@@ -28,7 +28,7 @@ setup script::
     $ cd mrchem/pilot
     $ cp mrchem.cpp.sample mrchem.cpp
     $ cd ..
-    $ ./setup --release
+    $ ./setup --release --enable-mpi=off
 
 The setup script will now create a ``/build/pilot`` directory where you can
 build the code::
