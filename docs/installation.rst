@@ -17,7 +17,7 @@ correctly, provided all the necessary modules have been loaded::
 Obtaining and building the code
 -------------------------------
 
-An experimental version of MRCPP is available on GitHub. There is no official
+An experimental version of MRChem is available on GitHub. There is no official
 MRChem program yet, but you can write your own main program in a file called
 ``mrchem.cpp`` in the ``/pilot`` directory. You will find a sample code called
 ``mrchem.cpp.sample`` in this directory where some of the functionality is
@@ -51,6 +51,6 @@ will give you all threads available, otherwise use
 ``export OMP_NUM_THREADS N``)::
 
     $ unset OMP_NUM_THREADS
-    $ ./mrcpp
+    $ ./mrchem-pilot.x
 
 At the moment, no input parsing is available.
