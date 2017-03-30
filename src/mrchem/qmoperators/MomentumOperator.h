@@ -17,35 +17,17 @@ protected:
     virtual bool isImag() const { return true; }
 };
 
-class QMMomentumX : public QMMomentum {
-public:
-    QMMomentumX(DerivativeOperator<3> &D) : QMMomentum(0, D) { }
-    virtual ~QMMomentumX() { }
-};
-
-class QMMomentumY : public QMMomentum {
-public:
-    QMMomentumY(DerivativeOperator<3> &D) : QMMomentum(1, D) { }
-    virtual ~QMMomentumY() { }
-};
-
-class QMMomentumZ : public QMMomentum {
-public:
-    QMMomentumZ(DerivativeOperator<3> &D) : QMMomentum(2, D) { }
-    virtual ~QMMomentumZ() { }
-};
-
 class MomentumOperator : public RankOneTensorOperator<3> {
 public:
-    MomentumOperator(DerivativeOperator<3> &D) : p_x(D), p_y(D), p_z(D) {
+    MomentumOperator(DerivativeOperator<3> &D) : p_x(0, D), p_y(1, D), p_z(2, D) {
         initializeTensorOperator();
     }
     virtual ~MomentumOperator() { }
 
 protected:
-    QMMomentumX p_x;
-    QMMomentumY p_y;
-    QMMomentumZ p_z;
+    QMMomentum p_x;
+    QMMomentum p_y;
+    QMMomentum p_z;
 
     void initializeTensorOperator() {
         RankOneTensorOperator<3> &h = (*this);
