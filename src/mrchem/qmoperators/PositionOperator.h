@@ -1,58 +1,31 @@
 #ifndef POSITIONOPERATOR_H
 #define POSITIONOPERATOR_H
 
-#include "QMPotential.h"
 #include "QMTensorOperator.h"
+#include "AnalyticPotential.h"
 
-
-class QMPosition : public QMPotential {
+class QMPosition : public AnalyticPotential {
 public:
     QMPosition(int d, const double *o = 0) {
-        setPosition(this->r_O, o);
-        setFunction(d, this->r_O);
+        double orig = 0.0;
+        if (o != 0) orig = o[d];
+        auto f = [d, orig] (const double *r) -> double { return r[d] - orig; };
+        setReal(f);
     }
     virtual ~QMPosition() { }
-
-    virtual void setup(double prec);
-    virtual void clear();
-
-protected:
-    double r_O[3];
-    std::function<double (const double *r)> func;
-
-    void setPosition(double *out, const double *inp);
-    void setFunction(int d, const double *o);
-};
-
-class QMPositionX : public QMPosition {
-public:
-    QMPositionX(const double *o = 0) : QMPosition(0, o) { }
-    virtual ~QMPositionX() { }
-};
-
-class QMPositionY : public QMPosition {
-public:
-    QMPositionY(const double *o = 0) : QMPosition(1, o) { }
-    virtual ~QMPositionY() { }
-};
-
-class QMPositionZ : public QMPosition {
-public:
-    QMPositionZ(const double *o = 0) : QMPosition(2, o) { }
-    virtual ~QMPositionZ() { }
 };
 
 class PositionOperator : public RankOneTensorOperator<3> {
 public:
-    PositionOperator(const double *o = 0) : r_x(o), r_y(o), r_z(o) {
+    PositionOperator(const double *o = 0) : r_x(0, o), r_y(1, o), r_z(2, o) {
         initializeTensorOperator();
     }
     virtual ~PositionOperator() { }
 
 protected:
-    QMPositionX r_x;
-    QMPositionY r_y;
-    QMPositionZ r_z;
+    QMPosition r_x;
+    QMPosition r_y;
+    QMPosition r_z;
 
     void initializeTensorOperator() {
         RankOneTensorOperator<3> &h = (*this);
