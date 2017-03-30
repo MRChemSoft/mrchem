@@ -6,7 +6,7 @@
 template<int D>
 class AnalyticFunction : public RepresentableFunction<D> {
 public:
-    AnalyticFunction(std::function<double(const double *r)> f,
+    AnalyticFunction(std::function<double (const double *r)> f,
                      const double *a = 0,
                      const double *b = 0)
         : RepresentableFunction<D>(a, b),
@@ -14,11 +14,9 @@ public:
     virtual ~AnalyticFunction() { }
 
     virtual double evalf(const double *r) const {
-        if (this->outOfBounds(r)) {
-            return 0.0;
-        } else {
-            return this->func(r);
-        }
+        double val = 0.0;
+        if (not this->outOfBounds(r)) val = this->func(r);
+        return val;
     }
 protected:
     std::function<double (const double *r)> func;
