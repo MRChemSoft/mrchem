@@ -1,6 +1,7 @@
 #include "OrbitalAdder.h"
 #include "OrbitalVector.h"
 #include "Orbital.h"
+#include "MathUtils.h"
 
 using namespace std;
 using namespace Eigen;
@@ -77,14 +78,14 @@ void OrbitalAdder::operator()(Orbital &out,
 
     // set output spin
     for (int i = 0; i < inp.size(); i++) {
-        if (fabs(coefs[i]) < MachineZero) continue;
+        if (abs(coefs[i]) < MachineZero) continue;
         if (inp[i]->getOccupancy() == 0) continue;
         out.setSpin(inp[i]->getSpin());
         break;
     }
     // sanity check spin
     for (int i = 0; i < inp.size(); i++) {
-        if (fabs(coefs[i]) < MachineZero) continue;
+        if (abs(coefs[i]) < MachineZero) continue;
         if (inp[i]->getOccupancy() == 0) continue;
         if (out.getSpin() != inp[i]->getSpin()) MSG_FATAL("Mixing spins");
     }
