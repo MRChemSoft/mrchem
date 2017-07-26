@@ -1,5 +1,5 @@
-#ifndef COMPLEX_FUNCTION_H
-#define COMPLEX_FUNCTION_H
+#ifndef QMFUNCTION_H
+#define QMFUNCTION_H
 
 #include <complex>
 
@@ -7,12 +7,12 @@
 #include "FunctionTree.h"
 
 template<int D>
-class ComplexFunction {
+class QMFunction {
 public:
-    ComplexFunction(FunctionTree<D> *r = 0, FunctionTree<D> *i = 0) : re(r), im(i) { }
-    ComplexFunction(const ComplexFunction &func) { NOT_IMPLEMENTED_ABORT; }
-    ComplexFunction<D> &operator=(const ComplexFunction<D> &func);
-    virtual ~ComplexFunction() { clearReal(true); clearImag(true); }
+    QMFunction(FunctionTree<D> *r = 0, FunctionTree<D> *i = 0) : re(r), im(i) { }
+    QMFunction(const QMFunction &func) { NOT_IMPLEMENTED_ABORT; }
+    QMFunction<D> &operator=(const QMFunction<D> &func);
+    virtual ~QMFunction() { clearReal(true); clearImag(true); }
 
     bool hasReal() const { if (this->re == 0) return false; return true; }
     bool hasImag() const { if (this->im == 0) return false; return true; }
@@ -34,7 +34,7 @@ public:
 
     int getNNodes(int type = Total) const;
     double getSquareNorm(int type = Total) const;
-    std::complex<double> dot(ComplexFunction<D> &ket);
+    std::complex<double> dot(QMFunction<D> &ket);
 
     void normalize();
     void operator*=(double c);
@@ -46,4 +46,4 @@ protected:
     FunctionTree<D> *im;
 };
 
-#endif // COMPLEX_FUNCTION_H
+#endif // QMFUNCTION_H

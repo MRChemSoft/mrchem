@@ -5,7 +5,7 @@ extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 using namespace std;
 
 template<int D>
-ComplexFunction<D>& ComplexFunction<D>::operator=(const ComplexFunction<D> &func) {
+QMFunction<D>& QMFunction<D>::operator=(const QMFunction<D> &func) {
     if (this != &func) {
         if (this->hasReal()) MSG_ERROR("Function not empty");
         if (this->hasImag()) MSG_ERROR("Function not empty");
@@ -16,31 +16,31 @@ ComplexFunction<D>& ComplexFunction<D>::operator=(const ComplexFunction<D> &func
 }
 
 template<int D>
-void ComplexFunction<D>::allocReal() {
+void QMFunction<D>::allocReal() {
     if (this->hasReal()) MSG_ERROR("Function not empty");
     this->re = new FunctionTree<D>(*MRA);
 }
 
 template<int D>
-void ComplexFunction<D>::allocImag() {
+void QMFunction<D>::allocImag() {
     if (this->hasImag()) MSG_ERROR("Function not empty");
     this->im = new FunctionTree<D>(*MRA);
 }
 
 template<int D>
-void ComplexFunction<D>::clearReal(bool free) {
+void QMFunction<D>::clearReal(bool free) {
     if (this->hasReal() and free) delete this->re;
     this->re = 0;
 }
 
 template<int D>
-void ComplexFunction<D>::clearImag(bool free) {
+void QMFunction<D>::clearImag(bool free) {
     if (this->hasImag() and free) delete this->im;
     this->im = 0;
 }
 
 template<int D>
-int ComplexFunction<D>::getNNodes(int type) const {
+int QMFunction<D>::getNNodes(int type) const {
     int rNodes = 0;
     int iNodes = 0;
     if (this->hasReal()) rNodes = this->real().getNNodes();
@@ -51,7 +51,7 @@ int ComplexFunction<D>::getNNodes(int type) const {
 }
 
 template<int D>
-double ComplexFunction<D>::getSquareNorm(int type) const {
+double QMFunction<D>::getSquareNorm(int type) const {
     double rNorm = 0;
     double iNorm = 0;
     if (this->hasReal()) rNorm = this->real().getSquareNorm();
@@ -62,8 +62,8 @@ double ComplexFunction<D>::getSquareNorm(int type) const {
 }
 
 template<int D>
-complex<double> ComplexFunction<D>::dot(ComplexFunction<D> &ket) {
-    ComplexFunction<D> &bra = *this;
+complex<double> QMFunction<D>::dot(QMFunction<D> &ket) {
+    QMFunction<D> &bra = *this;
     double rDot = 0.0;
     double iDot = 0.0;
     if (bra.hasReal() and ket.hasReal()) rDot += bra.real().dot(ket.real());
@@ -74,15 +74,15 @@ complex<double> ComplexFunction<D>::dot(ComplexFunction<D> &ket) {
 }
 
 template<int D>
-void ComplexFunction<D>::normalize() {
+void QMFunction<D>::normalize() {
     double norm = sqrt(this->getSquareNorm(Total));
     *this *= 1.0/norm;
 }
 
 template<int D>
-void ComplexFunction<D>::operator*=(double c) {
+void QMFunction<D>::operator*=(double c) {
     if (hasReal()) this->real() *= c;
     if (hasImag()) this->imag() *= c;
 }
 
-template class ComplexFunction<3>;
+template class QMFunction<3>;

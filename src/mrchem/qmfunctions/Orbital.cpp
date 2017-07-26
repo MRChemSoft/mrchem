@@ -12,21 +12,21 @@ using namespace std;
 Orbital workOrb(2, Orbital::Paired);
 
 Orbital::Orbital(int occ, int s)
-        : ComplexFunction<3>(0, 0),
+        : QMFunction<3>(0, 0),
           spin(s),
           occupancy(occ),
           error(1.0) {
 }
 
 Orbital::Orbital(const Orbital &orb)
-        : ComplexFunction<3>(0, 0),
+        : QMFunction<3>(0, 0),
           spin(orb.spin),
           occupancy(orb.occupancy),
           error(1.0) {
 }
 
 Orbital& Orbital::operator=(const Orbital &orb) {
-    ComplexFunction<3>::operator=(orb);
+    QMFunction<3>::operator=(orb);
     this->spin = orb.spin;
     this->occupancy = orb.occupancy;
     this->error = orb.error;
@@ -83,7 +83,7 @@ complex<double> Orbital::dot(Orbital &ket) {
     Orbital &bra = *this;
     if ((bra.getSpin() == Orbital::Alpha) and (ket.getSpin() == Orbital::Beta)) return 0.0;
     if ((bra.getSpin() == Orbital::Beta) and (ket.getSpin() == Orbital::Alpha)) return 0.0;
-    return ComplexFunction<3>::dot(ket);
+    return QMFunction<3>::dot(ket);
 }
 
 //send an orbital with MPI

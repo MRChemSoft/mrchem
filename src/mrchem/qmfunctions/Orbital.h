@@ -7,7 +7,7 @@
 
 #include "ComplexFunction.h"
 
-class Orbital : public ComplexFunction<3> {
+class Orbital : public QMFunction<3> {
 public:
     Orbital(int occ, int s);
     Orbital(const Orbital &orb);
