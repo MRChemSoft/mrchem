@@ -7,7 +7,7 @@
 
 #include "QMFunction.h"
 
-class Orbital : public QMFunction<3> {
+class Orbital : public QMFunction {
 public:
     Orbital(int occ, int s);
     Orbital(const Orbital &orb);

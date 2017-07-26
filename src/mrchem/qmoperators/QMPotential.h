@@ -4,7 +4,7 @@
 #include "QMOperator.h"
 #include "QMFunction.h"
 
-class QMPotential : public QMFunction<3>, public QMOperator {
+class QMPotential : public QMFunction, public QMOperator {
 public:
     QMPotential(int ab = 1);
     virtual ~QMPotential();

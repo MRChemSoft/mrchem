@@ -10,7 +10,7 @@ extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 using namespace std;
 
 QMPotential::QMPotential(int ab)
-    : QMFunction<3>(0, 0),
+    : QMFunction(0, 0),
       QMOperator(MRA->getMaxScale()),
       adap_build(ab) {
 }

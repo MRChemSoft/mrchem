@@ -248,13 +248,13 @@ void SCF::applyHelmholtzOperators(OrbitalVector &phi_np1,
 	    H(i, np1Phi_i, *arg_i);
 	    delete arg_i;
 	  
-	    int rNodes = np1Phi_i.getNNodes(QMFunction<3>::Real);
-	    int iNodes = np1Phi_i.getNNodes(QMFunction<3>::Imag);
+        int rNodes = np1Phi_i.getNNodes(QMFunction::Real);
+        int iNodes = np1Phi_i.getNNodes(QMFunction::Imag);
 	    double norm_n = sqrt(nPhi_i.getSquareNorm());
 	    double norm_np1 = sqrt(np1Phi_i.getSquareNorm());
 	    double dNorm_n = fabs(norm_np1-norm_n);
-            double real_norm = sqrt(np1Phi_i.getSquareNorm(QMFunction<3>::Real));
-            double imag_norm = sqrt(np1Phi_i.getSquareNorm(QMFunction<3>::Imag));
+        double real_norm = sqrt(np1Phi_i.getSquareNorm(QMFunction::Real));
+        double imag_norm = sqrt(np1Phi_i.getSquareNorm(QMFunction::Imag));
 
 	    timer.stop();
             TelePrompter::setPrecision(5);
