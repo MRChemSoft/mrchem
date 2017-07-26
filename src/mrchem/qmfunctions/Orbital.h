@@ -11,7 +11,7 @@ class Orbital : public QMFunction {
 public:
     Orbital(int occ, int s);
     Orbital(const Orbital &orb);
-    Orbital &operator=(const Orbital &orb);
+    Orbital &operator=(const Orbital &orb) { NOT_IMPLEMENTED_ABORT;}
     virtual ~Orbital() { clear(); }
     void clear(bool free = true);
 

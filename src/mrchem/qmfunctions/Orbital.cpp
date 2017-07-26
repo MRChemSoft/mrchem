@@ -19,18 +19,10 @@ Orbital::Orbital(int occ, int s)
 }
 
 Orbital::Orbital(const Orbital &orb)
-        : QMFunction(0, 0),
+        : QMFunction(orb),
           spin(orb.spin),
           occupancy(orb.occupancy),
           error(1.0) {
-}
-
-Orbital& Orbital::operator=(const Orbital &orb) {
-    QMFunction::operator=(orb);
-    this->spin = orb.spin;
-    this->occupancy = orb.occupancy;
-    this->error = orb.error;
-    return *this;
 }
 
 void Orbital::clear(bool free) {
