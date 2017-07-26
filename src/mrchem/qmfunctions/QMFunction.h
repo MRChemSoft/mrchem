@@ -9,9 +9,12 @@
 class QMFunction {
 public:
     QMFunction(FunctionTree<3> *r = 0, FunctionTree<3> *i = 0) : re(r), im(i) { }
-    QMFunction(const QMFunction &func) { NOT_IMPLEMENTED_ABORT; }
-    QMFunction &operator=(const QMFunction &func);
+    QMFunction(const QMFunction &func) : re(0), im(0) { }
+    QMFunction &operator=(const QMFunction &func) { NOT_IMPLEMENTED_ABORT; }
     virtual ~QMFunction() { clearReal(true); clearImag(true); }
+
+    void deepCopy(QMFunction &inp);
+    void shallowCopy(const QMFunction &inp);
 
     bool hasReal() const { if (this->re == 0) return false; return true; }
     bool hasImag() const { if (this->im == 0) return false; return true; }

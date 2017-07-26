@@ -143,8 +143,8 @@ void Accelerator::push_back(OrbitalVector &phi,
 
     OrbitalVector *new_phi = new OrbitalVector(phi);
     OrbitalVector *new_dPhi = new OrbitalVector(dPhi);
-    *new_phi = phi;
-    *new_dPhi = dPhi;
+    new_phi->shallowCopy(phi);
+    new_dPhi->shallowCopy(dPhi);
     phi.clear(false);
     dPhi.clear(false);
 

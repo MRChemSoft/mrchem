@@ -16,8 +16,11 @@ public:
     OrbitalVector(int n_alpha, int n_beta);
     OrbitalVector(int ne, int mult, bool rest);
     OrbitalVector(const OrbitalVector &orb_set);
-    OrbitalVector& operator=(const OrbitalVector &orb_set);
+    OrbitalVector& operator=(const OrbitalVector &orb_set) { NOT_IMPLEMENTED_ABORT; }
     virtual ~OrbitalVector();
+
+    void deepCopy(OrbitalVector &inp);
+    void shallowCopy(const OrbitalVector &inp);
 
     void push_back(int n_orbs, int occ, int spin);
     void push_back(Orbital& Orb);

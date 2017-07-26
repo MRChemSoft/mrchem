@@ -79,17 +79,28 @@ OrbitalVector::OrbitalVector(const OrbitalVector &orb_set) {
     }
 }
 
-OrbitalVector& OrbitalVector::operator=(const OrbitalVector &inp) {
+void OrbitalVector::deepCopy(OrbitalVector &inp) {
+    OrbitalVector &out = *this;
+    if (&inp != &out) {
+        if (inp.size() != out.size()) MSG_ERROR("Size mismatch");
+        for (int i = 0; i < out.size(); i++) {
+            Orbital &inp_i = inp.getOrbital(i);
+            Orbital &out_i = out.getOrbital(i);
+            out_i.deepCopy(inp_i);
+        }
+    }
+}
+
+void OrbitalVector::shallowCopy(const OrbitalVector &inp) {
     OrbitalVector &out = *this;
     if (&inp != &out) {
         if (inp.size() != out.size()) MSG_ERROR("Size mismatch");
         for (int i = 0; i < out.size(); i++) {
             const Orbital &inp_i = inp.getOrbital(i);
             Orbital &out_i = out.getOrbital(i);
-            out_i = inp_i;
+            out_i.shallowCopy(inp_i);
         }
     }
-    return out;
 }
 
 /** OrbitalVector destructor

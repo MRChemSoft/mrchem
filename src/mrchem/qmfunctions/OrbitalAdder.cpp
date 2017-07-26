@@ -256,35 +256,34 @@ void OrbitalAdder::rotate(OrbitalVector &out, const MatrixXd &U) {
     }else{
       rotate(tmp, U, out);
     }
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
 }
 
 void OrbitalAdder::inPlace(Orbital &out, complex<double> c, Orbital &inp) {
-    Orbital tmp(out);//shallow copy
+    Orbital tmp(out);	  // Copy parameters
     (*this)(tmp, 1.0, out, c, inp, true); // Union grid
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
 }
 
 void OrbitalAdder::inPlace(Orbital &out,
                            vector<complex<double> > &c,
                            vector<Orbital *> &inp,
                            bool union_grid) {
-    Orbital tmp(out);   // Shallow copy
+    Orbital tmp(out);     // Copy parameters
     inp.push_back(&out);
     c.push_back(1.0);
     (*this)(tmp, c, inp, union_grid);
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
-    inp.pop_back();     // Restore vector
-    c.pop_back();       // Restore vector
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
+    inp.pop_back();       // Restore vector
+    c.pop_back();         // Restore vector
    
 }
-
 
 void OrbitalAdder::inPlace(Orbital &out, const VectorXd &c, OrbitalVector &inp,
                               bool union_grid) {
@@ -292,13 +291,13 @@ void OrbitalAdder::inPlace(Orbital &out, const VectorXd &c, OrbitalVector &inp,
     VectorXd c_extended(c.size()+1);
     for (int i = 0; i < c.size(); i++)c_extended(i)=c(i);
     c_extended(c.size())=1.0;
-    Orbital tmp(out);//shallow copy
+    Orbital tmp(out);	  // Copy parameters
     inp.push_back(out);
     (*this)(tmp, c_extended, inp, union_grid);
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
-    inp.pop_back(false);//restore vector
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
+    inp.pop_back(false);  // Restore vector
    
 }
 

@@ -1,17 +1,38 @@
 #include "QMFunction.h"
+#include "MWAdder.h"
+#include "GridGenerator.h"
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 using namespace std;
 
-QMFunction& QMFunction::operator=(const QMFunction &func) {
-    if (this != &func) {
-        if (this->hasReal()) MSG_ERROR("Function not empty");
-        if (this->hasImag()) MSG_ERROR("Function not empty");
-        this->re = func.re;
-        this->im = func.im;
+void QMFunction::deepCopy(QMFunction &inp) {
+    if (this->hasReal()) MSG_ERROR("Function not empty");
+    if (this->hasImag()) MSG_ERROR("Function not empty");
+
+    MWAdder<3> add;
+    GridGenerator<3> grid;
+    if (inp.hasReal()) {
+        FunctionTreeVector<3> vec;
+        vec.push_back(&inp.real());
+        this->re = new FunctionTree<3>(inp.real().getMRA());
+        grid(this->real(), vec);
+        add(this->real(), vec);
     }
-    return *this;
+    if (inp.hasImag()) {
+        FunctionTreeVector<3> vec;
+        vec.push_back(&inp.imag());
+        this->im = new FunctionTree<3>(inp.imag().getMRA());
+        grid(this->imag(), vec);
+        add(this->imag(), vec);
+    }
+}
+
+void QMFunction::shallowCopy(const QMFunction &inp) {
+    if (this->hasReal()) MSG_ERROR("Function not empty");
+    if (this->hasImag()) MSG_ERROR("Function not empty");
+    this->re = inp.re;
+    this->im = inp.im;
 }
 
 void QMFunction::allocReal() {
