@@ -5,7 +5,7 @@
 
 #include "constants.h"
 
-#include "ComplexFunction.h"
+#include "QMFunction.h"
 
 class Orbital : public QMFunction<3> {
 public:

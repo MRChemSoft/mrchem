@@ -1,4 +1,4 @@
-#include "ComplexFunction.h"
+#include "QMFunction.h"
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 

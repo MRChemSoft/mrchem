@@ -2,7 +2,7 @@
 #define QMPOTENTIAL_H
 
 #include "QMOperator.h"
-#include "ComplexFunction.h"
+#include "QMFunction.h"
 
 class QMPotential : public QMFunction<3>, public QMOperator {
 public:
