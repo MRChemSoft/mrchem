@@ -104,3 +104,10 @@ target/
 #Virtual environments
 venv
 
+#QtCreator
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
+
