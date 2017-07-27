@@ -9,9 +9,6 @@
  *
  */
 
-#pragma GCC system_header
-#include <Eigen/Core>
-
 #include "mrchem.h"
 #include "parallel.h"
 #include "constants.h"
@@ -37,7 +34,6 @@
 
 
 using namespace std;
-using namespace Eigen;
 
 void testProjection();
 void testAddition();
