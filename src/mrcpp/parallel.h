@@ -3,6 +3,8 @@
 
 #include "config.h"
 
+#define EIGEN_DONT_PARALLELIZE
+
 #ifdef HAVE_OPENMP
 
 #include <omp.h>
