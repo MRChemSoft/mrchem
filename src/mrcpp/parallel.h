@@ -3,9 +3,6 @@
 
 #include "config.h"
 
-template<int D> class FunctionTree;
-class Orbital;
-
 #ifdef HAVE_OPENMP
 
 #include <omp.h>
@@ -28,9 +25,10 @@ extern int MPI_size;
 void define_groups();
 void MPI_Initializations();
 
-
 #ifdef HAVE_MPI
 #include <mpi.h>
+
+template<int D> class FunctionTree;
 
 template<int D>
 void Send_SerialTree(FunctionTree<D>* Tree, int Nchunks, int dest, int tag, MPI_Comm comm);

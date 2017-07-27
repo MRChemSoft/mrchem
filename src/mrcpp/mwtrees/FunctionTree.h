@@ -16,6 +16,7 @@
 #include "MWTree.h"
 #include "SerialFunctionTree.h"
 
+class Orbital;
 
 template<int D>
 class FunctionTree: public MWTree<D> {
