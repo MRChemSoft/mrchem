@@ -275,6 +275,8 @@ void testDerivative() {
     println(0," absolute error:             " << setw(30) << abs_err);
     println(0," relative error:             " << setw(30) << rel_err << endl);
 
+    delete MRA_1;
+
     tot_t.stop();
     TelePrompter::printFooter(0, tot_t, 2);
 }
