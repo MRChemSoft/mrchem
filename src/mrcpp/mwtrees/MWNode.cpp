@@ -37,7 +37,7 @@ MWNode<D>::MWNode()
         this->children[i] = 0;
     }
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_init_lock(&node_lock);
 #endif
 }
@@ -76,7 +76,7 @@ MWNode<D>::MWNode(const MWNode<D> &node)
         this->children[i] = 0;
     }
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_init_lock(&node_lock);
 #endif
 }
@@ -86,7 +86,7 @@ MWNode<D>::MWNode(const MWNode<D> &node)
 template<int D>
 MWNode<D>::~MWNode() {
     if (this->isLooseNode()) this->freeCoefs();
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_destroy_lock(&node_lock);
 #endif
 }

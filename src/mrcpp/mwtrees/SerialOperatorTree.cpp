@@ -106,7 +106,7 @@ void SerialOperatorTree::allocRoots(MWTree<2> &tree) {
 
         tree.incrementNodeCount(root_p->getScale());
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&(root_p->node_lock));
 #endif
 
@@ -157,7 +157,7 @@ void SerialOperatorTree::allocChildren(MWNode<2> &parent) {
 
         child_p->tree->incrementNodeCount(child_p->getScale());
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&child_p->node_lock);
 #endif
 

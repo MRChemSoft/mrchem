@@ -21,7 +21,7 @@
 #define getObjectCache(T,X) \
     ObjectCache<T> &X = ObjectCache<T>::getInstance();
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
 #define SET_CACHE_LOCK() omp_set_lock(&this->cache_lock)
 #define UNSET_CACHE_LOCK() omp_unset_lock(&this->cache_lock)
 #define TEST_CACHE_LOCK() omp_test_lock(&this->cache_lock)
@@ -108,7 +108,7 @@ protected:
         this->memLoaded = 0;
         this->objs.push_back(0);
         this->mem.push_back(0);
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&cache_lock);
 #endif
     }
@@ -117,13 +117,13 @@ protected:
         SET_CACHE_LOCK();
         clear();
         UNSET_CACHE_LOCK();
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_destroy_lock(&cache_lock);
 #endif
     }
     ObjectCache(ObjectCache<T> const &oc) { }
     ObjectCache<T> &operator=(ObjectCache<T> const &oc) { return *this; }
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_lock_t cache_lock;
 #endif
 private:

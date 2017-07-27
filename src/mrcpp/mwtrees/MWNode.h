@@ -19,7 +19,7 @@
 #include "HilbertPath.h"
 #include "SerialTree.h"
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
 #define SET_NODE_LOCK() omp_set_lock(&this->node_lock)
 #define UNSET_NODE_LOCK() omp_unset_lock(&this->node_lock)
 #define TEST_NODE_LOCK() omp_test_lock(&this->node_lock)
@@ -199,7 +199,7 @@ protected:
     static const unsigned char FlagEndNode    = B8(00010000);
     static const unsigned char FlagRootNode   = B8(00100000);
     static const unsigned char FlagLooseNode  = B8(01000000);
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_lock_t node_lock;
 #endif
 

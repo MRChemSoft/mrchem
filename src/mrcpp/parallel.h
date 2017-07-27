@@ -8,7 +8,6 @@ class Orbital;
 
 #ifdef HAVE_OPENMP
 
-#define OPENMP
 #include <omp.h>
 
 #else

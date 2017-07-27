@@ -16,7 +16,7 @@
 #include "MultiResolutionAnalysis.h"
 #include "SerialTree.h"
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
 #define SET_TREE_LOCK() omp_set_lock(&this->tree_lock)
 #define UNSET_TREE_LOCK() omp_unset_lock(&this->tree_lock)
 #define TEST_TREE_LOCK() omp_test_lock(&this->tree_lock)
@@ -152,7 +152,7 @@ protected:
     void incrementGenNodeCount();
     void decrementGenNodeCount();
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_lock_t tree_lock;
 #endif
 };

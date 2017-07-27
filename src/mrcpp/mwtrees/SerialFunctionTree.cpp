@@ -140,7 +140,7 @@ void SerialFunctionTree<D>::allocRoots(MWTree<D> &tree) {
 
         tree.incrementNodeCount(root_p->getScale());
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&(root_p->node_lock));
 #endif
 
@@ -192,7 +192,7 @@ void SerialFunctionTree<D>::allocChildren(MWNode<D> &parent) {
 
         child_p->tree->incrementNodeCount(child_p->getScale());
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&child_p->node_lock);
 #endif
 
@@ -244,7 +244,7 @@ void SerialFunctionTree<D>::allocGenChildren(MWNode<D> &parent) {
 
 	child_p->tree->incrementGenNodeCount();
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
 	omp_init_lock(&child_p->node_lock);
 #endif
 
@@ -461,7 +461,7 @@ void SerialFunctionTree<D>::rewritePointers(int nChunks){
 	    Node->children[i] = this->nodeChunks[n_ichunk] + n_inode;
 	  }
 	  this->nodeStackStatus[Node->serialIx] = 1;//occupied
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
 	  omp_init_lock(&(Node->node_lock));
 #endif
 	}
