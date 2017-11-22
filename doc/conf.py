@@ -69,7 +69,7 @@ source_parsers = {
 master_doc = 'index'
 
 # General information about the project.
-project = u'MRChem'
+project = 'MRChem'
 copyright = u'2017, Stig Rune Jensen, Luca Frediani, Jonas Juselius, Peter Wind, Magnar Bjørgve, Rune Sørland Monstad'
 author = u'Stig Rune Jensen, Luca Frediani, Jonas Juselius, Peter Wind, Magnar Bjørgve, Rune Sørland Monstad'
 
@@ -253,8 +253,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'MRChem.tex', u'MRChem Documentation',
-   u'Roberto Di Remigio, Luca Frediani, Krzysztof Mozgawa', 'manual'),
+  (master_doc, 'MRChem.tex', 'MRChem Documentation',
+   'Roberto Di Remigio, Luca Frediani, Krzysztof Mozgawa', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -283,7 +283,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'mrchem', u'MRChem Documentation',
+    (master_doc, 'mrchem', 'MRChem Documentation',
      [author], 1)
 ]
 
@@ -297,7 +297,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'MRChem', u'MRChem Documentation',
+  (master_doc, 'MRChem', 'MRChem Documentation',
    author, 'MRChem', 'One line description of project.',
    'Miscellaneous'),
 ]
@@ -395,8 +395,8 @@ def configure_file(rep, fname, **kwargs):
     f = open(os.path.join(in_path, fname_in), 'r')
     filedata = f.read()
     f.close()
-    rep = dict((re.escape(k), v) for k, v in rep.iteritems())
-    pattern = re.compile("|".join(rep.keys()))
+    rep = dict((re.escape(k), v) for k, v in rep.items())
+    pattern = re.compile("|".join(list(rep.keys())))
     filedata = pattern.sub(lambda m: rep[re.escape(m.group(0))], filedata)
     fname_out = prefix + fname
     f = open(os.path.join(out_path, fname_out), 'w+')
@@ -418,9 +418,10 @@ def generate_bar_charts(mod_dir, dir_lang, savedir):
     sys.path.append(mod_dir)
     from cloc_tools import bar_chart
     # Generate scripts and list of scripts (absolute paths)
-    list_of_scripts = [bar_chart(root_dir, language, savedir) for root_dir, language in dir_lang.iteritems()]
+    list_of_scripts = [bar_chart(root_dir, language, savedir) for root_dir, language in dir_lang.items()]
     # Generate charts
-    [execfile(fname) for fname in list_of_scripts]
+    for fname in list_of_scripts:
+        exec(compile(open(fname).read(), fname, 'exec'))
 
 
 def setup(app):
@@ -438,9 +439,9 @@ def setup(app):
         project_root_dir = os.getcwd()
         project_doc_dir  = os.path.join(project_root_dir, 'doc')
         project_src_dir  = os.path.join(project_root_dir, 'src')
-    print('Project root directory {}'.format(project_root_dir))
-    print('Project doc directory {}'.format(project_doc_dir))
-    print('Project src directory {}'.format(project_src_dir))
+    print(('Project root directory {}'.format(project_root_dir)))
+    print(('Project doc directory {}'.format(project_doc_dir)))
+    print(('Project src directory {}'.format(project_src_dir)))
 
     # Clean up leftovers
     print('Clean up leftovers from previous build')
