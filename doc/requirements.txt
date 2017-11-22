@@ -2,3 +2,4 @@ sphinx-rtd-theme
 sphinx
 recommonmark
 sphinxcontrib-bibtex
+breathe
