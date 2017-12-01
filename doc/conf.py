@@ -254,7 +254,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   (master_doc, 'MRChem.tex', 'MRChem Documentation',
-   'Roberto Di Remigio, Luca Frediani, Krzysztof Mozgawa', 'manual'),
+   'Stig Rune Jensen, Luca Frediani, Peter Wind', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
