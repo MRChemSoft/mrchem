@@ -4,6 +4,16 @@
 
 
 
+/** 
+ *  \class XCPotential
+ *  \brief Compute XC potential
+ *
+ *  TO BE COMPLETED
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
 class XCPotential : public XCOperator {
 public:
     XCPotential(XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D = 0)

@@ -6,8 +6,8 @@ Classes and functions reference
 
    chemistry
    initial_guess
-   properites
-   qmfunction
+   properties
+   qmfunctions
    qmoperators
    scf_solver
    

@@ -36,16 +36,3 @@ To add new tests for your class you have to:
    A possible workaround is to add some kind of input file and create a text fixture
    that sets up the test environment. Have a look in the ``tests/input`` directory
    for an example
-#. create the .cpp files containing the tests. Use the following template:
-
-   .. literalinclude:: ../snippets/test_example.cpp
-      :language: cpp
-      :linenos:
-
-   In this example we are creating a test fixture. The fixture will instatiate
-   a GePolCavity with fixed parameters. The result is then tested against reference values
-   in the various SECTIONs.
-   It is **important** to add the documentation lines on top of the tests, to help other
-   developers understand which class is being tested and what parameters are being tested.
-   Within Catch fixtures are created behind the curtains, you do not need to worry about
-   those details. This results in somewhat terser test source files.

@@ -3,6 +3,16 @@
 #include "QMOperator.h"
 #include "QMFunction.h"
 
+/** 
+ *  \class QMPotential
+ *  \brief Operator defining an external potential
+ *
+ *  Bla bla bla
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
 class QMPotential : public QMFunction, public QMOperator {
 public:
     QMPotential(int ab = 1);

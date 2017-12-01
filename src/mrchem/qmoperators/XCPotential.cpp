@@ -14,6 +14,8 @@ extern MultiResolutionAnalysis<3> *MRA;
 using namespace std;
 using namespace Eigen;
 
+/** \brief Provides the right sequence of internal operations to compute the XC potential 
+ */
 void XCPotential::setup(double prec) {
     setApplyPrec(prec);
     calcDensity();
@@ -26,6 +28,8 @@ void XCPotential::setup(double prec) {
     clearXCOutput();
 }
 
+/** \brief Cleanup function to call after the the XC potential has been calculated
+ */
 void XCPotential::clear() {
     clearReal(true);
     clearImag(true);
@@ -37,6 +41,8 @@ void XCPotential::clear() {
     clearApplyPrec();
 }
 
+/** TO BE COMPLETED
+ */
 void XCPotential::calcPotential() {
     if (this->hasReal()) MSG_ERROR("Potential not properly cleared");
     if (this->hasImag()) MSG_ERROR("Potential not properly cleared");
@@ -74,6 +80,9 @@ void XCPotential::calcPotential() {
     TelePrompter::printTree(0, "XC potential", n, t);
 }
 
+/** \brief Computes the LDA part of the XC potential
+ *  
+ */
 void XCPotential::calcPotentialLDA(int spin) {
     if (spin == Density::Total) {
         if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
@@ -92,6 +101,12 @@ void XCPotential::calcPotentialLDA(int spin) {
     }
 }
 
+/** \brief Driver for the the GGA part of the XC potential
+ *
+ * Initializes the variables for the computation of GGA part of the XC
+ * potential. The initialization depends on the spin
+ * (total/alpha/beta).
+ */
 void XCPotential::calcPotentialGGA(int spin) {
     FunctionTreeVector<3> xc_funcs;
     FunctionTreeVector<3> dRho_a;
@@ -167,6 +182,15 @@ void XCPotential::calcPotentialGGA(int spin) {
     }
 }
 
+/** \brief Calculation of the GGA part of the XC potential
+ *
+ * The calculation is performed according the the following equation 
+ * TO BE COMPLETED
+ *
+ * This function is identical irrespective of which case we consider
+ * (alpha/beta/total). It is the caller which provides the right
+ * assignment to the functions used here.
+ */
 FunctionTree<3>* XCPotential::calcPotentialGGA(FunctionTreeVector<3> &xc_funcs,
                                                FunctionTreeVector<3> &dRho_a,
                                                FunctionTreeVector<3> &dRho_b) {
