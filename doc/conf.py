@@ -70,8 +70,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'MRChem'
-copyright = u'2017, Stig Rune Jensen, Luca Frediani, Jonas Juselius, Peter Wind, Magnar Bjørgve, Rune Sørland Monstad'
-author = u'Stig Rune Jensen, Luca Frediani, Jonas Juselius, Peter Wind, Magnar Bjørgve, Rune Sørland Monstad'
+copyright = '2017, Stig Rune Jensen, Luca Frediani, Jonas Juselius, Peter Wind, Magnar Bjorgve, Rune Sorland Monstad'
+author = 'Stig Rune Jensen, Luca Frediani, Jonas Juselius, Peter Wind, Magnar Bjorgve, Rune Sorland Monstad'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -395,7 +395,7 @@ def configure_file(rep, fname, **kwargs):
     f = open(os.path.join(in_path, fname_in), 'r')
     filedata = f.read()
     f.close()
-    rep = dict((re.escape(k), v) for k, v in rep.items())
+    rep = dict((re.escape(k), v) for k, v in list(rep.items()))
     pattern = re.compile("|".join(list(rep.keys())))
     filedata = pattern.sub(lambda m: rep[re.escape(m.group(0))], filedata)
     fname_out = prefix + fname
@@ -418,7 +418,7 @@ def generate_bar_charts(mod_dir, dir_lang, savedir):
     sys.path.append(mod_dir)
     from cloc_tools import bar_chart
     # Generate scripts and list of scripts (absolute paths)
-    list_of_scripts = [bar_chart(root_dir, language, savedir) for root_dir, language in dir_lang.items()]
+    list_of_scripts = [bar_chart(root_dir, language, savedir) for root_dir, language in list(dir_lang.items())]
     # Generate charts
     for fname in list_of_scripts:
         exec(compile(open(fname).read(), fname, 'exec'))
