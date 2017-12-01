@@ -37,11 +37,9 @@ include(tests)
 include(python)
 include(git)
 include(initial_guess)
-#include(doxygen)
 include(mw_filters)
 include(main)
 include(feature_summary)
 include(autocmake_save_flags)
-include(documentation)
 
 
