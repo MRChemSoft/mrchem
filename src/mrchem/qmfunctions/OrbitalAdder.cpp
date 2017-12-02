@@ -3,12 +3,15 @@
 #include "Orbital.h"
 #include "MathUtils.h"
 
+extern OrbitalVector workOrbVec;
+
 using namespace std;
 using namespace Eigen;
 
-OrbitalAdder::OrbitalAdder(double prec, int max_scale)
-    : add(prec, max_scale),
-      grid(max_scale) {
+OrbitalAdder::OrbitalAdder(double prec, int max_scale, int work_vec_max)
+    : workVecMax(work_vec_max),
+      add(prec, max_scale),
+      grid(max_scale){
 }
 
 void OrbitalAdder::operator()(Orbital &phi_ab,
@@ -204,103 +207,97 @@ void OrbitalAdder::rotate_P(OrbitalVector &out, const MatrixXd &U, OrbitalVector
     if (U.rows() < out.size()) MSG_ERROR("Invalid arguments");
 
     int Ni = phi.size();
-    OrbitalVector OrbVecChunk_i(0);//to store adresses of own i_orbs
-    int OrbsIx[workOrbVecSize];//to store own orbital indices
-    OrbitalVector rcvOrbs(0);//to store adresses of received orbitals
-    int rcvOrbsIx[workOrbVecSize];//to store received orbital indices
+    OrbitalVector orbVecChunk_i(0);//to store adresses of own i_orbs
+    vector<int> orbsIx;            //to store own orbital indices
+    OrbitalVector rcvOrbs(0);      //to store adresses of received orbitals
+    int rcvOrbsIx[workOrbVecSize]; //to store received orbital indices
     
     //make vector with adresses of own orbitals
-    int i = 0;
-    for (int Ix = MPI_rank;  Ix < Ni; Ix += MPI_size) {
-      OrbVecChunk_i.push_back(phi.getOrbital(Ix));//i orbitals
-      out.getOrbital(Ix).clear(true);
-      OrbsIx[i++] = Ix;
+    for (int Ix = mpiOrbRank; Ix < Ni; Ix += mpiOrbSize) {
+	orbVecChunk_i.push_back(phi.getOrbital(Ix));//i orbitals
+	out.getOrbital(Ix).clear(true);
+	orbsIx.push_back(Ix);
     }
     
-     for (int iter = 0;  iter >= 0; iter++) {
-      //get a new chunk from other processes
-      OrbVecChunk_i.getOrbVecChunk(OrbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
-      //Update only own orbitals	
-      int j = 0;
-      for (int Jx = MPI_rank;  Jx < Ni; Jx += MPI_size) {
-	VectorXd U_Chunk(rcvOrbs.size());
-	for (int ix = 0; ix<rcvOrbs.size(); ix++)U_Chunk(ix)=U(Jx,rcvOrbsIx[ix]);
-	this->inPlace(out.getOrbital(Jx),U_Chunk, rcvOrbs, false);//can start with empty orbital
-      }
-      rcvOrbs.clearVec(false);//reset to zero size orbital vector
+    for (int iter = 0; iter >= 0; iter++) {
+	//get a new chunk from other processes
+	orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter, this->workVecMax, 0);
+	//Update only own orbitals	
+	for (int Jx = mpiOrbRank; Jx < Ni; Jx += mpiOrbSize) {
+	    VectorXd U_Chunk(rcvOrbs.size());
+	    for (int ix = 0; ix < rcvOrbs.size(); ix++) U_Chunk(ix) = U(Jx,rcvOrbsIx[ix]);
+	    this->inPlace(out.getOrbital(Jx), U_Chunk, rcvOrbs, false);//can start with empty orbital
+	}
+	rcvOrbs.clearVec(false);//reset to zero size orbital vector
     }
     
     //clear orbital adresses, not the orbitals
-    OrbVecChunk_i.clearVec(false);
- 
+    orbVecChunk_i.clearVec(false);
+    workOrbVec.clear();
 }
 
 void OrbitalAdder::rotate(OrbitalVector &out, const MatrixXd &U, OrbitalVector &inp) {
     if (U.cols() != inp.size()) MSG_ERROR("Invalid arguments");
     if (U.rows() < out.size()) MSG_ERROR("Invalid arguments");
-    if(MPI_size>1){
-      rotate_P(out, U, inp);
-    }else{
-      for (int i = 0; i < out.size(); i++) {
-        const VectorXd &c = U.row(i);
-        Orbital &out_i = out.getOrbital(i);
-        (*this)(out_i, c, inp, false); // Adaptive grids
-      }
+    if (mpiOrbSize > 1) {
+	rotate_P(out, U, inp);
+    } else {
+	for (int i = 0; i < out.size(); i++) {
+	    const VectorXd &c = U.row(i);
+	    Orbital &out_i = out.getOrbital(i);
+	    (*this)(out_i, c, inp, false); // Adaptive grids
+	}
     }
 }
 
 /** In place rotation of orbital vector */
 void OrbitalAdder::rotate(OrbitalVector &out, const MatrixXd &U) {
     OrbitalVector tmp(out);
-    if(MPI_size>1){
-      rotate_P(tmp, U, out);
-    }else{
-      rotate(tmp, U, out);
+    if (mpiOrbSize > 1) {
+	rotate_P(tmp, U, out);
+    } else {
+	rotate(tmp, U, out);
     }
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
 }
 
 void OrbitalAdder::inPlace(Orbital &out, complex<double> c, Orbital &inp) {
-    Orbital tmp(out);//shallow copy
+    Orbital tmp(out);	  // Copy parameters
     (*this)(tmp, 1.0, out, c, inp, true); // Union grid
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
 }
 
 void OrbitalAdder::inPlace(Orbital &out,
                            vector<complex<double> > &c,
                            vector<Orbital *> &inp,
                            bool union_grid) {
-    Orbital tmp(out);   // Shallow copy
+    Orbital tmp(out);     // Copy parameters
     inp.push_back(&out);
     c.push_back(1.0);
     (*this)(tmp, c, inp, union_grid);
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
-    inp.pop_back();     // Restore vector
-    c.pop_back();       // Restore vector
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
+    inp.pop_back();       // Restore vector
+    c.pop_back();         // Restore vector
    
 }
 
-
-void OrbitalAdder::inPlace(Orbital &out, const VectorXd &c, OrbitalVector &inp,
-                              bool union_grid) {
-
+void OrbitalAdder::inPlace(Orbital &out, const VectorXd &c, OrbitalVector &inp, bool union_grid) {
     VectorXd c_extended(c.size()+1);
-    for (int i = 0; i < c.size(); i++)c_extended(i)=c(i);
+    for (int i = 0; i < c.size(); i++) c_extended(i) = c(i);
     c_extended(c.size())=1.0;
-    Orbital tmp(out);//shallow copy
+    Orbital tmp(out);	  // Copy parameters
     inp.push_back(out);
     (*this)(tmp, c_extended, inp, union_grid);
-    out.clear(true);    // Delete pointers
-    out = tmp;          // Copy pointers
-    tmp.clear(false);   // Clear pointers
-    inp.pop_back(false);//restore vector
-   
+    out.clear(true);      // Delete pointers
+    out.shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);     // Clear pointers
+    inp.pop_back(false);  // Restore vector
 }
 
 void OrbitalAdder::inPlace(OrbitalVector &out, double c, OrbitalVector &inp) {

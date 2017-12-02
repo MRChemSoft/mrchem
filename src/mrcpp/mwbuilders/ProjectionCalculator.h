@@ -1,5 +1,4 @@
-#ifndef ANALYTICPROJECTOR_H
-#define ANALYTICPROJECTOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -18,4 +17,3 @@ protected:
     virtual void calcNode(MWNode<D> &node);
 };
 
-#endif // ANALYTICPROJECTOR_H

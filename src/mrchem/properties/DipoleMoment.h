@@ -1,5 +1,4 @@
-#ifndef DIPOLEMOMENT_H
-#define DIPOLEMOMENT_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -46,4 +45,3 @@ protected:
     Eigen::VectorXd electronic;
 };
 
-#endif // DIPOLEMOMENT_H

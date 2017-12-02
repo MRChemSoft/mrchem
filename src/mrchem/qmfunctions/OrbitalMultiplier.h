@@ -1,5 +1,4 @@
-#ifndef ORBITALMULTIPLIER_H
-#define ORBITALMULTIPLIER_H
+#pragma once
 
 #include "MWAdder.h"
 #include "MWMultiplier.h"
@@ -26,4 +25,3 @@ protected:
     void calcImagPart(Orbital &phi_ab, double c, Orbital &phi_a, Orbital &phi_b, bool adjoint);
 };
 
-#endif // ORBITALMULTIPLIER_H

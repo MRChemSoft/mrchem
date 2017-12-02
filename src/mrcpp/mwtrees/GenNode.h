@@ -1,15 +1,9 @@
 
 /*
  *
- *  \date Oct 18, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
  */
 
-#ifndef GENNODE_H_
-#define GENNODE_H_
+#pragma once
 
 #include "FunctionNode.h"
 
@@ -62,4 +56,3 @@ protected:
     void reCompress() { NOT_IMPLEMENTED_ABORT; }
 };
 
-#endif /* GENNODE_H_ */

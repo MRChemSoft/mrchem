@@ -1,5 +1,4 @@
-#ifndef HSFOPERATOR_H
-#define HSFOPERATOR_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "PositionOperator.h"
@@ -67,5 +66,4 @@ protected:
     }
 };
 
-#endif // HSFOPERATOR_H
 

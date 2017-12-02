@@ -1,5 +1,4 @@
-#ifndef DENSITYPROJECTOR_H
-#define DENSITYPROJECTOR_H
+#pragma once
 
 #include "MWAdder.h"
 #include "MWMultiplier.h"
@@ -25,4 +24,3 @@ protected:
     GridGenerator<3> grid;
 };
 
-#endif // DENSITYPROJECTOR_H

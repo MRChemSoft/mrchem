@@ -1,5 +1,4 @@
-#ifndef OPERATORSTATISTICS_H
-#define OPERATORSTATISTICS_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -39,4 +38,3 @@ protected:
     Eigen::Matrix<int, 8, 8> **compCount;
 };
 
-#endif // OPERATORSTATISTICS_H

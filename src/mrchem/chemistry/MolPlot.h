@@ -1,5 +1,4 @@
-#ifndef MOLPLOT_H
-#define MOLPLOT_H
+#pragma once
 
 #include "Plot.h"
 #include "Molecule.h"
@@ -74,4 +73,3 @@ protected:
     }
 };
 
-#endif // MOLPLOT_H

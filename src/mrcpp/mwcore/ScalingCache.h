@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Sep 2, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef SCALINGCACHE_H_
-#define SCALINGCACHE_H_
+#pragma once
 
 #include "ObjectCache.h"
 
@@ -50,4 +39,3 @@ private:
     ScalingCache<P> &operator=(const ScalingCache<P> &sc) { return *this;	}
 };
 
-#endif /* SCALINGCACHE_H_ */

@@ -1,5 +1,4 @@
-#ifndef ORBITALPROJECTOR_H
-#define ORBITALPROJECTOR_H
+#pragma once
 
 #include <string>
 
@@ -34,4 +33,3 @@ protected:
                                      const std::string &mo);
 };
 
-#endif // ORBITALPROJECTOR_H

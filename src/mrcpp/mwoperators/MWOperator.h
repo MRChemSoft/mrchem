@@ -1,5 +1,4 @@
-#ifndef MWOPERATOR_H
-#define MWOPERATOR_H
+#pragma once
 
 #include <vector>
 
@@ -33,4 +32,3 @@ protected:
     Eigen::VectorXi band_max;
 };
 
-#endif // MWOPERATOR_H

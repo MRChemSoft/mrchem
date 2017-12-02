@@ -32,32 +32,80 @@ void KAIN::setupLinearSystem() {
         *orbA = MatrixXd::Zero(nHistory, nHistory);
         *orbB = VectorXd::Zero(nHistory);
 
-        Orbital &phi_m = this->orbitals[nHistory]->getOrbital(n);
-        Orbital &fPhi_m = this->dOrbitals[nHistory]->getOrbital(n);
+	if (mpiOrbRank == n%mpiOrbSize) {
+	    Orbital &phi_m = this->orbitals[nHistory]->getOrbital(n);
+	    Orbital &fPhi_m = this->dOrbitals[nHistory]->getOrbital(n);
 
-        for (int i = 0; i < nHistory; i++) {
-            Orbital &phi_i = this->orbitals[i]->getOrbital(n);
-            Orbital dPhi_im(phi_i);
-            this->add(dPhi_im, 1.0, phi_i, -1.0, phi_m, true);
+	    for (int i = 0; i < nHistory; i++) {
+		Orbital &phi_i = this->orbitals[i]->getOrbital(n);
+		Orbital dPhi_im(phi_i);
+		this->add(dPhi_im, 1.0, phi_i, -1.0, phi_m, true);
 
-            for (int j = 0; j < nHistory; j++) {
-                Orbital &fPhi_j = this->dOrbitals[j]->getOrbital(n);
-                Orbital dfPhi_jm(fPhi_j);
-                this->add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, true);
+		for (int j = 0; j < nHistory; j++) {
+		    Orbital &fPhi_j = this->dOrbitals[j]->getOrbital(n);
+		    Orbital dfPhi_jm(fPhi_j);
+		    this->add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, true);
 
-                // Ref. Harrisons KAIN paper the following has the wrong sign,
-                // but we define the updates (lowercase f) with opposite sign.
-                complex<double> inner_prod = dPhi_im.dot(dfPhi_jm);
-                if (inner_prod.imag() > MachineZero) NOT_IMPLEMENTED_ABORT;
-                (*orbA)(i,j) -= inner_prod.real();
-            }
-            complex<double> inner_prod = dPhi_im.dot(fPhi_m);
-            if (inner_prod.imag() > MachineZero) NOT_IMPLEMENTED_ABORT;
-            (*orbB)(i) += inner_prod.real();
-        }
+		    // Ref. Harrisons KAIN paper the following has the wrong sign,
+		    // but we define the updates (lowercase f) with opposite sign.
+		    complex<double> inner_prod = dPhi_im.dot(dfPhi_jm);
+		    if (inner_prod.imag() > MachineZero) NOT_IMPLEMENTED_ABORT;
+		    (*orbA)(i,j) -= inner_prod.real();
+		}
+		complex<double> inner_prod = dPhi_im.dot(fPhi_m);
+		if (inner_prod.imag() > MachineZero) NOT_IMPLEMENTED_ABORT;
+		(*orbB)(i) += inner_prod.real();
+	    }
+	}
         A_matrices.push_back(orbA);
         b_vectors.push_back(orbB);
     }
+
+#ifdef HAVE_MPI
+    //combine results from all processes
+    //make a super matrix, so that all coefficients are consecutive
+    MatrixXd orbsAB(nHistory, (nHistory+1)*nOrbitals);
+    
+    int jn = 0;
+    for (int n = 0; n < nOrbitals; n++) {
+	MatrixXd *orbA = A_matrices[n];
+	for (int j = 0; j < nHistory; j++) {
+	    for (int i = 0; i < nHistory; i++) {
+		orbsAB(i,jn) = (*orbA)(i,j);
+	    }
+	    jn++;
+	}
+    }
+    for (int n = 0; n < nOrbitals; n++) {
+	VectorXd *orbB = b_vectors[n];
+	for (int i = 0; i < nHistory; i++) {
+	    orbsAB(i,jn) = (*orbB)(i);
+	}
+	jn++;
+    }
+
+    MPI_Allreduce(MPI_IN_PLACE, &orbsAB(0,0), (nHistory+1)*nHistory*nOrbitals,
+		  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+    
+    jn = 0;
+    for (int n = 0; n < nOrbitals; n++) {
+	MatrixXd *orbA = A_matrices[n];
+	for (int j = 0; j < nHistory; j++) {
+	    for (int i = 0; i < nHistory; i++) {
+		(*orbA)(i,j) = orbsAB(i,jn);
+	    }
+	    jn++;
+	}
+    }
+    for (int n = 0; n < nOrbitals; n++) {
+	VectorXd *orbB = b_vectors[n];
+	for (int i = 0; i < nHistory; i++) {
+	    (*orbB)(i) = orbsAB(i,jn);
+	}
+	jn++;
+    }
+
+#endif
 
 //    // Fock matrix is treated as a whole using the Frobenius inner product
     if (this->orbitals.size() == this->fock.size()) {
@@ -123,50 +171,52 @@ void KAIN::expandSolution(OrbitalVector &phi,
         if (this->sepOrbitals) {
             m = n;
         }
-        vector<complex<double> > totCoefs;
-        vector<Orbital *> totOrbs;
+	if (mpiOrbRank == n%mpiOrbSize) {
+	    vector<complex<double> > totCoefs;
+	    vector<Orbital *> totOrbs;
 
-        Orbital &phi_m = this->orbitals[nHistory]->getOrbital(n);
-        Orbital &fPhi_m = this->dOrbitals[nHistory]->getOrbital(n);
-        totCoefs.push_back(1.0);
-        totOrbs.push_back(&fPhi_m);
+	    Orbital &phi_m = this->orbitals[nHistory]->getOrbital(n);
+	    Orbital &fPhi_m = this->dOrbitals[nHistory]->getOrbital(n);
+	    totCoefs.push_back(1.0);
+	    totOrbs.push_back(&fPhi_m);
 
-        // Ref. Harrisons KAIN paper the following has the wrong sign,
-        // but we define the updates (lowercase f) with opposite sign
-        // (but not the orbitals themselves).
-        for (int j = 0; j < nHistory; j++) {
-            vector<complex<double> > partCoefs;
-            vector<Orbital *> partOrbs;
+	    // Ref. Harrisons KAIN paper the following has the wrong sign,
+	    // but we define the updates (lowercase f) with opposite sign
+	    // (but not the orbitals themselves).
+	    for (int j = 0; j < nHistory; j++) {
+		vector<complex<double> > partCoefs;
+		vector<Orbital *> partOrbs;
 
-            Orbital &phi_j = this->orbitals[j]->getOrbital(n);
-            partCoefs.push_back(1.0);
-            partOrbs.push_back(&phi_j);
+		Orbital &phi_j = this->orbitals[j]->getOrbital(n);
+		partCoefs.push_back(1.0);
+		partOrbs.push_back(&phi_j);
 
-            Orbital &fPhi_j = this->dOrbitals[j]->getOrbital(n);
-            partCoefs.push_back(1.0);
-            partOrbs.push_back(&fPhi_j);
+		Orbital &fPhi_j = this->dOrbitals[j]->getOrbital(n);
+		partCoefs.push_back(1.0);
+		partOrbs.push_back(&fPhi_j);
 
-            partCoefs.push_back(-1.0);
-            partOrbs.push_back(&phi_m);
-            partCoefs.push_back(-1.0);
-            partOrbs.push_back(&fPhi_m);
+		partCoefs.push_back(-1.0);
+		partOrbs.push_back(&phi_m);
+		partCoefs.push_back(-1.0);
+		partOrbs.push_back(&fPhi_m);
 
-            Orbital *partStep = new Orbital(fPhi_m);
-            this->add(*partStep, partCoefs, partOrbs, true);
+		Orbital *partStep = new Orbital(fPhi_m);
+		this->add(*partStep, partCoefs, partOrbs, true);
 
-            double c_j = (*this->c[m])(j);
-            totCoefs.push_back(c_j);
-            totOrbs.push_back(partStep);
-        }
+		double c_j = (*this->c[m])(j);
+		totCoefs.push_back(c_j);
+		totOrbs.push_back(partStep);
+	    }
 
-        Orbital &dPhi_n = dPhi.getOrbital(n);
-        this->add(dPhi_n, totCoefs, totOrbs, true);
-        for (int k = 0; k < totOrbs.size(); k++) {
-            // First entry is the last orbital update and should not be deallocated,
-            // all other entries are locally allocated partSteps that must be deleted
-            if (k != 0) delete totOrbs[k];
-            totOrbs[k] = 0;
-        }
+	    Orbital &dPhi_n = dPhi.getOrbital(n);
+	    this->add(dPhi_n, totCoefs, totOrbs, true);
+	    for (int k = 0; k < totOrbs.size(); k++) {
+		// First entry is the last orbital update and should not be deallocated,
+		// all other entries are locally allocated partSteps that must be deleted
+		if (k != 0) delete totOrbs[k];
+		totOrbs[k] = 0;
+	    }
+	}
     }
 
     // Treat Fock matrix as a whole using Frobenius inner product

@@ -1,5 +1,4 @@
-#ifndef HELMHOLTZOPERATOR_H
-#define HELMHOLTZOPERATOR_H
+#pragma once
 
 #include "ConvolutionOperator.h"
 #include "HelmholtzKernel.h"
@@ -27,4 +26,3 @@ protected:
 };
 
 
-#endif // HELMHOLTZOPERATOR_H

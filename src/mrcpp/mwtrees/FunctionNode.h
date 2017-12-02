@@ -1,5 +1,4 @@
-#ifndef FUNCTIONNODE_H
-#define FUNCTIONNODE_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -39,4 +38,3 @@ protected:
 
 };
 
-#endif // FUNCTIONNODE_H

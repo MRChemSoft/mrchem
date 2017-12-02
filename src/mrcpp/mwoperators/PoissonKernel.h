@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 7, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef POISSONKERNEL_H_
-#define POISSONKERNEL_H_
+#pragma once
 
 #include "GreensKernel.h"
 
@@ -24,4 +13,3 @@ protected:
     virtual void initializeKernel();
 };
 
-#endif /* POISSONKERNEL_H_ */

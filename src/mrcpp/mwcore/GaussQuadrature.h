@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 22, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef GAUSSQUADRATURE_H_
-#define GAUSSQUADRATURE_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -62,4 +51,3 @@ protected:
     double integrate_nd(RepresentableFunction<3> &func, int axis = 0) const;
 };
 
-#endif /* GAUSSQUADRATURE_H_ */

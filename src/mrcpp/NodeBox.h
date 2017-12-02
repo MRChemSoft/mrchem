@@ -7,8 +7,7 @@
  *
  */
 
-#ifndef NODEBOX_H_
-#define NODEBOX_H_
+#pragma once
 
 #include "BoundingBox.h"
 
@@ -44,4 +43,3 @@ protected:
     void deleteNodes();
 };
 
-#endif /* NODEBOX_H_ */

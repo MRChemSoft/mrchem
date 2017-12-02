@@ -1,5 +1,4 @@
-#ifndef MRENV_H
-#define MRENV_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -15,4 +14,3 @@ public:
     static void initializeMRA();
 };
 
-#endif // MRENV_H

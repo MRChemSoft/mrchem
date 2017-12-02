@@ -1,12 +1,10 @@
 /**
  *
- *
  *          CTCC, University of Tromsø
  *
  */
 
-#ifndef BOUNDINGBOX_H_
-#define BOUNDINGBOX_H_
+#pragma once
 
 #include "mrcpp_declarations.h"
 #include "NodeIndex.h"
@@ -62,7 +60,7 @@ protected:
 template<int D>
 bool BoundingBox<D>::operator==(const BoundingBox<D> &box) const {
     if (getCornerIndex() != box.getCornerIndex()) return false;
-    for (int d = 0; d < 3; d++) {
+    for (int d = 0; d < D; d++) {
         if (this->size(d) != box.size(d)) return false;
     }
     return true;
@@ -71,7 +69,7 @@ bool BoundingBox<D>::operator==(const BoundingBox<D> &box) const {
 template<int D>
 bool BoundingBox<D>::operator!=(const BoundingBox<D> &box) const {
     if (getCornerIndex() != box.getCornerIndex()) return true;
-    for (int d = 0; d < 3; d++) {
+    for (int d = 0; d < D; d++) {
         if (this->size(d) != box.size(d)) return true;
     }
     return false;
@@ -107,4 +105,3 @@ std::ostream& operator<<(std::ostream &o, const BoundingBox<T> &box) {
     return o;
 }
 
-#endif /* BOUNDINGBOX_H_ */

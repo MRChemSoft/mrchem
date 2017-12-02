@@ -1,5 +1,4 @@
-#ifndef MWFDCALCULATOR_H
-#define MWFDCALCULATOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -36,4 +35,3 @@ protected:
                      Eigen::MatrixXd &vals);
 };
 
-#endif // MWFDCALCULATOR_H

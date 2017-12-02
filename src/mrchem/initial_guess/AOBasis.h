@@ -1,5 +1,4 @@
-#ifndef AOBASIS_H
-#define AOBASIS_H
+#pragma once
 
 #include <vector>
 #include "AOContraction.h"
@@ -36,4 +35,3 @@ private:
     std::vector<AOContraction *> ctrs;
 };
 
-#endif // AOBASIS_H

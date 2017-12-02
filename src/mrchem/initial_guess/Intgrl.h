@@ -1,7 +1,6 @@
 /** Class to parse and process basis sets in MOLECULE or INTGRL format.
  */
-#ifndef INTGRL_H
-#define INTGRL_H
+#pragma once
 
 #include <vector>
 #include <string>
@@ -37,4 +36,3 @@ protected:
     void readAtomData(std::iostream &ifs, int n_atoms, double z);
 };
 
-#endif // INTGRL_H

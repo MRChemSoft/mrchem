@@ -1,5 +1,4 @@
-#ifndef ORBITALEXP_H
-#define ORBITALEXP_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -28,4 +27,3 @@ protected:
     void transformToSpherical();
 };
 
-#endif // ORBITALEXP_H

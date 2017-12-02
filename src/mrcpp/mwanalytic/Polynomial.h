@@ -1,9 +1,5 @@
 /**
  *
- * \date Jun 7, 2009
- * \author Jonas Juselius <jonas.juselius@uit.no> \n
- *         CTCC, University of Tromsø
- *
  *  Base class for general polynomials with reasonably advanced
  * properties. The Polynomial class(es) are not implemented in the
  * most efficient manner, because they are only evaluated a fixed
@@ -13,8 +9,7 @@
  * 4Polynomials.
  */
 
-#ifndef POLYNOMIAL_H_
-#define POLYNOMIAL_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -80,4 +75,3 @@ protected:
     double L; ///< Translation coeff
     Eigen::VectorXd coefs; ///< Expansion coefficients
 };
-#endif /* POLYNOMIAL_H_ */

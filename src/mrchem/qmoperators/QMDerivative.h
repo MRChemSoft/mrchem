@@ -1,5 +1,4 @@
-#ifndef QMDERIVATIVE_H
-#define QMDERIVATIVE_H
+#pragma once
 
 #include "QMOperator.h"
 
@@ -27,4 +26,3 @@ protected:
     void calcImagPart(Orbital &dPhi, Orbital &phi);
 };
 
-#endif // QMDERIVATIVE_H

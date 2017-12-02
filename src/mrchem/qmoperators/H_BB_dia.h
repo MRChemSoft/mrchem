@@ -1,5 +1,4 @@
-#ifndef H_BB_DIA_H
-#define H_BB_DIA_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "PositionOperator.h"
@@ -32,5 +31,4 @@ protected:
     }
 };
 
-#endif // H_BB_DIA_H
 

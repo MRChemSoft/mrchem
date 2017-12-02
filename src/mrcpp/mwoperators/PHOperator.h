@@ -1,5 +1,4 @@
-#ifndef PHOPERATOR_H
-#define PHOPERATOR_H
+#pragma once
 
 #include "DerivativeOperator.h"
 #include "TreeBuilder.h"
@@ -26,7 +25,7 @@ protected:
         PHCalculator calculator(basis, order);
         BandWidthAdaptor adaptor(bw, max_scale);
 
-        OperatorTree *o_tree = new OperatorTree(this->oper_mra, MachineZero, MaxAllocOperNodes);
+        OperatorTree *o_tree = new OperatorTree(this->oper_mra, MachineZero);
         builder.build(*o_tree, calculator, adaptor, -1);
 
         Timer trans_t;
@@ -41,4 +40,3 @@ protected:
     }
 };
 
-#endif // PHOPERATOR_H

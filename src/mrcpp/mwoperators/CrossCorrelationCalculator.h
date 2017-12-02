@@ -1,5 +1,4 @@
-#ifndef CROSSCORRELATIONCALCULATOR_H
-#define CROSSCORRELATIONCALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 #include "CrossCorrelationCache.h"
@@ -19,4 +18,3 @@ protected:
 };
 
 
-#endif // CROSSCORRELATIONCALCULATOR_H

@@ -1,17 +1,16 @@
-#ifndef ORBITAL_H
-#define ORBITAL_H
+#pragma once
 
 #include <complex>
 
 #include "constants.h"
 
-#include "ComplexFunction.h"
+#include "QMFunction.h"
 
-class Orbital : public ComplexFunction<3> {
+class Orbital : public QMFunction {
 public:
     Orbital(int occ, int s);
     Orbital(const Orbital &orb);
-    Orbital &operator=(const Orbital &orb);
+    Orbital &operator=(const Orbital &orb) { NOT_IMPLEMENTED_ABORT;}
     virtual ~Orbital() { clear(); }
     void clear(bool free = true);
 
@@ -67,8 +66,10 @@ public:
 
     void send_Orbital(int dest, int tag);
     void Rcv_Orbital(int source, int tag);
-    void Isend_Orbital(int dest, int tag);
+#ifdef HAVE_MPI
+    void Isend_Orbital(int dest, int tag, MPI_Request& request);
     void IRcv_Orbital(int source, int tag);
+#endif
 
     friend std::ostream& operator<<(std::ostream &o, Orbital &orb) {
         o << std::setw(25) << orb.getSquareNorm();
@@ -86,4 +87,3 @@ protected:
     double error;
 };
 
-#endif // ORBITAL_H

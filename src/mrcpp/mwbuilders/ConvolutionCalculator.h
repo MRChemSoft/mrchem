@@ -1,5 +1,4 @@
-#ifndef CONVOLUTIONCALCULATOR_H
-#define CONVOLUTIONCALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 #include "OperatorStatistics.h"
@@ -55,4 +54,3 @@ protected:
 };
 
 
-#endif // CONVOLUTIONCALCULATOR_H

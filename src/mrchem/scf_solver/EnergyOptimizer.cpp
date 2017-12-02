@@ -6,6 +6,7 @@
 #include "ExchangeOperator.h"
 #include "XCOperator.h"
 #include "HelmholtzOperatorSet.h"
+#include "IdentityOperator.h"
 #include "eigen_disable_warnings.h"
 
 using namespace std;
@@ -14,8 +15,8 @@ using namespace Eigen;
 extern OrbitalVector workOrbVec;
 
 EnergyOptimizer::EnergyOptimizer(HelmholtzOperatorSet &h)
-        : GroundStateSolver(h),
-          fOper_np1(0) {
+    : GroundStateSolver(h),
+      fOper_np1(0) {
 }
 
 EnergyOptimizer::~EnergyOptimizer() {
@@ -53,6 +54,7 @@ bool EnergyOptimizer::optimize() {
     OrbitalVector &phi_n = *this->orbitals_n;
     OrbitalVector &phi_np1 = *this->orbitals_np1;
     OrbitalVector &dPhi_n = *this->dOrbitals_n;
+    HelmholtzOperatorSet &H = *this->helmholtz;
 
     double err_o = phi_n.getErrors().maxCoeff();
     double err_t = 1.0;
@@ -80,21 +82,23 @@ bool EnergyOptimizer::optimize() {
         double E = calcProperty();
         this->property.push_back(E);
 
-        // Iterate Helmholtz operators
-        this->helmholtz->initialize(F_n.diagonal());
-	if(MPI_size>1){
-	  applyHelmholtzOperators_P(phi_np1, F_n, phi_n);
-	}else{
-	  applyHelmholtzOperators(phi_np1, F_n, phi_n);
-	}
+        // Setup Helmholtz operators and argument
+        H.setup(orb_prec, F_n.diagonal());
+        MatrixXd L_n = H.getLambda().asDiagonal();
+        OrbitalVector *args_n = setupHelmholtzArguments(fock, L_n-F_n, phi_n);
+
+        // Apply Helmholtz operators
+        H(phi_np1, *args_n);
+        delete args_n;
+
         this->add(dPhi_n, 1.0, phi_np1, -1.0, phi_n, true);
         // Compute errors
         VectorXd errors = dPhi_n.getNorms();
 #ifdef HAVE_MPI
-	//distribute errors among all orbitals
-	MPI_Allgather(MPI_IN_PLACE, 0, MPI_DOUBLE, &errors(0), 1, MPI_DOUBLE, MPI_COMM_WORLD);
+        //distribute errors among all orbitals
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DOUBLE, &errors(0), 1, MPI_DOUBLE, mpiCommOrb);
 #endif
-	
+
         phi_n.setErrors(errors);
         err_o = errors.maxCoeff();
         err_t = sqrt(errors.dot(errors));
@@ -146,15 +150,11 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     TelePrompter::printHeader(0,"Computing Fock matrix update");
 
     Timer timer;
-    MatrixXd dS_1;
-    MatrixXd dS_2;
-    if(MPI_size>1){
-      dS_1 = dPhi_n.calcOverlapMatrix_P(phi_n).real();
-      dS_2 = phi_np1.calcOverlapMatrix_P(dPhi_n).real();
-    }else{
-      dS_1 = dPhi_n.calcOverlapMatrix(phi_n).real();
-      dS_2 = phi_np1.calcOverlapMatrix(dPhi_n).real();
-    }
+    IdentityOperator I;
+    I.setup(getOrbitalPrecision());
+    MatrixXd dS_1 = I(dPhi_n, phi_n);
+    MatrixXd dS_2 = I(phi_np1, dPhi_n);
+    I.clear();
 
     NuclearPotential *v_n = this->fOper_n->getNuclearPotential();
     CoulombOperator *j_n = this->fOper_n->getCoulombOperator();
@@ -165,59 +165,59 @@ MatrixXd EnergyOptimizer::calcFockMatrixUpdate() {
     int Nj = dPhi_n.size();
     MatrixXd dV_n = MatrixXd::Zero(Ni,Nj);
     {   // Nuclear potential matrix is computed explicitly
-      Timer timer;
+        Timer timer;
 
 #ifdef HAVE_MPI
-	
-      OrbitalVector OrbVecChunk_i(0);//to store adresses of own i_orbs
-      OrbitalVector OrbVecChunk_j(0);//to store adresses of own j_orbs
-      int OrbsIx[workOrbVecSize];//to store own orbital indices
-      OrbitalVector rcvOrbs(0);//to store adresses of received orbitals
-      int rcvOrbsIx[workOrbVecSize];//to store received orbital indices
-      
-      //make vector with adresses of own orbitals
-      int i = 0;
-      for (int Ix = MPI_rank; Ix < Ni; Ix += MPI_size) {
-	OrbVecChunk_i.push_back(phi_np1.getOrbital(Ix));//i orbitals
-	OrbsIx[i++] = Ix;
-      }
-      for (int Ix = MPI_rank; Ix < Nj; Ix += MPI_size)
-	OrbVecChunk_j.push_back(dPhi_n.getOrbital(Ix));//j orbitals
 
-      for (int iter = 0;  iter >= 0 ; iter++) {
-	//get a new chunk from other processes
-	OrbVecChunk_i.getOrbVecChunk(OrbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
+        OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
+        OrbitalVector orbVecChunk_j(0); //to store adresses of own j_orbs
+        OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
 
-	//Only one process does the computations. j orbitals always local
-	MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(),OrbVecChunk_j.size());
-	
-	resultChunk = (*v_n)(rcvOrbs,OrbVecChunk_j);
+	vector<int> orbsIx;             //to store own orbital indices    
+	int rcvOrbsIx[workOrbVecSize];  //to store received orbital indices
 
-	//copy results into final matrix
-	int j = 0;
-	for (int Jx = MPI_rank;  Jx < Nj; Jx += MPI_size) {
-	  for (int ix = 0;  ix<rcvOrbs.size() ; ix++) {
-	    dV_n(rcvOrbsIx[ix],Jx) += resultChunk(ix,j);
-	  }
-	  j++;
-	}
-	rcvOrbs.clearVec(false);//reset to zero size orbital vector
-      }
-      
-      //clear orbital adresses, not the orbitals
-      OrbVecChunk_i.clearVec(false);
-      OrbVecChunk_j.clearVec(false);
-      
-      MPI_Allreduce(MPI_IN_PLACE, &dV_n(0,0), Ni*Nj,
-		    MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        //make vector with adresses of own orbitals
+        for (int ix = mpiOrbRank; ix < Ni; ix += mpiOrbSize) {
+            orbVecChunk_i.push_back(phi_np1.getOrbital(ix));//i orbitals
+            orbsIx.push_back(ix);
+        }
+        for (int jx = mpiOrbRank; jx < Nj; jx += mpiOrbSize)
+            orbVecChunk_j.push_back(dPhi_n.getOrbital(jx));//j orbitals
+
+        for (int iter = 0; iter >= 0; iter++) {
+            //get a new chunk from other processes
+            orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
+
+            //Only one process does the computations. j orbitals always local
+            MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(), orbVecChunk_j.size());
+            resultChunk = (*v_n)(rcvOrbs, orbVecChunk_j);
+
+            //copy results into final matrix
+            int j = 0;
+            for (int jx = mpiOrbRank;  jx < Nj; jx += mpiOrbSize) {
+                for (int ix = 0; ix < rcvOrbs.size(); ix++) {
+                    dV_n(rcvOrbsIx[ix],jx) += resultChunk(ix,j);
+                }
+                j++;
+            }
+            rcvOrbs.clearVec(false);//reset to zero size orbital vector
+        }
+
+        //clear orbital adresses, not the orbitals
+        orbVecChunk_i.clearVec(false);
+        orbVecChunk_j.clearVec(false);
+        workOrbVec.clear();
+
+        MPI_Allreduce(MPI_IN_PLACE, &dV_n(0,0), Ni*Nj,
+                      MPI_DOUBLE, MPI_SUM, mpiCommOrb);
 
 #else
-      dV_n = (*v_n)(phi_np1, dPhi_n);
+        dV_n = (*v_n)(phi_np1, dPhi_n);
 #endif
 
-      timer.stop();
-      double t = timer.getWallTime();
-      TelePrompter::printDouble(0, "Nuclear potential matrix", t);
+        timer.stop();
+        double t = timer.getWallTime();
+        TelePrompter::printDouble(0, "Nuclear potential matrix", t);
     }
 
     MatrixXd F_n;

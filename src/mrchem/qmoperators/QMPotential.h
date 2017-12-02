@@ -1,10 +1,19 @@
-#ifndef QMPOTENTIAL_H
-#define QMPOTENTIAL_H
+#pragma once
 
 #include "QMOperator.h"
-#include "ComplexFunction.h"
+#include "QMFunction.h"
 
-class QMPotential : public ComplexFunction<3>, public QMOperator {
+/** 
+ *  \class QMPotential
+ *  \brief Operator defining an external potential
+ *
+ *  Bla bla bla
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
+class QMPotential : public QMFunction, public QMOperator {
 public:
     QMPotential(int ab = 1);
     virtual ~QMPotential();
@@ -21,4 +30,3 @@ protected:
     void calcImagPart(Orbital &Vphi, Orbital &phi, bool adjoint);
 };
 
-#endif // POTENTIAL_H

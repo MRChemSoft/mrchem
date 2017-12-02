@@ -1,5 +1,4 @@
-#ifndef CONVOLUTIONOPERATOR_H
-#define CONVOLUTIONOPERATOR_H
+#pragma once
 
 #include "MWOperator.h"
 #include "FunctionTreeVector.h"
@@ -22,4 +21,3 @@ protected:
     double calcMaxDistance(const MultiResolutionAnalysis<D> &MRA) const;
 };
 
-#endif // CONVOLUTIONOPERATOR_H

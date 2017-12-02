@@ -1,5 +1,4 @@
-#ifndef XCOPERATOR_H
-#define XCOPERATOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -13,6 +12,16 @@ template<int D> class FunctionTree;
 template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
 
+/** 
+ *  \class XCOperator
+ *  \brief Interface class to compute DFT functionaals and derivatives
+ *
+ *  Testing the output on Sphinx
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
 class XCOperator : public QMPotential {
 public:
     XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D);
@@ -105,5 +114,4 @@ protected:
     }
 };
 
-#endif // XCOPERATOR_H
 

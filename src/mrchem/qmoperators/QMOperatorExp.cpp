@@ -135,15 +135,21 @@ double QMOperatorExp::trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector 
 
     double result = 0.0;
     for (int i = 0; i < phi.size(); i++) {
-        Orbital &phi_i = phi.getOrbital(i);
-        Orbital &x_i = x.getOrbital(i);
-        Orbital &y_i = y.getOrbital(i);
-
-        double eta_i = (double) phi_i.getOccupancy();
-        double result_1 = O(phi_i, x_i);
-        double result_2 = O(y_i, phi_i);
-        result += eta_i*(result_1 + result_2);
+        if (i%mpiOrbSize == mpiOrbRank) {
+	    Orbital &phi_i = phi.getOrbital(i);
+	    Orbital &x_i = x.getOrbital(i);
+	    Orbital &y_i = y.getOrbital(i);
+	    
+	    double eta_i = (double) phi_i.getOccupancy();
+	    double result_1 = O(phi_i, x_i);
+	    double result_2 = O(y_i, phi_i);
+	    result += eta_i*(result_1 + result_2);
+        }
     }
+#ifdef HAVE_MPI
+    MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+#endif
+
     return result;
 }
 
@@ -152,9 +158,14 @@ double QMOperatorExp::trace(OrbitalVector &phi) {
 
     double result = 0.0;
     for (int i = 0; i < phi.size(); i++) {
-        Orbital &phi_i = phi.getOrbital(i);
-        double eta_i = (double) phi_i.getOccupancy();
-        result += eta_i*O(phi_i, phi_i);
+	if (i%mpiOrbSize == mpiOrbRank) {
+	    Orbital &phi_i = phi.getOrbital(i);
+	    double eta_i = (double) phi_i.getOccupancy();
+	    result += eta_i*O(phi_i, phi_i);
+        }
     }
+#ifdef HAVE_MPI
+    MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+#endif
     return result;
 }

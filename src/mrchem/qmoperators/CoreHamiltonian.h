@@ -1,5 +1,4 @@
-#ifndef COREHAMILTONIAN_H
-#define COREHAMILTONIAN_H
+#pragma once
 
 #include "FockOperator.h"
 
@@ -11,4 +10,3 @@ public:
     virtual ~CoreHamiltonian() { }
 };
 
-#endif // COREHAMILTONIAN_H

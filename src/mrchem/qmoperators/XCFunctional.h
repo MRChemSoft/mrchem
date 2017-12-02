@@ -1,5 +1,4 @@
-#ifndef XCFUNCTIONAL_H
-#define XCFUNCTIONAL_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -31,4 +30,3 @@ private:
     int getParamFromName(const std::string &name);
 };
 
-#endif // XCFUNCTIONAL_H

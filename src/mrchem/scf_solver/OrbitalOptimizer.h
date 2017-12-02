@@ -1,5 +1,4 @@
-#ifndef ORBITALOPTIMIZER_H
-#define ORBITALOPTIMIZER_H
+#pragma once
 
 #include "GroundStateSolver.h"
 
@@ -22,4 +21,3 @@ protected:
     void printTreeSizes() const;
 };
 
-#endif // ORBITALOPTIMIZER_H

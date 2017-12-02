@@ -1,5 +1,4 @@
-#ifndef SPINOPERATOR_H
-#define SPINOPERATOR_H
+#pragma once
 
 #include "QMOperator.h"
 #include "QMTensorOperator.h"
@@ -72,4 +71,3 @@ protected:
     }
 };
 
-#endif // SPINOPERATOR_H

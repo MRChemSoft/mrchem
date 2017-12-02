@@ -1,5 +1,4 @@
-#ifndef LEBESGUEITERATOR_H
-#define LEBESGUEITERATOR_H
+#pragma once
 
 #include "MWTree.h"
 #include "MWNode.h"
@@ -17,4 +16,3 @@ protected:
     int getChildIndex(int i) const { return i; }
 };
 
-#endif // LEBESGUEITERATOR_H

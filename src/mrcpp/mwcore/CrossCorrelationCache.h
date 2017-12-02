@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 18, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef CROSSCORRELATIONCACHE_H_
-#define CROSSCORRELATIONCACHE_H_
+#pragma once
 
 #include "CrossCorrelation.h"
 #include "ObjectCache.h"
@@ -47,4 +36,3 @@ private:
     CrossCorrelationCache<T> &operator=(CrossCorrelationCache<T> const &ccc) { return *this; }
 };
 
-#endif /* CROSSCORRELATIONCACHE_H_ */

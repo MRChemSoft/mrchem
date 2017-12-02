@@ -3,19 +3,15 @@
  *
  */
 
-#ifndef CONSTANTS_H_
-#define CONSTANTS_H_
+#pragma once
 
 const double MachinePrec = 1.0e-15L;
-const double MachineZero = 1.0e-15L;
+const double MachineZero = 1.0e-14L;
 const int MaxOrder = 41; ///< Maximum scaling order
 const int MaxDepth = 30; ///< Maximum depth of trees
 const int MaxScale = 31; ///< Maximum scale of trees
 const int MinScale = -31; ///< Minimum scale of trees
 const int MaxSepRank = 1000;
-const int MaxAllocNodes = 256*1024;
-const int MaxAllocOperNodes = 8*1024;
-const int MaxAllocNodes1D = 8*1024;
 //Max number of orbitals stored temporarily. Larger->more memory
 //Also max size of orbitalvector that can be sent with send_OrbVec
 const int workOrbVecSize = 10;
@@ -43,4 +39,3 @@ const double root_pi = 1.7724538509055160273;
 const double C_x = -0.73855876638202240588; //Dirac exchange constant
 
 
-#endif /* CONSTANTS_H_ */

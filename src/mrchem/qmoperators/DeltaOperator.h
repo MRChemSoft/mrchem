@@ -1,5 +1,4 @@
-#ifndef DELTAOPERATOR_H
-#define DELTAOPERATOR_H
+#pragma once
 
 #include "QMPotential.h"
 #include "GaussFunc.h"
@@ -24,4 +23,3 @@ protected:
     void setFunction(double beta, const double *pos);
 };
 
-#endif // DELTAOPERATOR_H

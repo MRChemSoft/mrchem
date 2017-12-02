@@ -1,5 +1,4 @@
-#ifndef SCF_H
-#define SCF_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -61,40 +60,13 @@ protected:
     void printConvergence(bool converged) const;
     void printCycle(int nIter) const;
     void printTimer(double t) const;
-    void printMatrix(int level, const Eigen::MatrixXd &M,
-                     const char &name, int pr = 5) const;
+    void printMatrix(int level, const Eigen::MatrixXd &M, const char &name, int pr = 5) const;
 
-    void applyHelmholtzOperators(OrbitalVector &phi_np1,
-                                 Eigen::MatrixXd &F_n,
-                                 OrbitalVector &phi_n,
-                                 bool adjoint = false);
-
-    void applyHelmholtzOperators_P(OrbitalVector &phi_np1,
-                                 Eigen::MatrixXd &F_n,
-                                 OrbitalVector &phi_n,
-                                 bool adjoint = false);
-
-    virtual Orbital* getHelmholtzArgument(int i,
-                                          Eigen::MatrixXd &F,
-                                          OrbitalVector &phi,
-                                          bool adjoint) = 0;
-    virtual Orbital* getHelmholtzArgument_1(Orbital &phi_i) = 0;
-    virtual Orbital* getHelmholtzArgument_2(int i,
-					  int* OrbsIx,
-                                          Eigen::MatrixXd &F,
-                                          OrbitalVector &phi,
-					  Orbital* part_1,
-					  double coef_part1,
-					  Orbital &phi_i,
-                                          bool adjoint) = 0;
-
-    Orbital* calcMatrixPart(int i,
-                            Eigen::MatrixXd &M,
-                            OrbitalVector &phi);
-    Orbital* calcMatrixPart_P(int i,
-                            Eigen::MatrixXd &M,
-                            OrbitalVector &phi);
+    virtual OrbitalVector* setupHelmholtzArguments(FockOperator &fock,
+                                                   const Eigen::MatrixXd &M,
+                                                   OrbitalVector &phi,
+                                                   bool adjoint = false,
+                                                   bool clearFock = false) = 0;
 };
 
-#endif // SCF_H
 

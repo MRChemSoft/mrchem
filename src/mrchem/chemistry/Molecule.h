@@ -7,8 +7,7 @@
  *
  */
 
-#ifndef MOLECULE_H
-#define MOLECULE_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -103,4 +102,3 @@ protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
 };
 
-#endif // MOLECULE_H

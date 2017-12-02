@@ -1,5 +1,4 @@
-#ifndef SPINSPINCOUPLING_H
-#define SPINSPINCOUPLING_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -86,4 +85,3 @@ protected:
     Eigen::MatrixXd paramagnetic;
 };
 
-#endif // SPINSPINCOUPLING_H

@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Oct 15, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef SCALINGBASIS_H
-#define SCALINGBASIS_H
+#pragma once
 
 #include <vector>
 
@@ -87,4 +76,3 @@ protected:
     std::vector<Polynomial> funcs;
 };
 
-#endif /* SCALINGBASIS_H */

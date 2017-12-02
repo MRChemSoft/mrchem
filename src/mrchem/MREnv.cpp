@@ -10,13 +10,10 @@ MultiResolutionAnalysis<3> *MRA;
 
 void MREnv::initializeMRCPP(int argc, char **argv) {
 #ifdef HAVE_MPI
-    MPI_Init(NULL, NULL);
     MPI_Initializations();
 #endif
     int nThreads = omp_get_max_threads();
-
     omp_set_dynamic(0);
-    Eigen::setNbThreads(1);
 
     const char *infile = 0;
     if (argc == 1) {
@@ -59,11 +56,11 @@ void MREnv::initializeMRCPP(int argc, char **argv) {
     println(0, "BLAS was NOT found, Eigen will be used instead!" << endl);
 #endif
 
-    if (MPI_size > 1 or nThreads > 1) {
+    if (mpiOrbSize > 1 or nThreads > 1) {
         println(0,"+++ Parallel execution: ");
-        println(0,"  MPI hosts available     : " << MPI_size);
+        println(0,"  MPI hosts available     : " << mpiOrbSize);
         println(0,"  Threads/host            : " << nThreads);
-        println(0,"  Total used CPUs         : " << MPI_size*nThreads);
+        println(0,"  Total used CPUs         : " << mpiOrbSize*nThreads);
         println(0,"");
     } else {
         println(0,"+++ Serial execution" << endl);

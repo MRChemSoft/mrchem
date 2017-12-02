@@ -1,5 +1,4 @@
-#ifndef ANALYTICADAPTOR_H
-#define ANALYTICADAPTOR_H
+#pragma once
 
 #include "TreeAdaptor.h"
 #include "constants.h"
@@ -30,4 +29,3 @@ protected:
     }
 };
 
-#endif // ANALYTICADAPTOR_H

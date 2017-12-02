@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 8, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef MWFILTER_H_
-#define MWFILTER_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -67,4 +56,3 @@ protected:
 };
 
 
-#endif /* MWFILTER_H_ */

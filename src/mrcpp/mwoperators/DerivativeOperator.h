@@ -1,5 +1,4 @@
-#ifndef DERIVATIVEOPERATOR_H
-#define DERIVATIVEOPERATOR_H
+#pragma once
 
 #include "MWOperator.h"
 
@@ -11,4 +10,3 @@ public:
     virtual ~DerivativeOperator() { }
 };
 
-#endif // DERIVATIVEOPERATOR_H

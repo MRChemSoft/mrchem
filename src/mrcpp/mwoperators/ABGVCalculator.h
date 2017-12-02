@@ -1,5 +1,4 @@
-#ifndef ABGVCALCULATOR_H
-#define ABGVCALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 
@@ -21,4 +20,3 @@ protected:
     void calcValueVectors(const ScalingBasis &basis);
 };
 
-#endif // ABGVCALCULATOR_H

@@ -1,5 +1,4 @@
-#ifndef HELMHOLTZOPERATORSET_H
-#define HELMHOLTZOPERATORSET_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -9,24 +8,26 @@
 #include "MWConvolution.h"
 
 class Orbital;
+class OrbitalVector;
 
 class HelmholtzOperatorSet {
 public:
     HelmholtzOperatorSet(double build, double thrs = -1.0);
     virtual ~HelmholtzOperatorSet() { clear(); }
 
-    void initialize(const Eigen::VectorXd &energies);
+    void setup(double prec, const Eigen::VectorXd &energies);
     void clear();
 
-    void setPrecision(double prec) { this->apply.setPrecision(prec); }
     void setThreshold(double thrs) { this->threshold = thrs; }
     double getThreshold() const { return this->threshold; }
 
     double getLambda(int i) const { return this->lambda[i]; }
     Eigen::VectorXd getLambda() const;
     HelmholtzOperator &getOperator(int i);
+    printTreeSizes() const;
 
     void operator()(int i, Orbital &out, Orbital &inp);
+    void operator()(OrbitalVector &out, OrbitalVector &inp);
 
 private:
     double threshold; //For re-using operators. Negative means always recreate
@@ -37,9 +38,8 @@ private:
     std::vector<double> lambda;
     std::vector<HelmholtzOperator *> operators;
 
-    int initHelmholtzOperator(double energy);
+    int initHelmholtzOperator(double energy, int i);
     void clearUnused();
 };
 
 
-#endif // ORBITALSET_H

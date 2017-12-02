@@ -17,11 +17,11 @@ int NOtrees=0;
   * Serial tree nodes are not using the destructors, but explicitely call to deallocNodes or deallocGenNodes
   * Gen nodes and loose nodes are not counted with MWTree->[in/de]crementNodeCount()
 */
-SerialOperatorTree::SerialOperatorTree(OperatorTree *tree, int max_nodes)
+SerialOperatorTree::SerialOperatorTree(OperatorTree *tree)
         : SerialTree<2>(tree),
           lastNode(0) {
 
-    this->maxNodes = max_nodes;
+    this->maxNodes = 0;
     this->nNodes = 0;
     NOtrees++;
 
@@ -30,18 +30,9 @@ SerialOperatorTree::SerialOperatorTree(OperatorTree *tree, int max_nodes)
     this->maxNodesPerChunk = 64;
     int sizePerChunk = this->maxNodesPerChunk*this->sizeNodeCoeff;
    
-    if(MPI_rank==0 and NOtrees%100==1)println(10, " max_nodes = " << max_nodes << ", nodes per chunk = " << this->maxNodesPerChunk<<" sizePerChunk "<<sizePerChunk<<" N Op trees: "<<NOtrees);
-
-    //indicate occupation of nodes
-    this->nodeStackStatus = new int[this->maxNodes + 1];
+    if(mpiOrbRank==0 and NOtrees%100==1)println(10, "nodes per chunk = " << this->maxNodesPerChunk<<" sizePerChunk "<<sizePerChunk<<" N Op trees: "<<NOtrees);
 
     this->lastNode = (OperatorNode*) this->sNodes;//position of last allocated node
-
-    //initialize stacks
-    for (int i = 0; i < maxNodes; i++) {
-        this->nodeStackStatus[i] = 0;//0=unoccupied
-    }
-    this->nodeStackStatus[maxNodes] = -1;//=unavailable
 
     //make virtual table pointers
     OperatorNode* tmpNode = new OperatorNode();
@@ -58,7 +49,9 @@ SerialOperatorTree::~SerialOperatorTree() {
     for (int i = 0; i < this->nodeChunks.size(); i++) delete[] (char*)(this->nodeChunks[i]);
     for (int i = 0; i < this->nodeCoeffChunks.size(); i++) delete[] this->nodeCoeffChunks[i];
 
-    delete[] this->nodeStackStatus;
+    //    delete[] this->nodeStackStatus;
+    this->nodeStackStatus.clear();
+
     NOtrees--;
 
 #ifdef HAVE_OPENMP
@@ -106,7 +99,7 @@ void SerialOperatorTree::allocRoots(MWTree<2> &tree) {
 
         tree.incrementNodeCount(root_p->getScale());
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&(root_p->node_lock));
 #endif
 
@@ -157,7 +150,7 @@ void SerialOperatorTree::allocChildren(MWNode<2> &parent) {
 
         child_p->tree->incrementNodeCount(child_p->getScale());
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
         omp_init_lock(&child_p->node_lock);
 #endif
 
@@ -178,10 +171,6 @@ OperatorNode* SerialOperatorTree::allocNodes(int nAlloc, int *serialIx, double *
 
     if (chunkIx == 0 or chunkIx+nAlloc > this->maxNodesPerChunk ) {
         //start on new chunk
-        if (this->nNodes+nAlloc >= this->maxNodes){
-            MSG_FATAL("maxNodes exceeded " << this->maxNodes);
-        }
-
         //we want nodes allocated simultaneously to be allocated on the same piece.
         //possibly jump over the last nodes from the old chunk
         this->nNodes = this->maxNodesPerChunk*((this->nNodes+nAlloc-1)/this->maxNodesPerChunk);//start of next chunk
@@ -195,6 +184,12 @@ OperatorNode* SerialOperatorTree::allocNodes(int nAlloc, int *serialIx, double *
 	    this->nodeChunks.push_back(this->sNodes);
             double *sNodesCoeff = new double[this->sizeNodeCoeff*this->maxNodesPerChunk];
             this->nodeCoeffChunks.push_back(sNodesCoeff);
+	    //allocate new chunk in nodeStackStatus
+	    int oldsize = this->nodeStackStatus.size();
+	    int newsize = oldsize + this->maxNodesPerChunk;
+	    for (int i = oldsize; i < newsize; i++) this->nodeStackStatus.push_back(0);
+	    this->maxNodes = newsize;
+	    
         }
         this->lastNode = this->nodeChunks[chunk] + this->nNodes%(this->maxNodesPerChunk);
         *serialIx = this->nNodes;
@@ -240,5 +235,9 @@ void SerialOperatorTree::deallocNodes(int serialIx) {
 }
 
 void SerialOperatorTree::deallocGenNodes(int serialIx) {
+    NOT_REACHED_ABORT;
+}
+
+void SerialOperatorTree::deallocGenNodeChunks() {
     NOT_REACHED_ABORT;
 }

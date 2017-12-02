@@ -1,5 +1,4 @@
-#ifndef WAVELETADAPTOR_H
-#define WAVELETADAPTOR_H
+#pragma once
 
 #include "TreeAdaptor.h"
 #include "constants.h"
@@ -30,4 +29,3 @@ protected:
     }
 };
 
-#endif // WAVELETADAPTOR_H

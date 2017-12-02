@@ -1,5 +1,4 @@
-#ifndef DEFAULTCALCULATOR_H
-#define DEFAULTCALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 
@@ -23,4 +22,3 @@ protected:
     }
 };
 
-#endif // DEFAULTCALCULATOR_H

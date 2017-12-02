@@ -8,7 +8,7 @@
 using namespace Eigen;
 using namespace std;
 
-OperatorTree::OperatorTree(const MultiResolutionAnalysis<2> &mra, double np, int max_nodes)
+OperatorTree::OperatorTree(const MultiResolutionAnalysis<2> &mra, double np)
         : MWTree<2>(mra),
           normPrec(np),
           bandWidth(0),
@@ -16,7 +16,7 @@ OperatorTree::OperatorTree(const MultiResolutionAnalysis<2> &mra, double np, int
           nodePtrAccess(0) {
     if (this->normPrec < 0.0) MSG_FATAL("Negative prec");
 
-    this->serialTree_p = new SerialOperatorTree(this, max_nodes);
+    this->serialTree_p = new SerialOperatorTree(this);
     this->serialTree_p->allocRoots(*this);
     this->resetEndNodeTable();
 }

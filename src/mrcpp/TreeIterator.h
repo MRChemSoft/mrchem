@@ -1,5 +1,4 @@
-#ifndef TREEITERATOR_H
-#define TREEITERATOR_H
+#pragma once
 
 #include "MWTree.h"
 #include "MWNode.h"
@@ -183,4 +182,3 @@ public:
     ~IteratorNode() { delete this->next; }
 };
 
-#endif // TREEITERATOR_H

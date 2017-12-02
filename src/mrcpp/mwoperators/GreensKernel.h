@@ -2,8 +2,7 @@
  * \breif
  */
 
-#ifndef GREENSKERNEL_H_
-#define GREENSKERNEL_H_
+#pragma once
 
 #include "GaussExp.h"
 #include "Gaussian.h"
@@ -46,4 +45,3 @@ protected:
     virtual void initializeKernel() = 0;
 };
 
-#endif /* GREENSKERNEL_H_ */

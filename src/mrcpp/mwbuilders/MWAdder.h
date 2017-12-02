@@ -1,5 +1,4 @@
-#ifndef MWADDER_H
-#define MWADDER_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "AdditionCalculator.h"
@@ -58,4 +57,3 @@ protected:
     int maxScale;
 };
 
-#endif // MWADDER_H

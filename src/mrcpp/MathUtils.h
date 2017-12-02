@@ -1,14 +1,9 @@
 /* \file MathUtils.h
  *
- *  \date Jul 22, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
  * \breif Collection of misc math funcs.
  */
 
-#ifndef MATHUTILS_H_
-#define MATHUTILS_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -87,4 +82,3 @@ private:
     static void print_vector(int n, const double *vec);
 };
 
-#endif /* MATHUTILS_H_ */

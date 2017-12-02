@@ -1,15 +1,9 @@
 /*
  * 
- *
- *  \date Jul 8, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
  * \breif
  */
 
-#ifndef MACROS_H_
-#define MACROS_H_
+#pragma once
 
 #define  MAX(X,Y)   (((X) > (Y)) ? (X):(Y))
 #define  MIN(X,Y)   (((X) < (Y)) ? (X):(Y))
@@ -71,4 +65,3 @@
  B32(10000000,11111111,10101010,01010101) = 2164238933
  */
 
-#endif /* MACROS_H_ */

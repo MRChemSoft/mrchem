@@ -1,12 +1,11 @@
-#ifndef OPERATORTREE_H
-#define OPERATORTREE_H
+#pragma once
 
 #include "MWTree.h"
 
 class OperatorTree: public MWTree<2> {
 public:
     OperatorTree(const MultiResolutionAnalysis<2> &mra,
-                 double np, int max_nodes = MaxAllocOperNodes);
+                 double np);
     virtual ~OperatorTree();
 
     double getNormPrecision() const { return this->normPrec; }
@@ -51,4 +50,3 @@ protected:
     void getMaxTranslations(Eigen::VectorXi &maxTransl);
 };
 
-#endif // OPERATORTREE_H

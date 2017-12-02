@@ -1,10 +1,5 @@
 /*
  *
- *
- *  \date Jul 8, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
  * \breif FilterCache is a static class taking care of loading and
  * unloading MultiWavelet filters, and their tensor counter parts.
  *
@@ -15,8 +10,7 @@
  *
  */
 
-#ifndef FILTERCACHE_H_
-#define FILTERCACHE_H_
+#pragma once
 
 #include "MWFilter.h"
 #include "ObjectCache.h"
@@ -67,4 +61,3 @@ private:
     FilterCache &operator=(FilterCache<T> const &fc) { return *this; }
 };
 
-#endif /* FILTERSTORE_H_ */

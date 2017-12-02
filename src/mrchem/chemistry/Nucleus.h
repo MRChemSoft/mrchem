@@ -1,5 +1,4 @@
-#ifndef NUCLEUS_H
-#define NUCLEUS_H
+#pragma once
 
 #include <vector>
 
@@ -72,5 +71,4 @@ public:
     }
 };
 
-#endif // NUCLEUS_H
 

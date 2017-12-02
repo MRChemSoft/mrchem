@@ -1,14 +1,4 @@
-/**
- *
- *  \date Aug 14, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- *
- */
-
-#ifndef PROJECTEDNODE_H_
-#define PROJECTEDNODE_H_
+#pragma once
 
 #include "FunctionNode.h"
 
@@ -44,4 +34,3 @@ protected:
     void reCompress();
 };
 
-#endif /* PROJECTEDNODE_H_ */

@@ -1,5 +1,4 @@
-#ifndef POISSONOPERATOR_H
-#define POISSONOPERATOR_H
+#pragma once
 
 #include "ConvolutionOperator.h"
 #include "PoissonKernel.h"
@@ -21,4 +20,3 @@ public:
     virtual ~PoissonOperator() { }
 };
 
-#endif // POISSONOPERATOR_H

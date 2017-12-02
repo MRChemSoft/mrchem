@@ -72,7 +72,7 @@ void TelePrompter::init(int printLevel, bool teletype, const char *fil) {
     SET_PRINT_PRECISION(15);
     cout << scientific << setprecision(14);
 
-    int rank=MPI_rank;
+    int rank=mpiOrbRank;
     int world_size = 1;
     SET_PRINT_LEVEL(printLevel);
     if (teletype and fil != 0) {

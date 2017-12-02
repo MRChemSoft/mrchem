@@ -218,6 +218,8 @@ void LinearResponseSolver::calcHelmholtzUpdates(OrbitalVector *phi_n,
                                                 OrbitalVector *dPhi_n, 
                                                 MatrixXd *F, 
                                                 bool adjoint) {
+    NOT_IMPLEMENTED_ABORT;
+    /*
     if (phi_n == 0) return;
     if (dPhi_n == 0) MSG_ERROR("Orbital updates not set up");
     if (F == 0) MSG_ERROR("Fock matrix not set up");
@@ -229,8 +231,18 @@ void LinearResponseSolver::calcHelmholtzUpdates(OrbitalVector *phi_n,
     this->add.orthogonalize(*phi_np1, *this->orbitals_0);
     this->add(*dPhi_n, 1.0, *phi_np1, -1.0, *phi_n, true);
     delete phi_np1;
+    */
 }
 
+OrbitalVector* LinearResponseSolver::setupHelmholtzArguments(FockOperator &fock,
+                                                             const Eigen::MatrixXd &M,
+                                                             OrbitalVector &phi,
+                                                             bool adjoint,
+							     bool clearFock) {
+    NOT_IMPLEMENTED_ABORT;
+}
+
+/*
 Orbital* LinearResponseSolver::getHelmholtzArgument(int i, 
                                                     MatrixXd &F,
                                                     OrbitalVector &x,
@@ -293,6 +305,7 @@ Orbital* LinearResponseSolver::getHelmholtzArgument(int i,
 
     return argument;
 }
+*/
 
 double LinearResponseSolver::calcProperty() {
     FockOperator &fock_1 = *this->fOper_1;

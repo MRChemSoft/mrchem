@@ -1,11 +1,5 @@
 /**
  *
- * \date Jun 6, 2009
- * \author Jonas Juselius <jonas.juselius@uit.no> \n
- *         CTCC, University of Tromsø
- *
- *
- *
  * - Monodimensional gaussian expansion:
  *
  * \f$ g(x) = \sum_{i=1}^M g_i(x_i)
@@ -20,8 +14,7 @@
  *
  */
 
-#ifndef GAUSSEXP_H_
-#define GAUSSEXP_H_
+#pragma once
 
 #include <vector>
 
@@ -125,4 +118,3 @@ protected:
     double squareNorm;
 };
 
-#endif /* GAUSSEXP_H_ */

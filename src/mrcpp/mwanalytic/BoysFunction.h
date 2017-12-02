@@ -1,5 +1,4 @@
-#ifndef BOYSFUNCTION_H
-#define BOYSFUNCTION_H
+#pragma once
 
 #include "RepresentableFunction.h"
 #include "FunctionTree.h"
@@ -45,5 +44,4 @@ protected:
     MultiResolutionAnalysis<1> MRA;
 };
 
-#endif // BOYSFUNCTION_H
 

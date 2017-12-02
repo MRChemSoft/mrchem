@@ -1,16 +1,10 @@
 /*
  *
- *
- *  \date Sep 27, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
  *  Base class of functions that is representable in the mw basis.
  * This includes gaussians, expansions, polynomials and even function trees.
  */
 
-#ifndef REPRESENTABLEFUNCTION_H_
-#define REPRESENTABLEFUNCTION_H_
+#pragma once
 
 #include "TelePrompter.h"
 #include "constants.h"
@@ -60,4 +54,3 @@ protected:
     double *B; ///< Upper bound, Null if unbounded
 };
 
-#endif /* REPRESENTABLEFUNCTION_H_ */

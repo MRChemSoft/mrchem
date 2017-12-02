@@ -1,14 +1,4 @@
-/*
- *
- *
- *  \date June 2, 2010
- *  \author Stig Rune Jensen \n
- *          CTCC, University of Tromsø
- *
- */
-
-#ifndef INTERPOLATINGBASIS_H
-#define INTERPOLATINGBASIS_H
+#pragma once
 
 #include "ScalingBasis.h"
 
@@ -26,4 +16,3 @@ public:
     void calcCVMaps();
 };
 
-#endif // INTERPOLATINGBASIS_H

@@ -1,5 +1,4 @@
-#ifndef NUCLEARPOTENTIAL_H
-#define NUCLEARPOTENTIAL_H
+#pragma once
 
 #include "QMPotential.h"
 #include "Nucleus.h"
@@ -48,4 +47,3 @@ protected:
     NuclearFunction func;
 };
 
-#endif // NUCLEARPOTENTIAL_H

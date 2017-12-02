@@ -6,8 +6,7 @@
  * \breif Global objects and variables
  */
 
-#ifndef MRCHEM_H
-#define MRCHEM_H
+#pragma once
 
 #include "Getkw.h"
 #include "MultiResolutionAnalysis.h"
@@ -15,5 +14,4 @@
 extern Getkw Input; //< Default user input
 extern MultiResolutionAnalysis<3> *MRA; //< Default MRA
 
-#endif /* MRCHEM_H */
 

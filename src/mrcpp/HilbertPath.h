@@ -1,5 +1,4 @@
-#ifndef HILBERTPATH_H
-#define HILBERTPATH_H
+#pragma once
 
 template<int D>
 class HilbertPath {
@@ -25,4 +24,3 @@ private:
     static const int hTable[][8];
 };
 
-#endif // HILBERTPATH_H

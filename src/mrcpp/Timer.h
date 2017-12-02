@@ -1,5 +1,4 @@
-#ifndef TIMER_H
-#define TIMER_H
+#pragma once
 
 #include <chrono>
 
@@ -74,4 +73,3 @@ private:
         return diff.count();
     }
 };
-#endif // TIMER_H

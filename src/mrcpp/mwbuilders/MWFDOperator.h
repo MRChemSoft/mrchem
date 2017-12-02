@@ -1,5 +1,4 @@
-#ifndef MWFDOPERATOR_H
-#define MWFDOPERATOR_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "WaveletAdaptor.h"
@@ -56,4 +55,3 @@ protected:
     int approx_order;
 };
 
-#endif // MWFDOPERATOR_H

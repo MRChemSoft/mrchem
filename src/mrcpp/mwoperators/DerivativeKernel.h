@@ -1,5 +1,4 @@
-#ifndef DIFFKERNEL_H
-#define DIFFKERNEL_H
+#pragma once
 
 #include "GreensKernel.h"
 #include "GaussFunc.h"
@@ -22,4 +21,3 @@ protected:
     }
 };
 
-#endif // DIFFKERNEL_H

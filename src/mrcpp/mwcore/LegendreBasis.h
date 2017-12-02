@@ -1,14 +1,4 @@
-/*
- *
- *
- *  \date June 2, 2010
- *  \author Stig Rune Jensen \n
- *          CTCC, University of Tromsø
- *
- */
-
-#ifndef LEGENDREBASIS_H
-#define LEGENDREBASIS_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Dense>
@@ -29,4 +19,3 @@ public:
     void calcCVMaps();
 };
 
-#endif // LEGENDREBASIS_H

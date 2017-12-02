@@ -1,5 +1,4 @@
-#ifndef COULOMBPOTENTIAL_H
-#define COULOMBPOTENTIAL_H
+#pragma once
 
 #include "CoulombOperator.h"
 
@@ -26,4 +25,3 @@ protected:
     void calcPotential(QMPotential &V, Density &rho);
 };
 
-#endif // COULOMBPOTENTIAL_H

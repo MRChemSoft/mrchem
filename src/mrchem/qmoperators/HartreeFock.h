@@ -1,5 +1,4 @@
-#ifndef HARTREEFOCK_H
-#define HARTREEFOCK_H
+#pragma once
 
 #include "FockOperator.h"
 
@@ -13,4 +12,3 @@ public:
     virtual ~HartreeFock() { }
 };
 
-#endif // HARTREEFOCK_H

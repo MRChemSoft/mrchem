@@ -1,5 +1,4 @@
-#ifndef PLOT_H
-#define PLOT_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -68,4 +67,3 @@ private:
     void closePlot();
 };
 
-#endif // PLOT_H

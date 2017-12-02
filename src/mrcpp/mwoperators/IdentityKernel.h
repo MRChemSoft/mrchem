@@ -1,5 +1,4 @@
-#ifndef IDENTITYKERNEL_H
-#define IDENTITYKERNEL_H
+#pragma once
 
 #include "GreensKernel.h"
 #include "GaussFunc.h"
@@ -20,4 +19,3 @@ protected:
     }
 };
 
-#endif // IDENTITYKERNEL_H

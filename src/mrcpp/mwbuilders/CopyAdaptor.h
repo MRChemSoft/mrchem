@@ -1,5 +1,4 @@
-#ifndef COPYADAPTOR_H
-#define COPYADAPTOR_H
+#pragma once
 
 #include "TreeAdaptor.h"
 #include "FunctionTreeVector.h"
@@ -55,4 +54,3 @@ protected:
     }
 };
 
-#endif // COPYADAPTOR_H

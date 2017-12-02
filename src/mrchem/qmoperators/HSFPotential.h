@@ -1,5 +1,4 @@
-#ifndef HSFPOTENTIAL_H
-#define HSFPOTENTIAL_H
+#pragma once
 
 #include "QMPotential.h"
 #include "NuclearFunction.h"
@@ -93,4 +92,3 @@ protected:
     }
 };
 
-#endif // HSFPOTENTIAL_H

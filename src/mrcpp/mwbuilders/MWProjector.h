@@ -1,5 +1,4 @@
-#ifndef MWPROJECTOR_H
-#define MWPROJECTOR_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "ProjectionCalculator.h"
@@ -48,4 +47,3 @@ protected:
     int maxScale;
 };
 
-#endif // MWPROJECTOR_H

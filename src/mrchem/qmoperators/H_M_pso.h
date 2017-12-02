@@ -1,5 +1,4 @@
-#ifndef H_M_PSO_H
-#define H_M_PSO_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "AngularMomentumOperator.h"
@@ -29,5 +28,4 @@ protected:
     }
 };
 
-#endif // H_M_PSO_H
 

@@ -1,5 +1,4 @@
-#ifndef PHCALCULATOR_H
-#define PHCALCULATOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -21,4 +20,3 @@ protected:
     void readSMatrix(const ScalingBasis &basis, char n);
 };
 
-#endif // PHCALCULATOR_H

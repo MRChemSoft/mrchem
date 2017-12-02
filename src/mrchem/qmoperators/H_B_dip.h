@@ -1,5 +1,4 @@
-#ifndef H_B_DIP_H
-#define H_B_DIP_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "AngularMomentumOperator.h"
@@ -26,5 +25,4 @@ protected:
     }
 };
 
-#endif // H_B_DIP_H
 

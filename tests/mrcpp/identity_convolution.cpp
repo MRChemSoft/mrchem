@@ -2,7 +2,7 @@
 
 #include "factory_functions.h"
 #include "MWProjector.h"
-#include "IdentityOperator.h"
+#include "IdentityConvolution.h"
 #include "IdentityKernel.h"
 #include "OperatorTree.h"
 #include "MWConvolution.h"
@@ -10,11 +10,11 @@
 #include "CrossCorrelationCalculator.h"
 #include "BandWidth.h"
 
-namespace identity_operator {
+namespace identity_convolution {
 
 template<int D> void applyIdentity();
 
-TEST_CASE("Initialize identity operator", "[init_identity], [identity_operator], [mw_operator]") {
+TEST_CASE("Initialize identity convolution operator", "[init_identity], [identity_convolution], [mw_operator]") {
     double exp_prec  = 1.0e-6;
     double proj_prec = 1.0e-6;
     double ccc_prec  = 1.0e-4;
@@ -78,7 +78,7 @@ TEST_CASE("Initialize identity operator", "[init_identity], [identity_operator],
     }
 }
 
-TEST_CASE("Apply identity operator", "[apply_identity], [identity_operator], [mw_operator]") {
+TEST_CASE("Apply identity convolution operator", "[apply_identity], [identity_convolution], [mw_operator]") {
     SECTION("1D") {
         applyIdentity<1>();
     }
@@ -101,7 +101,7 @@ template<int D> void applyIdentity() {
     initialize(&mra);
 
     MWProjector<D> Q(proj_prec);
-    IdentityOperator<D> I(*mra, build_prec);
+    IdentityConvolution<D> I(*mra, build_prec);
     MWConvolution<D> apply(apply_prec);
 
     FunctionTree<D> fTree(*mra);

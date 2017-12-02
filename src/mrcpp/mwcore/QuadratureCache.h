@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 26, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef QUADRATURECACHE_H_
-#define QUADRATURECACHE_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -50,4 +39,3 @@ private:
     QuadratureCache &operator=(QuadratureCache const&) { return *this; }
 };
 
-#endif /* QUADRATURECACHE_H_ */

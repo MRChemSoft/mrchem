@@ -1,5 +1,4 @@
-#ifndef TREEBUILDER_H
-#define TREEBUILDER_H
+#pragma once
 
 #include "mrcpp_declarations.h"
 
@@ -22,4 +21,3 @@ protected:
     double calcWaveletNorm(const MWNodeVector &vec) const;
 };
 
-#endif // TREEBUILDER_H

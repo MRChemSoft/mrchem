@@ -1,5 +1,4 @@
-#ifndef QMOPERATOR_H
-#define QMOPERATOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -45,5 +44,4 @@ protected:
     double apply_prec;
 };
 
-#endif // QMOPERATOR_H
 

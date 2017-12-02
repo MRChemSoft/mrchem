@@ -2,12 +2,8 @@
  * Collection of assertions and a standard error/warn/info/debug
  * message interface.
  *
- * Written by Jonas Juselius <jonas.juselius@chem.uit.no>
- * CTCC, University of Tromsø, July 2009
- *
  */
-#ifndef TELEPROMPTER_H
-#define TELEPROMPTER_H
+#pragma once
 
 #include <cassert>
 #include <sstream>
@@ -158,4 +154,3 @@ private:
  #define NOT_IMPLEMENTED_ABORT abort();
  */
 
-#endif

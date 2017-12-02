@@ -7,8 +7,7 @@
  *
  */
 
-#ifndef PERIODICTABLE_H_
-#define PERIODICTABLE_H_
+#pragma once
 
 #include <string>
 #include <map>
@@ -32,4 +31,3 @@ private:
     static map_t _init_bysymbol();
 };
 
-#endif /* PERIODICTABLE_H_ */

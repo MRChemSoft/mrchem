@@ -1,27 +1,21 @@
 /**
-*
-*
-*  \date Aug 14, 2009
-*  \author Jonas Juselius <jonas.juselius@uit.no> \n
-*  CTCC, University of Tromsø
-*
 *  Basic class for representing functions in a multiwavelet
-* representation.
+*  representation.
 */
 
-#ifndef FUNCTIONTREE_H_
-#define FUNCTIONTREE_H_
+#pragma once
 
 #include "TreeBuilder.h"
 #include "MWTree.h"
 #include "SerialFunctionTree.h"
 
+class Orbital;
 
 template<int D>
 class FunctionTree: public MWTree<D> {
 public:
-    FunctionTree(const MultiResolutionAnalysis<D> &mra,
-                 int max_nodes = MaxAllocNodes);
+    FunctionTree(const MultiResolutionAnalysis<D> &mra);
+    FunctionTree(const MultiResolutionAnalysis<D> &mra, SharedMemory* &shMem);
     virtual ~FunctionTree();
 
     void clear();
@@ -78,4 +72,3 @@ std::ostream& operator<<(std::ostream &o, FunctionTree<D> &tree) {
     return o;
 }
 
-#endif /* FUNCTIONTREE_H_*/

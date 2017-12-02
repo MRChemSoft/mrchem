@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 5, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef LEGENDREPOLY_H_
-#define LEGENDREPOLY_H_
+#pragma once
 
 #include "Polynomial.h"
 
@@ -25,4 +14,3 @@ protected:
     void computeLegendrePolynomial(int k);
 };
 
-#endif /* LEGENDREPOLY_H_ */

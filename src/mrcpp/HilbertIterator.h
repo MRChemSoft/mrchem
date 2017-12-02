@@ -1,5 +1,4 @@
-#ifndef HILBERTITERATOR_H
-#define HILBERTITERATOR_H
+#pragma once
 
 #include "MWTree.h"
 #include "MWNode.h"
@@ -23,4 +22,3 @@ protected:
     }
 };
 
-#endif // HILBERTITERATOR_H

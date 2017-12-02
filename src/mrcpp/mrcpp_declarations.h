@@ -1,5 +1,4 @@
-#ifndef MWREPR_DECLARATIONS_H_
-#define MWREPR_DECLARATIONS_H_
+#pragma once
 
 #include <vector>
 #include <set>
@@ -32,7 +31,7 @@ template <int D> class MWMultiplier;
 template <int D> class MWConvolution;
 template <int D> class MWDerivative;
 
-template <int D> class IdentityOperator;
+template <int D> class IdentityConvolution;
 template <int D> class DerivativeConvolution;
 template <int D> class ConvolutionOperator;
 class PoissonOperator;
@@ -73,4 +72,3 @@ template <int D> class OperatorState;
 #define MWNodeVector std::vector<MWNode<D> *>
 #define NodeIndexSet std::set<const NodeIndex<D> *, NodeIndexComp<D> >
 
-#endif /* MWREPR_DECLARATIONS_H_*/

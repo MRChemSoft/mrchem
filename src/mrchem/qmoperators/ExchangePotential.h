@@ -1,5 +1,4 @@
-#ifndef EXCHANGEPOTENTIAL_H
-#define EXCHANGEPOTENTIAL_H
+#pragma once
 
 #include "ExchangeOperator.h"
 
@@ -94,6 +93,21 @@ protected:
      * The off-diagonal term X_ij is computed. 
      */
     void calcInternal(int i, int j);
+
+    /*! computes the off-diagonal part of the exchange potential for own orbitals
+     *  \param[in] i first orbital index
+     *  \param[in] j second orbital index
+     *
+     * The off-diagonal term X_ij is computed. 
+     */
+    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);
+    /*! computes the off-diagonal part of the exchange potential for own orbitals
+     *  and return V_ij for further use
+     *  \param[in] i first orbital index
+     *  \param[in] j second orbital index
+     *
+     * The off-diagonal term X_ij is computed. 
+     */
+    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j, Orbital *V_ij );
 };
 
-#endif // EXCHANGEPOTENTIAL_H

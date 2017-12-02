@@ -1,5 +1,4 @@
-#ifndef DERIVATIVECALCULATOR_H
-#define DERIVATIVECALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 #include "OperatorStatistics.h"
@@ -40,4 +39,3 @@ protected:
 };
 
 
-#endif // DERIVATIVECALCULATOR_H

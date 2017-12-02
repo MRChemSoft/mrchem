@@ -4,8 +4,7 @@
  * because of multi-threading issues.
 */
 
-#ifndef OPERATORSTATE_H
-#define OPERATORSTATE_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -94,4 +93,3 @@ private:
     }
 };
 
-#endif // OPERATORSTATE_H

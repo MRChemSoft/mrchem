@@ -1,12 +1,8 @@
 /**
  *  Simple n-dimensional node
- *
- *  Created on: May 29, 2009
- *      Author: jonas
  */
 
-#ifndef MWNODE_H_
-#define MWNODE_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -19,10 +15,11 @@
 #include "HilbertPath.h"
 #include "SerialTree.h"
 
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
 #define SET_NODE_LOCK() omp_set_lock(&this->node_lock)
 #define UNSET_NODE_LOCK() omp_unset_lock(&this->node_lock)
 #define TEST_NODE_LOCK() omp_test_lock(&this->node_lock)
+
 #else
 #define SET_NODE_LOCK()
 #define UNSET_NODE_LOCK()
@@ -136,6 +133,7 @@ public:
     friend class MWTree<D>;
     friend class FunctionTree<D>;
     friend class OperatorTree;
+    friend class Density;
 
 protected:
     MWTree<D> *tree;
@@ -199,7 +197,7 @@ protected:
     static const unsigned char FlagEndNode    = B8(00010000);
     static const unsigned char FlagRootNode   = B8(00100000);
     static const unsigned char FlagLooseNode  = B8(01000000);
-#ifdef OPENMP
+#ifdef HAVE_OPENMP
     omp_lock_t node_lock;
 #endif
 
@@ -318,4 +316,3 @@ std::ostream& operator<<(std::ostream &o, const MWNode<D> &nd) {
     return o;
 }
 
-#endif /* MWNODE_H_ */

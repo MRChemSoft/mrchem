@@ -49,6 +49,7 @@
 #include "ExchangePotential.h"
 #include "XCPotential.h"
 #include "XCFunctional.h"
+#include "IdentityOperator.h"
 
 using namespace std;
 using namespace Eigen;
@@ -466,8 +467,11 @@ void SCFDriver::setupInitialGroundState() {
         OrbitalVector *tmp = OP(*nuclei);
 
         // Compute orthonormalization matrix
-        MatrixXd S = tmp->calcOverlapMatrix().real();
+        IdentityOperator I;
+        I.setup(rel_prec);
+        MatrixXd S = I(*tmp, *tmp);
         MatrixXd S_m12 = MathUtils::hermitianMatrixPow(S, -1.0/2.0);
+        I.clear();
 
         // Compute core Hamiltonian matrix
         CoreHamiltonian h(*T, *V);
@@ -480,7 +484,7 @@ void SCFDriver::setupInitialGroundState() {
         MatrixXd U = M.transpose()*S_m12;
 
         // Duplicate orbitals if unrestricted
-	extendRotationMatrix(*phi, U);
+        extendRotationMatrix(*phi, U);
 
         // Rotate n lowest energy orbitals of U*tmp into phi
         OrbitalAdder add(rel_prec, max_scale);
@@ -851,10 +855,10 @@ void SCFDriver::extendRotationMatrix(const OrbitalVector &orbs, MatrixXd &O) {
     int nPaired = orbs.getNPaired();
     int nAlpha  = orbs.getNAlpha();
     int nBeta   = orbs.getNBeta();
-    int nCols   = O.cols(); 
+    int nCols   = O.cols();
 
     if (nBeta > nAlpha) {
-	MSG_ERROR("Inconsistent orbital set: too many beta orbitals");
+        MSG_ERROR("Inconsistent orbital set: too many beta orbitals");
     }
 
     O.conservativeResize(nPaired + nAlpha + nBeta, NoChange);

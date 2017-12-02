@@ -1,10 +1,5 @@
 /*
  *
- *
- *  \date Jul 5, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
  * \breif Tools to handle gaussian functions and/or expansions in gaussian functions.
  * Implemented as a template class in the dimensionality:
  *
@@ -18,8 +13,7 @@
  * = \prod_{i=1}^d \c_i e^{-\alpha_i (x_i-x_i^0)^2} \f$
  */
 
-#ifndef GAUSSFUNC_H_
-#define GAUSSFUNC_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -72,4 +66,3 @@ protected:
 
 };
 
-#endif /* GAUSSFUNC_H_ */

@@ -1,5 +1,4 @@
-#ifndef GRIDCLEANER_H
-#define GRIDCLEANER_H
+#pragma once
 
 #include "WaveletAdaptor.h"
 #include "DefaultCalculator.h"
@@ -30,4 +29,3 @@ protected:
     int maxScale;
 };
 
-#endif // GRIDCLEANER_H

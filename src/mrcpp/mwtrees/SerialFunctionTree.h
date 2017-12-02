@@ -7,8 +7,7 @@
 *
 */
 
-#ifndef SERIALFUNCTIONTREE_H_
-#define SERIALFUNCTIONTREE_H_
+#pragma once
 
 #include <vector>
 
@@ -22,7 +21,7 @@ template<int D> class GenNode;
 template<int D>
 class SerialFunctionTree : public SerialTree<D> {
 public:
-    SerialFunctionTree(FunctionTree<D> *tree, int max_nodes);
+    SerialFunctionTree(FunctionTree<D> *tree);
     virtual ~SerialFunctionTree();
 
     virtual void allocRoots(MWTree<D> &tree);
@@ -31,6 +30,7 @@ public:
 
     virtual void deallocNodes(int serialIx);
     virtual void deallocGenNodes(int serialIx);
+    virtual void deallocGenNodeChunks();
 
     std::vector<ProjectedNode<D>*> nodeChunks;
     std::vector<double*> nodeCoeffChunks;
@@ -45,7 +45,8 @@ public:
 
     double **genCoeffStack;
 
-    int *genNodeStackStatus;
+    //    int *genNodeStackStatus;
+    std::vector<int> genNodeStackStatus;
 
     void rewritePointers(int nChunks);
 
@@ -68,4 +69,3 @@ private:
 #endif
 };
 
-#endif /* SERIALFUNCTIONTREE_H_*/

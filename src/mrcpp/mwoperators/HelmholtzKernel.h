@@ -1,15 +1,4 @@
-/*
- *
- *
- *  \date Jul 7, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef HELMHOLTZKERNEL_H_
-#define HELMHOLTZKERNEL_H_
+#pragma once
 
 #include "GreensKernel.h"
 
@@ -26,4 +15,3 @@ protected:
     virtual void initializeKernel();
 };
 
-#endif /* HELMHOLTZKERNEL_H_ */

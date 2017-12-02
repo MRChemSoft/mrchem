@@ -1,5 +1,4 @@
-#ifndef MWDERIVATIVE_H
-#define MWDERIVATIVE_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "CopyAdaptor.h"
@@ -55,4 +54,3 @@ protected:
     int maxScale;
 };
 
-#endif // MWDERIVATIVE_H

@@ -1,5 +1,4 @@
-#ifndef EXCHANGEOPERATOR_H
-#define EXCHANGEOPERATOR_H
+#pragma once
 
 #include "QMOperator.h"
 #include "OrbitalVector.h"
@@ -34,7 +33,7 @@ public:
 protected:
     double x_factor;            ///< Exchange factor for hybrid XC functionals
     PoissonOperator *poisson;   ///< Pointer to external object
-    OrbitalVector *orbitals;    // Pointer to external object
+    OrbitalVector *orbitals;    ///< Pointer to external object
 
     bool screen;                ///< Apply screening in exchange evaluation
     Eigen::VectorXd tot_norms;  ///< Total norms for use in screening
@@ -51,4 +50,3 @@ protected:
     }
 };
 
-#endif // EXCHANGEOPERATOR_H

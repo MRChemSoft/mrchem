@@ -1,5 +1,4 @@
-#ifndef MULTIRESOLUTIONANALYSIS_H
-#define MULTIRESOLUTIONANALYSIS_H
+#pragma once
 
 #include "BoundingBox.h"
 #include "InterpolatingBasis.h"
@@ -133,4 +132,3 @@ protected:
     }
 };
 
-#endif // MULTIRESOLUTIONANALYSIS_H

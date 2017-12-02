@@ -9,9 +9,6 @@
  *
  */
 
-#pragma GCC system_header
-#include <Eigen/Core>
-
 #include "mrchem.h"
 #include "parallel.h"
 #include "constants.h"
@@ -37,7 +34,6 @@
 
 
 using namespace std;
-using namespace Eigen;
 
 void testProjection();
 void testAddition();
@@ -278,6 +274,8 @@ void testDerivative() {
     println(0," dg_tree norm:               " << setw(30) << dg_norm << endl);
     println(0," absolute error:             " << setw(30) << abs_err);
     println(0," relative error:             " << setw(30) << rel_err << endl);
+
+    delete MRA_1;
 
     tot_t.stop();
     TelePrompter::printFooter(0, tot_t, 2);

@@ -1,15 +1,4 @@
- /*
- *
- *
- *  \date Jul 18, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
- * \breif
- */
-
-#ifndef CROSSCORRELATION_H_
-#define CROSSCORRELATION_H_
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -46,4 +35,3 @@ protected:
     void readCCCBin();
 };
 
-#endif /* CROSSCORRELATION_H_ */

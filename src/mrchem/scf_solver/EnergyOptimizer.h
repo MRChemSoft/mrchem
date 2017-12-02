@@ -1,5 +1,4 @@
-#ifndef ENERGYOPTIMIZER_H
-#define ENERGYOPTIMIZER_H
+#pragma once
 
 #include "GroundStateSolver.h"
 
@@ -20,4 +19,3 @@ protected:
     Eigen::MatrixXd calcFockMatrixUpdate();
 };
 
-#endif // ENERGYOPTIMIZER_H

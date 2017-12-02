@@ -9,8 +9,8 @@ using namespace Eigen;
 
 OrbitalOptimizer::OrbitalOptimizer(HelmholtzOperatorSet &h,
                                    Accelerator *k)
-        : GroundStateSolver(h),
-          kain(k) {
+    : GroundStateSolver(h),
+      kain(k) {
 }
 
 OrbitalOptimizer::~OrbitalOptimizer() {
@@ -18,8 +18,8 @@ OrbitalOptimizer::~OrbitalOptimizer() {
 }
 
 void OrbitalOptimizer::setup(FockOperator &fock,
-                              OrbitalVector &phi,
-                              MatrixXd &F) {
+                             OrbitalVector &phi,
+                             MatrixXd &F) {
     this->fMat_n = &F;
     this->fOper_n = &fock;
 
@@ -49,12 +49,14 @@ bool OrbitalOptimizer::optimize() {
     OrbitalVector &phi_n = *this->orbitals_n;
     OrbitalVector &phi_np1 = *this->orbitals_np1;
     OrbitalVector &dPhi_n = *this->dOrbitals_n;
+    HelmholtzOperatorSet &H = *this->helmholtz;
 
+    double orb_prec = getOrbitalPrecision();
     double err_o = phi_n.getErrors().maxCoeff();
     double err_t = 1.0;
     double err_p = 1.0;
-	
-    fock.setup(getOrbitalPrecision());
+
+    fock.setup(orb_prec);
     F = fock(phi_n, phi_n);
 
     int nIter = 0;
@@ -64,68 +66,73 @@ bool OrbitalOptimizer::optimize() {
         Timer timer;
         printCycle(nIter);
         adjustPrecision(err_o);
-
-        double orb_prec = getOrbitalPrecision();
+        orb_prec = getOrbitalPrecision();
 
         // Rotate orbitals
         if (needLocalization(nIter)) {
             localize(fock, F, phi_n);
             if (this->kain != 0) this->kain->clear();
         } else if (needDiagonalization(nIter)) {
-	    diagonalize(fock, F, phi_n);
-	    if (this->kain != 0) this->kain->clear();
+            diagonalize(fock, F, phi_n);
+            if (this->kain != 0) this->kain->clear();
         }
 
         // Compute electronic energy
         double E = calcProperty();
         this->property.push_back(E);
-		
-        // Iterate Helmholtz operators
-        this->helmholtz->initialize(F.diagonal());
-	if (MPI_size > 1) {
-	    applyHelmholtzOperators_P(phi_np1, F, phi_n);
-	}else{
-	    applyHelmholtzOperators(phi_np1, F, phi_n);
-	}
-        fock.clear();
-	orthonormalize(fock, F, phi_np1);
+
+        // Setup Helmholtz operators and argument
+        H.setup(orb_prec, F.diagonal());
+        MatrixXd L = H.getLambda().asDiagonal();
+	bool adjoint = false;
+	bool clearFock = false;
+	if (mpiOrbSize > 1) clearFock = true;
+        OrbitalVector *args_n = setupHelmholtzArguments(fock, L-F, phi_n, adjoint, clearFock);
+
+        // Apply Helmholtz operators
+        H(phi_np1, *args_n);
+        delete args_n;
+        if (mpiOrbSize > 1) H.clear();
+
+        if (not clearFock) fock.clear();
+        orthonormalize(fock, F, phi_np1);
 
         // Compute orbital updates
         this->add(dPhi_n, 1.0, phi_np1, -1.0, phi_n, true);
         phi_np1.clear();
-		
+
         // Employ KAIN accelerator
         if (this->kain != 0) this->kain->accelerate(orb_prec, phi_n, dPhi_n);
 
         // Compute errors
-	int Ni = dPhi_n.size();
+        int Ni = dPhi_n.size();
         VectorXd errors = VectorXd::Zero(Ni);
-	for (int i = MPI_rank; i < Ni; i += MPI_size){
-	    errors(i) = sqrt(dPhi_n.getOrbital(i).getSquareNorm());
-	}
+        for (int i = mpiOrbRank; i < Ni; i += mpiOrbSize){
+            errors(i) = sqrt(dPhi_n.getOrbital(i).getSquareNorm());
+        }
+
 #ifdef HAVE_MPI
-	//distribute errors among all orbitals
-	//could use reduce or gather also here
-	MPI_Allreduce(MPI_IN_PLACE, &errors(0), Ni, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        //distribute errors among all orbitals
+        MPI_Allreduce(MPI_IN_PLACE, &errors(0), Ni, MPI_DOUBLE, MPI_SUM, mpiCommOrb);
 #endif
+
         err_o = errors.maxCoeff();
         err_t = sqrt(errors.dot(errors));
         err_p = calcPropertyError();
         this->orbError.push_back(err_t);
         converged = checkConvergence(err_o, err_p);
-		
+
         // Update orbitals
         this->add.inPlace(phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
-	orthonormalize(fock, F, phi_n);
-
+        orthonormalize(fock, F, phi_n);
         phi_n.setErrors(errors);
-		
+
         // Compute Fock matrix
         fock.setup(orb_prec);
         F = fock(phi_n, phi_n);
-		
+
         // Finalize SCF cycle
         timer.stop();
         printOrbitals(F.diagonal(), phi_n, 0);

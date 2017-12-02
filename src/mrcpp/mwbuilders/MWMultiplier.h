@@ -1,5 +1,4 @@
-#ifndef MWMULTIPLIER_H
-#define MWMULTIPLIER_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "MultiplicationCalculator.h"
@@ -58,4 +57,3 @@ protected:
     int maxScale;
 };
 
-#endif // MWMULTIPLIER_H

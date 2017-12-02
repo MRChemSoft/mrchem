@@ -1,5 +1,4 @@
-#ifndef AOCONTRACTION_H
-#define AOCONTRACTION_H
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -41,4 +40,3 @@ protected:
     std::vector<double> coefs;
 };
 
-#endif // AOCONTRACTION_H

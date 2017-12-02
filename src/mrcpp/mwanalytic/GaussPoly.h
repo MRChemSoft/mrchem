@@ -6,8 +6,7 @@
  *		   CTCC, University of Tromsø
  */
 
-#ifndef GAUSSPOLY_H
-#define GAUSSPOLY_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -77,4 +76,3 @@ private:
     Polynomial *poly[D];
 };
 
-#endif // GAUSSPOLY_H

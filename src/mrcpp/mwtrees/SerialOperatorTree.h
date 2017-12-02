@@ -7,8 +7,7 @@
 *
 */
 
-#ifndef SERIALOPERATORTREE_H_
-#define SERIALOPERATORTREE_H_
+#pragma once
 
 #include <vector>
 
@@ -20,7 +19,7 @@ class OperatorNode;
 
 class SerialOperatorTree : public SerialTree<2> {
 public:
-    SerialOperatorTree(OperatorTree *tree, int max_nodes);
+    SerialOperatorTree(OperatorTree *tree);
     virtual ~SerialOperatorTree();
 
     virtual void allocRoots(MWTree<2> &tree);
@@ -29,6 +28,7 @@ public:
 
     virtual void deallocNodes(int serialIx);
     virtual void deallocGenNodes(int serialIx);
+    virtual void deallocGenNodeChunks();
 
 protected:
     OperatorNode *sNodes;       //serial OperatorNodes
@@ -47,4 +47,3 @@ private:
 #endif
 };
 
-#endif /* SERIALOPERATORTREE_H_*/

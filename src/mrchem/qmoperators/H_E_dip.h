@@ -1,5 +1,4 @@
-#ifndef H_E_DIP_H
-#define H_E_DIP_H
+#pragma once
 
 #include "PositionOperator.h"
 
@@ -28,5 +27,4 @@ public:
     using RankOneTensorOperator<3>::trace;
 };
 
-#endif // H_E_DIP_H
 

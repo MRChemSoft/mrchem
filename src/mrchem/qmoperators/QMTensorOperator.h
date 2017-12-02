@@ -1,5 +1,4 @@
-#ifndef QMTENSOROPERATOR_H
-#define QMTENSOROPERATOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -68,5 +67,4 @@ public:
     }
 };
 
-#endif // QMTENSOROPERATOR_H
 

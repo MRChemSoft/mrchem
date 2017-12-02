@@ -1,5 +1,4 @@
-#ifndef TREECALCULATOR_H
-#define TREECALCULATOR_H
+#pragma once
 
 #include "MWNode.h"
 #include "mrcpp_declarations.h"
@@ -31,4 +30,3 @@ protected:
     virtual void postProcess() { }
 };
 
-#endif // TREECALCULATOR_H

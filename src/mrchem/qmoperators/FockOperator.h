@@ -1,5 +1,4 @@
-#ifndef FOCKOPERATOR_H
-#define FOCKOPERATOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -68,5 +67,4 @@ protected:
     QMOperatorExp *H_1;   // First order perturbation operators
 };
 
-#endif // FOCKOPERATOR_H
 

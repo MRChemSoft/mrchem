@@ -1,5 +1,4 @@
-#ifndef DFT_H
-#define DFT_H
+#pragma once
 
 #include "FockOperator.h"
 
@@ -14,4 +13,3 @@ public:
     virtual ~DFT() { }
 };
 
-#endif // DFT_H

@@ -1,5 +1,4 @@
-#ifndef BANDWIDTHADAPTOR_H
-#define BANDWIDTHADAPTOR_H
+#pragma once
 
 #include "TreeAdaptor.h"
 #include "constants.h"
@@ -31,4 +30,3 @@ protected:
     }
 };
 
-#endif // BANDWIDTHADAPTOR_H

@@ -1,5 +1,4 @@
-#ifndef GRIDGENERATOR_H
-#define GRIDGENERATOR_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "DefaultCalculator.h"
@@ -49,4 +48,3 @@ protected:
     int maxScale;
 };
 
-#endif // GRIDGENERATOR_H

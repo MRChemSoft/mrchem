@@ -1,5 +1,4 @@
-#ifndef ELEMENT_H_
-#define ELEMENT_H_
+#pragma once
 
 #include "TelePrompter.h"
 
@@ -34,4 +33,3 @@ protected:
     const double g_val;         /** g-value */
 };
 
-#endif /* ELEMENT_H_ */

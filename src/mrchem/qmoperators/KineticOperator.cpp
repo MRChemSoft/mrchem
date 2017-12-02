@@ -55,51 +55,66 @@ MatrixXd KineticOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_or
     MatrixXcd T_z = MatrixXcd::Zero(Ni, Nj);
     {
         Timer timer;
+        OrbitalVector dOrbs_j(0);
         for (int j = 0; j < Nj; j++) {
             Orbital &orb_j = j_orbs.getOrbital(j);
-            Orbital *xOrb_j = p_x(orb_j);
-            for (int i = 0; i < Ni; i++) {
-                Orbital &orb_i = i_orbs.getOrbital(i);
-                Orbital *xOrb_i = p_x(orb_i);
-                T_x(i,j) = xOrb_i->dot(*xOrb_j);
-                delete xOrb_i;
-            }
-            delete xOrb_j;
+            Orbital *dOrb_j = p_x(orb_j);
+            dOrbs_j.push_back(*dOrb_j);
         }
+        for (int i = 0; i < Ni; i++) {
+            Orbital &orb_i = i_orbs.getOrbital(i);
+            Orbital *dOrb_i = p_x(orb_i);
+            for (int j = 0; j < Nj; j++) {
+                Orbital &dOrb_j = dOrbs_j.getOrbital(j);
+                T_x(i,j) = dOrb_i->dot(dOrb_j);
+            }
+            delete dOrb_i;
+        }
+        dOrbs_j.clear(true);
         timer.stop();
         double t = timer.getWallTime();
         TelePrompter::printDouble(1, "T_x", t);
     }
     {
         Timer timer;
+        OrbitalVector dOrbs_j(0);
         for (int j = 0; j < Nj; j++) {
             Orbital &orb_j = j_orbs.getOrbital(j);
-            Orbital *yOrb_j = p_y(orb_j);
-            for (int i = 0; i < Ni; i++) {
-                Orbital &orb_i = i_orbs.getOrbital(i);
-                Orbital *yOrb_i = p_y(orb_i);
-                T_y(i,j) = yOrb_i->dot(*yOrb_j);
-                delete yOrb_i;
-            }
-            delete yOrb_j;
+            Orbital *dOrb_j = p_y(orb_j);
+            dOrbs_j.push_back(*dOrb_j);
         }
+        for (int i = 0; i < Ni; i++) {
+            Orbital &orb_i = i_orbs.getOrbital(i);
+            Orbital *dOrb_i = p_y(orb_i);
+            for (int j = 0; j < Nj; j++) {
+                Orbital &dOrb_j = dOrbs_j.getOrbital(j);
+                T_y(i,j) = dOrb_i->dot(dOrb_j);
+            }
+            delete dOrb_i;
+        }
+        dOrbs_j.clear(true);
         timer.stop();
         double t = timer.getWallTime();
         TelePrompter::printDouble(1, "T_y", t);
     }
     {
         Timer timer;
+        OrbitalVector dOrbs_j(0);
         for (int j = 0; j < Nj; j++) {
             Orbital &orb_j = j_orbs.getOrbital(j);
-            Orbital *zOrb_j = p_z(orb_j);
-            for (int i = 0; i < Ni; i++) {
-                Orbital &orb_i = i_orbs.getOrbital(i);
-                Orbital *zOrb_i = p_z(orb_i);
-                T_z(i,j) = zOrb_i->dot(*zOrb_j);
-                delete zOrb_i;
-            }
-            delete zOrb_j;
+            Orbital *dOrb_j = p_z(orb_j);
+            dOrbs_j.push_back(*dOrb_j);
         }
+        for (int i = 0; i < Ni; i++) {
+            Orbital &orb_i = i_orbs.getOrbital(i);
+            Orbital *dOrb_i = p_z(orb_i);
+            for (int j = 0; j < Nj; j++) {
+                Orbital &dOrb_j = dOrbs_j.getOrbital(j);
+                T_z(i,j) = dOrb_i->dot(dOrb_j);
+            }
+            delete dOrb_i;
+        }
+        dOrbs_j.clear(true);
         timer.stop();
         double t = timer.getWallTime();
         TelePrompter::printDouble(1, "T_z", t);

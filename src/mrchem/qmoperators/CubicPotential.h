@@ -1,5 +1,4 @@
-#ifndef CUBICPOTENTIAL_H
-#define CUBICPOTENTIAL_H
+#pragma once
 
 #include "NuclearPotential.h"
 
@@ -34,4 +33,3 @@ public:
     }
 };
 
-#endif // CUBICPOTENTIAL_H

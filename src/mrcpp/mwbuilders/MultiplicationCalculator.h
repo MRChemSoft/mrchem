@@ -1,5 +1,4 @@
-#ifndef MULTIPLICATIONCALCULATOR_H
-#define MULTIPLICATIONCALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 #include "FunctionTreeVector.h"
@@ -42,4 +41,3 @@ private:
     FunctionTreeVector<D> *prod_vec;
 };
 
-#endif // MULTIPLICATIONCALCULATOR_H

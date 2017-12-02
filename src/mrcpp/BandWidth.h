@@ -1,13 +1,8 @@
 /*
  * BandWidth.h
- *
- *  Created: Jonas, Jan 22, 2010
- *  Revised: Stig,  Apr 22, 2016
- *
  */
 
-#ifndef BANDWIDTH_H
-#define BANDWIDTH_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -91,4 +86,3 @@ private:
     Eigen::MatrixXi widths; /// column 5 stores max width at depth
 };
 
-#endif /* BANDWIDTH_H */

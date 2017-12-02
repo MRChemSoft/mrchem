@@ -1,5 +1,4 @@
-#ifndef NUCLEARFUNCTION_H
-#define NUCLEARFUNCTION_H
+#pragma once
 
 #include <vector>
 
@@ -32,4 +31,3 @@ protected:
     std::vector<double> z_coords;
 };
 
-#endif // NUCLEARFUNCTION_H

@@ -1,14 +1,9 @@
 /**
  *
- * \date Jun 7, 2009
- * \author Jonas Juselius <jonas.juselius@uit.no> \n
- *         CTCC, University of Tromsø
- *
  *  Base class for Gaussian type functions
  */
 
-#ifndef GAUSSIAN_H_
-#define GAUSSIAN_H_
+#pragma once
 
 #include <iostream>
 #include <cmath>
@@ -108,4 +103,3 @@ protected:
     bool isZeroOnInterval(const double *a, const double *b) const;
 };
 
-#endif /* GAUSSIAN_H_ */

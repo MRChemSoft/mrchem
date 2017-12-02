@@ -1,5 +1,4 @@
-#ifndef HYPERFINECOUPLING_H
-#define HYPERFINECOUPLING_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -63,4 +62,3 @@ protected:
     Eigen::MatrixXd spin_term;
 };
 
-#endif // HYPERFINECOUPLING_H

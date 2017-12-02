@@ -1,5 +1,4 @@
-#ifndef TREEADAPTOR_H
-#define TREEADAPTOR_H
+#pragma once
 
 #include "mrcpp_declarations.h"
 #include "TelePrompter.h"
@@ -33,4 +32,3 @@ protected:
     virtual bool splitNode(const MWNode<D> &node) const { return false; }
 };
 
-#endif // TREEADAPTOR_H

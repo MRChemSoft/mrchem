@@ -1,5 +1,4 @@
-#ifndef QUADRATICPOTENTIAL_H
-#define QUADRATICPOTENTIAL_H
+#pragma once
 
 #include "NuclearPotential.h"
 
@@ -34,4 +33,3 @@ public:
     }
 };
 
-#endif // QUADRATICPOTENTIAL_H

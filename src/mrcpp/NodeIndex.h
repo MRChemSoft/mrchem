@@ -1,17 +1,10 @@
 /*
- *
- *
- *  \date Oct 7, 2009
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
- *
  * \breif Simple storage class for scale and translation indexes.
  * The usefulness of the class becomes evident when examining
  * the parallel algorithms for projection & friends.
  */
 
-#ifndef NODEINDEX_H_
-#define NODEINDEX_H_
+#pragma once
 
 #include <iostream>
 
@@ -161,4 +154,3 @@ public:
     }
 };
 
-#endif /* NODEINDEX_H_ */

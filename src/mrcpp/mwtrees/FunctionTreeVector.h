@@ -1,5 +1,4 @@
-#ifndef FUNCTIONTREEVECTOR_H
-#define FUNCTIONTREEVECTOR_H
+#pragma once
 
 #include <vector>
 
@@ -73,4 +72,3 @@ protected:
     std::vector<FunctionTree<D> *> funcs;
 };
 
-#endif // FUNCTIONTREEVECTOR_H

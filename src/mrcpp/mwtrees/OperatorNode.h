@@ -1,5 +1,4 @@
-#ifndef OPERATORNODE_H
-#define OPERATORNODE_H
+#pragma once
 
 #include "MWNode.h"
 #include "OperatorTree.h"
@@ -44,4 +43,3 @@ protected:
     }
 };
 
-#endif // OPERATORNODE_H

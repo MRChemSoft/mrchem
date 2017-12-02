@@ -10,15 +10,16 @@ Welcome to MRChem's documentation!
 MRChem is a numerical real-space code for molecular
 electronic structure calculations within the self-consistent field (SCF)
 approximations of quantum chemistry (Hartree-Fock and Density Functional
-Theory). The code is divided in two main parts: the MultiResolution
-Computation Program Package (MRCPP), which is a general purpose numerical
+Theory). The code is divided in two main parts: the `MultiResolution
+Computation Program Package <https://mrcpp.readthedocs.io/en/latest>`_ (MRCPP),
+which is a general purpose numerical
 mathematics library based on multiresolution analysis and the multiwavelet
 basis which provide low-scaling algorithms as well as rigorous error control
 in numerical computations, and the MultiResolution Chemistry (MRChem) program
 that uses the functionalities of MRCPP for computational chemistry applications.
 
-The code is being developed at the `Centre for Theoretical and Computational
-Chemistry <http://www.ctcc.no/>`_ (CTCC) at
+The code is being developed at the `Hylleraas Centre for Quantum Molecular
+Sciences <http://www.ctcc.no/>`_ at
 `UiT - The Arctic University of Norway <http://en.uit.no>`_.
 
 --------------------------------------------------------------------------------
@@ -70,6 +71,5 @@ Upcoming features:
    :maxdepth: 2
 
    installation
-   mrcpp_api
    mrchem_manual
-
+   code_reference/classes-and-functions

@@ -1,5 +1,4 @@
-#ifndef ABGVOPERATOR_H
-#define ABGVOPERATOR_H
+#pragma once
 
 #include "DerivativeOperator.h"
 #include "TreeBuilder.h"
@@ -28,7 +27,7 @@ protected:
         ABGVCalculator calculator(basis, a, b);
         BandWidthAdaptor adaptor(bw, max_scale);
 
-        OperatorTree *o_tree = new OperatorTree(this->oper_mra, MachineZero, MaxAllocOperNodes);
+        OperatorTree *o_tree = new OperatorTree(this->oper_mra, MachineZero);
         builder.build(*o_tree, calculator, adaptor, -1);
 
         Timer trans_t;
@@ -43,4 +42,3 @@ protected:
     }
 };
 
-#endif // ABGVOPERATOR_H

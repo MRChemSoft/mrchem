@@ -6,8 +6,7 @@
  *
  * \breif Maximization of nonlinear functional.
  */
-#ifndef NONLINEARMAXIMIZER_H
-#define NONLINEARMAXIMIZER_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Eigenvalues>
@@ -30,4 +29,3 @@ protected:
     virtual void do_step(Eigen::VectorXd step){ }
 };
 
-#endif //NONLINEARMAXIMIZER_H

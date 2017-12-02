@@ -1,5 +1,4 @@
-#ifndef HYDROGENICFUNCTION_H
-#define HYDROGENICFUNCTION_H
+#pragma once
 
 #include <cmath>
 
@@ -173,4 +172,3 @@ protected:
     AngularFunction Y;
 };
 
-#endif // HYDROGENICFUNCTION_H

@@ -1,5 +1,4 @@
-#ifndef LINEARRESPONSESOLVER_H
-#define LINEARRESPONSESOLVER_H
+#pragma once
 
 #include "SCF.h"
 
@@ -49,19 +48,12 @@ protected:
                               OrbitalVector *dPhi_n, 
                               Eigen::MatrixXd *F, 
                               bool adjoint);
-    virtual Orbital* getHelmholtzArgument(int i,
-                                          Eigen::MatrixXd &F,
-                                          OrbitalVector &x,
-                                          bool adjoint);
-    virtual Orbital* getHelmholtzArgument_1(Orbital &phi_i) { NOT_IMPLEMENTED_ABORT; }
-    virtual Orbital* getHelmholtzArgument_2(int i,
-					  int* OrbsIx,
-                                          Eigen::MatrixXd &F,
-                                          OrbitalVector &phi,
-					  Orbital* part_1,
-					  double coef_part1,
-					  Orbital &phi_i,
-                                          bool adjoint) { NOT_IMPLEMENTED_ABORT; }
+
+    OrbitalVector *setupHelmholtzArguments(FockOperator &fock,
+                                           const Eigen::MatrixXd &M,
+                                           OrbitalVector &phi,
+                                           bool adjoint = false,
+                                           bool clearFock = false);
 
     void printProperty() const;
 
@@ -71,4 +63,3 @@ protected:
     double calcPropertyError() const;
 };
 
-#endif // LINEARSTATESOLVER_H

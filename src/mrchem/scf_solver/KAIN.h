@@ -1,5 +1,4 @@
-#ifndef KAIN_H
-#define KAIN_H
+#pragma once
 
 #include "Accelerator.h"
 
@@ -27,4 +26,3 @@ protected:
                         Eigen::MatrixXd *dF);
 };
 
-#endif // KAIN_H

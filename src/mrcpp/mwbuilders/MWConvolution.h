@@ -1,5 +1,4 @@
-#ifndef MWCONVOLUTION_H
-#define MWCONVOLUTION_H
+#pragma once
 
 #include "TreeBuilder.h"
 #include "WaveletAdaptor.h"
@@ -53,4 +52,3 @@ protected:
     int maxScale;
 };
 
-#endif // MWCONVOLUTION_H

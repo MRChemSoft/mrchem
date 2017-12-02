@@ -1,5 +1,4 @@
-#ifndef ORBITALVECTOR_H
-#define ORBITALVECTOR_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -7,6 +6,7 @@
 #include <Eigen/Eigenvalues>
 
 #include <vector>
+using std::vector;
 
 #include "Orbital.h"
 
@@ -16,21 +16,19 @@ public:
     OrbitalVector(int n_alpha, int n_beta);
     OrbitalVector(int ne, int mult, bool rest);
     OrbitalVector(const OrbitalVector &orb_set);
-    OrbitalVector& operator=(const OrbitalVector &orb_set);
+    OrbitalVector& operator=(const OrbitalVector &orb_set) { NOT_IMPLEMENTED_ABORT; }
     virtual ~OrbitalVector();
 
+    void deepCopy(OrbitalVector &inp);
+    void shallowCopy(const OrbitalVector &inp);
+
     void push_back(int n_orbs, int occ, int spin);
-    void push_back(Orbital& Orb);
+    void push_back(Orbital &orb);
     void pop_back(bool free = true);
     void clear(bool free = true);
     void clearVec(bool free = true);
 
     void normalize();
-
-    Eigen::MatrixXcd calcOverlapMatrix();
-    Eigen::MatrixXcd calcOverlapMatrix(OrbitalVector &ket);
-    Eigen::MatrixXcd calcOverlapMatrix_P(OrbitalVector &ket);
-    Eigen::MatrixXcd calcOverlapMatrix_P_H(OrbitalVector &ket);
 
     int size() const { return this->orbitals.size(); }
     int getNOccupied() const;
@@ -66,11 +64,15 @@ public:
 
     int printTreeSizes() const;
 
-    void send_OrbVec(int dest, int tag, int* OrbsIx, int start, int maxcount);
-    void Isend_OrbVec(int dest, int tag, int* OrbsIx, int start, int maxcount);
-    void Rcv_OrbVec(int source, int tag, int* OrbsIx, int& workOrbVecIx);
-    void getOrbVecChunk(int* myOrbsIx, OrbitalVector &rcvOrbs, int* rcvOrbsIx, int size, int& iter0);
-    void getOrbVecChunk_sym(int* myOrbsIx, OrbitalVector &rcvOrbs, int* rcvOrbsIx, int size, int& iter0);
+    void send_OrbVec(int dest, int tag, vector<int> &orbsIx, int start, int maxcount);
+#ifdef HAVE_MPI
+    void Isend_OrbVec(int dest, int tag, vector<int> &orbsIx, int start, int maxcount, MPI_Request& request);
+#endif
+    void Rcv_OrbVec(int source, int tag, int *orbsIx, int& workOrbVecIx);
+    void getOrbVecChunk(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs, int* rcvOrbsIx, int size, int& iter0, int maxOrbs_in=-1, int workIx=0);
+    void getOrbVecChunk_sym(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs, int* rcvOrbsIx, int size, int& iter0, int* sndtoMPI=0, int* sndOrbIx=0, int maxOrbs_in=-1, int workIx=0);
+
+    bool inUse=false;
 
     friend std::ostream& operator<<(std::ostream &o, OrbitalVector &orb_set) {
         int oldPrec = TelePrompter::setPrecision(15);
@@ -103,4 +105,3 @@ protected:
     std::vector<Orbital *> orbitals;
 };
 
-#endif // ORBITALVECTOR_H

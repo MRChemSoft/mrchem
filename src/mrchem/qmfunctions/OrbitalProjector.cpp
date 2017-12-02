@@ -66,7 +66,7 @@ OrbitalVector* OrbitalProjector::operator()(const Nuclei &nucs) {
                     Orbital &phi_i = phi->getOrbital(totOrbs);
 
                     HydrogenicFunction h_func(n, l, m, Z, R);
-		    if (MPI_rank == nOrbs%MPI_size) {
+		    if (mpiOrbRank == nOrbs%mpiOrbSize) {
                         phi_i.allocReal();
                         this->project(phi_i.real(), h_func);
                         printout(0, setw(5) << totOrbs);
@@ -103,7 +103,7 @@ void OrbitalProjector::operator()(OrbitalVector &orbs,
         Orbital &mwOrb = orbs.getOrbital(i);
         GaussExp<3> &gtOrb = moExp->getOrbital(i);
         mwOrb.clear(true);
-	if (MPI_rank == i%MPI_size) {	
+	if (mpiOrbRank == i%mpiOrbSize) {	
             mwOrb.allocReal();
             this->project(mwOrb.real(), gtOrb);
             printout(0, setw(5) << i);

@@ -1,5 +1,4 @@
-#ifndef SCFDRIVER_H
-#define SCFDRIVER_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -264,5 +263,3 @@ protected:
 
     void extendRotationMatrix(const OrbitalVector &orbs, Eigen::MatrixXd &O);
 };
-
-#endif

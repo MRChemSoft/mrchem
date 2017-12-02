@@ -1,5 +1,4 @@
-#ifndef SCFENERGY_H
-#define SCFENERGY_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -75,4 +74,3 @@ protected:
     double E_xc;
 };
 
-#endif // SCFENERGY_H

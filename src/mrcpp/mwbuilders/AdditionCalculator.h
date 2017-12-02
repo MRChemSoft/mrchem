@@ -1,5 +1,4 @@
-#ifndef ADDITIONCALCULATOR_H
-#define ADDITIONCALCULATOR_H
+#pragma once
 
 #include "TreeCalculator.h"
 #include "FunctionTreeVector.h"
@@ -37,4 +36,3 @@ private:
     FunctionTreeVector<D> *sum_vec;
 };
 
-#endif // ADDITIONCALCULATOR_H

@@ -1,5 +1,4 @@
-#ifndef OPERATORADAPTOR_H
-#define OPERATORADAPTOR_H
+#pragma once
 
 #include "WaveletAdaptor.h"
 
@@ -29,4 +28,3 @@ protected:
     }
 };
 
-#endif // OPERATORADAPTOR_H

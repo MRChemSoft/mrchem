@@ -1,5 +1,4 @@
-#ifndef H_B_SPIN_H
-#define H_B_SPIN_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "SpinOperator.h"
@@ -24,5 +23,4 @@ protected:
     }
 };
 
-#endif // H_E_DIP_H
 

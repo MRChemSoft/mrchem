@@ -1,5 +1,4 @@
-#ifndef QMOPERATOREXP_H
-#define QMOPERATOREXP_H
+#pragma once
 
 #include <vector>
 #include <complex>
@@ -104,5 +103,4 @@ inline QMOperatorExp operator-(QMOperatorExp A, QMOperatorExp B) {
     return result;
 }
 
-#endif // QMOPERATOREXP_H
 

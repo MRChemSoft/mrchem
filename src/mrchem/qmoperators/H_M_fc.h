@@ -1,5 +1,4 @@
-#ifndef H_M_FC_H
-#define H_M_FC_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "DeltaOperator.h"
@@ -30,5 +29,4 @@ protected:
     }
 };
 
-#endif // H_M_PSO_H
 

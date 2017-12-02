@@ -1,5 +1,4 @@
-#ifndef DERIVATIVECONVOLUTION_H
-#define DERIVATIVECONVOLUTION_H
+#pragma once
 
 #include "ConvolutionOperator.h"
 #include "GridGenerator.h"
@@ -21,4 +20,3 @@ public:
     virtual ~DerivativeConvolution() { }
 };
 
-#endif // DERIVATIVECONVOLUTION_H

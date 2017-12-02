@@ -1,5 +1,4 @@
-#ifndef ANGULARMOMENTUMOPERATOR_H
-#define ANGULARMOMENTUMOPERATOR_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "PositionOperator.h"
@@ -32,4 +31,3 @@ protected:
     }
 };
 
-#endif // ANGULARMOMENTUMOPERATOR_H

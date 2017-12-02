@@ -1,5 +1,4 @@
-#ifndef MAGNETIZABILITY_H
-#define MAGNETIZABILITY_H
+#pragma once
 
 #pragma GCC system_header
 #include <Eigen/Core>
@@ -76,4 +75,3 @@ protected:
     Eigen::MatrixXd paramagnetic;
 };
 
-#endif // MAGNETIZABILITY_H

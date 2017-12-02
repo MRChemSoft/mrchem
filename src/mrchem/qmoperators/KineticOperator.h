@@ -1,5 +1,4 @@
-#ifndef KINETICOPERATOR_H
-#define KINETICOPERATOR_H
+#pragma once
 
 #include "QMTensorOperator.h"
 #include "MomentumOperator.h"
@@ -34,4 +33,3 @@ protected:
     }
 };
 
-#endif // KINETICOPERATOR_H

@@ -1,5 +1,4 @@
-#ifndef EIGEN_DISABLE_WARNINGS_H_
-#define EIGEN_DISABLE_WARNINGS_H_
+#pragma once
 
 // Disable obnoxious warnings from Eigen headers
 #if defined __INTEL_COMPILER
@@ -18,4 +17,3 @@
 //#pragma clang diagnostic ignored "-Wconstant-logical-operand"
 #endif
 
-#endif // EIGEN_DISABLE_WARNINGS_H_
