@@ -5,6 +5,11 @@
 using namespace std;
 using namespace Eigen;
 
+/** \brief creator 
+ *
+ * Initializes some parameters in the xcfun library
+ *
+ */
 XCFunctional::XCFunctional(bool s, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
@@ -24,6 +29,10 @@ void XCFunctional::setFunctional(const string &name, double coef) {
     xc_set_param(this->functional, param, coef);
 }
 
+/** \brief Obtains the parametrization of the functional based from
+ * its name/keyword
+ *
+ */
 int XCFunctional::getParamFromName(const string &name) {
     int param = -1;
     if (name == "SLATERX") {

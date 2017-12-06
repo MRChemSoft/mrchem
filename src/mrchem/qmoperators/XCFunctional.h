@@ -5,6 +5,16 @@
 
 #include "xcfun.h"
 
+/** 
+ *  \class XCPotential
+ *  \brief Compute XC functional with XCFun
+ *
+ *  Interface class for the XCFun library
+ *
+ *  \author Stig Rune Jensen
+ *  \date 2015
+ *  
+ */
 class XCFunctional {
 public:
     XCFunctional(bool s, double thrs = 0.0);
@@ -23,10 +33,10 @@ public:
     void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
 
 private:
-    bool spin;
-    double cutoff;
-    xc_functional functional;
+    bool spin;                 ///< Spin polarization
+    double cutoff;             ///< Below the cutoff value, the density will be considered zero
+    xc_functional functional;  ///< The functional in the XCFun library (class from xcfun library)
 
-    int getParamFromName(const std::string &name);
+    int getParamFromName(const std::string &name); 
 };
 
