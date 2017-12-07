@@ -11,6 +11,14 @@ QMPotential
    :protected-members:
    :private-members:
 
+XCFunctional
+------------
+.. doxygenclass:: XCFunctional
+   :project: MRChem
+   :members:
+   :protected-members:
+   :private-members:
+
 XCOperator
 ----------
 .. doxygenclass:: XCOperator

@@ -151,14 +151,14 @@ int XCFunctional::getParamFromName(const string &name) {
     return param;
 }
 
-/** Computes the alpha and beta exchange-correlation potentials
- * from the xcfun output functions. For LDA's these are the second
- * and third output functions, respectively. For GGA's the potentials
- * must be computed through
- * \f$ v_{xc}^\sigma = \frac{\partial F_{xc}}{\partial \rho^\sigma(r)}
- *  - \nabla\cdot\frac{\partial F_{xc}}{\partial(\nabla\rho^\sigma)} \f$
+/** \breif Evaluates XC functional and derivatives
  *
- * XCFunctional output:
+ * Computes the alpha and beta exchange-correlation functionals and
+ * their derivatives.  The electronic density (total/alpha/beta) are
+ * given as input. Results are then stored in the xcfun output
+ * functions. Higher order derivatives can be computed changing the parameter k. 
+ *
+ * XCFunctional output (with k=1):
  *
  * LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho}\right) \f$
  *
@@ -183,6 +183,7 @@ int XCFunctional::getParamFromName(const string &name) {
  *  \right) \f$
  */
 
+ */
 void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     if (inp.cols() != getInputLength()) MSG_ERROR("Invalid input");
 

@@ -80,8 +80,11 @@ void XCPotential::calcPotential() {
     TelePrompter::printTree(0, "XC potential", n, t);
 }
 
-/** \brief Computes the LDA part of the XC potential
+/** \brief Driver for the the LDA part of the XC potential
  *  
+ * For LDA functionals it suffices to compute the first derivative of
+ * the functional with respect to the density. Theya re are the second
+ * and third output functions (alpha/beta) in the XCFunctional driver.
  */
 void XCPotential::calcPotentialLDA(int spin) {
     if (spin == Density::Total) {
@@ -89,13 +92,13 @@ void XCPotential::calcPotentialLDA(int spin) {
         this->setReal(this->xcOutput[1]);
         this->xcOutput[1] = 0;
     } else if (spin == Density::Alpha) {
-        //if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        //this->potential[1].setReal(this->xcOutput[1]);
-        //this->xcOutput[1] = 0;
+        if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
+        this->potential[1].setReal(this->xcOutput[1]);
+        this->xcOutput[1] = 0;
     } else if (spin == Density::Beta) {
-        //if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        //this->potential[2].setReal(this->xcOutput[2]);
-        //this->xcOutput[2] = 0;
+        if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
+        this->potential[2].setReal(this->xcOutput[2]);
+        this->xcOutput[2] = 0;
     } else {
         MSG_FATAL("Invalid spin");
     }
@@ -137,48 +140,46 @@ void XCPotential::calcPotentialGGA(int spin) {
         dRho_b.clear();
     }
     if (spin == Density::Alpha) {
-        NOT_IMPLEMENTED_ABORT;
-        //if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        //if (this->xcOutput[3] == 0) MSG_ERROR("Invalid XC output");
-        //if (this->xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
-        //xc_funcs.push_back(this->xcOutput[1]);
-        //xc_funcs.push_back(this->xcOutput[3]);
-        //xc_funcs.push_back(this->xcOutput[4]);
-        //dRho_a.push_back(&rho_x.alpha());
-        //dRho_a.push_back(&rho_y.alpha());
-        //dRho_a.push_back(&rho_z.alpha());
-        //dRho_b.push_back(&rho_x.beta());
-        //dRho_b.push_back(&rho_y.beta());
-        //dRho_b.push_back(&rho_z.beta());
+        if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
+        if (this->xcOutput[3] == 0) MSG_ERROR("Invalid XC output");
+        if (this->xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
+        xc_funcs.push_back(this->xcOutput[1]);
+        xc_funcs.push_back(this->xcOutput[3]);
+        xc_funcs.push_back(this->xcOutput[4]);
+        dRho_a.push_back(&rho_x.alpha());
+        dRho_a.push_back(&rho_y.alpha());
+        dRho_a.push_back(&rho_z.alpha());
+        dRho_b.push_back(&rho_x.beta());
+        dRho_b.push_back(&rho_y.beta());
+        dRho_b.push_back(&rho_z.beta());
 
-        //FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        //this->potential[1].setReal(V);
+        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
+        this->potential[1].setReal(V);
 
-        //xc_funcs.clear();
-        //dRho_a.clear();
-        //dRho_b.clear();
+        xc_funcs.clear();
+        dRho_a.clear();
+        dRho_b.clear();
     }
     if (spin == Density::Beta) {
-        NOT_IMPLEMENTED_ABORT;
-        //if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        //if (this->xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
-        //if (this->xcOutput[5] == 0) MSG_ERROR("Invalid XC output");
-        //xc_funcs.push_back(this->xcOutput[2]);
-        //xc_funcs.push_back(this->xcOutput[5]);
-        //xc_funcs.push_back(this->xcOutput[4]);
-        //dRho_a.push_back(&rho_x.beta());
-        //dRho_a.push_back(&rho_y.beta());
-        //dRho_a.push_back(&rho_z.beta());
-        //dRho_b.push_back(&rho_x.alpha());
-        //dRho_b.push_back(&rho_y.alpha());
-        //dRho_b.push_back(&rho_z.alpha());
+        if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
+        if (this->xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
+        if (this->xcOutput[5] == 0) MSG_ERROR("Invalid XC output");
+        xc_funcs.push_back(this->xcOutput[2]);
+        xc_funcs.push_back(this->xcOutput[5]);
+        xc_funcs.push_back(this->xcOutput[4]);
+        dRho_a.push_back(&rho_x.beta());
+        dRho_a.push_back(&rho_y.beta());
+        dRho_a.push_back(&rho_z.beta());
+        dRho_b.push_back(&rho_x.alpha());
+        dRho_b.push_back(&rho_y.alpha());
+        dRho_b.push_back(&rho_z.alpha());
 
-        //FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        //this->potential[2].setReal(V);
+        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
+        this->potential[2].setReal(V);
 
-        //xc_funcs.clear();
-        //dRho_a.clear();
-        //dRho_b.clear();
+        xc_funcs.clear();
+        dRho_a.clear();
+        dRho_b.clear();
     }
 }
 

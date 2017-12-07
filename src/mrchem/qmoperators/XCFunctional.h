@@ -6,7 +6,7 @@
 #include "xcfun.h"
 
 /** 
- *  \class XCPotential
+ *  \class XCFunctional
  *  \brief Compute XC functional with XCFun
  *
  *  Interface class for the XCFun library
@@ -35,7 +35,7 @@ public:
 private:
     bool spin;                 ///< Spin polarization
     double cutoff;             ///< Below the cutoff value, the density will be considered zero
-    xc_functional functional;  ///< The functional in the XCFun library (class from xcfun library)
+    xc_functional functional;  ///< The functional in the XCFun library (struct from xcfun library)
 
     int getParamFromName(const std::string &name); 
 };
