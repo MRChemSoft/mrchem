@@ -186,7 +186,7 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     if (inp.cols() != getInputLength()) MSG_ERROR("Invalid input");
 
     int nInp = getInputLength();
-    int nOut = getOutputLength(k);
+    int nOut = getOutputLength();
     int nPts = inp.rows();
     out = MatrixXd::Zero(nPts, nOut);
 

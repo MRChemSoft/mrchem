@@ -24,10 +24,12 @@ public:
     void setFunctional(const std::string &name, double coef = 1.0);
 
     int getInputLength() const { return xc_input_length(this->functional); }
-    int getOutputLength(int k) const { return xc_output_length(this->functional, k); }
+    int getOutputLength() const { return xc_output_length(this->functional); }
 
-    bool isLDA() const { return (xc_get_type(this->functional) == XC_LDA); }
-    bool isGGA() const { return (xc_get_type(this->functional) == XC_GGA); }
+    bool isLDA() const { return (!(this->isGGA() && this->isMetaGGA())); }
+    bool isGGA() const { return (xc_is_gga(this->functional)); }
+    bool isMetaGGA() const { return (xc_is_metagga(this->functional)); }
+    
     bool isSpinSeparated() const { return this->spin; }
 
     void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;

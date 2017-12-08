@@ -208,7 +208,7 @@ void XCOperator::setupXCOutput() {
     GridGenerator<3> grid(this->max_scale);
 
     // Alloc output trees
-    int nOut = this->functional->getOutputLength(this->order);
+    int nOut = this->functional->getOutputLength();
     this->xcOutput = allocPtrArray<FunctionTree<3> >(nOut);
 
     // Copy grid from input density
@@ -222,7 +222,7 @@ void XCOperator::setupXCOutput() {
 void XCOperator::clearXCOutput() {
     if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
 
-    int nOut = this->functional->getOutputLength(this->order);
+    int nOut = this->functional->getOutputLength();
     this->xcOutput = deletePtrArray<FunctionTree<3> >(nOut, &this->xcOutput);
 }
 
@@ -234,7 +234,7 @@ void XCOperator::evaluateXCFunctional() {
     println(2, "Evaluating");
 
     int nInp = this->functional->getInputLength();
-    int nOut = this->functional->getOutputLength(this->order);
+    int nOut = this->functional->getOutputLength();
 
 #pragma omp parallel firstprivate(nInp, nOut)
 {
@@ -377,7 +377,7 @@ int XCOperator::printTreeSizes() const {
     int nOutput = 0;
     int outTrees = 0;
     if (this->xcOutput != 0) {
-        int nFuncs = this->functional->getOutputLength(this->order);
+        int nFuncs = this->functional->getOutputLength();
         for (int i = 0; i < nFuncs; i++) {
             if (this->xcOutput[i] != 0) {
                 nOutput += this->xcOutput[i]->getNNodes();
