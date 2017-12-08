@@ -28,10 +28,14 @@ target_link_libraries(mrcpp
     mwtrees
     mwoperators
     mwbuilders
-    rt
 )
 
-install(TARGETS mrcpp
+if (UNIX AND NOT APPLE)
+    target_link_libraries(mrcpp rt)
+endif()
+
+
+Install(TARGETS mrcpp
         ARCHIVE DESTINATION lib
         CONFIGURATIONS Debug-devel Release-devel
         )

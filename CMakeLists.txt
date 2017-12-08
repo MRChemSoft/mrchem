@@ -41,5 +41,6 @@ include(mw_filters)
 include(main)
 include(feature_summary)
 include(autocmake_save_flags)
+include(FindLibrt)
 
 
