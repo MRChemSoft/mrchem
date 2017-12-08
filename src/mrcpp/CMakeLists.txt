@@ -30,11 +30,6 @@ target_link_libraries(mrcpp
     mwbuilders
 )
 
-if (UNIX AND NOT APPLE)
-    target_link_libraries(mrcpp rt)
-endif()
-
-
 Install(TARGETS mrcpp
         ARCHIVE DESTINATION lib
         CONFIGURATIONS Debug-devel Release-devel
