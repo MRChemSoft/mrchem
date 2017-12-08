@@ -182,8 +182,6 @@ int XCFunctional::getParamFromName(const string &name) {
  *  \frac{\partial F_{xc}}{\partial \rho_z^\beta}
  *  \right) \f$
  */
-
- */
 void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     if (inp.cols() != getInputLength()) MSG_ERROR("Invalid input");
 

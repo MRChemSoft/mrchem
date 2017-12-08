@@ -93,11 +93,11 @@ void XCPotential::calcPotentialLDA(int spin) {
         this->xcOutput[1] = 0;
     } else if (spin == Density::Alpha) {
         if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        this->potential[1].setReal(this->xcOutput[1]);
+        this->setReal(this->xcOutput[1]);
         this->xcOutput[1] = 0;
     } else if (spin == Density::Beta) {
         if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        this->potential[2].setReal(this->xcOutput[2]);
+        this->setReal(this->xcOutput[2]);
         this->xcOutput[2] = 0;
     } else {
         MSG_FATAL("Invalid spin");
@@ -154,7 +154,7 @@ void XCPotential::calcPotentialGGA(int spin) {
         dRho_b.push_back(&rho_z.beta());
 
         FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        this->potential[1].setReal(V);
+        this->setReal(V);
 
         xc_funcs.clear();
         dRho_a.clear();
@@ -175,7 +175,7 @@ void XCPotential::calcPotentialGGA(int spin) {
         dRho_b.push_back(&rho_z.alpha());
 
         FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        this->potential[2].setReal(V);
+        this->setReal(V);
 
         xc_funcs.clear();
         dRho_a.clear();
