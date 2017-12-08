@@ -30,7 +30,7 @@ target_link_libraries(mrcpp
     mwbuilders
 )
 
-Install(TARGETS mrcpp
+install(TARGETS mrcpp
         ARCHIVE DESTINATION lib
         CONFIGURATIONS Debug-devel Release-devel
         )
