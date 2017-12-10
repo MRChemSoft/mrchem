@@ -39,6 +39,5 @@ private:
     double cutoff;             ///< Below the cutoff value, the density will be considered zero
     xc_functional functional;  ///< The functional in the XCFun library (struct from xcfun library)
 
-    int getParamFromName(const std::string &name); 
 };
 

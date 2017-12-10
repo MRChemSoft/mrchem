@@ -73,7 +73,7 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     for (int i = 0; i < nPts; i++) {
         if (inp(i,0) > this->cutoff) {
             for (int j = 0; j < nInp; j++) iDat[j] = inp(i,j);
-            xc_eval(this->functional, k, iDat, oDat);
+            xc_eval(this->functional, iDat, oDat);
             for (int j = 0; j < nOut; j++) out(i,j) = oDat[j];
         } else {
             for (int j = 0; j < nOut; j++) out(i,j) = 0.0;
