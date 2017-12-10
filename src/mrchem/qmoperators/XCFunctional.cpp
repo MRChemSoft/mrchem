@@ -14,9 +14,9 @@ XCFunctional::XCFunctional(bool s, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
     if (this->spin) {
-        xc_set_mode(this->functional, XC_VARS_AB);
+        xc_set(this->functional, "XC_A_B", 1);
     } else {
-        xc_set_mode(this->functional, XC_VARS_N);
+        xc_set(this->functional, "XC_N", 1);
     }
 }
 
@@ -25,130 +25,7 @@ XCFunctional::~XCFunctional() {
 }
 
 void XCFunctional::setFunctional(const string &name, double coef) {
-    int param = getParamFromName(name);
-    xc_set_param(this->functional, param, coef);
-}
-
-/** \brief Obtains the parametrization of the functional based from
- * its name/keyword
- *
- */
-int XCFunctional::getParamFromName(const string &name) {
-    int param = -1;
-    if (name == "SLATERX") {
-        param = XC_SLATERX;
-    } else if (name == "VWN5C") {
-        param = XC_VWN5C;
-    } else if (name == "BECKEX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BECKEX;
-    } else if (name == "BECKECORRX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BECKECORRX;
-    } else if (name == "BECKESRX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BECKESRX;
-    } else if (name == "OPTX") {
-        MSG_WARN("Functional not tested");
-        param = XC_OPTX;
-    } else if (name == "LYPC") {
-        MSG_WARN("Functional not tested");
-        param = XC_LYPC;
-    } else if (name == "PBEX") {
-        param = XC_PBEX;
-    } else if (name == "REVPBEX") {
-        MSG_WARN("Functional not tested");
-        param = XC_REVPBEX;
-    } else if (name == "RPBEX") {
-        MSG_WARN("Functional not tested");
-        param = XC_RPBEX;
-    } else if (name == "PBEC") {
-        param = XC_PBEC;
-    } else if (name == "SPBEC") {
-        MSG_WARN("Functional not tested");
-        param = XC_SPBEC;
-    } else if (name == "VWN_PBEC") {
-        MSG_WARN("Functional not tested");
-        param = XC_VWN_PBEC;
-    } else if (name == "LDAERFX") {
-        MSG_WARN("Functional not tested");
-        param = XC_LDAERFX;
-    } else if (name == "LDAERFC") {
-        MSG_WARN("Functional not tested");
-        param = XC_LDAERFC;
-    } else if (name == "LDAERFC_JT") {
-        MSG_WARN("Functional not tested");
-        param = XC_LDAERFC_JT;
-    } else if (name == "KTX") {
-        MSG_WARN("Functional not tested");
-        param = XC_KTX;
-    } else if (name == "TFK") {
-        MSG_WARN("Functional not tested");
-        param = XC_TFK;
-    } else if (name == "PW91X") {
-        MSG_WARN("Functional not tested");
-        param = XC_PW91X;
-    } else if (name == "PW91K") {
-        MSG_WARN("Functional not tested");
-        param = XC_PW91K;
-    } else if (name == "PW92C") {
-        MSG_WARN("Functional not tested");
-        param = XC_PW92C;
-    } else if (name == "MO5X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05X;
-    } else if (name == "MO5X2X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05X2X;
-    } else if (name == "MO6X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06X;
-    } else if (name == "MO6X2X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06X2X;
-    } else if (name == "MO6LX") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06LX;
-    } else if (name == "MO6HFX") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06HFX;
-    } else if (name == "BRX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BRX;
-    } else if (name == "MO5X2C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05X2C;
-    } else if (name == "MO5C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05C;
-    } else if (name == "MO6C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06C;
-    } else if (name == "MO6HFC") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06HFC;
-    } else if (name == "MO6LC") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06LC;
-    } else if (name == "MO6X2C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06X2C;
-    } else if (name == "TPSSC") {
-        MSG_WARN("Functional not tested");
-        param = XC_TPSSC;
-    } else if (name == "TPSSX") {
-        MSG_WARN("Functional not tested");
-        param = XC_TPSSX;
-    } else if (name == "REVTPSSC") {
-        MSG_WARN("Functional not tested");
-        param = XC_REVTPSSC;
-    } else if (name == "REVTPSSX") {
-        MSG_WARN("Functional not tested");
-        param = XC_REVTPSSX;
-    } else {
-        MSG_ERROR("Invalid functional");
-    }
-    return param;
+    xc_set(this->functional, name.c_str(), coef);
 }
 
 /** \breif Evaluates XC functional and derivatives
@@ -206,3 +83,21 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     delete[] oDat;
 }
 
+
+/*
+  int xc_eval_setup(xc_functional fun,
+		    enum xc_vars vars,
+		    enum xc_mode mode,
+		    int order);
+
+  void xc_eval(xc_functional fun,
+	       const double *density,
+	       double *result);
+
+  void xc_eval_vec(xc_functional fun, int nr_points,
+		   const double *density,
+		   int density_pitch,
+		   double *result,
+		   int result_pitch);
+
+*/
