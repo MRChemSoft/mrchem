@@ -18,6 +18,7 @@ XCFunctional::XCFunctional(bool s, double thrs)
     } else {
         xc_set(this->functional, "XC_N", 1);
     }
+    if(xc_eval_setup(this->functional, XXXXXXXXXXXXXXXXXXX
 }
 
 XCFunctional::~XCFunctional() {
