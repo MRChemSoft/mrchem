@@ -66,9 +66,9 @@ target_link_libraries(mrchem.x
 )
 
 
-if (APPLE)
-    target_link_libraries(mrchem.x stdc++)
-endif()
+#if (APPLE)
+#    target_link_libraries(mrchem.x stdc++)
+#endif()
 
   option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 

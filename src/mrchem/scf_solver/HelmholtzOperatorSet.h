@@ -24,7 +24,7 @@ public:
     double getLambda(int i) const { return this->lambda[i]; }
     Eigen::VectorXd getLambda() const;
     HelmholtzOperator &getOperator(int i);
-    printTreeSizes() const;
+    int printTreeSizes() const;
 
     void operator()(int i, Orbital &out, Orbital &inp);
     void operator()(OrbitalVector &out, OrbitalVector &inp);
