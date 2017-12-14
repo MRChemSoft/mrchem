@@ -18,7 +18,10 @@ XCFunctional::XCFunctional(bool s, double thrs)
     } else {
         xc_set(this->functional, "XC_N", 1);
     }
-    if(xc_eval_setup(this->functional, XXXXXXXXXXXXXXXXXXX
+
+    //LUCA: BAD HACK!!!
+    xc_eval_setup(this->functional,
+                  XC_N, XC_POTENTIAL,1);
 }
 
 XCFunctional::~XCFunctional() {
