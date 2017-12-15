@@ -66,11 +66,7 @@ target_link_libraries(mrchem.x
 )
 
 
-#if (APPLE)
-#    target_link_libraries(mrchem.x stdc++)
-#endif()
-
-  option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
+option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 
 set (MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/bin/mrchem.x)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mrchem.in mrchem)
