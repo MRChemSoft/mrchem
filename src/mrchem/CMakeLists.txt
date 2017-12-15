@@ -65,7 +65,6 @@ target_link_libraries(mrchem.x
     ${BLAS_LIBRARIES}
 )
 
-
 option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 
 set (MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/bin/mrchem.x)
