@@ -13,15 +13,16 @@ using namespace Eigen;
 XCFunctional::XCFunctional(bool s, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
+    /*
     if (this->spin) {
-        xc_set(this->functional, "XC_A_B", 1);
+        xc_set(this->functional, "LDA", 1.0);
     } else {
-        xc_set(this->functional, "XC_N", 1);
+        xc_set(this->functional, "LDA", 1.0);
     }
-
     //LUCA: BAD HACK!!!
     xc_eval_setup(this->functional,
                   XC_N, XC_POTENTIAL,1);
+    */
 }
 
 XCFunctional::~XCFunctional() {
@@ -31,6 +32,22 @@ XCFunctional::~XCFunctional() {
 void XCFunctional::setFunctional(const string &name, double coef) {
     xc_set(this->functional, name.c_str(), coef);
 }
+/*
+  Setup the XC functional for evaluation. In MRChem we use only a subset of the alternatives offered by xcfun.
+  More functinality might be enabled at a later stage.
+ */
+void XCFunctional::evalSetup()
+{
+    unsigned int func_type = this->isGGA(); //only LDA and GGA supported for now
+    unsigned int dens_type = 2 * this->spin; // only total density (no spin) or alpha & beta
+    unsigned int mode_type = 3; // contracted mode only
+    unsigned int laplacian = 0; // no laplacian
+    unsigned int kinetic = 0; // no kinetic energy density
+    unsigned int current = 0; // no current density
+    unsigned int explicit_derivatives = 0; // only gamma-type derivatives now (soon to be changed!)
+    xc_user_eval_setup(this->functional, func_type, dens_type, mode_type, laplacian, kinetic, current, explicit_derivatives);
+}
+    
 
 /** \breif Evaluates XC functional and derivatives
  *
