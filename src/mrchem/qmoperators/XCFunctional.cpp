@@ -30,8 +30,10 @@ XCFunctional::~XCFunctional() {
 }
 
 void XCFunctional::setFunctional(const string &name, double coef) {
-    xc_set(this->functional, name.c_str(), coef);
+    string funcName = "XC_" + name;
+    xc_set(this->functional, funcName.c_str(), coef);
 }
+
 /*
   Setup the XC functional for evaluation. In MRChem we use only a subset of the alternatives offered by xcfun.
   More functinality might be enabled at a later stage.
@@ -103,22 +105,3 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     delete[] iDat;
     delete[] oDat;
 }
-
-
-/*
-  int xc_eval_setup(xc_functional fun,
-		    enum xc_vars vars,
-		    enum xc_mode mode,
-		    int order);
-
-  void xc_eval(xc_functional fun,
-	       const double *density,
-	       double *result);
-
-  void xc_eval_vec(xc_functional fun, int nr_points,
-		   const double *density,
-		   int density_pitch,
-		   double *result,
-		   int result_pitch);
-
-*/
