@@ -38,16 +38,17 @@ void XCFunctional::setFunctional(const string &name, double coef) {
   Setup the XC functional for evaluation. In MRChem we use only a subset of the alternatives offered by xcfun.
   More functinality might be enabled at a later stage.
  */
-void XCFunctional::evalSetup()
+void XCFunctional::evalSetup(const int order)
 {
     unsigned int func_type = this->isGGA(); //only LDA and GGA supported for now
-    unsigned int dens_type = 2 * this->spin; // only total density (no spin) or alpha & beta
-    unsigned int mode_type = 3; // contracted mode only
+    unsigned int dens_type = 1 + this->spin; // only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
+    unsigned int mode_type = 2; // HACK POTENTIAL MODEcontracted mode only
     unsigned int laplacian = 0; // no laplacian
     unsigned int kinetic = 0; // no kinetic energy density
     unsigned int current = 0; // no current density
     unsigned int explicit_derivatives = 0; // only gamma-type derivatives now (soon to be changed!)
-    xc_user_eval_setup(this->functional, func_type, dens_type, mode_type, laplacian, kinetic, current, explicit_derivatives);
+    std::cout << "In evalSetup. Order  " << order << " Dens " << dens_type << " Func " << func_type << std::endl;  
+    xc_user_eval_setup(this->functional, order, func_type, dens_type, mode_type, laplacian, kinetic, current, explicit_derivatives);
 }
     
 
@@ -86,7 +87,8 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     if (inp.cols() != getInputLength()) MSG_ERROR("Invalid input");
 
     int nInp = getInputLength();
-    int nOut = getOutputLength();
+    int nOut = getOutputLength(); // 2^order * n_points
+    
     int nPts = inp.rows();
     out = MatrixXd::Zero(nPts, nOut);
 
@@ -97,6 +99,7 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
         if (inp(i,0) > this->cutoff) {
             for (int j = 0; j < nInp; j++) iDat[j] = inp(i,j);
             xc_eval(this->functional, iDat, oDat);
+            //std::cout << iDat[0] << oDat[0] << std::endl;
             for (int j = 0; j < nOut; j++) out(i,j) = oDat[j];
         } else {
             for (int j = 0; j < nOut; j++) out(i,j) = 0.0;

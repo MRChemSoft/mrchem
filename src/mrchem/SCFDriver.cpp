@@ -386,7 +386,6 @@ void SCFDriver::setup() {
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        xcfun->evalSetup(spin);
         XC = new XCPotential(*xcfun, *phi, ABGV_00);
         if (dft_x_fac > MachineZero) {
             K = new ExchangePotential(*P, *phi, dft_x_fac);

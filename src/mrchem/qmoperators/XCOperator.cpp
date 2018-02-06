@@ -28,6 +28,7 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
     gradient[0].setIsSpinDensity(spin);
     gradient[1].setIsSpinDensity(spin);
     gradient[2].setIsSpinDensity(spin);
+    F.evalSetup(k);
 }
 
 XCOperator::~XCOperator() {

@@ -33,6 +33,7 @@ public:
     bool isSpinSeparated() const { return this->spin; }
 
     void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
+    void evalSetup(const int order);
 
 private:
     bool spin;                 ///< Spin polarization
