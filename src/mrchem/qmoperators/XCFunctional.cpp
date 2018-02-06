@@ -13,16 +13,6 @@ using namespace Eigen;
 XCFunctional::XCFunctional(bool s, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
-    /*
-    if (this->spin) {
-        xc_set(this->functional, "LDA", 1.0);
-    } else {
-        xc_set(this->functional, "LDA", 1.0);
-    }
-    //LUCA: BAD HACK!!!
-    xc_eval_setup(this->functional,
-                  XC_N, XC_POTENTIAL,1);
-    */
 }
 
 XCFunctional::~XCFunctional() {
@@ -30,8 +20,8 @@ XCFunctional::~XCFunctional() {
 }
 
 void XCFunctional::setFunctional(const string &name, double coef) {
-    string funcName = "XC_" + name;
-    xc_set(this->functional, funcName.c_str(), coef);
+    string funcName = name;
+    xc_set(this->functional, name.c_str(), coef);
 }
 
 /*
