@@ -7,6 +7,24 @@ add_custom_target(git-submodule-init
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 
+ExternalProject_Add(submodule-mrcpp
+    DOWNLOAD_COMMAND git submodule update
+    PREFIX ${CMAKE_CURRENT_BINARY_DIR}
+    DOWNLOAD_DIR ${CMAKE_SOURCE_DIR}
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mrcpp
+    BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/mrcpp
+    INSTALL_DIR ${PROJECT_BINARY_DIR}/external
+    CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/external
+                -DCMAKE_BUILD_TYPE=Release
+                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                -DENABLE_OPENMP=${ENABLE_OPENMP}
+                -DENABLE_MPI=${ENABLE_MPI}
+                -DENABLE_TESTS=FALSE
+                -DENABLE_EXAMPLES=FALSE
+    )
+add_dependencies(submodule-mrcpp git-submodule-init)
+add_dependencies(external-modules submodule-mrcpp)
+
 enable_language(C)
 ExternalProject_Add(submodule-libgetkw
     DOWNLOAD_COMMAND git submodule update
