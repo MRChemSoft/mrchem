@@ -1,9 +1,4 @@
-include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp)
-include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwanalytic)
-include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwcore)
-include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwtrees)
-include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwoperators)
-include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwbuilders)
+include_directories (${CMAKE_SOURCE_DIR}/src/mrchem)
 
 add_library(qmfunctions STATIC 
     QMFunction.cpp
@@ -22,11 +17,6 @@ target_link_libraries(qmfunctions
     chemistry
     initial_guess
     mrcpp
-    mwanalytic
-    mwcore
-    mwtrees
-    mwoperators
-    mwbuilders
 )
 
 install(TARGETS qmfunctions

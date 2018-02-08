@@ -4,14 +4,11 @@
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 OrbitalMultiplier::OrbitalMultiplier(double prec, int max_scale)
-    : add(prec, max_scale),
-      mult(prec, max_scale),
-      grid(max_scale) {
+    : multPrec(prec){
 }
 
 void OrbitalMultiplier::setPrecision(double prec) {
-    this->add.setPrecision(prec);
-    this->mult.setPrecision(prec);
+    this->multPrec = prec;
 }
 
 // phi_ab = c * phi_a * phi_b
@@ -39,16 +36,16 @@ void OrbitalMultiplier::calcRealPart(Orbital &phi_ab,
     FunctionTreeVector<3> vec;
     if (phi_a.hasReal() and phi_b.hasReal()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        this->grid(*tree, phi_a.real());
-        this->grid(*tree, phi_b.real());
-        this->mult(*tree, c, phi_a.real(), phi_b.real(), 0);
+        copy_grid(*tree, phi_a.real());
+        copy_grid(*tree, phi_b.real());
+        multiply(multPrec, *tree, c, phi_a.real(), phi_b.real(), 0);
         vec.push_back(1.0, tree);
     }
     if (phi_a.hasImag() and phi_b.hasImag()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        this->grid(*tree, phi_a.imag());
-        this->grid(*tree, phi_b.imag());
-        this->mult(*tree, c, phi_a.imag(), phi_b.imag(), 0);
+        copy_grid(*tree, phi_a.imag());
+        copy_grid(*tree, phi_b.imag());
+        multiply(multPrec, *tree, c, phi_a.imag(), phi_b.imag(), 0);
         vec.push_back(-1.0, tree);
     }
     if (vec.size() == 1) {
@@ -57,8 +54,8 @@ void OrbitalMultiplier::calcRealPart(Orbital &phi_ab,
     }
     if (vec.size() == 2) {
         phi_ab.allocReal();
-        this->grid(phi_ab.real(), vec);
-        this->add(phi_ab.real(), vec, 0);
+        copy_grid(phi_ab.real(), vec);
+        add(multPrec, phi_ab.real(), vec, 0);
         vec.clear(true);
     }
 }
@@ -77,16 +74,16 @@ void OrbitalMultiplier::calcImagPart(Orbital &phi_ab,
     FunctionTreeVector<3> vec;
     if (phi_a.hasReal() and phi_b.hasImag()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        this->grid(*tree, phi_a.real());
-        this->grid(*tree, phi_b.imag());
-        this->mult(*tree, c, phi_a.real(), phi_b.imag(), 0);
+        copy_grid(*tree, phi_a.real());
+        copy_grid(*tree, phi_b.imag());
+        multiply(multPrec, *tree, c, phi_a.real(), phi_b.imag(), 0);
         vec.push_back(1.0, tree);
     }
     if (phi_a.hasImag() and phi_b.hasReal()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        this->grid(*tree, phi_a.imag());
-        this->grid(*tree, phi_b.real());
-        this->mult(*tree, c, phi_a.imag(), phi_b.real(), 0);
+        copy_grid(*tree, phi_a.imag());
+        copy_grid(*tree, phi_b.real());
+        multiply(multPrec, *tree, c, phi_a.imag(), phi_b.real(), 0);
         if (adjoint) {
             vec.push_back(-1.0, tree);
         } else {
@@ -99,8 +96,8 @@ void OrbitalMultiplier::calcImagPart(Orbital &phi_ab,
     }
     if (vec.size() == 2) {
         phi_ab.allocImag();
-        this->grid(phi_ab.imag(), vec);
-        this->add(phi_ab.imag(), vec, 0);
+        copy_grid(phi_ab.imag(), vec);
+        add(multPrec, phi_ab.imag(), vec, 0);
         vec.clear(true);
     }
 }

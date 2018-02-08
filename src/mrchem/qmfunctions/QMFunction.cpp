@@ -1,6 +1,4 @@
 #include "QMFunction.h"
-#include "MWAdder.h"
-#include "GridGenerator.h"
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
@@ -10,21 +8,19 @@ void QMFunction::deepCopy(QMFunction &inp) {
     if (this->hasReal()) MSG_ERROR("Function not empty");
     if (this->hasImag()) MSG_ERROR("Function not empty");
 
-    MWAdder<3> add;
-    GridGenerator<3> grid;
     if (inp.hasReal()) {
         FunctionTreeVector<3> vec;
         vec.push_back(&inp.real());
         this->re = new FunctionTree<3>(inp.real().getMRA());
-        grid(this->real(), vec);
-        add(this->real(), vec);
+        copy_grid(this->real(), vec);
+        add(-1,this->real(), vec);
     }
     if (inp.hasImag()) {
         FunctionTreeVector<3> vec;
         vec.push_back(&inp.imag());
         this->im = new FunctionTree<3>(inp.imag().getMRA());
-        grid(this->imag(), vec);
-        add(this->imag(), vec);
+        copy_grid(this->imag(), vec);
+        add(-1,this->imag(), vec);
     }
 }
 
@@ -79,10 +75,10 @@ complex<double> QMFunction::dot(QMFunction &ket) {
     QMFunction &bra = *this;
     double rDot = 0.0;
     double iDot = 0.0;
-    if (bra.hasReal() and ket.hasReal()) rDot += bra.real().dot(ket.real());
-    if (bra.hasImag() and ket.hasImag()) rDot += bra.imag().dot(ket.imag());
-    if (bra.hasReal() and ket.hasImag()) iDot += bra.real().dot(ket.imag());
-    if (bra.hasImag() and ket.hasReal()) iDot -= bra.imag().dot(ket.real());
+    if (bra.hasReal() and ket.hasReal()) rDot += mrcpp::dot(bra.real(), ket.real());
+    if (bra.hasImag() and ket.hasImag()) rDot += mrcpp::dot(bra.imag(), ket.imag());
+    if (bra.hasReal() and ket.hasImag()) iDot += mrcpp::dot(bra.real(), ket.imag());
+    if (bra.hasImag() and ket.hasReal()) iDot -= mrcpp::dot(bra.imag(), ket.real());
     return complex<double>(rDot, iDot);
 }
 
@@ -92,6 +88,6 @@ void QMFunction::normalize() {
 }
 
 void QMFunction::operator*=(double c) {
-    if (hasReal()) this->real() *= c;
-    if (hasImag()) this->imag() *= c;
+  if (hasReal()) this->real().rescale(c);
+  if (hasImag()) this->imag().rescale(c);
 }

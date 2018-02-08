@@ -1,9 +1,12 @@
 #pragma once
 
-#include "constants.h"
+#include "MRCPP/MWFunctions"
+#include "MRCPP/Parallel"
+#include "MRCPP/Printer"
+
 #include "parallel.h"
 
-template<int D> class FunctionTree;
+using namespace mrcpp;
 
 class Density {
 public:

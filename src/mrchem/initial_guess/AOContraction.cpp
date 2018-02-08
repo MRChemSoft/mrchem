@@ -1,6 +1,8 @@
+#include "MRCPP/Printer"
+
 #include "AOContraction.h"
-#include "GaussExp.h"
-#include "GaussFunc.h"
+
+using namespace mrcpp;
 
 static const int s_gto[][3] = {
     {0, 0, 0}

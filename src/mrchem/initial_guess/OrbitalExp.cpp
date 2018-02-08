@@ -1,14 +1,15 @@
 #include <fstream>
 #include <string>
 
+#include "MRCPP/Printer"
+
 #include "OrbitalExp.h"
 #include "Intgrl.h"
 #include "Nucleus.h"
 #include "AOBasis.h"
-#include "GaussExp.h"
-#include "GaussFunc.h"
 
 using namespace std;
+using namespace mrcpp;
 using namespace Eigen;
 
 OrbitalExp::OrbitalExp(Intgrl &intgrl)

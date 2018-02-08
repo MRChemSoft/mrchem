@@ -107,8 +107,8 @@ void Orbital::send_Orbital(int dest, int tag){
   int count=sizeof(Metadata);
   MPI_Send(&Orbinfo, count, MPI_BYTE, dest, 0, comm);
   
-  if(this->hasReal())Send_SerialTree(&this->real(), Orbinfo.NchunksReal, dest, tag, comm);
-  if(this->hasImag())Send_SerialTree(&this->imag(), Orbinfo.NchunksImag, dest, tag*10000, comm);
+  if(this->hasReal())send_tree(this->real(), dest, tag, comm);
+  if(this->hasImag())send_tree(this->imag(), dest, tag+10000, comm);
   
 #endif
 }
@@ -140,10 +140,11 @@ void Orbital::Isend_Orbital(int dest, int tag, MPI_Request& request){
   }else{Orbinfo.NchunksImag = 0;}
   
   int count=sizeof(Metadata);
-  MPI_Isend(&Orbinfo, count, MPI_BYTE, dest, 0, comm, &request);
+  MPI_Isend(&Orbinfo, count, MPI_BYTE, dest, 0
+	   , comm, &request);
   
-  if(this->hasReal())ISend_SerialTree(&this->real(), Orbinfo.NchunksReal, dest, tag, comm,  request);
-  if(this->hasImag())ISend_SerialTree(&this->imag(), Orbinfo.NchunksImag, dest, tag*10000, comm, request);
+  if(this->hasReal())isend_tree(this->real(), dest, tag, comm,  &request);
+  if(this->hasImag())isend_tree(this->imag(), dest, tag+10000, comm, &request);
   
 }
 #endif
@@ -174,14 +175,14 @@ void Orbital::Rcv_Orbital(int source, int tag){
       //We must have a tree defined for receiving nodes. Define one:
       this->allocReal();
     }
-    Rcv_SerialTree(&this->real(), Orbinfo.NchunksReal, source, tag, comm);}
+    recv_tree(this->real(), source, tag, comm);}
 
   if(Orbinfo.NchunksImag>0){
     if(not this->hasImag()){
       //We must have a tree defined for receiving nodes. Define one:
       this->allocImag();
     }
-    Rcv_SerialTree(&this->imag(), Orbinfo.NchunksImag, source, tag*10000, comm);
+    recv_tree(this->imag(), source, tag+10000, comm);
   }else{
     //&(this->imag())=0;
   }
@@ -189,46 +190,3 @@ void Orbital::Rcv_Orbital(int source, int tag){
 #endif
 
 }
-
-#ifdef HAVE_MPI
-//receive an orbital with MPI
-void Orbital::IRcv_Orbital(int source, int tag){
-  MPI_Status status;
-  MPI_Comm comm=mpiCommOrb;
-
-  struct Metadata{
-    int spin;
-    int occupancy;
-    int NchunksReal;
-    int NchunksImag;
-    double error;
-  };
-
-  Metadata Orbinfo;
-  MPI_Request request=MPI_REQUEST_NULL;
-
-  int count=sizeof(Metadata);
-  MPI_Irecv(&Orbinfo, count, MPI_BYTE, source, 0, comm, &request);
-
-  this->setSpin(Orbinfo.spin);
-  this->setOccupancy(Orbinfo.occupancy);
-  this->setError(Orbinfo.error);
-  
-  if(Orbinfo.NchunksReal>0){
-    if(not this->hasReal()){
-      //We must have a tree defined for receiving nodes. Define one:
-      this->allocReal();
-    }
-    IRcv_SerialTree(&this->real(), Orbinfo.NchunksReal, source, tag, comm);}
-
-  if(Orbinfo.NchunksImag>0){
-    if(not this->hasImag()){
-      //We must have a tree defined for receiving nodes. Define one:
-      this->allocImag();
-    }
-    IRcv_SerialTree(&this->imag(), Orbinfo.NchunksImag, source, tag*10000, comm);
-  }else{
-    //&(this->imag())=0;
-  }
-}
-#endif

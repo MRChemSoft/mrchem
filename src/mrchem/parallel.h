@@ -6,7 +6,11 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+const int workOrbVecSize = 10;
+#else
+const int workOrbVecSize = 1;
 #endif
+
 extern int mpiOrbRank;
 extern int mpiOrbSize;
 extern int mpiShRank;

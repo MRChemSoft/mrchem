@@ -3,6 +3,8 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
+#include "MRCPP/Printer"
+
 #include "Nucleus.h"
 
 class SpinSpinCoupling {
@@ -31,11 +33,11 @@ public:
         double isoPShz = para.trace()/3.0;
         double isoTShz = isoDShz + isoPShz;
 
-        int oldPrec = TelePrompter::setPrecision(10);
+        int oldPrec = mrcpp::Printer::setPrecision(10);
         o<<"                                                            "<<std::endl;
         o<<"================= Spin-Spin Coupling tensor ================"<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(5);
+        mrcpp::Printer::setPrecision(5);
         o<<std::setw(3)  << sscc.getNucleusK().getElement().getSymbol();
         o<<std::setw(26) << sscc.getNucleusK().getCoord()[0];
         o<<std::setw(15) << sscc.getNucleusK().getCoord()[1];
@@ -47,7 +49,7 @@ public:
         o<<std::setw(15) << sscc.getNucleusL().getCoord()[2];
         o<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(10);
+        mrcpp::Printer::setPrecision(10);
         o<<"                                                            "<<std::endl;
         o<<"-------------------- Isotropic averages --------------------"<<std::endl;
         o<<"                                                            "<<std::endl;
@@ -75,7 +77,7 @@ public:
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(oldPrec);
+        mrcpp::Printer::setPrecision(oldPrec);
         return o;
     }
 protected:

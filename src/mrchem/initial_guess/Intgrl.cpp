@@ -1,14 +1,13 @@
 #include <fstream>
 
+#include "MRCPP/Printer"
+
 #include "Intgrl.h"
-#include "TelePrompter.h"
 #include "Nucleus.h"
 #include "AOBasis.h"
-#include "constants.h"
-#include "MathUtils.h"
-#include "GaussExp.h"
 
 using namespace std;
+using namespace mrcpp;
 
 #define GETLINE(X,S)  if (not getline(X,S)) \
     MSG_FATAL("Unexpected end of file while reading basis sets!");

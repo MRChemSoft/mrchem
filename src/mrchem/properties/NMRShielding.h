@@ -3,6 +3,8 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
+#include "MRCPP/Printer"
+
 #include "Nucleus.h"
 
 class NMRShielding {
@@ -28,19 +30,19 @@ public:
         double isoPSppm = para.trace()/3.0;
         double isoTSppm = isoDSppm + isoPSppm;
 
-        int oldPrec = TelePrompter::setPrecision(10);
+        int oldPrec = mrcpp::Printer::setPrecision(10);
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                    NMR shielding tensor                    "<<std::endl;
         o<<"------------------------------------------------------------"<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(5);
+        mrcpp::Printer::setPrecision(5);
         o<<std::setw(3)  << nmr.getNucleus().getElement().getSymbol();
         o<<std::setw(26) << nmr.getNucleus().getCoord()[0];
         o<<std::setw(15) << nmr.getNucleus().getCoord()[1];
         o<<std::setw(15) << nmr.getNucleus().getCoord()[2];
         o<<std::endl;
-        TelePrompter::setPrecision(10);
+        mrcpp::Printer::setPrecision(10);
         o<<"                                                            "<<std::endl;
         o<<"-------------------- Isotropic averages --------------------"<<std::endl;
         o<<"                                                            "<<std::endl;
@@ -68,7 +70,7 @@ public:
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(oldPrec);
+        mrcpp::Printer::setPrecision(oldPrec);
         return o;
     }
 protected:

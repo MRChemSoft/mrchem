@@ -3,6 +3,8 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
+#include "MRCPP/Printer"
+
 class Magnetizability {
 public:
     Magnetizability() {
@@ -29,7 +31,7 @@ public:
         double isoPMsi = isoPMau*78.9451185;
         double isoTMsi = isoTMau*78.9451185;
 
-        int oldPrec = TelePrompter::setPrecision(10);
+        int oldPrec = mrcpp::Printer::setPrecision(10);
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                   Magnetizability tensor                   "<<std::endl;
@@ -67,7 +69,7 @@ public:
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(oldPrec);
+        mrcpp::Printer::setPrecision(oldPrec);
         return o;
     }
 protected:

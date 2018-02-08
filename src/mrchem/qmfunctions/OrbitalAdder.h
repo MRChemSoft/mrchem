@@ -3,9 +3,7 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
-#include "MWAdder.h"
-#include "GridGenerator.h"
-#include "constants.h"
+#include "parallel.h"
 
 class Orbital;
 class OrbitalVector;
@@ -15,7 +13,7 @@ public:
     OrbitalAdder(double prec, int max_scale, int work_vec_max = workOrbVecSize);
     virtual ~OrbitalAdder() { }
 
-    void setPrecision(double prec) { this->add.setPrecision(prec); }
+    void setPrecision(double prec) { addPrec = prec; }
 
     void operator()(Orbital &phi_ab,
                     std::complex<double> a, Orbital &phi_a,
@@ -54,7 +52,6 @@ public:
 
 protected:
     int workVecMax; //max number of orbitals to store temporarily while sending
-    MWAdder<3> add;
-    GridGenerator<3> grid;
+    double addPrec;
 };
 

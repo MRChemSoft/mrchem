@@ -7,6 +7,8 @@
  *
  */
 
+#include "MRCPP/Printer"
+
 #include "PeriodicTable.h"
 #include "Element.h"
 

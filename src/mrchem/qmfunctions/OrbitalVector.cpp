@@ -549,8 +549,8 @@ void OrbitalVector::send_OrbVec(int dest, int tag, vector<int> &orbsIx, int star
     for (int i = start; i <  this->size() && (i-start<maxcount); i++) {
 	int i_out=i-start;
 	orb_i = &this->getOrbital(i);
-	if(orb_i->hasReal())Send_SerialTree(&orb_i->real(), Orbinfo.NchunksReal[i_out], dest, 2*i_out+1+tag, comm);
-	if(orb_i->hasImag())Send_SerialTree(&orb_i->imag(), Orbinfo.NchunksImag[i_out], dest, 2*i_out+2+tag, comm);
+	if(orb_i->hasReal())send_tree(orb_i->real(), dest, 2*i_out+1+tag, comm);
+	if(orb_i->hasImag())send_tree(orb_i->imag(), dest, 2*i_out+2+tag, comm);
     }
 
 #endif
@@ -590,8 +590,8 @@ void OrbitalVector::Isend_OrbVec(int dest, int tag, vector<int> &orbsIx, int sta
     for (int i = start; i <  this->size() && (i-start<maxcount); i++) {
 	int i_out=i-start;
 	orb_i = &this->getOrbital(i);
-	if(orb_i->hasReal())ISend_SerialTree(&orb_i->real(), Orbinfo.NchunksReal[i_out], dest, 2*i_out+1+tag, comm, request);
-	if(orb_i->hasImag())ISend_SerialTree(&orb_i->imag(), Orbinfo.NchunksImag[i_out], dest, 2*i_out+2+tag, comm, request);
+	if(orb_i->hasReal())isend_tree(orb_i->real(), dest, 2*i_out+1+tag, comm, &request);
+	if(orb_i->hasImag())isend_tree(orb_i->imag(), dest, 2*i_out+2+tag, comm, &request);
     }
 }
 #endif
@@ -639,14 +639,14 @@ void OrbitalVector::Rcv_OrbVec(int source, int tag, int *orbsIx, int& workOrbVec
 		//We must have a tree defined for receiving nodes. Define one:
 		orb_i->allocReal();
 	    }
-	    Rcv_SerialTree(&orb_i->real(), Orbinfo.NchunksReal[i], source, 2*i+1+tag, comm);}
+	    recv_tree(orb_i->real(), source, 2*i+1+tag, comm);}
 
 	if(Orbinfo.NchunksImag[i]>0){
 	    if(not orb_i->hasImag()){
 		//We must have a tree defined for receiving nodes. Define one:
 		orb_i->allocImag();
 	    }
-	    Rcv_SerialTree(&orb_i->imag(), Orbinfo.NchunksImag[i], source, 2*i+2+tag, comm);
+	    recv_tree(orb_i->imag(), source, 2*i+2+tag, comm);
 	}else{
 	    //&(this->imag())=0;
 	}

@@ -5,6 +5,9 @@
 #include "constants.h"
 
 #include "QMFunction.h"
+#include "MRCPP/Parallel"
+
+using namespace mrcpp;
 
 class Orbital : public QMFunction {
 public:

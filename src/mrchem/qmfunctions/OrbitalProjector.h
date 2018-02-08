@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "MWProjector.h"
-#include "GridGenerator.h"
+#include "MRCPP/Printer"
+#include "parallel.h"
 
 class OrbitalVector;
 class OrbitalExp;
@@ -11,10 +11,10 @@ class Nuclei;
 
 class OrbitalProjector {
 public:
-    OrbitalProjector(double prec, int max_scale);
+    OrbitalProjector(double prec);
     virtual ~OrbitalProjector() { }
 
-    void setPrecision(double prec) { this->project.setPrecision(prec); }
+    void setPrecision(double prec) { projPrec = prec; }
 
     OrbitalVector* operator()(const Nuclei &nucs);
 
@@ -26,9 +26,7 @@ public:
                     const std::string &mo_a,
                     const std::string &mo_b);
 protected:
-    MWProjector<3> project;
-    GridGenerator<3> grid;
-
+    double projPrec;
     OrbitalExp* readOrbitalExpansion(const std::string &bf,
                                      const std::string &mo);
 };

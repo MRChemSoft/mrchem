@@ -3,7 +3,7 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
-#include "TelePrompter.h"
+#include "MRCPP/Printer"
 
 class SCFEnergy {
 public:
@@ -31,7 +31,7 @@ public:
         double E_kJ = E_au   * 2625.49962;
         double E_kcal = E_au * 627.509469;
         double E_eV = E_au   * 27.21138505;
-        int oldPrec = TelePrompter::setPrecision(15);
+        int oldPrec = mrcpp::Printer::setPrecision(15);
         o << "                                                            " << std::endl;
         o << "============================================================" << std::endl;
         o << "                         SCF Energy                         " << std::endl;
@@ -58,7 +58,7 @@ public:
         o <<"                                                            "<<std::endl;
         o << "============================================================" << std::endl;
         o << "                                                            " << std::endl;
-        TelePrompter::setPrecision(oldPrec);
+        mrcpp::Printer::setPrecision(oldPrec);
         return o;
     }
 

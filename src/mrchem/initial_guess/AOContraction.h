@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 
-template<int D> class GaussExp;
+#include "MRCPP/Gaussians"
 
 static const int MAX_L = 3; // Max f-functions
 
@@ -19,8 +19,8 @@ public:
     virtual ~AOContraction() { }
 
     void append(double e, double c);
-    GaussExp<3> getNormContraction(int m, const double *center) const;
-    GaussExp<3> getContraction(int m, const double *center) const;
+    mrcpp::GaussExp<3> getNormContraction(int m, const double *center) const;
+    mrcpp::GaussExp<3> getContraction(int m, const double *center) const;
 
     int getNComp() const { return this->nComp; }
     int getMoment() const { return this->L; }

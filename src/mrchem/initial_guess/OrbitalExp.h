@@ -4,8 +4,9 @@
 #include <Eigen/Core>
 #include <vector>
 
+#include "MRCPP/Gaussians"
+
 class Intgrl;
-template<int D> class GaussExp;
 
 class OrbitalExp {
 public:
@@ -15,13 +16,13 @@ public:
     int size() const { return orbitals.size(); }
     int getAngularMomentum(int n) const;
 
-    GaussExp<3> &getOrbital(int n) { return *orbitals[n]; }
+    mrcpp::GaussExp<3> &getOrbital(int n) { return *orbitals[n]; }
 
     void rotate(Eigen::MatrixXd &U);
 
 protected:
     bool cartesian;
-    std::vector<GaussExp<3> *> orbitals;
+    std::vector<mrcpp::GaussExp<3> *> orbitals;
 
     void readAOExpansion(Intgrl &intgrl);
     void transformToSpherical();

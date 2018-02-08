@@ -2,7 +2,10 @@
 
 #include <vector>
 
-#include "RepresentableFunction.h"
+#include "MRCPP/Printer"
+#include "MRCPP/MWFunctions"
+
+using namespace mrcpp;
 
 class Nuclei;
 class Nucleus;

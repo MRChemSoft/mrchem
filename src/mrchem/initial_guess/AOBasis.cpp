@@ -1,6 +1,9 @@
+#include "MRCPP/Printer"
+
 #include "AOBasis.h"
 #include "AOContraction.h"
-#include "GaussExp.h"
+
+using namespace mrcpp;
 
 AOBasis::AOBasis() {
     this->nPrim = 0;

@@ -3,7 +3,7 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
-#include "TelePrompter.h"
+#include "MRCPP/Printer"
 
 class DipoleMoment {
 public:
@@ -20,7 +20,7 @@ public:
     friend std::ostream& operator<<(std::ostream &o, const DipoleMoment &dipole) {
         Eigen::VectorXd mu = dipole.get();
 
-        int oldPrec = TelePrompter::setPrecision(10);
+        int oldPrec = mrcpp::Printer::setPrecision(10);
         double au = mu.norm();
         double debye = au/0.393430307;
         o<<"                                                            "<<std::endl;
@@ -37,7 +37,7 @@ public:
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                                                            "<<std::endl;
-        TelePrompter::setPrecision(oldPrec);
+        mrcpp::Printer::setPrecision(oldPrec);
         return o;
     }
 protected:

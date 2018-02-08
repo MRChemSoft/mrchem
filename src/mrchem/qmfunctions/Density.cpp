@@ -2,8 +2,6 @@
 #include "FunctionTree.h"
 #include "SerialFunctionTree.h"
 #include "ProjectedNode.h"
-#include "TelePrompter.h"
-#include "parallel.h"
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
@@ -17,7 +15,9 @@ Density::Density(bool spin, bool shared)
       dens_a(0),
       dens_b(0) {
     if(shared and mpiShSize>1){
-	this->shMem = new SharedMemory(2000);//initiate up to 2000MB shared memory
+      this->shMem = new SharedMemory(mpiCommSh, 5000);//initiate up to 5000MB shared memory
+      //note that this reserved memory is virtual, i.e. does not occupy the available memory,
+      //only the part which is actually used (written on) is occupying real memory.
     }else{
 	this->setIsShared(false);//at least 2 processes for sharing
     }
@@ -147,7 +147,6 @@ void Density::send_Density(int dest, int tag){
 	int NchunksAlpha;
 	int NchunksBeta;
     };
-
     Metadata Densinfo;
 
     Densinfo.spin = this->isSpinDensity();
@@ -164,13 +163,12 @@ void Density::send_Density(int dest, int tag){
 	Densinfo.NchunksBeta = this->beta().getSerialFunctionTree()->nodeChunks.size();//should reduce to actual number of chunks
     }else{Densinfo.NchunksBeta = 0;}
 
-
     int count=sizeof(Metadata);
     MPI_Send(&Densinfo, count, MPI_BYTE, dest, tag, comm);
-    if(this->hasTotal())Send_SerialTree(this->dens_t, Densinfo.NchunksTotal, dest, tag+10000, comm);
-    if(this->hasSpin())Send_SerialTree(this->dens_s, Densinfo.NchunksSpin, dest, tag+15000, comm);
-    if(this->hasAlpha())Send_SerialTree(this->dens_a, Densinfo.NchunksAlpha, dest, tag+20000, comm);
-    if(this->hasBeta())Send_SerialTree(this->dens_b, Densinfo.NchunksBeta, dest, tag+30000, comm);
+    if(this->hasTotal())send_tree(this->total(), dest, tag+10000, comm);
+    if(this->hasSpin())send_tree(this->spin(), dest, tag+15000, comm);
+    if(this->hasAlpha())send_tree(this->alpha(), dest, tag+20000, comm);
+    if(this->hasBeta())send_tree(this->beta(), dest, tag+30000, comm);
 
 #endif
 }
@@ -188,7 +186,6 @@ void Density::Rcv_Density(int source, int tag){
 	int NchunksAlpha;
 	int NchunksBeta;
     };
-
     Metadata Densinfo;
 
     int count=sizeof(Metadata);
@@ -196,16 +193,16 @@ void Density::Rcv_Density(int source, int tag){
 
     if(Densinfo.NchunksTotal>0){
 	if (not this->hasTotal()) this->allocTotal();
-	Rcv_SerialTree(this->dens_t, Densinfo.NchunksTotal, source, tag+10000, comm);}
+	recv_tree(this->total(), source, tag+10000, comm);}
     if(Densinfo.NchunksSpin>0){
 	if (not this->hasSpin()) this->allocSpin();
-	Rcv_SerialTree(this->dens_s, Densinfo.NchunksSpin, source, tag+15000, comm);}
+	recv_tree(this->spin(), source, tag+15000, comm);}
     if(Densinfo.NchunksAlpha>0){
 	if (not this->hasAlpha()) this->allocAlpha();
-	Rcv_SerialTree(this->dens_a, Densinfo.NchunksAlpha, source, tag+20000, comm);}
+	recv_tree(this->alpha(), source, tag+20000, comm);}
     if(Densinfo.NchunksBeta>0){
 	if (not this->hasBeta()) this->allocBeta();
-	Rcv_SerialTree(this->dens_b, Densinfo.NchunksBeta, source, tag+30000, comm);}
+	recv_tree(this->beta(), source, tag+30000, comm);}
 
 #endif
 }

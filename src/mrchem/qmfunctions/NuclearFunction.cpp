@@ -12,10 +12,10 @@ NuclearFunction::NuclearFunction()
 NuclearFunction::NuclearFunction(const Nuclei &nucs, double prec)
         : RepresentableFunction<3>(),
           const_fac(-1.0/(3.0*root_pi)) {
-    int oldprec = TelePrompter::setPrecision(5);
-    TelePrompter::printHeader(0, "Setting up nuclear potential");
+    int oldprec = Printer::setPrecision(5);
+    Printer::printHeader(0, "Setting up nuclear potential");
     println(0, " Nr  Element         Charge        Precision     Smoothing ");
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
 
     double c = 0.00435*prec;
     for (int i = 0; i < nucs.size(); i++) {
@@ -34,8 +34,8 @@ NuclearFunction::NuclearFunction(const Nuclei &nucs, double prec)
         printout(0, setw(14) << prec);
         printout(0, setw(14) << smooth << endl);
     }
-    TelePrompter::printSeparator(0, '=', 2);
-    TelePrompter::setPrecision(oldprec);
+    Printer::printSeparator(0, '=', 2);
+    Printer::setPrecision(oldprec);
 }
 
 void NuclearFunction::push_back(const Nucleus &nuc, double S) {

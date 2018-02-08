@@ -1,13 +1,10 @@
 #include "OrbitalProjector.h"
-#include "GaussExp.h"
-#include "GaussFunc.h"
 #include "HydrogenicFunction.h"
 #include "Nucleus.h"
-#include "Intgrl.h"
-#include "OrbitalExp.h"
+#include "../initial_guess/OrbitalExp.h"
+#include "../initial_guess/Intgrl.h"
 #include "OrbitalVector.h"
 #include "Orbital.h"
-#include "TelePrompter.h"
 #include "Timer.h"
 #include "MathUtils.h"
 
@@ -16,7 +13,7 @@ using namespace Eigen;
 
 //void OrbitalVector::readOrbitals(const OrbitalVector &orbs) {
 //    Timer timer;
-//    int oldPrec = TelePrompter::setPrecision(15);
+//    int oldPrec = Printer::setPrecision(15);
 //    printout(0, "\n\n================ Setting up starting guess ");
 //    printout(0, "=================\n\n");
 
@@ -28,21 +25,20 @@ using namespace Eigen;
 //        printout(0, "Orbital " << setw(3) << i);
 //        println(0, " squareNorm: " << setw(36) << thisOrb->getSquareNorm());
 //    }
-//    TelePrompter::setPrecision(5);
+//    Printer::setPrecision(5);
 //    printout(0, "\n================ Elapsed time: ");
 //    println(0, timer.elapsed() << " =================\n");
-//    TelePrompter::setPrecision(oldPrec);
+//    Printer::setPrecision(oldPrec);
 //}
 
-OrbitalProjector::OrbitalProjector(double prec, int max_scale)
-    : project(prec, max_scale),
-      grid(max_scale) {
+OrbitalProjector::OrbitalProjector(double prec)
+    : projPrec(prec){
 }
 
 OrbitalVector* OrbitalProjector::operator()(const Nuclei &nucs) {
-    TelePrompter::printHeader(0, "Setting up occupied orbitals");
+    Printer::printHeader(0, "Setting up occupied orbitals");
     println(0, "    n  Spin  Occ                           SquareNorm");
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
 
     Timer timer;
     OrbitalVector *phi = new OrbitalVector(0);
@@ -68,7 +64,7 @@ OrbitalVector* OrbitalProjector::operator()(const Nuclei &nucs) {
                     HydrogenicFunction h_func(n, l, m, Z, R);
 		    if (mpiOrbRank == nOrbs%mpiOrbSize) {
                         phi_i.allocReal();
-                        this->project(phi_i.real(), h_func);
+                        project(projPrec, phi_i.real(), h_func);
                         printout(0, setw(5) << totOrbs);
                         printout(0, setw(5) << phi_i.printSpin());
                         printout(0, setw(5) << phi_i.getOccupancy());
@@ -86,16 +82,16 @@ OrbitalVector* OrbitalProjector::operator()(const Nuclei &nucs) {
         }
     }
     timer.stop();
-    TelePrompter::printFooter(0, timer, 2);
+    Printer::printFooter(0, timer, 2);
     return phi;
 }
 
 void OrbitalProjector::operator()(OrbitalVector &orbs,
                                   const string &bf,
                                   const string &mo) {
-    TelePrompter::printHeader(0, "Setting up occupied orbitals (closed-shell)");
+    Printer::printHeader(0, "Setting up occupied orbitals (closed-shell)");
     println(0, "    n  Spin  Occ                           SquareNorm");
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
 
     Timer timer;
     OrbitalExp *moExp = readOrbitalExpansion(bf, mo);
@@ -105,7 +101,7 @@ void OrbitalProjector::operator()(OrbitalVector &orbs,
         mwOrb.clear(true);
 	if (mpiOrbRank == i%mpiOrbSize) {	
             mwOrb.allocReal();
-            this->project(mwOrb.real(), gtOrb);
+            project(projPrec, mwOrb.real(), gtOrb);
             printout(0, setw(5) << i);
             printout(0, setw(5) << mwOrb.printSpin());
             printout(0, setw(5) << mwOrb.getOccupancy());
@@ -115,14 +111,14 @@ void OrbitalProjector::operator()(OrbitalVector &orbs,
     delete moExp;
 
     timer.stop();
-    TelePrompter::printFooter(0, timer, 2);
+    Printer::printFooter(0, timer, 2);
 }
 
 void OrbitalProjector::operator()(OrbitalVector &orbs,
                                   const string &bf,
                                   const string &mo_a,
                                   const string &mo_b) {
-    TelePrompter::printHeader(0, "Setting up occupied orbitals (open-shell)");
+    Printer::printHeader(0, "Setting up occupied orbitals (open-shell)");
 
     Timer timer;
     OrbitalExp *moExp_a = readOrbitalExpansion(bf, mo_a);
@@ -140,7 +136,7 @@ void OrbitalProjector::operator()(OrbitalVector &orbs,
         if (mwOrb.getSpin() == Orbital::Beta) gtOrb = &moExp_b->getOrbital(n_b++);
 
         mwOrb.allocReal();
-        this->project(mwOrb.real(), *gtOrb);
+        project(projPrec, mwOrb.real(), *gtOrb);
 
         printout(0, setw(5) << i);
         printout(0, setw(5) << mwOrb.printSpin());
@@ -151,12 +147,12 @@ void OrbitalProjector::operator()(OrbitalVector &orbs,
     delete moExp_b;
 
     timer.stop();
-    TelePrompter::printFooter(0, timer, 2);
+    Printer::printFooter(0, timer, 2);
 }
 
 //void OrbitalVector::readVirtuals(const string &bf, const string &mo, int n_occ) {
 //    Timer timer;
-//    int oldPrec = TelePrompter::setPrecision(15);
+//    int oldPrec = Printer::setPrecision(15);
 //    printout(0, "\n\n=============== Setting up virtual orbitals ");
 //    printout(0, "================\n\n");
 
@@ -170,10 +166,10 @@ void OrbitalProjector::operator()(OrbitalVector &orbs,
 //        this->orbitals.push_back(orb_a);
 //    }
 //    delete moExp;
-//    TelePrompter::setPrecision(5);
+//    Printer::setPrecision(5);
 //    printout(0, "\n================ Elapsed time: ");
 //    println(0, timer.elapsed() << " =================\n");
-//    TelePrompter::setPrecision(oldPrec);
+//    Printer::setPrecision(oldPrec);
 //}
 
 

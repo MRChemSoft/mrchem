@@ -2,12 +2,14 @@
 
 #include <complex>
 
-#include "constants.h"
-#include "FunctionTree.h"
+#include "MRCPP/Printer"
+#include "MRCPP/MWFunctions"
+
+using namespace mrcpp;
 
 class QMFunction {
 public:
-    QMFunction(FunctionTree<3> *r = 0, FunctionTree<3> *i = 0) : re(r), im(i) { }
+ QMFunction(FunctionTree<3> *r = 0, FunctionTree<3> *i = 0) : re(r), im(i) { }
     QMFunction(const QMFunction &func) : re(0), im(0) { }
     QMFunction &operator=(const QMFunction &func) { NOT_IMPLEMENTED_ABORT; }
     virtual ~QMFunction() { clearReal(true); clearImag(true); }

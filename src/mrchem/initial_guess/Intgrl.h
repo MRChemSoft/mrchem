@@ -2,13 +2,14 @@
  */
 #pragma once
 
+#include "MRCPP/Gaussians"
+
 #include <vector>
 #include <string>
 #include <iostream>
 
 class Nucleus;
 class AOBasis;
-template<int> class GaussExp;
 
 class Intgrl {
 public:
@@ -23,8 +24,8 @@ public:
     Nucleus &getNucleus(int i) { return *this->nuclei[i]; }
     AOBasis &getAOBasis(int i) { return *this->basis[i]; }
 
-    GaussExp<3> getAtomBasis(int i, bool norm = true) const;
-    GaussExp<3> getMolBasis(bool norm = true) const;
+    mrcpp::GaussExp<3> getAtomBasis(int i, bool norm = true) const;
+    mrcpp::GaussExp<3> getMolBasis(bool norm = true) const;
 
 protected:
     std::vector<Nucleus *> nuclei;

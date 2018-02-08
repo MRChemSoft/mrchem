@@ -9,17 +9,15 @@ using namespace std;
 using namespace Eigen;
 
 OrbitalAdder::OrbitalAdder(double prec, int max_scale, int work_vec_max)
-    : workVecMax(work_vec_max),
-      add(prec, max_scale),
-      grid(max_scale){
+  : workVecMax(work_vec_max),
+    addPrec(prec){
 }
 
 void OrbitalAdder::operator()(Orbital &phi_ab,
                               complex<double> a, Orbital &phi_a,
                               complex<double> b, Orbital &phi_b,
                               bool union_grid) {
-    double prec = this->add.getPrecision();
-    if (not union_grid and prec < 0.0) MSG_ERROR("Negative adaptive prec");
+    if (not union_grid and addPrec < 0.0) MSG_ERROR("Negative adaptive prec");
     if (phi_ab.hasReal() or phi_ab.hasImag()) MSG_ERROR("Orbital not empty");
 
     // set output spin
@@ -51,21 +49,21 @@ void OrbitalAdder::operator()(Orbital &phi_ab,
     if (rvec.size() > 0) {
         if (union_grid) {
             phi_ab.allocReal();
-            this->grid(phi_ab.real(), rvec);
-            this->add(phi_ab.real(), rvec, 0);
+            copy_grid(phi_ab.real(), rvec);
+            add(addPrec, phi_ab.real(), rvec, 0);
         } else {
             phi_ab.allocReal();
-            this->add(phi_ab.real(), rvec);
+            add(addPrec, phi_ab.real(), rvec);
         }
     }
     if (ivec.size() > 0) {
         if (union_grid) {
             phi_ab.allocImag();
-            this->grid(phi_ab.imag(), ivec);
-            this->add(phi_ab.imag(), ivec, 0);
+            copy_grid(phi_ab.imag(), ivec);
+            add(addPrec, phi_ab.imag(), ivec, 0);
         } else {
             phi_ab.allocImag();
-            this->add(phi_ab.imag(), ivec);
+            add(addPrec, phi_ab.imag(), ivec);
         }
     }
 }
@@ -74,8 +72,7 @@ void OrbitalAdder::operator()(Orbital &out,
                               std::vector<complex<double> > &coefs,
                               std::vector<Orbital *> &inp,
                               bool union_grid) {
-    double prec = this->add.getPrecision();
-    if (not union_grid and prec < 0.0) MSG_ERROR("Negative adaptive prec");
+    if (not union_grid and this->addPrec < 0.0) MSG_ERROR("Negative adaptive prec");
     if (out.hasReal() or out.hasImag()) MSG_ERROR("Orbital not empty");
     if (coefs.size() != inp.size()) MSG_ERROR("Invalid arguments");
 
@@ -113,21 +110,21 @@ void OrbitalAdder::operator()(Orbital &out,
     if (rvec.size() > 0) {
         if (union_grid) {
             out.allocReal();
-            this->grid(out.real(), rvec);
-            this->add(out.real(), rvec, 0);
+            copy_grid(out.real(), rvec);
+            add(addPrec, out.real(), rvec, 0);
         } else {
             out.allocReal();
-            this->add(out.real(), rvec);
+            add(addPrec, out.real(), rvec);
         }
     }
     if (ivec.size() > 0) {
         if (union_grid) {
             out.allocImag();
-            this->grid(out.imag(), ivec);
-            this->add(out.imag(), ivec, 0);
+            copy_grid(out.imag(), ivec);
+            add(addPrec, out.imag(), ivec, 0);
         } else {
             out.allocImag();
-            this->add(out.imag(), ivec);
+            add(addPrec, out.imag(), ivec);
         }
     }
 }
@@ -151,8 +148,7 @@ void OrbitalAdder::operator()(Orbital &out,
                               const VectorXd &c,
                               OrbitalVector &inp,
                               bool union_grid) {
-    double prec = this->add.getPrecision();
-    if (not union_grid and prec < 0.0) MSG_ERROR("Negative adaptive prec");
+    if (not union_grid and this->addPrec < 0.0) MSG_ERROR("Negative adaptive prec");
     if (c.size() != inp.size()) MSG_ERROR("Invalid arguments");
     if (out.hasReal() or out.hasImag()) MSG_ERROR("Output not empty");
 
@@ -183,21 +179,21 @@ void OrbitalAdder::operator()(Orbital &out,
     if (rvec.size() > 0) {
         if (union_grid) {
             out.allocReal();
-            this->grid(out.real(), rvec);
-            this->add(out.real(), rvec, 0);
+            copy_grid(out.real(), rvec);
+            add(addPrec, out.real(), rvec, 0);
         } else {
             out.allocReal();
-            this->add(out.real(), rvec);
+            add(addPrec, out.real(), rvec);
         }
     }
     if (ivec.size() > 0) {
         if (union_grid) {
             out.allocImag();
-            this->grid(out.imag(), ivec);
-            this->add(out.imag(), ivec, 0);
+            copy_grid(out.imag(), ivec);
+            add(addPrec, out.imag(), ivec, 0);
         } else {
             out.allocImag();
-            this->add(out.imag(), ivec);
+            add(addPrec, out.imag(), ivec);
         }
     }
 }
