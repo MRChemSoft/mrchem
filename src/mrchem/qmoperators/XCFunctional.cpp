@@ -20,7 +20,6 @@ XCFunctional::~XCFunctional() {
 }
 
 void XCFunctional::setFunctional(const string &name, double coef) {
-    string funcName = name;
     xc_set(this->functional, name.c_str(), coef);
 }
 
@@ -32,7 +31,7 @@ void XCFunctional::evalSetup(const int order)
 {
     unsigned int func_type = this->isGGA(); //only LDA and GGA supported for now
     unsigned int dens_type = 1 + this->spin; // only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
-    unsigned int mode_type = 2; // HACK POTENTIAL MODEcontracted mode only
+    unsigned int mode_type = 1; //HACK HARD CODED
     unsigned int laplacian = 0; // no laplacian
     unsigned int kinetic = 0; // no kinetic energy density
     unsigned int current = 0; // no current density

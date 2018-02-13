@@ -26,7 +26,7 @@ public:
     int getInputLength() const { return xc_input_length(this->functional); }
     int getOutputLength() const { return xc_output_length(this->functional); }
 
-    bool isLDA() const { return (!(this->isGGA() && this->isMetaGGA())); }
+    bool isLDA() const { return (!(this->isGGA() || this->isMetaGGA())); }
     bool isGGA() const { return (xc_is_gga(this->functional)); }
     bool isMetaGGA() const { return (xc_is_metagga(this->functional)); }
     
