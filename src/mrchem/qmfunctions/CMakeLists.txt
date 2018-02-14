@@ -1,3 +1,7 @@
+set (DEBUG_qmfunctions TRUE)
+
+CHECK_IF_DEBUG()
+
 include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp)
 include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwanalytic)
 include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwcore)
