@@ -1,6 +1,8 @@
-include(DefaultPathsMRChem)
-include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/external/catch)
+add_subdirectory(qmfunctions)
+add_subdirectory(qmoperators)
 
-link_directories(${CMAKE_BINARY_DIR}/external/lib)
-
+add_executable(unit-tests unit_tests.cpp
+    $<TARGET_OBJECTS:qmfunction-tests>
+    $<TARGET_OBJECTS:qmoperator-tests>
+)
+target_link_libraries(unit-tests qmfunctions qmoperators)
