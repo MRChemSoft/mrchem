@@ -1,42 +1,35 @@
+#include "MRCPP/Printer"
+
 #include "IdentityOperator.h"
-#include "OrbitalVector.h"
 #include "Orbital.h"
 
-using namespace Eigen;
+namespace mrchem {
+extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-extern MultiResolutionAnalysis<3> *MRA; // Global MRA
-extern OrbitalVector workOrbVec;
-
-IdentityOperator::IdentityOperator() : QMOperator(MRA->getMaxScale()) {
-}
-
-Orbital* IdentityOperator::operator() (Orbital &phi) {
+Orbital IdentityOperator::operator()(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-
-    Orbital *newOrb = new Orbital(phi);
-    newOrb->deepCopy(phi);
-    return newOrb;
+    return inp.deepCopy();
 }
 
-Orbital* IdentityOperator::adjoint(Orbital &phi) {
+Orbital IdentityOperator::dagger(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-
-    NOT_IMPLEMENTED_ABORT;
+    return inp.deepCopy();
 }
 
-double IdentityOperator::operator() (Orbital &phi_i, Orbital &phi_j) {
+/** Overwrite default deep copy by more efficient dot product */
+ComplexDouble IdentityOperator::operator()(Orbital bra, Orbital ket) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-
-    NOT_IMPLEMENTED_ABORT;
+    return orbital::dot(bra, ket);
 }
 
-double IdentityOperator::adjoint(Orbital &phi_i, Orbital &phi_j) {
+/** Overwrite default deep copy by more efficient dot product */
+ComplexDouble IdentityOperator::dagger(Orbital bra, Orbital ket) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-
-    NOT_IMPLEMENTED_ABORT;
+    return orbital::dot(bra, ket);
 }
 
-MatrixXd IdentityOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+/*
+ComplexMatrix IdentityOperator::operator()(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     MatrixXcd S = MatrixXcd::Zero(i_orbs.size(), j_orbs.size());
@@ -55,7 +48,7 @@ MatrixXd IdentityOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_o
     return S.real();
 }
 
-MatrixXd IdentityOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
+ComplexMatrix IdentityOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     NOT_IMPLEMENTED_ABORT;
@@ -75,8 +68,10 @@ MatrixXcd IdentityOperator::calcOverlapMatrix(OrbitalVector &bra, OrbitalVector 
     }
     return S;
 }
+*/
 
 /** Calculate overlap matrix between two orbital sets */
+/*
 MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVector &ket) {
 #ifdef HAVE_MPI
     int Ni = bra.size();
@@ -128,10 +123,12 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVecto
     NOT_REACHED_ABORT;
 #endif
 }
+*/
 
 /** Calculate overlap matrix between two orbital sets using MPI
  * 	assumes Hermitian overlap
  */
+/*
 MatrixXcd IdentityOperator::calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVector &ket) {
 #ifdef HAVE_MPI
     int Ni = bra.size();
@@ -189,3 +186,6 @@ MatrixXcd IdentityOperator::calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVec
     NOT_REACHED_ABORT;
 #endif
 }
+*/
+
+} //namespace mrchem

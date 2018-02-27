@@ -1,30 +1,36 @@
 #pragma once
 
-#pragma GCC system_header
-#include <Eigen/Core>
-
 #include "QMOperator.h"
+
+namespace mrchem {
 
 class IdentityOperator : public QMOperator {
 public:
-    IdentityOperator();
+    IdentityOperator() : QMOperator() { }
     virtual ~IdentityOperator() { }
 
     virtual void setup(double prec) { setApplyPrec(prec); }
     virtual void clear() { clearApplyPrec(); }
 
-    virtual Orbital* operator() (Orbital &phi);
-    virtual Orbital* adjoint(Orbital &phi);
+    virtual Orbital operator()(Orbital inp);
+    virtual Orbital dagger(Orbital inp);
 
-    virtual double operator() (Orbital &phi_i, Orbital &phi_j);
-    virtual double adjoint(Orbital &phi_i, Orbital &phi_j);
+    //virtual OrbitalVector operator()(OrbitalVector inp);
+    //virtual OrbitalVector dagger(OrbitalVector inp);
 
-    virtual Eigen::MatrixXd operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs);
-    virtual Eigen::MatrixXd adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs);
+    virtual ComplexDouble operator()(Orbital bra, Orbital ket);
+    virtual ComplexDouble dagger(Orbital bra, Orbital ket);
+
+    //virtual ComplexMatrix operator()(OrbitalVector bra, OrbitalVector ket);
+    //virtual ComplexMatrix dagger(OrbitalVector bra, OrbitalVector ket);
+
+    using QMOperator::operator();
+    using QMOperator::dagger;
 
 protected:
-    Eigen::MatrixXcd calcOverlapMatrix(OrbitalVector &bra, OrbitalVector &ket);
-    Eigen::MatrixXcd calcOverlapMatrix_P(OrbitalVector &bra, OrbitalVector &ket);
-    Eigen::MatrixXcd calcOverlapMatrix_P_H(OrbitalVector &bra, OrbitalVector &ket);
+    //ComplexMatrix calcOverlapMatrix(OrbitalVector bra, OrbitalVector ket);
+    //ComplexMatrix calcOverlapMatrix_P(OrbitalVector bra, OrbitalVector ket);
+    //ComplexMatrix calcOverlapMatrix_P_H(OrbitalVector bra, OrbitalVector ket);
 };
 
+} //namespace mrchem
