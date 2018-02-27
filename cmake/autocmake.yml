@@ -1,6 +1,10 @@
 name: MRChem
-
 min_cmake_version: 2.8
+setup_script: setup
+default_build_type: release
+language:
+  - C
+  - CXX
 
 url_root: https://github.com/coderefinery/autocmake/raw/master/
 
@@ -25,11 +29,11 @@ modules:
 - libs:
   - source:
     - 'custom/eigen.cmake'
+    - 'custom/catch.cmake'
 - tests:
   - docopt: "--enable-tests Enable tests [default: False]."
   - define: "'-DENABLE_TESTS={0}'.format(arguments['--enable-tests'])"
-  - source:
-    - 'custom/tests.cmake'
+  - source: 'custom/tests.cmake'
 - custom:
   - source:
     - 'custom/python.cmake'

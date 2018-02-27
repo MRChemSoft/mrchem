@@ -12,10 +12,20 @@ if sys.version_info[0] == 2 and sys.version_info[1] < 7:
 AUTOCMAKE_GITHUB_URL = 'https://github.com/coderefinery/autocmake/raw/master/'
 
 
+def licensing_info():
+    return '''The CMake infrastructure for this project is generated using [Autocmake]
+by Radovan Bast, Roberto Di Remigio, Jonas Juselius and contributors.
+The `update.py` Python script and the contents of the directories `autocmake` and `downloaded` are licensed
+under the terms of the [BSD-3-Clause license], unless otherwise stated.
+
+[Autocmake]: http://autocmake.org
+[BSD-3-Clause license]: https://tldrlegal.com/license/bsd-3-clause-license-(revised)'''
+
+
 def check_for_yaml():
     try:
         import yaml
-    except:
+    except ImportError:
         sys.stderr.write("ERROR: you need to install the pyyaml package\n")
         sys.exit(-1)
 
@@ -141,10 +151,25 @@ def process_yaml(argv):
         sys.stderr.write("ERROR: project name contains a space\n")
         sys.exit(-1)
 
+    if 'language' in config:
+        project_language = ' '.join(config['language']) if isinstance(config['language'], list) else config['language']
+    else:
+        sys.stderr.write("ERROR: you have to specify the project language(s) in autocmake.yml\n\n")
+        sys.stderr.write("# for instance like this (several languages):\nlanguage:\n  - CXX\n  - Fortran\n\n")
+        sys.stderr.write("# or like this (one language):\nlanguage: Fortran\n\n")
+        sys.exit(-1)
+
     if 'min_cmake_version' in config:
         min_cmake_version = config['min_cmake_version']
     else:
         sys.stderr.write("ERROR: you have to specify min_cmake_version in autocmake.yml\n")
+        sys.exit(-1)
+
+    if 'default_build_type' in config:
+        default_build_type = config['default_build_type'].lower()
+    else:
+        sys.stderr.write("ERROR: you have to specify default_build_type in autocmake.yml\n\n")
+        sys.stderr.write("# for instance like this (debug, release, relwithdebinfo, or minsizerel):\ndefault_build_type: release\n\n")
         sys.exit(-1)
 
     if 'setup_script' in config:
@@ -173,18 +198,19 @@ def process_yaml(argv):
 
     # create CMakeLists.txt
     print('- generating CMakeLists.txt')
-    s = gen_cmakelists(project_name, min_cmake_version, relative_path, modules)
+    s = gen_cmakelists(project_name, project_language, min_cmake_version, default_build_type, relative_path, modules)
     with open(os.path.join(project_root, 'CMakeLists.txt'), 'w') as f:
         f.write('{0}\n'.format('\n'.join(s)))
 
-    # create setup script
-    print('- generating setup script')
-    s = gen_setup(cleaned_config, relative_path, setup_script_name)
-    file_path = os.path.join(project_root, setup_script_name)
-    with open(file_path, 'w') as f:
-        f.write('{0}\n'.format('\n'.join(s)))
-    if sys.platform != 'win32':
-        make_executable(file_path)
+    # create setup script unless it is 'None' or 'none'
+    if setup_script_name.lower() != 'none':
+        print('- generating setup script')
+        s = gen_setup(cleaned_config, default_build_type, relative_path, setup_script_name)
+        file_path = os.path.join(project_root, setup_script_name)
+        with open(file_path, 'w') as f:
+            f.write('{0}\n'.format('\n'.join(s)))
+        if sys.platform != 'win32':
+            make_executable(file_path)
 
 
 def main(argv):
@@ -241,6 +267,10 @@ def main(argv):
                 src='{0}{1}'.format(AUTOCMAKE_GITHUB_URL, f),
                 dst='{0}'.format(f)
             )
+        # finally create a README.md with licensing information
+        with open('README.md', 'w') as f:
+            print('- generating licensing information')
+            f.write(licensing_info())
         sys.exit(0)
 
     process_yaml(argv)
