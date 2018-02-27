@@ -18,8 +18,6 @@ Usage:
   ./setup (-h | --help)
 
 Options:
-  --cc=<CC>                              C compiler [default: gcc].
-  --extra-cc-flags=<EXTRA_CFLAGS>        Extra C compiler flags [default: ''].
   --cxx=<CXX>                            C++ compiler [default: g++].
   --extra-cxx-flags=<EXTRA_CXXFLAGS>     Extra C++ compiler flags [default: ''].
   --mpi                                  Enable MPI parallelization [default: False].
@@ -43,7 +41,6 @@ def gen_cmake_command(options, arguments):
     """
     command = []
     command.append(arguments['--cmake-executable'])
-    command.append('-DCMAKE_C_COMPILER={0} -DEXTRA_CFLAGS="{1}"'.format(arguments['--cc'], arguments['--extra-cc-flags']))
     command.append('-DCMAKE_CXX_COMPILER={0} -DEXTRA_CXXFLAGS="{1}"'.format(arguments['--cxx'], arguments['--extra-cxx-flags']))
     command.append('-DENABLE_MPI={0}'.format(arguments['--mpi']))
     command.append('-DENABLE_OPENMP={0}'.format(arguments['--omp']))

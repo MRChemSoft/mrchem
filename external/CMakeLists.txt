@@ -7,6 +7,7 @@ add_custom_target(git-submodule-init
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     )
 
+enable_language(C)
 ExternalProject_Add(submodule-libgetkw
     DOWNLOAD_COMMAND git submodule update
     PREFIX ${CMAKE_CURRENT_BINARY_DIR}
@@ -24,7 +25,6 @@ add_dependencies(external-modules submodule-libgetkw)
 
 option(ENABLE_XCFUN "Use XCFun library" ON)
 if (ENABLE_XCFUN)
-    enable_language(Fortran)
     ExternalProject_Add(submodule-xcfun
         DOWNLOAD_COMMAND git submodule update
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}

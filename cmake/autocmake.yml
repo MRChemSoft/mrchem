@@ -3,7 +3,6 @@ min_cmake_version: 3.3
 setup_script: setup
 default_build_type: release
 language:
-  - C
   - CXX
 
 url_root: https://github.com/coderefinery/autocmake/raw/master/
@@ -11,13 +10,10 @@ url_root: https://github.com/coderefinery/autocmake/raw/master/
 modules:
 - compilers:
   - source:
-    - '%(url_root)modules/cc.cmake'
     - '%(url_root)modules/cxx.cmake'
 - flags:
   - source:
-    - 'compiler_flags/GNU.C.cmake'
     - 'compiler_flags/GNU.CXX.cmake'
-    - 'compiler_flags/Intel.C.cmake'
     - 'compiler_flags/Intel.CXX.cmake'
 - plugins:
   - source:

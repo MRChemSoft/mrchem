@@ -5,7 +5,7 @@
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
 # project name
-project(MRChem C CXX)
+project(MRChem CXX)
 
 # do not rebuild if rules (compiler flags) change
 set(CMAKE_SKIP_RULE_DEPENDENCY TRUE)
@@ -21,11 +21,8 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/custom)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/downloaded)
 
 # included cmake modules
-include(autocmake_cc)
 include(autocmake_cxx)
-include(GNU.C)
 include(GNU.CXX)
-include(Intel.C)
 include(Intel.CXX)
 include(autocmake_mpi)
 include(autocmake_omp)
