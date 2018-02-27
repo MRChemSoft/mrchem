@@ -1,89 +1,71 @@
 #pragma once
 
-#include <complex>
+#include "qmfunctions.h"
 
-#include "constants.h"
+namespace mrchem {
 
-#include "QMFunction.h"
-
-class Orbital : public QMFunction {
-public:
-    Orbital(int occ, int s);
-    Orbital(const Orbital &orb);
-    Orbital &operator=(const Orbital &orb) { NOT_IMPLEMENTED_ABORT;}
-    virtual ~Orbital() { clear(); }
-    void clear(bool free = true);
-
-    int getSpin() const { return this->spin; }
-    int getOccupancy() const { return this->occupancy; }
-    double getError() const { return this->error; }
-
-    void setSpin(int s) { this->spin = s; }
-    void setOccupancy(int occ) { this->occupancy = occ; }
-    void setError(double err) { this->error = err; }
-
-    bool isConverged(double prec) const;
-
-    void compare(const Orbital &orb) const;
-    int compareSpin(const Orbital &orb) const;
-    int compareOccupancy(const Orbital &orb) const;
-
-    std::complex<double> dot(Orbital &ket);
-    /*! determines the exchange factor to be used in the calculation of the exact exchange
-     *
-     * \param [in] orb input orbital to which K is applied
-     *
-     * The factor is computed in terms of the occupancy of the two orbitals and in terms of the spin
-     * 0.5 factors are used in order to preserve occupancy of the set of doubly occupied orbitals
-     * this-> is the orbital defining the operator whereas the input orbital (orb) is the one              
-     * the operator is applied to
-     *
-     * Occupancy: Single/Double
-     * Spin: alpha/beta
-     *
-     * K (this->) | orb (input) | factor
-     * alpha      | alpha       | 1.0       
-     * alpha      | beta        | 0.0       
-     * alpha      | double      | 0.5      
-     * -------------------------------
-     * beta       | alpha       | 0.0       
-     * beta       | beta        | 1.0       
-     * beta       | double      | 0.5 
-     * -------------------------------
-     * double     | alpha       | 1.0       
-     * double     | beta        | 1.0       
-     * double     | double      | 1.0       
-     *
-     */
-    double getExchangeFactor(const Orbital &orb) const;
-
-    char printSpin() const {
-        char sp = 'u';
-        if (this->spin == Alpha) sp = 'a';
-        if (this->spin == Beta) sp = 'b';
-        return sp;
-    }
-
-    void send_Orbital(int dest, int tag);
-    void Rcv_Orbital(int source, int tag);
-#ifdef HAVE_MPI
-    void Isend_Orbital(int dest, int tag, MPI_Request& request);
-    void IRcv_Orbital(int source, int tag);
-#endif
-
-    friend std::ostream& operator<<(std::ostream &o, Orbital &orb) {
-        o << std::setw(25) << orb.getSquareNorm();
-        o << std::setw(3) << orb.getOccupancy();
-        o << std::setw(4) << orb.printSpin();
-        o << std::setw(24) << orb.getError() << std::endl;
-        return o;
-    }
-
-    enum Spin { Paired, Alpha, Beta };
-
-protected:
+/* POD struct for orbital meta data. Used for simple MPI communication. */
+struct OrbitalMeta {
+    int occ;
     int spin;
-    int occupancy;
+    int nChunksReal;
+    int nChunksImag;
+    bool conjugate;
     double error;
 };
 
+class Orbital {
+public:
+    Orbital(int occ = 0, int s = 0);
+    ~Orbital() { }
+
+    Orbital(const Orbital &orb);
+    Orbital &operator=(const Orbital &orb);
+    Orbital deepCopy();
+    Orbital dagger() const;
+
+    void alloc(int type = NUMBER::Total);
+    void clear(int type = NUMBER::Total);
+    void free(int type = NUMBER::Total);
+
+    bool hasReal() const { return (this->re == 0) ? false : true; }
+    bool hasImag() const { return (this->im == 0) ? false : true; }
+
+    mrcpp::FunctionTree<3> &real() { return *this->re; }
+    mrcpp::FunctionTree<3> &imag() { return *this->im; }
+
+    const mrcpp::FunctionTree<3> &real() const { return *this->re; }
+    const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
+
+    void setReal(mrcpp::FunctionTree<3> *real) { this->re = real; }
+    void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
+
+    void setError(double err) { this->meta.error = err; }
+
+    OrbitalMeta &getMetaData();
+    int occ() const { return this->meta.occ; }
+    int spin() const { return this->meta.spin; }
+    bool conjugate() const { return this->meta.conjugate; }
+    double error() const { return this->meta.error; }
+    double norm() const;
+    double squaredNorm() const;
+
+    void add(ComplexDouble c, Orbital inp, double prec = -1.0);
+    void multiply(Orbital inp, double prec = -1.0);
+    void rescale(ComplexDouble c);
+
+    void normalize() { rescale(1.0/this->norm()); }
+    void orthogonalize(Orbital inp);
+
+    friend std::ostream& operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
+
+protected:
+    OrbitalMeta meta;
+    mrcpp::FunctionTree<3> *re;     ///* Real part of function
+    mrcpp::FunctionTree<3> *im;     ///* Imaginary part of function
+
+    char printSpin() const;
+    std::ostream& print(std::ostream &o) const;
+};
+
+} //namespace mrchem

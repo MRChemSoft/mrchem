@@ -1,234 +1,209 @@
-//#include <fstream>
+#include "MRCPP/Printer"
+#include "SerialFunctionTree.h"
 
 #include "Orbital.h"
-#include "FunctionTree.h"
-#include "SerialFunctionTree.h"
-#include "parallel.h"
 
-extern MultiResolutionAnalysis<3> *MRA; // Global MRA
-
-using namespace std;
-
-Orbital workOrb(2, Orbital::Paired);
+namespace mrchem {
+extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 Orbital::Orbital(int occ, int s)
-        : QMFunction(0, 0),
-          spin(s),
-          occupancy(occ),
-          error(1.0) {
+        : meta({occ, s, 0, 0, false, 0.0}), re(0), im(0) {
+    if (this->occ() < 0) INVALID_ARG_ABORT;
+    if (this->spin() < 0) INVALID_ARG_ABORT;
 }
 
 Orbital::Orbital(const Orbital &orb)
-        : QMFunction(orb),
-          spin(orb.spin),
-          occupancy(orb.occupancy),
-          error(1.0) {
+        : meta(orb.meta), re(orb.re), im (orb.im) {
 }
 
-void Orbital::clear(bool free) {
-    clearReal(free);
-    clearImag(free);
-}
-
-void Orbital::compare(const Orbital &orb) const {
-    if (this->compareOccupancy(orb) < 0) {
-        MSG_WARN("Different occupancy");
+Orbital& Orbital::operator=(const Orbital &orb) {
+    if (this != &orb) {
+        this->meta = orb.meta;
+        this->re = orb.re;
+        this->im = orb.im;
     }
-    if (this->compareSpin(orb) < 0) {
-        MSG_WARN("Different spin");
+    return *this;
+}
+
+Orbital Orbital::deepCopy() {
+    Orbital out(*this); // Shallow copy
+    out.clear();        // Remove *re and *im pointers
+    if (this->hasReal()) {
+        out.alloc(NUMBER::Real);
+        mrcpp::FunctionTreeVector<3> vec;
+        vec.push_back(&this->real());
+        mrcpp::copy_grid(out.real(), vec);
+        mrcpp::add(-1.0, out.real(), vec);
+    }
+    if (this->hasImag()) {
+        out.alloc(NUMBER::Imag);
+        mrcpp::FunctionTreeVector<3> vec;
+        vec.push_back(&this->imag());
+        mrcpp::copy_grid(out.imag(), vec);
+        mrcpp::add(-1.0, out.imag(), vec);
+    }
+    return out;         // Return shallow copy
+}
+
+Orbital Orbital::dagger() const {
+    Orbital out(*this); // Shallow copy
+    out.meta.conjugate = not this->meta.conjugate;
+    return out;         // Return shallow copy
+}
+
+void Orbital::alloc(int type) {
+    if (type == NUMBER::Real or type == NUMBER::Total) {
+        if (this->hasReal()) MSG_FATAL("Function not empty");
+        this->re = new mrcpp::FunctionTree<3>(*MRA);
+    }
+    if (type == NUMBER::Imag or type == NUMBER::Total) {
+        if (this->hasImag()) MSG_FATAL("Function not empty");
+        this->im = new mrcpp::FunctionTree<3>(*MRA);
     }
 }
 
-int Orbital::compareOccupancy(const Orbital &orb) const {
-    if (this->getOccupancy() == orb.getOccupancy()) {
-        return this->getOccupancy();
+void Orbital::clear(int type) {
+    if (type == NUMBER::Real or type == NUMBER::Total) {
+        this->re = 0;
+        this->meta.nChunksReal = 0;
     }
-    return -1;
-}
-
-int Orbital::compareSpin(const Orbital &orb) const {
-    if (this->getSpin() == orb.getSpin()) {
-        return this->getSpin();
+    if (type == NUMBER::Imag or type == NUMBER::Total) {
+        this->im = 0;
+        this->meta.nChunksImag = 0;
     }
-    return -1;
 }
 
-double Orbital::getExchangeFactor(const Orbital &orb) const {
-    if (orb.getSpin() == Orbital::Paired) {
-        return 1.0;
-    } else if (this->getSpin() == Orbital::Paired) {
-        return 0.5;
-    } else if (this->getSpin() == orb.getSpin()) {
-        return 1.0;
+void Orbital::free(int type) {
+    if (type == NUMBER::Real or type == NUMBER::Total) {
+        if (this->hasReal()) delete this->re;
+        this->re = 0;
+        this->meta.nChunksReal = 0;
     }
-    return 0.0;
-}
-
-bool Orbital::isConverged(double prec) const {
-    bool converged = false;
-    if (prec < 0.0) converged = true;
-    if (getError() < prec) converged = true;
-    return converged;
-}
-
-complex<double> Orbital::dot(Orbital &ket) {
-    Orbital &bra = *this;
-    if ((bra.getSpin() == Orbital::Alpha) and (ket.getSpin() == Orbital::Beta)) return 0.0;
-    if ((bra.getSpin() == Orbital::Beta) and (ket.getSpin() == Orbital::Alpha)) return 0.0;
-    return QMFunction::dot(ket);
-}
-
-//send an orbital with MPI
-void Orbital::send_Orbital(int dest, int tag){
-#ifdef HAVE_MPI
-  MPI_Status status;
-  MPI_Comm comm=mpiCommOrb;
-
-  struct Metadata{
-    int spin;
-    int occupancy;
-    int NchunksReal;
-    int NchunksImag;
-    double error;
-  };
-
-  Metadata Orbinfo;
-
-  Orbinfo.spin=this->getSpin();
-  Orbinfo.occupancy=this->getOccupancy();
-  Orbinfo.error=this->getError();
-  if(this->hasReal()){
-    Orbinfo.NchunksReal = this->real().getSerialFunctionTree()->nodeChunks.size();//should reduce to actual number of chunks
-  }else{Orbinfo.NchunksReal = 0;}
-  if(this->hasImag()){
-    Orbinfo.NchunksImag = this->imag().getSerialFunctionTree()->nodeChunks.size();//should reduce to actual number of chunks
-  }else{Orbinfo.NchunksImag = 0;}
-  
-  int count=sizeof(Metadata);
-  MPI_Send(&Orbinfo, count, MPI_BYTE, dest, 0, comm);
-  
-  if(this->hasReal())Send_SerialTree(&this->real(), Orbinfo.NchunksReal, dest, tag, comm);
-  if(this->hasImag())Send_SerialTree(&this->imag(), Orbinfo.NchunksImag, dest, tag*10000, comm);
-  
-#endif
-}
-
-#ifdef HAVE_MPI
-//send an orbital with MPI
-void Orbital::Isend_Orbital(int dest, int tag, MPI_Request& request){
-  MPI_Status status;
-  MPI_Comm comm=mpiCommOrb;
-
-  struct Metadata{
-    int spin;
-    int occupancy;
-    int NchunksReal;
-    int NchunksImag;
-    double error;
-  };
-
-  Metadata Orbinfo;
-
-  Orbinfo.spin=this->getSpin();
-  Orbinfo.occupancy=this->getOccupancy();
-  Orbinfo.error=this->getError();
-  if(this->hasReal()){
-    Orbinfo.NchunksReal = this->real().getSerialFunctionTree()->nodeChunks.size();//should reduce to actual number of chunks
-  }else{Orbinfo.NchunksReal = 0;}
-  if(this->hasImag()){
-    Orbinfo.NchunksImag = this->imag().getSerialFunctionTree()->nodeChunks.size();//should reduce to actual number of chunks
-  }else{Orbinfo.NchunksImag = 0;}
-  
-  int count=sizeof(Metadata);
-  MPI_Isend(&Orbinfo, count, MPI_BYTE, dest, 0, comm, &request);
-  
-  if(this->hasReal())ISend_SerialTree(&this->real(), Orbinfo.NchunksReal, dest, tag, comm,  request);
-  if(this->hasImag())ISend_SerialTree(&this->imag(), Orbinfo.NchunksImag, dest, tag*10000, comm, request);
-  
-}
-#endif
-//receive an orbital with MPI
-void Orbital::Rcv_Orbital(int source, int tag){
-#ifdef HAVE_MPI
-  MPI_Status status;
-  MPI_Comm comm=mpiCommOrb;
-
-  struct Metadata{
-    int spin;
-    int occupancy;
-    int NchunksReal;
-    int NchunksImag;
-    double error;
-  };
-
-  Metadata Orbinfo;
-
-  int count=sizeof(Metadata);
-  MPI_Recv(&Orbinfo, count, MPI_BYTE, source, 0, comm, &status);
-  this->setSpin(Orbinfo.spin);
-  this->setOccupancy(Orbinfo.occupancy);
-  this->setError(Orbinfo.error);
-  
-  if(Orbinfo.NchunksReal>0){
-    if(not this->hasReal()){
-      //We must have a tree defined for receiving nodes. Define one:
-      this->allocReal();
+    if (type == NUMBER::Imag or type == NUMBER::Total) {
+        if (this->hasImag()) delete this->im;
+        this->im = 0;
+        this->meta.nChunksImag = 0;
     }
-    Rcv_SerialTree(&this->real(), Orbinfo.NchunksReal, source, tag, comm);}
-
-  if(Orbinfo.NchunksImag>0){
-    if(not this->hasImag()){
-      //We must have a tree defined for receiving nodes. Define one:
-      this->allocImag();
-    }
-    Rcv_SerialTree(&this->imag(), Orbinfo.NchunksImag, source, tag*10000, comm);
-  }else{
-    //&(this->imag())=0;
-  }
-  
-#endif
-
 }
 
-#ifdef HAVE_MPI
-//receive an orbital with MPI
-void Orbital::IRcv_Orbital(int source, int tag){
-  MPI_Status status;
-  MPI_Comm comm=mpiCommOrb;
-
-  struct Metadata{
-    int spin;
-    int occupancy;
-    int NchunksReal;
-    int NchunksImag;
-    double error;
-  };
-
-  Metadata Orbinfo;
-  MPI_Request request=MPI_REQUEST_NULL;
-
-  int count=sizeof(Metadata);
-  MPI_Irecv(&Orbinfo, count, MPI_BYTE, source, 0, comm, &request);
-
-  this->setSpin(Orbinfo.spin);
-  this->setOccupancy(Orbinfo.occupancy);
-  this->setError(Orbinfo.error);
-  
-  if(Orbinfo.NchunksReal>0){
-    if(not this->hasReal()){
-      //We must have a tree defined for receiving nodes. Define one:
-      this->allocReal();
-    }
-    IRcv_SerialTree(&this->real(), Orbinfo.NchunksReal, source, tag, comm);}
-
-  if(Orbinfo.NchunksImag>0){
-    if(not this->hasImag()){
-      //We must have a tree defined for receiving nodes. Define one:
-      this->allocImag();
-    }
-    IRcv_SerialTree(&this->imag(), Orbinfo.NchunksImag, source, tag*10000, comm);
-  }else{
-    //&(this->imag())=0;
-  }
+/** Tree sizes (nChunks) are flushed before return. */
+OrbitalMeta& Orbital::getMetaData() {
+    this->meta.nChunksReal = 0;
+    this->meta.nChunksImag = 0;
+    if (this->hasReal()) this->meta.nChunksReal = real().getSerialFunctionTree()->getNChunksUsed();
+    if (this->hasImag()) this->meta.nChunksImag = imag().getSerialFunctionTree()->getNChunksUsed();
+    return this->meta;
 }
-#endif
+
+double Orbital::norm() const {
+    double norm = this->squaredNorm();
+    if (norm > 0.0) norm = sqrt(norm);
+    return norm;
+}
+
+double Orbital::squaredNorm() const {
+    double sq_r = -1.0;
+    double sq_i = -1.0;
+    if (this->hasReal()) sq_r = this->real().getSquareNorm();
+    if (this->hasImag()) sq_i = this->imag().getSquareNorm();
+
+    double sq_norm = 0.0;
+    if (sq_r < 0.0 and sq_i < 0.0) {
+        sq_norm = -1.0;
+    } else {
+        if (sq_r >= 0.0) sq_norm += sq_r;
+        if (sq_i >= 0.0) sq_norm += sq_i;
+    }
+    return sq_norm;
+}
+
+/** In place multiply with scalar */
+void Orbital::rescale(ComplexDouble c) {
+    double thrs = mrcpp::MachineZero;
+    bool cHasReal = (abs(c.real()) > thrs);
+    bool cHasImag = (abs(c.imag()) > thrs);
+
+    if (cHasReal and cHasImag) {
+        Orbital tmp = orbital::add(c, *this, 0.0, *this);
+        this->free();
+        *this = tmp;
+    }
+    if (cHasReal and not cHasImag) {
+        if (this->hasReal()) this->real().rescale(c.real());
+        if (this->hasImag()) this->imag().rescale(c.real());
+    }
+    if (not cHasReal and not cHasImag) {
+        if (this->hasReal()) this->real().setZero();
+        if (this->hasImag()) this->imag().setZero();
+    }
+    if (not cHasReal and cHasImag) {
+        double conj = 1.0;
+        if (this->conjugate()) conj = -1.0;
+        mrcpp::FunctionTree<3> *tmp_re = this->re;
+        mrcpp::FunctionTree<3> *tmp_im = this->im;
+        if (tmp_re != 0) tmp_re->rescale(c.imag());
+        if (tmp_im != 0) tmp_im->rescale(-1.0*conj*c.imag());
+        this->clear();
+        this->setReal(tmp_im);
+        this->setImag(tmp_re);
+    }
+}
+
+/** In place orthogonalize against inp */
+void Orbital::orthogonalize(Orbital inp) {
+    ComplexDouble overlap = orbital::dot(inp, *this);
+    double sq_norm = inp.squaredNorm();
+    this->add(-1.0*(overlap/sq_norm), inp);
+}
+
+/** In place orthogonalize against all orbitals in inp */
+/*
+void Orbital::orthogonalize(OrbitalVector inp) {
+    NEEDS_TESTING;
+    for (int i = 0; i < inp.size(); i++) {
+        Orbital &inp_i = inp.getOrbital(i);
+        this->orthogonalize(inp_i);
+    }
+}
+*/
+
+/** In place addition */
+void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
+    Orbital tmp = orbital::add(1.0, *this, c, inp, prec);
+    this->free();
+    *this = tmp;
+}
+
+/** In place addition */
+/*
+void Orbital::add(double prec, ComplexVector &c, OrbitalVector &inp, bool union_grid) {
+    NEEDS_TESTING;
+    Orbital tmp(*this);     // Copy parameters
+    inp.push_back(this);
+    c.push_back(1.0);
+    qmfunctions::add(prec, tmp, c, inp, union_grid);
+    this->clear(true);      // Delete pointers
+    this->shallowCopy(tmp); // Copy pointers
+    tmp.clear(false);       // Clear pointers
+    inp.pop_back();         // Restore vector
+    c.pop_back();           // Restore vector
+}
+*/
+
+char Orbital::printSpin() const {
+    char sp = 'u';
+    if (this->spin() == SPIN::Alpha) sp = 'a';
+    if (this->spin() == SPIN::Beta) sp = 'b';
+    return sp;
+}
+
+std::ostream& Orbital::print(std::ostream &o) const {
+    o << std::setw(25) << this->norm();
+    o << std::setw(3) << this->occ();
+    o << std::setw(4) << this->printSpin();
+    o << std::setw(24) << this->error() << std::endl;
+    return o;
+}
+
+} //namespace mrchem
+
