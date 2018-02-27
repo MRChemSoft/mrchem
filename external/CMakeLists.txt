@@ -18,7 +18,6 @@ ExternalProject_Add(submodule-libgetkw
                 -DCMAKE_BUILD_TYPE=Release
                 -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                 -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                -DCMAKE_FORTRAN_COMPILER=${CMAKE_FORTRAN_COMPILER}
     )
 add_dependencies(submodule-libgetkw git-submodule-init)
 add_dependencies(external-modules submodule-libgetkw)
@@ -37,7 +36,6 @@ if (ENABLE_XCFUN)
                     -DCMAKE_BUILD_TYPE=Release
                     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                    -DCMAKE_FORTRAN_COMPILER=${CMAKE_FORTRAN_COMPILER}
         )
     add_dependencies(submodule-xcfun git-submodule-init)
     add_dependencies(external-modules submodule-xcfun)
