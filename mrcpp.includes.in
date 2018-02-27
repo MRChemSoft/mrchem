@@ -1,4 +1,0 @@
-@EIGEN3_INCLUDE_DIR@
-external/include
-src/mrchem
-src/mrcpp
