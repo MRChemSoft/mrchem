@@ -1,4 +1,4 @@
-include(DefaultPathsMRCPP)
+include(DefaultPathsMRChem)
 
 include_directories(mrcpp)
 include_directories(mrchem)

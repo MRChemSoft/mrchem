@@ -1,4 +1,4 @@
-include(DefaultPathsMRCPP)
+include(DefaultPathsMRChem)
 set_property(GLOBAL PROPERTY TestSources)
 add_subdirectory(mrcpp)
 
