@@ -5,3 +5,6 @@
 	path = external/xcfun
 	url = https://github.com/dftlibs/xcfun.git
 
+[submodule "external/mrcpp"]
+	path = external/mrcpp
+	url = https://github.com/stigrj/mrcpp.git
