@@ -1,5 +1,5 @@
 name: MRChem
-min_cmake_version: 2.8
+min_cmake_version: 3.3
 setup_script: setup
 default_build_type: release
 language:
