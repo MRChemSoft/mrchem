@@ -1,57 +1,96 @@
+#include "MRCPP/Printer"
+
 #include "QMOperator.h"
 #include "Orbital.h"
-#include "OrbitalVector.h"
-#include "Timer.h"
 
-using namespace Eigen;
-using namespace std;
+namespace mrchem {
 
 void QMOperator::setApplyPrec(double prec) {
     if (this->apply_prec < 0.0) { 
         this->apply_prec = prec;
-    } else if (not IS_EQUAL(prec, this->apply_prec)) {
+    } else if (abs(prec - this->apply_prec) > mrcpp::MachineZero) {
         MSG_ERROR("Clear operator before setup with different prec!");
     }
 }
 
-double QMOperator::operator() (Orbital &phi_i, Orbital &phi_j) {
+/*
+OrbitalVector QMOperator::operator()(OrbitalVector inp) {
     QMOperator &O = *this;
-    Orbital *Ophi_j = O(phi_j);
-    complex<double> result = phi_i.dot(*Ophi_j);
-    delete Ophi_j;
-    if (result.imag() > MachineZero) MSG_ERROR("Should be real");
-    return result.real();
-}
-
-double QMOperator::adjoint(Orbital &phi_i, Orbital &phi_j) {
-    NOT_IMPLEMENTED_ABORT;
-}
-
-MatrixXd QMOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
-    if (mpiOrbSize == 1) TelePrompter::printHeader(1, "Compute Matrix Element");
-    int Ni = i_orbs.size();
-    int Nj = j_orbs.size();
-    MatrixXcd result = MatrixXcd::Zero(Ni, Nj);
-
-    Timer timer;
-    QMOperator &O = *this;
-    for (int j = 0; j < Nj; j++) {
-        Orbital &phi_j = j_orbs.getOrbital(j);
-        Orbital *Ophi_j = O(phi_j);
-        for (int i = 0; i <  Ni; i++) {
-            Orbital &phi_i = i_orbs.getOrbital(i);
-            result(i,j) = phi_i.dot(*Ophi_j);
-        }
-        delete Ophi_j;
+    OrbitalVector out;
+    for (int i = 0; i < inp.size(); i++) {
+        Orbital &phi_i = *inp[i];
+        Orbital Ophi_i = O(phi_i);
+        out.push_back(Ophi_i);
     }
-    if (mpiOrbSize == 1) timer.stop();
-    if (mpiOrbSize == 1) TelePrompter::printFooter(1, timer, 2);
-
-    if (result.imag().norm() > MachineZero) MSG_ERROR("Should be real");
-    return result.real();
+    return out;
 }
 
-MatrixXd QMOperator::adjoint(OrbitalVector &i_orbs, OrbitalVector &j_orbs) {
-    NOT_IMPLEMENTED_ABORT;
+OrbitalVector QMOperator::dagger(OrbitalVector inp) {
+    QMOperator &O = *this;
+    OrbitalVector out;
+    for (int i = 0; i < inp.size(); i++) {
+        Orbital &phi_i = *inp[i];
+        Orbital Ophi_i = O.dagger(phi_i);
+        out.push_back(Ophi_i);
+    }
+    return out;
+}
+*/
+
+ComplexDouble QMOperator::operator()(Orbital bra, Orbital ket) {
+    QMOperator &O = *this;
+    Orbital Oket = O(ket);
+    ComplexDouble result = orbital::dot(bra, Oket);
+    Oket.free();
+    return result;
 }
 
+ComplexDouble QMOperator::dagger(Orbital bra, Orbital ket) {
+    QMOperator &O = *this;
+    Orbital Oket = O.dagger(ket);
+    ComplexDouble result = orbital::dot(bra, Oket);
+    Oket.free();
+    return result;
+}
+
+/*
+ComplexMatrix QMOperator::operator()(OrbitalVector bra, OrbitalVector ket) {
+    QMOperator &O = *this;
+    int Ni = bra.size();
+    int Nj = ket.size();
+    ComplexMatrix result(Ni, Nj);
+
+    result.setZero();
+    for (int j = 0; j < Nj; j++) {
+        Orbital &ket_j = ket[j];
+        Orbital Oket_j = O(ket_j);
+        for (int i = 0; i < Ni; i++) {
+            Orbital &bra_i = bra[i];
+            result(i, j) = orbital::dot(bra_i, Oket_j);
+        }
+        Oket_j.clear(true);
+    }
+    return result;
+}
+
+ComplexMatrix QMOperator::dagger(OrbitalVector bra, OrbitalVector ket) {
+    QMOperator &O = *this;
+    int Ni = bra.size();
+    int Nj = ket.size();
+    ComplexMatrix result(Ni, Nj);
+
+    result.setZero();
+    for (int j = 0; j < Nj; j++) {
+        Orbital &ket_j = ket[j];
+        Orbital Oket_j = O.dagger(ket_j);
+        for (int i = 0; i < Ni; i++) {
+            Orbital &bra_i = bra[i];
+            result(i, j) = orbital::dot(bra_i, Oket_j);
+        }
+        Oket_j.clear(true);
+    }
+    return result;
+}
+*/
+
+} //namespace mrchem
