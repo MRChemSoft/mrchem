@@ -9,24 +9,17 @@
  *
  */
 
-#include "mrchem.h"
-#include "MREnv.h"
-#include "SCFDriver.h"
+#include "MRCPP/Printer"
 
-Getkw Input;
+#include "mrchem.h"
+
+namespace mrchem {
+
+mrcpp::MultiResolutionAnalysis<3> *MRA;  //< Default MRA
 
 int main(int argc, char **argv) {
-    Timer timer;
-    MREnv::initializeMRCPP(argc, argv);
-
-    SCFDriver driver(Input);
-    driver.setup();
-    driver.run();
-    driver.clear();
-
-    timer.stop();
-    MREnv::finalizeMRCPP(timer);
-
+    NOT_IMPLEMENTED_ABORT;
     return 0;
 }
 
+} //namespace mrchem

@@ -1,17 +1,23 @@
 /*
- *  \date Feb 18, 2010
- *  \author Jonas Juselius <jonas.juselius@uit.no> \n
- *          CTCC, University of Tromsø
+ *  \date Feb 22, 2018
+ *  \author Stig Rune Jensen <stig.r.jensen@uit.no> \n
+ *          Hylleraas Centre for Quantum Molecular Sciences \n
+ *          UiT - The Arctic University of Norway
  *
- * \breif Global objects and variables
+ *  \breif Global objects and variables
  */
 
 #pragma once
 
-#include "Getkw.h"
-#include "MultiResolutionAnalysis.h"
+#include <complex>
 
-extern Getkw Input; //< Default user input
-extern MultiResolutionAnalysis<3> *MRA; //< Default MRA
+#include "MRCPP/MWFunctions"
 
+namespace mrchem {
+
+typedef std::complex<double> ComplexDouble;
+
+extern mrcpp::MultiResolutionAnalysis<3> *MRA;  //< Default MRA
+
+} //namespace mrchem
 
