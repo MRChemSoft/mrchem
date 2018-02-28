@@ -6,10 +6,18 @@
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-Orbital::Orbital(int occ, int s)
-        : meta({occ, s, 0, 0, false, 0.0}), re(0), im(0) {
-    if (this->occ() < 0) INVALID_ARG_ABORT;
+Orbital::Orbital()
+        : meta({0, 0, 0, 0, false, 0.0}), re(0), im(0) {
+}
+
+Orbital::Orbital(int spin, int occ)
+        : meta({spin, occ, 0, 0, false, 0.0}), re(0), im(0) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
+    if (this->occ() < 0) {
+        if (this->spin() == SPIN::Paired) this->meta.occ = 2;
+        if (this->spin() == SPIN::Alpha) this->meta.occ = 1;
+        if (this->spin() == SPIN::Beta) this->meta.occ = 1;
+    }
 }
 
 Orbital::Orbital(const Orbital &orb)
@@ -23,6 +31,10 @@ Orbital& Orbital::operator=(const Orbital &orb) {
         this->im = orb.im;
     }
     return *this;
+}
+
+Orbital Orbital::paramCopy() const {
+    return Orbital(this->spin(), this->occ());
 }
 
 Orbital Orbital::deepCopy() {

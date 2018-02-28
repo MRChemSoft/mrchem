@@ -36,7 +36,7 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
     }
 
     SECTION("apply") {
-        Orbital phi(2, SPIN::Paired);
+        Orbital phi(SPIN::Paired);
         phi.alloc();
         mrcpp::project(prec, phi.real(), f);
         mrcpp::project(prec, phi.imag(), g);
@@ -60,7 +60,7 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
     }
 
     SECTION("expectation value") {
-        Orbital phi(2, SPIN::Paired);
+        Orbital phi(SPIN::Paired);
         phi.alloc();
         mrcpp::project(prec, phi.real(), f);
         mrcpp::project(prec, phi.imag(), g);
