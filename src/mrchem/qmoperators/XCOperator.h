@@ -8,13 +8,14 @@
 
 class XCFunctional;
 class OrbitalVector;
+class XCPotential;
 template<int D> class FunctionTree;
 template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
 
 /** 
  *  \class XCOperator
- *  \brief Interface class to compute DFT functionaals and derivatives
+ *  \brief Exchange and Correlation operators
  *
  *  Testing the output on Sphinx
  *
@@ -28,9 +29,12 @@ public:
     virtual ~XCOperator();
 
     double getEnergy() const { return this->energy; }
+    void setup(double prec);
+    void clear();
 
 protected:
     const int order;                    ///< Order of kernel derivative
+    int nPotentials;                    ///< Number of potential energy functions
     XCFunctional *functional;           ///< Pointer to external object
     DerivativeOperator<3> *derivative;  ///< Pointer to external object
     OrbitalVector *orbitals;            ///< Pointer to external object
@@ -42,6 +46,9 @@ protected:
     FunctionTree<3> **xcInput;          ///< XCFun input
     FunctionTree<3> **xcOutput;         ///< XCFun output
 
+    std::vector<XCPotential> potentialFunction;
+
+
     void setupXCInput();
     void setupXCOutput();
 
@@ -51,7 +58,7 @@ protected:
     void calcDensity();
     void calcDensityGradient(Density *dRho, Density &rho);
 
-    virtual void calcPotential() = 0;
+    void calcPotential();
     bool cropPotential(double prec);
 
     void calcEnergy();
@@ -64,9 +71,7 @@ protected:
     void expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
 
     FunctionTreeVector<3> calcGradient(FunctionTree<3> &inp);
-    FunctionTree<3>* calcDivergence(FunctionTreeVector<3> &inp);
     FunctionTree<3>* calcDotProduct(FunctionTreeVector<3> &vec_a, FunctionTreeVector<3> &vec_b);
-    FunctionTree<3>* calcGradDotPotDensVec(FunctionTree<3> &V, FunctionTreeVector<3> &rho);
 
     template<class T>
     int sumNodes(T **trees, int nTrees) {

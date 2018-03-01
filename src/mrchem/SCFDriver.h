@@ -36,6 +36,7 @@ class CoulombPotential;
 class KineticOperator;
 class NuclearPotential;
 class ExchangePotential;
+class XCOperator;
 class XCPotential;
 class XCFunctional;
 
@@ -209,14 +210,14 @@ protected:
     NuclearPotential *V;
     CoulombPotential *J;
     ExchangePotential *K;
-    XCPotential *XC;
+    XCOperator *XC;
     FockOperator *fock;
     Eigen::MatrixXd F;
 
     OrbitalVector *phi_np1;
     CoulombPotential *J_np1;
     ExchangePotential *K_np1;
-    XCPotential *XC_np1;
+    XCOperator *XC_np1;
     FockOperator *fock_np1;
     Eigen::MatrixXd F_np1;
 
@@ -225,7 +226,7 @@ protected:
     OrbitalVector *phi_y;
     CoulombPotential *dJ;
     ExchangePotential *dK;
-    XCPotential *dXC;
+    XCOperator *dXC;
     FockOperator *d_fock;
 
     // XCFun

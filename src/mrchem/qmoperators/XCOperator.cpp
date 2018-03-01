@@ -1,4 +1,5 @@
 #include "XCOperator.h"
+#include "XCPotential.h"
 #include "XCFunctional.h"
 #include "FunctionTree.h"
 #include "FunctionNode.h"
@@ -24,6 +25,7 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
           xcInput(0),
           xcOutput(0) {
     bool spin = F.isSpinSeparated();
+    int nPotentials = spin ? k + 1 : 1; /// k+1 potentials if spin separated, otherwise just one.
     density.setIsSpinDensity(spin);
     gradient[0].setIsSpinDensity(spin);
     gradient[1].setIsSpinDensity(spin);
@@ -36,6 +38,40 @@ XCOperator::~XCOperator() {
     if (this->xcOutput != 0) MSG_ERROR("XC output not deallocated");
     this->functional = 0;
     this->derivative = 0;
+}
+
+/** \brief Provides the right sequence of internal operations to compute the XC potential 
+ */
+void XCOperator::setup(double prec) {
+    setApplyPrec(prec);
+    calcDensity();
+    setupXCInput();
+    setupXCOutput();
+    evaluateXCFunctional();
+    calcEnergy();
+    calcPotential();
+    clearXCInput();
+    clearXCOutput();
+}
+
+void XCOperator::calcPotential() {
+    for (int i = 0; i < this->nPotentials; i++) {
+        XCPotential pot(i, this->order);
+        pot.calcPotential(this->functional, this->xcOutput, this->density, this->gradient, this->derivative, this->max_scale);
+        potentialFunction.push_back(pot);
+    }
+}
+
+/** \brief Cleanup function to call after the the XC potential has been calculated
+ */
+void XCOperator::clear() {
+    //Here I have to clear the potential objects.
+    this->energy = 0.0;
+    this->density.clear();
+    this->gradient[0].clear();
+    this->gradient[1].clear();
+    this->gradient[2].clear();
+    clearApplyPrec();
 }
 
 void XCOperator::calcDensity() {
@@ -101,25 +137,6 @@ FunctionTreeVector<3> XCOperator::calcGradient(FunctionTree<3> &inp) {
     return out;
 }
 
-FunctionTree<3>* XCOperator::calcDivergence(FunctionTreeVector<3> &inp) {
-    if (this->derivative == 0) MSG_ERROR("No derivative operator");
-    MWAdder<3> add(-1.0, this->max_scale);
-    MWDerivative<3> apply(this->max_scale);
-    GridGenerator<3> grid(this->max_scale);
-
-    FunctionTreeVector<3> tmp_vec;
-    for (int d = 0; d < 3; d++) {
-        FunctionTree<3> *out_d = new FunctionTree<3>(*MRA);
-        apply(*out_d, *this->derivative, *inp[d], d);
-        tmp_vec.push_back(out_d);
-    }
-    FunctionTree<3> *out = new FunctionTree<3>(*MRA);
-    grid(*out, tmp_vec);
-    add(*out, tmp_vec, 0); // Addition on union grid
-    tmp_vec.clear(true);
-    return out;
-}
-
 /** Compute the required input functions for XCFun. In the case of GGA
  * the spin density gradients are computed. Then densities and gradients
  * are sorted in the input function array in the correct order for XCFun.
@@ -164,13 +181,13 @@ void XCOperator::setupXCInput() {
             vec.push_back(&rho_x.alpha());
             vec.push_back(&rho_y.alpha());
             vec.push_back(&rho_z.alpha());
-            this->xcInput[1] = calcDotProduct(vec, vec);
+            this->xcInput[2] = calcDotProduct(vec, vec);
             vec.clear();
 
             vec.push_back(&rho_x.beta());
             vec.push_back(&rho_y.beta());
             vec.push_back(&rho_z.beta());
-            this->xcInput[2] = calcDotProduct(vec, vec);
+            this->xcInput[3] = calcDotProduct(vec, vec);
             vec.clear();
         }
     }
@@ -198,7 +215,7 @@ void XCOperator::clearXCInput() {
     if (spin) this->xcInput[1] = 0;
 
     // the rest should be deleted
-    this->xcInput = deletePtrArray<FunctionTree<3> >(nInp, &this->xcInput);
+    this->xcInput = deletePtrArray<FunctionTree<3> >(nInp, &this->xcInput);  //LUCA: is this enough? Are we not leaving garbage around?
 }
 
 void XCOperator::setupXCOutput() {
@@ -270,37 +287,6 @@ void XCOperator::calcEnergy() {
     double t = timer.getWallTime();
     int n = this->xcOutput[0]->getNNodes();
     TelePrompter::printTree(0, "XC energy", n, t);
-}
-
-FunctionTree<3>* XCOperator::calcGradDotPotDensVec(FunctionTree<3> &V, FunctionTreeVector<3> &rho) {
-    MWMultiplier<3> mult(-1.0, this->max_scale);
-    GridGenerator<3> grid(this->max_scale);
-
-    FunctionTreeVector<3> vec;
-    for (int d = 0; d < 3; d++) {
-        if (rho[d] == 0) MSG_ERROR("Invalid density");
-
-        Timer timer;
-        FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
-        grid(*Vrho, *rho[d]);
-        mult(*Vrho, 1.0, V, *rho[d], 0);
-        vec.push_back(Vrho);
-
-        timer.stop();
-        double t = timer.getWallTime();
-        int n = Vrho->getNNodes();
-        TelePrompter::printTree(2, "Multiply", n, t);
-    }
-
-    Timer timer;
-    FunctionTree<3> *result = calcDivergence(vec);
-    vec.clear(true);
-
-    timer.stop();
-    double t = timer.getWallTime();
-    int n = result->getNNodes();
-    TelePrompter::printTree(2, "Gradient", n, t);
-    return result;
 }
 
 FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,

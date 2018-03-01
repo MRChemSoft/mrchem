@@ -386,7 +386,7 @@ void SCFDriver::setup() {
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        XC = new XCPotential(*xcfun, *phi, ABGV_00);
+        XC = new XCOperator(1, *xcfun, *phi, ABGV_00);
         if (dft_x_fac > MachineZero) {
             K = new ExchangePotential(*P, *phi, dft_x_fac);
         }
@@ -440,7 +440,7 @@ void SCFDriver::setup_np1() {
         K_np1 = new ExchangePotential(*P, *phi_np1);
     } else if (wf_method == "DFT") {
         J_np1 = new CoulombPotential(*P, *phi_np1);
-        XC_np1 = new XCPotential(*xcfun, *phi_np1, ABGV_00);
+        XC_np1 = new XCOperator(1, *xcfun, *phi_np1, ABGV_00);
         if (dft_x_fac > MachineZero) {
             K_np1 = new ExchangePotential(*P, *phi_np1, dft_x_fac);
         }

@@ -14,94 +14,76 @@ extern MultiResolutionAnalysis<3> *MRA;
 using namespace std;
 using namespace Eigen;
 
-/** \brief Provides the right sequence of internal operations to compute the XC potential 
+/** \brief Creator
+ *
+ *  Initializes derivative order and index
+ *
  */
-void XCPotential::setup(double prec) {
-    setApplyPrec(prec);
-    calcDensity();
-    setupXCInput();
-    setupXCOutput();
-    evaluateXCFunctional();
-    calcEnergy();
-    calcPotential();
-    clearXCInput();
-    clearXCOutput();
+XCPotential::XCPotential(int dO, int dI)
+    : derivativeOrder(dO), derivativeIndex(dI) {
+    if (abs(derivativeOrder) > 1) {
+            NOT_IMPLEMENTED_ABORT;
+        }
+    if (abs(derivativeIndex) > abs(derivativeOrder)) {
+        MSG_ERROR("Inconsistent input in XCPotential creator");
+    }
 }
 
-/** \brief Cleanup function to call after the the XC potential has been calculated
+/** \brief driver to compute the XC potential
+
+    For LDA functionals, the potential is directly the output of
+    xcfun. For GGA functionals, the potential is assembled starting
+    from the xcfun output. In both cases the result is stored in the
+    real part of the parent qmfunction.
+
  */
-void XCPotential::clear() {
-    clearReal(true);
-    clearImag(true);
-    this->energy = 0.0;
-    this->density.clear();
-    this->gradient[0].clear();
-    this->gradient[1].clear();
-    this->gradient[2].clear();
-    clearApplyPrec();
-}
+void XCPotential::calcPotential(XCFunctional * func,
+                                FunctionTree<3> ** xcOutput,
+                                Density & density,
+                                Density * gradient,
+                                DerivativeOperator<3> *derivative,
+                                int maxScale) {
+    if (this->potentialFunction != 0) MSG_ERROR("Potential not properly cleared");
 
-/** TO BE COMPLETED
- */
-void XCPotential::calcPotential() {
-    if (this->hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (this->hasImag()) MSG_ERROR("Potential not properly cleared");
+    if (xcOutput == 0) MSG_ERROR("XC output not initialized");
 
-    if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
-
-    bool lda = this->functional->isLDA();
-    bool gga = this->functional->isGGA();
-    bool spin = this->functional->isSpinSeparated();
+    bool lda = func->isLDA();
+    bool gga = func->isGGA();
+    bool spin = func->isSpinSeparated();
 
     Timer timer;
+
     if (lda) {
-        if (not spin) {
-            calcPotentialLDA(Density::Total);
-        } else {
-            calcPotentialLDA(Density::Alpha);
-            calcPotentialLDA(Density::Beta);
-        }
+        calcPotentialLDA(xcOutput, density, gradient);
     } else if (gga) {
-        if (not spin) {
-            calcPotentialGGA(Density::Total);
-        } else {
-            calcPotentialGGA(Density::Alpha);
-            calcPotentialGGA(Density::Beta);
-        }
+        calcPotentialGGA(spin, xcOutput, density, gradient, derivative, maxScale);
     } else {
         MSG_FATAL("Invalid functional type");
     }
     timer.stop();
     double t = timer.getWallTime();
-    int n = 0;
-    n += this->getNNodes();
-    //n += this->potential[1].getNNodes();
-    //n += this->potential[2].getNNodes();
+    int n = this->potentialFunction->getNNodes();
     TelePrompter::printTree(0, "XC potential", n, t);
 }
 
 /** \brief Driver for the the LDA part of the XC potential
  *  
  * For LDA functionals it suffices to compute the first derivative of
- * the functional with respect to the density. Theya re are the second
- * and third output functions (alpha/beta) in the XCFunctional driver.
+ * the functional with respect to the density. They are the second and
+ * third output functions (alpha/beta) in the XCFunctional driver. We
+ * to store the correct one in potentialFunction;
  */
-void XCPotential::calcPotentialLDA(int spin) {
-    if (spin == Density::Total) {
-        if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        this->setReal(this->xcOutput[1]);
-        this->xcOutput[1] = 0;
-    } else if (spin == Density::Alpha) {
-        if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        this->setReal(this->xcOutput[1]);
-        this->xcOutput[1] = 0;
-    } else if (spin == Density::Beta) {
-        if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        this->setReal(this->xcOutput[2]);
-        this->xcOutput[2] = 0;
-    } else {
-        MSG_FATAL("Invalid spin");
+void XCPotential::calcPotentialLDA(FunctionTree<3> ** xcOutput,
+                                   Density & density,
+                                   Density * gradient) {
+    if (this->derivativeOrder != 1) {
+        NOT_IMPLEMENTED_ABORT;
     }
+
+    int outputIndex = derivativeIndex + 1;
+    if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
+    this->potentialFunction = xcOutput[outputIndex];
+    xcOutput[outputIndex] = 0;
 }
 
 /** \brief Driver for the the GGA part of the XC potential
@@ -110,20 +92,26 @@ void XCPotential::calcPotentialLDA(int spin) {
  * potential. The initialization depends on the spin
  * (total/alpha/beta).
  */
-void XCPotential::calcPotentialGGA(int spin) {
+void XCPotential::calcPotentialGGA(bool spin,
+                                   FunctionTree<3> ** xcOutput,
+                                   Density & density,
+                                   Density * gradient,
+                                   DerivativeOperator<3> *derivative,
+                                   int maxScale) {
+ 
     FunctionTreeVector<3> xc_funcs;
     FunctionTreeVector<3> dRho_a;
     FunctionTreeVector<3> dRho_b;
 
-    Density &rho_x = this->gradient[0];
-    Density &rho_y = this->gradient[1];
-    Density &rho_z = this->gradient[2];
+    Density &rho_x = gradient[0];
+    Density &rho_y = gradient[1];
+    Density &rho_z = gradient[2];
 
-    if (spin == Density::Total) {
-        if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        xc_funcs.push_back(this->xcOutput[1]);
-        xc_funcs.push_back(this->xcOutput[2]);
+    if (!spin) {
+        if (xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
+        if (xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
+        xc_funcs.push_back(xcOutput[1]);
+        xc_funcs.push_back(xcOutput[2]);
         xc_funcs.push_back(0);
         dRho_a.push_back(&rho_x.total());
         dRho_a.push_back(&rho_y.total());
@@ -132,20 +120,19 @@ void XCPotential::calcPotentialGGA(int spin) {
         dRho_b.push_back(0);
         dRho_b.push_back(0);
 
-        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        this->setReal(V);
+        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b, derivative, maxScale);
+        this->potentialFunction = V;
 
         xc_funcs.clear();
         dRho_a.clear();
         dRho_b.clear();
-    }
-    if (spin == Density::Alpha) {
-        if (this->xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        if (this->xcOutput[3] == 0) MSG_ERROR("Invalid XC output");
-        if (this->xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
-        xc_funcs.push_back(this->xcOutput[1]);
-        xc_funcs.push_back(this->xcOutput[3]);
-        xc_funcs.push_back(this->xcOutput[4]);
+    } else if (spin && derivativeIndex == 0) {
+        if (xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
+        if (xcOutput[3] == 0) MSG_ERROR("Invalid XC output");
+        if (xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
+        xc_funcs.push_back(xcOutput[1]);
+        xc_funcs.push_back(xcOutput[3]);
+        xc_funcs.push_back(xcOutput[4]);
         dRho_a.push_back(&rho_x.alpha());
         dRho_a.push_back(&rho_y.alpha());
         dRho_a.push_back(&rho_z.alpha());
@@ -153,20 +140,19 @@ void XCPotential::calcPotentialGGA(int spin) {
         dRho_b.push_back(&rho_y.beta());
         dRho_b.push_back(&rho_z.beta());
 
-        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        this->setReal(V);
+        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b, derivative, maxScale);
+        this->potentialFunction = V;
 
         xc_funcs.clear();
         dRho_a.clear();
         dRho_b.clear();
-    }
-    if (spin == Density::Beta) {
-        if (this->xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        if (this->xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
-        if (this->xcOutput[5] == 0) MSG_ERROR("Invalid XC output");
-        xc_funcs.push_back(this->xcOutput[2]);
-        xc_funcs.push_back(this->xcOutput[5]);
-        xc_funcs.push_back(this->xcOutput[4]);
+    } else if (spin && derivativeIndex == 1) {
+        if (xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
+        if (xcOutput[5] == 0) MSG_ERROR("Invalid XC output");
+        if (xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
+        xc_funcs.push_back(xcOutput[2]);
+        xc_funcs.push_back(xcOutput[5]);
+        xc_funcs.push_back(xcOutput[4]);
         dRho_a.push_back(&rho_x.beta());
         dRho_a.push_back(&rho_y.beta());
         dRho_a.push_back(&rho_z.beta());
@@ -174,12 +160,14 @@ void XCPotential::calcPotentialGGA(int spin) {
         dRho_b.push_back(&rho_y.alpha());
         dRho_b.push_back(&rho_z.alpha());
 
-        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b);
-        this->setReal(V);
+        FunctionTree<3> *V = calcPotentialGGA(xc_funcs, dRho_a, dRho_b, derivative, maxScale);
+        this->potentialFunction = V;
 
         xc_funcs.clear();
         dRho_a.clear();
         dRho_b.clear();
+    } else {
+        MSG_ERROR("Undefined case");
     }
 }
 
@@ -194,7 +182,9 @@ void XCPotential::calcPotentialGGA(int spin) {
  */
 FunctionTree<3>* XCPotential::calcPotentialGGA(FunctionTreeVector<3> &xc_funcs,
                                                FunctionTreeVector<3> &dRho_a,
-                                               FunctionTreeVector<3> &dRho_b) {
+                                               FunctionTreeVector<3> &dRho_b,
+                                               DerivativeOperator<3> *derivative,
+                                               int maxScale) {
     if (xc_funcs[0] == 0) MSG_ERROR("Invalid XC output");
 
     FunctionTreeVector<3> funcs;
@@ -202,18 +192,18 @@ FunctionTree<3>* XCPotential::calcPotentialGGA(FunctionTreeVector<3> &xc_funcs,
 
     FunctionTree<3> *tmp_1 = 0;
     if (xc_funcs[1] != 0) {
-        tmp_1 = calcGradDotPotDensVec(*xc_funcs[1], dRho_a);
+        tmp_1 = calcGradDotPotDensVec(*xc_funcs[1], dRho_a, derivative, maxScale);
         funcs.push_back(-2.0, tmp_1);
     }
 
     FunctionTree<3> *tmp_2 = 0;
     if (xc_funcs[2] != 0) {
-        tmp_2 = calcGradDotPotDensVec(*xc_funcs[2], dRho_b);
+        tmp_2 = calcGradDotPotDensVec(*xc_funcs[2], dRho_b, derivative, maxScale);
         funcs.push_back(-1.0, tmp_2);
     }
 
-    GridGenerator<3> G(this->max_scale);
-    MWAdder<3> add(-1.0, this->max_scale);
+    GridGenerator<3> G(maxScale);
+    MWAdder<3> add(-1.0, maxScale);
 
     FunctionTree<3> *V = new FunctionTree<3>(*MRA);
     G(*V, funcs);
@@ -224,5 +214,60 @@ FunctionTree<3>* XCPotential::calcPotentialGGA(FunctionTreeVector<3> &xc_funcs,
     if (tmp_2 != 0) delete tmp_2;
 
     return V;
+}
+
+FunctionTree<3>* XCPotential::calcGradDotPotDensVec(FunctionTree<3> &V,
+                                                    FunctionTreeVector<3> &rho,
+                                                    DerivativeOperator<3> *derivative,
+                                                    int maxScale) {
+    MWMultiplier<3> mult(-1.0, maxScale);
+    GridGenerator<3> grid(maxScale);
+
+    FunctionTreeVector<3> vec;
+    for (int d = 0; d < 3; d++) {
+        if (rho[d] == 0) MSG_ERROR("Invalid density");
+
+        Timer timer;
+        FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
+        grid(*Vrho, *rho[d]);
+        mult(*Vrho, 1.0, V, *rho[d], 0);
+        vec.push_back(Vrho);
+
+        timer.stop();
+        double t = timer.getWallTime();
+        int n = Vrho->getNNodes();
+        TelePrompter::printTree(2, "Multiply", n, t);
+    }
+
+    Timer timer;
+    FunctionTree<3> *result = calcDivergence(vec, derivative, maxScale);
+    vec.clear(true);
+
+    timer.stop();
+    double t = timer.getWallTime();
+    int n = result->getNNodes();
+    TelePrompter::printTree(2, "Gradient", n, t);
+    return result;
+}
+
+FunctionTree<3>* XCPotential::calcDivergence(FunctionTreeVector<3> &inp,
+                                             DerivativeOperator<3> *derivative,
+                                             int maxScale) {
+    if (derivative == 0) MSG_ERROR("No derivative operator");
+    MWAdder<3> add(-1.0,  maxScale);
+    MWDerivative<3> apply(maxScale);
+    GridGenerator<3> grid(maxScale);
+
+    FunctionTreeVector<3> tmp_vec;
+    for (int d = 0; d < 3; d++) {
+        FunctionTree<3> *out_d = new FunctionTree<3>(*MRA);
+        apply(*out_d, *derivative, *inp[d], d);
+        tmp_vec.push_back(out_d);
+    }
+    FunctionTree<3> *out = new FunctionTree<3>(*MRA);
+    grid(*out, tmp_vec);
+    add(*out, tmp_vec, 0); // Addition on union grid
+    tmp_vec.clear(true);
+    return out;
 }
 
