@@ -1,12 +1,9 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "mrtest.h"
 
 #include "IdentityOperator.h"
 #include "Orbital.h"
-
-extern MultiResolutionAnalysis<3> *mrchem::MRA;  //< Default MRA
 
 using namespace mrchem;
 
@@ -22,7 +19,6 @@ auto g = [] (const double *r) -> double {
 
 TEST_CASE("IdentityOperator", "[identity_operator]") {
     const double prec = 1.0e-3;
-    mrchem::MRA = mrtest::initialize_mra();
 
     SECTION("setup") {
         IdentityOperator I;
@@ -80,6 +76,4 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         I.clear();
         phi.free();
     }
-
-    delete mrchem::MRA;
 }

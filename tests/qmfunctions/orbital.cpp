@@ -1,11 +1,7 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "mrtest.h"
-
 #include "Orbital.h"
-
-extern MultiResolutionAnalysis<3> *mrchem::MRA;  //< Default MRA
 
 using namespace mrchem;
 
@@ -21,7 +17,6 @@ auto g = [] (const double *r) -> double {
 
 TEST_CASE("Orbital", "[orbital]") {
     const double prec = 1.0e-3;
-    mrchem::MRA = mrtest::initialize_mra();
 
     SECTION("alloc") {
         Orbital phi_1(SPIN::Paired);
@@ -163,8 +158,8 @@ TEST_CASE("Orbital", "[orbital]") {
             mrcpp::project(prec, phi_2.imag(), g);
 
             ComplexDouble S = orbital::dot(phi_1, phi_2);
-            REQUIRE( S.real() == Approx(0.0) );
-            REQUIRE( S.imag() == Approx(0.0) );
+            REQUIRE( abs(S.real()) < mrcpp::MachineZero );
+            REQUIRE( abs(S.imag()) < mrcpp::MachineZero );
 
             phi_2.free();
         }
@@ -175,8 +170,8 @@ TEST_CASE("Orbital", "[orbital]") {
             mrcpp::project(prec, phi_2.imag(), g);
 
             ComplexDouble S1 = orbital::dot(phi_1, phi_2);
-            REQUIRE( S1.real() == Approx(0.0) );
-            REQUIRE( S1.imag() != Approx(0.0) );
+            REQUIRE( abs(S1.real()) < mrcpp::MachineZero );
+            REQUIRE( abs(S1.imag()) > mrcpp::MachineZero );
 
             ComplexDouble S2 = orbital::dot(phi_1, phi_2.dagger());
             REQUIRE( S2.real() == Approx( S1.real()) );
@@ -185,8 +180,10 @@ TEST_CASE("Orbital", "[orbital]") {
             phi_2.orthogonalize(phi_1);
 
             ComplexDouble S3 = orbital::dot(phi_1, phi_2);
-            REQUIRE( S3.real() == Approx(0.0) );
-            REQUIRE( S3.imag() == Approx(0.0) );
+            std::cout << S3.real() << std::endl;
+            std::cout << S3.imag() << std::endl;
+            REQUIRE( abs(S3.real()) < mrcpp::MachineZero );
+            REQUIRE( abs(S3.imag()) < mrcpp::MachineZero );
 
             phi_2.free();
         }
@@ -231,6 +228,4 @@ TEST_CASE("Orbital", "[orbital]") {
         phi.free();
         psi.free();
     }
-
-    delete mrchem::MRA;
 }
