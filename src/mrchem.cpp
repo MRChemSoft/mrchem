@@ -1,4 +1,4 @@
-/** \mainpage The MRChem program
+/** \mainpage The MRChem main program
  *
  * \author Stig Rune Jensen
  *
@@ -9,17 +9,31 @@
  *
  */
 
+#include "Getkw.h"
 #include "MRCPP/Printer"
+#include "MRCPP/Timer"
 
+#include "mrenv.h"
 #include "mrchem.h"
+#include "parallel.h"
 
-namespace mrchem {
+Getkw mrchem::Input;
+mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
-mrcpp::MultiResolutionAnalysis<3> *MRA;  //< Default MRA
+using namespace mrcpp;
+using namespace mrchem;
 
 int main(int argc, char **argv) {
-    NOT_IMPLEMENTED_ABORT;
+    mpi::initialize(argc, argv);
+    mrenv::initialize(argc, argv);
+
+    Timer timer;
+
+    timer.stop();
+    double wt = timer.getWallTime();
+
+    mrenv::finalize(wt);
+    mpi::finalize();
     return 0;
 }
 
-} //namespace mrchem

@@ -11,13 +11,17 @@
 
 #include <complex>
 
+#include "config.h"
 #include "MRCPP/MWFunctions"
+
+class Getkw;
 
 namespace mrchem {
 
 typedef std::complex<double> ComplexDouble;
 
-extern mrcpp::MultiResolutionAnalysis<3> *MRA;  //< Default MRA
+extern Getkw Input;
+extern mrcpp::MultiResolutionAnalysis<3> *MRA;  //< Global MRA
 
 } //namespace mrchem
 

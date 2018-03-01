@@ -18,13 +18,13 @@ version="@PROGRAM_VERSION@"
 import sys, re, optparse, os, string, subprocess, tempfile, math
 from copy import deepcopy
 
-sys.path.append("@CMAKE_INSTALL_PREFIX@/external/share/libgetkw/")
+sys.path.append("@CMAKE_BINARY_DIR@/stage/@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
 if not os.environ.has_key('MRCHEM_FILTER_DIR'):
     os.environ['MRCHEM_FILTER_DIR'] = "@MW_FILTER_DIR@"
 import getkw
-from @INITIAL_GUESS_PROGRAM@ import run_initial_guess
-from @INITIAL_GUESS_PROGRAM@ import estimate_energy
+# from @INITIAL_GUESS_PROGRAM@ import run_initial_guess
+# from @INITIAL_GUESS_PROGRAM@ import estimate_energy
 
 def main():
     global topsect, debug, executable, printlevel, dryrun
@@ -71,9 +71,9 @@ def main():
             charge = mol.get('charge').get()
             basis = lsdalton.get('basis').get()
             method = lsdalton.get('method').get()
-            if run_initial_guess(coords, basis, method, charge, mult) is not None:
-                print "Error in initial guess step"
-                sys.exit(1)
+#            if run_initial_guess(coords, basis, method, charge, mult) is not None:
+#                print "Error in initial guess step"
+#                sys.exit(1)
         # Write processed input file and run MRChem
         with tempfile.TemporaryFile(mode='w+r') as fd:
             fd.write(str(inkw.top))
@@ -281,17 +281,17 @@ def verify_top(top):
     if not top.get('rel_prec').is_set():
         if not top.get('est_norm').is_set():
             mol = topsect.fetch_sect('Molecule')
-            if mol.get('coords').is_set():
-                coords = mol.get('coords').get()
-                est_au = estimate_energy(coords)
-                if top['energy_unit'][0] == 'eV':
-                    top['est_norm'][0] = 27.2*est_au
-                elif top['energy_unit'][0] == 'kcal':
-                    top['est_norm'][0] = 627.5*est_au
-                elif top['energy_unit'][0] == 'kJ':
-                    top['est_norm'][0] = 2625.5*est_au
-                else:
-                    top['est_norm'][0] = est_au
+#            if mol.get('coords').is_set():
+#                coords = mol.get('coords').get()
+#                est_au = estimate_energy(coords)
+#                if top['energy_unit'][0] == 'eV':
+#                    top['est_norm'][0] = 27.2*est_au
+#                elif top['energy_unit'][0] == 'kcal':
+#                    top['est_norm'][0] = 627.5*est_au
+#                elif top['energy_unit'][0] == 'kJ':
+#                    top['est_norm'][0] = 2625.5*est_au
+#                else:
+#                    top['est_norm'][0] = est_au
                 #print "\nPrecision is set by energy estimate Z^(5/2)"
         top['rel_prec'][0] = 10*top['abs_prec'][0] / top['est_norm'][0]
         #print "   est_norm  ", top['est_norm'][0]
