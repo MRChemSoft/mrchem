@@ -1,5 +1,4 @@
 #include "MRCPP/Printer"
-#include "SerialFunctionTree.h"
 
 #include "Orbital.h"
 
@@ -102,8 +101,8 @@ void Orbital::free(int type) {
 OrbitalMeta& Orbital::getMetaData() {
     this->meta.nChunksReal = 0;
     this->meta.nChunksImag = 0;
-    if (this->hasReal()) this->meta.nChunksReal = real().getSerialFunctionTree()->getNChunksUsed();
-    if (this->hasImag()) this->meta.nChunksImag = imag().getSerialFunctionTree()->getNChunksUsed();
+    if (this->hasReal()) this->meta.nChunksReal = real().getNChunksUsed();
+    if (this->hasImag()) this->meta.nChunksImag = imag().getNChunksUsed();
     return this->meta;
 }
 
