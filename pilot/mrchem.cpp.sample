@@ -1,36 +1,32 @@
-#include "MRCPP/MWFunctions"
+/** The MRChem sandbox */
+
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+#include "Getkw.h"
 
-const int min_scale = -4;
-const int max_depth = 25;
+#include "mrenv.h"
+#include "mrchem.h"
+#include "parallel.h"
 
-const int order = 7;
-const double prec = 1.0e-5;
+Getkw mrchem::Input;
+mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
 using namespace mrcpp;
+using namespace mrchem;
 
 int main(int argc, char **argv) {
+    mpi::initialize(argc, argv);
+    mrenv::initialize(argc, argv);
+
     Timer timer;
 
-    // Initialize printing
-    int printlevel = 0;
-    Printer::init(printlevel);
-    Printer::printEnvironment();
-    Printer::printHeader(0, "MRChem pilot code");
-
-    // Constructing world box
-    int corner[3] = {-1,-1,-1};
-    int boxes[3]  = { 2, 2, 2};
-    BoundingBox<3> world(min_scale, corner, boxes);
-
-    // Constructing basis and MRA
-    InterpolatingBasis basis(order);
-    MultiResolutionAnalysis<3> MRA(world, basis, max_depth);
-
+    // Do your stuff here
+    
     timer.stop();
-    Printer::printFooter(0, timer, 2);
+    double wt = timer.getWallTime();
 
+    mrenv::finalize(wt);
+    mpi::finalize();
     return 0;
 }
 

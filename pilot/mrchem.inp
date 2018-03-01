@@ -11,11 +11,3 @@ MRA {
   boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
 }
 
-Pilot {
-  run_projection = false
-  run_addition = false
-  run_multiplication = false
-  run_derivative = false
-  run_poisson = false
-  run_scf = false
-}
