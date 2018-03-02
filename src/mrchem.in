@@ -18,7 +18,7 @@ version="@PROGRAM_VERSION@"
 import sys, re, optparse, os, string, subprocess, tempfile, math
 from copy import deepcopy
 
-sys.path.append("@CMAKE_BINARY_DIR@/stage/@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
+sys.path.append("@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
 if not os.environ.has_key('MRCHEM_FILTER_DIR'):
     os.environ['MRCHEM_FILTER_DIR'] = "@MW_FILTER_DIR@"

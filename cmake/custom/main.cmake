@@ -7,8 +7,6 @@ configure_file (
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-include_directories(${CMAKE_BINARY_DIR})
-
 add_subdirectory(external)
 add_subdirectory(src)
 add_subdirectory(pilot)
