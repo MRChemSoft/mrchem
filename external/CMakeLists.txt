@@ -60,3 +60,11 @@ if (ENABLE_XCFUN)
     add_dependencies(submodule-xcfun git-submodule-init)
     add_dependencies(external-modules submodule-xcfun)
 endif()
+
+install(
+    DIRECTORY
+    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/
+    DESTINATION
+    ${CMAKE_INSTALL_PREFIX}
+    USE_SOURCE_PERMISSIONS
+    )
