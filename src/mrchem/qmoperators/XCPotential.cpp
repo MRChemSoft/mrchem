@@ -19,7 +19,7 @@ using namespace Eigen;
  *  Initializes derivative order and index
  *
  */
-XCPotential::XCPotential(int dO, int dI)
+XCPotential::XCPotential(int dI, int dO)
     : derivativeOrder(dO), derivativeIndex(dI) {
     if (abs(derivativeOrder) > 1) {
             NOT_IMPLEMENTED_ABORT;
@@ -27,6 +27,7 @@ XCPotential::XCPotential(int dO, int dI)
     if (abs(derivativeIndex) > abs(derivativeOrder)) {
         MSG_ERROR("Inconsistent input in XCPotential creator");
     }
+	potentialFunction = 0;
 }
 
 /** \brief driver to compute the XC potential
@@ -84,6 +85,11 @@ void XCPotential::calcPotentialLDA(FunctionTree<3> ** xcOutput,
     if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
     this->potentialFunction = xcOutput[outputIndex];
     xcOutput[outputIndex] = 0;
+}
+
+void XCPotential::clear() {
+	delete this->potentialFunction;
+	this->potentialFunction = 0;
 }
 
 /** \brief Driver for the the GGA part of the XC potential

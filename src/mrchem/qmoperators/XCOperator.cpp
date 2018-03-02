@@ -25,7 +25,7 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
           xcInput(0),
           xcOutput(0) {
     bool spin = F.isSpinSeparated();
-    int nPotentials = spin ? k + 1 : 1; /// k+1 potentials if spin separated, otherwise just one.
+    nPotentials = spin ? k + 1 : 1; /// k+1 potentials if spin separated, otherwise just one.
     density.setIsSpinDensity(spin);
     gradient[0].setIsSpinDensity(spin);
     gradient[1].setIsSpinDensity(spin);
@@ -66,12 +66,15 @@ void XCOperator::calcPotential() {
 /** \brief Cleanup function to call after the the XC potential has been calculated
  */
 void XCOperator::clear() {
-    //Here I have to clear the potential objects.
     this->energy = 0.0;
     this->density.clear();
     this->gradient[0].clear();
     this->gradient[1].clear();
     this->gradient[2].clear();
+	for (int i = 0; i < nPotentials; i++) {
+		this->potentialFunction[i].clear();
+		this->potentialFunction.pop_back();
+	}
     clearApplyPrec();
 }
 

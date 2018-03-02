@@ -27,6 +27,7 @@ public:
                        Density * gradient,
                        DerivativeOperator<3> *derivative,
                        int maxScale);
+    void clear();
     
 protected:
     
