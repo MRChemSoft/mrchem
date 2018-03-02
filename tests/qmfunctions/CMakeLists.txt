@@ -1,5 +1,5 @@
-target_sources(unit-tests PRIVATE
+target_sources(mrchem-tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/orbital.cpp
     )
 
-add_Catch_test(orbital "orbital")
+add_catch_test(orbital "orbital")

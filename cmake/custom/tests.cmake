@@ -7,7 +7,7 @@
 
 option(ENABLE_TESTS "Enable test suite" ON)
 
-macro(add_Catch_test _name _labels)
+macro(add_catch_test _name _labels)
   # _labels is not a list, it's a string... Transform it into a list
   set(labels)
   string(REPLACE ";" " " _labels "${_labels}")
@@ -17,7 +17,7 @@ macro(add_Catch_test _name _labels)
   unset(_labels)
 
   add_test(NAME ${_name}
-           COMMAND ${PROJECT_BINARY_DIR}/tests/unit-tests [${_name}] --success --out ${PROJECT_BINARY_DIR}/tests/${_name}.log --durations yes
+           COMMAND ${PROJECT_BINARY_DIR}/tests/mrchem-tests [${_name}] --success --out ${PROJECT_BINARY_DIR}/tests/${_name}.log --durations yes
            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   if(labels)
