@@ -56,6 +56,7 @@ void XCOperator::setup(double prec) {
 
 void XCOperator::calcPotential() {
     for (int i = 0; i < this->nPotentials; i++) {
+        std::cout << "nPotentials " << this->nPotentials << " " << i << std::endl; 
         XCPotential pot(i, this->order);
         pot.calcPotential(this->functional, this->xcOutput, this->density, this->gradient, this->derivative, this->max_scale);
         potentialFunction.push_back(pot);
