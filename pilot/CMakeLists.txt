@@ -22,8 +22,8 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.cpp)
     set (MRCHEM_DRIVER_DEBUG ON)
     set (MRCHEM_EXECUTABLE ${CMAKE_BINARY_DIR}/pilot/mrchem-pilot.x)
 
-    configure_file(${CMAKE_SOURCE_DIR}/src/mrchem.in ${CMAKE_BINARY_DIR}/pilot/mrchem @ONLY)
-    execute_process(COMMAND chmod 755 ${CMAKE_BINARY_DIR}/pilot/mrchem OUTPUT_QUIET)
+    configure_file(${CMAKE_SOURCE_DIR}/src/mrchem.in ${CMAKE_BINARY_DIR}/pilot/mrchem-pilot @ONLY)
+    execute_process(COMMAND chmod 755 ${CMAKE_BINARY_DIR}/pilot/mrchem-pilot OUTPUT_QUIET)
 endif()
 
 if (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/mrchem.inp)
