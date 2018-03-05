@@ -180,8 +180,6 @@ TEST_CASE("Orbital", "[orbital]") {
             phi_2.orthogonalize(phi_1);
 
             ComplexDouble S3 = orbital::dot(phi_1, phi_2);
-            std::cout << S3.real() << std::endl;
-            std::cout << S3.imag() << std::endl;
             REQUIRE( abs(S3.real()) < mrcpp::MachineZero );
             REQUIRE( abs(S3.imag()) < mrcpp::MachineZero );
 
