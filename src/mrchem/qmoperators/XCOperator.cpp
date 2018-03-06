@@ -58,13 +58,17 @@ Orbital* XCOperator::operator() (Orbital &phi) {
     FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)].getPotentialFunction();
     this->setReal(potential);
     this->setImag(0);
-    Orbital * Vphi = QMPotential(phi); 
+    Orbital * Vphi = QMPotential::operator()(phi); 
     this->clearReal(false);
-    This->clearImag(false);
+    this->clearImag(false);
     return Vphi;
 }
 
-Void XCOperator::calcPotential() {
+Orbital* XCOperator::adjoint(Orbital &phi) {
+    NOT_IMPLEMENTED_ABORT;
+}
+
+void XCOperator::calcPotential() {
     for (int i = 0; i < this->nPotentials; i++) {
         std::cout << "nPotentials " << this->nPotentials << " " << i << std::endl; 
         XCPotential pot(i, this->order);
@@ -460,7 +464,7 @@ int XCOperator::getPotentialFunctionIndex(const Orbital &orb) {
     int orbitalSpin = orb.getSpin();
     bool spinSeparatedFunctional = this->functional->isSpinSeparated();
     int orbitalOccupancy = orb.getOccupancy();
-    int potentiialFunctionIndex = -1;
+    int potentialFunctionIndex = -1;
     if (spinSeparatedFunctional && orbitalSpin == Alpha) {
         potentialFunctionIndex = 0;
     }
