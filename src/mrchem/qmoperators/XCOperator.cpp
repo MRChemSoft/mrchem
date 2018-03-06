@@ -25,6 +25,7 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
           xcInput(0),
           xcOutput(0) {
     bool spin = F.isSpinSeparated();
+    std::cout << "Is spin sep 2" << spin << std::endl;
     nPotentials = spin ? k + 1 : 1; /// k+1 potentials if spin separated, otherwise just one.
     density.setIsSpinDensity(spin);
     gradient[0].setIsSpinDensity(spin);
@@ -465,6 +466,9 @@ int XCOperator::getPotentialFunctionIndex(const Orbital &orb) {
     bool spinSeparatedFunctional = this->functional->isSpinSeparated();
     int orbitalOccupancy = orb.getOccupancy();
     int potentialFunctionIndex = -1;
+    std::cout << "orbSpin " << orbitalSpin
+              << "ssf "     << spinSeparatedFunctional
+              << "oo "      << orbitalOccupancy << std::endl; 
     if (spinSeparatedFunctional && orbitalSpin == Alpha) {
         potentialFunctionIndex = 0;
     }

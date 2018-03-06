@@ -190,10 +190,6 @@ SCFDriver::SCFDriver(Getkw &input) {
 }
 
 bool SCFDriver::sanityCheck() const {
-    if (wf_method == "DFT" and dft_spin) {
-        MSG_ERROR("Spin DFT not implemented");
-        return false;
-    }
     if (wf_restricted and mol_multiplicity != 1) {
         MSG_ERROR("Restricted open-shell not implemented");
         return false;
@@ -382,6 +378,7 @@ void SCFDriver::setup() {
         fock = new HartreeFock(*T, *V, *J, *K);
     } else if (wf_method == "DFT") {
         J = new CoulombPotential(*P, *phi);
+        std::cout << "Is spin sep 1" << dft_spin << std::endl;
         xcfun = new XCFunctional(dft_spin, dft_cutoff);
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
