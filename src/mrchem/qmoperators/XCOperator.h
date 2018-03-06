@@ -67,6 +67,12 @@ protected:
     void calcPotential();
     bool cropPotential(double prec);
 
+    XCPotential * calcPotentialFunction(int i);
+    
+    void calcPotentialLDA(XCPotential * pot);
+    
+    void calcPotentialGGA(XCPotential * pot);
+
     void calcEnergy();
     void evaluateXCFunctional();
 
