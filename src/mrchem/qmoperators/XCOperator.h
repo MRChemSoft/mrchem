@@ -32,6 +32,13 @@ public:
     void setup(double prec);
     void clear();
 
+    virtual Orbital* operator() (Orbital &phi);
+    virtual Orbital* adjoint(Orbital &phi);
+
+    using QMOperator::operator();
+    using QMOperator::adjoint;
+    
+
 protected:
     const int order;                    ///< Order of kernel derivative
     int nPotentials;                    ///< Number of potential energy functions
@@ -73,6 +80,8 @@ protected:
     FunctionTreeVector<3> calcGradient(FunctionTree<3> &inp);
     FunctionTree<3>* calcDotProduct(FunctionTreeVector<3> &vec_a, FunctionTreeVector<3> &vec_b);
 
+    int getPotentialFunctionIndex(const Orbital & orb);
+    
     template<class T>
     int sumNodes(T **trees, int nTrees) {
         int nNodes = 0;

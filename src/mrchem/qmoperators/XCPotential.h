@@ -28,6 +28,7 @@ public:
                        DerivativeOperator<3> *derivative,
                        int maxScale);
     void clear();
+    FunctionTree<3>* getPotentialFunction() { return this->potentialFunction; };
     
 protected:
     

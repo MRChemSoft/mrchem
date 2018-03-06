@@ -54,12 +54,29 @@ void XCOperator::setup(double prec) {
     clearXCOutput();
 }
 
-void XCOperator::calcPotential() {
+Orbital* XCOperator::operator() (Orbital &phi) {
+    FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)].getPotentialFunction();
+    this->setReal(potential);
+    this->setImag(0);
+    Orbital * Vphi = QMPotential(phi); 
+    this->clearReal(false);
+    This->clearImag(false);
+    return Vphi;
+}
+
+Void XCOperator::calcPotential() {
     for (int i = 0; i < this->nPotentials; i++) {
         std::cout << "nPotentials " << this->nPotentials << " " << i << std::endl; 
         XCPotential pot(i, this->order);
-        pot.calcPotential(this->functional, this->xcOutput, this->density, this->gradient, this->derivative, this->max_scale);
+        pot.calcPotential(this->functional,
+                          this->xcOutput,
+                          this->density,
+                          this->gradient,
+                          this->derivative,
+                          this->max_scale);
         potentialFunction.push_back(pot);
+        std::cout << "XC Potential function" << std::endl;
+        std::cout << (*(pot.getPotentialFunction())) << std::endl;
     }
 }
 
@@ -290,6 +307,7 @@ void XCOperator::calcEnergy() {
     timer.stop();
     double t = timer.getWallTime();
     int n = this->xcOutput[0]->getNNodes();
+    std::cout << "XC energy " << this->energy << std::endl;
     TelePrompter::printTree(0, "XC energy", n, t);
 }
 
@@ -438,3 +456,22 @@ void XCOperator::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Matr
     }
 }
 
+int XCOperator::getPotentialFunctionIndex(const Orbital &orb) {
+    int orbitalSpin = orb.getSpin();
+    bool spinSeparatedFunctional = this->functional->isSpinSeparated();
+    int orbitalOccupancy = orb.getOccupancy();
+    int potentiialFunctionIndex = -1;
+    if (spinSeparatedFunctional && orbitalSpin == Alpha) {
+        potentialFunctionIndex = 0;
+    }
+    else if (spinSeparatedFunctional && orbitalSpin == Beta) {
+        potentialFunctionIndex = 1;
+    }
+    else if (!spinSeparatedFunctional && orbitalSpin == Paired) {
+        potentialFunctionIndex = 0;
+    }
+    else {
+        NOT_IMPLEMENTED_ABORT;
+    }
+    return potentialFunctionIndex;
+}

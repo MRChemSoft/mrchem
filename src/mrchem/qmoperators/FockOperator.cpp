@@ -128,8 +128,8 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
 
     //make vector with adresses of own orbitals
     for (int Ix = mpiOrbRank; Ix < Ni; Ix += mpiOrbSize) {
-	orbVecChunk_i.push_back(i_orbs.getOrbital(Ix));//i orbitals
-	orbsIx.push_back(Ix);
+        orbVecChunk_i.push_back(i_orbs.getOrbital(Ix));//i orbitals
+        orbsIx.push_back(Ix);
     }
     for (int Ix = mpiOrbRank; Ix < Nj; Ix += mpiOrbSize) orbVecChunk_j.push_back(j_orbs.getOrbital(Ix));//j orbitals
     //need to pad orbVecChunk_j so that all have same size
@@ -139,34 +139,34 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
 	//get a new chunk from other processes
 	//NB: should not use directly workorbvec as rcvOrbs, because they may 
 	//contain own orbitals, and these can be overwritten
-	orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
+        orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
 
 	//Only one process does the computations. j orbitals always local
-	MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
-      
-	if (this->T != 0) resultChunk = (*this->T)(rcvOrbs,orbVecChunk_j);
-	if (this->V != 0) resultChunk += (*this->V)(rcvOrbs,orbVecChunk_j);
-	if (this->J != 0) resultChunk += (*this->J)(rcvOrbs,orbVecChunk_j);
-	if (this->K != 0) {
-	    resultChunk += (*this->K)(rcvOrbs,orbVecChunk_j);
-	    if (rcvOrbs.size() == 0 and iter>=0) {
-		//we must still go through operator to send own orbitals to others. Just make a fake operation!
-		rcvOrbs.push_back(i_orbs.getOrbital(mpiOrbRank));//i orbitals
-		MatrixXd resultChunk_notused = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
-		resultChunk_notused = (*this->K)(rcvOrbs,orbVecChunk_j);
-	    }
-	}
-	if (this->XC != 0) resultChunk += (*this->XC)(rcvOrbs,orbVecChunk_j);
-
+        MatrixXd resultChunk = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
+    
+        if (this->T != 0) resultChunk = (*this->T)(rcvOrbs,orbVecChunk_j);
+        if (this->V != 0) resultChunk += (*this->V)(rcvOrbs,orbVecChunk_j);
+        if (this->J != 0) resultChunk += (*this->J)(rcvOrbs,orbVecChunk_j);
+        if (this->K != 0) {
+            resultChunk += (*this->K)(rcvOrbs,orbVecChunk_j);
+            if (rcvOrbs.size() == 0 and iter>=0) {
+                //we must still go through operator to send own orbitals to others. Just make a fake operation!
+                rcvOrbs.push_back(i_orbs.getOrbital(mpiOrbRank));//i orbitals
+                MatrixXd resultChunk_notused = MatrixXd::Zero(rcvOrbs.size(),orbVecChunk_j.size());
+                resultChunk_notused = (*this->K)(rcvOrbs,orbVecChunk_j);
+            }
+        }
+        if (this->XC != 0) resultChunk += (*this->XC)(rcvOrbs,orbVecChunk_j);
+        
 	//copy results into final matrix
-	int j = 0;
-	for (int Jx = mpiOrbRank; Jx < Nj; Jx += mpiOrbSize) {
-	    for (int ix = 0; ix < rcvOrbs.size(); ix++) {
-		result(rcvOrbsIx[ix],Jx) += resultChunk(ix,j);
-	    }
-	    j++;
-	}
-	rcvOrbs.clearVec(false);//reset to zero size orbital vector
+        int j = 0;
+        for (int Jx = mpiOrbRank; Jx < Nj; Jx += mpiOrbSize) {
+            for (int ix = 0; ix < rcvOrbs.size(); ix++) {
+                result(rcvOrbsIx[ix],Jx) += resultChunk(ix,j);
+            }
+            j++;
+        }
+        rcvOrbs.clearVec(false);//reset to zero size orbital vector
     }
 
     //clear orbital vector adresses. NB: only references and metadata must be deleted, not the trees in orbitals
@@ -179,41 +179,48 @@ MatrixXd FockOperator::operator() (OrbitalVector &i_orbs, OrbitalVector &j_orbs)
                   MPI_DOUBLE, MPI_SUM, mpiCommOrb);
 
 #else
+    
     if (this->T != 0) {
         Timer timer;
         result += (*this->T)(i_orbs, j_orbs);
         timer.stop();
         TelePrompter::printDouble(0, "Kinetic matrix", timer.getWallTime());
+        std::cout << result << std::endl;
     }
     if (this->V != 0) {
         Timer timer;
         result += (*this->V)(i_orbs, j_orbs);
         timer.stop();
         TelePrompter::printDouble(0, "Nuclear potential matrix", timer.getWallTime());
+        std::cout << result << std::endl;
     }
     if (this->J != 0) {
         Timer timer;
         result += (*this->J)(i_orbs, j_orbs);
         timer.stop();
         TelePrompter::printDouble(0, "Coulomb matrix", timer.getWallTime());
+        std::cout << result << std::endl;
     }
     if (this->K != 0) {
         Timer timer;
         result += (*this->K)(i_orbs, j_orbs);
         timer.stop();
         TelePrompter::printDouble(0, "Exchange matrix", timer.getWallTime());
+        std::cout << result << std::endl;
     }
     if (this->XC != 0) {
         Timer timer;
         result += (*this->XC)(i_orbs, j_orbs);
         timer.stop();
         TelePrompter::printDouble(0, "Exchange-Correlation matrix", timer.getWallTime());
+        std::cout << result << std::endl;
     }
     if (this->H_1 != 0) {
         Timer timer;
         result += (*this->H_1)(i_orbs, j_orbs);
         timer.stop();
         TelePrompter::printDouble(0, "Perturbation matrix", timer.getWallTime());
+        std::cout << result << std::endl;
     }
 #endif
     tot_t.stop();
