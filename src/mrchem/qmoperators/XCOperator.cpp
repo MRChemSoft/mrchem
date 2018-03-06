@@ -56,7 +56,7 @@ void XCOperator::setup(double prec) {
 }
 
 Orbital* XCOperator::operator() (Orbital &phi) {
-    FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)].getPotentialFunction();
+    FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)]->getPotentialFunction();
     this->setReal(potential);
     this->setImag(0);
     Orbital * Vphi = QMPotential::operator()(phi); 
@@ -72,8 +72,8 @@ Orbital* XCOperator::adjoint(Orbital &phi) {
 void XCOperator::calcPotential() {
     for (int i = 0; i < this->nPotentials; i++) {
         std::cout << "nPotentials " << this->nPotentials << " " << i << std::endl; 
-        XCPotential pot(i, this->order);
-        pot.calcPotential(this->functional,
+        XCPotential * pot = new XCPotential(i, this->order);
+        pot->calcPotential(this->functional,
                           this->xcOutput,
                           this->density,
                           this->gradient,
@@ -81,7 +81,7 @@ void XCOperator::calcPotential() {
                           this->max_scale);
         potentialFunction.push_back(pot);
         std::cout << "XC Potential function" << std::endl;
-        std::cout << (*(pot.getPotentialFunction())) << std::endl;
+        std::cout << (*(pot->getPotentialFunction())) << std::endl;
     }
 }
 
@@ -94,7 +94,7 @@ void XCOperator::clear() {
     this->gradient[1].clear();
     this->gradient[2].clear();
 	for (int i = 0; i < nPotentials; i++) {
-		this->potentialFunction[i].clear();
+		this->potentialFunction[i]->clear();
 		this->potentialFunction.pop_back();
 	}
     clearApplyPrec();

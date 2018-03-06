@@ -17,7 +17,9 @@
 class XCPotential {
 public:
     XCPotential(int dO = 1, int dI = 0);
-    virtual ~XCPotential() { } 
+    virtual ~XCPotential() {
+        clear();
+    } 
 
     int getDerIndex() { return derivativeIndex; };
     int getDerOrder() { return derivativeOrder; };

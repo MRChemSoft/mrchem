@@ -88,7 +88,7 @@ void XCPotential::calcPotentialLDA(FunctionTree<3> ** xcOutput,
 }
 
 void XCPotential::clear() {
-	delete this->potentialFunction;
+    if(this->potentialFunction != 0) delete this->potentialFunction;
 	this->potentialFunction = 0;
 }
 

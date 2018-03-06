@@ -53,8 +53,7 @@ protected:
     FunctionTree<3> **xcInput;          ///< XCFun input
     FunctionTree<3> **xcOutput;         ///< XCFun output
 
-    std::vector<XCPotential> potentialFunction;
-
+    std::vector<XCPotential *> potentialFunction;
 
     void setupXCInput();
     void setupXCOutput();
