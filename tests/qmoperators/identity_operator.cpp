@@ -4,6 +4,7 @@
 
 #include "IdentityOperator.h"
 #include "Orbital.h"
+#include "OrbitalVector.h"
 
 using namespace mrchem;
 
@@ -55,6 +56,40 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         phi.free();
     }
 
+    SECTION("vector apply") {
+        OrbitalVector Phi;
+        Phi.push_back(SPIN::Paired);
+        Phi.push_back(SPIN::Paired);
+        Phi[0].alloc(NUMBER::Real);
+        Phi[1].alloc(NUMBER::Real);
+        mrcpp::project(prec, Phi[0].real(), f);
+        mrcpp::project(prec, Phi[1].real(), g);
+        Phi.normalize();
+
+        IdentityOperator I;
+        I.setup(prec);
+        SECTION("O(Phi)") {
+            OrbitalVector IPhi = I(Phi);
+            REQUIRE( IPhi[0].real().integrate() == Approx(Phi[0].real().integrate()) );
+            REQUIRE( IPhi[1].real().integrate() == Approx(Phi[1].real().integrate()) );
+            IPhi.free();
+        }
+        SECTION("O.dagger(Phi)") {
+            OrbitalVector IPhi = I.dagger(Phi);
+            REQUIRE( IPhi[0].real().integrate() == Approx(Phi[0].real().integrate()) );
+            REQUIRE( IPhi[1].real().integrate() == Approx(Phi[1].real().integrate()) );
+            IPhi.free();
+        }
+        SECTION("trace") {
+            double nEl = Phi.getNElectrons();
+            ComplexDouble trace = I.trace(Phi);
+            REQUIRE( trace.real() == Approx(nEl) );
+            REQUIRE( abs(trace.imag()) < mrcpp::MachineZero );
+        }
+        I.clear();
+        Phi.free();
+    }
+
     SECTION("expectation value") {
         Orbital phi(SPIN::Paired);
         phi.alloc();
@@ -66,14 +101,36 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         SECTION("<phi|O|phi>") {
             ComplexDouble S = I(phi, phi);
             REQUIRE( S.real() == Approx(phi.squaredNorm()) );
-            REQUIRE( S.imag() == Approx(0.0) );
+            REQUIRE( S.imag() < mrcpp::MachineZero );
         }
         SECTION("<phi|O.dagger()|phi>") {
             ComplexDouble S = I.dagger(phi, phi);
             REQUIRE( S.real() == Approx(phi.squaredNorm()) );
-            REQUIRE( S.imag() == Approx(0.0) );
+            REQUIRE( S.imag() < mrcpp::MachineZero );
         }
         I.clear();
         phi.free();
+    }
+
+    SECTION("expectation matrix") {
+        OrbitalVector Phi;
+        Phi.push_back(SPIN::Paired);
+        Phi.push_back(SPIN::Paired);
+        Phi[0].alloc(NUMBER::Imag);
+        Phi[1].alloc(NUMBER::Imag);
+        mrcpp::project(prec, Phi[0].imag(), f);
+        mrcpp::project(prec, Phi[1].imag(), g);
+
+        IdentityOperator I;
+        I.setup(prec);
+        SECTION("<phi_i|O|phi_j>") {
+            ComplexMatrix S = I(Phi, Phi);
+            REQUIRE( abs(S(0,0)) == Approx(Phi[0].squaredNorm()) );
+            REQUIRE( abs(S(1,1)) == Approx(Phi[1].squaredNorm()) );
+            REQUIRE( S(0,1).real() == Approx( S(1,0).real()) );
+            REQUIRE( S(0,1).imag() == Approx(-S(1,0).imag()) );
+        }
+        I.clear();
+        Phi.free();
     }
 }
