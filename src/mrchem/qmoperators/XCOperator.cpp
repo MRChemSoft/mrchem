@@ -311,6 +311,8 @@ void XCOperator::setupXCInput() {
     bool spin = this->functional->isSpinSeparated();
     bool gga = this->functional->isGGA();
 
+    std::cout << "Input length " << nInp << std::endl;
+    
     Density &rho = this->density;
     Density &rho_x = this->gradient[0];
     Density &rho_y = this->gradient[1];
@@ -332,18 +334,19 @@ void XCOperator::setupXCInput() {
         this->xcInput[0] = &rho.alpha();
         this->xcInput[1] = &rho.beta();
         if (gga) {
-            FunctionTreeVector<3> vec;
-            vec.push_back(&rho_x.alpha());
-            vec.push_back(&rho_y.alpha());
-            vec.push_back(&rho_z.alpha());
-            this->xcInput[2] = calcDotProduct(vec, vec);
-            vec.clear();
-
-            vec.push_back(&rho_x.beta());
-            vec.push_back(&rho_y.beta());
-            vec.push_back(&rho_z.beta());
-            this->xcInput[3] = calcDotProduct(vec, vec);
-            vec.clear();
+            FunctionTreeVector<3> vec_a;
+            FunctionTreeVector<3> vec_b;
+            vec_a.push_back(&rho_x.alpha());
+            vec_a.push_back(&rho_y.alpha());
+            vec_a.push_back(&rho_z.alpha());
+            vec_b.push_back(&rho_x.beta());
+            vec_b.push_back(&rho_y.beta());
+            vec_b.push_back(&rho_z.beta());
+            this->xcInput[2] = calcDotProduct(vec_a, vec_a);
+            this->xcInput[3] = calcDotProduct(vec_a, vec_b);
+            this->xcInput[4] = calcDotProduct(vec_b, vec_b);
+            vec_a.clear();
+            vec_b.clear();
         }
     }
 
