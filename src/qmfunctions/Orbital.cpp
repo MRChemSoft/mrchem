@@ -1,6 +1,7 @@
 #include "MRCPP/Printer"
 
 #include "Orbital.h"
+#include "OrbitalVector.h"
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -164,45 +165,36 @@ void Orbital::rescale(ComplexDouble c) {
 void Orbital::orthogonalize(Orbital inp) {
     ComplexDouble overlap = orbital::dot(inp, *this);
     double sq_norm = inp.squaredNorm();
-    this->add(-1.0*(overlap/sq_norm), inp);
+    if (abs(overlap) > mrcpp::MachineZero) {
+        this->add(-1.0*(overlap/sq_norm), inp);
+    }
 }
 
 /** In place orthogonalize against all orbitals in inp */
-/*
-void Orbital::orthogonalize(OrbitalVector inp) {
-    NEEDS_TESTING;
-    for (int i = 0; i < inp.size(); i++) {
-        Orbital &inp_i = inp.getOrbital(i);
-        this->orthogonalize(inp_i);
+void Orbital::orthogonalize(OrbitalVector inp_vec) {
+    for (int i = 0; i < inp_vec.size(); i++) {
+        this->orthogonalize(inp_vec[i]);
     }
 }
-*/
 
 /** In place addition */
 void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
+    // The following sets the spin/occupancy only locally, e.i. the
+    // original orbital is NOT changed. The effect of this is to
+    // disable spin/occupancy sanity checks in the following addition.
+    // Since this is an in-place operation, we assume that the spin
+    // and occupancy of the result is already defined and that it
+    // should not change.
+    inp.setSpin(this->spin());
+    inp.setOcc(this->occ());
     Orbital tmp = orbital::add(1.0, *this, c, inp, prec);
     this->free();
     *this = tmp;
 }
 
-/** In place addition */
-/*
-void Orbital::add(double prec, ComplexVector &c, OrbitalVector &inp, bool union_grid) {
-    NEEDS_TESTING;
-    Orbital tmp(*this);     // Copy parameters
-    inp.push_back(this);
-    c.push_back(1.0);
-    qmfunctions::add(prec, tmp, c, inp, union_grid);
-    this->clear(true);      // Delete pointers
-    this->shallowCopy(tmp); // Copy pointers
-    tmp.clear(false);       // Clear pointers
-    inp.pop_back();         // Restore vector
-    c.pop_back();           // Restore vector
-}
-*/
-
 char Orbital::printSpin() const {
     char sp = 'u';
+    if (this->spin() == SPIN::Paired) sp = 'p';
     if (this->spin() == SPIN::Alpha) sp = 'a';
     if (this->spin() == SPIN::Beta) sp = 'b';
     return sp;

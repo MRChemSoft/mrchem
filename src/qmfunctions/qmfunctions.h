@@ -16,6 +16,11 @@ namespace orbital {
 ComplexDouble dot(Orbital bra, Orbital ket);
 
 Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, double prec = -1.0);
+OrbitalVector add(ComplexDouble a, OrbitalVector inp_a, ComplexDouble b, OrbitalVector inp_b, double prec = -1.0);
+
+Orbital add(const ComplexVector &c, OrbitalVector inp, double prec = -1.0);
+OrbitalVector add(const ComplexMatrix &U, OrbitalVector inp, double prec = -1.0);
+
 Orbital multiply(Orbital inp_a, Orbital inp_b, double prec = -1.0);
 
 bool compare(const Orbital &orb_a, const Orbital &orb_b);

@@ -42,7 +42,9 @@ public:
     void setReal(mrcpp::FunctionTree<3> *real) { this->re = real; }
     void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
 
-    void setError(double err) { this->meta.error = err; }
+    void setError(double error) { this->meta.error = error; }
+    void setSpin(int spin) { this->meta.spin = spin; }
+    void setOcc(int occ) { this->meta.occ = occ; }
 
     OrbitalMeta &getMetaData();
     int occ() const { return this->meta.occ; }
@@ -58,6 +60,7 @@ public:
 
     void normalize() { rescale(1.0/this->norm()); }
     void orthogonalize(Orbital inp);
+    void orthogonalize(OrbitalVector inp_vec);
 
     friend std::ostream& operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
 

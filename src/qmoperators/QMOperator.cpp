@@ -2,6 +2,7 @@
 
 #include "QMOperator.h"
 #include "Orbital.h"
+#include "OrbitalVector.h"
 
 namespace mrchem {
 
@@ -13,12 +14,11 @@ void QMOperator::setApplyPrec(double prec) {
     }
 }
 
-/*
 OrbitalVector QMOperator::operator()(OrbitalVector inp) {
     QMOperator &O = *this;
     OrbitalVector out;
     for (int i = 0; i < inp.size(); i++) {
-        Orbital &phi_i = *inp[i];
+        Orbital &phi_i = inp[i];
         Orbital Ophi_i = O(phi_i);
         out.push_back(Ophi_i);
     }
@@ -29,13 +29,12 @@ OrbitalVector QMOperator::dagger(OrbitalVector inp) {
     QMOperator &O = *this;
     OrbitalVector out;
     for (int i = 0; i < inp.size(); i++) {
-        Orbital &phi_i = *inp[i];
+        Orbital &phi_i = inp[i];
         Orbital Ophi_i = O.dagger(phi_i);
         out.push_back(Ophi_i);
     }
     return out;
 }
-*/
 
 ComplexDouble QMOperator::operator()(Orbital bra, Orbital ket) {
     QMOperator &O = *this;
@@ -53,7 +52,6 @@ ComplexDouble QMOperator::dagger(Orbital bra, Orbital ket) {
     return result;
 }
 
-/*
 ComplexMatrix QMOperator::operator()(OrbitalVector bra, OrbitalVector ket) {
     QMOperator &O = *this;
     int Ni = bra.size();
@@ -68,12 +66,13 @@ ComplexMatrix QMOperator::operator()(OrbitalVector bra, OrbitalVector ket) {
             Orbital &bra_i = bra[i];
             result(i, j) = orbital::dot(bra_i, Oket_j);
         }
-        Oket_j.clear(true);
+        Oket_j.free();
     }
     return result;
 }
 
 ComplexMatrix QMOperator::dagger(OrbitalVector bra, OrbitalVector ket) {
+    NEEDS_TESTING;
     QMOperator &O = *this;
     int Ni = bra.size();
     int Nj = ket.size();
@@ -87,10 +86,20 @@ ComplexMatrix QMOperator::dagger(OrbitalVector bra, OrbitalVector ket) {
             Orbital &bra_i = bra[i];
             result(i, j) = orbital::dot(bra_i, Oket_j);
         }
-        Oket_j.clear(true);
+        Oket_j.free();
     }
     return result;
 }
-*/
+
+ComplexDouble QMOperator::trace(OrbitalVector inp) {
+    QMOperator &O = *this;
+    ComplexDouble out(0.0, 0.0);
+    for (int i = 0; i < inp.size(); i++) {
+        Orbital &inp_i = inp[i];
+        double occ_i = (double) inp_i.occ();
+        out += occ_i*O(inp_i, inp_i);
+    }
+    return out;
+}
 
 } //namespace mrchem

@@ -1,50 +1,22 @@
+#include "MRCPP/Printer"
+
+#include "parallel.h"
 
 #include "OrbitalVector.h"
-#include "Orbital.h"
-#include "FunctionTree.h"
-#include "SerialFunctionTree.h"
-#include "Timer.h"
 
-using namespace std;
-using namespace Eigen;
-
-extern Orbital workOrb;
-//NB: workOrbVec is only for temporary orbitals and orbitals stored there can be overwritten, i.e. destroyed
-OrbitalVector workOrbVec(workOrbVecSize);
-OrbitalVector workOrbVec2(workOrbVecSize);
-
-/** OrbitalVector constructor
- *
- * New orbitals are constructed with double
- * occupancy and undefined spin
- *
- * All orbital functions are uninitialized.
- */
-OrbitalVector::OrbitalVector(int n_orbs) {
-    push_back(n_orbs, 2, Orbital::Paired);
-}
-
-/** OrbitalVector constructor
- *
- * New orbitals are constructed with single
- * occupancy orbitals and alpha/beta spin
- *
- * All orbital functions are uninitialized.
- */
-OrbitalVector::OrbitalVector(int n_alpha, int n_beta) {
-    push_back(n_alpha, 1, Orbital::Alpha);
-    push_back(n_beta, 1, Orbital::Beta);
-}
+namespace mrchem {
 
 /** OrbitalVector constructor
  *
  * ne is number of electrons.
- * mult is spin mutiplicity.
+ * mult is spin multiplicity.
  * rest is spin restricted.
  *
  * All orbital functions are uninitialized.
+ *
  */
-OrbitalVector::OrbitalVector(int ne, int mult, bool rest) {
+OrbitalVector::OrbitalVector(int ne, int mult, bool rest)
+        : in_use(false) {
     int de = ne - (mult - 1);
     if (de%2 != 0)  MSG_ERROR("Invalid multiplicity");
 
@@ -59,159 +31,146 @@ OrbitalVector::OrbitalVector(int ne, int mult, bool rest) {
         nd = 0;
     }
 
-    push_back(nd, 2, Orbital::Paired);
-    push_back(na, 1, Orbital::Alpha);
-    push_back(nb, 1, Orbital::Beta);
+    for (int i = 0; i < nd; i++) push_back(SPIN::Paired);
+    for (int i = 0; i < na; i++) push_back(SPIN::Alpha);
+    for (int i = 0; i < nb; i++) push_back(SPIN::Beta);
 }
 
 /** Copy constructor
  *
- * New orbitals are constructed with spin and occupancy
- * parameters (not function data) taken from the input set.
+ * New orbitals are constructed as shallow copies of the input set.
  *
- * All orbital functions are uninitialized.
  */
-OrbitalVector::OrbitalVector(const OrbitalVector &orb_set) {
-    for (int i = 0; i < orb_set.size(); i++) {
-        const Orbital &orb_i = orb_set.getOrbital(i);
-        Orbital *newOrb = new Orbital(orb_i);
-        this->orbitals.push_back(newOrb);
+OrbitalVector::OrbitalVector(const OrbitalVector &inp_vec)
+        : in_use(false) {
+    for (int i = 0; i < inp_vec.size(); i++) {
+        this->orbitals.push_back(inp_vec[i]);
     }
 }
 
-void OrbitalVector::deepCopy(OrbitalVector &inp) {
-    OrbitalVector &out = *this;
-    if (&inp != &out) {
-        if (inp.size() != out.size()) MSG_ERROR("Size mismatch");
-        for (int i = 0; i < out.size(); i++) {
-            Orbital &inp_i = inp.getOrbital(i);
-            Orbital &out_i = out.getOrbital(i);
-            out_i.deepCopy(inp_i);
+/** Assignment operator
+ *
+ * New orbitals are constructed as shallow copies of the input set.
+ *
+ */
+OrbitalVector& OrbitalVector::operator=(const OrbitalVector &inp_vec) {
+    this->clear();
+    if (this != &inp_vec) {
+        for (int i = 0; i < inp_vec.size(); i++) {
+            Orbital out_i;
+            out_i = inp_vec[i];
+            this->push_back(out_i);
         }
     }
+    return *this;
 }
 
-void OrbitalVector::shallowCopy(const OrbitalVector &inp) {
-    OrbitalVector &out = *this;
-    if (&inp != &out) {
-        if (inp.size() != out.size()) MSG_ERROR("Size mismatch");
-        for (int i = 0; i < out.size(); i++) {
-            const Orbital &inp_i = inp.getOrbital(i);
-            Orbital &out_i = out.getOrbital(i);
-            out_i.shallowCopy(inp_i);
-        }
-    }
-}
-
-/** OrbitalVector destructor
+/** Deep copy
  *
- * Deletes all orbitals in the vector
+ * New orbitals are constructed as deep copies of the input set.
+ *
  */
-OrbitalVector::~OrbitalVector() {
+OrbitalVector OrbitalVector::deepCopy() {
+    OrbitalVector &inp_vec = *this;
+    OrbitalVector out_set;
+    for (int i = 0; i < inp_vec.size(); i++) {
+        Orbital out_i = inp_vec[i].deepCopy();
+        out_set.push_back(out_i);
+    }
+    return out_set;
+}
+
+/** Parameter copy
+ *
+ * New orbitals are constructed as parameter copies of the input set.
+ *
+ */
+OrbitalVector OrbitalVector::paramCopy() const {
+    const OrbitalVector &inp_vec = *this;
+    OrbitalVector out_set;
+    for (int i = 0; i < inp_vec.size(); i++) {
+        Orbital out_i = inp_vec[i].paramCopy();
+        out_set.push_back(out_i);
+    }
+    return out_set;
+}
+
+/** Clears the orbital vector
+ *
+ * Leaves an empty vector. The orbitals are not freed.
+ *
+ */
+void OrbitalVector::clear() {
+    this->orbitals.clear();
+}
+
+/** Frees each orbital in the vector
+ *
+ * Leaves an empty vector. Orbitals are freed.
+ *
+ */
+void OrbitalVector::free() {
     for (int i = 0; i < this->size(); i++) {
-        if (this->orbitals[i] != 0) {
-            delete this->orbitals[i];
-        }
+        Orbital &orb = (*this)[i];
+        orb.free();
     }
     this->orbitals.clear();
 }
 
-/** Clears each orbital in the vector
+/** Adjoin two vectors
  *
- * Deletes the actual functions in the orbitals and removes them from vector
- * Leaves an empty vector
+ * The orbitals of the input vector are appended to
+ * (*this) vector, the ownership is transferred. Leaves
+ * the input vector empty.
+ *
  */
-void OrbitalVector::clearVec(bool free) {
+void OrbitalVector::adjoin(OrbitalVector &inp) {
+    for (int i = 0; i < inp.size(); i++) {
+        this->push_back(inp[i]);
+    }
+    inp.clear();
+}
+
+/** Disjoin vector in two parts
+ *
+ * All orbitals of a particular spin is collected in a new vector
+ * and returned. These orbitals are removed from (*this) vector,
+ * and the ownership is transferred.
+ *
+ */
+OrbitalVector OrbitalVector::disjoin(int spin) {
+    OrbitalVector out;
+    OrbitalVector tmp;
     for (int i = 0; i < this->size(); i++) {
-	this->orbitals[i]->clear(free);//must first remove link to trees!
-	delete this->orbitals[i];
+        Orbital &orb_i = (*this)[i];
+        if (orb_i.spin() == spin) {
+            out.push_back(orb_i);
+        } else {
+            tmp.push_back(orb_i);
+        }
     }
-    this->orbitals.clear();
+    this->clear();
+    *this = tmp;
+    return out;
 }
 
-/** Clears each orbital in the vector
- *
- * Deletes the actual functions in the orbitals, keeps
- * the spin and occupancy.
- */
-void OrbitalVector::clear(bool free) {
-    for (int i = 0; i < this->size(); i++) {
-        this->orbitals[i]->clear(free);
-    }
-}
-
-/** Append orbital to this set
- *
- * n_orbs is number of new orbitals.
- * occ is occupancy of all new orbitals.
- * spin is the spin of all new orbitals.
- *
- * New orbitals are constructed with given spin and occupancy
- * parameters, as uninitialized functions.
- *
- * Any existing orbitals in the set are kept.
- */
-void OrbitalVector::push_back(int n_orbs, int occ, int spin) {
-    for (int i = 0; i < n_orbs; i++) {
-        Orbital *orb = new Orbital(occ, spin);
-        this->orbitals.push_back(orb);
-    }
-}
-
-/** Append an orbital to this set
- *
- */
-void OrbitalVector::push_back(Orbital &orb) {
-    Orbital *newOrb = new Orbital(orb);
-    newOrb->shallowCopy(orb);
-    this->orbitals.push_back(newOrb);
-}
-
-/** Remove the last orbital from this set
- *
- */
-void OrbitalVector::pop_back(bool free) {
-    this->orbitals[this->size()-1]->clear(free);
-    delete this->orbitals[this->size()-1];
-    this->orbitals.pop_back();
-}
-
-const Orbital& OrbitalVector::getOrbital(int i) const {
-    if (this->orbitals[i] == 0) MSG_ERROR("Incomplete set");
-    return *this->orbitals[i];
-}
-
-Orbital& OrbitalVector::getOrbital(int i) {
-    if (this->orbitals[i] == 0) MSG_ERROR("Incomplete set");
-    return *this->orbitals[i];
-}
 
 /** Returns the number of occupied orbitals */
 int OrbitalVector::getNOccupied() const {
-    int nOccupied = 0;
+    int nOcc = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getOccupancy() > 0) {
-            nOccupied++;
-        }
+        const Orbital &orb = (*this)[i];
+        if (orb.occ() > 0) nOcc++;
     }
-    return nOccupied;
+    return nOcc;
 }
 
 /** Returns the number of empty orbitals */
 int OrbitalVector::getNEmpty() const {
     int nEmpty = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getOccupancy() == 0) {
-            nEmpty++;
-        }
+        const Orbital &orb = (*this)[i];
+        if (orb.occ() == 0) nEmpty++;
     }
     return nEmpty;
 }
@@ -220,28 +179,28 @@ int OrbitalVector::getNEmpty() const {
 int OrbitalVector::getNSingly() const {
     int nSingly = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getOccupancy() == 1) {
-            nSingly++;
-        }
+        const Orbital &orb = (*this)[i];
+        if (orb.occ() == 1) nSingly++;
     }
     return nSingly;
+}
+
+/** Returns the number of doubly occupied orbitals */
+int OrbitalVector::getNDoubly() const {
+    int nDoubly = 0;
+    for (int i = 0; i < this->size(); i++) {
+        const Orbital &orb = (*this)[i];
+        if (orb.occ() == 1) nDoubly++;
+    }
+    return nDoubly;
 }
 
 /** Returns the number of paired orbitals */
 int OrbitalVector::getNPaired() const {
     int nPaired = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getSpin() == Orbital::Paired) {
-            nPaired++;
-        }
+        const Orbital &orb = (*this)[i];
+        if (orb.spin() == SPIN::Paired) nPaired++;
     }
     return nPaired;
 }
@@ -250,13 +209,8 @@ int OrbitalVector::getNPaired() const {
 int OrbitalVector::getNAlpha() const {
     int nAlpha = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getSpin() == Orbital::Alpha) {
-            nAlpha++;
-        }
+        const Orbital &orb = (*this)[i];
+        if (orb.spin() == SPIN::Alpha) nAlpha++;
     }
     return nAlpha;
 }
@@ -265,52 +219,29 @@ int OrbitalVector::getNAlpha() const {
 int OrbitalVector::getNBeta() const {
     int nBeta = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getSpin() == Orbital::Beta) {
-            nBeta++;
-        }
+        const Orbital &orb = (*this)[i];
+        if (orb.spin() == SPIN::Beta) nBeta++;
     }
     return nBeta;
-}
-
-/** Returns the number of doubly occupied orbitals */
-int OrbitalVector::getNDoubly() const {
-    int nDoubly = 0;
-    for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (orb->getOccupancy() == 2) {
-            nDoubly++;
-        }
-    }
-    return nDoubly;
 }
 
 /** Returns the number of electrons with the given spin
  *
  * Paired spin (default input) returns the total number of electrons.
+ *
  */
-int OrbitalVector::getNElectrons(int inpSpin) const {
+int OrbitalVector::getNElectrons(int spin) const {
     int nElectrons = 0;
     for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        int thisSpin = orb->getSpin();
-        if (inpSpin == Orbital::Paired) {
-            nElectrons += orb->getOccupancy();
-        } else if (inpSpin == Orbital::Alpha) {
-            if (thisSpin == Orbital::Paired or thisSpin == Orbital::Alpha) {
+        const Orbital &orb = (*this)[i];
+        if (spin == SPIN::Paired) {
+            nElectrons += orb.occ();
+        } else if (spin == SPIN::Alpha) {
+            if (orb.spin() == SPIN::Paired or orb.spin() == SPIN::Alpha) {
                 nElectrons += 1;
             }
-        } else if (inpSpin == Orbital::Beta) {
-            if (thisSpin == Orbital::Paired or thisSpin == Orbital::Beta) {
+        } else if (spin == SPIN::Beta) {
+            if (orb.spin() == SPIN::Paired or orb.spin() == SPIN::Beta) {
                 nElectrons += 1;
             }
         } else {
@@ -320,39 +251,21 @@ int OrbitalVector::getNElectrons(int inpSpin) const {
     return nElectrons;
 }
 
+/** Returns the spin multiplicity of the vector */
 int OrbitalVector::getMultiplicity() const {
-    NOT_IMPLEMENTED_ABORT;
-}
-
-bool OrbitalVector::isConverged(double prec) const {
-    bool converged = true;
-    for (int i = 0; i < this->size(); i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        if (not orb->isConverged(prec)) {
-            converged = false;
-        }
-    }
-    return converged;
-}
-
-double OrbitalVector::calcTotalError() const {
-    const VectorXd &error = getErrors();
-    return sqrt(error.dot(error));
+    int nAlpha = getNElectrons(SPIN::Alpha);
+    int nBeta = getNElectrons(SPIN::Beta);
+    int S = abs(nAlpha - nBeta);
+    return S + 1;
 }
 
 /** Returns a vector containing the orbital errors */
-VectorXd OrbitalVector::getErrors() const {
+DoubleVector OrbitalVector::getErrors() const {
     int nOrbs = this->size();
-    VectorXd errors = VectorXd::Zero(nOrbs);
+    DoubleVector errors = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        errors(i) = orb->getError();
+        const Orbital &orb = (*this)[i];
+        errors(i) = orb.error();
     }
     return errors;
 }
@@ -360,32 +273,24 @@ VectorXd OrbitalVector::getErrors() const {
 /** Assign errors to each orbital.
  *
  * Length of input vector must match the number of orbitals in the set.
+ *
  */
-void OrbitalVector::setErrors(const VectorXd &errors) {
+void OrbitalVector::setErrors(const DoubleVector &errors) {
     int nOrbs = this->size();
-    if (nOrbs != errors.size()) {
-        MSG_ERROR("Size mismatch");
-    }
+    if (nOrbs != errors.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < nOrbs; i++) {
-        Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        orb->setError(errors(i));
+        Orbital &orb = (*this)[i];
+        orb.setError(errors(i));
     }
 }
 
-/** Returns a vector containing the orbital spins
- */
-VectorXi OrbitalVector::getSpins() const {
+/** Returns a vector containing the orbital spins */
+IntVector OrbitalVector::getSpins() const {
     int nOrbs = this->size();
-    VectorXi spins = VectorXi::Zero(nOrbs);
+    IntVector spins = IntVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        spins(i) = orb->getSpin();
+        const Orbital &orb = (*this)[i];
+        spins(i) = orb.spin();
     }
     return spins;
 }
@@ -393,32 +298,24 @@ VectorXi OrbitalVector::getSpins() const {
 /** Assigns spin to each orbital
  *
  * Length of input vector must match the number of orbitals in the set.
+ *
  */
-void OrbitalVector::setSpins(const VectorXi &spins) {
+void OrbitalVector::setSpins(const IntVector &spins) {
     int nOrbs = this->size();
-    if (nOrbs != spins.size()) {
-        MSG_ERROR("Size mismatch");
-    }
+    if (nOrbs != spins.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < nOrbs; i++) {
-        Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        orb->setSpin(spins(i));
+        Orbital &orb = (*this)[i];
+        orb.setSpin(spins(i));
     }
 }
 
-/** Returns a vector containing the orbital occupancies
- */
-VectorXi OrbitalVector::getOccupancies() const {
+/** Returns a vector containing the orbital occupancies */
+IntVector OrbitalVector::getOccupancies() const {
     int nOrbs = this->size();
-    VectorXi occ = VectorXi::Zero(nOrbs);
+    IntVector occ = IntVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        occ(i) = orb->getOccupancy();
+        const Orbital &orb = (*this)[i];
+        occ(i) = orb.occ();
     }
     return occ;
 }
@@ -426,87 +323,104 @@ VectorXi OrbitalVector::getOccupancies() const {
 /** Assigns spin to each orbital
  *
  * Length of input vector must match the number of orbitals in the set.
+ *
  */
-void OrbitalVector::setOccupancies(const VectorXi &occ) {
+void OrbitalVector::setOccupancies(const IntVector &occ) {
     int nOrbs = this->size();
-    if (nOrbs != occ.size()) {
-        MSG_ERROR("Size mismatch");
-    }
+    if (nOrbs != occ.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < nOrbs; i++) {
-        Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        orb->setOccupancy(occ(i));
+        Orbital &orb = (*this)[i];
+        orb.setOcc(occ(i));
     }
 }
 
-/** Returns a vector containing the orbital square norms
- */
-VectorXd OrbitalVector::getSquareNorms() const {
+/** Returns a vector containing the orbital square norms */
+DoubleVector OrbitalVector::getSquaredNorms() const {
     int nOrbs = this->size();
-    VectorXd norms = VectorXd::Zero(nOrbs);
+    DoubleVector norms = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        norms(i) = orb->getSquareNorm();
+        const Orbital &orb = (*this)[i];
+        norms(i) = orb.squaredNorm();
     }
     return norms;
 }
 
-/** Returns a vector containing the orbital norms
- */
-VectorXd OrbitalVector::getNorms() const {
+/** Returns a vector containing the orbital norms */
+DoubleVector OrbitalVector::getNorms() const {
     int nOrbs = this->size();
-    VectorXd norms = VectorXd::Zero(nOrbs);
+    DoubleVector norms = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        const Orbital *orb = this->orbitals[i];
-        if (orb == 0) {
-            continue;
-        }
-        norms(i) = sqrt(orb->getSquareNorm());
+        const Orbital &orb = (*this)[i];
+        norms(i) = orb.norm();
     }
     return norms;
 }
 
-void OrbitalVector::replaceOrbital(int i, Orbital **orb) {
-    if (i < 0 or i >= this->size()) {
-        MSG_ERROR("Orbital index out of bounds");
-    }
-    if (this->orbitals[i] != 0) {
-        delete this->orbitals[i];
-    }
-    this->orbitals[i] = *orb;
-    *orb = 0;
-}
-
-/** Normalize all orbitals in the set
- */
+/** Normalize all orbitals in the set */
 void OrbitalVector::normalize() {
     for (int i = 0; i < this->size(); i++) {
-        Orbital &orb = getOrbital(i);
+        Orbital &orb = (*this)[i];
         orb.normalize();
     }
 }
 
+/** Gram-Schmidt orthogonalize orbitals within the set */
+void OrbitalVector::orthogonalize() {
+    for (int i = 0; i < this->size(); i++) {
+        Orbital &orb_i = (*this)[i];
+        for (int j = 0; j < i; j++) {
+            Orbital &orb_j = (*this)[j];
+            orb_i.orthogonalize(orb_j);
+        }
+    }
+}
+
+/** Orthogonalize the out orbital against all orbitals in inp */
+void OrbitalVector::orthogonalize(OrbitalVector inp_vec) {
+    for (int i = 0; i < this->size(); i++) {
+        Orbital &orb_i = (*this)[i];
+        orb_i.orthogonalize(inp_vec);
+    }
+}
+
+/** In place rotation (unitary transformation) of orbitals */
+void OrbitalVector::rotate(const ComplexMatrix &U, double prec) {
+    if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
+
+    OrbitalVector out;
+    for (int i = 0; i < U.rows(); i++) {
+        const ComplexVector &c = U.row(i);
+	Orbital out_i = orbital::add(c, *this, prec);
+        out.push_back(out_i);
+    }
+    this->free();
+    *this = out;
+}
+
+/** Collective printing of all orbitals in the vector */
+std::ostream& OrbitalVector::print(std::ostream &o) const {
+    int oldPrec = mrcpp::Printer::setPrecision(15);
+    mrcpp::Printer::setScientific();
+    o << "*OrbitalVector: ";
+    o << std::setw(4) << this->size()          << " orbitals  ";
+    o << std::setw(4) << this->getNOccupied()  << " occupied  ";
+    o << std::setw(4) << this->getNElectrons() << " electrons " << std::endl;
+    o << "------------------------------";
+    o << "------------------------------\n";
+    o << "   n    sqNorm               Occ Spin  Error\n";
+    o << "------------------------------";
+    o << "------------------------------\n";
+    for (int i = 0; i < this->size(); i++) {
+        const Orbital &orb = (*this)[i];
+        o << std::setw(4) << i << orb;
+    }
+    o << "------------------------------";
+    o << "------------------------------\n";
+    mrcpp::Printer::setPrecision(oldPrec);
+    return o;
+}
+
 /*
-  int OrbitalVector::printTreeSizes() const {
-  int nNodes = 0;
-  int nTrees = 0;
-  for (int i = 0; i < size(); i++) {
-  if (this->orbitals[i] != 0) {
-  nNodes += this->orbitals[i]->getNNodes();
-  nTrees++;
-  }
-  }
-  println(0, " OrbitalVector     " << setw(15) << nTrees << setw(25) << nNodes);
-  return nNodes;
-  }
-*/
-
-
 struct Metadata{
     int Norbitals;
     int spin[workOrbVecSize];
@@ -516,8 +430,9 @@ struct Metadata{
     int Ix[workOrbVecSize];
     double error[workOrbVecSize];
 };
-
+*/
 //send an orbitalvector with MPI
+/*
 void OrbitalVector::send_OrbVec(int dest, int tag, vector<int> &orbsIx, int start, int maxcount){
 #ifdef HAVE_MPI
     MPI_Status status;
@@ -555,8 +470,9 @@ void OrbitalVector::send_OrbVec(int dest, int tag, vector<int> &orbsIx, int star
 
 #endif
 }
+*/
 
-
+/*
 #ifdef HAVE_MPI
 //non-blocking send an orbitalvector with MPI
 void OrbitalVector::Isend_OrbVec(int dest, int tag, vector<int> &orbsIx, int start, int maxcount, MPI_Request &request){
@@ -595,8 +511,9 @@ void OrbitalVector::Isend_OrbVec(int dest, int tag, vector<int> &orbsIx, int sta
     }
 }
 #endif
+*/
 
-
+/*
 //receive an orbitalvector with MPI
 void OrbitalVector::Rcv_OrbVec(int source, int tag, int *orbsIx, int& workOrbVecIx){
 #ifdef HAVE_MPI
@@ -657,8 +574,8 @@ void OrbitalVector::Rcv_OrbVec(int source, int tag, int *orbsIx, int& workOrbVec
     }
 
 #endif
-
 }
+*/
 
 /** Send and receive a chunk of an OrbitalVector
  * this : Vector with orbitals locally (owned by this MPI process)
@@ -669,6 +586,7 @@ void OrbitalVector::Rcv_OrbVec(int source, int tag, int *orbsIx, int& workOrbVec
  * iter0 : iteration to start with, to know which chunk is to be treated
  * NB: it is assumed that the orbitals are evenly distributed among MPI processes (or as evenly as possible)
  */
+/*
 void OrbitalVector::getOrbVecChunk(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs, int* rcvOrbsIx, int size, int& iter0, int maxOrbs_in, int workIx){
 
     int maxOrbs = workOrbVecSize;//max number of orbital to send or receive per iteration
@@ -677,7 +595,7 @@ void OrbitalVector::getOrbVecChunk(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs
     int maxsizeperOrbvec = (size + mpiOrbSize-1)/mpiOrbSize;
 
     int RcvOrbVecIx = 0;
-
+*/
     /* many index scales:
      * Orbital vector index. max = size
      * MPI_iter index. The iteration count through all MPI processes. max = mpiOrbSize
@@ -687,7 +605,7 @@ void OrbitalVector::getOrbVecChunk(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs
      * this is in order to know where to restart
      * Last iteration is for cleanups: clear send and receive vectors and set workOrbVec flag as available.
      */
-
+/*
     int MPI_iter0 = (iter0*maxOrbs)/maxsizeperOrbvec;//which MPI_iter to start with
     int start = (iter0*maxOrbs)%maxsizeperOrbvec;//where to start in the first iteration
     int start0 = start;//save
@@ -736,6 +654,7 @@ void OrbitalVector::getOrbVecChunk(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs
 	start = 0;//always start at 0 after first iteration
     }
 }
+*/
 
 /** Send and receive a chunk of an OrbitalVector
  * Assumes that a symmetric operator is calculated, so that only
@@ -752,6 +671,7 @@ void OrbitalVector::getOrbVecChunk(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs
  * workIx : set if need to use another workOrbVec (optional in)
  * NB: it is assumed that the orbitals are evenly distributed among MPI processes (or as evenly as possible)
  */
+/*
 void OrbitalVector::getOrbVecChunk_sym(vector<int> &myOrbsIx, OrbitalVector &rcvOrbs, int* rcvOrbsIx, int size, int& iter0, int* sndtoMPI, int* sndOrbIx, int maxOrbs_in, int workIx){
 
     int maxOrbs = workOrbVecSize;//max number of orbital to send or receive per iteration
@@ -766,6 +686,7 @@ void OrbitalVector::getOrbVecChunk_sym(vector<int> &myOrbsIx, OrbitalVector &rcv
     for (int i = 0; i < mpiOrbSize; i++) request[i] = MPI_REQUEST_NULL;
     int nRequests = 0;
     MPI_Status status[mpiOrbSize];
+*/
     /* many index scales:
      * Orbital vector index. max = size
      * MPI_iter index. The iteration count through all MPI processes. max = mpiOrbSize
@@ -774,7 +695,7 @@ void OrbitalVector::getOrbVecChunk_sym(vector<int> &myOrbsIx, OrbitalVector &rcv
      * For accounting, we assume that all MPI are filled with maxsizeperOrbvec;
      * this is in order to know where to restart
      */
-
+/*
     int MPI_iter0 = (iter0*maxOrbs)/maxsizeperOrbvec;//which MPI_iter to start with
     int start = (iter0*maxOrbs)%maxsizeperOrbvec;//where to start in the first iteration
     int start0 = start;//save
@@ -838,3 +759,6 @@ void OrbitalVector::getOrbVecChunk_sym(vector<int> &myOrbsIx, OrbitalVector &rcv
     MPI_Waitall(nRequests,request, status);
 #endif
 }
+*/
+
+} //namespace mrchem

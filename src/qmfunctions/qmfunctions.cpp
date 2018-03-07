@@ -1,7 +1,10 @@
 #include "MRCPP/Printer"
 
+#include "parallel.h"
+
 #include "qmfunctions.h"
 #include "Orbital.h"
+#include "OrbitalVector.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
@@ -41,32 +44,74 @@ ComplexDouble dot(Orbital bra, Orbital ket) {
   * Complicated by the fact that both inputs can be interpreted as complex
   * conjugate versions of themselves. */
 Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, double prec) {
-    int occ = compare_occ(inp_a, inp_b);
-    int spin = compare_spin(inp_a, inp_b);
-    Orbital out(occ, spin);
+    ComplexVector coefs(2);
+    coefs(0) = a;
+    coefs(1) = b;
 
-    double thrs = mrcpp::MachineZero;
-    bool aHasReal = (abs(a.real()) > thrs);
-    bool aHasImag = (abs(a.imag()) > thrs);
-    bool bHasReal = (abs(b.real()) > thrs);
-    bool bHasImag = (abs(b.imag()) > thrs);
+    OrbitalVector orbs;
+    orbs.push_back(inp_a);
+    orbs.push_back(inp_b);
 
-    double a_conj(1.0), b_conj(1.0);
-    if (inp_a.conjugate()) a_conj = -1.0;
-    if (inp_b.conjugate()) b_conj = -1.0;
+    return add(coefs, orbs, prec);
+}
+
+/** out_i = a*(inp_a)_i + b*(inp_b)_i
+ *
+ *  Component-wise addition of orbitals.
+ *
+ */
+OrbitalVector add(ComplexDouble a, OrbitalVector inp_a,
+                  ComplexDouble b, OrbitalVector inp_b,
+                  double prec) {
+    if (inp_a.size() != inp_b.size()) MSG_ERROR("Size mismatch");
+
+    OrbitalVector out;
+    for (int i = 0; i < inp_a.size(); i++) {
+        Orbital out_i = add(a, inp_a[i], b, inp_b[i]);
+        out.push_back(out_i);
+    }
+    return out;
+}
+
+/** out = c_0*inp_0 + c_1*inp_1 + ...
+  *
+  * Complicated by the fact that both inputs can be interpreted as complex
+  * conjugate versions of themselves.
+  *
+  */
+Orbital add(const ComplexVector &c, OrbitalVector inp, double prec) {
+    if (c.size() != inp.size()) MSG_ERROR("Size mismatch");
+
+    Orbital out;
+    // set output spin from first contributing input
+    for (int i = 0; i < inp.size(); i++) {
+        if (abs(c[i]) < mrcpp::MachineZero) continue;
+        out = inp[i].paramCopy();
+        break;
+    }
+    // all contributing input spins must be equal
+    for (int i = 0; i < inp.size(); i++) {
+        if (abs(c[i]) < mrcpp::MachineZero) continue;
+        if (out.spin() != inp[i].spin()) MSG_FATAL("Mixing spins");
+    }
 
     FunctionTreeVector<3> rvec;
     FunctionTreeVector<3> ivec;
 
-    if (inp_a.hasReal() and aHasReal) rvec.push_back(a.real(), &inp_a.real());
-    if (inp_b.hasReal() and bHasReal) rvec.push_back(b.real(), &inp_b.real());
-    if (inp_a.hasImag() and aHasImag) rvec.push_back(-a_conj*a.imag(), &inp_a.imag());
-    if (inp_b.hasImag() and bHasImag) rvec.push_back(-b_conj*b.imag(), &inp_b.imag());
+    double thrs = mrcpp::MachineZero;
+    for (int i = 0; i < inp.size(); i++) {
+        bool cHasReal = (abs(c[i].real()) > thrs);
+        bool cHasImag = (abs(c[i].imag()) > thrs);
 
-    if (inp_a.hasReal() and aHasImag) ivec.push_back(a.imag(), &inp_a.real());
-    if (inp_b.hasReal() and bHasImag) ivec.push_back(b.imag(), &inp_b.real());
-    if (inp_a.hasImag() and aHasReal) ivec.push_back(a_conj*a.real(), &inp_a.imag());
-    if (inp_b.hasImag() and bHasReal) ivec.push_back(b_conj*b.real(), &inp_b.imag());
+        double conj(1.0);
+        if (inp[i].conjugate()) conj = -1.0;
+
+        if (cHasReal and inp[i].hasReal()) rvec.push_back(      c[i].real(), &inp[i].real());
+        if (cHasImag and inp[i].hasImag()) rvec.push_back(-conj*c[i].imag(), &inp[i].imag());
+
+        if (cHasImag and inp[i].hasReal()) ivec.push_back(      c[i].imag(), &inp[i].real());
+        if (cHasReal and inp[i].hasImag()) ivec.push_back( conj*c[i].real(), &inp[i].imag());
+    }
 
     if (rvec.size() > 0) {
         out.alloc(NUMBER::Real);
@@ -89,34 +134,34 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
     return out;
 }
 
-/*
-void add(double prec, Orbital &out, ComplexVector &coefs, OrbitalVector &inp, bool union_grid) {
-    NEEDS_TESTING;
-    // set output spin from first contributing input
-    for (int i = 0; i < inp.size(); i++) {
-        if (abs(coefs[i]) < mrcpp::MachineZero) continue;
-        if (inp[i]->getOccupancy() == 0) continue;
-        out.setSpin(inp[i]->getSpin());
-        break;
-    }
-    // all contributing input spins must be equal
-    for (int i = 0; i < inp.size(); i++) {
-        if (abs(coefs[i]) < mrcpp::MachineZero) continue;
-        if (inp[i]->getOccupancy() == 0) continue;
-        if (out.getSpin() != inp[i]->getSpin()) MSG_FATAL("Mixing spins");
-    }
+/* Orbital transformation out_vec = U*inp_vec
+ *
+ * The transformation matrix is not necessarily square.
+ *
+ */
+OrbitalVector add(const ComplexMatrix &U, OrbitalVector inp, double prec) {
+    if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
 
-    add(prec, (QMFunction &) out, coefs, (QMFunctionVector &) inp, union_grid);
+    OrbitalVector out;
+    for (int i = 0; i < U.rows(); i++) {
+        const ComplexVector &c = U.row(i);
+	Orbital out_i = add(c, inp, prec);
+        out.push_back(out_i);
+    }
+    return out;
 }
-*/
+
 
 /** out = inp_a * inp_b
-  * Complicated by the fact that both inputs can be interpreted as complex
-  * conjugate versions of themselves. */
+  *
+  * Complicated by the fact that both inputs can be interpreted
+  * as complex conjugate versions of themselves.
+  *
+  */
 Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
     int occ = compare_occ(inp_a, inp_b);
     int spin = compare_spin(inp_a, inp_b);
-    Orbital out(occ, spin);
+    Orbital out(spin, occ);
 
     double a_conj(1.0), b_conj(1.0);
     if (inp_a.conjugate()) a_conj = -1.0;
@@ -207,6 +252,11 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
     return out;
 }
 
+/** Compare spin and occupancy of two orbitals
+ *
+ *  Returns true if orbital parameters are the same.
+ *
+ */
 bool compare(const Orbital &orb_a, const Orbital &orb_b) {
     bool comp = true;
     if (compare_occ(orb_a, orb_b) < 0) {
@@ -220,25 +270,27 @@ bool compare(const Orbital &orb_a, const Orbital &orb_b) {
     return comp;
 }
 
+/** Compare occupancy of two orbitals
+ *
+ *  Returns the common occupancy if they match, -1 if they differ.
+ *
+ */
 int compare_occ(const Orbital &orb_a, const Orbital &orb_b) {
     int comp = -1;
     if (orb_a.occ() == orb_b.occ()) comp = orb_a.occ();
     return comp;
 }
 
+/** Compare spin of two orbitals
+ *
+ *  Returns the common spin if they match, -1 if they differ.
+ *
+ */
 int compare_spin(const Orbital &orb_a, const Orbital &orb_b) {
     int comp = -1;
     if (orb_a.spin() == orb_b.spin()) comp = orb_a.spin();
     return comp;
 }
-
-///** Normalize all orbitals in vector */
-//void normalize(OrbitalVector &out) {
-//    for (int i = 0; i < out.size(); i++) {
-//        Orbital &out_i = *out[i];
-//        qmfunction::normalize(out_i);
-//    }
-//}
 
 } //namespace orbital
 

@@ -26,14 +26,16 @@ public:
     virtual Orbital operator()(Orbital inp) = 0;
     virtual Orbital dagger(Orbital inp) = 0;
 
-    //virtual OrbitalVector operator()(OrbitalVector inp);
-    //virtual OrbitalVector dagger(OrbitalVector inp);
+    virtual OrbitalVector operator()(OrbitalVector inp);
+    virtual OrbitalVector dagger(OrbitalVector inp);
 
     virtual ComplexDouble operator()(Orbital bra, Orbital ket);
     virtual ComplexDouble dagger(Orbital bra, Orbital ket);
 
-    //virtual ComplexMatrix operator()(OrbitalVector bra, OrbitalVector ket);
-    //virtual ComplexMatrix dagger(OrbitalVector bra, OrbitalVector ket);
+    virtual ComplexMatrix operator()(OrbitalVector bra, OrbitalVector ket);
+    virtual ComplexMatrix dagger(OrbitalVector bra, OrbitalVector ket);
+
+    virtual ComplexDouble trace(OrbitalVector inp);
 
 protected:
     double apply_prec;
