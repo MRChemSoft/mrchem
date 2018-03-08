@@ -1,32 +1,37 @@
 #pragma once
 
-#include "QMOperator.h"
 #include "QMFunction.h"
+#include "QMOperator.h"
 
 /** 
  *  \class QMPotential
- *  \brief Operator defining an external potential
- *
- *  Bla bla bla
+ *  \brief Operator defining a multiplicative potential
  *
  *  \author Stig Rune Jensen
  *  \date 2015
  *  
  */
+
+namespace mrchem {
+
 class QMPotential : public QMFunction, public QMOperator {
 public:
-    QMPotential(int ab = 1);
+    QMPotential(int adap = 1);
+    QMPotential(const QMPotential &pot);
+    QMPotential &operator=(const QMPotential &pot);
     virtual ~QMPotential();
 
-    virtual Orbital* operator() (Orbital &phi);
-    virtual Orbital* adjoint(Orbital &phi);
+    virtual Orbital operator()(Orbital inp);
+    virtual Orbital dagger(Orbital inp);
 
     using QMOperator::operator();
-    using QMOperator::adjoint;
+    using QMOperator::dagger;
 
 protected:
     int adap_build;
-    void calcRealPart(Orbital &Vphi, Orbital &phi);
-    void calcImagPart(Orbital &Vphi, Orbital &phi, bool adjoint);
+
+    mrcpp::FunctionTree<3> *calcRealPart(Orbital &phi, bool dagger);
+    mrcpp::FunctionTree<3> *calcImagPart(Orbital &phi, bool dagger);
 };
 
+} //namespace mrchem;

@@ -1,18 +1,37 @@
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
 #include "QMPotential.h"
-#include "MWAdder.h"
-#include "MWMultiplier.h"
-#include "GridGenerator.h"
 #include "Orbital.h"
-#include "Timer.h"
 
-extern MultiResolutionAnalysis<3> *MRA; // Global MRA
+using mrcpp::FunctionTree;
+using mrcpp::FunctionTreeVector;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
-using namespace std;
+namespace mrchem {
+extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-QMPotential::QMPotential(int ab)
-    : QMFunction(0, 0),
-      QMOperator(MRA->getMaxScale()),
-      adap_build(ab) {
+QMPotential::QMPotential(int adap)
+        : QMFunction(0, 0),
+          QMOperator(),
+          adap_build(adap) {
+}
+
+QMPotential::QMPotential(const QMPotential &pot)
+        : QMFunction(pot),
+          QMOperator(pot),
+          adap_build(pot.adap_build) {
+}
+
+QMPotential& QMPotential::operator=(const QMPotential &pot) {
+    if (this != &pot) {
+        this->re = pot.re;
+        this->im = pot.im;
+        this->adap_build = pot.adap_build;
+        this->apply_prec = pot.apply_prec;
+    }
+    return *this;
 }
 
 QMPotential::~QMPotential() {
@@ -20,105 +39,116 @@ QMPotential::~QMPotential() {
     if (this->hasImag()) MSG_ERROR("Potential not cleared");
 }
 
-Orbital* QMPotential::operator() (Orbital &phi) {
+Orbital QMPotential::operator()(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Timer timer;
-    Orbital *Vphi = new Orbital(phi);
-    calcRealPart(*Vphi, phi);
-    calcImagPart(*Vphi, phi, false);
+    Orbital out = inp.paramCopy();
+    FunctionTree<3> *re = calcRealPart(inp, false);
+    FunctionTree<3> *im = calcImagPart(inp, false);
+    out.setReal(re);
+    out.setImag(im);
     timer.stop();
 
-    int n = Vphi->getNNodes();
-    double t = timer.getWallTime();
-    TelePrompter::printTree(1, "Applied QM potential", n, t);
+    //int n = out.getNNodes();
+    //double t = timer.getWallTime();
+    //Printer::printTree(1, "Applied QM potential", n, t);
 
-    return Vphi;
+    return out;
 }
 
-Orbital* QMPotential::adjoint(Orbital &phi) {
+Orbital QMPotential::dagger(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Timer timer;
-    Orbital *Vphi = new Orbital(phi);
-    calcRealPart(*Vphi, phi);
-    calcImagPart(*Vphi, phi, true);
+    Orbital out = inp.paramCopy();
+    FunctionTree<3> *re = calcRealPart(inp, true);
+    FunctionTree<3> *im = calcImagPart(inp, true);
+    out.setReal(re);
+    out.setImag(im);
     timer.stop();
 
-    int n = Vphi->getNNodes();
-    double t = timer.getWallTime();
-    TelePrompter::printTree(1, "Applied QM adjoint potential", n, t);
+    //int n = out.getNNodes();
+    //double t = timer.getWallTime();
+    //Printer::printTree(1, "Applied QM adjoint potential", n, t);
 
-    return Vphi;
+    return out;
 }
 
-void QMPotential::calcRealPart(Orbital &Vphi, Orbital &phi) {
-    MWAdder<3> add(this->apply_prec, this->max_scale);
-    MWMultiplier<3> mult(this->apply_prec, this->max_scale);
-    GridGenerator<3> grid(this->max_scale);
+FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
+    int adap = this->adap_build;
+    double prec = this->apply_prec;
 
     QMPotential &V = *this;
     FunctionTreeVector<3> vec;
 
-    if (Vphi.hasReal()) MSG_ERROR("Orbital not empty");
     if (V.hasReal() and phi.hasReal()) {
+        double coef = 1.0;
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        grid(*tree, phi.real());
-        mult(*tree, 1.0, V.real(), phi.real(), this->adap_build);
-        vec.push_back(1.0, tree);
+        mrcpp::copy_grid(*tree, phi.real());
+        mrcpp::multiply(prec, *tree, coef, V.real(), phi.real(), adap);
+        vec.push_back(tree);
     }
     if (V.hasImag() and phi.hasImag()) {
+        double coef = -1.0;
+        if (dagger) coef *= -1.0;
+        if (phi.conjugate()) coef *= -1.0;
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        grid(*tree, phi.imag());
-        mult(*tree, 1.0, V.imag(), phi.imag(), this->adap_build);
-        vec.push_back(-1.0, tree);
+        mrcpp::copy_grid(*tree, phi.imag());
+        mrcpp::multiply(prec, *tree, coef, V.imag(), phi.imag(), adap);
+        vec.push_back(tree);
     }
+
+    FunctionTree<3> *out = 0;
     if (vec.size() == 1) {
-        Vphi.setReal(vec[0]);
+        out = vec[0];
         vec.clear(false);
     }
     if (vec.size() == 2) {
-        Vphi.allocReal();
-        grid(Vphi.real(), vec);
-        add(Vphi.real(), vec, 0);
+        out = new FunctionTree<3>(*MRA);
+        mrcpp::copy_grid(*out, vec);
+        mrcpp::add(-1.0, *out, vec, 0);
         vec.clear(true);
     }
+    return out;
 }
 
-void QMPotential::calcImagPart(Orbital &Vphi, Orbital &phi, bool adjoint) {
-    MWAdder<3> add(this->apply_prec, this->max_scale);
-    MWMultiplier<3> mult(this->apply_prec, this->max_scale);
-    GridGenerator<3> grid(this->max_scale);
+FunctionTree<3>* QMPotential::calcImagPart(Orbital &phi, bool dagger) {
+    int adap = this->adap_build;
+    double prec = this->apply_prec;
 
     QMPotential &V = *this;
     FunctionTreeVector<3> vec;
 
-    if (Vphi.hasImag()) MSG_ERROR("Orbital not empty");
     if (V.hasReal() and phi.hasImag()) {
+        double coef = 1.0;
+        if (phi.conjugate()) coef *= -1.0;
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        grid(*tree, phi.imag());
-        mult(*tree, 1.0, V.real(), phi.imag(), this->adap_build);
-        vec.push_back(1.0, tree);
+        mrcpp::copy_grid(*tree, phi.imag());
+        mrcpp::multiply(prec, *tree, coef, V.real(), phi.imag(), adap);
+        vec.push_back(tree);
     }
     if (V.hasImag() and phi.hasReal()) {
+        double coef = 1.0;
+        if (dagger) coef *= -1.0;
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        grid(*tree, phi.real());
-        mult(*tree, 1.0, V.imag(), phi.real(), this->adap_build);
-        if (adjoint) {
-            vec.push_back(-1.0, tree);
-        } else {
-            vec.push_back(1.0, tree);
-        }
+        mrcpp::copy_grid(*tree, phi.real());
+        mrcpp::multiply(prec, *tree, coef, V.imag(), phi.real(), adap);
+        vec.push_back(tree);
     }
+
+    FunctionTree<3> *out = 0;
     if (vec.size() == 1) {
-        Vphi.setImag(vec[0]);
+        out = vec[0];
         vec.clear(false);
     }
     if (vec.size() == 2) {
-        Vphi.allocImag();
-        grid(Vphi.imag(), vec);
-        add(Vphi.imag(), vec, 0);
+        out = new FunctionTree<3>(*MRA);
+        mrcpp::copy_grid(*out, vec);
+        mrcpp::add(-1.0, *out, vec, 0);
         vec.clear(true);
     }
+    return out;
 }
 
+} //namespace mrchem
