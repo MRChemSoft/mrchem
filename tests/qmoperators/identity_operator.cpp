@@ -7,6 +7,7 @@
 #include "OrbitalVector.h"
 
 using namespace mrchem;
+using namespace orbital;
 
 auto f = [] (const double *r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
@@ -64,7 +65,7 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         Phi[1].alloc(NUMBER::Real);
         mrcpp::project(prec, Phi[0].real(), f);
         mrcpp::project(prec, Phi[1].real(), g);
-        Phi.normalize();
+        normalize(Phi);
 
         IdentityOperator I;
         I.setup(prec);
@@ -72,22 +73,22 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
             OrbitalVector IPhi = I(Phi);
             REQUIRE( IPhi[0].real().integrate() == Approx(Phi[0].real().integrate()) );
             REQUIRE( IPhi[1].real().integrate() == Approx(Phi[1].real().integrate()) );
-            IPhi.free();
+            free(IPhi);
         }
         SECTION("O.dagger(Phi)") {
             OrbitalVector IPhi = I.dagger(Phi);
             REQUIRE( IPhi[0].real().integrate() == Approx(Phi[0].real().integrate()) );
             REQUIRE( IPhi[1].real().integrate() == Approx(Phi[1].real().integrate()) );
-            IPhi.free();
+            free(IPhi);
         }
         SECTION("trace") {
-            double nEl = Phi.getNElectrons();
+            double nEl = get_electron_number(Phi);
             ComplexDouble trace = I.trace(Phi);
             REQUIRE( trace.real() == Approx(nEl) );
             REQUIRE( abs(trace.imag()) < mrcpp::MachineZero );
         }
         I.clear();
-        Phi.free();
+        free(Phi);
     }
 
     SECTION("expectation value") {
@@ -131,6 +132,6 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
             REQUIRE( S(0,1).imag() == Approx(-S(1,0).imag()) );
         }
         I.clear();
-        Phi.free();
+        free(Phi);
     }
 }
