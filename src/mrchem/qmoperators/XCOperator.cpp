@@ -266,7 +266,6 @@ void XCOperator::calcDensityGradient(Density *dRho, Density &rho) {
         dRho[0].setDensity(Density::Alpha, grad_a[0]);
         dRho[1].setDensity(Density::Alpha, grad_a[1]);
         dRho[2].setDensity(Density::Alpha, grad_a[2]);
-        
         FunctionTreeVector<3> grad_b = calcGradient(rho.beta());
         dRho[0].setDensity(Density::Beta, grad_b[0]);
         dRho[1].setDensity(Density::Beta, grad_b[1]);
@@ -292,74 +291,93 @@ FunctionTreeVector<3> XCOperator::calcGradient(FunctionTree<3> &inp) {
     return out;
 }
 
-/** Compute the required input functions for XCFun. In the case of GGA
- * the spin density gradients are computed. Then densities and gradients
- * are sorted in the input function array in the correct order for XCFun.
- * We define \f$ \gamma_{\alpha\beta} = \nabla\rho_\alpha\cdot\nabla\rho_\beta\f$
- * LDA: \f$ (\rho) \f$
- * GGA: \f$ (\rho, \gamma) \f$
- * Spin LDA: \f$ (\rho_\alpha,\rho_\beta) \f$
- * Spin GGA: \f$ (\rho_\alpha,\rho_\beta, \gamma_{\alpha\alpha},
- * \gamma_{\alpha\beta}, \gamma_{\beta\beta}) \f$
- */
 void XCOperator::setupXCInput() {
-    if (this->xcInput != 0) MSG_ERROR("XC input not empty");
+   if (this->xcInput != 0) MSG_ERROR("XC input not empty");
     Timer timer;
     println(2, "Preprocessing");
 
     int nInp = this->functional->getInputLength();
     bool spin = this->functional->isSpinSeparated();
     bool gga = this->functional->isGGA();
+    bool gamma = this->functional->needsGamma();
 
     std::cout << "Input length " << nInp << std::endl;
     
-    Density &rho = this->density;
-    Density &rho_x = this->gradient[0];
-    Density &rho_y = this->gradient[1];
-    Density &rho_z = this->gradient[2];
-
     this->xcInput = allocPtrArray<FunctionTree<3> >(nInp);
 
-    if (not spin) {
-        this->xcInput[0] = &rho.total();
-        if (gga) {
-            FunctionTreeVector<3> vec;
-            vec.push_back(&rho_x.total());
-            vec.push_back(&rho_y.total());
-            vec.push_back(&rho_z.total());
-            this->xcInput[1] = calcDotProduct(vec, vec);
-            vec.clear();
-        }
-    } else {
-        this->xcInput[0] = &rho.alpha();
-        this->xcInput[1] = &rho.beta();
-        if (gga) {
-            FunctionTreeVector<3> vec_a;
-            FunctionTreeVector<3> vec_b;
-            vec_a.push_back(&rho_x.alpha());
-            vec_a.push_back(&rho_y.alpha());
-            vec_a.push_back(&rho_z.alpha());
-            vec_b.push_back(&rho_x.beta());
-            vec_b.push_back(&rho_y.beta());
-            vec_b.push_back(&rho_z.beta());
-            this->xcInput[2] = calcDotProduct(vec_a, vec_a);
-            this->xcInput[3] = calcDotProduct(vec_a, vec_b);
-            this->xcInput[4] = calcDotProduct(vec_b, vec_b);
-            vec_a.clear();
-            vec_b.clear();
-        }
+    int nUsed = 0;
+    nUsed = setupXCInputDensity(nUsed, spin);
+    if (gga) {
+        nUsed = setupXCInputGradient(nUsed, spin, gamma);
     }
-
+    
     // sanity check
+    if (nInp != nUsed)  MSG_ERROR("Mismatch between used vs requested");
     for (int i = 0; i < nInp; i++) {
         if (this->xcInput[i] == 0) MSG_ERROR("Invalid XC input");
     }
 
-    timer.stop();
-    double t = timer.getWallTime();
-    int n = sumNodes<FunctionTree<3> >(this->xcInput, nInp);
-    TelePrompter::printTree(0, "XC preprocess xcfun", n, t);
-    printout(2, endl);
+}
+
+int XCOperator::setupXCInputDensity(int nUsed, bool spin) {
+    if(spin) {
+        this->xcInput[nUsed]     = &this->density.alpha();
+        this->xcInput[nUsed + 1] = &this->density.beta();
+        nUsed += 2;
+    } else {
+        this->xcInput[nUsed] = &this->density.total();
+        nUsed++;
+    }
+    return nUsed;
+}
+
+int XCOperator::setupXCInputGradient(int nUsed, bool spin, bool gamma) {
+
+    FunctionTreeVector<3> vec_a, vec_b, vec_t;
+    
+    vec_a.push_back(&gradient[0].alpha());
+    vec_a.push_back(&gradient[1].alpha());
+    vec_a.push_back(&gradient[2].alpha());
+
+    vec_b.push_back(&gradient[0].beta());
+    vec_b.push_back(&gradient[1].beta());
+    vec_b.push_back(&gradient[2].beta());
+                    
+    vec_t.push_back(&gradient[0].total());
+    vec_t.push_back(&gradient[1].total());
+    vec_t.push_back(&gradient[2].total());
+    
+    if(spin) {
+        if(gamma) {
+            this->xcInput[nUsed    ] = calcDotProduct(vec_a, vec_a);
+            this->xcInput[nUsed + 1] = calcDotProduct(vec_a, vec_b);
+            this->xcInput[nUsed + 2] = calcDotProduct(vec_b, vec_b);
+            nUsed += 3;
+        } else {
+            this->xcInput[nUsed    ] = vec_a[0];
+            this->xcInput[nUsed + 1] = vec_a[1];
+            this->xcInput[nUsed + 2] = vec_a[2];
+            this->xcInput[nUsed + 3] = vec_b[0];
+            this->xcInput[nUsed + 4] = vec_b[1];
+            this->xcInput[nUsed + 5] = vec_b[2];
+            nUsed += 6;
+        }
+    } else {
+        if(gamma) {
+            this->xcInput[nUsed] = calcDotProduct(vec_t, vec_t);
+            nUsed += 1;
+        } else {
+            this->xcInput[nUsed    ] = vec_t[0];
+            this->xcInput[nUsed + 1] = vec_t[1];
+            this->xcInput[nUsed + 2] = vec_t[2];
+            nUsed += 3;
+        }
+    }
+    vec_a.clear();
+    vec_b.clear();
+    vec_t.clear();
+    
+    return nUsed;
 }
 
 void XCOperator::clearXCInput() {

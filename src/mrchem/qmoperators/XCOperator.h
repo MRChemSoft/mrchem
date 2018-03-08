@@ -58,6 +58,9 @@ protected:
     void setupXCInput();
     void setupXCOutput();
 
+    int setupXCInputDensity(int nUsed, bool spin);
+    int setupXCInputGradient(int nUsed, bool spin, bool gamma);
+
     void clearXCInput();
     void clearXCOutput();
 

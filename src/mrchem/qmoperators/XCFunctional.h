@@ -31,14 +31,16 @@ public:
     bool isMetaGGA() const { return (xc_is_metagga(this->functional)); }
     
     bool isSpinSeparated() const { return this->spin; }
+    bool needsGamma() const { return (expDerivatives == 0);};
 
     void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
     void evalSetup(const int order);
 
 private:
-    bool spin;                 ///< Spin polarization
-    double cutoff;             ///< Below the cutoff value, the density will be considered zero
-    xc_functional functional;  ///< The functional in the XCFun library (struct from xcfun library)
+    bool spin;                  ///< Spin polarization
+    unsigned int expDerivatives;///< whether gamma-type or explicit derivatives are used
+    double cutoff;              ///< Below the cutoff value, the density will be considered zero
+    xc_functional functional;   ///< The functional in the XCFun library (struct from xcfun library)
 
 };
 
