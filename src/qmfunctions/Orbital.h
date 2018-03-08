@@ -1,6 +1,6 @@
 #pragma once
 
-#include "qmfunctions.h"
+#include "QMFunction.h"
 
 namespace mrchem {
 
@@ -14,7 +14,7 @@ struct OrbitalMeta {
     double error;
 };
 
-class Orbital {
+class Orbital : public QMFunction {
 public:
     Orbital();
     Orbital(int spin, int occ = -1);
@@ -25,22 +25,6 @@ public:
     Orbital paramCopy() const;
     Orbital deepCopy();
     Orbital dagger() const;
-
-    void alloc(int type = NUMBER::Total);
-    void clear(int type = NUMBER::Total);
-    void free(int type = NUMBER::Total);
-
-    bool hasReal() const { return (this->re == 0) ? false : true; }
-    bool hasImag() const { return (this->im == 0) ? false : true; }
-
-    mrcpp::FunctionTree<3> &real() { return *this->re; }
-    mrcpp::FunctionTree<3> &imag() { return *this->im; }
-
-    const mrcpp::FunctionTree<3> &real() const { return *this->re; }
-    const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
-
-    void setReal(mrcpp::FunctionTree<3> *real) { this->re = real; }
-    void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
 
     void setError(double error) { this->meta.error = error; }
     void setSpin(int spin) { this->meta.spin = spin; }
@@ -66,8 +50,6 @@ public:
 
 protected:
     OrbitalMeta meta;
-    mrcpp::FunctionTree<3> *re;     ///* Real part of function
-    mrcpp::FunctionTree<3> *im;     ///* Imaginary part of function
 
     char printSpin() const;
     std::ostream& print(std::ostream &o) const;

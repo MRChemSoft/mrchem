@@ -50,9 +50,9 @@ Orbital QMPotential::operator()(Orbital inp) {
     out.setImag(im);
     timer.stop();
 
-    //int n = out.getNNodes();
-    //double t = timer.getWallTime();
-    //Printer::printTree(1, "Applied QM potential", n, t);
+    int n = out.getNNodes();
+    double t = timer.getWallTime();
+    Printer::printTree(1, "Applied QM potential", n, t);
 
     return out;
 }
@@ -68,9 +68,9 @@ Orbital QMPotential::dagger(Orbital inp) {
     out.setImag(im);
     timer.stop();
 
-    //int n = out.getNNodes();
-    //double t = timer.getWallTime();
-    //Printer::printTree(1, "Applied QM adjoint potential", n, t);
+    int n = out.getNNodes();
+    double t = timer.getWallTime();
+    Printer::printTree(1, "Applied QM adjoint potential", n, t);
 
     return out;
 }

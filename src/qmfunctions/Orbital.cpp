@@ -6,11 +6,13 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 Orbital::Orbital()
-        : meta({0, 0, 0, 0, false, 0.0}), re(0), im(0) {
+        : QMFunction(0, 0),
+          meta({0, 0, 0, 0, false, 0.0}) {
 }
 
 Orbital::Orbital(int spin, int occ)
-        : meta({spin, occ, 0, 0, false, 0.0}), re(0), im(0) {
+        : QMFunction(0, 0),
+          meta({spin, occ, 0, 0, false, 0.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
         if (this->spin() == SPIN::Paired) this->meta.occ = 2;
@@ -20,14 +22,15 @@ Orbital::Orbital(int spin, int occ)
 }
 
 Orbital::Orbital(const Orbital &orb)
-        : meta(orb.meta), re(orb.re), im (orb.im) {
+        : QMFunction(orb),
+          meta(orb.meta) {
 }
 
 Orbital& Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
-        this->meta = orb.meta;
         this->re = orb.re;
         this->im = orb.im;
+        this->meta = orb.meta;
     }
     return *this;
 }
@@ -60,41 +63,6 @@ Orbital Orbital::dagger() const {
     Orbital out(*this); // Shallow copy
     out.meta.conjugate = not this->meta.conjugate;
     return out;         // Return shallow copy
-}
-
-void Orbital::alloc(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) MSG_FATAL("Function not empty");
-        this->re = new mrcpp::FunctionTree<3>(*MRA);
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (this->hasImag()) MSG_FATAL("Function not empty");
-        this->im = new mrcpp::FunctionTree<3>(*MRA);
-    }
-}
-
-void Orbital::clear(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        this->re = 0;
-        this->meta.nChunksReal = 0;
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        this->im = 0;
-        this->meta.nChunksImag = 0;
-    }
-}
-
-void Orbital::free(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) delete this->re;
-        this->re = 0;
-        this->meta.nChunksReal = 0;
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (this->hasImag()) delete this->im;
-        this->im = 0;
-        this->meta.nChunksImag = 0;
-    }
 }
 
 /** Tree sizes (nChunks) are flushed before return. */
