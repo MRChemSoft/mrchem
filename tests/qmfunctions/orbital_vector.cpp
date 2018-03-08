@@ -2,7 +2,6 @@
 
 #include "mrchem.h"
 #include "Orbital.h"
-#include "OrbitalVector.h"
 
 using namespace mrchem;
 using namespace orbital;

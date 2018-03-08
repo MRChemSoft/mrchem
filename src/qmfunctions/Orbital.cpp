@@ -1,7 +1,6 @@
 #include "MRCPP/Printer"
 
 #include "Orbital.h"
-#include "OrbitalVector.h"
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA

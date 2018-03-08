@@ -2,7 +2,6 @@
 
 #include "QMOperator.h"
 #include "Orbital.h"
-#include "OrbitalVector.h"
 
 namespace mrchem {
 

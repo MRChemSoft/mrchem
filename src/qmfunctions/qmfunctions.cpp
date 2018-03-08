@@ -4,7 +4,6 @@
 
 #include "qmfunctions.h"
 #include "Orbital.h"
-#include "OrbitalVector.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
