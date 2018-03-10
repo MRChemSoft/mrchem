@@ -1,13 +1,13 @@
 #pragma once
 
-#include "QMTensorOperator.h"
+#include "TensorOperator.h"
 #include "RankZeroTensorOperator.h"
 #include "Orbital.h"
 
 namespace mrchem {
 
 template<int I>
-class RankOneTensorOperator : public QMTensorOperator<I, RankZeroTensorOperator> {
+class RankOneTensorOperator : public TensorOperator<I, RankZeroTensorOperator> {
 public:
     OrbitalVector operator()(Orbital phi) {
         RankOneTensorOperator &O = *this;

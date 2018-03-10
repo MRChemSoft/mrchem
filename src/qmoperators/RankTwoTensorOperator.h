@@ -1,12 +1,12 @@
 #pragma once
 
-#include "QMTensorOperator.h"
+#include "TensorOperator.h"
 #include "RankOneTensorOperator.h"
 
 namespace mrchem {
 
 template<int I, int J>
-class RankTwoTensorOperator : public QMTensorOperator<I, RankOneTensorOperator<J> > {
+class RankTwoTensorOperator : public TensorOperator<I, RankOneTensorOperator<J> > {
 public:
     ComplexMatrix operator()(Orbital bra, Orbital ket) {
         RankTwoTensorOperator &O = *this;

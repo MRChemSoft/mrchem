@@ -3,10 +3,10 @@
 namespace mrchem {
 
 template<int I, class T>
-class QMTensorOperator {
+class TensorOperator {
 public:
-    QMTensorOperator() { }
-    virtual ~QMTensorOperator() { }
+    TensorOperator() { }
+    virtual ~TensorOperator() { }
 
     void setup(double prec) { for (int i = 0; i < I; i++) this->oper[i].setup(prec); }
     void clear() { for (int i = 0; i < I; i++) this->oper[i].clear(); }
