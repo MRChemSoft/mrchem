@@ -21,6 +21,8 @@ class Getkw;
 namespace mrchem {
 
 typedef std::complex<double> ComplexDouble;
+typedef std::function<double (const double *r)> DoubleFunction;
+typedef std::function<ComplexDouble (const double *r)> ComplexFunction;
 
 typedef Eigen::VectorXi  IntVector;
 typedef Eigen::VectorXd  DoubleVector;
