@@ -1,6 +1,8 @@
 #pragma once
 
 #include "QMTensorOperator.h"
+#include "RankZeroTensorOperator.h"
+#include "Orbital.h"
 
 namespace mrchem {
 
@@ -16,7 +18,7 @@ public:
         return out;
     }
     ComplexVector operator()(Orbital bra, Orbital ket) {
-        RankTwoTensorOperator &O = *this;
+        RankOneTensorOperator &O = *this;
         ComplexVector out(I);
         for (int i = 0; i < I; i++) {
             out(i) = O[i](bra, ket);
