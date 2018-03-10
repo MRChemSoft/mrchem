@@ -4,8 +4,8 @@
 #include "QMPotential.h"
 #include "Orbital.h"
 
-using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
+using mrcpp::FunctionTree;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -18,28 +18,12 @@ QMPotential::QMPotential(int adap)
           adap_build(adap) {
 }
 
-QMPotential::QMPotential(const QMPotential &pot)
-        : QMFunction(pot),
-          QMOperator(pot),
-          adap_build(pot.adap_build) {
-}
-
-QMPotential& QMPotential::operator=(const QMPotential &pot) {
-    if (this != &pot) {
-        this->re = pot.re;
-        this->im = pot.im;
-        this->adap_build = pot.adap_build;
-        this->apply_prec = pot.apply_prec;
-    }
-    return *this;
-}
-
 QMPotential::~QMPotential() {
     if (this->hasReal()) MSG_ERROR("Potential not cleared");
     if (this->hasImag()) MSG_ERROR("Potential not cleared");
 }
 
-Orbital QMPotential::operator()(Orbital inp) {
+Orbital QMPotential::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Timer timer;

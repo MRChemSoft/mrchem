@@ -17,18 +17,16 @@ namespace mrchem {
 class QMPotential : public QMFunction, public QMOperator {
 public:
     QMPotential(int adap = 1);
-    QMPotential(const QMPotential &pot);
-    QMPotential &operator=(const QMPotential &pot);
     virtual ~QMPotential();
-
-    virtual Orbital operator()(Orbital inp);
-    virtual Orbital dagger(Orbital inp);
-
-    using QMOperator::operator();
-    using QMOperator::dagger;
 
 protected:
     int adap_build;
+
+    virtual Orbital apply(Orbital inp);
+    virtual Orbital dagger(Orbital inp);
+
+    using QMOperator::apply;    // Necessary in order to pick up base class 
+    using QMOperator::dagger;   // definitions for overloaded functions
 
     mrcpp::FunctionTree<3> *calcRealPart(Orbital &phi, bool dagger);
     mrcpp::FunctionTree<3> *calcImagPart(Orbital &phi, bool dagger);
