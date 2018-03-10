@@ -396,6 +396,24 @@ void orthogonalize(OrbitalVector &vec, OrbitalVector &inp) {
     }
 }
 
+ComplexMatrix calc_overlap_matrix(OrbitalVector &braket) {
+    return orbital::calc_overlap_matrix(braket, braket);
+}
+
+ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
+    int Ni = bra.size();
+    int Nj = ket.size();
+    ComplexMatrix S(Ni, Nj);
+    S.setZero();
+
+    for (int i = 0; i < Ni; i++) {
+        for (int j = 0; j < Nj; j++) {
+            S(i,j) = orbital::dot(bra[i], ket[j]);
+        }
+    }
+    return S;
+}
+
 /** Returns the number of occupied orbitals */
 int size_occupied(const OrbitalVector &vec) {
     int nOcc = 0;

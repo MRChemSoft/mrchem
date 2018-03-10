@@ -38,6 +38,9 @@ void normalize(OrbitalVector &vec);
 void orthogonalize(OrbitalVector &vec);
 void orthogonalize(OrbitalVector &vec, OrbitalVector &inp);
 
+ComplexMatrix calc_overlap_matrix(OrbitalVector &braket);
+ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket);
+
 int size_empty(const OrbitalVector &vec);
 int size_occupied(const OrbitalVector &vec);
 int size_singly(const OrbitalVector &vec);
