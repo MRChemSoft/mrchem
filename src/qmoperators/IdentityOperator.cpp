@@ -18,19 +18,19 @@ Orbital QMIdentity::dagger(Orbital inp) {
 }
 
 /** Overwrite default deep copy by more efficient dot product */
-ComplexDouble QMIdentity::apply(Orbital bra, Orbital ket) {
-    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
+ComplexDouble IdentityOperator::operator()(Orbital bra, Orbital ket) {
+    if (this->I.prec() < 0.0) MSG_ERROR("Uninitialized operator");
     return orbital::dot(bra, ket);
 }
 
 /** Overwrite default deep copy by more efficient dot product */
-ComplexDouble QMIdentity::dagger(Orbital bra, Orbital ket) {
-    return apply(bra, ket);
+ComplexDouble IdentityOperator::dagger(Orbital bra, Orbital ket) {
+    return operator()(bra, ket);
 }
 
 /** Overwrite default deep copy by calculation of overlap matrix */
-ComplexMatrix QMIdentity::apply(OrbitalVector &bra, OrbitalVector &ket) {
-    if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
+ComplexMatrix IdentityOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+    if (this->I.prec() < 0.0) MSG_ERROR("Uninitialized operator");
 
     ComplexMatrix S;
     if (&bra == &ket) {
@@ -43,8 +43,8 @@ ComplexMatrix QMIdentity::apply(OrbitalVector &bra, OrbitalVector &ket) {
 }
 
 /** Overwrite default deep copy by calculation of overlap matrix */
-ComplexMatrix QMIdentity::dagger(OrbitalVector &bra, OrbitalVector &ket) {
-    return apply(bra, ket);
+ComplexMatrix IdentityOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
+    return operator()(bra, ket);
 }
 
 } //namespace mrchem

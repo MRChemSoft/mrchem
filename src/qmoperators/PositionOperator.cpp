@@ -34,7 +34,7 @@ void QMPosition::setup(double prec) {
 
     int n = this->getNNodes();
     double t = timer.getWallTime();
-    Printer::printTree(0, "QMPosition", n, t);
+    Printer::printTree(1, "QMPosition", n, t);
 }
 
 void QMPosition::clear() {

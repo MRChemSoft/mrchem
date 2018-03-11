@@ -103,15 +103,10 @@ OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
 ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
     ComplexDouble out(0.0, 0.0);
     for (int n = 0; n < this->oper_exp.size(); n++) {
+        Orbital Oket = applyOperTerm(n, ket);
         ComplexDouble c_n = this->coef_exp[n];
-        if (this->oper_exp[n].size() == 1) {
-            QMOperator &O = *this->oper_exp[n][0];
-            out += c_n*O.apply(bra, ket);
-        } else {
-            Orbital Oket = applyOperTerm(n, ket);
-            out += c_n*orbital::dot(bra, Oket);
-            Oket.free();
-        }
+        out += c_n*orbital::dot(bra, Oket);
+        Oket.free();
     }
     return out;
 }
@@ -128,17 +123,12 @@ ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra,
 
     for (int n = 0; n < this->oper_exp.size(); n++) {
         ComplexDouble c_n = this->coef_exp[n];
-        if (this->oper_exp[n].size() == 1) {
-            QMOperator &O = *this->oper_exp[n][0];
-            out += c_n*O.apply(bra, ket);
-        } else {
-            for (int j = 0; j < Nj; j++) {
-                Orbital Oket_j = applyOperTerm(n, ket[j]);
-                for (int i = 0; i < Ni; i++) {
-                    out(i,j) += c_n*orbital::dot(bra[i], Oket_j);
-                }
-                Oket_j.free();
+        for (int j = 0; j < Nj; j++) {
+            Orbital Oket_j = applyOperTerm(n, ket[j]);
+            for (int i = 0; i < Ni; i++) {
+                out(i,j) += c_n*orbital::dot(bra[i], Oket_j);
             }
+            Oket_j.free();
         }
     }
     return out;

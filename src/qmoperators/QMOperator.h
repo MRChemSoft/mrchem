@@ -15,6 +15,8 @@ public:
     QMOperator() : apply_prec(-1.0) { }
     virtual ~QMOperator() { }
 
+    double prec() { return this->apply_prec; }
+
     friend RankZeroTensorOperator;
 
 protected:
@@ -30,12 +32,6 @@ protected:
 
     virtual Orbital apply(Orbital inp) = 0;
     virtual Orbital dagger(Orbital inp) = 0;
-
-    virtual ComplexDouble apply(Orbital bra, Orbital ket);
-    virtual ComplexDouble dagger(Orbital bra, Orbital ket);
-
-    virtual ComplexMatrix apply(OrbitalVector &bra, OrbitalVector &ket);
-    virtual ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 };
 
 } //namespace mrchem

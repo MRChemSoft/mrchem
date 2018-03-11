@@ -16,7 +16,7 @@ namespace mrchem {
 
 class QMPotential : public QMFunction, public QMOperator {
 public:
-    QMPotential(int adap = 1);
+    QMPotential(int adap);
     virtual ~QMPotential();
 
 protected:
@@ -24,9 +24,6 @@ protected:
 
     virtual Orbital apply(Orbital inp);
     virtual Orbital dagger(Orbital inp);
-
-    using QMOperator::apply;    // Necessary in order to pick up base class 
-    using QMOperator::dagger;   // definitions for overloaded functions
 
     mrcpp::FunctionTree<3> *calcRealPart(Orbital &phi, bool dagger);
     mrcpp::FunctionTree<3> *calcImagPart(Orbital &phi, bool dagger);

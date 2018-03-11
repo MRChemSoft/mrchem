@@ -5,26 +5,26 @@
 
 namespace mrchem {
 
-class QMDelta : public QMPotential {
+class QMDelta final : public QMPotential {
 public:
     QMDelta(const double *o, double expo);
-    virtual ~QMDelta() { }
+    ~QMDelta() { }
 
 protected:
     mrcpp::GaussFunc<3> func;
 
-    virtual void setup(double prec);
-    virtual void clear();
+    void setup(double prec);
+    void clear();
 };
 
-class DeltaOperator : public RankZeroTensorOperator {
+class DeltaOperator final : public RankZeroTensorOperator {
 public:
     DeltaOperator(const double *o = 0, double expo = 1.0e6)
             : delta(0, expo) {
         RankZeroTensorOperator &d = (*this);
         d = delta;
     }
-    virtual ~DeltaOperator() { }
+    ~DeltaOperator() { }
 
 protected:
     QMDelta delta;

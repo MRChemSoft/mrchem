@@ -5,26 +5,23 @@
 
 namespace mrchem {
 
-class QMNabla : public QMOperator {
+class QMNabla final : public QMOperator {
 public:
     QMNabla(int d, mrcpp::DerivativeOperator<3> &D);
-    virtual ~QMNabla() { }
+    ~QMNabla() { }
 
 protected:
     const int apply_dir;
     mrcpp::DerivativeOperator<3> *derivative;
 
-    virtual void setup(double prec) { setApplyPrec(prec); }
-    virtual void clear() { clearApplyPrec(); }
+    void setup(double prec) { setApplyPrec(prec); }
+    void clear() { clearApplyPrec(); }
 
-    virtual Orbital apply(Orbital inp);
-    virtual Orbital dagger(Orbital inp);
-
-    using QMOperator::apply;    // Necessary in order to pick up base class 
-    using QMOperator::dagger;   // definitions for overloaded functions
+    Orbital apply(Orbital inp);
+    Orbital dagger(Orbital inp);
 };
 
-class NablaOperator : public RankOneTensorOperator<3> {
+class NablaOperator final : public RankOneTensorOperator<3> {
 public:
     NablaOperator(mrcpp::DerivativeOperator<3> &D)
             : d_x(0, D),
@@ -35,7 +32,7 @@ public:
         d[1] = d_y;
         d[2] = d_z;
     }
-    virtual ~NablaOperator() { }
+    ~NablaOperator() { }
 
 protected:
     QMNabla d_x;

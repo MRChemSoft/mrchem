@@ -5,32 +5,36 @@
 
 namespace mrchem {
 
-class QMIdentity : public QMOperator {
+class QMIdentity final : public QMOperator {
 public:
     QMIdentity() : QMOperator() { }
-    virtual ~QMIdentity() { }
+    ~QMIdentity() { }
 
 protected:
-    virtual void setup(double prec) { setApplyPrec(prec); }
-    virtual void clear() { clearApplyPrec(); }
+    void setup(double prec) { setApplyPrec(prec); }
+    void clear() { clearApplyPrec(); }
 
-    virtual Orbital apply(Orbital inp);
-    virtual Orbital dagger(Orbital inp);
-
-    virtual ComplexDouble apply(Orbital bra, Orbital ket);
-    virtual ComplexDouble dagger(Orbital bra, Orbital ket);
-
-    virtual ComplexMatrix apply(OrbitalVector &bra, OrbitalVector &ket);
-    virtual ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+    Orbital apply(Orbital inp);
+    Orbital dagger(Orbital inp);
 };
 
-class IdentityOperator : public RankZeroTensorOperator {
+class IdentityOperator final : public RankZeroTensorOperator {
 public:
     IdentityOperator() {
         RankZeroTensorOperator &h = (*this);
         h = I;
     }
-    virtual ~IdentityOperator() { }
+    ~IdentityOperator() { }
+
+    ComplexDouble operator()(Orbital bra, Orbital ket);
+    ComplexDouble dagger(Orbital bra, Orbital ket);
+
+    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
+    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+
+    // Necessary in order to pick up base class definitions for overloaded functions
+    using RankZeroTensorOperator::operator();
+    using RankZeroTensorOperator::dagger;
 
 protected:
     QMIdentity I;

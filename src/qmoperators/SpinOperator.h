@@ -5,25 +5,22 @@
 
 namespace mrchem {
 
-class QMSpin : public QMOperator {
+class QMSpin final : public QMOperator {
 public:
     QMSpin(int d) : D(d) { }
-    virtual ~QMSpin() { }
+    ~QMSpin() { }
 
 protected:
     const int D;
 
-    virtual void setup(double prec) { setApplyPrec(prec); }
-    virtual void clear() { clearApplyPrec(); }
+    void setup(double prec) { setApplyPrec(prec); }
+    void clear() { clearApplyPrec(); }
 
-    virtual Orbital apply(Orbital inp);
-    virtual Orbital dagger(Orbital inp);
-
-    using QMOperator::apply;    // Necessary in order to pick up base class 
-    using QMOperator::dagger;   // definitions for overloaded functions
+    Orbital apply(Orbital inp);
+    Orbital dagger(Orbital inp);
 };
 
-class SpinOperator : public RankOneTensorOperator<3> {
+class SpinOperator final : public RankOneTensorOperator<3> {
 public:
     SpinOperator()
         : s_x(0),
@@ -34,7 +31,7 @@ public:
         s[1] = s_y;
         s[2] = s_z;
     }
-    virtual ~SpinOperator() { }
+    ~SpinOperator() { }
 
 protected:
     QMSpin s_x;

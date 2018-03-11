@@ -5,26 +5,23 @@
 
 namespace mrchem {
 
-class QMMomentum : public QMOperator {
+class QMMomentum final : public QMOperator {
 public:
     QMMomentum(int d, mrcpp::DerivativeOperator<3> &D);
-    virtual ~QMMomentum() { }
+    ~QMMomentum() { }
 
 protected:
     const int apply_dir;
     mrcpp::DerivativeOperator<3> *derivative;
 
-    virtual void setup(double prec) { setApplyPrec(prec); }
-    virtual void clear() { clearApplyPrec(); }
+    void setup(double prec) { setApplyPrec(prec); }
+    void clear() { clearApplyPrec(); }
 
-    virtual Orbital apply(Orbital inp);
-    virtual Orbital dagger(Orbital inp);
-
-    using QMOperator::apply;    // Necessary in order to pick up base class 
-    using QMOperator::dagger;   // definitions for overloaded functions
+    Orbital apply(Orbital inp);
+    Orbital dagger(Orbital inp);
 };
 
-class MomentumOperator : public RankOneTensorOperator<3> {
+class MomentumOperator final : public RankOneTensorOperator<3> {
 public:
     MomentumOperator(mrcpp::DerivativeOperator<3> &D)
             : p_x(0, D),
@@ -35,7 +32,7 @@ public:
         p[1] = p_y;
         p[2] = p_z;
     }
-    virtual ~MomentumOperator() { }
+    ~MomentumOperator() { }
 
 protected:
     QMMomentum p_x;
