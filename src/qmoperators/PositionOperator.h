@@ -1,7 +1,5 @@
 #pragma once
 
-#include "AnalyticFunction.h"
-
 #include "QMPotential.h"
 #include "RankOneTensorOperator.h"
 
