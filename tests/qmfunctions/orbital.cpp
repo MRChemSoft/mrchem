@@ -19,6 +19,7 @@ auto g = [] (const double *r) -> double {
 
 TEST_CASE("Orbital", "[orbital]") {
     const double prec = 1.0e-3;
+    const double thrs = 1.0e-12;
 
     SECTION("alloc") {
         Orbital phi_1(SPIN::Paired);
@@ -160,8 +161,8 @@ TEST_CASE("Orbital", "[orbital]") {
             mrcpp::project(prec, phi_2.imag(), g);
 
             ComplexDouble S = orbital::dot(phi_1, phi_2);
-            REQUIRE( std::abs(S.real()) < mrcpp::MachineZero );
-            REQUIRE( std::abs(S.imag()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S.real()) < thrs );
+            REQUIRE( std::abs(S.imag()) < thrs );
 
             phi_2.free();
         }
@@ -172,8 +173,8 @@ TEST_CASE("Orbital", "[orbital]") {
             mrcpp::project(prec, phi_2.imag(), g);
 
             ComplexDouble S1 = orbital::dot(phi_1, phi_2);
-            REQUIRE( std::abs(S1.real()) < mrcpp::MachineZero );
-            REQUIRE( std::abs(S1.imag()) > mrcpp::MachineZero );
+            REQUIRE( std::abs(S1.real()) < thrs );
+            REQUIRE( std::abs(S1.imag()) > thrs );
 
             ComplexDouble S2 = orbital::dot(phi_1, phi_2.dagger());
             REQUIRE( S2.real() == Approx( S1.real()) );
@@ -182,8 +183,8 @@ TEST_CASE("Orbital", "[orbital]") {
             phi_2.orthogonalize(phi_1);
 
             ComplexDouble S3 = orbital::dot(phi_1, phi_2);
-            REQUIRE( std::abs(S3.real()) < mrcpp::MachineZero );
-            REQUIRE( std::abs(S3.imag()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S3.real()) < thrs );
+            REQUIRE( std::abs(S3.imag()) < thrs );
 
             phi_2.free();
         }
@@ -223,7 +224,7 @@ TEST_CASE("Orbital", "[orbital]") {
         double f_norm = phi.real().getSquareNorm();
         double g_norm = phi.imag().getSquareNorm();
         REQUIRE( psi.real().integrate() == Approx(f_norm + g_norm) );
-        REQUIRE( psi.imag().integrate() == Approx(0.0) );
+        REQUIRE( psi.imag().integrate() < thrs );
 
         phi.free();
         psi.free();

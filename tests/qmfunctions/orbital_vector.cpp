@@ -42,6 +42,7 @@ auto f6 = [] (const double *r) -> double {
 
 TEST_CASE("OrbitalVector", "[orbital_vector]") {
     const double prec = 1.0e-3;
+    const double thrs = 1.0e-12;
 
     SECTION("push_back") {
         Orbital phi_a(SPIN::Alpha);
@@ -245,7 +246,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
                 for (int j = 0; j < nOrbs; j++) {
                     ComplexDouble S_ij = orbital::dot(Phi[i], Phi[j]);
                     if (i == j ) REQUIRE( std::abs(S_ij) == Approx(1.0) );
-                    if (i != j ) REQUIRE( std::abs(S_ij) < 100*mrcpp::MachineZero );
+                    if (i != j ) REQUIRE( std::abs(S_ij) < thrs );
                 }
             }
         }
@@ -264,7 +265,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             for (int i = 0; i < Psi.size(); i++) {
                 for (int j = 0; j < Phi.size(); j++) {
                     ComplexDouble S_ij = orbital::dot(Psi[i], Phi[j]);
-                    REQUIRE( std::abs(S_ij) < mrcpp::MachineZero );
+                    REQUIRE( std::abs(S_ij) < thrs );
                 }
             }
             free(Psi);
@@ -331,7 +332,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
                 for (int j = 0; j < nOrbs; j++) {
                     ComplexDouble S_ij = orbital::dot(Psi[i], Psi[j]);
                     if (i == j ) REQUIRE( std::abs(S_ij) == Approx(1.0) );
-                    if (i != j ) REQUIRE( std::abs(S_ij) < mrcpp::MachineZero );
+                    if (i != j ) REQUIRE( std::abs(S_ij) < thrs );
                 }
             }
             free(Psi);
