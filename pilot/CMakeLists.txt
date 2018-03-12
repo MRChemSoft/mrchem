@@ -10,6 +10,8 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.cpp)
         ${CMAKE_BINARY_DIR}
         ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
         ${CMAKE_SOURCE_DIR}/src
+        ${CMAKE_SOURCE_DIR}/src/chemistry
+        ${CMAKE_SOURCE_DIR}/src/properties
         ${CMAKE_SOURCE_DIR}/src/analyticfunctions
         ${CMAKE_SOURCE_DIR}/src/qmfunctions
         ${CMAKE_SOURCE_DIR}/src/qmoperators
