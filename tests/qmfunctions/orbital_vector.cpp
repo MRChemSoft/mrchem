@@ -6,6 +6,8 @@
 using namespace mrchem;
 using namespace orbital;
 
+namespace orbital_vector_tests {
+
 auto f1 = [] (const double *r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-1.0*R*R);
@@ -338,3 +340,5 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         free(Phi);
     }
 }
+
+} //namespace orbital_vector_tests

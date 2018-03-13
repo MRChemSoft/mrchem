@@ -8,6 +8,8 @@
 using namespace mrchem;
 using namespace orbital;
 
+namespace identity_operator_tests {
+
 auto f = [] (const double *r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-1.0*R*R);
@@ -134,3 +136,5 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         free(Phi);
     }
 }
+
+} //namespace identity_operator_tests

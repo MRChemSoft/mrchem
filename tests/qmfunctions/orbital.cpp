@@ -5,6 +5,8 @@
 
 using namespace mrchem;
 
+namespace orbital_tests {
+
 auto f = [] (const double *r) -> double {
     double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
     return exp(-1.0*R*R);
@@ -227,3 +229,5 @@ TEST_CASE("Orbital", "[orbital]") {
         psi.free();
     }
 }
+
+} //namespace orbital_tests
