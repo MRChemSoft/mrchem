@@ -8,7 +8,7 @@ namespace mrchem {
 void QMOperator::setApplyPrec(double prec) {
     if (this->apply_prec < 0.0) { 
         this->apply_prec = prec;
-    } else if (abs(prec - this->apply_prec) > mrcpp::MachineZero) {
+    } else if (std::abs(prec - this->apply_prec) > mrcpp::MachineZero) {
         MSG_ERROR("Clear operator before setup with different prec!");
     }
 }

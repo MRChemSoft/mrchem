@@ -131,8 +131,8 @@ double Orbital::squaredNorm() const {
 /** In place multiply with scalar */
 void Orbital::rescale(ComplexDouble c) {
     double thrs = mrcpp::MachineZero;
-    bool cHasReal = (abs(c.real()) > thrs);
-    bool cHasImag = (abs(c.imag()) > thrs);
+    bool cHasReal = (std::abs(c.real()) > thrs);
+    bool cHasImag = (std::abs(c.imag()) > thrs);
 
     if (cHasReal and cHasImag) {
         Orbital tmp = orbital::add(c, *this, 0.0, *this);
@@ -164,7 +164,7 @@ void Orbital::rescale(ComplexDouble c) {
 void Orbital::orthogonalize(Orbital inp) {
     ComplexDouble overlap = orbital::dot(inp, *this);
     double sq_norm = inp.squaredNorm();
-    if (abs(overlap) > mrcpp::MachineZero) {
+    if (std::abs(overlap) > mrcpp::MachineZero) {
         this->add(-1.0*(overlap/sq_norm), inp);
     }
 }

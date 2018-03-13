@@ -84,7 +84,7 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
             double nEl = get_electron_number(Phi);
             ComplexDouble trace = I.trace(Phi);
             REQUIRE( trace.real() == Approx(nEl) );
-            REQUIRE( abs(trace.imag()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(trace.imag()) < mrcpp::MachineZero );
         }
         I.clear();
         free(Phi);
@@ -125,8 +125,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         I.setup(prec);
         SECTION("<phi_i|O|phi_j>") {
             ComplexMatrix S = I(Phi, Phi);
-            REQUIRE( abs(S(0,0)) == Approx(Phi[0].squaredNorm()) );
-            REQUIRE( abs(S(1,1)) == Approx(Phi[1].squaredNorm()) );
+            REQUIRE( std::abs(S(0,0)) == Approx(Phi[0].squaredNorm()) );
+            REQUIRE( std::abs(S(1,1)) == Approx(Phi[1].squaredNorm()) );
             REQUIRE( S(0,1).real() == Approx( S(1,0).real()) );
             REQUIRE( S(0,1).imag() == Approx(-S(1,0).imag()) );
         }

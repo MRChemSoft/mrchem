@@ -158,8 +158,8 @@ TEST_CASE("Orbital", "[orbital]") {
             mrcpp::project(prec, phi_2.imag(), g);
 
             ComplexDouble S = orbital::dot(phi_1, phi_2);
-            REQUIRE( abs(S.real()) < mrcpp::MachineZero );
-            REQUIRE( abs(S.imag()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S.real()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S.imag()) < mrcpp::MachineZero );
 
             phi_2.free();
         }
@@ -170,8 +170,8 @@ TEST_CASE("Orbital", "[orbital]") {
             mrcpp::project(prec, phi_2.imag(), g);
 
             ComplexDouble S1 = orbital::dot(phi_1, phi_2);
-            REQUIRE( abs(S1.real()) < mrcpp::MachineZero );
-            REQUIRE( abs(S1.imag()) > mrcpp::MachineZero );
+            REQUIRE( std::abs(S1.real()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S1.imag()) > mrcpp::MachineZero );
 
             ComplexDouble S2 = orbital::dot(phi_1, phi_2.dagger());
             REQUIRE( S2.real() == Approx( S1.real()) );
@@ -180,8 +180,8 @@ TEST_CASE("Orbital", "[orbital]") {
             phi_2.orthogonalize(phi_1);
 
             ComplexDouble S3 = orbital::dot(phi_1, phi_2);
-            REQUIRE( abs(S3.real()) < mrcpp::MachineZero );
-            REQUIRE( abs(S3.imag()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S3.real()) < mrcpp::MachineZero );
+            REQUIRE( std::abs(S3.imag()) < mrcpp::MachineZero );
 
             phi_2.free();
         }

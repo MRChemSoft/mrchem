@@ -228,13 +228,13 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
     Orbital out;
     // set output spin from first contributing input
     for (int i = 0; i < inp.size(); i++) {
-        if (abs(c[i]) < mrcpp::MachineZero) continue;
+        if (std::abs(c[i]) < mrcpp::MachineZero) continue;
         out = inp[i].paramCopy();
         break;
     }
     // all contributing input spins must be equal
     for (int i = 0; i < inp.size(); i++) {
-        if (abs(c[i]) < mrcpp::MachineZero) continue;
+        if (std::abs(c[i]) < mrcpp::MachineZero) continue;
         if (out.spin() != inp[i].spin()) MSG_FATAL("Mixing spins");
     }
 
@@ -243,8 +243,8 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
 
     double thrs = mrcpp::MachineZero;
     for (int i = 0; i < inp.size(); i++) {
-        bool cHasReal = (abs(c[i].real()) > thrs);
-        bool cHasImag = (abs(c[i].imag()) > thrs);
+        bool cHasReal = (std::abs(c[i].real()) > thrs);
+        bool cHasImag = (std::abs(c[i].imag()) > thrs);
 
         double conj(1.0);
         if (inp[i].conjugate()) conj = -1.0;
@@ -463,7 +463,7 @@ int size_beta(const OrbitalVector &vec) {
 int get_multiplicity(const OrbitalVector &vec) {
     int nAlpha = get_electron_number(vec, SPIN::Alpha);
     int nBeta = get_electron_number(vec, SPIN::Beta);
-    int S = abs(nAlpha - nBeta);
+    int S = std::abs(nAlpha - nBeta);
     return S + 1;
 }
 
