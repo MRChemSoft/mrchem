@@ -1,5 +1,6 @@
 [![License](https://img.shields.io/badge/license-%20LGPLv3-blue.svg)](../master/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/mrchem/badge/?version=latest)](http://mrchem.readthedocs.io/en/latest/?badge=latest)
+[![Travis CI build status](https://travis-ci.org/MRChemSoft/mrchem.svg?branch=new-mrcpp)](https://travis-ci.org/MRChemSoft/mrchem)
 
 
 # MRChem: MultiResolution Chemistry
