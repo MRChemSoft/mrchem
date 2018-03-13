@@ -11,6 +11,7 @@ matrix:
             - cmake3-data
             - g++-4.8
             - libeigen3-dev
+            - libboost-math-dev
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
