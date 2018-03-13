@@ -28,7 +28,8 @@ script:
   - ./setup --enable-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP}
   - cd build
   - cmake --build . -- VERBOSE=1 -j2
-  - ctest --output-on-failure --verbose
+  - cd tests
+  - ./mrchem-tests --success
 
 after_success:
   - |
