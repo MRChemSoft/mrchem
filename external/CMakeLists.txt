@@ -42,7 +42,7 @@ ExternalProject_Add(submodule-libgetkw
 add_dependencies(submodule-libgetkw git-submodule-init)
 add_dependencies(external-modules submodule-libgetkw)
 
-option(ENABLE_XCFUN "Use XCFun library" ON)
+option(ENABLE_XCFUN "Use XCFun library" OFF)
 if (ENABLE_XCFUN)
     ExternalProject_Add(submodule-xcfun
         DOWNLOAD_COMMAND ""
