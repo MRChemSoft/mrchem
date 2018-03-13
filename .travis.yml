@@ -1,0 +1,48 @@
+language: cpp
+sudo: false
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - cmake3
+            - cmake3-data
+            - g++-4.8
+            - libeigen3-dev
+      env:
+        - BUILD_TYPE='release'
+        - CXX_COMPILER='g++-4.8'
+        - TESTS='--enable-tests'
+        - PYTHON_VER='2.7'
+
+before_script:
+  - cd ${TRAVIS_BUILD_DIR}
+  - python --version
+  - cmake --version
+  - ${CXX_COMPILER} --version
+
+script:
+  - export OMP_NUM_THREADS=2
+  - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${TESTS} ${COVERAGE} ${OPENMP}
+  - cd build
+  - cmake --build . -- VERBOSE=1 -j2
+  - |
+    if [[ "${TESTS}" = "--enable-tests" ]]; then
+      ctest --output-on-failure --verbose
+    fi
+
+after_success:
+  - |
+    if [[ "${COVERAGE}" = "--coverage" ]]; then
+      cd ${TRAVIS_BUILD_DIR}
+      lcov --version
+      lcov --directory . --capture --output-file coverage.info
+      lcov --remove coverage.info '/usr/*' --output-file coverage.info
+      lcov --remove coverage.info 'external/*' --output-file coverage.info
+      lcov --remove coverage.info 'tests/*' --output-file coverage.info
+      lcov --list coverage.info
+      bash <(curl -s https://codecov.io/bash) -X gcov || echo "Codecov did not collect coverage reports"
+    fi
+
