@@ -15,7 +15,6 @@ matrix:
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
-        - TESTS='--enable-tests'
         - PYTHON_VER='2.7'
 
 before_script:
@@ -26,13 +25,10 @@ before_script:
 
 script:
   - export OMP_NUM_THREADS=2
-  - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${TESTS} ${COVERAGE} ${OPENMP}
+  - ./setup --enable-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP}
   - cd build
   - cmake --build . -- VERBOSE=1 -j2
-  - |
-    if [[ "${TESTS}" = "--enable-tests" ]]; then
-      ctest --output-on-failure --verbose
-    fi
+  - ctest --output-on-failure --verbose
 
 after_success:
   - |
