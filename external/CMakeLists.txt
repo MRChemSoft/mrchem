@@ -11,7 +11,7 @@ ExternalProject_Add(submodule-mrcpp
     DOWNLOAD_COMMAND ""
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mrcpp
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-                -DCMAKE_BUILD_TYPE=Release
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                 -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                 -DENABLE_OPENMP=${ENABLE_OPENMP}
                 -DENABLE_MPI=${ENABLE_MPI}
