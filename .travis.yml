@@ -16,6 +16,35 @@ matrix:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
         - PYTHON_VER='2.7'
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - cmake3
+            - cmake3-data
+            - g++-4.8
+            - libeigen3-dev
+            - libboost-math-dev
+      env:
+        - BUILD_TYPE='release'
+        - CXX_COMPILER='g++-4.8'
+        - OPENMP='--omp'
+        - PYTHON_VER='2.7'
+    - os: linux
+      addons:
+        apt:
+          packages:
+            - cmake3
+            - cmake3-data
+            - g++-4.8
+            - libeigen3-dev
+            - libboost-math-dev
+            - lcov
+      env:
+        - BUILD_TYPE='debug'
+        - CXX_COMPILER='g++-4.8'
+        - COVERAGE='--coverage'
+        - PYTHON_VER='2.7'
 
 before_script:
   - cd ${TRAVIS_BUILD_DIR}
