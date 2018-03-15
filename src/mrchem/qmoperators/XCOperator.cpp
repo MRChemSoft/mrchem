@@ -27,9 +27,6 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
     std::cout << "Is spin sep 2" << spin << std::endl;
     nPotentials = spin ? k + 1 : 1; /// k+1 potentials if spin separated, otherwise just one.
     density.setIsSpinDensity(spin);
-    gradient[0].setIsSpinDensity(spin);
-    gradient[1].setIsSpinDensity(spin);
-    gradient[2].setIsSpinDensity(spin);
     F.evalSetup(k);
 }
 
@@ -88,7 +85,7 @@ void XCOperator::calcPotentialLDA() {
     if (this->order != 1) {
         NOT_IMPLEMENTED_ABORT;
     }
-    for (int i = 0; in < this->nPotentials) {
+    for (int i = 0; i < this->nPotentials; i++) {
         int outputIndex = i + 1;
         if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
         potentialFunction.push_back(xcOutput[outputIndex]);
@@ -98,19 +95,20 @@ void XCOperator::calcPotentialLDA() {
 
 
 void XCOperator::calcPotentialGGA() {
-    
+
+    FunctionTree<3> * pot;
     bool spin = this->functional->isSpinSeparated();
     bool gamma = this->functional->needsGamma();
     if(spin) {
-        FunctionTree & df_da   = xcOutput[1];
-        FunctionTree & df_db   = xcOutput[2];
+        FunctionTree<3> & df_da   = *xcOutput[1];
+        FunctionTree<3> & df_db   = *xcOutput[2];
         if(gamma) {
-            FunctionTree & df_dgaa = xcOutput[3];
-            FunctionTree & df_dgab = xcOutput[4];
-            FunctionTree & df_dgbb = xcOutput[5];
-            pot = calcPotentialGGA(df_da, df_db, df_dgaa, df_dgab, grad_a, grad_b);
+            FunctionTree<3> & df_dgaa = *xcOutput[3];
+            FunctionTree<3> & df_dgab = *xcOutput[4];
+            FunctionTree<3> & df_dgbb = *xcOutput[5];
+            pot = this->functional->calcPotentialGGA(df_da, df_dgaa, df_dgab, grad_a, grad_b, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
-            pot = calcPotentialGGA(df_db, df_da, df_dgbb, df_dgab, grad_b, grad_a);
+            pot = this->functional->calcPotentialGGA(df_db, df_dgbb, df_dgab, grad_b, grad_a, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
         else {
@@ -122,29 +120,30 @@ void XCOperator::calcPotentialGGA() {
             df_dga.push_back(xcOutput[6]);
             df_dga.push_back(xcOutput[7]);
             df_dga.push_back(xcOutput[8]);
-            pot = calcPotentialGGA(df_da, df_dga);
+            pot = this->functional->calcPotentialGGA(df_da, df_dga, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
-            pot = calcPotentialGGA(df_db, df_dgb);
+            pot = this->functional->calcPotentialGGA(df_db, df_dgb, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
             
     }
     else {
-        FunctionTree & df_dt   = xcOutput[1];
+        FunctionTree<3> & df_dt = *xcOutput[1];
         if(gamma) {
-            FunctionTree & df_dgamma   = xcOutput[2];
-            pot = calcPotentialGGA(df_dt, df_dgamma, grad_t);
+            FunctionTree<3> & df_dgamma = *xcOutput[2];
+            pot = this->functional->calcPotentialGGA(df_dt, df_dgamma, grad_t, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
         else {
             FunctionTreeVector<3> df_dgt;
-            df_dga.push_back(xcOutput[3]);
-            df_dga.push_back(xcOutput[4]);
-            df_dga.push_back(xcOutput[5]);
-            pot = calcPotentialGGA(df_dt, df_dgt);
+            df_dgt.push_back(xcOutput[3]);
+            df_dgt.push_back(xcOutput[4]);
+            df_dgt.push_back(xcOutput[5]);
+            pot = this->functional->calcPotentialGGA(df_dt, df_dgt, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
     }
+    pot = 0;
 }
 
 /** \brief Cleanup function to call after the the XC potential has been calculated
@@ -152,12 +151,11 @@ void XCOperator::calcPotentialGGA() {
 void XCOperator::clear() {
     this->energy = 0.0;
     this->density.clear();
-    this->gradient[0].clear();
-    this->gradient[1].clear();
-    this->gradient[2].clear();
+    this->grad_t.clear();
+    this->grad_a.clear();
+    this->grad_b.clear();
 	for (int i = 0; i < nPotentials; i++) {
 		this->potentialFunction[i]->clear();
-		this->potentialFunction.pop_back();
 	}
     clearApplyPrec();
 }
@@ -180,7 +178,7 @@ void XCOperator::calcDensity() {
     
     if (this->functional->isGGA()) {
         Timer timer2;
-        n2 = calcDensityGradient(rho);
+        int n2 = calcDensityGradient();
         timer2.stop();
         double t2 = timer2.getWallTime();
         TelePrompter::printTree(0, "XC density gradient", n2, t2);
@@ -188,15 +186,16 @@ void XCOperator::calcDensity() {
     }
 }
 
-int XCOperator::calcDensityGradient(Density &rho) {
-    if (rho.isSpinDensity()) {
-        grad_a = calcGradient(rho.alpha());
-        grad_b = calcGradient(rho.beta());
-        nNodes  = grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes()
-        nNodes += grad_b[0]->getNNodes() + grad_b[1]->getNNodes() + grad_b[2]->getNNodes()
+int XCOperator::calcDensityGradient() {
+    int nNodes = 0;
+    if (this->density.isSpinDensity()) {
+        grad_a = calcGradient(this->density.alpha());
+        grad_b = calcGradient(this->density.beta());
+        nNodes  = grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes();
+        nNodes += grad_b[0]->getNNodes() + grad_b[1]->getNNodes() + grad_b[2]->getNNodes();
     } else {
-        grad_t = calcGradient(rho.total());
-        nNodes = grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes()
+        grad_t = calcGradient(this->density.total());
+        nNodes = grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes();
     }
     return nNodes;
 }
@@ -256,50 +255,32 @@ int XCOperator::setupXCInputDensity(int nUsed, bool spin) {
 
 int XCOperator::setupXCInputGradient(int nUsed, bool spin, bool gamma) {
 
-    FunctionTreeVector<3> vec_a, vec_b, vec_t;
-    
-    vec_a.push_back(&gradient[0].alpha());
-    vec_a.push_back(&gradient[1].alpha());
-    vec_a.push_back(&gradient[2].alpha());
-
-    vec_b.push_back(&gradient[0].beta());
-    vec_b.push_back(&gradient[1].beta());
-    vec_b.push_back(&gradient[2].beta());
-                    
-    vec_t.push_back(&gradient[0].total());
-    vec_t.push_back(&gradient[1].total());
-    vec_t.push_back(&gradient[2].total());
-    
     if(spin) {
         if(gamma) {
-            this->xcInput[nUsed    ] = calcDotProduct(vec_a, vec_a);
-            this->xcInput[nUsed + 1] = calcDotProduct(vec_a, vec_b);
-            this->xcInput[nUsed + 2] = calcDotProduct(vec_b, vec_b);
+            this->xcInput[nUsed    ] = calcDotProduct(grad_a, grad_a);
+            this->xcInput[nUsed + 1] = calcDotProduct(grad_a, grad_b);
+            this->xcInput[nUsed + 2] = calcDotProduct(grad_b, grad_b);
             nUsed += 3;
         } else {
-            this->xcInput[nUsed    ] = vec_a[0];
-            this->xcInput[nUsed + 1] = vec_a[1];
-            this->xcInput[nUsed + 2] = vec_a[2];
-            this->xcInput[nUsed + 3] = vec_b[0];
-            this->xcInput[nUsed + 4] = vec_b[1];
-            this->xcInput[nUsed + 5] = vec_b[2];
+            this->xcInput[nUsed    ] = grad_a[0];
+            this->xcInput[nUsed + 1] = grad_a[1];
+            this->xcInput[nUsed + 2] = grad_a[2];
+            this->xcInput[nUsed + 3] = grad_b[0];
+            this->xcInput[nUsed + 4] = grad_b[1];
+            this->xcInput[nUsed + 5] = grad_b[2];
             nUsed += 6;
         }
     } else {
         if(gamma) {
-            this->xcInput[nUsed] = calcDotProduct(vec_t, vec_t);
+            this->xcInput[nUsed] = calcDotProduct(grad_t, grad_t);
             nUsed += 1;
         } else {
-            this->xcInput[nUsed    ] = vec_t[0];
-            this->xcInput[nUsed + 1] = vec_t[1];
-            this->xcInput[nUsed + 2] = vec_t[2];
+            this->xcInput[nUsed    ] = grad_t[0];
+            this->xcInput[nUsed + 1] = grad_t[1];
+            this->xcInput[nUsed + 2] = grad_t[2];
             nUsed += 3;
         }
     }
-    vec_a.clear();
-    vec_b.clear();
-    vec_t.clear();
-    
     return nUsed;
 }
 

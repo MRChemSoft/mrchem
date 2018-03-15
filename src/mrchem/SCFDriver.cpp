@@ -47,8 +47,8 @@
 #include "NuclearPotential.h"
 #include "CoulombPotential.h"
 #include "ExchangePotential.h"
-#include "XCPotential.h"
 #include "XCFunctional.h"
+#include "XCOperator.h"
 #include "IdentityOperator.h"
 
 using namespace std;

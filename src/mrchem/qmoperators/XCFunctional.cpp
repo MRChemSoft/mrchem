@@ -1,9 +1,15 @@
+#include "GridGenerator.h"
+#include "MWAdder.h"
+#include "MWMultiplier.h"
+#include "MWDerivative.h"
 #include "XCFunctional.h"
 #include "TelePrompter.h"
 #include "constants.h"
 
 using namespace std;
 using namespace Eigen;
+
+extern MultiResolutionAnalysis<3> *MRA;
 
 /** \brief creator 
  *
@@ -104,13 +110,13 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  DerivativeOperator<3> *derivative,
                                                  int maxScale) {
     FunctionTreeVector<3> funcs;
-    funcs.push_back(1.0, df_drho);
+    funcs.push_back(1.0, &df_drho);
 
     FunctionTree<3> *tmp = 0;
-    tmp = calcGradDotPotDensVec(*df_dgamma, grad_rho, derivative, maxScale);
+    tmp = calcGradDotPotDensVec(df_dgamma, grad_rho, derivative, maxScale);
     funcs.push_back(-2.0, tmp);
 
-    FunctionTreee<3> * V = addPotentialContributions(funcs, maxScale);
+    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
     funcs.clear(false);
     delete tmp;
     return V;
@@ -124,17 +130,17 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
                                                  DerivativeOperator<3> *derivative,
                                                  int maxScale) {
     FunctionTreeVector<3> funcs;
-    funcs.push_back(1.0, df_drhoa);
+    funcs.push_back(1.0, &df_drhoa);
 
     FunctionTree<3> *tmp1 = 0;
-    tmp1 = calcGradDotPotDensVec(*df_dgaa, grad_rhoa, derivative, maxScale);
+    tmp1 = calcGradDotPotDensVec(df_dgaa, grad_rhoa, derivative, maxScale);
     funcs.push_back(-2.0, tmp1);
 
     FunctionTree<3> *tmp2 = 0;
-    tmp2 = calcGradDotPotDensVec(*df_dgab, grad_rhob, derivative, maxScale);
+    tmp2 = calcGradDotPotDensVec(df_dgab, grad_rhob, derivative, maxScale);
     funcs.push_back(-1.0, tmp2);
 
-    FunctionTreee<3> * V = addPotentialContributions(funcs, maxScale);
+    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
     funcs.clear(false);
     delete tmp1;
     delete tmp2;
@@ -147,15 +153,14 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  int maxScale) {
 
     FunctionTreeVector<3> funcs;
-    funcs.push_back(1.0, df_drho);
+    funcs.push_back(1.0, &df_drho);
 
     FunctionTree<3> * tmp = calcDivergence(df_dgr, derivative, maxScale);
     funcs.push_back(-1.0, tmp);
 
-    FunctionTreee<3> * V = addPotentialContributions(funcs, maxScale);
+    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
     funcs.clear(false);
-    delete tmp1;
-    delete tmp2;
+    delete tmp;
     return V;
 }
 
@@ -164,7 +169,6 @@ FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> 
     FunctionTree<3> *V = new FunctionTree<3>(*MRA);
     GridGenerator<3> G(maxScale);
     MWAdder<3> add(-1.0, maxScale);
-    FunctionTree<3> *V = new FunctionTree<3>(*MRA);
     G(*V, contributions);
     add(*V, contributions, 0);
     return V;

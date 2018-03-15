@@ -3,6 +3,8 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
+#include "FunctionTree.h"
+#include "FunctionTreeVector.h"
 #include "xcfun.h"
 
 /** 
@@ -43,8 +45,7 @@ public:
                                        FunctionTree<3> & df_dgab, FunctionTreeVector<3> grad_rhoa,
                                        FunctionTreeVector<3> grad_rhob, DerivativeOperator<3> *derivative,
                                        int maxScale);
-    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTree<3> & df_dgrx,
-                                       FunctionTree<3> & df_dgry, FunctionTree<3> & df_dgrz,
+    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTreeVector<3> & df_dgr,
                                        DerivativeOperator<3> *derivative, int maxScale);
  protected:
     FunctionTree<3> * addPotentialContributions(FunctionTreeVector<3> & contributions,
@@ -52,6 +53,10 @@ public:
     FunctionTree<3>* calcDivergence(FunctionTreeVector<3> &inp,
                                     DerivativeOperator<3> *derivative,
                                     int maxScale);
+    FunctionTree<3>* calcGradDotPotDensVec(FunctionTree<3> &V,
+                                           FunctionTreeVector<3> &rho,
+                                           DerivativeOperator<3> *derivative,
+                                           int maxScale);
 
 private:
     bool spin;                  ///< Spin polarization

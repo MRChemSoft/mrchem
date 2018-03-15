@@ -3,13 +3,13 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
+#include "FunctionTree.h"
+#include "FunctionTreeVector.h"
 #include "QMPotential.h"
 #include "Density.h"
 
 class XCFunctional;
 class OrbitalVector;
-template<int D> class FunctionTree;
-template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
 
 /** 
@@ -47,12 +47,11 @@ protected:
 
     double energy;                      ///< XC energy
     Density density;                    ///< Unperturbed density
-    Density gradient[3];                ///< Unperturbed density gradient
 
     FunctionTree<3> **xcInput;          ///< XCFun input
     FunctionTree<3> **xcOutput;         ///< XCFun output
 
-    std::vector<FunctionTree<3> *> potentialFunction;
+    FunctionTreeVector<3> potentialFunction;
 
     FunctionTreeVector<3> grad_a;
     FunctionTreeVector<3> grad_b;
@@ -68,7 +67,7 @@ protected:
     void clearXCOutput();
 
     void calcDensity();
-    void calcDensityGradient(Density *dRho, Density &rho);
+    int calcDensityGradient();
 
     void calcPotential();
     bool cropPotential(double prec);
