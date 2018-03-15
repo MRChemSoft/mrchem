@@ -28,18 +28,20 @@ class OpticalRotation;
 
 class Molecule final {
 public:
-    Molecule(const Nuclei &nucs, int c = 0);
-    Molecule(const std::string &coord_file, int c = 0);
-    Molecule(const std::vector<std::string> &coord_str, int c = 0);
+    Molecule(const Nuclei &nucs, int c = 0, int m = 1);
+    Molecule(const std::string &coord_file, int c = 0, int m = 1);
+    Molecule(const std::vector<std::string> &coord_str, int c = 0, int m = 1);
     ~Molecule();
 
     int getCharge() const { return this->charge; }
+    int getMultiplicity() const { return this->multiplicity; }
     int getNNuclei() const { return this->nuclei.size(); }
     int getNElectrons() const;
 
     const double *getCenterOfMass() const { return this->COM; }
 
     Nuclei &getNuclei() { return this->nuclei; }
+    const Nuclei &getNuclei() const { return this->nuclei; }
     Nucleus &getNucleus(int i) { return this->nuclei[i]; }
     const Nucleus &getNucleus(int i) const { return this->nuclei[i]; }
 
@@ -68,6 +70,7 @@ public:
 
 protected:
     int charge;
+    int multiplicity;
     Nuclei nuclei;
 
     // Properties

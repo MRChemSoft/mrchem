@@ -15,8 +15,9 @@ using mrcpp::Printer;
 
 namespace mrchem {
 
-Molecule::Molecule(const Nuclei &nucs, int c)
+Molecule::Molecule(const Nuclei &nucs, int c, int m)
         : charge(c),
+          multiplicity(m),
           nuclei(nucs),
           energy(0),
           dipole(0),
@@ -29,8 +30,9 @@ Molecule::Molecule(const Nuclei &nucs, int c)
     allocNuclearProperties();
 }
 
-Molecule::Molecule(const string &coord_file, int c)
+Molecule::Molecule(const string &coord_file, int c, int m)
         : charge(c),
+          multiplicity(m),
           energy(0),
           dipole(0),
           quadrupole(0),
@@ -43,8 +45,9 @@ Molecule::Molecule(const string &coord_file, int c)
     allocNuclearProperties();
 }
 
-Molecule::Molecule(const vector<string> &coord_str, int c)
+Molecule::Molecule(const vector<string> &coord_str, int c, int m)
         : charge(c),
+          multiplicity(m),
           energy(0),
           dipole(0),
           quadrupole(0),
