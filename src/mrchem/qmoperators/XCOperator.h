@@ -8,7 +8,6 @@
 
 class XCFunctional;
 class OrbitalVector;
-class XCPotential;
 template<int D> class FunctionTree;
 template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
@@ -53,8 +52,12 @@ protected:
     FunctionTree<3> **xcInput;          ///< XCFun input
     FunctionTree<3> **xcOutput;         ///< XCFun output
 
-    std::vector<XCPotential *> potentialFunction;
+    std::vector<FunctionTree<3> *> potentialFunction;
 
+    FunctionTreeVector<3> grad_a;
+    FunctionTreeVector<3> grad_b;
+    FunctionTreeVector<3> grad_t;
+    
     void setupXCInput();
     void setupXCOutput();
 
@@ -70,11 +73,9 @@ protected:
     void calcPotential();
     bool cropPotential(double prec);
 
-    XCPotential * calcPotentialFunction(int i);
+    void calcPotentialLDA();
     
-    void calcPotentialLDA(XCPotential * pot);
-    
-    void calcPotentialGGA(XCPotential * pot);
+    void calcPotentialGGA();
 
     void calcEnergy();
     void evaluateXCFunctional();

@@ -1,5 +1,4 @@
 #include "XCOperator.h"
-#include "XCPotential.h"
 #include "XCFunctional.h"
 #include "FunctionTree.h"
 #include "FunctionNode.h"
@@ -56,7 +55,7 @@ void XCOperator::setup(double prec) {
 }
 
 Orbital* XCOperator::operator() (Orbital &phi) {
-    FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)]->getPotentialFunction();
+    FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)];
     this->setReal(potential);
     this->setImag(0);
     Orbital * Vphi = QMPotential::operator()(phi); 
@@ -70,149 +69,83 @@ Orbital* XCOperator::adjoint(Orbital &phi) {
 }
 
 void XCOperator::calcPotential() {
-    for (int i = 0; i < this->nPotentials; i++) {
-        std::cout << "nPotentials " << this->nPotentials << " " << i << std::endl; 
-        XCPotential * pot = calcPotentialFunction(i);
-        potentialFunction.push_back(pot);
-        std::cout << "XC Potential function" << std::endl;
-        std::cout << (*(pot->getPotentialFunction())) << std::endl;
-    }
-}
-
-/** \brief driver to compute the XC potential
-
-    For LDA functionals, the potential is directly the output of
-    xcfun. For GGA functionals, the potential is assembled starting
-    from the xcfun output. In both cases the result is stored in the
-    real part of the parent qmfunction.
-
- */
-XCPotential * XCOperator::calcPotentialFunction(int i) {
     if (xcOutput == 0) MSG_ERROR("XC output not initialized");
     
-    XCPotential * pot = new XCPotential(i, this->order);
     bool lda = this->functional->isLDA();
     bool gga = this->functional->isGGA();
     
-    Timer timer;
-    
     if (lda) {
-        calcPotentialLDA(pot);
+        calcPotentialLDA();
     } else if (gga) {
-        calcPotentialGGA(pot);
+        calcPotentialGGA();
     } else {
         MSG_FATAL("Invalid functional type");
     }
-    timer.stop();
-    double t = timer.getWallTime();
-    int n = (pot->getPotentialFunction())->getNNodes();
-    TelePrompter::printTree(0, "XC potential", n, t);
-    
-    return pot;
 }
 
-/** \brief Driver for the the LDA part of the XC potential
- *  
- * For LDA functionals it suffices to compute the first derivative of
- * the functional with respect to the density. They are the second and
- * third output functions (alpha/beta) in the XCFunctional driver. We
- * to store the correct one in potentialFunction;
- */
-void XCOperator::calcPotentialLDA(XCPotential * pot) {
+void XCOperator::calcPotentialLDA() {
 
-    if (pot->getDerOrder() != 1) {
+    if (this->order != 1) {
         NOT_IMPLEMENTED_ABORT;
     }
-
-    int outputIndex = pot->getDerIndex() + 1;
-    if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
-
-    pot->setPotentialFunction(xcOutput[outputIndex]);
-    xcOutput[outputIndex] = 0;
-}
-
-
-/** \brief Driver for the the GGA part of the XC potential
- *
- * Initializes the variables for the computation of GGA part of the XC
- * potential. The initialization depends on the spin
- * (total/alpha/beta).
- */
-void XCOperator::calcPotentialGGA(XCPotential * pot) {
- 
-    bool spin = this->functional->isSpinSeparated();
-    FunctionTreeVector<3> xc_funcs;
-    FunctionTreeVector<3> dRho_a;
-    FunctionTreeVector<3> dRho_b;
-
-    Density &rho_x = gradient[0];
-    Density &rho_y = gradient[1];
-    Density &rho_z = gradient[2];
-
-    if (!spin) {
-        if (xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        if (xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        xc_funcs.push_back(xcOutput[1]);
-        xc_funcs.push_back(xcOutput[2]);
-        xc_funcs.push_back(0);
-        dRho_a.push_back(&rho_x.total());
-        dRho_a.push_back(&rho_y.total());
-        dRho_a.push_back(&rho_z.total());
-        dRho_b.push_back(0);
-        dRho_b.push_back(0);
-        dRho_b.push_back(0);
-
-        FunctionTree<3> * V = pot->calcPotentialGGA(xc_funcs, dRho_a, dRho_b, derivative, this->max_scale);
-        pot->setPotentialFunction(V);
-
-        xc_funcs.clear();
-        dRho_a.clear();
-        dRho_b.clear();
-    } else if (spin && pot->getDerIndex() == 0) {
-        if (xcOutput[1] == 0) MSG_ERROR("Invalid XC output");
-        if (xcOutput[3] == 0) MSG_ERROR("Invalid XC output");
-        if (xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
-        xc_funcs.push_back(xcOutput[1]);
-        xc_funcs.push_back(xcOutput[3]);
-        xc_funcs.push_back(xcOutput[4]);
-        dRho_a.push_back(&rho_x.alpha());
-        dRho_a.push_back(&rho_y.alpha());
-        dRho_a.push_back(&rho_z.alpha());
-        dRho_b.push_back(&rho_x.beta());
-        dRho_b.push_back(&rho_y.beta());
-        dRho_b.push_back(&rho_z.beta());
-
-        FunctionTree<3> * V = pot->calcPotentialGGA(xc_funcs, dRho_a, dRho_b, derivative, this->max_scale);
-        pot->setPotentialFunction(V);
-
-        xc_funcs.clear();
-        dRho_a.clear();
-        dRho_b.clear();
-    } else if (spin && pot->getDerIndex() == 1) {
-        if (xcOutput[2] == 0) MSG_ERROR("Invalid XC output");
-        if (xcOutput[5] == 0) MSG_ERROR("Invalid XC output");
-        if (xcOutput[4] == 0) MSG_ERROR("Invalid XC output");
-        xc_funcs.push_back(xcOutput[2]);
-        xc_funcs.push_back(xcOutput[5]);
-        xc_funcs.push_back(xcOutput[4]);
-        dRho_a.push_back(&rho_x.beta());
-        dRho_a.push_back(&rho_y.beta());
-        dRho_a.push_back(&rho_z.beta());
-        dRho_b.push_back(&rho_x.alpha());
-        dRho_b.push_back(&rho_y.alpha());
-        dRho_b.push_back(&rho_z.alpha());
-
-        FunctionTree<3> * V = pot->calcPotentialGGA(xc_funcs, dRho_a, dRho_b, derivative, this->max_scale);
-        pot->setPotentialFunction(V);
-        
-        xc_funcs.clear();
-        dRho_a.clear();
-        dRho_b.clear();
-    } else {
-        MSG_ERROR("Undefined case");
+    for (int i = 0; in < this->nPotentials) {
+        int outputIndex = i + 1;
+        if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
+        potentialFunction.push_back(xcOutput[outputIndex]);
+        xcOutput[outputIndex] = 0;
     }
 }
 
+
+void XCOperator::calcPotentialGGA() {
+    
+    bool spin = this->functional->isSpinSeparated();
+    bool gamma = this->functional->needsGamma();
+    if(spin) {
+        FunctionTree & df_da   = xcOutput[1];
+        FunctionTree & df_db   = xcOutput[2];
+        if(gamma) {
+            FunctionTree & df_dgaa = xcOutput[3];
+            FunctionTree & df_dgab = xcOutput[4];
+            FunctionTree & df_dgbb = xcOutput[5];
+            pot = calcPotentialGGA(df_da, df_db, df_dgaa, df_dgab, grad_a, grad_b);
+            potentialFunction.push_back(pot);
+            pot = calcPotentialGGA(df_db, df_da, df_dgbb, df_dgab, grad_b, grad_a);
+            potentialFunction.push_back(pot);
+        }
+        else {
+            FunctionTreeVector<3> df_dga;
+            FunctionTreeVector<3> df_dgb;
+            df_dga.push_back(xcOutput[3]);
+            df_dga.push_back(xcOutput[4]);
+            df_dga.push_back(xcOutput[5]);
+            df_dga.push_back(xcOutput[6]);
+            df_dga.push_back(xcOutput[7]);
+            df_dga.push_back(xcOutput[8]);
+            pot = calcPotentialGGA(df_da, df_dga);
+            potentialFunction.push_back(pot);
+            pot = calcPotentialGGA(df_db, df_dgb);
+            potentialFunction.push_back(pot);
+        }
+            
+    }
+    else {
+        FunctionTree & df_dt   = xcOutput[1];
+        if(gamma) {
+            FunctionTree & df_dgamma   = xcOutput[2];
+            pot = calcPotentialGGA(df_dt, df_dgamma, grad_t);
+            potentialFunction.push_back(pot);
+        }
+        else {
+            FunctionTreeVector<3> df_dgt;
+            df_dga.push_back(xcOutput[3]);
+            df_dga.push_back(xcOutput[4]);
+            df_dga.push_back(xcOutput[5]);
+            pot = calcPotentialGGA(df_dt, df_dgt);
+            potentialFunction.push_back(pot);
+        }
+    }
+}
 
 /** \brief Cleanup function to call after the the XC potential has been calculated
  */
@@ -234,7 +167,6 @@ void XCOperator::calcDensity() {
     
     OrbitalVector &phi = *this->orbitals;
     Density &rho = this->density;
-    Density *dRho = &this->gradient[0];
     QMPotential &V = *this;
     
     DensityProjector project(this->apply_prec, this->max_scale);
@@ -248,34 +180,25 @@ void XCOperator::calcDensity() {
     
     if (this->functional->isGGA()) {
         Timer timer2;
-        calcDensityGradient(dRho, rho);
+        n2 = calcDensityGradient(rho);
         timer2.stop();
         double t2 = timer2.getWallTime();
-        int n2 = 0;
-        n2 += dRho[0].getNNodes();
-        n2 += dRho[1].getNNodes();
-        n2 += dRho[2].getNNodes();
         TelePrompter::printTree(0, "XC density gradient", n2, t2);
         printout(1, endl);
     }
 }
 
-void XCOperator::calcDensityGradient(Density *dRho, Density &rho) {
+int XCOperator::calcDensityGradient(Density &rho) {
     if (rho.isSpinDensity()) {
-        FunctionTreeVector<3> grad_a = calcGradient(rho.alpha());
-        dRho[0].setDensity(Density::Alpha, grad_a[0]);
-        dRho[1].setDensity(Density::Alpha, grad_a[1]);
-        dRho[2].setDensity(Density::Alpha, grad_a[2]);
-        FunctionTreeVector<3> grad_b = calcGradient(rho.beta());
-        dRho[0].setDensity(Density::Beta, grad_b[0]);
-        dRho[1].setDensity(Density::Beta, grad_b[1]);
-        dRho[2].setDensity(Density::Beta, grad_b[2]);
+        grad_a = calcGradient(rho.alpha());
+        grad_b = calcGradient(rho.beta());
+        nNodes  = grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes()
+        nNodes += grad_b[0]->getNNodes() + grad_b[1]->getNNodes() + grad_b[2]->getNNodes()
     } else {
-        FunctionTreeVector<3> grad_t = calcGradient(rho.total());
-        dRho[0].setDensity(Density::Total, grad_t[0]);
-        dRho[1].setDensity(Density::Total, grad_t[1]);
-        dRho[2].setDensity(Density::Total, grad_t[2]);
+        grad_t = calcGradient(rho.total());
+        nNodes = grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes()
     }
+    return nNodes;
 }
 
 FunctionTreeVector<3> XCOperator::calcGradient(FunctionTree<3> &inp) {
@@ -491,71 +414,6 @@ FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
     out_vec.clear(true);
     return out;
 }
-
-/*
-Orbital* XCOperator::operator() (Orbital &orb_p) {
-    QMPotential &V_p = this->potential[0];
-    QMPotential &V_a = this->potential[1];
-    QMPotential &V_b = this->potential[2];
-
-    if (orb_p.getSpin() == Density::Total) return V_p(orb_p);
-    if (orb_p.getSpin() == Density::Alpha) return V_a(orb_p);
-    if (orb_p.getSpin() == Density::Beta) return V_b(orb_p);
-
-    MSG_ERROR("Invalid spin");
-    return 0;
-}
-*/
-
-/*
-Orbital* XCOperator::adjoint(Orbital &orb_p) {
-    NOT_IMPLEMENTED_ABORT;
-}
-*/
-
-/*
-int XCOperator::printTreeSizes() const {
-    NOT_IMPLEMENTED_ABORT;
-    int nNodes = 0;
-    nNodes += this->density_0.printTreeSizes();
-    this->gradient_0[0]->printTreeSizes();
-    this->gradient_0[1]->printTreeSizes();
-    this->gradient_0[2]->printTreeSizes();
-
-    if (this->potential != 0) {
-        nNodes += this->potential[0]->printTreeSizes();
-        nNodes += this->potential[1]->printTreeSizes();
-        nNodes += this->potential[2]->printTreeSizes();
-    }
-    int nInput = 0;
-    int inTrees = 0;
-    if (this->xcInput != 0) {
-        int nFuncs = this->functional->getInputLength();
-        for (int i = 0; i < nFuncs; i++) {
-            if (this->xcInput[i] != 0) {
-                nInput += this->xcInput[i]->getNNodes();
-                inTrees++;
-            }
-        }
-    }
-    int nOutput = 0;
-    int outTrees = 0;
-    if (this->xcOutput != 0) {
-        int nFuncs = this->functional->getOutputLength();
-        for (int i = 0; i < nFuncs; i++) {
-            if (this->xcOutput[i] != 0) {
-                nOutput += this->xcOutput[i]->getNNodes();
-                outTrees++;
-            }
-        }
-    }
-    println(0, " XC input          " << setw(15) << inTrees << setw(25) << nInput);
-    println(0, " XC output         " << setw(15) << outTrees << setw(25) << nOutput);
-
-    nNodes += (nInput + nOutput);
-    return nNodes;
-}
-*/
 
 void XCOperator::compressTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");

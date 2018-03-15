@@ -36,6 +36,23 @@ public:
     void evaluate(int k, Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const;
     void evalSetup(const int order);
 
+    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTree<3> & df_dgamma,
+                                       FunctionTreeVector<3> grad_rho, DerivativeOperator<3> *derivative,
+                                       int maxScale);
+    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drhoa, FunctionTree<3> & df_dgaa,
+                                       FunctionTree<3> & df_dgab, FunctionTreeVector<3> grad_rhoa,
+                                       FunctionTreeVector<3> grad_rhob, DerivativeOperator<3> *derivative,
+                                       int maxScale);
+    FunctionTree<3> * calcPotentialGGA(FunctionTree<3> & df_drho, FunctionTree<3> & df_dgrx,
+                                       FunctionTree<3> & df_dgry, FunctionTree<3> & df_dgrz,
+                                       DerivativeOperator<3> *derivative, int maxScale);
+ protected:
+    FunctionTree<3> * addPotentialContributions(FunctionTreeVector<3> & contributions,
+                                                int maxScale);
+    FunctionTree<3>* calcDivergence(FunctionTreeVector<3> &inp,
+                                    DerivativeOperator<3> *derivative,
+                                    int maxScale);
+
 private:
     bool spin;                  ///< Spin polarization
     unsigned int expDerivatives;///< whether gamma-type or explicit derivatives are used
