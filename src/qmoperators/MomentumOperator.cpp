@@ -32,12 +32,13 @@ Orbital QMMomentum::apply(Orbital inp) {
     if (inp.hasImag()) {
         out.alloc(NUMBER::Real);
         mrcpp::apply(out.real(), D, inp.imag(), dir);
-        if (not inp.conjugate()) out.real().rescale(-1.0);
+        if (inp.conjugate()) out.real().rescale(-1.0);
     }
     // Calc imag part
     if (inp.hasReal()) {
         out.alloc(NUMBER::Imag);
         mrcpp::apply(out.imag(), D, inp.real(), dir);
+        out.imag().rescale(-1.0);
     }
     timer.stop();
 
