@@ -185,7 +185,7 @@ Orbital RankZeroTensorOperator::applyOperTerm(int n, Orbital inp) {
         if (this->oper_exp[n][m] == 0) MSG_FATAL("Invalid oper term");
         QMOperator &O_nm = *this->oper_exp[n][m];
         Orbital tmp = O_nm.apply(out);
-        if (n > 0) out.free(); // don't free input orbital
+        if (m > 0) out.free(); // don't free input orbital
         out = tmp;
     }
     return out;
