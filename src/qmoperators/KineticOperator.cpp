@@ -72,7 +72,7 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         for (int i = 0; i < Ni; i++) {
             Orbital dBra_i = p_y(bra[i]);
             for (int j = 0; j < Nj; j++) {
-                T_x(i,j) = orbital::dot(dBra_i, dKet[j]);
+                T_y(i,j) = orbital::dot(dBra_i, dKet[j]);
             }
             dBra_i.free();
         }
@@ -87,7 +87,7 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         for (int i = 0; i < Ni; i++) {
             Orbital dBra_i = p_z(bra[i]);
             for (int j = 0; j < Nj; j++) {
-                T_x(i,j) = orbital::dot(dBra_i, dKet[j]);
+                T_z(i,j) = orbital::dot(dBra_i, dKet[j]);
             }
             dBra_i.free();
         }

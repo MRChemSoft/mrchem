@@ -14,7 +14,7 @@ public:
         RankZeroTensorOperator &p_z = this->p[2];
 
         RankZeroTensorOperator &t = (*this);
-        t = -0.5*(p_x*p_x + p_y*p_y + p_z*p_z);
+        t = 0.5*(p_x*p_x + p_y*p_y + p_z*p_z);
     }
     ~KineticOperator() { }
 
