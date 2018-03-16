@@ -146,15 +146,18 @@ public:
             : RepresentableFunction<3>(),
               R(n, l, Z),
               Y(l, m) {
-        for (int d = 0; d < 3; d++) this->origin[0] = (o != 0) ? o[0] : 0.0;
+        this->origin[0] = (o != 0) ? o[0] : 0.0;
+        this->origin[1] = (o != 0) ? o[1] : 0.0;
+        this->origin[2] = (o != 0) ? o[2] : 0.0;
     }
     ~HydrogenFunction() { }
 
     double evalf(const double *p) const {
-        double q[3];
-        q[0] = p[0]-this->origin[0];
-        q[1] = p[1]-this->origin[1];
-        q[2] = p[2]-this->origin[2];
+        double q[3] = {
+            p[0] - this->origin[0],
+            p[1] - this->origin[1],
+            p[2] - this->origin[2]
+        };
         double r = std::sqrt(q[0]*q[0] + q[1]*q[1] + q[2]*q[2]);
         return this->R.evalf(&r)*this->Y.evalf(q);
     }
