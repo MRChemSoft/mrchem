@@ -88,8 +88,13 @@ void XCOperator::calcPotentialLDA() {
     for (int i = 0; i < this->nPotentials; i++) {
         int outputIndex = i + 1;
         if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
+        std::cout << "XC output function " << this->nPotentials << std::endl;
+        std::cout << *xcOutput[outputIndex] << std::endl;
         potentialFunction.push_back(xcOutput[outputIndex]);
         xcOutput[outputIndex] = 0;
+        std::cout << "PF Size " << potentialFunction.size() << std::endl;
+        std::cout << "XC Potential function " << this->nPotentials << std::endl;
+        std::cout << *potentialFunction[i] << std::endl;
     }
 }
 
@@ -151,12 +156,10 @@ void XCOperator::calcPotentialGGA() {
 void XCOperator::clear() {
     this->energy = 0.0;
     this->density.clear();
-    this->grad_t.clear();
-    this->grad_a.clear();
-    this->grad_b.clear();
-	for (int i = 0; i < nPotentials; i++) {
-		this->potentialFunction[i]->clear();
-	}
+    this->grad_t.clear(true);
+    this->grad_a.clear(true);
+    this->grad_b.clear(true);
+	this->potentialFunction.clear(true);
     clearApplyPrec();
 }
 
@@ -335,7 +338,7 @@ void XCOperator::evaluateXCFunctional() {
     int nOut = this->functional->getOutputLength();
 
 #pragma omp parallel firstprivate(nInp, nOut)
-{
+    {
     	int nNodes = this->xcInput[0]->getNEndNodes();
 #pragma omp for schedule(guided)
     	for (int n = 0; n < nNodes; n++) {
@@ -344,10 +347,12 @@ void XCOperator::evaluateXCFunctional() {
             this->functional->evaluate(this->order, inpData, outData);
             expandNodeData(n, nOut, this->xcOutput, outData);
         }
-}
+    }
+    std::cout << "XCFun output" << std::endl;
     for (int i = 0; i < nOut; i++) {
         this->xcOutput[i]->mwTransform(BottomUp);
         this->xcOutput[i]->calcSquareNorm();
+        std::cout << *(this->xcOutput[i]) << std::endl;
     }
 
     timer.stop();
