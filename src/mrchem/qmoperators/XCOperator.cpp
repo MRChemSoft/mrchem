@@ -47,8 +47,14 @@ void XCOperator::setup(double prec) {
     evaluateXCFunctional();
     calcEnergy();
     calcPotential();
+    std::cout << "after calc pot" << std::endl;
+    std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
     clearXCInput();
+    std::cout << "after clear xc inp" << std::endl;
+    std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
     clearXCOutput();
+    std::cout << "at the end of setup" << std::endl;
+    std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
 }
 
 Orbital* XCOperator::operator() (Orbital &phi) {
@@ -104,6 +110,7 @@ void XCOperator::calcPotentialGGA() {
     FunctionTree<3> * pot;
     bool spin = this->functional->isSpinSeparated();
     bool gamma = this->functional->needsGamma();
+    std::cout << "calcPotential: spin and gamma " << spin << " " << gamma << std::endl;
     if(spin) {
         FunctionTree<3> & df_da   = *xcOutput[1];
         FunctionTree<3> & df_db   = *xcOutput[2];
@@ -141,9 +148,9 @@ void XCOperator::calcPotentialGGA() {
         }
         else {
             FunctionTreeVector<3> df_dgt;
+            df_dgt.push_back(xcOutput[2]);
             df_dgt.push_back(xcOutput[3]);
             df_dgt.push_back(xcOutput[4]);
-            df_dgt.push_back(xcOutput[5]);
             pot = this->functional->calcPotentialGGA(df_dt, df_dgt, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
@@ -155,11 +162,18 @@ void XCOperator::calcPotentialGGA() {
  */
 void XCOperator::clear() {
     this->energy = 0.0;
+    std::cout << "clear XC1" << std::endl;
     this->density.clear();
-    this->grad_t.clear(true);
-    this->grad_a.clear(true);
-    this->grad_b.clear(true);
-	this->potentialFunction.clear(true);
+    std::cout << "clear XC2" << std::endl;
+    this->grad_t.clear2(true);
+    std::cout << "clear XC3" << std::endl;
+    this->grad_a.clear2(true);
+    std::cout << "clear XC4" << std::endl;
+    this->grad_b.clear2(true);
+    std::cout << "clear XC4" << std::endl;
+    this->gamma.clear2(true);
+    std::cout << "clear XC5" << std::endl;
+	this->potentialFunction.clear2(true);
     clearApplyPrec();
 }
 
@@ -187,6 +201,23 @@ void XCOperator::calcDensity() {
         TelePrompter::printTree(0, "XC density gradient", n2, t2);
         printout(1, endl);
     }
+    if (this->functional->needsGamma()) calcGamma();
+            
+}
+
+void XCOperator::calcGamma() {
+    FunctionTree<3> * temp;
+    if(this->functional->isSpinSeparated()) {
+            temp = calcDotProduct(grad_a, grad_a);
+            this->gamma.push_back(temp);
+            temp = calcDotProduct(grad_a, grad_b);
+            this->gamma.push_back(temp);
+            temp = calcDotProduct(grad_b, grad_b);
+            this->gamma.push_back(temp);
+        } else {
+            temp = calcDotProduct(grad_t, grad_t);
+            this->gamma.push_back(temp);
+    }
 }
 
 int XCOperator::calcDensityGradient() {
@@ -197,8 +228,10 @@ int XCOperator::calcDensityGradient() {
         nNodes  = grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes();
         nNodes += grad_b[0]->getNNodes() + grad_b[1]->getNNodes() + grad_b[2]->getNNodes();
     } else {
+        std::cout << "Makes grad tot den " << std::endl;
         grad_t = calcGradient(this->density.total());
         nNodes = grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes();
+        std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
     }
     return nNodes;
 }
@@ -231,9 +264,9 @@ void XCOperator::setupXCInput() {
     this->xcInput = allocPtrArray<FunctionTree<3> >(nInp);
 
     int nUsed = 0;
-    nUsed = setupXCInputDensity(nUsed, spin);
+    nUsed = setupXCInputDensity(nUsed);
     if (gga) {
-        nUsed = setupXCInputGradient(nUsed, spin, gamma);
+        nUsed = setupXCInputGradient(nUsed);
     }
     
     // sanity check
@@ -244,8 +277,10 @@ void XCOperator::setupXCInput() {
 
 }
 
-int XCOperator::setupXCInputDensity(int nUsed, bool spin) {
-    if(spin) {
+int XCOperator::setupXCInputDensity(int nUsed) {
+
+    bool spinSep = this->functional->isSpinSeparated();
+    if(spinSep) {
         this->xcInput[nUsed]     = &this->density.alpha();
         this->xcInput[nUsed + 1] = &this->density.beta();
         nUsed += 2;
@@ -256,13 +291,16 @@ int XCOperator::setupXCInputDensity(int nUsed, bool spin) {
     return nUsed;
 }
 
-int XCOperator::setupXCInputGradient(int nUsed, bool spin, bool gamma) {
+int XCOperator::setupXCInputGradient(int nUsed) {
 
-    if(spin) {
-        if(gamma) {
-            this->xcInput[nUsed    ] = calcDotProduct(grad_a, grad_a);
-            this->xcInput[nUsed + 1] = calcDotProduct(grad_a, grad_b);
-            this->xcInput[nUsed + 2] = calcDotProduct(grad_b, grad_b);
+    bool spinSep = this->functional->isSpinSeparated();
+    bool needsGamma = this->functional->needsGamma();
+    
+    if(spinSep) {
+        if(needsGamma) {
+            this->xcInput[nUsed    ] = gamma[0];
+            this->xcInput[nUsed + 1] = gamma[1];
+            this->xcInput[nUsed + 2] = gamma[2];
             nUsed += 3;
         } else {
             this->xcInput[nUsed    ] = grad_a[0];
@@ -274,8 +312,8 @@ int XCOperator::setupXCInputGradient(int nUsed, bool spin, bool gamma) {
             nUsed += 6;
         }
     } else {
-        if(gamma) {
-            this->xcInput[nUsed] = calcDotProduct(grad_t, grad_t);
+        if(needsGamma) {
+            this->xcInput[nUsed] = gamma[0];
             nUsed += 1;
         } else {
             this->xcInput[nUsed    ] = grad_t[0];
@@ -293,11 +331,9 @@ void XCOperator::clearXCInput() {
     int nInp = this->functional->getInputLength();
     bool spin = this->functional->isSpinSeparated();
 
-    // these belong to density
-    this->xcInput[0] = 0;
-    if (spin) this->xcInput[1] = 0;
-
-    // the rest should be deleted
+    for (int i = 0; i < nInp; i++) {
+        this->xcInput[i] = 0;
+    }
     this->xcInput = deletePtrArray<FunctionTree<3> >(nInp, &this->xcInput);  //LUCA: is this enough? Are we not leaving garbage around?
 }
 

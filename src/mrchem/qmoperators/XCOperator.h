@@ -37,6 +37,10 @@ public:
     using QMOperator::operator();
     using QMOperator::adjoint;
     
+    FunctionTreeVector<3> grad_a;
+    FunctionTreeVector<3> grad_b;
+    FunctionTreeVector<3> grad_t;
+    FunctionTreeVector<3> gamma;
 
 protected:
     const int order;                    ///< Order of kernel derivative
@@ -52,22 +56,19 @@ protected:
     FunctionTree<3> **xcOutput;         ///< XCFun output
 
     FunctionTreeVector<3> potentialFunction;
-
-    FunctionTreeVector<3> grad_a;
-    FunctionTreeVector<3> grad_b;
-    FunctionTreeVector<3> grad_t;
     
     void setupXCInput();
     void setupXCOutput();
 
-    int setupXCInputDensity(int nUsed, bool spin);
-    int setupXCInputGradient(int nUsed, bool spin, bool gamma);
+    int setupXCInputDensity(int nUsed);
+    int setupXCInputGradient(int nUsed);
 
     void clearXCInput();
     void clearXCOutput();
 
     void calcDensity();
     int calcDensityGradient();
+    void calcGamma();
 
     void calcPotential();
     bool cropPotential(double prec);

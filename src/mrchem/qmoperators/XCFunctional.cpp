@@ -19,7 +19,7 @@ extern MultiResolutionAnalysis<3> *MRA;
 XCFunctional::XCFunctional(bool s, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
-    this->expDerivatives = 0; // only gamma-type derivatives now (soon to be changed!)
+    this->expDerivatives = 1; // explicit-type derivatives by default
 }
 
 XCFunctional::~XCFunctional() {
@@ -42,7 +42,9 @@ void XCFunctional::evalSetup(const int order)
     unsigned int laplacian = 0; // no laplacian
     unsigned int kinetic = 0; // no kinetic energy density
     unsigned int current = 0; // no current density
-    std::cout << "In evalSetup. Order  " << order << " Dens " << dens_type << " Func " << func_type << std::endl;  
+    if(this->isLDA()) { // Fall back to gamma-type derivatives if LDA (bad hack: no der are actually needed here!)
+        this->expDerivatives = 0;
+    }
     xc_user_eval_setup(this->functional, order, func_type, dens_type, mode_type, laplacian, kinetic, current, this->expDerivatives);
 }
     

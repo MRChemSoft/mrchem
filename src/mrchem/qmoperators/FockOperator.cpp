@@ -49,7 +49,11 @@ void FockOperator::setup(double prec) {
     if (this->V != 0) this->V->setup(prec);
     if (this->J != 0) this->J->setup(prec);
     if (this->K != 0) this->K->setup(prec);
-    if (this->XC != 0) this->XC->setup(prec);
+    if (this->XC != 0) {
+        this->XC->setup(prec);
+        std::cout << "After setup XC" << std::endl;
+        std::cout << *(XC->grad_t[0]) << *(XC->grad_t[1]) << *(XC->grad_t[2]) << std::endl;
+    }
     if (this->H_1 != 0) this->H_1->setup(prec);
     timer.stop();
     TelePrompter::printFooter(0, timer, 2);
@@ -60,7 +64,12 @@ void FockOperator::clear() {
     if (this->V != 0) this->V->clear();
     if (this->J != 0) this->J->clear();
     if (this->K != 0) this->K->clear();
-    if (this->XC != 0) this->XC->clear();
+    std::cout << "Before clear XC" << std::endl;
+    if (this->XC != 0) {
+        std::cout << *(XC->grad_t[0]) << *(XC->grad_t[1]) << *(XC->grad_t[2]) << std::endl;
+        this->XC->clear();
+    }
+    std::cout << "After clear XC" << std::endl;
     if (this->H_1 != 0) this->H_1->clear();
 }
 
