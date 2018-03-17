@@ -45,19 +45,6 @@ public:
         this->coefs.clear();
         this->funcs.clear();
     }
-    void clear2(bool dealloc = false) {
-        if (dealloc) {
-            for (int i = 0; i < this->funcs.size(); i++) {
-                std::cout << "Dealloc " << i << std::endl;
-                if (this->funcs[i] != 0) {
-                    //                    std::cout << *(funcs[i]) << std::endl;
-                    delete this->funcs[i];
-                }
-            }
-        }
-        this->coefs.clear();
-        this->funcs.clear();
-    }
     double getCoef(int i) const {
         if (i < 0 or i >= this->coefs.size()) MSG_ERROR("Out of bounds");
         return this->coefs[i];

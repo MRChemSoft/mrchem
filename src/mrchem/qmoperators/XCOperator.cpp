@@ -24,7 +24,6 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
           xcInput(0),
           xcOutput(0) {
     bool spin = F.isSpinSeparated();
-    std::cout << "Is spin sep 2" << spin << std::endl;
     nPotentials = spin ? k + 1 : 1; /// k+1 potentials if spin separated, otherwise just one.
     density.setIsSpinDensity(spin);
     F.evalSetup(k);
@@ -47,14 +46,8 @@ void XCOperator::setup(double prec) {
     evaluateXCFunctional();
     calcEnergy();
     calcPotential();
-    std::cout << "after calc pot" << std::endl;
-    std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
     clearXCInput();
-    std::cout << "after clear xc inp" << std::endl;
-    std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
     clearXCOutput();
-    std::cout << "at the end of setup" << std::endl;
-    std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
 }
 
 Orbital* XCOperator::operator() (Orbital &phi) {
@@ -94,13 +87,8 @@ void XCOperator::calcPotentialLDA() {
     for (int i = 0; i < this->nPotentials; i++) {
         int outputIndex = i + 1;
         if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
-        std::cout << "XC output function " << this->nPotentials << std::endl;
-        std::cout << *xcOutput[outputIndex] << std::endl;
         potentialFunction.push_back(xcOutput[outputIndex]);
         xcOutput[outputIndex] = 0;
-        std::cout << "PF Size " << potentialFunction.size() << std::endl;
-        std::cout << "XC Potential function " << this->nPotentials << std::endl;
-        std::cout << *potentialFunction[i] << std::endl;
     }
 }
 
@@ -110,7 +98,6 @@ void XCOperator::calcPotentialGGA() {
     FunctionTree<3> * pot;
     bool spin = this->functional->isSpinSeparated();
     bool gamma = this->functional->needsGamma();
-    std::cout << "calcPotential: spin and gamma " << spin << " " << gamma << std::endl;
     if(spin) {
         FunctionTree<3> & df_da   = *xcOutput[1];
         FunctionTree<3> & df_db   = *xcOutput[2];
@@ -162,18 +149,12 @@ void XCOperator::calcPotentialGGA() {
  */
 void XCOperator::clear() {
     this->energy = 0.0;
-    std::cout << "clear XC1" << std::endl;
     this->density.clear();
-    std::cout << "clear XC2" << std::endl;
-    this->grad_t.clear2(true);
-    std::cout << "clear XC3" << std::endl;
-    this->grad_a.clear2(true);
-    std::cout << "clear XC4" << std::endl;
-    this->grad_b.clear2(true);
-    std::cout << "clear XC4" << std::endl;
-    this->gamma.clear2(true);
-    std::cout << "clear XC5" << std::endl;
-	this->potentialFunction.clear2(true);
+    this->grad_t.clear(true);
+    this->grad_a.clear(true);
+    this->grad_b.clear(true);
+    this->gamma.clear(true);
+	this->potentialFunction.clear(true);
     clearApplyPrec();
 }
 
@@ -228,10 +209,8 @@ int XCOperator::calcDensityGradient() {
         nNodes  = grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes();
         nNodes += grad_b[0]->getNNodes() + grad_b[1]->getNNodes() + grad_b[2]->getNNodes();
     } else {
-        std::cout << "Makes grad tot den " << std::endl;
         grad_t = calcGradient(this->density.total());
         nNodes = grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes();
-        std::cout << *grad_t[0] << *grad_t[1] << *grad_t[2] << std::endl;
     }
     return nNodes;
 }
@@ -259,8 +238,6 @@ void XCOperator::setupXCInput() {
     bool gga = this->functional->isGGA();
     bool gamma = this->functional->needsGamma();
 
-    std::cout << "Input length " << nInp << std::endl;
-    
     this->xcInput = allocPtrArray<FunctionTree<3> >(nInp);
 
     int nUsed = 0;
@@ -384,11 +361,9 @@ void XCOperator::evaluateXCFunctional() {
             expandNodeData(n, nOut, this->xcOutput, outData);
         }
     }
-    std::cout << "XCFun output" << std::endl;
     for (int i = 0; i < nOut; i++) {
         this->xcOutput[i]->mwTransform(BottomUp);
         this->xcOutput[i]->calcSquareNorm();
-        std::cout << *(this->xcOutput[i]) << std::endl;
     }
 
     timer.stop();
@@ -407,7 +382,6 @@ void XCOperator::calcEnergy() {
     timer.stop();
     double t = timer.getWallTime();
     int n = this->xcOutput[0]->getNNodes();
-    std::cout << "XC energy " << this->energy << std::endl;
     TelePrompter::printTree(0, "XC energy", n, t);
 }
 
@@ -496,9 +470,6 @@ int XCOperator::getPotentialFunctionIndex(const Orbital &orb) {
     bool spinSeparatedFunctional = this->functional->isSpinSeparated();
     int orbitalOccupancy = orb.getOccupancy();
     int potentialFunctionIndex = -1;
-    std::cout << "orbSpin " << orbitalSpin
-              << "ssf "     << spinSeparatedFunctional
-              << "oo "      << orbitalOccupancy << std::endl; 
     if (spinSeparatedFunctional && orbitalSpin == Alpha) {
         potentialFunctionIndex = 0;
     }
