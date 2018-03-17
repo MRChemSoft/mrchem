@@ -97,11 +97,11 @@ void XCOperator::calcPotentialGGA() {
 
     FunctionTree<3> * pot;
     bool spin = this->functional->isSpinSeparated();
-    bool gamma = this->functional->needsGamma();
+    bool needsGamma = this->functional->needsGamma();
     if(spin) {
         FunctionTree<3> & df_da   = *xcOutput[1];
         FunctionTree<3> & df_db   = *xcOutput[2];
-        if(gamma) {
+        if(needsGamma) {
             FunctionTree<3> & df_dgaa = *xcOutput[3];
             FunctionTree<3> & df_dgab = *xcOutput[4];
             FunctionTree<3> & df_dgbb = *xcOutput[5];
@@ -116,9 +116,9 @@ void XCOperator::calcPotentialGGA() {
             df_dga.push_back(xcOutput[3]);
             df_dga.push_back(xcOutput[4]);
             df_dga.push_back(xcOutput[5]);
-            df_dga.push_back(xcOutput[6]);
-            df_dga.push_back(xcOutput[7]);
-            df_dga.push_back(xcOutput[8]);
+            df_dgb.push_back(xcOutput[6]);
+            df_dgb.push_back(xcOutput[7]);
+            df_dgb.push_back(xcOutput[8]);
             pot = this->functional->calcPotentialGGA(df_da, df_dga, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
             pot = this->functional->calcPotentialGGA(df_db, df_dgb, this->derivative, this->max_scale);
@@ -128,7 +128,7 @@ void XCOperator::calcPotentialGGA() {
     }
     else {
         FunctionTree<3> & df_dt = *xcOutput[1];
-        if(gamma) {
+        if(needsGamma) {
             FunctionTree<3> & df_dgamma = *xcOutput[2];
             pot = this->functional->calcPotentialGGA(df_dt, df_dgamma, grad_t, this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
