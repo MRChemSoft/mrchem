@@ -66,8 +66,8 @@ bool OrbitalOptimizer::optimize() {
         Timer timer;
         printCycle(nIter);
         adjustPrecision(err_o);
-        orb_prec = getOrbitalPrecision();
-        
+        orb_prec = getOrbitalPrecision();        
+
         // Rotate orbitals
         if (needLocalization(nIter)) {
             localize(fock, F, phi_n);
@@ -91,13 +91,10 @@ bool OrbitalOptimizer::optimize() {
         
         // Apply Helmholtz operators
         H(phi_np1, *args_n);
-        std::cout << "After H applic" << std::endl;
         delete args_n;
         if (mpiOrbSize > 1) H.clear();
         
-        std::cout << "Before clear fock" << std::endl;
         if (not clearFock) fock.clear();
-        std::cout << "After clear fock" << std::endl;
         orthonormalize(fock, F, phi_np1);
         
         // Compute orbital updates
@@ -105,7 +102,6 @@ bool OrbitalOptimizer::optimize() {
         phi_np1.clear();
         
         // Employ KAIN accelerator
-        std::cout << "Before kain" << std::endl;
         if (this->kain != 0) this->kain->accelerate(orb_prec, phi_n, dPhi_n);
         
         // Compute errors
@@ -126,7 +122,6 @@ bool OrbitalOptimizer::optimize() {
         this->orbError.push_back(err_t);
         converged = checkConvergence(err_o, err_p);
         
-        std::cout << "Update orbs" << std::endl;
         // Update orbitals
         this->add.inPlace(phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
@@ -143,7 +138,6 @@ bool OrbitalOptimizer::optimize() {
         printOrbitals(F.diagonal(), phi_n, 0);
         printProperty();
         printTimer(timer.getWallTime());
-        std::cout << "End of loop" << std::endl;
         
         if (converged) break;
     }
