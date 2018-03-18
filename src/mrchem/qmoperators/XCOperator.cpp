@@ -554,59 +554,16 @@ FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
     return out;
 }
 
-/** @brief converts data from FunctionTree to matrix
+/** @brief converts data from a FunctionNode to a matrix
  *
- * The FunctionTree(s) row data is packed into a matrix whose dimensions are the overall number of grid points (nCoefs) and the number of functions (nFuncs). In order for this to work, all functions have to have exactly the same grid (not necessarily a uniform grid).
+ * The FunctionNode(s) row data is packed into a matrix whose
+ * dimensions are the overall number of grid points (nCoefs) and the
+ * number of functions (nFuncs).
  *
+ * parma[in] n the index of the requested node
  * param[in] nFuncs the number of functions
  * param[in] trees the array of FunctionTree(s)
  * param[in] the matrix object.
- */
-void XCOperator::compressTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
-    if (trees == 0) MSG_ERROR("Invalid input");
-    if (trees[0] == 0) MSG_ERROR("Invalid input");
-
-    FunctionTree<3> &tree = *trees[0];
-    int nCoefs = tree.getTDim()*tree.getKp1_d()*tree.getNEndNodes();
-    data = MatrixXd::Zero(nCoefs, nFuncs);
-
-    for (int i = 0; i < nFuncs; i++) {
-        if (trees[i] == 0) MSG_ERROR("Uninitialized input tree");
-        VectorXd col_i;
-        trees[i]->getEndValues(col_i);
-        data.col(i) = col_i;
-    }
-}
-
-/** @brief 
- *
- *
- *
- *
- *
- *
- *
- *
- */
-void XCOperator::expandTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
-    if (trees == 0) MSG_ERROR("Invalid input");
-
-    for (int i = 0; i < nFuncs; i++) {
-        if (trees[i] == 0) MSG_ERROR("Uninitialized output tree " << i);
-        VectorXd col_i = data.col(i);
-        trees[i]->setEndValues(col_i);
-    }
-}
-
-/** @brief 
- *
- *
- *
- *
- *
- *
- *
- *
  */
 void XCOperator::compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");
@@ -625,15 +582,14 @@ void XCOperator::compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, Ma
     }
 }
 
-/** @brief 
+/** @brief converts data from a matrix to a FunctionNode
  *
+ * The matrix containing the output from xcfun is converted back to the corresponding FunctionNode(s). The matrix dimensions are the overall number of grid points (nCoefs) and the number of functions (nFuncs).
  *
- *
- *
- *
- *
- *
- *
+ * parma[in] n the index of the requested node
+ * param[in] nFuncs the number of functions
+ * param[in] trees the array of FunctionTree(s)
+ * param[in] the matrix object.
  */
 void XCOperator::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");
@@ -646,28 +602,25 @@ void XCOperator::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Matr
     }
 }
 
-/** @brief 
+/** @brief fetches the correct index for the potential function to use
  *
- *
- *
- *
- *
- *
- *
+ * @param[in] orb the potentialFunction will be applied to this orbital.
+ * 
+ * Based on the orbital spin, and whether the functional is spin
+ * separated, the correct potential index is selected.
  *
  */
 int XCOperator::getPotentialFunctionIndex(const Orbital &orb) {
     int orbitalSpin = orb.getSpin();
     bool spinSeparatedFunctional = this->functional->isSpinSeparated();
-    int orbitalOccupancy = orb.getOccupancy();
     int potentialFunctionIndex = -1;
-    if (spinSeparatedFunctional && orbitalSpin == Alpha) {
+    if (spinSeparatedFunctional and orbitalSpin == Alpha) {
         potentialFunctionIndex = 0;
     }
-    else if (spinSeparatedFunctional && orbitalSpin == Beta) {
+    else if (spinSeparatedFunctional and orbitalSpin == Beta) {
         potentialFunctionIndex = 1;
     }
-    else if (!spinSeparatedFunctional && orbitalSpin == Paired) {
+    else if (!spinSeparatedFunctional and orbitalSpin == Paired) {
         potentialFunctionIndex = 0;
     }
     else {
