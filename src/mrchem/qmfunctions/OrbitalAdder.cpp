@@ -1,7 +1,7 @@
 #include "OrbitalAdder.h"
 #include "OrbitalVector.h"
 #include "Orbital.h"
-#include "MathUtils.h"
+#include <cmath>
 
 extern OrbitalVector workOrbVec;
 
