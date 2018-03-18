@@ -139,6 +139,7 @@ protected:
 
     // DFT input
     bool dft_spin;
+    bool dft_explicit_der;
     double dft_x_fac;
     double dft_cutoff;
     std::vector<double> dft_func_coefs;

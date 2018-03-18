@@ -19,10 +19,15 @@ extern MultiResolutionAnalysis<3> *MRA;
  * @param[in] thrs Threshold for func calculation
  *
  */
-XCFunctional::XCFunctional(bool s, double thrs)
+XCFunctional::XCFunctional(bool s, bool e, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
-    this->expDerivatives = 1; // explicit-type derivatives by default
+    if(e) {
+        this->expDerivatives = 1;
+    }
+    else {
+        this->expDerivatives = 0;
+    }        
 }
 
 /** @brief destructor

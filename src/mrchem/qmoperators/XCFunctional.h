@@ -19,7 +19,7 @@
  */
 class XCFunctional {
 public:
-    XCFunctional(bool s, double thrs = 0.0);
+    XCFunctional(bool s, bool e, double thrs = 0.0);
     virtual ~XCFunctional();
 
     void setDensityCutoff(double thrs) { this->cutoff = thrs; }
