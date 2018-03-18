@@ -16,6 +16,13 @@ template<int D> class DerivativeOperator;
  *  \class XCOperator
  *  \brief Exchange and Correlation operators
  *
+ * Ideally, this should handle an arbitrary-order operator (k>1) for
+ * response calculations Currently nly the potential is computed
+ * (k=1). LDA and GGA functionals are allowed as well as two different ways
+ * to compute the XC potentials: either with explicit derivatives or gamma-type derivatives
+ * The calss handles the bookkeeping for the input/output of the xcfun library through arrays of
+ * FunctionTree(s). 
+ *
  *  Testing the output on Sphinx
  *
  *  \author Stig Rune Jensen
@@ -37,26 +44,25 @@ public:
     using QMOperator::operator();
     using QMOperator::adjoint;
     
-    FunctionTreeVector<3> grad_a;
-    FunctionTreeVector<3> grad_b;
-    FunctionTreeVector<3> grad_t;
-    FunctionTreeVector<3> gamma;
-
 protected:
     const int order;                    ///< Order of kernel derivative
     int nPotentials;                    ///< Number of potential energy functions
-    XCFunctional *functional;           ///< Pointer to external object
-    DerivativeOperator<3> *derivative;  ///< Pointer to external object
-    OrbitalVector *orbitals;            ///< Pointer to external object
+    XCFunctional *functional;           ///< External XC functional to be used
+    DerivativeOperator<3> *derivative;  ///< External derivative operator
+    OrbitalVector *orbitals;            ///< External set of orbitals used to build the density
 
     double energy;                      ///< XC energy
     Density density;                    ///< Unperturbed density
 
-    FunctionTree<3> **xcInput;          ///< XCFun input
-    FunctionTree<3> **xcOutput;         ///< XCFun output
+    FunctionTree<3> **xcInput;          ///< Bookkeeping array to feed XCFun
+    FunctionTree<3> **xcOutput;         ///< Bookkeeping array returned by XCFun
 
-    FunctionTreeVector<3> potentialFunction;
-    
+    FunctionTreeVector<3> potentialFunction; ///< Storage of the computed potential functions
+    FunctionTreeVector<3> grad_a; ///< Gradient of the alpha density        
+    FunctionTreeVector<3> grad_b; ///< Gradient of the beta  density        
+    FunctionTreeVector<3> grad_t; ///< Gradient of the total density        
+    FunctionTreeVector<3> gamma;  ///< Gamma function(s) (three fcns for spin separated calculations)       
+
     void setupXCInput();
     void setupXCOutput();
 

@@ -14,6 +14,18 @@ using namespace Eigen;
 
 extern MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** @brief constructor
+ *
+ * @param[in] k order of the operator
+ * @param[in] F XCFunctional pointer
+ * @param[in] phi vector of orbitals
+ * @param[in] D derivative operators
+ *
+ * Based on the order and spin the correct nr. of potential functions is determined
+ * Then the functional is set up for subsequent calculations, fixing some internals of
+ * xcfun when F.evalSetup is invoked.
+ *
+ */
 XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOperator<3> *D)
         : QMPotential(0),
           order(k),
@@ -29,14 +41,26 @@ XCOperator::XCOperator(int k, XCFunctional &F, OrbitalVector &phi, DerivativeOpe
     F.evalSetup(k);
 }
 
+/** @brief destructor
+ *
+ */
 XCOperator::~XCOperator() {
-    if (this->xcInput != 0) MSG_ERROR("XC input not deallocated");
+    if (this->xcInput != 0)  MSG_ERROR("XC input not deallocated");
     if (this->xcOutput != 0) MSG_ERROR("XC output not deallocated");
     this->functional = 0;
     this->derivative = 0;
+    this->orbitals = 0;
 }
 
-/** \brief Provides the right sequence of internal operations to compute the XC potential 
+/** @brief setup the XCOperator
+ * 
+ * @param[in] prec precision 
+ *
+ * Sequence of steps required to compute the XC potentials The moat
+ * important steps are evaluateXCFunctional and calcPotential where
+ * the functional derivatives are computed and the potential assembled
+ * respectively
+ *
  */
 void XCOperator::setup(double prec) {
     setApplyPrec(prec);
@@ -50,6 +74,15 @@ void XCOperator::setup(double prec) {
     clearXCOutput();
 }
 
+/** @brief XCOperator application
+ *
+ * The operator is applied by choosing the correct potential function
+ * which is then assigned to the real function part of the operator
+ * base-class before the base class function is called.
+ *
+ * @param[in] phi orbital to which the potential is applied.
+ *
+ */
 Orbital* XCOperator::operator() (Orbital &phi) {
     FunctionTree<3> * potential = this->potentialFunction[this->getPotentialFunctionIndex(phi)];
     this->setReal(potential);
@@ -60,10 +93,18 @@ Orbital* XCOperator::operator() (Orbital &phi) {
     return Vphi;
 }
 
+/** @brief adjoint operator not implemented
+ *
+ */
 Orbital* XCOperator::adjoint(Orbital &phi) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+/** @brief potential calculation
+ *
+ * different calls for LDA and GGA
+ *
+ */
 void XCOperator::calcPotential() {
     if (xcOutput == 0) MSG_ERROR("XC output not initialized");
     
@@ -79,6 +120,12 @@ void XCOperator::calcPotential() {
     }
 }
 
+/** @brief potential calculation for LDA functionals
+ *
+ * The potential conicides with the xcfun output, which is then
+ * assigned to the corresponding potential functions.
+ *
+ */
 void XCOperator::calcPotentialLDA() {
 
     if (this->order != 1) {
@@ -92,7 +139,16 @@ void XCOperator::calcPotentialLDA() {
     }
 }
 
-
+/** @brief  potential calculation for GGA functionals
+ *
+ * the potential functions are assembled from the xcfun output functions
+ * The metod used depends on whether the functional is spin-separated 
+ * and whether explicit or gamma-type derivatives have been used in xcfun.
+ * The corresponding method in the XCFunctional class is then selected and used
+ *
+ * Note: maybe all this stuff should end up in XCFunctional so that we
+ * don't need to expose XCOutput.
+ */
 void XCOperator::calcPotentialGGA() {
 
     FunctionTree<3> * pot;
@@ -105,9 +161,11 @@ void XCOperator::calcPotentialGGA() {
             FunctionTree<3> & df_dgaa = *xcOutput[3];
             FunctionTree<3> & df_dgab = *xcOutput[4];
             FunctionTree<3> & df_dgbb = *xcOutput[5];
-            pot = this->functional->calcPotentialGGA(df_da, df_dgaa, df_dgab, grad_a, grad_b, this->derivative, this->max_scale);
+            pot = this->functional->calcPotentialGGA(df_da, df_dgaa, df_dgab, grad_a, grad_b,
+                                                     this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
-            pot = this->functional->calcPotentialGGA(df_db, df_dgbb, df_dgab, grad_b, grad_a, this->derivative, this->max_scale);
+            pot = this->functional->calcPotentialGGA(df_db, df_dgbb, df_dgab, grad_b, grad_a,
+                                                     this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
         else {
@@ -119,9 +177,11 @@ void XCOperator::calcPotentialGGA() {
             df_dgb.push_back(xcOutput[6]);
             df_dgb.push_back(xcOutput[7]);
             df_dgb.push_back(xcOutput[8]);
-            pot = this->functional->calcPotentialGGA(df_da, df_dga, this->derivative, this->max_scale);
+            pot = this->functional->calcPotentialGGA(df_da, df_dga, this->derivative,
+                                                     this->max_scale);
             potentialFunction.push_back(pot);
-            pot = this->functional->calcPotentialGGA(df_db, df_dgb, this->derivative, this->max_scale);
+            pot = this->functional->calcPotentialGGA(df_db, df_dgb, this->derivative,
+                                                     this->max_scale);
             potentialFunction.push_back(pot);
         }
             
@@ -130,7 +190,8 @@ void XCOperator::calcPotentialGGA() {
         FunctionTree<3> & df_dt = *xcOutput[1];
         if(needsGamma) {
             FunctionTree<3> & df_dgamma = *xcOutput[2];
-            pot = this->functional->calcPotentialGGA(df_dt, df_dgamma, grad_t, this->derivative, this->max_scale);
+            pot = this->functional->calcPotentialGGA(df_dt, df_dgamma, grad_t,
+                                                     this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
         else {
@@ -138,14 +199,16 @@ void XCOperator::calcPotentialGGA() {
             df_dgt.push_back(xcOutput[2]);
             df_dgt.push_back(xcOutput[3]);
             df_dgt.push_back(xcOutput[4]);
-            pot = this->functional->calcPotentialGGA(df_dt, df_dgt, this->derivative, this->max_scale);
+            pot = this->functional->calcPotentialGGA(df_dt, df_dgt,
+                                                     this->derivative, this->max_scale);
             potentialFunction.push_back(pot);
         }
     }
     pot = 0;
 }
 
-/** \brief Cleanup function to call after the the XC potential has been calculated
+/** @brief clears all data in the XCOperator object
+ *
  */
 void XCOperator::clear() {
     this->energy = 0.0;
@@ -158,6 +221,10 @@ void XCOperator::clear() {
     clearApplyPrec();
 }
 
+/** @brief given a set of orbitals, it computes the corresponding density function(s)
+ *
+ * Note: yet another function that does not necessarily belong to this class.
+ */
 void XCOperator::calcDensity() {
     if (this->orbitals == 0) MSG_ERROR("Orbitals not initialized");
     
@@ -186,6 +253,15 @@ void XCOperator::calcDensity() {
             
 }
 
+/** @brief computes the gradient invariants (gamma functions)
+ *
+ * Depending on the mode chosen, xcfun needs either the gamma
+ * functions or the explicit gradients. The first mode is possibly
+ * more efficient (fewer functions to compute/handle), whereas the
+ * other is simpler to implement. We keep both options open and
+ * compute the gradient invariants if and when necessary.
+ *
+ */
 void XCOperator::calcGamma() {
     FunctionTree<3> * temp;
     if(this->functional->isSpinSeparated()) {
@@ -201,33 +277,54 @@ void XCOperator::calcGamma() {
     }
 }
 
+/** @brief computes the gradient of the density
+ *
+ * For spin-free calculations, the total density is used. For
+ * spin-separated calculations both alpha and beta gradients are
+ * computed. The results are stored in the correspondig data members
+ * of the XCOperator.
+ *
+ */
 int XCOperator::calcDensityGradient() {
     int nNodes = 0;
     if (this->density.isSpinDensity()) {
         grad_a = calcGradient(this->density.alpha());
         grad_b = calcGradient(this->density.beta());
-        nNodes  = grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes();
+        nNodes += grad_a[0]->getNNodes() + grad_a[1]->getNNodes() + grad_a[2]->getNNodes();
         nNodes += grad_b[0]->getNNodes() + grad_b[1]->getNNodes() + grad_b[2]->getNNodes();
     } else {
         grad_t = calcGradient(this->density.total());
-        nNodes = grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes();
+        nNodes += grad_t[0]->getNNodes() + grad_t[1]->getNNodes() + grad_t[2]->getNNodes();
     }
     return nNodes;
 }
 
-FunctionTreeVector<3> XCOperator::calcGradient(FunctionTree<3> &inp) {
+/** @brief computes and stores the gradient of a function
+ *
+ * @param[in] function
+ *
+ * Note: this should also be handled at a lower level (mrcpp)
+ *
+ */
+FunctionTreeVector<3> XCOperator::calcGradient(FunctionTree<3> &function) {
     if (this->derivative == 0) MSG_ERROR("No derivative operator");
     MWDerivative<3> apply(this->max_scale);
-    
-    FunctionTreeVector<3> out;
+    FunctionTreeVector<3> gradient;
     for (int d = 0; d < 3; d++) {
-        FunctionTree<3> *out_d = new FunctionTree<3>(*MRA);
-        apply(*out_d, *this->derivative, inp, d);
-        out.push_back(out_d);
+        FunctionTree<3> *gradient_comp = new FunctionTree<3>(*MRA);
+        apply(*gradient_comp, *this->derivative, function, d);
+        gradient.push_back(gradient_comp);
     }
-    return out;
+    return gradient;
 }
 
+/** @brief allocate input arrays for xcfun
+ *
+ * Based on the xcfun setup, the requested array of FunctionTrees(s)
+ * is allocared and its pointers assigned to the required input
+ * functions.
+ *
+ */
 void XCOperator::setupXCInput() {
    if (this->xcInput != 0) MSG_ERROR("XC input not empty");
     Timer timer;
@@ -245,8 +342,6 @@ void XCOperator::setupXCInput() {
     if (gga) {
         nUsed = setupXCInputGradient(nUsed);
     }
-    
-    // sanity check
     if (nInp != nUsed)  MSG_ERROR("Mismatch between used vs requested");
     for (int i = 0; i < nInp; i++) {
         if (this->xcInput[i] == 0) MSG_ERROR("Invalid XC input");
@@ -254,6 +349,10 @@ void XCOperator::setupXCInput() {
 
 }
 
+/** @brief sets xcInput pointers for the density
+ *
+ * Returns the nr. of pointers used for sanity checking
+ */
 int XCOperator::setupXCInputDensity(int nUsed) {
 
     bool spinSep = this->functional->isSpinSeparated();
@@ -268,6 +367,10 @@ int XCOperator::setupXCInputDensity(int nUsed) {
     return nUsed;
 }
 
+/** @brief sets xcInput pointers for the gradient(s)
+ *
+ * Returns the nr. of pointers used for sanity checking
+ */
 int XCOperator::setupXCInputGradient(int nUsed) {
 
     bool spinSep = this->functional->isSpinSeparated();
@@ -302,6 +405,12 @@ int XCOperator::setupXCInputGradient(int nUsed) {
     return nUsed;
 }
 
+/** @brief clear the xcInput array
+ *
+ * the array is just for bookkeeping, therefore it is only necessary
+ * to set all pointers to NULL.
+ *
+ */
 void XCOperator::clearXCInput() {
     if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
 
@@ -311,9 +420,17 @@ void XCOperator::clearXCInput() {
     for (int i = 0; i < nInp; i++) {
         this->xcInput[i] = 0;
     }
-    this->xcInput = deletePtrArray<FunctionTree<3> >(nInp, &this->xcInput);  //LUCA: is this enough? Are we not leaving garbage around?
+    //LUCA: is this enough? Are we not leaving garbage around?
+    this->xcInput = deletePtrArray<FunctionTree<3> >(nInp, &this->xcInput);  
 }
 
+/** @brief allocate output arrays for xcfun
+ *
+ * Based on the xcfun setup, the requested array of FunctionTrees(s)
+ * is allocated and the function objects are created, borrowing the
+ * grid from the electronic density.
+ *
+ */
 void XCOperator::setupXCOutput() {
     if (this->xcOutput != 0) MSG_ERROR("XC output not empty");
     if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
@@ -333,6 +450,15 @@ void XCOperator::setupXCOutput() {
     }
 }
 
+/** @brief clear the xcOutput array
+ *
+ * after calling xcfun the array contains intermediate functions which
+ * have been employed to obtain the XC potentials. They need to be
+ * deleted properly, unless they are used as such (for LDA). In that
+ * case the correspondinf pointers are set to NULL when the function
+ * "becomes" the potential.
+ *
+ */
 void XCOperator::clearXCOutput() {
     if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
 
@@ -340,6 +466,12 @@ void XCOperator::clearXCOutput() {
     this->xcOutput = deletePtrArray<FunctionTree<3> >(nOut, &this->xcOutput);
 }
 
+/** @brief evaluation of the functional and its derivatives
+ *
+ * the data contained in the xcInput is converted in matrix form and fed to the functional.
+ * the output matrix is then converted back to function form.
+ *
+ */
 void XCOperator::evaluateXCFunctional() {
     if (this->xcInput == 0) MSG_ERROR("XC input not initialized");
     if (this->xcOutput == 0) MSG_ERROR("XC input not initialized");
@@ -373,6 +505,9 @@ void XCOperator::evaluateXCFunctional() {
     printout(2, endl);
 }
 
+/** @brief computes the XC energy as the integral of the functional.
+ *
+ */
 void XCOperator::calcEnergy() {
     if (this->xcOutput == 0) MSG_ERROR("XC output not initialized");
     if (this->xcOutput[0] == 0) MSG_ERROR("Invalid XC output");
@@ -385,6 +520,14 @@ void XCOperator::calcEnergy() {
     TelePrompter::printTree(0, "XC energy", n, t);
 }
 
+/** @brief scalar product of two FunctionTreeVector(s)
+ *
+ * param[in] vec_a first vector
+ * param[in] vec_b second vector
+ *
+ * Note: should be a mrcpp functionality.
+ *
+ */
 FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
                                             FunctionTreeVector<3> &vec_b) {
     if (vec_a.size() != vec_b.size()) MSG_ERROR("Invalid input");
@@ -411,6 +554,14 @@ FunctionTree<3>* XCOperator::calcDotProduct(FunctionTreeVector<3> &vec_a,
     return out;
 }
 
+/** @brief converts data from FunctionTree to matrix
+ *
+ * The FunctionTree(s) row data is packed into a matrix whose dimensions are the overall number of grid points (nCoefs) and the number of functions (nFuncs). In order for this to work, all functions have to have exactly the same grid (not necessarily a uniform grid).
+ *
+ * param[in] nFuncs the number of functions
+ * param[in] trees the array of FunctionTree(s)
+ * param[in] the matrix object.
+ */
 void XCOperator::compressTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");
     if (trees[0] == 0) MSG_ERROR("Invalid input");
@@ -427,6 +578,16 @@ void XCOperator::compressTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd 
     }
 }
 
+/** @brief 
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
 void XCOperator::expandTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");
 
@@ -437,6 +598,16 @@ void XCOperator::expandTreeData(int nFuncs, FunctionTree<3> **trees, MatrixXd &d
     }
 }
 
+/** @brief 
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
 void XCOperator::compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");
     if (trees[0] == 0) MSG_ERROR("Invalid input");
@@ -454,6 +625,16 @@ void XCOperator::compressNodeData(int n, int nFuncs, FunctionTree<3> **trees, Ma
     }
 }
 
+/** @brief 
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
 void XCOperator::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, MatrixXd &data) {
     if (trees == 0) MSG_ERROR("Invalid input");
 
@@ -465,6 +646,16 @@ void XCOperator::expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Matr
     }
 }
 
+/** @brief 
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ */
 int XCOperator::getPotentialFunctionIndex(const Orbital &orb) {
     int orbitalSpin = orb.getSpin();
     bool spinSeparatedFunctional = this->functional->isSpinSeparated();

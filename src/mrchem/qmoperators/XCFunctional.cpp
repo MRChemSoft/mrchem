@@ -11,9 +11,12 @@ using namespace Eigen;
 
 extern MultiResolutionAnalysis<3> *MRA;
 
-/** \brief creator 
+/** @brief constructor
  *
- * Initializes some parameters in the xcfun library
+ * Initializes the new functional
+ * 
+ * @param[in] s True for spin-separated calculations
+ * @param[in] thrs Threshold for func calculation
  *
  */
 XCFunctional::XCFunctional(bool s, double thrs)
@@ -22,26 +25,40 @@ XCFunctional::XCFunctional(bool s, double thrs)
     this->expDerivatives = 1; // explicit-type derivatives by default
 }
 
+/** @brief destructor
+ *
+ */
 XCFunctional::~XCFunctional() {
     xc_free_functional(this->functional);
 }
 
+/** @brief functional setup
+ *
+ * @usage For each functional part in calculation a corresponding token is created in xcfun
+ *
+ * @param[in] name The name of the chosen functional
+ * @param[in] coef The amount of the chosen functional
+ */
 void XCFunctional::setFunctional(const string &name, double coef) {
     xc_set(this->functional, name.c_str(), coef);
 }
 
-/*
-  Setup the XC functional for evaluation. In MRChem we use only a subset of the alternatives offered by xcfun.
-  More functinality might be enabled at a later stage.
+/** @brief User-friendly setup of the xcfun calculation
+ *
+ * Setup the XC functional for evaluation. In MRChem we use only a subset of the alternatives offered by xcfun. 
+ * More functinality might be enabled at a later stage.
+ *
+ * @param[in] order Order of the requested operator (1 for potential, 2 for hessian, ...)
+ * 
  */
 void XCFunctional::evalSetup(const int order)
 {
-    unsigned int func_type = this->isGGA(); //only LDA and GGA supported for now
-    unsigned int dens_type = 1 + this->spin; // only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
-    unsigned int mode_type = 1; //HACK HARD CODED
-    unsigned int laplacian = 0; // no laplacian
-    unsigned int kinetic = 0; // no kinetic energy density
-    unsigned int current = 0; // no current density
+    unsigned int func_type = this->isGGA();  //!< only LDA and GGA supported for now
+    unsigned int dens_type = 1 + this->spin; //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
+    unsigned int mode_type = 1; //!< only derivatives (neither potential nor contracted)
+    unsigned int laplacian = 0; //!< no laplacian
+    unsigned int kinetic = 0;   //!< no kinetic energy density
+    unsigned int current = 0;   //!< no current density
     if(this->isLDA()) { // Fall back to gamma-type derivatives if LDA (bad hack: no der are actually needed here!)
         this->expDerivatives = 0;
     }
@@ -52,11 +69,11 @@ void XCFunctional::evalSetup(const int order)
 /** \breif Evaluates XC functional and derivatives
  *
  * Computes the alpha and beta exchange-correlation functionals and
- * their derivatives.  The electronic density (total/alpha/beta) are
+ * their derivatives.  The electronic density (total/alpha/beta) and their gradients are
  * given as input. Results are then stored in the xcfun output
  * functions. Higher order derivatives can be computed changing the parameter k. 
  *
- * XCFunctional output (with k=1):
+ * XCFunctional output (with k=1 and explicit derivatives):
  *
  * LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho}\right) \f$
  *
@@ -79,12 +96,36 @@ void XCFunctional::evalSetup(const int order)
  *  \frac{\partial F_{xc}}{\partial \rho_y^\beta},
  *  \frac{\partial F_{xc}}{\partial \rho_z^\beta}
  *  \right) \f$
- */
+ *
+ * XCFunctional output (with k=1 and gamma-type derivatives):
+ *
+ * GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho},
+ *  \frac{\partial F_{xc}}{\partial \gamma} \f$
+ *
+ * Spin GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho^\beta },
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \alpha}},
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \beta }},
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\beta  \beta }}
+ *  \right) \f$
+ *
+ * The points are passed with through a matrix of dimension nInp x nPts
+ * where nInp is the number of input data required for a single evaluation
+ * and nPts is the number of points requested. Similarly the output is provided 
+ * as a matrix nOut x nPts.
+ * 
+ * param[in] k the order of the requested derivatives
+ * param[in] input values 
+ * param[out] output values
+ *
+*/
 void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     if (inp.cols() != getInputLength()) MSG_ERROR("Invalid input");
 
     int nInp = getInputLength();
-    int nOut = getOutputLength(); // 2^order * n_points
+    int nOut = getOutputLength();
     
     int nPts = inp.rows();
     out = MatrixXd::Zero(nPts, nOut);
@@ -105,6 +146,18 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     delete[] oDat;
 }
 
+/** @brief XC potential calculation
+ *
+ * Computes the XC potential for a non-spin separated functional and 
+ * gamma-type derivatives
+ *
+ * @param[in] df_drho functional derivative wrt rho
+ * @param[in] df_dgamma functional_derivative wrt gamma
+ * @param[in] grad_rho gradient of rho
+ * @param[in] derivative derivative operator to use
+ * @param[in] maxScale maximum scale for the derivative application
+ *
+ */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  FunctionTree<3> & df_dgamma,
                                                  FunctionTreeVector<3> grad_rho,
@@ -123,6 +176,22 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
     return V;
 }
 
+/** @brief XC potential calculation
+ *
+ * Computes the XC potential for a spin separated functional and 
+ * gamma-type derivatives
+ *
+ * @param[in] df_drhoa functional derivative wrt rhoa
+ * @param[in] df_drhob functional derivative wrt rhob
+ * @param[in] df_dgaa  functional_derivative wrt gamma_aa
+ * @param[in] df_dgab  functional_derivative wrt gamma_ab
+ * @param[in] df_dgbb  functional_derivative wrt gamma_bb
+ * @param[in] grad_rhoa gradient of rho_a
+ * @param[in] grad_rhob gradient of rho_b
+ * @param[in] derivative derivative operator to use
+ * @param[in] maxScale maximum scale for the derivative application
+ *
+ */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
                                                  FunctionTree<3> & df_dgaa,
                                                  FunctionTree<3> & df_dgab,
@@ -148,6 +217,16 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
     return V;
 }
 
+/** @brief XC potential calculation
+ *
+ * Computes the XC potential for explicit derivatives.
+ *
+ * @param[in] df_drho functional derivative wrt rho
+ * @param[in] df_dgr  functional_derivative wrt grad_rho
+ * @param[in] derivative derivative operator to use
+ * @param[in] maxScale maximum scale for the derivative application
+ *
+ */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  FunctionTreeVector<3> & df_dgr,
                                                  DerivativeOperator<3> *derivative,
@@ -165,6 +244,14 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
     return V;
 }
 
+/** @brief adds all potential contributions together
+ * 
+ * @param[in] contributions vctor with all contributions
+ * @param[in] maxScale maximum scale to perform the addition
+ *
+ * NOTE: this should possibly be moved to the new mrcpp module
+ * as it only involves mwtrees
+ */
 FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> & contributions,
                                                          int maxScale) {
     FunctionTree<3> *V = new FunctionTree<3>(*MRA);
@@ -175,6 +262,15 @@ FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> 
     return V;
 }
 
+/** @brief computes the divergence of a vector field
+ * 
+ * @param[in] inp the vector field expressed as function trees
+ * @param[in] derivative the derivative operator
+ * @param[in] maxScale the maximum scale to which the derivative is performed
+ *
+ * NOTE: this should possibly be moved to the new mrcpp module
+ * as it only involves mwtrees
+ */
 FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
                                              DerivativeOperator<3> *derivative,
                                              int maxScale) {
@@ -196,6 +292,16 @@ FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
     return out;
 }
 
+/** brief divergenge of a vector field times a function
+ *
+ * @param[in]V Function (derivative of the functional wrt gamma)
+ * @param[in]rho vector field (density gradient)
+ * @param[in] derivative the derivative operator
+ * @param[in] maxScale the maximum scale to which the derivative is performed
+ *
+ * NOTE: this should possibly be moved to the new mrcpp module
+ * as it only involves mwtrees
+ */
 FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
                                                     FunctionTreeVector<3> &rho,
                                                     DerivativeOperator<3> *derivative,
