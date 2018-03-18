@@ -47,8 +47,8 @@
 #include "NuclearPotential.h"
 #include "CoulombPotential.h"
 #include "ExchangePotential.h"
-#include "XCPotential.h"
 #include "XCFunctional.h"
+#include "XCOperator.h"
 #include "IdentityOperator.h"
 
 using namespace std;
@@ -103,6 +103,7 @@ SCFDriver::SCFDriver(Getkw &input) {
         dft_cutoff = input.get<double>("DFT.density_cutoff");
         dft_func_coefs = input.getDblVec("DFT.func_coefs");
         dft_func_names = input.getData("DFT.functionals");
+        dft_explicit_der = input.get<bool>("DFT.explicit_der");
     }
 
     scf_run = input.get<bool>("SCF.run");
@@ -190,10 +191,6 @@ SCFDriver::SCFDriver(Getkw &input) {
 }
 
 bool SCFDriver::sanityCheck() const {
-    if (wf_method == "DFT" and dft_spin) {
-        MSG_ERROR("Spin DFT not implemented");
-        return false;
-    }
     if (wf_restricted and mol_multiplicity != 1) {
         MSG_ERROR("Restricted open-shell not implemented");
         return false;
@@ -382,11 +379,11 @@ void SCFDriver::setup() {
         fock = new HartreeFock(*T, *V, *J, *K);
     } else if (wf_method == "DFT") {
         J = new CoulombPotential(*P, *phi);
-        xcfun = new XCFunctional(dft_spin, dft_cutoff);
+        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff);
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        XC = new XCPotential(*xcfun, *phi, ABGV_00);
+        XC = new XCOperator(1, *xcfun, *phi, ABGV_00);
         if (dft_x_fac > MachineZero) {
             K = new ExchangePotential(*P, *phi, dft_x_fac);
         }
@@ -440,7 +437,7 @@ void SCFDriver::setup_np1() {
         K_np1 = new ExchangePotential(*P, *phi_np1);
     } else if (wf_method == "DFT") {
         J_np1 = new CoulombPotential(*P, *phi_np1);
-        XC_np1 = new XCPotential(*xcfun, *phi_np1, ABGV_00);
+        XC_np1 = new XCOperator(1, *xcfun, *phi_np1, ABGV_00);
         if (dft_x_fac > MachineZero) {
             K_np1 = new ExchangePotential(*P, *phi_np1, dft_x_fac);
         }

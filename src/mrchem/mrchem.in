@@ -165,6 +165,7 @@ def setup_keywords():
     dft.add_kw('orbital_free',          'BOOL', False)
     dft.add_kw('exact_exchange',        'DBL', 0.0)
     dft.add_kw('density_cutoff',        'DBL', 0.0)
+    dft.add_kw('explicit_der',          'BOOL', True)
     dft.add_kw('functionals',           'DATA')
     dft.add_kw('func_coefs',            'DBL_ARRAY')
     top.add_sect(dft)

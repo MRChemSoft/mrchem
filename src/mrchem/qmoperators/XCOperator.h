@@ -3,18 +3,25 @@
 #pragma GCC system_header
 #include <Eigen/Core>
 
+#include "FunctionTree.h"
+#include "FunctionTreeVector.h"
 #include "QMPotential.h"
 #include "Density.h"
 
 class XCFunctional;
 class OrbitalVector;
-template<int D> class FunctionTree;
-template<int D> class FunctionTreeVector;
 template<int D> class DerivativeOperator;
 
 /** 
  *  \class XCOperator
- *  \brief Interface class to compute DFT functionaals and derivatives
+ *  \brief Exchange and Correlation operators
+ *
+ * Ideally, this should handle an arbitrary-order operator (k>1) for
+ * response calculations Currently nly the potential is computed
+ * (k=1). LDA and GGA functionals are allowed as well as two different ways
+ * to compute the XC potentials: either with explicit derivatives or gamma-type derivatives
+ * The calss handles the bookkeeping for the input/output of the xcfun library through arrays of
+ * FunctionTree(s). 
  *
  *  Testing the output on Sphinx
  *
@@ -28,31 +35,53 @@ public:
     virtual ~XCOperator();
 
     double getEnergy() const { return this->energy; }
+    void setup(double prec);
+    void clear();
 
+    virtual Orbital* operator() (Orbital &phi);
+    virtual Orbital* adjoint(Orbital &phi);
+
+    using QMOperator::operator();
+    using QMOperator::adjoint;
+    
 protected:
     const int order;                    ///< Order of kernel derivative
-    XCFunctional *functional;           ///< Pointer to external object
-    DerivativeOperator<3> *derivative;  ///< Pointer to external object
-    OrbitalVector *orbitals;            ///< Pointer to external object
+    int nPotentials;                    ///< Number of potential energy functions
+    XCFunctional *functional;           ///< External XC functional to be used
+    DerivativeOperator<3> *derivative;  ///< External derivative operator
+    OrbitalVector *orbitals;            ///< External set of orbitals used to build the density
 
     double energy;                      ///< XC energy
     Density density;                    ///< Unperturbed density
-    Density gradient[3];                ///< Unperturbed density gradient
 
-    FunctionTree<3> **xcInput;          ///< XCFun input
-    FunctionTree<3> **xcOutput;         ///< XCFun output
+    FunctionTree<3> **xcInput;          ///< Bookkeeping array to feed XCFun
+    FunctionTree<3> **xcOutput;         ///< Bookkeeping array returned by XCFun
+
+    FunctionTreeVector<3> potentialFunction; ///< Storage of the computed potential functions
+    FunctionTreeVector<3> grad_a; ///< Gradient of the alpha density        
+    FunctionTreeVector<3> grad_b; ///< Gradient of the beta  density        
+    FunctionTreeVector<3> grad_t; ///< Gradient of the total density        
+    FunctionTreeVector<3> gamma;  ///< Gamma function(s) (three fcns for spin separated calculations)       
 
     void setupXCInput();
     void setupXCOutput();
+
+    int setupXCInputDensity(int nUsed);
+    int setupXCInputGradient(int nUsed);
 
     void clearXCInput();
     void clearXCOutput();
 
     void calcDensity();
-    void calcDensityGradient(Density *dRho, Density &rho);
+    int calcDensityGradient();
+    void calcGamma();
 
-    virtual void calcPotential() = 0;
+    void calcPotential();
     bool cropPotential(double prec);
+
+    void calcPotentialLDA();
+    
+    void calcPotentialGGA();
 
     void calcEnergy();
     void evaluateXCFunctional();
@@ -64,10 +93,10 @@ protected:
     void expandNodeData(int n, int nFuncs, FunctionTree<3> **trees, Eigen::MatrixXd &data);
 
     FunctionTreeVector<3> calcGradient(FunctionTree<3> &inp);
-    FunctionTree<3>* calcDivergence(FunctionTreeVector<3> &inp);
     FunctionTree<3>* calcDotProduct(FunctionTreeVector<3> &vec_a, FunctionTreeVector<3> &vec_b);
-    FunctionTree<3>* calcGradDotPotDensVec(FunctionTree<3> &V, FunctionTreeVector<3> &rho);
 
+    int getPotentialFunctionIndex(const Orbital & orb);
+    
     template<class T>
     int sumNodes(T **trees, int nTrees) {
         int nNodes = 0;

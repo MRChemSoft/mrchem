@@ -1,3 +1,7 @@
+#include "GridGenerator.h"
+#include "MWAdder.h"
+#include "MWMultiplier.h"
+#include "MWDerivative.h"
 #include "XCFunctional.h"
 #include "TelePrompter.h"
 #include "constants.h"
@@ -5,151 +9,76 @@
 using namespace std;
 using namespace Eigen;
 
-XCFunctional::XCFunctional(bool s, double thrs)
+extern MultiResolutionAnalysis<3> *MRA;
+
+/** @brief constructor
+ *
+ * Initializes the new functional
+ * 
+ * @param[in] s True for spin-separated calculations
+ * @param[in] thrs Threshold for func calculation
+ *
+ */
+XCFunctional::XCFunctional(bool s, bool e, double thrs)
         : spin(s), cutoff(thrs) {
     this->functional = xc_new_functional();
-    if (this->spin) {
-        xc_set_mode(this->functional, XC_VARS_AB);
-    } else {
-        xc_set_mode(this->functional, XC_VARS_N);
+    if(e) {
+        this->expDerivatives = 1;
     }
+    else {
+        this->expDerivatives = 0;
+    }        
 }
 
+/** @brief destructor
+ *
+ */
 XCFunctional::~XCFunctional() {
     xc_free_functional(this->functional);
 }
 
-void XCFunctional::setFunctional(const string &name, double coef) {
-    int param = getParamFromName(name);
-    xc_set_param(this->functional, param, coef);
-}
-
-int XCFunctional::getParamFromName(const string &name) {
-    int param = -1;
-    if (name == "SLATERX") {
-        param = XC_SLATERX;
-    } else if (name == "VWN5C") {
-        param = XC_VWN5C;
-    } else if (name == "BECKEX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BECKEX;
-    } else if (name == "BECKECORRX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BECKECORRX;
-    } else if (name == "BECKESRX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BECKESRX;
-    } else if (name == "OPTX") {
-        MSG_WARN("Functional not tested");
-        param = XC_OPTX;
-    } else if (name == "LYPC") {
-        MSG_WARN("Functional not tested");
-        param = XC_LYPC;
-    } else if (name == "PBEX") {
-        param = XC_PBEX;
-    } else if (name == "REVPBEX") {
-        MSG_WARN("Functional not tested");
-        param = XC_REVPBEX;
-    } else if (name == "RPBEX") {
-        MSG_WARN("Functional not tested");
-        param = XC_RPBEX;
-    } else if (name == "PBEC") {
-        param = XC_PBEC;
-    } else if (name == "SPBEC") {
-        MSG_WARN("Functional not tested");
-        param = XC_SPBEC;
-    } else if (name == "VWN_PBEC") {
-        MSG_WARN("Functional not tested");
-        param = XC_VWN_PBEC;
-    } else if (name == "LDAERFX") {
-        MSG_WARN("Functional not tested");
-        param = XC_LDAERFX;
-    } else if (name == "LDAERFC") {
-        MSG_WARN("Functional not tested");
-        param = XC_LDAERFC;
-    } else if (name == "LDAERFC_JT") {
-        MSG_WARN("Functional not tested");
-        param = XC_LDAERFC_JT;
-    } else if (name == "KTX") {
-        MSG_WARN("Functional not tested");
-        param = XC_KTX;
-    } else if (name == "TFK") {
-        MSG_WARN("Functional not tested");
-        param = XC_TFK;
-    } else if (name == "PW91X") {
-        MSG_WARN("Functional not tested");
-        param = XC_PW91X;
-    } else if (name == "PW91K") {
-        MSG_WARN("Functional not tested");
-        param = XC_PW91K;
-    } else if (name == "PW92C") {
-        MSG_WARN("Functional not tested");
-        param = XC_PW92C;
-    } else if (name == "MO5X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05X;
-    } else if (name == "MO5X2X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05X2X;
-    } else if (name == "MO6X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06X;
-    } else if (name == "MO6X2X") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06X2X;
-    } else if (name == "MO6LX") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06LX;
-    } else if (name == "MO6HFX") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06HFX;
-    } else if (name == "BRX") {
-        MSG_WARN("Functional not tested");
-        param = XC_BRX;
-    } else if (name == "MO5X2C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05X2C;
-    } else if (name == "MO5C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M05C;
-    } else if (name == "MO6C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06C;
-    } else if (name == "MO6HFC") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06HFC;
-    } else if (name == "MO6LC") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06LC;
-    } else if (name == "MO6X2C") {
-        MSG_WARN("Functional not tested");
-        param = XC_M06X2C;
-    } else if (name == "TPSSC") {
-        MSG_WARN("Functional not tested");
-        param = XC_TPSSC;
-    } else if (name == "TPSSX") {
-        MSG_WARN("Functional not tested");
-        param = XC_TPSSX;
-    } else if (name == "REVTPSSC") {
-        MSG_WARN("Functional not tested");
-        param = XC_REVTPSSC;
-    } else if (name == "REVTPSSX") {
-        MSG_WARN("Functional not tested");
-        param = XC_REVTPSSX;
-    } else {
-        MSG_ERROR("Invalid functional");
-    }
-    return param;
-}
-
-/** Computes the alpha and beta exchange-correlation potentials
- * from the xcfun output functions. For LDA's these are the second
- * and third output functions, respectively. For GGA's the potentials
- * must be computed through
- * \f$ v_{xc}^\sigma = \frac{\partial F_{xc}}{\partial \rho^\sigma(r)}
- *  - \nabla\cdot\frac{\partial F_{xc}}{\partial(\nabla\rho^\sigma)} \f$
+/** @brief functional setup
  *
- * XCFunctional output:
+ * @usage For each functional part in calculation a corresponding token is created in xcfun
+ *
+ * @param[in] name The name of the chosen functional
+ * @param[in] coef The amount of the chosen functional
+ */
+void XCFunctional::setFunctional(const string &name, double coef) {
+    xc_set(this->functional, name.c_str(), coef);
+}
+
+/** @brief User-friendly setup of the xcfun calculation
+ *
+ * Setup the XC functional for evaluation. In MRChem we use only a subset of the alternatives offered by xcfun. 
+ * More functinality might be enabled at a later stage.
+ *
+ * @param[in] order Order of the requested operator (1 for potential, 2 for hessian, ...)
+ * 
+ */
+void XCFunctional::evalSetup(const int order)
+{
+    unsigned int func_type = this->isGGA();  //!< only LDA and GGA supported for now
+    unsigned int dens_type = 1 + this->spin; //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
+    unsigned int mode_type = 1; //!< only derivatives (neither potential nor contracted)
+    unsigned int laplacian = 0; //!< no laplacian
+    unsigned int kinetic = 0;   //!< no kinetic energy density
+    unsigned int current = 0;   //!< no current density
+    if(this->isLDA()) { // Fall back to gamma-type derivatives if LDA (bad hack: no der are actually needed here!)
+        this->expDerivatives = 0;
+    }
+    xc_user_eval_setup(this->functional, order, func_type, dens_type, mode_type, laplacian, kinetic, current, this->expDerivatives);
+}
+    
+
+/** \breif Evaluates XC functional and derivatives
+ *
+ * Computes the alpha and beta exchange-correlation functionals and
+ * their derivatives.  The electronic density (total/alpha/beta) and their gradients are
+ * given as input. Results are then stored in the xcfun output
+ * functions. Higher order derivatives can be computed changing the parameter k. 
+ *
+ * XCFunctional output (with k=1 and explicit derivatives):
  *
  * LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho}\right) \f$
  *
@@ -172,13 +101,37 @@ int XCFunctional::getParamFromName(const string &name) {
  *  \frac{\partial F_{xc}}{\partial \rho_y^\beta},
  *  \frac{\partial F_{xc}}{\partial \rho_z^\beta}
  *  \right) \f$
- */
-
+ *
+ * XCFunctional output (with k=1 and gamma-type derivatives):
+ *
+ * GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho},
+ *  \frac{\partial F_{xc}}{\partial \gamma} \f$
+ *
+ * Spin GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho^\beta },
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \alpha}},
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \beta }},
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\beta  \beta }}
+ *  \right) \f$
+ *
+ * The points are passed with through a matrix of dimension nInp x nPts
+ * where nInp is the number of input data required for a single evaluation
+ * and nPts is the number of points requested. Similarly the output is provided 
+ * as a matrix nOut x nPts.
+ * 
+ * param[in] k the order of the requested derivatives
+ * param[in] input values 
+ * param[out] output values
+ *
+*/
 void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     if (inp.cols() != getInputLength()) MSG_ERROR("Invalid input");
 
     int nInp = getInputLength();
-    int nOut = getOutputLength(k);
+    int nOut = getOutputLength();
+    
     int nPts = inp.rows();
     out = MatrixXd::Zero(nPts, nOut);
 
@@ -188,7 +141,7 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     for (int i = 0; i < nPts; i++) {
         if (inp(i,0) > this->cutoff) {
             for (int j = 0; j < nInp; j++) iDat[j] = inp(i,j);
-            xc_eval(this->functional, k, iDat, oDat);
+            xc_eval(this->functional, iDat, oDat);
             for (int j = 0; j < nOut; j++) out(i,j) = oDat[j];
         } else {
             for (int j = 0; j < nOut; j++) out(i,j) = 0.0;
@@ -196,5 +149,195 @@ void XCFunctional::evaluate(int k, MatrixXd &inp, MatrixXd &out) const {
     }
     delete[] iDat;
     delete[] oDat;
+}
+
+/** @brief XC potential calculation
+ *
+ * Computes the XC potential for a non-spin separated functional and 
+ * gamma-type derivatives
+ *
+ * @param[in] df_drho functional derivative wrt rho
+ * @param[in] df_dgamma functional_derivative wrt gamma
+ * @param[in] grad_rho gradient of rho
+ * @param[in] derivative derivative operator to use
+ * @param[in] maxScale maximum scale for the derivative application
+ *
+ */
+FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
+                                                 FunctionTree<3> & df_dgamma,
+                                                 FunctionTreeVector<3> grad_rho,
+                                                 DerivativeOperator<3> *derivative,
+                                                 int maxScale) {
+    FunctionTreeVector<3> funcs;
+    funcs.push_back(1.0, &df_drho);
+
+    FunctionTree<3> *tmp = 0;
+    tmp = calcGradDotPotDensVec(df_dgamma, grad_rho, derivative, maxScale);
+    funcs.push_back(-2.0, tmp);
+
+    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
+    funcs.clear(false);
+    delete tmp;
+    return V;
+}
+
+/** @brief XC potential calculation
+ *
+ * Computes the XC potential for a spin separated functional and 
+ * gamma-type derivatives
+ *
+ * @param[in] df_drhoa functional derivative wrt rhoa
+ * @param[in] df_drhob functional derivative wrt rhob
+ * @param[in] df_dgaa  functional_derivative wrt gamma_aa
+ * @param[in] df_dgab  functional_derivative wrt gamma_ab
+ * @param[in] df_dgbb  functional_derivative wrt gamma_bb
+ * @param[in] grad_rhoa gradient of rho_a
+ * @param[in] grad_rhob gradient of rho_b
+ * @param[in] derivative derivative operator to use
+ * @param[in] maxScale maximum scale for the derivative application
+ *
+ */
+FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
+                                                 FunctionTree<3> & df_dgaa,
+                                                 FunctionTree<3> & df_dgab,
+                                                 FunctionTreeVector<3> grad_rhoa,
+                                                 FunctionTreeVector<3> grad_rhob,
+                                                 DerivativeOperator<3> *derivative,
+                                                 int maxScale) {
+    FunctionTreeVector<3> funcs;
+    funcs.push_back(1.0, &df_drhoa);
+
+    FunctionTree<3> *tmp1 = 0;
+    tmp1 = calcGradDotPotDensVec(df_dgaa, grad_rhoa, derivative, maxScale);
+    funcs.push_back(-2.0, tmp1);
+
+    FunctionTree<3> *tmp2 = 0;
+    tmp2 = calcGradDotPotDensVec(df_dgab, grad_rhob, derivative, maxScale);
+    funcs.push_back(-1.0, tmp2);
+
+    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
+    funcs.clear(false);
+    delete tmp1;
+    delete tmp2;
+    return V;
+}
+
+/** @brief XC potential calculation
+ *
+ * Computes the XC potential for explicit derivatives.
+ *
+ * @param[in] df_drho functional derivative wrt rho
+ * @param[in] df_dgr  functional_derivative wrt grad_rho
+ * @param[in] derivative derivative operator to use
+ * @param[in] maxScale maximum scale for the derivative application
+ *
+ */
+FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
+                                                 FunctionTreeVector<3> & df_dgr,
+                                                 DerivativeOperator<3> *derivative,
+                                                 int maxScale) {
+
+    FunctionTreeVector<3> funcs;
+    funcs.push_back(1.0, &df_drho);
+
+    FunctionTree<3> * tmp = calcDivergence(df_dgr, derivative, maxScale);
+    funcs.push_back(-1.0, tmp);
+
+    FunctionTree<3> * V = addPotentialContributions(funcs, maxScale);
+    funcs.clear(false);
+    delete tmp;
+    return V;
+}
+
+/** @brief adds all potential contributions together
+ * 
+ * @param[in] contributions vctor with all contributions
+ * @param[in] maxScale maximum scale to perform the addition
+ *
+ * NOTE: this should possibly be moved to the new mrcpp module
+ * as it only involves mwtrees
+ */
+FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> & contributions,
+                                                         int maxScale) {
+    FunctionTree<3> *V = new FunctionTree<3>(*MRA);
+    GridGenerator<3> G(maxScale);
+    MWAdder<3> add(-1.0, maxScale);
+    G(*V, contributions);
+    add(*V, contributions, 0);
+    return V;
+}
+
+/** @brief computes the divergence of a vector field
+ * 
+ * @param[in] inp the vector field expressed as function trees
+ * @param[in] derivative the derivative operator
+ * @param[in] maxScale the maximum scale to which the derivative is performed
+ *
+ * NOTE: this should possibly be moved to the new mrcpp module
+ * as it only involves mwtrees
+ */
+FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp,
+                                             DerivativeOperator<3> *derivative,
+                                             int maxScale) {
+    if (derivative == 0) MSG_ERROR("No derivative operator");
+    MWAdder<3> add(-1.0,  maxScale);
+    MWDerivative<3> apply(maxScale);
+    GridGenerator<3> grid(maxScale);
+
+    FunctionTreeVector<3> tmp_vec;
+    for (int d = 0; d < 3; d++) {
+        FunctionTree<3> *out_d = new FunctionTree<3>(*MRA);
+        apply(*out_d, *derivative, *inp[d], d);
+        tmp_vec.push_back(out_d);
+    }
+    FunctionTree<3> *out = new FunctionTree<3>(*MRA);
+    grid(*out, tmp_vec);
+    add(*out, tmp_vec, 0); // Addition on union grid
+    tmp_vec.clear(true);
+    return out;
+}
+
+/** brief divergenge of a vector field times a function
+ *
+ * @param[in]V Function (derivative of the functional wrt gamma)
+ * @param[in]rho vector field (density gradient)
+ * @param[in] derivative the derivative operator
+ * @param[in] maxScale the maximum scale to which the derivative is performed
+ *
+ * NOTE: this should possibly be moved to the new mrcpp module
+ * as it only involves mwtrees
+ */
+FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
+                                                    FunctionTreeVector<3> &rho,
+                                                    DerivativeOperator<3> *derivative,
+                                                    int maxScale) {
+    MWMultiplier<3> mult(-1.0, maxScale);
+    GridGenerator<3> grid(maxScale);
+
+    FunctionTreeVector<3> vec;
+    for (int d = 0; d < 3; d++) {
+        if (rho[d] == 0) MSG_ERROR("Invalid density");
+
+        Timer timer;
+        FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
+        grid(*Vrho, *rho[d]);
+        mult(*Vrho, 1.0, V, *rho[d], 0);
+        vec.push_back(Vrho);
+
+        timer.stop();
+        double t = timer.getWallTime();
+        int n = Vrho->getNNodes();
+        TelePrompter::printTree(2, "Multiply", n, t);
+    }
+
+    Timer timer;
+    FunctionTree<3> *result = calcDivergence(vec, derivative, maxScale);
+    vec.clear(true);
+
+    timer.stop();
+    double t = timer.getWallTime();
+    int n = result->getNNodes();
+    TelePrompter::printTree(2, "Gradient", n, t);
+    return result;
 }
 

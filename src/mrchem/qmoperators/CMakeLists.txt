@@ -18,7 +18,6 @@ add_library(qmoperators STATIC
     QMOperatorExp.cpp
     SpinOperator.cpp
     XCFunctional.cpp
-    XCPotential.cpp
     XCOperator.cpp
 )
 
