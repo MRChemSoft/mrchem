@@ -8,6 +8,7 @@ add_dependencies(mrchem
     external-modules
     )
 add_subdirectory(chemistry)
+add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 target_include_directories(mrchem PRIVATE
