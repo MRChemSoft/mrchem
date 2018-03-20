@@ -24,10 +24,10 @@ public:
         double fc_term = hfc.fc_term(0,0);
         double spin_term = 1.0/hfc.spin_term(0,0);
 
-        double beta_e = 0.5;        // Bohr magneton
-        double beta_N = 0.0002723;  // nuclear magneton
-        double g_e = 2.00231931;    // free-electron g-value
-        double g_N = 0.0; //hfc.getNucleus().getElement().getGValue();
+        double beta_e = PHYSCONST::beta_e;  // Bohr magneton
+        double beta_N = PHYSCONST::beta_N;  // Nuclear magneton
+        double g_e    = PHYSCONST::g_e;     // Free-electron g-value
+        double g_N    = 0.0; //hfc.getNucleus().getElement().getGValue();
 
         double hfcc_g = 0.0;
         double hfcc_hz = 0.0;

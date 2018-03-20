@@ -1,6 +1,7 @@
 #include "MRCPP/Printer"
 
 #include "HydrogenFunction.h"
+#include "mrchem.h"
 
 namespace mrchem {
 
@@ -89,7 +90,7 @@ double AngularFunction::calcConstant() const {
     } else if (L == 3 and M == 5) { c = std::sqrt(105.0/4.0);
     } else if (L == 3 and M == 6) { c = std::sqrt(105.0/4.0);
     } else { NOT_IMPLEMENTED_ABORT; }
-    return c/std::sqrt(4.0*mrcpp::pi);
+    return c/(2.0*MATHCONST::sqrt_pi);
 }
 
 double AngularFunction::evalfPoly(const double *q) const {

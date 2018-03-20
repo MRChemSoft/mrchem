@@ -26,9 +26,9 @@ public:
         double isoPMau = para.trace()/3.0;
         double isoTMau = isoDMau + isoPMau;
 
-        double isoDMsi = isoDMau*78.9451185;
-        double isoPMsi = isoPMau*78.9451185;
-        double isoTMsi = isoTMau*78.9451185;
+        double isoDMsi = isoDMau * PHYSCONST::JT_m2; // SI units (J/T^2 10^{-30})
+        double isoPMsi = isoPMau * PHYSCONST::JT_m2; // SI units (J/T^2 10^{-30})
+        double isoTMsi = isoTMau * PHYSCONST::JT_m2; // SI units (J/T^2 10^{-30})
 
         int oldPrec = mrcpp::Printer::setPrecision(10);
         o<<"                                                            "<<std::endl;

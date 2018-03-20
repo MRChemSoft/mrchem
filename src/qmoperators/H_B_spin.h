@@ -8,7 +8,7 @@ namespace mrchem {
 class H_B_spin final : public RankOneTensorOperator<3> {
 public:
     H_B_spin() {
-        static double g_e = 2.00231930436182;
+        const double g_e = PHYSCONST::g_e;
 
         RankOneTensorOperator<3> &h = (*this);
         h[0] = (-g_e/2.0)*s[0];

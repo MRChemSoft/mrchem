@@ -27,9 +27,9 @@ public:
 
     friend std::ostream& operator<<(std::ostream &o, const SCFEnergy &en) {
         double E_au = en.E_nuc + en.E_el;
-        double E_kJ = E_au   * 2625.49962;
-        double E_kcal = E_au * 627.509469;
-        double E_eV = E_au   * 27.21138505;
+        double E_kJ = E_au   * PHYSCONST::kJ;
+        double E_kcal = E_au * PHYSCONST::kcal;
+        double E_eV = E_au   * PHYSCONST::eV;
         int oldPrec = mrcpp::Printer::setPrecision(15);
         o << "                                                            " << std::endl;
         o << "============================================================" << std::endl;

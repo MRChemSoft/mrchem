@@ -17,7 +17,7 @@ QMDelta::QMDelta(const double *o, double expo)
     }
 
     // Delta function should integrate to one
-    double coef = pow(expo/mrcpp::pi, 3.0/2.0);
+    double coef = pow(expo/MATHCONST::pi, 3.0/2.0);
 
     this->func.setCoef(coef);
     this->func.setExp(expo);

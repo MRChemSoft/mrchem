@@ -21,7 +21,7 @@ public:
 
         int oldPrec = mrcpp::Printer::setPrecision(10);
         double au = mu.norm();
-        double debye = au/0.393430307;
+        double debye = au * PHYSCONST::Debye;
         o<<"                                                            "<<std::endl;
         o<<"============================================================"<<std::endl;
         o<<"                         Dipole moment                      "<<std::endl;
