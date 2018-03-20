@@ -17,7 +17,7 @@ protected:
     void clear();
 };
 
-class PositionOperator final : public RankOneTensorOperator<3> {
+class PositionOperator : public RankOneTensorOperator<3> {
 public:
     PositionOperator(const double *o = 0)
             : r_x(0, o),
@@ -28,7 +28,7 @@ public:
         r[1] = r_y;
         r[2] = r_z;
     }
-    ~PositionOperator() { }
+    virtual ~PositionOperator() { }
 
 protected:
     QMPosition r_x;
