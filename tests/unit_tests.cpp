@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
 
 void initialize_mra() {
     // Defining resolution levels 2^{-n}
-    int min_scale = -4;
+    int min_scale = -5;
     int max_depth = 25;
 
     // Constructing world box
