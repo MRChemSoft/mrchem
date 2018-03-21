@@ -15,6 +15,7 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.cpp)
         ${CMAKE_SOURCE_DIR}/src/analyticfunctions
         ${CMAKE_SOURCE_DIR}/src/qmfunctions
         ${CMAKE_SOURCE_DIR}/src/qmoperators
+        ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
         )
     target_link_libraries(mrchem-pilot.x
         mrchem

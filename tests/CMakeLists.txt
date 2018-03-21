@@ -16,6 +16,7 @@ target_include_directories(mrchem-tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/qmfunctions
     ${CMAKE_SOURCE_DIR}/src/qmoperators
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     )
 
 target_link_libraries(mrchem-tests
