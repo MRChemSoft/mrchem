@@ -8,6 +8,9 @@
 
 namespace mrchem {
 
+class Orbital;
+class Density;
+
 namespace omp {
 extern int n_threads;
 } //namespace omp
@@ -32,20 +35,15 @@ extern MPI_Comm comm_sh_group;
 
 void initialize(int argc, char **argv);
 void finalize();
-} //namespace mpi
 
-class Orbital;
-namespace orbital {
 void send_orbital(Orbital &orb, int dst, int tag);
 void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request);
 void recv_orbital(Orbital &orb, int src, int tag);
-} //namespace orbital
 
-class Density;
-namespace density {
 void send_density(Density &rho, int dst, int tag);
 void isend_density(Density &rho, int dst, int tag, MPI_Request& request);
 void recv_density(Density &rho, int src, int tag);
-} //namespace density
+
+} //namespace mpi
 
 } //namespace mrchem
