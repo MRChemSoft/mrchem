@@ -20,6 +20,7 @@ target_include_directories(mrchem PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmfunctions
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     )
 target_link_libraries(mrchem
     mrcpp
@@ -42,6 +43,7 @@ target_include_directories(mrchem.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmfunctions
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     )
 target_link_libraries(mrchem.x
     mrchem

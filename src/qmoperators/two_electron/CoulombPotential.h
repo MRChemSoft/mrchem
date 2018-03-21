@@ -1,27 +1,25 @@
 #pragma once
 
-#include "CoulombOperator.h"
+#include "QMPotential.h"
+#include "Density.h"
 
-class CoulombPotential : public CoulombOperator {
+namespace mrchem {
+
+class CoulombPotential final : public QMPotential {
 public:
-    CoulombPotential(PoissonOperator &P, OrbitalVector &phi)
-        : CoulombOperator(P, phi) { }
-    virtual ~CoulombPotential() { }
+    CoulombPotential(mrcpp::PoissonOperator &P, OrbitalVector &Phi);
+    ~CoulombPotential() { }
 
-    virtual void setup(double prec) {
-        setApplyPrec(prec);
-        calcDensity(this->density, *this->orbitals);
-        calcPotential(*this, this->density);
-    }
-    virtual void clear() {
-        clearReal(true);
-        clearImag(true);
-        this->density.clear();
-        clearApplyPrec();
-    }
+    void setup(double prec);
+    void clear();
 
 protected:
-    void calcDensity(Density &rho, OrbitalVector &phi);
-    void calcPotential(QMPotential &V, Density &rho);
+    Density density;                    // Density that defines the potential
+    OrbitalVector *orbitals;            // Pointer to external object
+    mrcpp::PoissonOperator *poisson;    // Pointer to external object
+
+    void setupDensity(double prec);
+    void setupPotential(double prec);
 };
 
+} //namespace mrchem

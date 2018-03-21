@@ -1,37 +1,66 @@
+#include "MRCPP/MWOperators"
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
 #include "CoulombPotential.h"
-#include "DensityProjector.h"
-#include "PoissonOperator.h"
-#include "MWConvolution.h"
 
-using namespace std;
+using mrcpp::PoissonOperator;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
-void CoulombPotential::calcDensity(Density &rho, OrbitalVector &phi) {
+namespace mrchem {
+
+CoulombPotential::CoulombPotential(PoissonOperator &P, OrbitalVector &Phi)
+        : QMPotential(1),
+          density(false, true),
+          orbitals(&Phi),
+          poisson(&P) {
+}
+
+void CoulombPotential::setup(double prec) {
+    if (this->isSetup(prec)) return;
+    setApplyPrec(prec);
+
+    setupDensity(prec);
+    setupPotential(prec);
+}
+
+void CoulombPotential::clear() {
+    this->free();           // delete FunctionTree pointers
+    this->density.free();   // delete FunctionTree pointers
+    this->clearApplyPrec(); // apply_prec = -1
+}
+
+void CoulombPotential::setupDensity(double prec) {
     if (this->orbitals == 0) MSG_ERROR("Orbitals not initialized");
 
-    DensityProjector project(this->apply_prec, this->max_scale);
+    Density &rho = this->density;
+    OrbitalVector &Phi = *this->orbitals;
 
     Timer timer;
-    project(rho, phi);
+    density::calc_density(rho, Phi, prec);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes();
-    TelePrompter::printTree(0, "Coulomb density", n, t);
+    Printer::printTree(0, "Coulomb density", n, t);
 }
 
-void CoulombPotential::calcPotential(QMPotential &V, Density &rho) {
-    if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
-
+void CoulombPotential::setupPotential(double prec) {
     if (this->poisson == 0) MSG_ERROR("Poisson operator not initialized");
-    PoissonOperator &P = *this->poisson;
+    if (this->hasReal()) MSG_ERROR("Potential not properly cleared");
+    if (this->hasImag()) MSG_ERROR("Potential not properly cleared");
 
-    MWConvolution<3> apply(this->apply_prec, this->max_scale);
+    PoissonOperator &P = *this->poisson;
+    QMPotential &V = *this;
+    Density &rho = this->density;
 
     Timer timer;
-    V.allocReal();
-    apply(V.real(), P, rho.total());
+    V.alloc(NUMBER::Real);
+    mrcpp::apply(prec, V.real(), P, rho.total());
     timer.stop();
     int n = V.getNNodes();
     double t = timer.getWallTime();
-    TelePrompter::printTree(0, "Coulomb potential", n, t);
+    Printer::printTree(0, "Coulomb potential", n, t);
 }
+
+} //namespace mrchem

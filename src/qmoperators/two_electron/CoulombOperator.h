@@ -1,25 +1,23 @@
 #pragma once
 
-#include "QMPotential.h"
-#include "Density.h"
+#include "RankZeroTensorOperator.h"
+#include "CoulombPotential.h"
 
-class CoulombOperator : public QMPotential {
+namespace mrchem {
+
+class CoulombOperator final : public RankZeroTensorOperator {
 public:
-    CoulombOperator(PoissonOperator &P, OrbitalVector &phi)
-        : poisson(&P),
-          orbitals(&phi),
-#ifdef HAVE_MPI
-	density(false, true){//Use shared memory.
-	//          density(false, false){//do not Use shared memory.
-#else
-          density(false) {
-#endif
+    CoulombOperator(mrcpp::PoissonOperator &P, OrbitalVector &Phi)
+            : potential(0) {
+        this->potential = new CoulombPotential(P, Phi);
+
+        RankZeroTensorOperator &J = (*this);
+        J = *potential;
     }
-    virtual ~CoulombOperator() { }
+    ~CoulombOperator() { delete this->potential; }
 
 protected:
-    PoissonOperator *poisson;   // Pointer to external object
-    OrbitalVector *orbitals;    // Pointer to external object
-    Density density;            // Density that defines the potential
+    QMPotential *potential;
 };
 
+} //namespace mrchem
