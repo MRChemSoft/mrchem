@@ -17,6 +17,7 @@ public:
     ~ExchangeOperator() { delete this->exchange; }
 
     void setupInternal(double prec) { this->exchange->setupInternal(prec); }
+    void rotate(const ComplexMatrix &U) { this->exchange->rotate(U); }
 
 protected:
     ExchangePotential *exchange;
