@@ -21,6 +21,8 @@ public:
     void setup(double prec);
     void clear();
 
+    void setupInternal(double prec);
+
 protected:
     bool screen;                ///< Apply screening in exchange evaluation
     DoubleVector tot_norms;     ///< Total norms for use in screening
@@ -37,13 +39,12 @@ protected:
     using QMOperator::apply;
     using QMOperator::dagger;
 
-    int testPreComputed(Orbital phi_p);
+    int testPreComputed(Orbital phi_p) const;
     double getScaledPrecision(int i, int j) const;
     double getSpinFactor(Orbital phi_i, Orbital phi_j) const;
 
     Orbital calcExchange(Orbital phi_p);
 
-    void calcInternalExchange();
     void calcInternal(int i);
     void calcInternal(int i, int j);
     void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);

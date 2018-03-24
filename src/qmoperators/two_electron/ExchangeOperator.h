@@ -16,6 +16,8 @@ public:
     }
     ~ExchangeOperator() { delete this->exchange; }
 
+    void setupInternal(double prec) { this->exchange->setupInternal(prec); }
+
 protected:
     ExchangePotential *exchange;
 };

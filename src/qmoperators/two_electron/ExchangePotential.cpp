@@ -31,12 +31,11 @@ ExchangePotential::ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &P
  *
  * @param[in] prec reqested precision
  *
- * This will precompute the internal exchange between the orbtials defining
- * the operator.
+ * This will NOT precompute the internal exchange between the orbtials defining
+ * the operator, which is done explicitly using setupInternal().
  */
 void ExchangePotential::setup(double prec) {
     setApplyPrec(prec);
-    calcInternalExchange();
 }
 
 /** @brief Clears the Exchange Operator
@@ -213,7 +212,8 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
  *
  * The exchange potential is (pre)computed among the orbitals that define the operator
  */
-void ExchangePotential::calcInternalExchange() {
+void ExchangePotential::setupInternal(double prec) {
+    setApplyPrec(prec);
     if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
 
     if (this->exchange.size() != 0) MSG_ERROR("Exchange not properly cleared");
@@ -612,17 +612,18 @@ void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_
  * If the given contribution has been precomputed, it is simply copied,
  * without additional recalculation.
  */
-int ExchangePotential::testPreComputed(Orbital phi_p) {
-    OrbitalVector &Phi = *this->orbitals;
-    OrbitalVector &Ex = this->exchange;
-    if (Ex.size() != Phi.size()) MSG_FATAL("Size mismatch");
+int ExchangePotential::testPreComputed(Orbital phi_p) const {
+    const OrbitalVector &Phi = *this->orbitals;
+    const OrbitalVector &Ex = this->exchange;
 
     int out = -1;
-    for (int i = 0; i < Phi.size(); i++) {
-        if (&Phi[i].real() == &phi_p.real() and
-            &Phi[i].imag() == &phi_p.imag()) {
-            out = i;
-            break;
+    if (Ex.size() == Phi.size()) {
+        for (int i = 0; i < Phi.size(); i++) {
+            if (&Phi[i].real() == &phi_p.real() and
+                &Phi[i].imag() == &phi_p.imag()) {
+                out = i;
+                break;
+            }
         }
     }
     return out;
