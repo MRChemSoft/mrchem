@@ -74,6 +74,10 @@ void ExchangePotential::rotate(const ComplexMatrix &U) {
  * particular exchange contribution has been precomputed.
  */
 Orbital ExchangePotential::apply(Orbital inp) {
+    if (this->apply_prec < 0.0) {
+        MSG_ERROR("Uninitialized operator");
+        return inp.paramCopy();
+    }
     int i = testPreComputed(inp);
     if (i < 0) {
         println(1, "On-the-fly exchange");
