@@ -34,6 +34,14 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator+=(QMOperator &O) {
     return *this;
 }
 
+RankZeroTensorOperator& RankZeroTensorOperator::operator-=(QMOperator &O) {
+    this->coef_exp.push_back(-1.0);
+    QMOperatorVector tmp;
+    tmp.push_back(&O);
+    this->oper_exp.push_back(tmp);
+    return *this;
+}
+
 RankZeroTensorOperator& RankZeroTensorOperator::operator=(const RankZeroTensorOperator &O) {
     if (this != &O) {
         this->coef_exp = O.coef_exp;
@@ -46,6 +54,18 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator+=(const RankZeroTensorO
     if (this != &O) {
         for (int i = 0; i < O.coef_exp.size(); i++) {
             this->coef_exp.push_back(O.coef_exp[i]);
+        }
+        for (int i = 0; i < O.oper_exp.size(); i++) {
+            this->oper_exp.push_back(O.oper_exp[i]);
+        }
+    }
+    return *this;
+}
+
+RankZeroTensorOperator& RankZeroTensorOperator::operator-=(const RankZeroTensorOperator &O) {
+    if (this != &O) {
+        for (int i = 0; i < O.coef_exp.size(); i++) {
+            this->coef_exp.push_back(-O.coef_exp[i]);
         }
         for (int i = 0; i < O.oper_exp.size(); i++) {
             this->oper_exp.push_back(O.oper_exp[i]);

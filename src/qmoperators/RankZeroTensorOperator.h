@@ -34,8 +34,10 @@ public:
 
     RankZeroTensorOperator& operator=(QMOperator &O);
     RankZeroTensorOperator& operator+=(QMOperator &O);
+    RankZeroTensorOperator& operator-=(QMOperator &O);
     RankZeroTensorOperator& operator=(const RankZeroTensorOperator &O);
     RankZeroTensorOperator& operator+=(const RankZeroTensorOperator &O);
+    RankZeroTensorOperator& operator-=(const RankZeroTensorOperator &O);
 
     friend RankZeroTensorOperator operator*(ComplexDouble a, RankZeroTensorOperator A);
     friend RankZeroTensorOperator operator*(RankZeroTensorOperator A, RankZeroTensorOperator B);
