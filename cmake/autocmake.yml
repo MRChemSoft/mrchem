@@ -31,7 +31,6 @@ modules:
     - 'custom/python.cmake'
     - 'custom/git.cmake'
     - 'custom/initial_guess.cmake'
-    - 'custom/doxygen.cmake'
     - 'custom/mw_filters.cmake'
     - 'custom/main.cmake'
     - 'custom/feature_summary.cmake'
