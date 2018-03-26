@@ -8,7 +8,7 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-QMPosition::QMPosition(int d, const double *o)
+PositionPotential::PositionPotential(int d, const double *o)
         : QMPotential(1) {
     double orig = 0.0;
     if (o != 0) orig = o[d];
@@ -20,7 +20,7 @@ QMPosition::QMPosition(int d, const double *o)
     this->func.set(f);
 }
 
-void QMPosition::setup(double prec) {
+void PositionPotential::setup(double prec) {
     if (this->isSetup(prec)) return;
     this->setApplyPrec(prec);
 
@@ -34,10 +34,10 @@ void QMPosition::setup(double prec) {
 
     int n = this->getNNodes();
     double t = timer.getWallTime();
-    Printer::printTree(1, "QMPosition", n, t);
+    Printer::printTree(1, "PositionPotential", n, t);
 }
 
-void QMPosition::clear() {
+void PositionPotential::clear() {
     this->free();           // delete FunctionTree pointers
     this->clearApplyPrec(); // apply_prec = -1
 }

@@ -5,10 +5,10 @@
 
 namespace mrchem {
 
-class QMPosition final : public QMPotential {
+class PositionPotential final : public QMPotential {
 public:
-    QMPosition(int d, const double *o);
-    ~QMPosition() { }
+    PositionPotential(int d, const double *o);
+    ~PositionPotential() { }
 
 protected:
     mrcpp::AnalyticFunction<3> func;
@@ -31,9 +31,9 @@ public:
     virtual ~PositionOperator() { }
 
 protected:
-    QMPosition r_x;
-    QMPosition r_y;
-    QMPosition r_z;
+    PositionPotential r_x;
+    PositionPotential r_y;
+    PositionPotential r_z;
 };
 
 } //namespace mrchem
