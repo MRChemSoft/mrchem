@@ -77,6 +77,10 @@ void finalize() {
  * Orbital related MPI functions *
  *********************************/
 
+bool my_orb(const Orbital &orb) {
+    return (orb.rankID() < 0 or orb.rankID() == mpi::orb_rank) ? true : false;
+}
+
 //send an orbital with MPI
 void send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI

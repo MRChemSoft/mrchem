@@ -75,3 +75,5 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec = -1.0);
 
 
 } //namespace mrchem
+
+std::ostream& operator<<(std::ostream &o, const mrchem::OrbitalVector &vec);

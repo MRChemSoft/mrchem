@@ -7,12 +7,12 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 Orbital::Orbital()
         : QMFunction(0, 0),
-          meta({0, 0, 0, 0, false, 0.0}) {
+          meta({-1, 0, 0, 0, 0, false, 0.0}) {
 }
 
-Orbital::Orbital(int spin, int occ)
+Orbital::Orbital(int spin, int occ, int rank)
         : QMFunction(0, 0),
-          meta({spin, occ, 0, 0, false, 0.0}) {
+          meta({rank, spin, occ, 0, 0, false, 0.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
         if (this->spin() == SPIN::Paired) this->meta.occ = 2;
@@ -36,7 +36,7 @@ Orbital& Orbital::operator=(const Orbital &orb) {
 }
 
 Orbital Orbital::paramCopy() const {
-    return Orbital(this->spin(), this->occ());
+    return Orbital(this->spin(), this->occ(), this->rankID());
 }
 
 Orbital Orbital::deepCopy() {
@@ -168,10 +168,14 @@ char Orbital::printSpin() const {
 }
 
 std::ostream& Orbital::print(std::ostream &o) const {
+    int oldprec = mrcpp::Printer::setPrecision(12);
+    o << std::setw(6)  << this->rankID();
     o << std::setw(25) << this->norm();
-    o << std::setw(3) << this->occ();
-    o << std::setw(4) << this->printSpin();
-    o << std::setw(24) << this->error() << std::endl;
+    o << std::setw(5)  << this->printSpin();
+    o << std::setw(4)  << this->occ();
+    mrcpp::Printer::setPrecision(5);
+    o << std::setw(15) << this->error();
+    mrcpp::Printer::setPrecision(oldprec);
     return o;
 }
 

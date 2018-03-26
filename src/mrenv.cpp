@@ -28,7 +28,12 @@ void initialize(int argc, char **argv) {
 
     // Initialize printing
     int printlevel = Input.get<int>("printlevel");
-    Printer::init(printlevel, mpi::orb_rank, mpi::orb_size);
+    bool teletype = Input.get<bool>("teletype");
+    if (teletype) {
+        Printer::init(printlevel, mpi::orb_rank, mpi::orb_size, "mrchem");
+    } else {
+        Printer::init(printlevel, mpi::orb_rank, mpi::orb_size);
+    }
     Printer::setPrecision(15);
 
     // Initialize world box

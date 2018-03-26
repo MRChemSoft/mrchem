@@ -6,6 +6,7 @@ namespace mrchem {
 
 /* POD struct for orbital meta data. Used for simple MPI communication. */
 struct OrbitalMeta {
+    int rank_id;
     int spin;
     int occ;
     int nChunksReal;
@@ -17,7 +18,7 @@ struct OrbitalMeta {
 class Orbital : public QMFunction {
 public:
     Orbital();
-    Orbital(int spin, int occ = -1);
+    Orbital(int spin, int occ = -1, int rank = -1);
     ~Orbital() { }
 
     Orbital(const Orbital &orb);
@@ -33,6 +34,7 @@ public:
     OrbitalMeta &getMetaData();
     int occ() const { return this->meta.occ; }
     int spin() const { return this->meta.spin; }
+    int rankID() const { return this->meta.rank_id; }
     bool conjugate() const { return this->meta.conjugate; }
     double error() const { return this->meta.error; }
     double norm() const;

@@ -598,28 +598,6 @@ DoubleVector get_norms(const OrbitalVector &vec) {
     return norms;
 }
 
-/** Collective printing of all orbitals in the vector */
-std::ostream& operator<<(std::ostream &o, const OrbitalVector &vec) {
-    int oldPrec = mrcpp::Printer::setPrecision(15);
-    mrcpp::Printer::setScientific();
-    o << "*OrbitalVector: ";
-    o << std::setw(4) << vec.size()          << " orbitals  ";
-    o << std::setw(4) << size_occupied(vec)  << " occupied  ";
-    o << std::setw(4) << get_electron_number(vec) << " electrons " << std::endl;
-    o << "------------------------------";
-    o << "------------------------------\n";
-    o << "   n    sqNorm               Occ Spin  Error\n";
-    o << "------------------------------";
-    o << "------------------------------\n";
-    for (int i = 0; i < vec.size(); i++) {
-        o << std::setw(4) << i << vec[i];
-    }
-    o << "------------------------------";
-    o << "------------------------------\n";
-    mrcpp::Printer::setPrecision(oldPrec);
-    return o;
-}
-
 } //namespace orbital
 
 
@@ -845,3 +823,20 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
 } //namespace density
 
 } //namespace mrchem
+
+/** Collective printing of all orbitals in the vector */
+std::ostream& operator<<(std::ostream &o, const mrchem::OrbitalVector &vec) {
+    mrcpp::Printer::setScientific();
+    o << "*OrbitalVector: ";
+    o << std::setw(4) << vec.size()          << " orbitals  ";
+    o << std::setw(4) << mrchem::orbital::size_occupied(vec)  << " occupied  ";
+    o << std::setw(4) << mrchem::orbital::get_electron_number(vec) << " electrons " << std::endl;
+    o << "------------------------------------------------------------\n";
+    o << "   n  RankID           Norm          Spin Occ      Error    \n";
+    o << "------------------------------------------------------------\n";
+    for (int i = 0; i < vec.size(); i++) {
+        o << std::setw(4) << i << vec[i] << std::endl;
+    }
+    o << "------------------------------------------------------------\n";
+    return o;
+}

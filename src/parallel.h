@@ -36,6 +36,8 @@ extern MPI_Comm comm_sh_group;
 void initialize(int argc, char **argv);
 void finalize();
 
+bool my_orb(const Orbital &orb);
+
 void send_orbital(Orbital &orb, int dst, int tag);
 void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request);
 void recv_orbital(Orbital &orb, int src, int tag);
