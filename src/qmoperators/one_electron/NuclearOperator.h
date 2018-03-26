@@ -6,10 +6,10 @@
 
 namespace mrchem {
 
-class QMNucPot final : public QMPotential {
+class NuclearPotential final : public QMPotential {
 public:
-    QMNucPot(const Nuclei &nucs, double prec);
-    ~QMNucPot() { }
+    NuclearPotential(const Nuclei &nucs, double prec);
+    ~NuclearPotential() { }
 
     void setup(double prec);
     void clear();
@@ -21,20 +21,20 @@ protected:
     NuclearFunction func;
 };
 
-class NuclearPotential final : public RankZeroTensorOperator {
+class NuclearOperator final : public RankZeroTensorOperator {
 public:
-    NuclearPotential(const Nuclei &nucs, double prec)
+    NuclearOperator(const Nuclei &nucs, double prec)
             : r_m1(nucs, prec) {
         RankZeroTensorOperator &v = (*this);
         v = r_m1;
     }
-    ~NuclearPotential() { }
+    ~NuclearOperator() { }
 
     Nuclei &getNuclei() { return this->r_m1.getNuclei(); }
     const Nuclei &getNuclei() const { return this->r_m1.getNuclei(); }
 
 protected:
-    QMNucPot r_m1;
+    NuclearPotential r_m1;
 };
 
 } //namespace mrchem

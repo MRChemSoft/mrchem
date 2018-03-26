@@ -1,6 +1,8 @@
 #pragma once
 
-#include "NuclearPotential.h"
+#include "QMPotential.h"
+#include "RankZeroTensorOperator.h"
+#include "NuclearFunction.h"
 
 namespace mrchem {
 

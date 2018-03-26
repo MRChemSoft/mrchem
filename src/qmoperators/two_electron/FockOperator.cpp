@@ -4,7 +4,7 @@
 
 #include "FockOperator.h"
 #include "KineticOperator.h"
-#include "NuclearPotential.h"
+#include "NuclearOperator.h"
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 #include "SCFEnergy.h"
@@ -16,7 +16,7 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 FockOperator::FockOperator(KineticOperator  *t,
-                           NuclearPotential *v,
+                           NuclearOperator  *v,
                            CoulombOperator  *j,
                            ExchangeOperator *k,
                            XCOperator       *xc)

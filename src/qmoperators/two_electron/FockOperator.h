@@ -6,7 +6,7 @@ namespace mrchem {
 
 class SCFEnergy;
 class KineticOperator;
-class NuclearPotential;
+class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
 class XCOperator;
@@ -14,7 +14,7 @@ class XCOperator;
 class FockOperator final : public RankZeroTensorOperator {
 public:
     FockOperator(KineticOperator  *t = 0,
-                 NuclearPotential *v = 0,
+                 NuclearOperator *v = 0,
                  CoulombOperator  *j = 0,
                  ExchangeOperator *k = 0,
                  XCOperator      *xc = 0);
@@ -24,7 +24,7 @@ public:
     RankZeroTensorOperator& potential() { return this->V; }
 
     KineticOperator  *getKineticOperator()  { return this->kin;  }
-    NuclearPotential *getNuclearPotential() { return this->nuc;  }
+    NuclearOperator  *getNuclearOperator()  { return this->nuc;  }
     CoulombOperator  *getCoulombOperator()  { return this->coul; }
     ExchangeOperator *getExchangeOperator() { return this->ex;   }
     XCOperator       *getXCOperator()       { return this->xc;   }
@@ -41,7 +41,7 @@ protected:
     RankZeroTensorOperator V;   ///< Total potential energy operator
 
     KineticOperator  *kin;
-    NuclearPotential *nuc;
+    NuclearOperator *nuc;
     CoulombOperator  *coul;
     ExchangeOperator *ex;
     XCOperator       *xc;

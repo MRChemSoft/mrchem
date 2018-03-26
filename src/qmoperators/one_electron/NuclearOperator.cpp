@@ -1,14 +1,14 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "NuclearPotential.h"
+#include "NuclearOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
-QMNucPot::QMNucPot(const Nuclei &nucs, double prec)
+NuclearPotential::NuclearPotential(const Nuclei &nucs, double prec)
         : QMPotential(1) {
     int oldprec = Printer::setPrecision(5);
     Printer::printHeader(0, "Setting up nuclear potential");
@@ -36,7 +36,7 @@ QMNucPot::QMNucPot(const Nuclei &nucs, double prec)
     Printer::setPrecision(oldprec);
 }
 
-void QMNucPot::setup(double prec) {
+void NuclearPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
 
@@ -54,7 +54,7 @@ void QMNucPot::setup(double prec) {
     Printer::printTree(0, "Nuclear potential", n, t);
 }
 
-void QMNucPot::clear() {
+void NuclearPotential::clear() {
     free();           // delete FunctionTree pointers
     clearApplyPrec(); // apply_prec = -1
 }

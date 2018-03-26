@@ -5,7 +5,7 @@
 #include "mrchem.h"
 
 #include "HydrogenFunction.h"
-#include "NuclearPotential.h"
+#include "NuclearOperator.h"
 #include "Orbital.h"
 
 using namespace mrchem;
@@ -13,7 +13,7 @@ using namespace orbital;
 
 namespace nuclear_potential {
 
-TEST_CASE("NuclearPotential", "[nuclear_potential]") {
+TEST_CASE("NuclearOperator", "[nuclear_operator]") {
     const double prec = 1.0e-3;
     const double thrs = prec*prec;
 
@@ -50,7 +50,7 @@ TEST_CASE("NuclearPotential", "[nuclear_potential]") {
 
     Nuclei nucs;
     nucs.push_back("H", 0);
-    NuclearPotential V(nucs, prec);
+    NuclearOperator V(nucs, prec);
 
     V.setup(prec);
     SECTION("apply") {
