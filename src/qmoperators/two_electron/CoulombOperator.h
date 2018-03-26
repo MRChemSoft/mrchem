@@ -16,6 +16,8 @@ public:
     }
     ~CoulombOperator() { delete this->potential; }
 
+    ComplexDouble trace(OrbitalVector &Phi) { return 0.5*RankZeroTensorOperator::trace(Phi); }
+
 protected:
     QMPotential *potential;
 };
