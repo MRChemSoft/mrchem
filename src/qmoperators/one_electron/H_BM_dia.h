@@ -2,7 +2,7 @@
 
 #include "RankTwoTensorOperator.h"
 #include "PositionOperator.h"
-#include "PowerPotential.h"
+#include "DistanceOperator.h"
 
 namespace mrchem {
 
@@ -34,7 +34,7 @@ public:
     ~H_BM_dia() { }
 
 protected:
-    PowerPotential r_m3;
+    DistanceOperator r_m3;
     PositionOperator r_o;
     PositionOperator r_k;
 };

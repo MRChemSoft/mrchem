@@ -1,14 +1,14 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "PowerPotential.h"
+#include "DistanceOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
-QMPower::QMPower(double pow, const double *R, double S)
+DistancePotential::DistancePotential(double pow, const double *R, double S)
         : QMPotential(1),
           power(pow) {
     Nuclei nucs;
@@ -16,7 +16,7 @@ QMPower::QMPower(double pow, const double *R, double S)
     this->func.push_back(nucs[0], S);
 }
 
-void QMPower::setup(double prec) {
+void DistancePotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
 
@@ -41,7 +41,7 @@ void QMPower::setup(double prec) {
     Printer::printTree(0, "Cubic potential", n, t);
 }
 
-void QMPower::clear() {
+void DistancePotential::clear() {
     free();           // delete FunctionTree pointers
     clearApplyPrec(); // apply_prec = -1
 }

@@ -6,10 +6,10 @@
 
 namespace mrchem {
 
-class QMPower final : public QMPotential {
+class DistancePotential final : public QMPotential {
 public:
-    QMPower(double pow, const double *r_K, double S);
-    ~QMPower() { }
+    DistancePotential(double pow, const double *r_K, double S);
+    ~DistancePotential() { }
 
     void setup(double prec);
     void clear();
@@ -19,17 +19,17 @@ protected:
     NuclearFunction func;
 };
 
-class PowerPotential : public RankZeroTensorOperator {
+class DistanceOperator : public RankZeroTensorOperator {
 public:
-    PowerPotential(double pow, const double *R = 0, double S = 1.0e-7)
+    DistanceOperator(double pow, const double *R = 0, double S = 1.0e-7)
             : r_pow(pow, R, S) {
         RankZeroTensorOperator &v = (*this);
         v = r_pow;
     }
-    ~PowerPotential() { }
+    ~DistanceOperator() { }
 
 protected:
-    QMPower r_pow;
+    DistancePotential r_pow;
 };
 
 

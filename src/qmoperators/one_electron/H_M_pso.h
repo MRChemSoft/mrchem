@@ -2,7 +2,7 @@
 
 #include "RankOneTensorOperator.h"
 #include "AngularMomentumOperator.h"
-#include "PowerPotential.h"
+#include "DistanceOperator.h"
 
 namespace mrchem {
 
@@ -20,7 +20,7 @@ public:
     ~H_M_pso() { }
 
 protected:
-    PowerPotential r_m3;
+    DistanceOperator r_m3;
     AngularMomentumOperator l;
 };
 
