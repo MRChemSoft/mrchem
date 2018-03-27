@@ -1,10 +1,15 @@
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
+#include "parallel.h"
+
 #include "KAIN.h"
 #include "Orbital.h"
-#include "OrbitalVector.h"
-#include "eigen_disable_warnings.h"
 
-using namespace std;
-using namespace Eigen;
+using mrcpp::Printer;
+using mrcpp::Timer;
+
+namespace mrchem {
 
 /** Calculates the A matrices and b vectors for each orbital individually.
  *
@@ -18,49 +23,40 @@ using namespace Eigen;
 void KAIN::setupLinearSystem() {
     Timer timer;
     int nHistory = this->orbitals.size() - 1;
-    if (nHistory < 1) {
-        MSG_FATAL("Not enough history to setup system of equations");
-    }
+    if (nHistory < 1) MSG_FATAL("Not enough history to setup system of equations");
 
-    vector<MatrixXd *> A_matrices;
-    vector<VectorXd *> b_vectors;
+    std::vector<DoubleMatrix> A_matrices;
+    std::vector<DoubleVector> b_vectors;
 
-    int nOrbitals = this->orbitals[nHistory]->size();
+    int nOrbitals = this->orbitals[nHistory].size();
     for (int n = 0; n < nOrbitals; n++) {
-        MatrixXd *orbA = new MatrixXd;
-        VectorXd *orbB = new VectorXd;
-        *orbA = MatrixXd::Zero(nHistory, nHistory);
-        *orbB = VectorXd::Zero(nHistory);
+        DoubleMatrix orbA = DoubleMatrix::Zero(nHistory, nHistory);
+        DoubleVector orbB = DoubleVector::Zero(nHistory);
 
-	if (mpiOrbRank == n%mpiOrbSize) {
-	    Orbital &phi_m = this->orbitals[nHistory]->getOrbital(n);
-	    Orbital &fPhi_m = this->dOrbitals[nHistory]->getOrbital(n);
+        if (mpi::orb_rank == n%mpi::orb_size) {
+            Orbital &phi_m = this->orbitals[nHistory][n];
+            Orbital &fPhi_m = this->dOrbitals[nHistory][n];
 
-	    for (int i = 0; i < nHistory; i++) {
-		Orbital &phi_i = this->orbitals[i]->getOrbital(n);
-		Orbital dPhi_im(phi_i);
-		this->add(dPhi_im, 1.0, phi_i, -1.0, phi_m, true);
+            for (int i = 0; i < nHistory; i++) {
+                Orbital &phi_i = this->orbitals[i][n];
+                Orbital dPhi_im = orbital::add(1.0, phi_i, -1.0, phi_m);
 
-		for (int j = 0; j < nHistory; j++) {
-		    Orbital &fPhi_j = this->dOrbitals[j]->getOrbital(n);
-		    Orbital dfPhi_jm(fPhi_j);
-		    this->add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, true);
+                for (int j = 0; j < nHistory; j++) {
+                    Orbital &fPhi_j = this->dOrbitals[j][n];
+                    Orbital dfPhi_jm = orbital::add(1.0, fPhi_j, -1.0, fPhi_m);
 
-		    // Ref. Harrisons KAIN paper the following has the wrong sign,
-		    // but we define the updates (lowercase f) with opposite sign.
-		    complex<double> inner_prod = dPhi_im.dot(dfPhi_jm);
-		    if (inner_prod.imag() > MachineZero) NOT_IMPLEMENTED_ABORT;
-		    (*orbA)(i,j) -= inner_prod.real();
-		}
-		complex<double> inner_prod = dPhi_im.dot(fPhi_m);
-		if (inner_prod.imag() > MachineZero) NOT_IMPLEMENTED_ABORT;
-		(*orbB)(i) += inner_prod.real();
-	    }
-	}
+                    // Ref. Harrisons KAIN paper the following has the wrong sign,
+                    // but we define the updates (lowercase f) with opposite sign.
+                    orbA(i,j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
+                }
+                orbB(i) += orbital::dot(dPhi_im, fPhi_m).real();
+            }
+        }
         A_matrices.push_back(orbA);
         b_vectors.push_back(orbB);
     }
 
+    /*
 #ifdef HAVE_MPI
     //combine results from all processes
     //make a super matrix, so that all coefficients are consecutive
@@ -68,81 +64,75 @@ void KAIN::setupLinearSystem() {
     
     int jn = 0;
     for (int n = 0; n < nOrbitals; n++) {
-	MatrixXd *orbA = A_matrices[n];
-	for (int j = 0; j < nHistory; j++) {
-	    for (int i = 0; i < nHistory; i++) {
-		orbsAB(i,jn) = (*orbA)(i,j);
-	    }
-	    jn++;
-	}
+        MatrixXd *orbA = A_matrices[n];
+        for (int j = 0; j < nHistory; j++) {
+            for (int i = 0; i < nHistory; i++) {
+                orbsAB(i,jn) = (*orbA)(i,j);
+            }
+            jn++;
+        }
     }
     for (int n = 0; n < nOrbitals; n++) {
-	VectorXd *orbB = b_vectors[n];
-	for (int i = 0; i < nHistory; i++) {
-	    orbsAB(i,jn) = (*orbB)(i);
-	}
-	jn++;
+        VectorXd *orbB = b_vectors[n];
+        for (int i = 0; i < nHistory; i++) {
+            orbsAB(i,jn) = (*orbB)(i);
+        }
+        jn++;
     }
 
     MPI_Allreduce(MPI_IN_PLACE, &orbsAB(0,0), (nHistory+1)*nHistory*nOrbitals,
-		  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+                  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
     
     jn = 0;
     for (int n = 0; n < nOrbitals; n++) {
-	MatrixXd *orbA = A_matrices[n];
-	for (int j = 0; j < nHistory; j++) {
-	    for (int i = 0; i < nHistory; i++) {
-		(*orbA)(i,j) = orbsAB(i,jn);
-	    }
-	    jn++;
-	}
+        MatrixXd *orbA = A_matrices[n];
+        for (int j = 0; j < nHistory; j++) {
+            for (int i = 0; i < nHistory; i++) {
+                (*orbA)(i,j) = orbsAB(i,jn);
+            }
+            jn++;
+        }
     }
     for (int n = 0; n < nOrbitals; n++) {
-	VectorXd *orbB = b_vectors[n];
-	for (int i = 0; i < nHistory; i++) {
-	    (*orbB)(i) = orbsAB(i,jn);
-	}
-	jn++;
+        VectorXd *orbB = b_vectors[n];
+        for (int i = 0; i < nHistory; i++) {
+            (*orbB)(i) = orbsAB(i,jn);
+        }
+        jn++;
     }
-
 #endif
+*/
 
-//    // Fock matrix is treated as a whole using the Frobenius inner product
+    // Fock matrix is treated as a whole using the Frobenius inner product
     if (this->orbitals.size() == this->fock.size()) {
-        const MatrixXd &X_m = this->fock[nHistory];
-        const MatrixXd &fX_m = this->dFock[nHistory];
+        const ComplexMatrix &X_m = this->fock[nHistory];
+        const ComplexMatrix &fX_m = this->dFock[nHistory];
 
-        MatrixXd *fockA = new MatrixXd;
-        *fockA = MatrixXd::Zero(nHistory, nHistory);
+        ComplexMatrix fockA = ComplexMatrix::Zero(nHistory, nHistory);
 
-        VectorXd *fockB = new VectorXd;
-        *fockB = VectorXd::Zero(nHistory);
+        ComplexVector fockB = ComplexVector::Zero(nHistory);
 
         for (int i = 0; i < nHistory; i++) {
-            const MatrixXd &X_i = this->fock[i];
-            MatrixXd dX_im = X_i - X_m;
+            const ComplexMatrix &X_i = this->fock[i];
+            ComplexMatrix dX_im = X_i - X_m;
             for (int j = 0; j < nHistory; j++) {
-                const MatrixXd &fX_j = this->dFock[j];
-                MatrixXd dfX_jm = fX_j - fX_m;
-                MatrixXd prod = dX_im.transpose()*dfX_jm;
-                (*fockA)(i,j) -= prod.trace();
+                const ComplexMatrix &fX_j = this->dFock[j];
+                ComplexMatrix dfX_jm = fX_j - fX_m;
+                ComplexMatrix prod = dX_im.transpose()*dfX_jm;
+                fockA(i,j) -= prod.trace();
             }
-            MatrixXd prod = dX_im.transpose()*fX_m;
-            (*fockB)(i) += prod.trace();
+            ComplexMatrix prod = dX_im.transpose()*fX_m;
+            fockB(i) += prod.trace();
         }
-        A_matrices.push_back(fockA);
-        b_vectors.push_back(fockB);
+        A_matrices.push_back(fockA.real());
+        b_vectors.push_back(fockB.real());
     }
 
     sortLinearSystem(A_matrices, b_vectors);
 
-    for (int n = 0; n < A_matrices.size(); n++) {
-        delete A_matrices[n];
-        delete b_vectors[n];
-    }
     timer.stop();
     double t = timer.getWallTime();
-    TelePrompter::printDouble(0, "Setup linear system", t);
+    Printer::printDouble(0, "Setup linear system", t);
 }
 
 /** Compute the next step for orbitals and orbital updates given the
@@ -151,92 +141,95 @@ void KAIN::setupLinearSystem() {
   * The next step \f$ \delta x^n \f$ is constructed as
   * \f$ \delta x^n = f(x^n) + \sum_{j=1}^m c_j[(x^j-x^n)+(f(x^j)-f(x^n))]\f$
   */
-void KAIN::expandSolution(OrbitalVector &phi,
+void KAIN::expandSolution(double prec,
+                          OrbitalVector &Phi,
                           OrbitalVector &dPhi,
-                          MatrixXd *F,
-                          MatrixXd *dF) {
+                          ComplexMatrix *F,
+                          ComplexMatrix *dF) {
     Timer timer;
     int nHistory = this->orbitals.size() - 1;
-    int nOrbitals = this->orbitals[nHistory]->size();
+    int nOrbitals = this->orbitals[nHistory].size();
 
-    phi.clear();
+    Phi.clear();
     dPhi.clear();
 
     // Orbitals are unchanged
-    MatrixXd I = MatrixXd::Identity(phi.size(), phi.size());
-    this->add.rotate(phi, I, *this->orbitals[nHistory]);
+    Phi = orbital::deep_copy(this->orbitals[nHistory]);
 
     int m = 0;
     for (int n = 0; n < nOrbitals; n++) {
         if (this->sepOrbitals) {
             m = n;
         }
-	if (mpiOrbRank == n%mpiOrbSize) {
-	    vector<complex<double> > totCoefs;
-	    vector<Orbital *> totOrbs;
+        if (mpi::orb_rank == n%mpi::orb_size) {
+            std::vector<ComplexDouble> totCoefs;
+            OrbitalVector totOrbs;
 
-	    Orbital &phi_m = this->orbitals[nHistory]->getOrbital(n);
-	    Orbital &fPhi_m = this->dOrbitals[nHistory]->getOrbital(n);
-	    totCoefs.push_back(1.0);
-	    totOrbs.push_back(&fPhi_m);
+            Orbital &phi_m = this->orbitals[nHistory][n];
+            Orbital &fPhi_m = this->dOrbitals[nHistory][n];
+            totCoefs.push_back(1.0);
+            totOrbs.push_back(fPhi_m);
 
-	    // Ref. Harrisons KAIN paper the following has the wrong sign,
-	    // but we define the updates (lowercase f) with opposite sign
-	    // (but not the orbitals themselves).
-	    for (int j = 0; j < nHistory; j++) {
-		vector<complex<double> > partCoefs;
-		vector<Orbital *> partOrbs;
+            // Ref. Harrisons KAIN paper the following has the wrong sign,
+            // but we define the updates (lowercase f) with opposite sign
+            // (but not the orbitals themselves).
+            for (int j = 0; j < nHistory; j++) {
+                ComplexVector partCoefs(4);
+                OrbitalVector partOrbs;
 
-		Orbital &phi_j = this->orbitals[j]->getOrbital(n);
-		partCoefs.push_back(1.0);
-		partOrbs.push_back(&phi_j);
+                partCoefs(0) = 1.0;
+                Orbital &phi_j = this->orbitals[j][n];
+                partOrbs.push_back(phi_j);
 
-		Orbital &fPhi_j = this->dOrbitals[j]->getOrbital(n);
-		partCoefs.push_back(1.0);
-		partOrbs.push_back(&fPhi_j);
+                partCoefs(1) = 1.0;
+                Orbital &fPhi_j = this->dOrbitals[j][n];
+                partOrbs.push_back(fPhi_j);
 
-		partCoefs.push_back(-1.0);
-		partOrbs.push_back(&phi_m);
-		partCoefs.push_back(-1.0);
-		partOrbs.push_back(&fPhi_m);
+                partCoefs(2) = -1.0;
+                partOrbs.push_back(phi_m);
 
-		Orbital *partStep = new Orbital(fPhi_m);
-		this->add(*partStep, partCoefs, partOrbs, true);
+                partCoefs(3) = -1.0;
+                partOrbs.push_back(fPhi_m);
 
-		double c_j = (*this->c[m])(j);
-		totCoefs.push_back(c_j);
-		totOrbs.push_back(partStep);
-	    }
+                Orbital partStep = orbital::multiply(partCoefs, partOrbs, prec);
 
-	    Orbital &dPhi_n = dPhi.getOrbital(n);
-	    this->add(dPhi_n, totCoefs, totOrbs, true);
-	    for (int k = 0; k < totOrbs.size(); k++) {
-		// First entry is the last orbital update and should not be deallocated,
-		// all other entries are locally allocated partSteps that must be deleted
-		if (k != 0) delete totOrbs[k];
-		totOrbs[k] = 0;
-	    }
-	}
+                ComplexDouble c_j = this->c[m](j);
+                totCoefs.push_back(c_j);
+                totOrbs.push_back(partStep);
+            }
+
+            // std::vector -> ComplexVector
+            ComplexVector coefsVec(totCoefs.size());
+            for (int i = 0; i < totCoefs.size(); i++) coefsVec(i) = totCoefs[i];
+
+            Orbital dPhi_n = orbital::multiply(coefsVec, totOrbs, prec);
+            dPhi.push_back(dPhi_n);
+
+            // First entry is the last orbital update and should not be deallocated,
+            // all other entries are locally allocated partSteps that must be deleted
+            totOrbs[0].clear();
+            orbital::free(totOrbs);
+        }
     }
 
     // Treat Fock matrix as a whole using Frobenius inner product
     if (this->fock.size() == this->orbitals.size()) {
         if (F == 0 or dF == 0) MSG_ERROR("Invalid fock matrix");
 
-        MatrixXd X_m = this->fock[nHistory];
-        const MatrixXd &fX_m = this->dFock[nHistory];
-        MatrixXd fockStep = MatrixXd::Zero(nOrbitals, nOrbitals);
+        ComplexMatrix X_m = this->fock[nHistory];
+        const ComplexMatrix &fX_m = this->dFock[nHistory];
+        ComplexMatrix fockStep = ComplexMatrix::Zero(nOrbitals, nOrbitals);
         fockStep = fX_m;
         m = this->c.size();
         for (int j = 0; j < nHistory; j++) {
-            const MatrixXd &X_j = this->fock[j];
-            const MatrixXd &fX_j = this->dFock[j];
-            MatrixXd tmpX = MatrixXd::Zero(nOrbitals,nOrbitals);
+            const ComplexMatrix &X_j = this->fock[j];
+            const ComplexMatrix &fX_j = this->dFock[j];
+            ComplexMatrix tmpX = ComplexMatrix::Zero(nOrbitals,nOrbitals);
             tmpX += X_j;
             tmpX -= X_m;
             tmpX += fX_j;
             tmpX -= fX_m;
-            tmpX *= (*this->c[m-1])(j);
+            tmpX *= this->c[m-1](j);
             fockStep += tmpX;
         }
         *F = X_m;
@@ -244,5 +237,7 @@ void KAIN::expandSolution(OrbitalVector &phi,
     }
     timer.stop();
     double t = timer.getWallTime();
-    TelePrompter::printDouble(0, "Expand solution", t);
+    Printer::printDouble(0, "Expand solution", t);
 }
+
+} //namespace mrchem

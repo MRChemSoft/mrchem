@@ -2,6 +2,8 @@
 
 #include "Accelerator.h"
 
+namespace mrchem {
+
 /** This class implements the Krylov subspace Accelerated Inexact Newton (KAIN)
   * method as described by R.J. Harrison (J. Comput. Chem. 25, 328, 2004).
   *
@@ -12,17 +14,19 @@
   * where \f$ x^n \f$ is the vector of orbitals, possibly appended by the
   * Fock matrix \f$ x^n = (\phi^n_0, \phi^n_1, \dots \phi^n_N, F^n) \f$
   */
-class KAIN : public Accelerator {
+class KAIN final : public Accelerator {
 public:
     KAIN(int max, int min = 0, bool sep = false)
         : Accelerator(max, min, sep) { }
-    virtual ~KAIN() { }
+    ~KAIN() { }
 
 protected:
     void setupLinearSystem();
-    void expandSolution(OrbitalVector &phi,
+    void expandSolution(double prec,
+                        OrbitalVector &Phi,
                         OrbitalVector &dPhi,
-                        Eigen::MatrixXd *F,
-                        Eigen::MatrixXd *dF);
+                        ComplexMatrix *F,
+                        ComplexMatrix *dF);
 };
 
+} //namespace mrchem
