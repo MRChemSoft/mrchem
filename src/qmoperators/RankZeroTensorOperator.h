@@ -29,8 +29,8 @@ public:
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
-    ComplexDouble trace(OrbitalVector &phi);
-    ComplexDouble trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
+    ComplexDouble trace(OrbitalVector &Phi);
+    ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y);
 
     RankZeroTensorOperator& operator=(QMOperator &O);
     RankZeroTensorOperator& operator+=(QMOperator &O);

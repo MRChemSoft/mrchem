@@ -91,6 +91,8 @@ void RankZeroTensorOperator::clear() {
 }
 
 Orbital RankZeroTensorOperator::operator()(Orbital inp) {
+    if (not mpi::my_orb(inp)) return inp.paramCopy();
+
     OrbitalVector orb_vec;
     ComplexVector coef_vec = getCoefVector();
     for (int n = 0; n < this->oper_exp.size(); n++) {
@@ -122,11 +124,13 @@ OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
 
 ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
     ComplexDouble out(0.0, 0.0);
-    for (int n = 0; n < this->oper_exp.size(); n++) {
-        Orbital Oket = applyOperTerm(n, ket);
-        ComplexDouble c_n = this->coef_exp[n];
-        out += c_n*orbital::dot(bra, Oket);
-        Oket.free();
+    if (mpi::my_orb(bra) and mpi::my_orb(ket)) {
+        for (int n = 0; n < this->oper_exp.size(); n++) {
+            Orbital Oket = applyOperTerm(n, ket);
+            ComplexDouble c_n = this->coef_exp[n];
+            out += c_n*orbital::dot(bra, Oket);
+            Oket.free();
+        }
     }
     return out;
 }
@@ -135,38 +139,34 @@ ComplexDouble RankZeroTensorOperator::dagger(Orbital bra, Orbital ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra,
-                                                 OrbitalVector &ket) {
-    int Ni = bra.size();
-    int Nj = ket.size();
-    ComplexMatrix out = ComplexMatrix::Zero(Ni, Nj);
-
+ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+    ComplexMatrix out = ComplexMatrix::Zero(bra.size(), ket.size());
     for (int n = 0; n < this->oper_exp.size(); n++) {
-        ComplexDouble c_n = this->coef_exp[n];
-        for (int j = 0; j < Nj; j++) {
+        OrbitalVector Oket;
+        for (int j = 0; j < ket.size(); j++) {
             Orbital Oket_j = applyOperTerm(n, ket[j]);
-            for (int i = 0; i < Ni; i++) {
-                out(i,j) += c_n*orbital::dot(bra[i], Oket_j);
-            }
-            Oket_j.free();
+            Oket.push_back(Oket_j);
         }
+        ComplexDouble c_n = this->coef_exp[n];
+        ComplexMatrix O_n = orbital::calc_overlap_matrix(bra, Oket);
+        out = out + c_n*O_n;
+        orbital::free(Oket);
     }
     return out;
 }
 
-ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra,
-                                             OrbitalVector &ket) {
+ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
-ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &phi) {
+ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
     RankZeroTensorOperator &O = *this;
 
     ComplexDouble result = 0.0;
-    for (int i = 0; i < phi.size(); i++) {
-	if (i%mpi::orb_size == mpi::orb_rank) {
-	    double eta_i = (double) phi[i].occ();
-	    result += eta_i*O(phi[i], phi[i]);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) {
+            double eta_i = (double) Phi[i].occ();
+            result += eta_i*O(Phi[i], Phi[i]);
         }
     }
 #ifdef HAVE_MPI
@@ -175,19 +175,21 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &phi) {
     return result;
 }
 
-ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &phi,
-                                            OrbitalVector &x,
-                                            OrbitalVector &y) {
+ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi,
+                                            OrbitalVector &X,
+                                            OrbitalVector &Y) {
     NEEDS_TESTING;
     RankZeroTensorOperator &O = *this;
 
     ComplexDouble result(0.0, 0.0);
-    for (int i = 0; i < phi.size(); i++) {
-        if (i%mpi::orb_size == mpi::orb_rank) {
-	    double eta_i = (double) phi[i].occ();
-	    ComplexDouble result_1 = O(phi[i], x[i]);
-	    ComplexDouble result_2 = O(y[i], phi[i]);
-	    result += eta_i*(result_1 + result_2);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) {
+            if (not mpi::my_orb(X[i])) MSG_ERROR("MPI communication needed");
+            if (not mpi::my_orb(Y[i])) MSG_ERROR("MPI communication needed");
+            double eta_i = (double) Phi[i].occ();
+            ComplexDouble result_1 = O(Phi[i], X[i]);
+            ComplexDouble result_2 = O(Y[i], Phi[i]);
+            result += eta_i*(result_1 + result_2);
         }
     }
 #ifdef HAVE_MPI
@@ -199,6 +201,7 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &phi,
 
 Orbital RankZeroTensorOperator::applyOperTerm(int n, Orbital inp) {
     if (n >= this->oper_exp.size()) MSG_FATAL("Invalid oper term");
+    if (not mpi::my_orb(inp)) return inp.paramCopy();
 
     Orbital out = inp;
     for (int m = 0; m < this->oper_exp[n].size(); m++) {
