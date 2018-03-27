@@ -11,6 +11,7 @@ add_subdirectory(chemistry)
 add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
+add_subdirectory(scf_solver)
 target_include_directories(mrchem PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
@@ -22,6 +23,7 @@ target_include_directories(mrchem PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
+    ${CMAKE_SOURCE_DIR}/src/scf_solver
     )
 target_link_libraries(mrchem
     mrcpp
@@ -46,6 +48,7 @@ target_include_directories(mrchem.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
+    ${CMAKE_SOURCE_DIR}/src/scf_solver
     )
 target_link_libraries(mrchem.x
     mrchem
