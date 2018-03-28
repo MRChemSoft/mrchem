@@ -48,12 +48,12 @@ public:
     void orthogonalize(Orbital inp);
     void orthogonalize(OrbitalVector inp_vec);
 
+    char printSpin() const;
     friend std::ostream& operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
 
 protected:
     OrbitalMeta meta;
 
-    char printSpin() const;
     std::ostream& print(std::ostream &o) const;
 };
 
