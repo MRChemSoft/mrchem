@@ -1,30 +1,20 @@
 #pragma once
 
-#pragma GCC system_header
-#include <Eigen/Core>
-#pragma GCC system_header
-#include <Eigen/Eigenvalues>
-
-#include <vector>
-#include <string>
-
-#include "QMTensorOperator.h"
+#include "qmfunctions.h"
+#include "qmoperators.h"
 
 class Getkw;
 
+namespace mrchem {
+
 class Nuclei;
 class Molecule;
-class OrbitalVector;
 class OrbitalOptimizer;
 class EnergyOptimizer;
 class GroundStateSolver;
 class LinearResponseSolver;
-class HelmholtzOperatorSet;
+class HelmholtzVector;
 class KAIN;
-
-class PoissonOperator;
-template<int D> class PHOperator;
-template<int D> class ABGVOperator;
 
 class H_E_dip;
 class H_B_dip;
@@ -32,20 +22,20 @@ class H_M_pso;
 
 class QMOperator;
 class FockOperator;
-class CoulombPotential;
+class CoulombOperator;
 class KineticOperator;
-class NuclearPotential;
-class ExchangePotential;
-class XCPotential;
+class NuclearOperator;
+class ExchangeOperator;
+class XCOperator;
 class XCFunctional;
 
 
-class ResponseCalculation {
+class ResponseCalculation  final {
 public:
     ResponseCalculation(RankOneTensorOperator<3> *h, double w, bool im, int d)
         : pert(h), freq(w), imag(im), dir(d) { }
 
-    bool isDynamic() const { if (fabs(this->freq) > MachineZero) return true; return false; }
+    bool isDynamic() const { if (std::abs(this->freq) > mrcpp::MachineZero) return true; return false; }
     bool isImaginary() const { return this->imag; }
 
     RankOneTensorOperator<3> *pert;
@@ -54,7 +44,7 @@ public:
     int dir;
 };
 
-class ResponseCalculations {
+class ResponseCalculations final {
 public:
     void push_back(RankOneTensorOperator<3> *h, double w, bool im, int d) {
         ResponseCalculation rsp_calc(h, w, im, d);
@@ -62,7 +52,7 @@ public:
         for (int i = 0; i < this->calculations.size(); i++) {
             const ResponseCalculation &i_calc = calculations[i];
             if ((i_calc.pert == rsp_calc.pert) and
-                (fabs(i_calc.freq - rsp_calc.freq) < MachineZero) and
+                (std::abs(i_calc.freq - rsp_calc.freq) < mrcpp::MachineZero) and
                 (i_calc.dir == rsp_calc.dir)) unique = false;
         }
         if (unique) {
@@ -79,10 +69,10 @@ protected:
     std::vector<ResponseCalculation> calculations;
 };
 
-class SCFDriver {
+class SCFDriver final {
 public:
     SCFDriver(Getkw &input);
-    virtual ~SCFDriver() { }
+    ~SCFDriver() { }
 
     void setup();
     void run();
@@ -189,43 +179,43 @@ protected:
     double r_O[3];
 
     // SCF machinery
-    HelmholtzOperatorSet *helmholtz;
+    HelmholtzVector *helmholtz;
     KAIN *kain;
     KAIN *kain_x;
     KAIN *kain_y;
 
     // MRA operators
-    PoissonOperator *P;
-    PHOperator<3> *PH_1;
-    PHOperator<3> *PH_2;
-    ABGVOperator<3> *ABGV_00;
-    ABGVOperator<3> *ABGV_55;
+    mrcpp::PoissonOperator *P;
+    mrcpp::PHOperator<3> *PH_1;
+    mrcpp::PHOperator<3> *PH_2;
+    mrcpp::ABGVOperator<3> *ABGV_00;
+    mrcpp::ABGVOperator<3> *ABGV_55;
 
     // Unperturbed quantities
     Molecule *molecule;
     Nuclei *nuclei;
     OrbitalVector *phi;
     KineticOperator *T;
-    NuclearPotential *V;
-    CoulombPotential *J;
-    ExchangePotential *K;
-    XCPotential *XC;
+    NuclearOperator *V;
+    CoulombOperator *J;
+    ExchangeOperator *K;
+    XCOperator *XC;
     FockOperator *fock;
-    Eigen::MatrixXd F;
+    ComplexMatrix F;
 
     OrbitalVector *phi_np1;
-    CoulombPotential *J_np1;
-    ExchangePotential *K_np1;
-    XCPotential *XC_np1;
+    CoulombOperator *J_np1;
+    ExchangeOperator *K_np1;
+    XCOperator *XC_np1;
     FockOperator *fock_np1;
-    Eigen::MatrixXd F_np1;
+    ComplexMatrix F_np1;
 
     // Perturbed quantities
     OrbitalVector *phi_x;
     OrbitalVector *phi_y;
-    CoulombPotential *dJ;
-    ExchangePotential *dK;
-    XCPotential *dXC;
+    CoulombOperator *dJ;
+    ExchangeOperator *dK;
+    XCOperator *dXC;
     FockOperator *d_fock;
 
     // XCFun
@@ -259,7 +249,9 @@ protected:
     void setup_np1();
     void clear_np1();
 
-    void printEigenvalues(OrbitalVector &orbs, Eigen::MatrixXd &f_mat);
+    void printEigenvalues(OrbitalVector &orbs, ComplexMatrix &f_mat);
 
-    void extendRotationMatrix(const OrbitalVector &orbs, Eigen::MatrixXd &O);
+    void extendRotationMatrix(const OrbitalVector &orbs, ComplexMatrix &O);
 };
+
+} //namespace mrchem

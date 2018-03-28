@@ -1,18 +1,13 @@
 #pragma once
 
-
-#pragma GCC system_header
-#include <Eigen/Core>
-#pragma GCC system_header
-#include <Eigen/Eigenvalues>
-
-
 #include "SCF.h"
 #include "SCFEnergy.h"
 
+namespace mrchem {
+
 class GroundStateSolver : public SCF {
 public:
-    GroundStateSolver(HelmholtzOperatorSet &h);
+    GroundStateSolver(HelmholtzVector &h);
     virtual ~GroundStateSolver();
 
 protected:
@@ -68,4 +63,4 @@ protected:
     void do_step(Eigen::VectorXd step);
 };
 
-
+} //namespace mrchem

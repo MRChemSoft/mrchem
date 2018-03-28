@@ -17,6 +17,8 @@
 #include "mrchem.h"
 #include "parallel.h"
 
+#include "SCFDriver.h"
+
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
@@ -28,6 +30,11 @@ int main(int argc, char **argv) {
     mrenv::initialize(argc, argv);
 
     Timer timer;
+
+    SCFDriver driver(Input);
+    driver.setup();
+    driver.run();
+    driver.clear();
 
     timer.stop();
     double wt = timer.getWallTime();

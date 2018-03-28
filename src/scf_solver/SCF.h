@@ -1,29 +1,21 @@
 #pragma once
 
-#pragma GCC system_header
-#include <Eigen/Core>
+namespace mrchem {
 
-#include <vector>
-
-#include "OrbitalAdder.h"
-#include "TelePrompter.h"
-
-class HelmholtzOperatorSet;
+class HelmholtzVector;
 class Accelerator;
 class FockOperator;
-class OrbitalVector;
-class Orbital;
 
 class SCF {
 public:
-    SCF(HelmholtzOperatorSet &h);
+    SCF(HelmholtzVector &h);
     virtual ~SCF();
 
     virtual bool optimize() = 0;
 
-    double getOrbitalPrecision() const { return this->orbPrec[0]; }
-    double getOrbitalThreshold() const { return this->orbThrs; }
-    double getPropertyThreshold() const { return this->propThrs; }
+    double getOrbitalPrecision() const  { return this->orbPrec[0]; }
+    double getOrbitalThreshold() const  { return this->orbThrs;    }
+    double getPropertyThreshold() const { return this->propThrs;   }
 
     void setThreshold(double orb_thrs, double prop_thrs);
     void setOrbitalPrec(double init, double final);
@@ -43,8 +35,7 @@ protected:
     std::vector<double> orbError;
     std::vector<double> property;
 
-    OrbitalAdder add;
-    HelmholtzOperatorSet *helmholtz;// Pointer to external object, do not delete!
+    HelmholtzVector *helmholtz;// Pointer to external object, do not delete!
 
     bool checkConvergence(double err_o, double err_p) const;
     bool needLocalization(int nIter) const;
@@ -69,4 +60,4 @@ protected:
                                                    bool clearFock = false) = 0;
 };
 
-
+} //namespace mrchem

@@ -2,18 +2,19 @@
 
 #include "GroundStateSolver.h"
 
+namespace mrchem {
+
 class Accelerator;
 
-class OrbitalOptimizer : public GroundStateSolver {
+class OrbitalOptimizer final : public GroundStateSolver {
 public:
-    OrbitalOptimizer(HelmholtzOperatorSet &h,
-                     Accelerator *k = 0);
-    virtual ~OrbitalOptimizer();
+    OrbitalOptimizer(HelmholtzVector &h, Accelerator *k = 0);
+    ~OrbitalOptimizer();
 
     void setup(FockOperator &fock, OrbitalVector &phi, Eigen::MatrixXd &F);
     void clear();
 
-    virtual bool optimize();
+    bool optimize();
 
 protected:
     Accelerator *kain; // Pointer to external object, do not delete!
@@ -21,3 +22,4 @@ protected:
     void printTreeSizes() const;
 };
 
+} //namespace mrchem
