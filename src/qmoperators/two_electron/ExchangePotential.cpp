@@ -36,6 +36,11 @@ ExchangePotential::ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &P
  */
 void ExchangePotential::setup(double prec) {
     setApplyPrec(prec);
+
+    int nOrbs = this->orbitals->size();
+    if (tot_norms.size() != nOrbs) this->tot_norms = DoubleVector::Zero(nOrbs);
+    if (part_norms.rows() != nOrbs) this->part_norms = DoubleMatrix::Zero(nOrbs,nOrbs);
+    if (part_norms.cols() != nOrbs) this->part_norms = DoubleMatrix::Zero(nOrbs,nOrbs);
 }
 
 /** @brief Clears the Exchange Operator
