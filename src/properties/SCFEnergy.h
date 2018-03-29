@@ -1,5 +1,7 @@
 #pragma once
 
+#include "MRCPP/Printer"
+
 #include "mrchem.h"
 
 namespace mrchem {
