@@ -287,9 +287,10 @@ void GroundStateSolver::diagonalize(double prec, FockOperator &fock, ComplexMatr
 void GroundStateSolver::diagonalizeBlock(ComplexMatrix &M, ComplexMatrix &U, int nstart, int nsize) {
     Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nsize);
     es.compute(M.block(nstart, nstart, nsize, nsize));
-    ComplexMatrix tmp = es.eigenvectors();
-    U.block(nstart, nstart, nsize, nsize) = tmp.transpose();
-    M.block(nstart, nstart, nsize, nsize) = es.eigenvalues().asDiagonal();
+    ComplexMatrix ei_vec = es.eigenvectors();
+    ComplexVector ei_val = es.eigenvalues().cast<ComplexDouble>();
+    U.block(nstart, nstart, nsize, nsize) = ei_vec.transpose();
+    M.block(nstart, nstart, nsize, nsize) = ei_val.asDiagonal();
 }
 
 void GroundStateSolver::orthonormalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi) {

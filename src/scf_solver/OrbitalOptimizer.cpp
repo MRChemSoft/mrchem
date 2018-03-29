@@ -80,7 +80,8 @@ bool OrbitalOptimizer::optimize() {
 
         // Setup Helmholtz operators and argument
         H.setup(orb_prec, F.real().diagonal());
-        ComplexMatrix L = H.getLambda().asDiagonal();
+        ComplexVector lambda = H.getLambda().cast<ComplexDouble>();
+        ComplexMatrix L = lambda.asDiagonal();
         bool adjoint = false;
         bool clearFock = false;
         if (mpi::orb_size > 1) clearFock = true;
