@@ -225,24 +225,28 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
   */
 Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
     if (c.size() != inp.size()) MSG_ERROR("Size mismatch");
+    double thrs = mrcpp::MachineZero;
 
     Orbital out;
     // set output spin from first contributing input
     for (int i = 0; i < inp.size(); i++) {
-        if (std::abs(c[i]) < mrcpp::MachineZero) continue;
+        if (std::abs(c[i]) < thrs) continue;
         out = inp[i].paramCopy();
         break;
     }
     // all contributing input spins must be equal
     for (int i = 0; i < inp.size(); i++) {
-        if (std::abs(c[i]) < mrcpp::MachineZero) continue;
-        if (out.spin() != inp[i].spin()) MSG_FATAL("Mixing spins");
+        if (std::abs(c[i]) < thrs) continue;
+        if (out.spin() != inp[i].spin()) {
+            // empty orbitals with wrong spin can occur
+            if (inp[i].hasReal()) MSG_FATAL("Mixing spins");
+            if (inp[i].hasImag()) MSG_FATAL("Mixing spins");
+        }
     }
 
     FunctionTreeVector<3> rvec;
     FunctionTreeVector<3> ivec;
 
-    double thrs = mrcpp::MachineZero;
     for (int i = 0; i < inp.size(); i++) {
         bool cHasReal = (std::abs(c[i].real()) > thrs);
         bool cHasImag = (std::abs(c[i].imag()) > thrs);
@@ -289,7 +293,7 @@ OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) 
     OrbitalVector out;
     for (int i = 0; i < U.rows(); i++) {
         const ComplexVector &c = U.row(i);
-	Orbital out_i = multiply(c, inp, prec);
+        Orbital out_i = multiply(c, inp, prec);
         out.push_back(out_i);
     }
     return out;
