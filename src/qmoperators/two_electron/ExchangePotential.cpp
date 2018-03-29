@@ -460,7 +460,7 @@ void ExchangePotential::calcInternal(int i, int j) {
     phi_jij.free();
 
     // compute x_j += phi_iij
-    Ex[j].add(j_fac, phi_jij);
+    Ex[j].add(j_fac, phi_iij);
     phi_iij.free();
 }
 
