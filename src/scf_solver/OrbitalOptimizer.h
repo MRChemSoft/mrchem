@@ -11,7 +11,7 @@ public:
     OrbitalOptimizer(HelmholtzVector &h, Accelerator *k = 0);
     ~OrbitalOptimizer();
 
-    void setup(FockOperator &fock, OrbitalVector &phi, Eigen::MatrixXd &F);
+    void setup(FockOperator &fock, OrbitalVector &phi, ComplexMatrix &F);
     void clear();
 
     bool optimize();

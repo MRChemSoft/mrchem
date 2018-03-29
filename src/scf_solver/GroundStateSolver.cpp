@@ -1,41 +1,31 @@
+#include <Eigen/Eigenvalues>
+
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
+#include "parallel.h"
+
 #include "GroundStateSolver.h"
-#include "HelmholtzOperatorSet.h"
 #include "FockOperator.h"
-#include "PoissonOperator.h"
-#include "KineticOperator.h"
-#include "NuclearPotential.h"
-#include "CoulombPotential.h"
-#include "ExchangePotential.h"
-#include "XCPotential.h"
-#include "XCFunctional.h"
-#include "SCFEnergy.h"
-#include "OrbitalVector.h"
 #include "Orbital.h"
-#include "PositionOperator.h"
-#include "IdentityOperator.h"
-#include "MathUtils.h"
-#include "eigen_disable_warnings.h"
 
 using namespace std;
-using namespace Eigen;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
-extern OrbitalVector workOrbVec;
+namespace mrchem {
 
-GroundStateSolver::GroundStateSolver(HelmholtzOperatorSet &h)
-    : SCF(h),
-      fOper_n(0),
-      fMat_n(0),
-      orbitals_n(0),
-      orbitals_np1(0),
-      dOrbitals_n(0) {
+GroundStateSolver::GroundStateSolver(HelmholtzVector &h)
+        : SCF(h),
+          fMat_n(0),
+          fOper_n(0),
+          orbitals_n(0) {
 }
 
 GroundStateSolver::~GroundStateSolver() {
-    if (this->fOper_n != 0) MSG_ERROR("Solver not properly cleared");
     if (this->fMat_n != 0) MSG_ERROR("Solver not properly cleared");
+    if (this->fOper_n != 0) MSG_ERROR("Solver not properly cleared");
     if (this->orbitals_n != 0) MSG_ERROR("Solver not properly cleared");
-    if (this->orbitals_np1 != 0) MSG_ERROR("Solver not properly cleared");
-    if (this->dOrbitals_n != 0) MSG_ERROR("Solver not properly cleared");
 }
 
 /** Computes the Helmholtz argument for the all orbitals.
@@ -48,35 +38,40 @@ GroundStateSolver::~GroundStateSolver() {
  *
  * greenArg = \hat{V}orb_i + \sum_j (\Lambda_{ij}-F_{ij})orb_j
  */
-OrbitalVector* GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
-                                                          const Eigen::MatrixXd &M,
-                                                          OrbitalVector &phi,
-                                                          bool adjoint,
-                                                          bool clearFock) {
+OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
+                                                         const ComplexMatrix &M,
+                                                         OrbitalVector &Phi,
+                                                         bool adjoint,
+                                                         bool clearFock) {
     Timer timer_tot;
-    TelePrompter::printHeader(0, "Setting up Helmholtz arguments");
-    int oldprec = TelePrompter::setPrecision(5);
+    Printer::printHeader(0, "Setting up Helmholtz arguments");
+    int oldprec = Printer::setPrecision(5);
+
+    RankZeroTensorOperator &V = fock.potential();
     
-    double coef = -1.0/(2.0*pi);
+    double coef = -1.0/(2.0*MATHCONST::pi);
     Timer timer_1;
-    OrbitalVector *args = new OrbitalVector(0);
-    for (int i = 0; i < phi.size(); i++) {
-        Orbital &phi_i = phi.getOrbital(i);
-        Orbital *Vphi_i = 0;
-        if (i%mpiOrbSize == mpiOrbRank) {
-            Vphi_i = fock.applyPotential(phi_i);
-            (*Vphi_i) *= coef;
+    OrbitalVector part_1 = orbital::param_copy(Phi);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) {
+            part_1[i] = V(Phi[i]);
         }
-        if (Vphi_i == 0) {
-            Vphi_i = new Orbital(phi_i);
-        }
-        args->push_back(*Vphi_i);
     }
     timer_1.stop();
-    TelePrompter::printDouble(0, "Potential part", timer_1.getWallTime());
+    Printer::printDouble(0, "Potential part", timer_1.getWallTime());
 
     if (clearFock) fock.clear();
 
+    Timer timer_2;
+    OrbitalVector part_2 = orbital::multiply(M, Phi);
+    timer_2.stop();
+    Printer::printDouble(0, "Matrix part", timer_2.getWallTime());
+
+    OrbitalVector out = orbital::add(coef, part_1, coef, part_2);
+    orbital::free(part_1);
+    orbital::free(part_2);
+
+    /*
     Timer timer_2;
     OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
     OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
@@ -105,7 +100,7 @@ OrbitalVector* GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
                 int jx = rcvOrbsIx[j];
                 double coef = M(ix,jx);
                 // Linear scaling screening inserted here
-                // if (fabs(coef) > MachineZero) {
+                // if (std::abs(coef) > MachineZero) {
                     Orbital &phi_j = rcvOrbs.getOrbital(j);
                     double norm_j = sqrt(phi_j.getSquareNorm());
                     if (norm_j > 0.01*getOrbitalPrecision()) {
@@ -118,8 +113,7 @@ OrbitalVector* GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
             Orbital *tmp_i = new Orbital(phi_i);
             if (orbs.size() > 0) this->add(*tmp_i, coefs, orbs, false);
 
-            Orbital &arg_i = args->getOrbital(i);
-            this->add.inPlace(arg_i, coef, *tmp_i);
+            this->add.inPlace(out[i], coef, *tmp_i);
             delete tmp_i;
         }
         rcvOrbs.clearVec(false);//reset to zero size orbital vector
@@ -127,41 +121,42 @@ OrbitalVector* GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     orbVecChunk_i.clearVec(false);
     workOrbVec.clear();
     timer_2.stop();
-    TelePrompter::printDouble(0, "Matrix part", timer_2.getWallTime());
+    Printer::printDouble(0, "Matrix part", timer_2.getWallTime());
+    */
 
     timer_tot.stop();
-    TelePrompter::printFooter(0, timer_tot, 2);
-    TelePrompter::setPrecision(oldprec);
+    Printer::printFooter(0, timer_tot, 2);
+    Printer::setPrecision(oldprec);
 
-    return args;
+    return out;
 }
 
 double GroundStateSolver::calcProperty() {
-    TelePrompter::printHeader(0, "Calculating SCF energy");
+    Printer::printHeader(0, "Calculating SCF energy");
     Timer timer;
 
-    MatrixXd &F = *this->fMat_n;
+    ComplexMatrix &F = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
-    OrbitalVector &phi = *this->orbitals_n;
+    OrbitalVector &Phi = *this->orbitals_n;
 
-    SCFEnergy E = fock.trace(phi, F);
+    SCFEnergy E = fock.trace(Phi, F);
     this->energy.push_back(E);
 
     timer.stop();
-    int oldPrec = TelePrompter::setPrecision(15);
+    int oldPrec = Printer::setPrecision(15);
     println(0, " Nuclear energy              " << setw(30) << E.getNuclearEnergy());
     println(0, " Electronic energy           " << setw(30) << E.getElectronicEnergy());
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
     println(0, " Total energy                " << setw(30) << E.getTotalEnergy());
-    TelePrompter::printFooter(0, timer, 2);
-    TelePrompter::setPrecision(oldPrec);
+    Printer::printFooter(0, timer, 2);
+    Printer::setPrecision(oldPrec);
 
     return E.getTotalEnergy();
 }
 
 double GroundStateSolver::calcPropertyError() const {
     int iter = this->property.size();
-    return fabs(getUpdate(this->property, iter, false));
+    return std::abs(getUpdate(this->property, iter, false));
 }
 
 void GroundStateSolver::printProperty() const {
@@ -185,18 +180,18 @@ void GroundStateSolver::printProperty() const {
     double N_0 = scf_0.getNuclearEnergy();
     double N_1 = scf_1.getNuclearEnergy();
 
-    TelePrompter::printHeader(0, "                    Energy                 Update      Done ");
+    Printer::printHeader(0, "                    Energy                 Update      Done ");
     printUpdate(" Kinetic    ",  T_1,  T_1 -  T_0);
     printUpdate(" N-E        ",  V_1,  V_1 -  V_0);
     printUpdate(" Coulomb    ",  J_1,  J_1 -  J_0);
     printUpdate(" Exchange   ",  K_1,  K_1 -  K_0);
     printUpdate(" X-C        ", XC_1, XC_1 - XC_0);
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
     printUpdate(" Electronic ",  E_1,  E_1 -  E_0);
     printUpdate(" Nuclear    ",  N_1,  N_1 -  N_0);
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
     printUpdate(" Total      ",  E_1 + N_1, (E_1+N_1) - (E_0+N_0));
-    TelePrompter::printSeparator(0, '=');
+    Printer::printSeparator(0, '=');
 }
 
 /** Minimize the spatial extension of orbitals, by a transformation of orbitals
@@ -207,18 +202,20 @@ void GroundStateSolver::printProperty() const {
  * The resulting transformation includes the orthonormalization of the orbitals.
  * For details see the tex documentation in doc directory
  */
-void GroundStateSolver::localize(FockOperator &fock, MatrixXd &F, OrbitalVector &phi) {
-    TelePrompter::printHeader(0, "Localizing orbitals");
+void GroundStateSolver::localize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi) {
+    NOT_IMPLEMENTED_ABORT;
+    /*
+    Printer::printHeader(0, "Localizing orbitals");
     Timer timer;
 
     MatrixXd U;
     int n_it = 0;
-    if (phi.size() > 1) {
+    if (Phi.size() > 1) {
         Timer rr_t;
-        RR rr(this->orbPrec[0], phi);
+        RR rr(this->orbPrec[0], Phi);
         n_it = rr.maximize();//compute total U, rotation matrix
         rr_t.stop();
-        TelePrompter::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime());
+        Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime());
         if (n_it > 0) {
             println(0, " Converged after iteration   " << setw(30) << n_it);
             U = rr.getTotalU().transpose();
@@ -231,83 +228,94 @@ void GroundStateSolver::localize(FockOperator &fock, MatrixXd &F, OrbitalVector 
 
     if (n_it <= 0) {
         Timer orth_t;
-        U = calcOrthonormalizationMatrix(phi);
+        U = calcOrthonormalizationMatrix(Phi);
         orth_t.stop();
-        TelePrompter::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
+        Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
     }
 
     Timer rot_t;
     F = U*F*U.transpose();
     fock.rotate(U);
-    this->add.rotate(phi, U);
+    this->add.rotate(Phi, U);
     rot_t.stop();
-    TelePrompter::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
 
     timer.stop();
-    TelePrompter::printFooter(0, timer, 2);
+    Printer::printFooter(0, timer, 2);
+    */
 }
 
 /** Perform the orbital rotation that diagonalizes the Fock matrix
  *
  * This operation includes the orthonormalization using the overlap matrix.
  */
-void GroundStateSolver::diagonalize(FockOperator &fock, MatrixXd &F, OrbitalVector &phi) {
-    TelePrompter::printHeader(0, "Digonalizing Fock matrix");
+void GroundStateSolver::diagonalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi) {
+    Printer::printHeader(0, "Digonalizing Fock matrix");
     Timer timer;
 
     Timer orth_t;
-    MatrixXd S_m12 = calcOrthonormalizationMatrix(phi);
+    ComplexMatrix S_m12 = calcOrthonormalizationMatrix(Phi);
     F = S_m12.transpose()*F*S_m12;
     orth_t.stop();
-    TelePrompter::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
+    Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
 
     Timer diag_t;
-    MatrixXd U = MatrixXd::Zero(F.rows(), F.cols());
-    int np = phi.getNPaired();
-    int na = phi.getNAlpha();
-    int nb = phi.getNBeta();
-    if (np > 0) MathUtils::diagonalizeBlock(F, U, 0,       np);
-    if (na > 0) MathUtils::diagonalizeBlock(F, U, np,      na);
-    if (nb > 0) MathUtils::diagonalizeBlock(F, U, np + na, nb);
+    ComplexMatrix U = ComplexMatrix::Zero(F.rows(), F.cols());
+    int np = orbital::size_paired(Phi);
+    int na = orbital::size_alpha(Phi);
+    int nb = orbital::size_beta(Phi);
+    if (np > 0) diagonalizeBlock(F, U, 0,       np);
+    if (na > 0) diagonalizeBlock(F, U, np,      na);
+    if (nb > 0) diagonalizeBlock(F, U, np + na, nb);
     U = U * S_m12;
     diag_t.stop();
-    TelePrompter::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime());
+    Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime());
 
     Timer rot_t;
     fock.rotate(U);
-    this->add.rotate(phi, U);
+    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    orbital::free(Phi);
+    Phi = Psi;
     rot_t.stop();
-    TelePrompter::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
 
     timer.stop();
-    TelePrompter::printFooter(0, timer, 2);
+    Printer::printFooter(0, timer, 2);
 }
 
-void GroundStateSolver::orthonormalize(FockOperator &fock, MatrixXd &F, OrbitalVector &phi) {
-    MatrixXd U = calcOrthonormalizationMatrix(phi);
+
+void GroundStateSolver::diagonalizeBlock(ComplexMatrix &M, ComplexMatrix &U, int nstart, int nsize) {
+    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nsize);
+    es.compute(M.block(nstart, nstart, nsize, nsize));
+    ComplexMatrix tmp = es.eigenvectors();
+    U.block(nstart, nstart, nsize, nsize) = tmp.transpose();
+    M.block(nstart, nstart, nsize, nsize) = es.eigenvalues().asDiagonal();
+}
+
+void GroundStateSolver::orthonormalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi) {
+    ComplexMatrix U = calcOrthonormalizationMatrix(Phi);
     F = U*F*U.transpose();
     fock.rotate(U);
-    this->add.rotate(phi, U);
+    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    orbital::free(Phi);
+    Phi = Psi;
 }
 
-MatrixXd GroundStateSolver::calcOrthonormalizationMatrix(OrbitalVector &phi) {
+ComplexMatrix GroundStateSolver::calcOrthonormalizationMatrix(OrbitalVector &Phi) {
     Timer timer;
     printout(1, "Calculating orthonormalization matrix            ");
 
-    IdentityOperator I;
-    I.setup(getOrbitalPrecision());
-    MatrixXd S_tilde = I(phi, phi);
-    I.clear();
+    ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
 
-    SelfAdjointEigenSolver<MatrixXd> es(S_tilde.cols());
+    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(S_tilde.cols());
     es.compute(S_tilde);
 
-    MatrixXd A = es.eigenvalues().asDiagonal();
+    DoubleMatrix A = es.eigenvalues().asDiagonal();
     for (int i = 0; i < A.cols(); i++) {
-        A(i,i) = pow(A(i,i), -1.0/2.0);
+        A(i,i) = std::pow(A(i,i), -1.0/2.0);
     }
-    MatrixXd B = es.eigenvectors();
-    MatrixXd U = B*A*B.transpose();
+    ComplexMatrix B = es.eigenvectors();
+    ComplexMatrix U = B*A*B.transpose();
 
     timer.stop();
     println(1, timer.getWallTime());
@@ -316,8 +324,10 @@ MatrixXd GroundStateSolver::calcOrthonormalizationMatrix(OrbitalVector &phi) {
 
 /** Compute the position matrix <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
  */
-RR::RR(double prec, OrbitalVector &phi) {
-    N = phi.size();
+RR::RR(double prec, OrbitalVector &Phi) {
+    NOT_IMPLEMENTED_ABORT;
+    /*
+    N = Phi.size();
     if (N < 2) MSG_ERROR("Cannot localize less than two orbitals");
     total_U = MatrixXd::Identity(N,N);
     N2h = N*(N-1)/2;
@@ -343,7 +353,7 @@ RR::RR(double prec, OrbitalVector &phi) {
 
     //make vector with adresses of own orbitals
     for (int Ix = mpiOrbRank; Ix < N; Ix += mpiOrbSize) {
-        orbVecChunk_i.push_back(phi.getOrbital(Ix));//i orbitals
+        orbVecChunk_i.push_back(Phi.getOrbital(Ix));//i orbitals
         orbsIx.push_back(Ix);
     }
 
@@ -437,6 +447,7 @@ RR::RR(double prec, OrbitalVector &phi) {
             }
         }
     }
+    */
 }
 
 /** compute the value of
@@ -470,7 +481,7 @@ double RR::make_gradient() {
     for (int ij=0; ij<N2h; ij++) {
         norm += gradient(ij)*gradient(ij);
     }
-    return sqrt(norm);
+    return std::sqrt(norm);
 }
 
 
@@ -523,7 +534,9 @@ double RR::make_hessian() {
 
 /** Given the step matrix, update the rotation matrix and the R matrix
  */
-void RR::do_step(VectorXd step){
+void RR::do_step(DoubleVector step) {
+    NOT_IMPLEMENTED_ABORT;
+    /*
     MatrixXd A(N,N);
     //define rotation U=exp(-A), A real antisymmetric, from step
     int ij=0;
@@ -555,4 +568,8 @@ void RR::do_step(VectorXd step){
             }
         }
     }
+    */
 }
+
+} //namespace mrchem
+

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
+#include "qmfunctions.h"
+
 namespace mrchem {
 
 class HelmholtzVector;
@@ -47,17 +52,17 @@ protected:
     void printUpdate(const std::string &name, double P, double dP) const;
     double getUpdate(const std::vector<double> &vec, int i, bool absPrec) const;
 
-    void printOrbitals(const Eigen::VectorXd &epsilon, const OrbitalVector &phi, int flag) const;
+    void printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, int flag) const;
     void printConvergence(bool converged) const;
     void printCycle(int nIter) const;
     void printTimer(double t) const;
-    void printMatrix(int level, const Eigen::MatrixXd &M, const char &name, int pr = 5) const;
+    void printMatrix(int level, const DoubleMatrix &M, const char &name, int pr = 5) const;
 
-    virtual OrbitalVector* setupHelmholtzArguments(FockOperator &fock,
-                                                   const Eigen::MatrixXd &M,
-                                                   OrbitalVector &phi,
-                                                   bool adjoint = false,
-                                                   bool clearFock = false) = 0;
+    virtual OrbitalVector setupHelmholtzArguments(FockOperator &fock,
+                                                  const ComplexMatrix &M,
+                                                  OrbitalVector &Phi,
+                                                  bool adjoint = false,
+                                                  bool clearFock = false) = 0;
 };
 
 } //namespace mrchem

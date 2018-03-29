@@ -1,24 +1,24 @@
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
 #include "SCF.h"
-#include "HelmholtzOperatorSet.h"
-#include "FockOperator.h"
-#include "OrbitalVector.h"
 #include "Orbital.h"
-#include "Timer.h"
 
 using namespace std;
-using namespace Eigen;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
-extern MultiResolutionAnalysis<3> *MRA; // Global MRA
-extern OrbitalVector workOrbVec;
+namespace mrchem {
 
-SCF::SCF(HelmholtzOperatorSet &h)
-    : maxIter(-1),
-      rotation(0),
-      canonical(true),
-      orbThrs(-1.0),
-      propThrs(-1.0),
-      add(-1.0, MRA->getMaxScale()),
-      helmholtz(&h) {
+extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
+
+SCF::SCF(HelmholtzVector &h)
+        : maxIter(-1),
+          rotation(0),
+          canonical(true),
+          orbThrs(-1.0),
+          propThrs(-1.0),
+          helmholtz(&h) {
     this->orbPrec[0] = -1.0;
     this->orbPrec[1] = -1.0;
     this->orbPrec[2] = -1.0;
@@ -41,17 +41,15 @@ void SCF::setOrbitalPrec(double init, double final) {
 
 void SCF::adjustPrecision(double error) {
     if (this->orbPrec[0] > 0.0 ) this->orbPrec[0] *= 0.75;
-    this->orbPrec[0] = min(10.0*error*error, this->orbPrec[0]);
-    this->orbPrec[0] = max(this->orbPrec[0], this->orbPrec[2]);
+    this->orbPrec[0] = std::min(10.0*error*error, this->orbPrec[0]);
+    this->orbPrec[0] = std::max(this->orbPrec[0], this->orbPrec[2]);
 
-    this->add.setPrecision(this->orbPrec[0]/10.0);
-
-    TelePrompter::printSeparator(0, '=');
-    TelePrompter::printDouble(0, "Current precision", this->orbPrec[0]);
-    TelePrompter::printSeparator(0, '-');
-    TelePrompter::printDouble(0, "Orbital threshold", this->orbThrs);
-    TelePrompter::printDouble(0, "Property threshold", this->propThrs);
-    TelePrompter::printSeparator(0, '=', 2);
+    Printer::printSeparator(0, '=');
+    Printer::printDouble(0, "Current precision", this->orbPrec[0]);
+    Printer::printSeparator(0, '-');
+    Printer::printDouble(0, "Orbital threshold", this->orbThrs);
+    Printer::printDouble(0, "Property threshold", this->propThrs);
+    Printer::printSeparator(0, '=', 2);
 }
 
 void SCF::resetPrecision() {
@@ -98,19 +96,19 @@ bool SCF::needDiagonalization(int nIter) const {
 }
 
 void SCF::printUpdate(const string &name, double P, double dP) const {
-    int oldPrec = TelePrompter::setPrecision(15);
+    int oldPrec = Printer::setPrecision(15);
     double p = 1.0;
-    if (fabs(P) > MachineZero) {
+    if (std::abs(P) > mrcpp::MachineZero) {
         p = P;
     }
     double thrs = getPropertyThreshold();
-    bool done = (fabs(dP/p) < thrs) or thrs < 0.0;
+    bool done = (std::abs(dP/p) < thrs) or thrs < 0.0;
     printout(0, name);
     printout(0, setw(24) << P);
-    TelePrompter::setPrecision(5);
+    Printer::setPrecision(5);
     printout(0, setw(16) << dP);
     println(0, setw(5) << done);
-    TelePrompter::setPrecision(oldPrec);
+    Printer::setPrecision(oldPrec);
 }
 
 double SCF::getUpdate(const vector<double> &vec, int i, bool absPrec) const {
@@ -121,65 +119,69 @@ double SCF::getUpdate(const vector<double> &vec, int i, bool absPrec) const {
         E_im1 = vec[i-2];
     }
     double E_diff = E_i - E_im1;
-    if (not absPrec and fabs(E_i) > MachineZero) {
+    if (not absPrec and std::abs(E_i) > mrcpp::MachineZero) {
         E_diff *= 1.0/E_i;
     }
     return E_diff;
 }
 
-void SCF::printOrbitals(const VectorXd &epsilon, const OrbitalVector &phi, int flag) const {
-    if (mpiOrbRank == 0) {
-        TelePrompter::printHeader(0, "Orbitals");
-        if (flag == 0) println(0, " Orb    F(i,i)        Error         nNodes  Spin  Occ  Done ");
-        if (flag == 1) println(0, " Orb    Norm          Error         nNodes  Spin  Occ  Done ");
-        TelePrompter::printSeparator(0, '-');
-        int oldprec = TelePrompter::setPrecision(5);
-        for (int i = 0; i < phi.size(); i++) {
-            const Orbital &phi_i = phi.getOrbital(i);
-            printout(0, setw(3) << i);
-            printout(0, " " << setw(13) << epsilon(i));
-            printout(0, " " << setw(13) << phi_i.getError());
-            printout(0, " " << setw(10) << phi_i.getNNodes());
-            printout(0, setw(5) << phi_i.printSpin());
-            printout(0, setw(5) << phi_i.getOccupancy());
-            printout(0, setw(5) << phi_i.isConverged(getOrbitalThreshold()) << endl);
-        }
-
-        TelePrompter::printSeparator(0, '-');
-        printout(0, " Total error:                    ");
-        printout(0, setw(19) << phi.calcTotalError() << "  ");
-        printout(0, setw(3) << phi.isConverged(getOrbitalThreshold()) << endl);
-        TelePrompter::printSeparator(0, '=', 2);
-        TelePrompter::setPrecision(oldprec);
+void SCF::printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, int flag) const {
+    Printer::printHeader(0, "Orbitals");
+    if (flag == 0) println(0, " Orb    F(i,i)        Error         nNodes  Spin  Occ  Done ");
+    if (flag == 1) println(0, " Orb    Norm          Error         nNodes  Spin  Occ  Done ");
+    Printer::printSeparator(0, '-');
+    int oldprec = Printer::setPrecision(5);
+    bool tot_conv = true;
+    double thrs = getOrbitalThreshold();
+    for (int i = 0; i < Phi.size(); i++) {
+        bool converged = (Phi[i].error() < thrs) ? true : false;
+        printout(0, setw(3) << i);
+        printout(0, " " << setw(13) << epsilon(i));
+        printout(0, " " << setw(13) << Phi[i].error());
+        printout(0, " " << setw(10) << Phi[i].getNNodes());
+        printout(0, setw(5) << Phi[i].printSpin());
+        printout(0, setw(5) << Phi[i].occ());
+        printout(0, setw(5) << converged << endl);
+        if (not converged) tot_conv = false;
     }
+
+    DoubleVector errors = orbital::get_errors(Phi);
+    double tot_error = std::sqrt(errors.dot(errors));
+
+    Printer::printSeparator(0, '-');
+    printout(0, " Total error:                    ");
+    printout(0, setw(19) << tot_error << "  ");
+    printout(0, setw(3) << tot_conv << endl);
+    Printer::printSeparator(0, '=', 2);
+    Printer::setPrecision(oldprec);
 }
 
 void SCF::printConvergence(bool converged) const {
     int iter = this->orbError.size();
-    int oldPrec = TelePrompter::getPrecision();
-    TelePrompter::printHeader(0, "Convergence rate");
+    int oldPrec = Printer::getPrecision();
+    Printer::printHeader(0, "Convergence rate");
     println(0,"Iter    OrbError       Property                   Update  ");
-    TelePrompter::printSeparator(0, '-');
+    Printer::printSeparator(0, '-');
     for (int i = 0; i < iter; i++) {
         double prop_i = this->property[i];
         double propDiff = getUpdate(this->property, i+1, true);
         printout(0, setw(3) << i+1);
-        TelePrompter::setPrecision(5);
+        Printer::setPrecision(5);
         printout(0, setw(15) << this->orbError[i]);
-        TelePrompter::setPrecision(15);
+        Printer::setPrecision(15);
         printout(0, setw(26) << prop_i);
-        TelePrompter::setPrecision(5);
+        Printer::setPrecision(5);
         printout(0, setw(15) << propDiff);
         printout(0, endl);
     }
-    TelePrompter::setPrecision(oldPrec);
-    TelePrompter::printSeparator(0, '-');
+    Printer::setPrecision(oldPrec);
+    Printer::printSeparator(0, '-');
     if (converged) {
         println(0,"                      SCF converged!!!                      ");
     } else {
         println(0,"                   SCF did NOT converge!!!                  ");
     }
-    TelePrompter::printSeparator(0, '=', 2);
+    Printer::printSeparator(0, '=', 2);
 }
 
 void SCF::printCycle(int nIter) const {
@@ -191,17 +193,17 @@ void SCF::printCycle(int nIter) const {
 }
 
 void SCF::printTimer(double t) const {
-    int oldPrec = TelePrompter::setPrecision(5);
+    int oldPrec = Printer::setPrecision(5);
     printout(0, endl << endl);
     printout(0, "################");
     printout(0, " Wall time: " << t << " sec ");
     printout(0, "################");
     printout(0, endl << endl << endl);
-    TelePrompter::setPrecision(oldPrec);
+    Printer::setPrecision(oldPrec);
 }
 
-void SCF::printMatrix(int level, const MatrixXd &M, const char &name, int pr) const {
-    int oldPrec = TelePrompter::setPrecision(pr);
+void SCF::printMatrix(int level, const DoubleMatrix &M, const char &name, int pr) const {
+    int oldPrec = Printer::setPrecision(pr);
     printout(level, endl);
     printout(level, "----------------------------- ");
     printout(level, name);
@@ -213,5 +215,7 @@ void SCF::printMatrix(int level, const MatrixXd &M, const char &name, int pr) co
     printout(level, "------------------------------");
     printout(level, endl);
     printout(level, endl);
-    TelePrompter::setPrecision(oldPrec);
+    Printer::setPrecision(oldPrec);
 }
+
+} //namespace mrchem

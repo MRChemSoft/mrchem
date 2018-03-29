@@ -5,35 +5,35 @@
 
 namespace mrchem {
 
+typedef std::vector<SCFEnergy> SCFEnergyVector;
+
 class GroundStateSolver : public SCF {
 public:
     GroundStateSolver(HelmholtzVector &h);
     virtual ~GroundStateSolver();
 
 protected:
-    std::vector<SCFEnergy> energy;
+    SCFEnergyVector energy;
 
-    FockOperator *fOper_n;
-    Eigen::MatrixXd *fMat_n;
-
+    ComplexMatrix *fMat_n;
+    FockOperator  *fOper_n;
     OrbitalVector *orbitals_n;
-    OrbitalVector *orbitals_np1;
-    OrbitalVector *dOrbitals_n;
 
-    OrbitalVector *setupHelmholtzArguments(FockOperator &fock,
-                                           const Eigen::MatrixXd &M,
-                                           OrbitalVector &phi,
-                                           bool adjoint = false,
-                                           bool clearFock = false);
+    OrbitalVector setupHelmholtzArguments(FockOperator &fock,
+                                          const ComplexMatrix &M,
+                                          OrbitalVector &Phi,
+                                          bool adjoint = false,
+                                          bool clearFock = false);
     void printProperty() const;
     double calcProperty();
     double calcPropertyError() const;
 
-    void localize(FockOperator &fock, Eigen::MatrixXd &F, OrbitalVector &phi);
-    void diagonalize(FockOperator &fock, Eigen::MatrixXd &F, OrbitalVector &phi);
-    void orthonormalize(FockOperator &fock, Eigen::MatrixXd &F, OrbitalVector &phi);
-    Eigen::MatrixXd calcOrthonormalizationMatrix(OrbitalVector &phi);
-    Eigen::MatrixXd calcOrthonormalizationMatrix_P(OrbitalVector &phi);
+    void localize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi);
+    void diagonalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi);
+    void orthonormalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi);
+    ComplexMatrix calcOrthonormalizationMatrix(OrbitalVector &Phi);
+    ComplexMatrix calcOrthonormalizationMatrix_P(OrbitalVector &Phi);
+    void diagonalizeBlock(ComplexMatrix &M, ComplexMatrix &U, int nstart, int nsize);
 };
 
 /** subclass which defines the particular Gradient and Hessian
@@ -48,19 +48,19 @@ protected:
 
 class RR : public NonlinearMaximizer {
 public:
-    RR(double prec, OrbitalVector &phi);//make the matrices <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
-    const Eigen::MatrixXd &getTotalU() const { return this->total_U; }
+    RR(double prec, OrbitalVector &Phi);//make the matrices <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
+    const DoubleMatrix &getTotalU() const { return this->total_U; }
 protected:
     int N;//number of orbitals
-    Eigen::MatrixXd r_i_orig;//<i|R_x|j>,<i|R_y|j>,<i|R_z|j>
-    Eigen::MatrixXd r_i ;// rotated  r_i_orig
-    Eigen::MatrixXd total_U;// the rotation matrix of the orbitals
+    DoubleMatrix r_i_orig;//<i|R_x|j>,<i|R_y|j>,<i|R_z|j>
+    DoubleMatrix r_i ;// rotated  r_i_orig
+    DoubleMatrix total_U;// the rotation matrix of the orbitals
 
     //NB:total_U is not Unitary if the basis set is not orthonormal
     double functional(); //the functional to maximize
     double make_gradient();
     double make_hessian();
-    void do_step(Eigen::VectorXd step);
+    void do_step(DoubleVector step);
 };
 
 } //namespace mrchem
