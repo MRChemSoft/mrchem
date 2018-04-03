@@ -448,65 +448,9 @@ void SCFDriver::clear_np1() {
 void SCFDriver::setupInitialGroundState() {
     // Reading initial guess
     if (scf_start == "none") {
-        HydrogenFunction s1(1, 0, 0);
-        HydrogenFunction s2(2, 0, 0);
-        HydrogenFunction px(2, 1, 0);
-        HydrogenFunction py(2, 1, 1);
-        HydrogenFunction pz(2, 1, 2);
-
-        std::vector<HydrogenFunction> hFuncs;
-        hFuncs.push_back(s1);
-        hFuncs.push_back(s2);
-        hFuncs.push_back(px);
-        hFuncs.push_back(py);
-        hFuncs.push_back(pz);
-
-        for (int i = 0; i < hFuncs.size(); i++) {
-            Orbital phi_i(SPIN::Paired);
-            phi->push_back(phi_i);
-            (*phi)[i].alloc(NUMBER::Real);
-            mrcpp::project(rel_prec, (*phi)[i].real(), hFuncs[i]);
-        }
-        /*
-        // Project minimal basis set of hydrogen orbitals
-        OrbitalProjector OP(rel_prec, max_scale);
-        OrbitalVector *tmp = OP(*nuclei);
-
-        // Compute orthonormalization matrix
-        IdentityOperator I;
-        I.setup(rel_prec);
-        MatrixXd S = I(*tmp, *tmp);
-        MatrixXd S_m12 = MathUtils::hermitianMatrixPow(S, -1.0/2.0);
-        I.clear();
-
-        // Compute core Hamiltonian matrix
-        CoreHamiltonian h(*T, *V);
-        h.setup(rel_prec);
-        MatrixXd f_mat = h(*tmp, *tmp);
-        h.clear();
-
-        // Diagonalize core Hamiltonian matrix
-        MatrixXd M = MathUtils::diagonalizeHermitianMatrix(f_mat);
-        MatrixXd U = M.transpose()*S_m12;
-
-        // Duplicate orbitals if unrestricted
-        extendRotationMatrix(*phi, U);
-
-        // Rotate n lowest energy orbitals of U*tmp into phi
-        OrbitalAdder add(rel_prec, max_scale);
-        add.rotate(*phi, U, *tmp);
-        delete tmp;
-        */
+        NOT_IMPLEMENTED_ABORT;
     } else if (scf_start == "gto") {
         NOT_IMPLEMENTED_ABORT;
-        /*
-        OrbitalProjector OP(rel_prec, max_scale);
-        if (wf_restricted) {
-            OP(*phi, file_basis_set, file_mo_mat_a);
-        } else {
-            OP(*phi, file_basis_set, file_mo_mat_a, file_mo_mat_b);
-        }
-        */
     } else if (scf_start == "mw") {
         NOT_IMPLEMENTED_ABORT;
     } else {
@@ -515,8 +459,6 @@ void SCFDriver::setupInitialGroundState() {
 }
 
 OrbitalOptimizer* SCFDriver::setupOrbitalOptimizer() {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     if (helmholtz == 0) MSG_ERROR("Helmholtz operators not initialized");
 
     OrbitalOptimizer *optimizer = new OrbitalOptimizer(*helmholtz, kain);
@@ -527,7 +469,6 @@ OrbitalOptimizer* SCFDriver::setupOrbitalOptimizer() {
     optimizer->setOrbitalPrec(scf_orbital_prec[0], scf_orbital_prec[1]);
 
     return optimizer;
-    */
 }
 
 EnergyOptimizer* SCFDriver::setupEnergyOptimizer() {
@@ -653,14 +594,11 @@ bool SCFDriver::runGroundState() {
 
     // Optimize orbitals
     if (scf_run) {
-        NOT_IMPLEMENTED_ABORT;
-        /*
         OrbitalOptimizer *solver = setupOrbitalOptimizer();
         solver->setup(*fock, *phi, F);
         converged = solver->optimize();
         solver->clear();
         delete solver;
-        */
     } else {
         fock->setup(rel_prec);
         F = (*fock)(*phi, *phi);
