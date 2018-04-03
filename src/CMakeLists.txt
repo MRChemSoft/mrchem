@@ -1,5 +1,7 @@
 link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
+add_subdirectory(initial_guess)
+
 add_library(mrchem STATIC
     SCFDriver.cpp
     parallel.cpp
