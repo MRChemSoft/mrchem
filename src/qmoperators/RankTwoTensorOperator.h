@@ -5,6 +5,16 @@
 
 namespace mrchem {
 
+/** @class RankTwoTensorOperator
+ *
+ *  @brief Matrix of RankZeroTensorOperator
+ *
+ * This class provides a base for all matrix operators (implemented as a vector
+ * of vectors), and implements some simple collective operations returning matrix
+ * quantities.
+ *
+ */
+
 template<int I, int J>
 class RankTwoTensorOperator : public TensorOperator<I, RankOneTensorOperator<J> > {
 public:

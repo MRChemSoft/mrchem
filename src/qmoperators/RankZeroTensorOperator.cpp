@@ -8,6 +8,10 @@
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** @brief return the expansion coefficients as an Eigen vector
+ *
+ * Converts std::vector<std::complex<double> > to Eigen::VectorXcd
+ */
 ComplexVector RankZeroTensorOperator::getCoefVector() const {
     int nCoefs = this->coef_exp.size();
     ComplexVector out(nCoefs);
@@ -17,6 +21,10 @@ ComplexVector RankZeroTensorOperator::getCoefVector() const {
     return out;
 }
 
+/** @brief assignment operator
+ *
+ * Clears the operator expansion and sets the right hand side as the only component.
+ */
 RankZeroTensorOperator& RankZeroTensorOperator::operator=(QMOperator &O) {
     this->clear();
     this->coef_exp.push_back(1.0);
@@ -26,6 +34,10 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator=(QMOperator &O) {
     return *this;
 }
 
+/** @brief in-place addition
+ *
+ * Adds a new term to the operator expansion.
+ */
 RankZeroTensorOperator& RankZeroTensorOperator::operator+=(QMOperator &O) {
     this->coef_exp.push_back(1.0);
     QMOperatorVector tmp;
@@ -34,6 +46,10 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator+=(QMOperator &O) {
     return *this;
 }
 
+/** @brief in-place subtraction
+ *
+ * Adds a new term to the operator expansion with -1 coefficient.
+ */
 RankZeroTensorOperator& RankZeroTensorOperator::operator-=(QMOperator &O) {
     this->coef_exp.push_back(-1.0);
     QMOperatorVector tmp;
@@ -42,6 +58,10 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator-=(QMOperator &O) {
     return *this;
 }
 
+/** @brief assignment operator
+ *
+ * This will shallow copy the operator expansion. Ownership not transferred.
+ */
 RankZeroTensorOperator& RankZeroTensorOperator::operator=(const RankZeroTensorOperator &O) {
     if (this != &O) {
         this->coef_exp = O.coef_exp;
@@ -50,6 +70,10 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator=(const RankZeroTensorOp
     return *this;
 }
 
+/** @brief in-place addition
+ *
+ * This will append an operator expansion. Ownership not transferred.
+ */
 RankZeroTensorOperator& RankZeroTensorOperator::operator+=(const RankZeroTensorOperator &O) {
     if (this != &O) {
         for (int i = 0; i < O.coef_exp.size(); i++) {
@@ -62,6 +86,11 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator+=(const RankZeroTensorO
     return *this;
 }
 
+/** @brief in-place subtraction
+ *
+ * This will append an operator expansion with negated coefficients.
+ * Ownership not transferred.
+ */
 RankZeroTensorOperator& RankZeroTensorOperator::operator-=(const RankZeroTensorOperator &O) {
     if (this != &O) {
         for (int i = 0; i < O.coef_exp.size(); i++) {
@@ -74,6 +103,13 @@ RankZeroTensorOperator& RankZeroTensorOperator::operator-=(const RankZeroTensorO
     return *this;
 }
 
+/** @brief run setup on all operators in the expansion
+ *
+ * @param prec: precision of application
+ *
+ * This prepares each of the fundamental operators in the expansion to be
+ * applied with the given precision. Must be called prior to application.
+ */
 void RankZeroTensorOperator::setup(double prec) {
     for (int i = 0; i < this->oper_exp.size(); i++) {
         for (int j = 0; j < this->oper_exp[i].size(); j++) {
@@ -82,6 +118,8 @@ void RankZeroTensorOperator::setup(double prec) {
     }
 }
 
+/** @brief run clear on all operators in the expansion
+ */
 void RankZeroTensorOperator::clear() {
     for (int i = 0; i < this->oper_exp.size(); i++) {
         for (int j = 0; j < this->oper_exp[i].size(); j++) {
@@ -90,6 +128,14 @@ void RankZeroTensorOperator::clear() {
     }
 }
 
+/** @brief apply operator expansion to orbital
+ *
+ * @param inp: orbital on which to apply
+ *
+ * Applies each term of the operator expansion to the input orbital. First all
+ * components of each term are applied consecutively, then the output of each term
+ * is added upp with the corresponding coefficient.
+ */
 Orbital RankZeroTensorOperator::operator()(Orbital inp) {
     if (not mpi::my_orb(inp)) return inp.paramCopy();
 
@@ -104,10 +150,23 @@ Orbital RankZeroTensorOperator::operator()(Orbital inp) {
     return out;
 }
 
+/** @brief apply the adjoint of the operator expansion to orbital
+ *
+ * @param inp: orbital on which to apply
+ *
+ * NOT IMPLEMENTED
+ */
 Orbital RankZeroTensorOperator::dagger(Orbital inp) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+/** @brief apply operator expansion to orbital vector
+ *
+ * @param inp: orbitals on which to apply
+ *
+ * This produces a new OrbitalVector of the same size as the input, containing
+ * the corresponding output orbitals after applying the operator.
+ */
 OrbitalVector RankZeroTensorOperator::operator()(OrbitalVector &inp) {
     RankZeroTensorOperator &O = *this;
     OrbitalVector out;
@@ -118,10 +177,25 @@ OrbitalVector RankZeroTensorOperator::operator()(OrbitalVector &inp) {
     return out;
 }
 
+/** @brief apply the adjoint of the operator expansion to orbital vector
+ *
+ * @param inp: orbitals on which to apply
+ *
+ * NOT IMPLEMENTED
+ */
 OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+/** @brief compute expectation value
+ *
+ * @param bra: orbital on the bra side
+ * @param ket: orbital on the ket side
+ *
+ * This applies each term of the operator expansion separately and computes the
+ * corresponding expectation value. Then the expectation values are added up with
+ * the corresponding coefficient to yield the final result.
+ */
 ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
     ComplexDouble out(0.0, 0.0);
     if (mpi::my_orb(bra) and mpi::my_orb(ket)) {
@@ -135,10 +209,27 @@ ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
     return out;
 }
 
+/** @brief compute expectation value of adjoint operator
+ *
+ * @param bra: orbital on the bra side
+ * @param ket: orbital on the ket side
+ *
+ * NOT IMPLEMENTED
+ */
 ComplexDouble RankZeroTensorOperator::dagger(Orbital bra, Orbital ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+/** @brief compute expectation matrix
+ *
+ * @param bra: orbitals on the bra side
+ * @param ket: orbitals on the ket side
+ *
+ * This applies each term of the operator expansion separately to all orbitals of
+ * ket vector, then computes the corresponding expectation matrix. Finally, the
+ * expectation matrices are added up with the corresponding coefficient to yield
+ * the final result.
+ */
 ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     ComplexMatrix out = ComplexMatrix::Zero(bra.size(), ket.size());
     for (int n = 0; n < this->oper_exp.size(); n++) {
@@ -155,10 +246,26 @@ ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVect
     return out;
 }
 
+/** @brief compute expectation matrix of adjoint operator
+ *
+ * @param bra: orbitals on the bra side
+ * @param ket: orbitals on the ket side
+ *
+ * NOT IMPLEMENTED
+ */
 ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+/** @brief compute trace of operator expansion
+ *
+ * @param Phi: orbitals on which to apply
+ *
+ * This sums the diagonal elements of the expectation value of the operator
+ * expansion applied to the density matrix:
+ *      result = \sum_i n_i * <Phi_i|O|Phi_i>
+ * Includes a MPI reduction operation in case of distributed orbitals.
+ */
 ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
     RankZeroTensorOperator &O = *this;
 
@@ -175,6 +282,17 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
     return result;
 }
 
+/** @brief compute trace of operator expansion
+ *
+ * @param Phi: unperturbed orbitals
+ * @param X: perturbed orbitals
+ * @param Y: perturbed orbitals
+ *
+ * This sums the diagonal elements of the expectation value of the operator
+ * expansion applied to the perturbed density matrix:
+ *      result = \sum_i n_i * (<Phi_i|O|X_i> + <Y_i|O|Phi_i>)
+ * Includes a MPI reduction operation in case of distributed orbitals.
+ */
 ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi,
                                             OrbitalVector &X,
                                             OrbitalVector &Y) {
@@ -199,6 +317,14 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi,
     return result;
 }
 
+/** @brief apply a single term of the operator expansion
+ *
+ * @param n: which term to apply
+ * @param inp: orbital on which to apply
+ *
+ * This consecutively applies all components of a particular term of the operator
+ * expansion to the input orbital.
+ */
 Orbital RankZeroTensorOperator::applyOperTerm(int n, Orbital inp) {
     if (n >= this->oper_exp.size()) MSG_FATAL("Invalid oper term");
     if (not mpi::my_orb(inp)) return inp.paramCopy();

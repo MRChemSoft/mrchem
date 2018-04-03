@@ -4,6 +4,35 @@
 
 namespace mrchem {
 
+/** @class RankZeroTensorOperator
+ *
+ *  @brief General expansion of QMOperators
+ *
+ * This class represents a general sum of products of fundamental QM operators,
+ * which will be applied from right to left:
+ *      \hat{Q} = c_1 \hat{q}_{11}\hat{q}_{12}\cdots
+ *              + c_2 \hat{q}_{21}\hat{q}_{22}\cdots
+ *              + \cdots
+ *
+ * The class has two main purposes:
+ * (1)  it provides an easy, intuitive way to contruct new (more complicated) operators from
+ *      simple fundamental operators by implementing the arithmetic operators (+,-,*). E.g.
+ *      the x component of the angular momentum can be written explicitly from position
+ *      and linear momentum as: l_x = r_y*p_z - r_z*p_y
+ * (2)  it provides the public interface to all operators by implementing the operator()
+ *      function, as well as expectation value and trace operation, using the (protected)
+ *      apply() function of the fundamental QMOperators
+ *
+ * Operators can be constructed either on the fly by combining other existing operators,
+ * or by defining a new derived class that contains the fundamental QMOperators (see e.g.
+ * NuclearOperator which CONTAINS a NuclearPotential that is ASSIGNED to the operator itself
+ * in the constructor). Note that the assignment operator is a shallow copy that does NOT
+ * transfer ownership of the QMOperator pointers, so be careful when defining new operators
+ * on the fly, as the underlying operators can go out of scope. This is why all implemented
+ * operators contain their fundamental operators as data members.
+ *
+ */
+
 // Convenience typedef
 typedef std::vector<QMOperator *> QMOperatorVector;
 

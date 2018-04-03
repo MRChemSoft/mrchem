@@ -3,13 +3,16 @@
 #include "QMFunction.h"
 #include "QMOperator.h"
 
-/** 
- *  \class QMPotential
- *  \brief Operator defining a multiplicative potential
+/** @class QMPotential
  *
- *  \author Stig Rune Jensen
- *  \date 2015
- *  
+ * @brief Operator defining a multiplicative potential
+ *
+ * Inherits the general features of a complex function from QMFunction and
+ * implements the multiplication of this function with an Orbital. The actual
+ * function representing the operator needs to be implemented in the derived
+ * classes, where the *re and *im FunctionTree pointers should be assigned in
+ * the setup() function and deallocated in the clear() function.
+ *
  */
 
 namespace mrchem {

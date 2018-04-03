@@ -6,6 +6,15 @@
 
 namespace mrchem {
 
+/** @class RankOneTensorOperator
+ *
+ *  @brief Vector of RankZeroTensorOperator
+ *
+ * This class provides a base for all vector operators, and implements some simple
+ * collective operations returning vector quantities.
+ *
+ */
+
 template<int I>
 class RankOneTensorOperator : public TensorOperator<I, RankZeroTensorOperator> {
 public:
