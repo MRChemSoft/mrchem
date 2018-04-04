@@ -228,7 +228,7 @@ void GroundStateSolver::localize(double prec, FockOperator &fock, ComplexMatrix 
 
     if (n_it <= 0) {
         Timer orth_t;
-        U = calcOrthonormalizationMatrix(Phi);
+        U = orbital::calc_orthonormalization_matrix(Phi);
         orth_t.stop();
         Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
     }
@@ -254,7 +254,7 @@ void GroundStateSolver::diagonalize(double prec, FockOperator &fock, ComplexMatr
     Timer timer;
 
     Timer orth_t;
-    ComplexMatrix S_m12 = calcOrthonormalizationMatrix(Phi);
+    ComplexMatrix S_m12 = orbital::calc_orthonormalization_matrix(Phi);
     F = S_m12.transpose()*F*S_m12;
     orth_t.stop();
     Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
@@ -294,33 +294,12 @@ void GroundStateSolver::diagonalizeBlock(ComplexMatrix &M, ComplexMatrix &U, int
 }
 
 void GroundStateSolver::orthonormalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi) {
-    ComplexMatrix U = calcOrthonormalizationMatrix(Phi);
+    ComplexMatrix U = orbital::calc_orthonormalization_matrix(Phi);
     F = U*F*U.transpose();
     fock.rotate(U);
     OrbitalVector Psi = orbital::multiply(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
-}
-
-ComplexMatrix GroundStateSolver::calcOrthonormalizationMatrix(OrbitalVector &Phi) {
-    Timer timer;
-    printout(1, "Calculating orthonormalization matrix            ");
-
-    ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
-
-    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(S_tilde.cols());
-    es.compute(S_tilde);
-
-    DoubleMatrix A = es.eigenvalues().asDiagonal();
-    for (int i = 0; i < A.cols(); i++) {
-        A(i,i) = std::pow(A(i,i), -1.0/2.0);
-    }
-    ComplexMatrix B = es.eigenvectors();
-    ComplexMatrix U = B*A*B.transpose();
-
-    timer.stop();
-    println(1, timer.getWallTime());
-    return U;
 }
 
 /** Compute the position matrix <i|R_x|j>,<i|R_y|j>,<i|R_z|j>

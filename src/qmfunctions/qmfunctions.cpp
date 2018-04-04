@@ -1,4 +1,5 @@
 #include "MRCPP/Printer"
+#include "MRCPP/Timer"
 
 #include "parallel.h"
 
@@ -417,6 +418,34 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
         }
     }
     return S;
+}
+
+/** Compute orthonormalization matrix
+ *
+ * Computes the Löwdin orthonormalization matrix S^(-1/2)
+ */
+ComplexMatrix calc_orthonormalization_matrix(OrbitalVector &Phi) {
+    mrcpp::Timer timer;
+    printout(1, "Calculating orthonormalization matrix            ");
+
+    ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
+    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(S_tilde.cols());
+    es.compute(S_tilde);
+
+    DoubleMatrix A = es.eigenvalues().asDiagonal();
+    for (int i = 0; i < A.cols(); i++) {
+        if (A(i,i) > mrcpp::MachineZero) {
+            A(i,i) = std::pow(A(i,i), -1.0/2.0);
+        } else {
+            A(i,i) = 0.0;
+        }
+    }
+    ComplexMatrix B = es.eigenvectors();
+    ComplexMatrix U = B*A*B.transpose();
+
+    timer.stop();
+    println(1, timer.getWallTime());
+    return U;
 }
 
 /** Returns the number of occupied orbitals */
