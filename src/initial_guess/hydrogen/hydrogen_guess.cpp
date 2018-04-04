@@ -1,4 +1,7 @@
+#include <Eigen/Eigenvalues>
+
 #include "MRCPP/MWFunctions"
+#include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
@@ -10,6 +13,9 @@
 #include "Nucleus.h"
 #include "Orbital.h"
 
+#include "NuclearOperator.h"
+#include "KineticOperator.h"
+
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -19,10 +25,9 @@ namespace mrchem {
  *
  *  First index energy level (n)
  *  Second index angular momentum (l)
- *
  */
-//namespace hydrogen_guess {
-int hydrogen_guess::PT[29][2] = {
+namespace hydrogen_guess {
+int PT[29][2] = {
    /*s*/
    {1,0},                  /*p*/
    {2,0},                  {2,1},
@@ -34,28 +39,58 @@ int hydrogen_guess::PT[29][2] = {
    {8,0},{5,4},{6,3},{7,2},{8,1},
    {9,0},{6,4},{7,3},{8,2},{9,1}
 };
-//} //namespace hydrogen_guess
 
-OrbitalVector hydrogen_guess::initial_guess(double prec,
-                                            const Molecule &mol,
-                                            bool restricted,
-                                            int zeta) {
-
+OrbitalVector initial_guess(double prec,
+                            const Molecule &mol,
+                            bool restricted,
+                            int zeta) {
     int mult = mol.getMultiplicity();   //multiplicity
     int Ne = mol.getNElectrons();       //total electrons
     int Nd = Ne - (mult - 1);           //doubly occupied
-    if (Nd%2 != 0)  MSG_FATAL("Invalid multiplicity");
+    if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
+    if (not restricted) NOT_IMPLEMENTED_ABORT;
 
     //project AO basis of hydrogen functions
     OrbitalVector Phi = hydrogen_guess::project(prec, mol.getNuclei(), zeta);
 
-/*
+    ComplexMatrix S_m12 = orbital::calc_orthonormalization_matrix(Phi);
+
+    // Compute core Hamiltonian matrix
+    mrcpp::ABGVOperator<3> D(*MRA, 0.5, 0.5);
+    KineticOperator T(D);
+    NuclearOperator V_nuc(mol.getNuclei(), prec);
+    T.setup(prec);
+    V_nuc.setup(prec);
+    ComplexMatrix t = T(Phi, Phi);
+    ComplexMatrix v = V_nuc(Phi, Phi);
+    V_nuc.clear();
+    T.clear();
+
+    ComplexMatrix F = S_m12.transpose()*(t + v)*S_m12;
+
+    // Diagonalize Hamiltonian matrix
+    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(F.cols());
+    es.compute(F);
+    ComplexMatrix ei_vec = es.eigenvectors();
+    ComplexMatrix U = ei_vec.transpose() * S_m12;
+
+    // Rotate orbitals and fill electrons by Aufbau
+    OrbitalVector Psi;
+    for (int i = 0; i < Nd/2; i++) {
+        ComplexVector v_i = U.row(i);
+        Orbital psi_i = orbital::multiply(v_i, Phi, prec);
+        Psi.push_back(psi_i);
+    }
+    orbital::free(Phi);
+
     if (restricted) {
         if (mult != 1) MSG_FATAL("Restricted open-shell not available");
 
         //set spin and occupation number
-        hydrogen_guess::populate(Phi, Nd, SPIN::Paired);
+        hydrogen_guess::populate(Psi, Nd, SPIN::Paired);
     } else {
+        NOT_IMPLEMENTED_ABORT;
+        /*
         OrbitalVector Phi_a = Phi;
         OrbitalVector Phi_b = orbital::deep_copy(Phi);
 
@@ -68,12 +103,12 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
 
         Phi.clear();
         Phi = orbital::adjoin(Phi_a, Phi_b);
+        */
     }
-*/
-    return Phi;
+    return Psi;
 }
 
-OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta) {
+OrbitalVector project(double prec, const Nuclei &nucs, int zeta) {
     Printer::printHeader(0, "Setting up occupied orbitals");
     println(0, "    N    Atom   Label                     SquareNorm");
     Printer::printSeparator(0, '-');
@@ -125,7 +160,7 @@ OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta)
     return Phi;
 }
 
-void hydrogen_guess::populate(OrbitalVector &vec, int N, int spin) {
+void populate(OrbitalVector &vec, int N, int spin) {
     int occ = 0;
     if (spin == SPIN::Paired) occ = 2;
     if (spin == SPIN::Alpha) occ = 1;
@@ -139,5 +174,7 @@ void hydrogen_guess::populate(OrbitalVector &vec, int N, int spin) {
         }
     }
 }
+
+} //namespace hydrogen_guess
 
 } //namespace mrchem

@@ -7,6 +7,8 @@
 #include "MRCPP/Timer"
 #include "Getkw.h"
 
+#include "hydrogen_guess.h"
+
 #include "SCFDriver.h"
 #include "Molecule.h"
 #include "HydrogenFunction.h"
@@ -220,12 +222,10 @@ bool SCFDriver::sanityCheck() const {
 void SCFDriver::setup() {
     // Setting up molecule
     molecule = new Molecule(mol_coords, mol_charge);
-    int nEl = molecule->getNElectrons();
     nuclei = &molecule->getNuclei();
 
     // Setting up empty orbitals
     phi = new OrbitalVector;
-            //(nEl, mol_multiplicity, wf_restricted);
 
     // Defining gauge origin
     const double *COM = molecule->getCenterOfMass();
@@ -454,15 +454,22 @@ void SCFDriver::clear_np1() {
 
 void SCFDriver::setupInitialGroundState() {
     // Reading initial guess
-    if (scf_start == "none") {
-        NOT_IMPLEMENTED_ABORT;
-    } else if (scf_start == "gto") {
+    if (scf_start == "gto") {
         NOT_IMPLEMENTED_ABORT;
     } else if (scf_start == "mw") {
         NOT_IMPLEMENTED_ABORT;
     } else {
-        NOT_IMPLEMENTED_ABORT;
+        // Setting up hydrogen initial guess
+        int ig_zeta = 0;
+             if (scf_start == "SZ") { ig_zeta = 1; }
+        else if (scf_start == "DZ") { ig_zeta = 2; }
+        else if (scf_start == "TZ") { ig_zeta = 3; }
+        else if (scf_start == "QZ") { ig_zeta = 4; }
+        else { MSG_FATAL("Invalid initial guess"); }
+
+        *phi = hydrogen_guess::initial_guess(rel_prec, *molecule, wf_restricted, ig_zeta);
     }
+    println(0, *phi);
 }
 
 OrbitalOptimizer* SCFDriver::setupOrbitalOptimizer() {

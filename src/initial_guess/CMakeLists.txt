@@ -19,6 +19,8 @@ target_include_directories(hydrogenguess PRIVATE
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/qmfunctions
     ${CMAKE_SOURCE_DIR}/src/qmoperators
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
     )
 target_link_libraries(hydrogenguess
@@ -49,6 +51,8 @@ target_include_directories(hydrogen-guess.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/qmfunctions
     ${CMAKE_SOURCE_DIR}/src/qmoperators
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
+    ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
     )
 target_link_libraries(hydrogen-guess.x

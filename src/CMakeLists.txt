@@ -28,8 +28,10 @@ target_include_directories(mrchem PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/scf_solver
+    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
     )
 target_link_libraries(mrchem
+    hydrogenguess
     mrcpp
     )
 install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
@@ -53,8 +55,10 @@ target_include_directories(mrchem.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/scf_solver
+    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
     )
 target_link_libraries(mrchem.x
+    hydrogenguess
     mrchem
     mrcpp
     getkw
