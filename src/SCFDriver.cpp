@@ -454,10 +454,10 @@ void SCFDriver::clear_np1() {
 
 void SCFDriver::setupInitialGroundState() {
     // Reading initial guess
-    if (scf_start == "gto") {
+    if (scf_start == "GTO") {
         NOT_IMPLEMENTED_ABORT;
-    } else if (scf_start == "mw") {
-        NOT_IMPLEMENTED_ABORT;
+    } else if (scf_start == "MW") {
+        *phi = orbital::load_orbitals(file_start_orbitals);
     } else {
         // Setting up hydrogen initial guess
         int ig_zeta = 0;
@@ -629,7 +629,7 @@ bool SCFDriver::runGroundState() {
         delete solver;
     }
 
-    if (scf_write_orbitals) NOT_IMPLEMENTED_ABORT;
+    if (scf_write_orbitals) orbital::save_orbitals(*phi, file_final_orbitals);
 
     // Compute requested properties
     if (converged) calcGroundStateProperties();

@@ -65,6 +65,9 @@ public:
     void orthogonalize(Orbital inp);
     void orthogonalize(OrbitalVector inp_vec);
 
+    void saveOrbital(const std::string &file);
+    void loadOrbital(const std::string &file);
+
     char printSpin() const;
     friend std::ostream& operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
 

@@ -371,6 +371,54 @@ OrbitalVector disjoin(OrbitalVector &inp, int spin) {
     return out;
 }
 
+/** Write orbitals to disk
+ *
+ * @param Phi: orbitals to save
+ * @param file: file name prefix
+ * @param n_orbs: number of orbitals to save
+ *
+ * The given file name (e.g. "phi") will be appended with orbital number ("phi_0").
+ * Produces separate files for meta data ("phi_0.meta"), real ("phi_0_re.tree") and
+ * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals in the
+ * vector are saved.
+ */
+void save_orbitals(OrbitalVector &Phi, const std::string &file, int n_orbs) {
+    if (n_orbs < 0) n_orbs = Phi.size();
+    if (n_orbs > Phi.size()) MSG_ERROR("Index out of bounds");
+    for (int i = 0; i < n_orbs; i++) {
+        std::stringstream orbname;
+        orbname << file << "_" << i;
+        Phi[i].saveOrbital(orbname.str());
+    }
+}
+
+/** Read orbitals from disk
+ *
+ * @param file: file name prefix
+ * @param n_orbs: number of orbitals to read
+ *
+ * The given file name (e.g. "phi") will be appended with orbital number ("phi_0").
+ * Produces separate files for meta data ("phi_0.meta"), real ("phi_0_re.tree") and
+ * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals matching
+ * the prefix name will be read.
+ */
+OrbitalVector load_orbitals(const std::string &file, int n_orbs) {
+    OrbitalVector Phi;
+    for (int i = 0; true; i++) {
+        if (n_orbs > 0 and i >= n_orbs) break;
+        std::stringstream orbname;
+        orbname << file << "_" << i;
+        Orbital phi_i;
+        phi_i.loadOrbital(orbname.str());
+        if (phi_i.hasReal() or phi_i.hasImag()) {
+            Phi.push_back(phi_i);
+        } else {
+            break;
+        }
+    }
+    return Phi;
+}
+
 /** Frees each orbital in the vector
  *
  * Leaves an empty vector. Orbitals are freed.

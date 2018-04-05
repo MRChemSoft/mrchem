@@ -33,6 +33,9 @@ OrbitalVector param_copy(const OrbitalVector &inp);
 OrbitalVector adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b);
 OrbitalVector disjoin(OrbitalVector &inp, int spin);
 
+void save_orbitals(OrbitalVector &Phi, const std::string &file, int n_orbs = -1);
+OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
+
 void free(OrbitalVector &vec);
 void normalize(OrbitalVector &vec);
 void orthogonalize(OrbitalVector &vec);

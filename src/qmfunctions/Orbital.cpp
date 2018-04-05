@@ -1,3 +1,5 @@
+#include <fstream>
+
 #include "MRCPP/Printer"
 
 #include "Orbital.h"
@@ -205,6 +207,68 @@ void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
     Orbital tmp = orbital::add(1.0, *this, c, inp, prec);
     this->free();
     *this = tmp;
+}
+
+void Orbital::saveOrbital(const std::string &file) {
+    //writing meta data
+    std::stringstream metafile;
+    metafile << file << ".meta";
+
+    //this flushes tree sizes
+    OrbitalMeta &my_meta = getMetaData();
+
+    std::fstream f;
+    f.open(metafile.str(), std::ios::out | std::ios::binary);
+    if (not f.is_open()) MSG_ERROR("Unable to open file");
+    f.write((char *) &my_meta, sizeof(OrbitalMeta));
+    f.close();
+
+    //writing real part
+    if (hasReal()) {
+        std::stringstream fname;
+        fname << file << "_re";
+        this->real().saveTree(fname.str());
+    }
+
+    //writing imaginary part
+    if (hasImag()) {
+        std::stringstream fname;
+        fname << file << "_im";
+        this->imag().saveTree(fname.str());
+    }
+}
+
+void Orbital::loadOrbital(const std::string &file) {
+    if (hasReal()) MSG_ERROR("Orbital not empty");
+    if (hasImag()) MSG_ERROR("Orbital not empty");
+
+    //reading meta data
+    std::stringstream fmeta;
+    fmeta << file << ".meta";
+
+    //this flushes tree sizes
+    OrbitalMeta &my_meta = getMetaData();
+
+    std::fstream f;
+    f.open(fmeta.str(), std::ios::in | std::ios::binary);
+    if (f.is_open()) f.read((char *) &my_meta, sizeof(OrbitalMeta));
+    f.close();
+
+    //reading real part
+    if (meta.nChunksReal > 0) {
+        std::stringstream fname;
+        fname << file << "_re";
+        alloc(NUMBER::Real);
+        this->real().loadTree(fname.str());
+    }
+
+    //reading imaginary part
+    if (meta.nChunksImag > 0) {
+        std::stringstream fname;
+        fname << file << "_im";
+        alloc(NUMBER::Imag);
+        this->imag().loadTree(fname.str());
+    }
 }
 
 /** @brief Returns a character representing the spin (a/b/p) */
