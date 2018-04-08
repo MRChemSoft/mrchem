@@ -10,6 +10,12 @@
 #include "GenNode.h"
 #include "Timer.h"
 
+#ifdef HAVE_BLAS
+extern "C" {
+#include BLAS_H
+}
+#endif
+
 using namespace std;
 using namespace Eigen;
 
