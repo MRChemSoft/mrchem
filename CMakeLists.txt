@@ -20,6 +20,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/compiler_
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/custom)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/downloaded)
 
+option(BLAS_H "CBLAS header file" "")
+if(BLAS_H)
+  include(FindBLAS)
+  if(BLAS_FOUND)
+    set(HAVE_BLAS 1)
+  endif(BLAS_FOUND)
+endif(BLAS_H)
+
 # included cmake modules
 include(autocmake_cc)
 include(autocmake_cxx)
@@ -43,5 +51,3 @@ include(mw_filters)
 include(main)
 include(feature_summary)
 include(autocmake_save_flags)
-
-
