@@ -1,0 +1,7 @@
+option(BLAS_H "CBLAS header file" "")
+if(BLAS_H)
+  include(FindBLAS)
+  if(BLAS_FOUND)
+    set(HAVE_BLAS 1)
+  endif(BLAS_FOUND)
+endif(BLAS_H)

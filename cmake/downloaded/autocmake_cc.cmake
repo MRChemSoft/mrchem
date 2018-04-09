@@ -1,3 +1,6 @@
+# (c) https://github.com/coderefinery/autocmake/blob/master/AUTHORS.md
+# licensed under BSD-3: https://github.com/coderefinery/autocmake/blob/master/LICENSE
+
 #.rst:
 #
 # Adds C support.
@@ -22,10 +25,7 @@
 #   docopt:
 #     - "--cc=<CC> C compiler [default: gcc]."
 #     - "--extra-cc-flags=<EXTRA_CFLAGS> Extra C compiler flags [default: '']."
-#   export: "'CC={0}'.format(arguments['--cc'])"
-#   define: "'-DEXTRA_CFLAGS=\"{0}\"'.format(arguments['--extra-cc-flags'])"
-
-enable_language(C)
+#   define: "'-DCMAKE_C_COMPILER={0} -DEXTRA_CFLAGS=\"{1}\"'.format(arguments['--cc'], arguments['--extra-cc-flags'])"
 
 if(NOT DEFINED CMAKE_C_COMPILER_ID)
     message(FATAL_ERROR "CMAKE_C_COMPILER_ID variable is not defined!")
@@ -36,7 +36,9 @@ if(NOT CMAKE_C_COMPILER_WORKS)
 endif()
 
 if(DEFINED EXTRA_CFLAGS)
+  if(NOT EXTRA_CFLAGS STREQUAL "")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${EXTRA_CFLAGS}")
+  endif()
 endif()
 
 if(DEFINED ENV{CFLAGS})

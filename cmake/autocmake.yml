@@ -25,6 +25,7 @@ modules:
 - libs:
   - source:
     - 'custom/eigen.cmake'
+    - 'custom/blas.cmake'
 - tests:
   - docopt: "--enable-tests Enable tests [default: False]."
   - define: "'-DENABLE_TESTS={0}'.format(arguments['--enable-tests'])"
