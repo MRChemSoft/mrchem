@@ -2,12 +2,7 @@
 #include "FunctionTree.h"
 #include "MathUtils.h"
 #include "QuadratureCache.h"
-
-#ifdef HAVE_BLAS
-extern "C" {
-#include BLAS_H
-}
-#endif
+#include "blas.h"
 
 using namespace std;
 using namespace Eigen;
@@ -287,7 +282,7 @@ double FunctionNode<D>::dotScaling(const FunctionNode<D> &ket) const {
 
     int size = bra.getKp1_d();
 #ifdef HAVE_BLAS
-    return cblas_ddot(size, a, 1, b, 1);
+    return ddot(size, a, 1, b, 1);
 #else
     double result = 0.0;
     for (int i = 0; i < size; i++) {
@@ -319,7 +314,7 @@ double FunctionNode<D>::dotWavelet(const FunctionNode<D> &ket) const {
     int start = bra.getKp1_d();
     int size = (bra.getTDim() - 1) * start;
 #ifdef HAVE_BLAS
-    return cblas_ddot(size, &a[start], 1, &b[start], 1);
+    return ddot(size, &a[start], 1, &b[start], 1);
 #else
     double result = 0.0;
     for (int i = 0; i < size; i++) {

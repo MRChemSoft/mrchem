@@ -7,12 +7,7 @@
 #include "constants.h"
 #include "parallel.h"
 #include "eigen_disable_warnings.h"
-
-#ifdef HAVE_BLAS
-extern "C" {
-#include BLAS_H
-}
-#endif
+#include "blas.h"
 
 using namespace std;
 using namespace Eigen;
@@ -262,9 +257,8 @@ void MathUtils::applyFilter(double *out, double *in,
                             const MatrixXd &filter,
                             int kp1, int kp1_dm1, double fac) {
 #ifdef HAVE_BLAS
-    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-                kp1_dm1, kp1, kp1, 1.0, in, kp1, filter.data(),
-                kp1, fac, out, kp1_dm1);
+  dgemm('t', 'n', kp1_dm1, kp1, kp1, 1.0, in, kp1, filter.data(),
+        kp1, fac, out, kp1_dm1);
 #else
     Eigen::Map<MatrixXd> f(in, kp1, kp1_dm1);
     Eigen::Map<MatrixXd> g(out, kp1_dm1, kp1);
