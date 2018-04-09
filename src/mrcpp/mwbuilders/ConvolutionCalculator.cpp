@@ -6,12 +6,7 @@
 #include "BandWidth.h"
 #include "Timer.h"
 #include "eigen_disable_warnings.h"
-
-#ifdef HAVE_BLAS
-extern "C" {
-#include BLAS_H
-}
-#endif
+#include "blas.h"
 
 using namespace std;
 using namespace Eigen;
@@ -316,9 +311,8 @@ void ConvolutionCalculator<D>::tensorApplyOperComp(OperatorState<D> &os) {
             }
             const double *f = aux[i];
             double *g = const_cast<double *>(aux[i + 1]);
-            cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-                    os.kp1_dm1, os.kp1, os.kp1, 1.0, f,
-                    os.kp1, oData[i], os.kp1, mult, g, os.kp1_dm1);
+            dgemm('t', 'n', os.kp1_dm1, os.kp1, os.kp1, 1.0, f,
+                  os.kp1, oData[i], os.kp1, mult, g, os.kp1_dm1);
         } else {
             // Identity operator in direction i
             Map<MatrixXd> f(aux[i], os.kp1, os.kp1_dm1);
