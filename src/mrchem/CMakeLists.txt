@@ -1,5 +1,5 @@
 include_directories (${CMAKE_INSTALL_PREFIX}/include) 
-include_directories (${Boost_INCLUDE_DIR})
+include_directories (${Boost_INCLUDE_DIRS})
 
 include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp)
 include_directories (${CMAKE_SOURCE_DIR}/src/mrcpp/mwanalytic)

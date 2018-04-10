@@ -15,11 +15,10 @@ ExternalProject_Add(submodule-libgetkw
     BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libgetkw
     INSTALL_DIR ${PROJECT_BINARY_DIR}/external
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/external
-                -DCMAKE_BUILD_TYPE=Release
+                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                 -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                 -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                -DCMAKE_FORTRAN_COMPILER=${CMAKE_FORTRAN_COMPILER}
-                -DBoost_INCLUDE_DIR=${Boost_INCLUDE_DIR}
+                -DBoost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}
     )
 add_dependencies(submodule-libgetkw git-submodule-init)
 add_dependencies(external-modules submodule-libgetkw)
@@ -35,10 +34,10 @@ if (ENABLE_XCFUN)
         BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/xcfun
         INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
         CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/external
-                    -DCMAKE_BUILD_TYPE=Release
+                    -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                     -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                    -DCMAKE_FORTRAN_COMPILER=${CMAKE_FORTRAN_COMPILER}
+                    -DCMAKE_Fortran_COMPILER=${CMAKE_Fortran_COMPILER}
         )
     add_dependencies(submodule-xcfun git-submodule-init)
     add_dependencies(external-modules submodule-xcfun)
