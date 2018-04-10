@@ -7,12 +7,6 @@
 #include "Timer.h"
 #include "eigen_disable_warnings.h"
 
-#ifdef HAVE_BLAS
-extern "C" {
-#include BLAS_H
-}
-#endif
-
 using namespace std;
 using namespace Eigen;
 
@@ -307,32 +301,6 @@ template<int D>
 void ConvolutionCalculator<D>::tensorApplyOperComp(OperatorState<D> &os) {
     double **aux = os.getAuxData();
     double **oData = os.getOperData();
-#ifdef HAVE_BLAS
-    double mult = 0.0;
-    for (int i = 0; i < D; i++) {
-        if (oData[i] != 0) {
-            if (i == D - 1) { // Last dir: Add up into g
-                mult = 1.0;
-            }
-            const double *f = aux[i];
-            double *g = const_cast<double *>(aux[i + 1]);
-            cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans,
-                    os.kp1_dm1, os.kp1, os.kp1, 1.0, f,
-                    os.kp1, oData[i], os.kp1, mult, g, os.kp1_dm1);
-        } else {
-            // Identity operator in direction i
-            Map<MatrixXd> f(aux[i], os.kp1, os.kp1_dm1);
-            Map<MatrixXd> g(aux[i + 1], os.kp1_dm1, os.kp1);
-            if (oData[i] == 0) {
-                if (i == D - 1) { // Last dir: Add up into g
-                    g += f.transpose();
-                } else {
-                    g = f.transpose();
-                }
-            }
-        }
-    }
-#else
     for (int i = 0; i < D; i++) {
         Map<MatrixXd> f(aux[i], os.kp1, os.kp1_dm1);
         Map<MatrixXd> g(aux[i + 1], os.kp1_dm1, os.kp1);
@@ -352,7 +320,6 @@ void ConvolutionCalculator<D>::tensorApplyOperComp(OperatorState<D> &os) {
             }
         }
     }
-#endif
 }
 
 template<int D>

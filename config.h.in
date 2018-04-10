@@ -4,12 +4,10 @@
 
 #define MW_FILTER_DIR "@MW_FILTER_DIR@"
 
-#define BLAS_H "@BLAS_H@"
-
 #cmakedefine HAVE_MPI
 
 #cmakedefine HAVE_OPENMP
 
-#cmakedefine HAVE_BLAS
+#cmakedefine EIGEN_USE_BLAS
 
 #cmakedefine HAVE_XCFUN

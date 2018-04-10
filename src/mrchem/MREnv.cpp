@@ -50,10 +50,10 @@ void MREnv::initializeMRCPP(int argc, char **argv) {
     println(0,endl);
     println(0,"Print level  : " <<  printlevel << endl);
 
-#ifdef HAVE_BLAS
-    println(0, "BLAS was found!" << endl);
+#ifdef EIGEN_USE_BLAS
+    println(0, "BLAS used in Eigen3" << endl);
 #else
-    println(0, "BLAS was NOT found, Eigen will be used instead!" << endl);
+    println(0, "BLAS is NOT used in Eigen3!" << endl);
 #endif
 
     if (mpiOrbSize > 1 or nThreads > 1) {

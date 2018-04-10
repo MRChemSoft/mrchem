@@ -1,7 +1,8 @@
-option(BLAS_H "CBLAS header file" "")
-if(BLAS_H)
+option(ENABLE_BLAS "Enable use of BLAS? (Requires a Fortran compiler)" OFF)
+if(ENABLE_BLAS)
   include(FindBLAS)
   if(BLAS_FOUND)
-    set(HAVE_BLAS 1)
+    # Enable BLAS in Eigen
+    add_definitions(-DEIGEN_USE_BLAS)
   endif(BLAS_FOUND)
-endif(BLAS_H)
+endif(ENABLE_BLAS)
