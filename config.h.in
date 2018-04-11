@@ -2,8 +2,6 @@
 
 #define GIT_REVISION "@GIT_REVISION@"
 
-#define MW_FILTER_DIR "@MW_FILTER_DIR@"
-
 #define BLAS_H "@BLAS_H@"
 
 #cmakedefine HAVE_MPI
