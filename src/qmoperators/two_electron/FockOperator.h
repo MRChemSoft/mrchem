@@ -2,6 +2,16 @@
 
 #include "RankZeroTensorOperator.h"
 
+/** @class FockOperator
+ *
+ * @brief Operator containing the standard SCF operators
+ *
+ * This is a simple collection of operators used in ground state SCF calculations.
+ * The operator is separated into kinetic and potential parts, since the MW way of
+ * solving the SCF equations is to invert the kinetic part, and apply the potential
+ * part as usual.
+ */
+
 namespace mrchem {
 
 class SCFEnergy;
@@ -14,7 +24,7 @@ class XCOperator;
 class FockOperator final : public RankZeroTensorOperator {
 public:
     FockOperator(KineticOperator  *t = 0,
-                 NuclearOperator *v = 0,
+                 NuclearOperator  *v = 0,
                  CoulombOperator  *j = 0,
                  ExchangeOperator *k = 0,
                  XCOperator      *xc = 0);
@@ -41,7 +51,7 @@ protected:
     RankZeroTensorOperator V;   ///< Total potential energy operator
 
     KineticOperator  *kin;
-    NuclearOperator *nuc;
+    NuclearOperator  *nuc;
     CoulombOperator  *coul;
     ExchangeOperator *ex;
     XCOperator       *xc;
