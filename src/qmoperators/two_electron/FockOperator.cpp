@@ -1,6 +1,6 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "MathUtils.h"
+#include "MRCPP/mwutils/MathUtils.h"
 
 #include "FockOperator.h"
 #include "KineticOperator.h"

@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "RepresentableFunction.h"
+#include "MRCPP/MWFunctions"
 
 #include "Nucleus.h"
 

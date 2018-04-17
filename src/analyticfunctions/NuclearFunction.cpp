@@ -1,4 +1,4 @@
-#include "MathUtils.h"
+#include "MRCPP/mwutils/MathUtils.h"
 
 #include "NuclearFunction.h"
 #include "Nucleus.h"

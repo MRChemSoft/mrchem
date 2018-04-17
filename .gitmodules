@@ -7,4 +7,4 @@
 
 [submodule "external/mrcpp"]
 	path = external/mrcpp
-	url = https://github.com/stigrj/mrcpp.git
+	url = https://github.com/MRChemSoft/mrcpp.git

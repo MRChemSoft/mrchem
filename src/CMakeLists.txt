@@ -14,6 +14,7 @@ add_subdirectory(qmoperators)
 target_include_directories(mrchem PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src/chemistry
     ${CMAKE_SOURCE_DIR}/src/properties
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
@@ -37,6 +38,7 @@ add_dependencies(mrchem.x
 target_include_directories(mrchem.x PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src/chemistry
     ${CMAKE_SOURCE_DIR}/src/properties
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
