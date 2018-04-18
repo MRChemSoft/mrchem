@@ -53,7 +53,7 @@ OrbitalVector initial_guess(double prec,
     //project AO basis of hydrogen functions
     OrbitalVector Phi = hydrogen_guess::project(prec, mol.getNuclei(), zeta);
 
-    ComplexMatrix S_m12 = orbital::calc_orthonormalization_matrix(Phi);
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
 
     // Compute core Hamiltonian matrix
     mrcpp::ABGVOperator<3> D(*MRA, 0.5, 0.5);
