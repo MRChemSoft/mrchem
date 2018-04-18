@@ -2,11 +2,14 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
+#include "utils/mathutils.h"
 
 #include "qmfunctions.h"
 #include "Orbital.h"
 #include "Density.h"
 
+using mrcpp::Timer;
+using mrcpp::Printer;
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
 
@@ -420,31 +423,131 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
     return S;
 }
 
-/** Compute orthonormalization matrix
+/** @brief Compute Löwdin orthonormalization matrix
  *
- * Computes the Löwdin orthonormalization matrix S^(-1/2)
+ * @param Phi: orbitals to orthonomalize
+ *
+ * Computes the inverse square root of the orbital overlap matrix S^(-1/2)
  */
-ComplexMatrix calc_orthonormalization_matrix(OrbitalVector &Phi) {
-    mrcpp::Timer timer;
-    printout(1, "Calculating orthonormalization matrix            ");
+ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi) {
+    Timer timer;
+    printout(1, "Calculating Löwdin orthonormalization matrix      ");
 
     ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
-    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(S_tilde.cols());
-    es.compute(S_tilde);
-
-    DoubleMatrix A = es.eigenvalues().asDiagonal();
-    for (int i = 0; i < A.cols(); i++) {
-        if (A(i,i) > mrcpp::MachineZero) {
-            A(i,i) = std::pow(A(i,i), -1.0/2.0);
-        } else {
-            A(i,i) = 0.0;
-        }
-    }
-    ComplexMatrix B = es.eigenvectors();
-    ComplexMatrix U = B*A*B.transpose();
+    ComplexMatrix S_m12 = mathutils::hermitian_matrix_pow(S_tilde, -1.0/2.0);
 
     timer.stop();
     println(1, timer.getWallTime());
+    return S_m12;
+}
+
+/** @brief Minimize the spatial extension of orbitals, by orbital rotation
+ *
+ * @param Phi: orbitals to localize
+ *
+ * Minimizes \f$  \sum_{i=1,N}\langle i| {\bf R^2}  | i \rangle - \langle i| {\bf R}| i \rangle^2 \f$
+ * which is equivalent to maximizing \f$  \sum_{i=1,N}\langle i| {\bf R}| i \rangle^2\f$
+ *
+ * The resulting transformation includes the orthonormalization of the orbitals.
+ * Orbitals are rotated in place, and the transformation matrix is returned.
+ */
+ComplexMatrix localize(double prec, OrbitalVector &Phi) {
+    NOT_IMPLEMENTED_ABORT;
+    /*
+    Printer::printHeader(0, "Localizing orbitals");
+    Timer timer;
+
+    MatrixXd U;
+    int n_it = 0;
+    if (Phi.size() > 1) {
+        Timer rr_t;
+        RR rr(this->orbPrec[0], Phi);
+        n_it = rr.maximize();//compute total U, rotation matrix
+        rr_t.stop();
+        Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime());
+        if (n_it > 0) {
+            println(0, " Converged after iteration   " << setw(30) << n_it);
+            U = rr.getTotalU().transpose();
+        } else {
+            println(0, " Foster-Boys localization did not converge!");
+        }
+    } else {
+        println(0, " Cannot localize less than two orbitals");
+    }
+
+    if (n_it <= 0) {
+        Timer orth_t;
+        U = orbital::calc_orthonormalization_matrix(Phi);
+        orth_t.stop();
+        Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
+    }
+
+    Timer rot_t;
+    F = U*F*U.transpose();
+    fock.rotate(U);
+    this->add.rotate(Phi, U);
+    rot_t.stop();
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
+
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
+    */
+}
+
+/** @brief Perform the orbital rotation that diagonalizes the Fock matrix
+ *
+ * @param Phi: orbitals to localize
+ *
+ * The resulting transformation includes the orthonormalization of the orbitals.
+ * Orbitals are rotated in place and Fock matrix is diagonalized in place.
+ * The transformation matrix is returned.
+ */
+ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
+    Printer::printHeader(0, "Digonalizing Fock matrix");
+    Timer timer;
+
+    Timer orth_t;
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
+    F = S_m12.transpose()*F*S_m12;
+    orth_t.stop();
+    Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
+
+    Timer diag_t;
+    ComplexMatrix U = ComplexMatrix::Zero(F.rows(), F.cols());
+    int np = orbital::size_paired(Phi);
+    int na = orbital::size_alpha(Phi);
+    int nb = orbital::size_beta(Phi);
+    if (np > 0) mathutils::diagonalize_block(F, U, 0,       np);
+    if (na > 0) mathutils::diagonalize_block(F, U, np,      na);
+    if (nb > 0) mathutils::diagonalize_block(F, U, np + na, nb);
+    U = U * S_m12;
+    diag_t.stop();
+    Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime());
+
+    Timer rot_t;
+    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    orbital::free(Phi);
+    Phi = Psi;
+    rot_t.stop();
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
+
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
+    return U;
+}
+
+/** @brief Perform the Löwdin orthonormalization
+ *
+ * @param Phi: orbitals to orthonormalize
+ *
+ * Orthonormalizes the orbitals by multiplication of the Löwdin matrix S^(-1/2).
+ * Orbitals are rotated in place, and the transformation matrix is returned.
+ */
+ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi) {
+    ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
+    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    orbital::free(Phi);
+    Phi = Psi;
     return U;
 }
 
@@ -859,7 +962,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
 
 /** Collective printing of all orbitals in the vector */
 std::ostream& operator<<(std::ostream &o, const mrchem::OrbitalVector &vec) {
-    mrcpp::Printer::setScientific();
+    Printer::setScientific();
     o << "*OrbitalVector: ";
     o << std::setw(4) << vec.size()          << " orbitals  ";
     o << std::setw(4) << mrchem::orbital::size_occupied(vec)  << " occupied  ";

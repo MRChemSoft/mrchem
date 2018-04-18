@@ -13,6 +13,7 @@ add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 add_subdirectory(scf_solver)
+add_subdirectory(utils)
 target_include_directories(mrchem PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}

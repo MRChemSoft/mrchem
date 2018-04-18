@@ -7,7 +7,6 @@
  * \breif Maximization of nonlinear functional.
  */
 
-#include "MathUtils.h"
 #include "NonlinearMaximizer.h"
 #include "parallel.h"
 #include "eigen_disable_warnings.h"

@@ -1,7 +1,6 @@
-#include "MRCPP/mwutils/MathUtils.h"
-
 #include "NuclearFunction.h"
 #include "Nucleus.h"
+#include "utils/mathutils.h"
 
 namespace mrchem {
 
@@ -17,8 +16,8 @@ double NuclearFunction::evalf(const double *r) const {
         double S_i = this->smooth[i];
         double Z_i = this->nuclei[i].getCharge();
         const double *R = this->nuclei[i].getCoord();
-        double R1 = mrcpp::MathUtils::calcDistance(3, R, r)/S_i;
-        double partResult = -erf(R1)/R1 + c*(exp(-R1*R1) + 16.0*exp(-4.0*R1*R1));
+        double R1 = mathutils::calc_distance(R, r)/S_i;
+        double partResult = -std::erf(R1)/R1 + c*(std::exp(-R1*R1) + 16.0*std::exp(-4.0*R1*R1));
         result += Z_i*partResult/S_i;
     }
     return result;
@@ -31,8 +30,8 @@ bool NuclearFunction::isVisibleAtScale(int scale, int nQuadPts) const {
             minSmooth = this->smooth[i];
         }
     }
-    double stdDeviation = pow(minSmooth, -0.5);
-    int visibleScale = int (floor(log2(nQuadPts*5.0*stdDeviation)));
+    double stdDeviation = std::pow(minSmooth, -0.5);
+    int visibleScale = int (floor(std::log2(nQuadPts*5.0*stdDeviation)));
     if (scale < visibleScale) {
         return false;
     } else {

@@ -5,15 +5,13 @@
 
 namespace mrchem {
 
-typedef std::vector<SCFEnergy> SCFEnergyVector;
-
 class GroundStateSolver : public SCF {
 public:
     GroundStateSolver(HelmholtzVector &h);
     virtual ~GroundStateSolver();
 
 protected:
-    SCFEnergyVector energy;
+    std::vector<SCFEnergy> energy;
 
     ComplexMatrix *fMat_n;
     FockOperator  *fOper_n;
@@ -27,13 +25,6 @@ protected:
     void printProperty() const;
     double calcProperty();
     double calcPropertyError() const;
-
-    void localize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi);
-    void diagonalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi);
-    void orthonormalize(double prec, FockOperator &fock, ComplexMatrix &F, OrbitalVector &Phi);
-    ComplexMatrix calcOrthonormalizationMatrix(OrbitalVector &Phi);
-    ComplexMatrix calcOrthonormalizationMatrix_P(OrbitalVector &Phi);
-    void diagonalizeBlock(ComplexMatrix &M, ComplexMatrix &U, int nstart, int nsize);
 };
 
 /** subclass which defines the particular Gradient and Hessian

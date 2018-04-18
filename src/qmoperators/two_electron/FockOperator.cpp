@@ -1,6 +1,5 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "MRCPP/mwutils/MathUtils.h"
 
 #include "FockOperator.h"
 #include "KineticOperator.h"
@@ -8,6 +7,7 @@
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 #include "SCFEnergy.h"
+#include "utils/mathutils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -119,7 +119,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
                 double Z_j = nuc_j.getCharge();
                 const double *R_i = nuc_i.getCoord();
                 const double *R_j = nuc_j.getCoord();
-                double R_ij = mrcpp::MathUtils::calcDistance(3, R_i, R_j);
+                double R_ij = mathutils::calc_distance(R_i, R_j);
                 E_nuc += (Z_i*Z_j)/R_ij;
             }
         }

@@ -67,10 +67,13 @@ bool OrbitalOptimizer::optimize() {
 
         // Rotate orbitals
         if (needLocalization(nIter)) {
-            localize(orb_prec/10, fock, F, Phi_n);
+            ComplexMatrix U = orbital::localize(orb_prec, Phi_n);
+            fock.rotate(U);
+            F = U*F*U.adjoint();
             if (this->kain != 0) this->kain->clear();
         } else if (needDiagonalization(nIter)) {
-            diagonalize(orb_prec/10, fock, F, Phi_n);
+            ComplexMatrix U = orbital::diagonalize(orb_prec, Phi_n, F);
+            fock.rotate(U);
             if (this->kain != 0) this->kain->clear();
         }
 
@@ -93,7 +96,8 @@ bool OrbitalOptimizer::optimize() {
         if (mpi::orb_size > 1) H.clear();
 
         if (not clearFock) fock.clear();
-        orthonormalize(orb_prec/10, fock, F, Phi_np1);
+        ComplexMatrix U = orbital::orthonormalize(orb_prec, Phi_np1);
+        F = U*F*U.adjoint();
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
@@ -126,7 +130,7 @@ bool OrbitalOptimizer::optimize() {
         orbital::free(dPhi_n);
         Phi_n = Phi_np1;
 
-        orthonormalize(orb_prec/10, fock, F, Phi_n);
+        orbital::orthonormalize(orb_prec, Phi_n);
         orbital::set_errors(Phi_n, errors);
 
         // Compute Fock matrix
@@ -145,9 +149,10 @@ bool OrbitalOptimizer::optimize() {
     fock.clear();
 
     if (this->canonical) {
-        diagonalize(orb_prec, fock, F, Phi_n);
+        orbital::diagonalize(orb_prec, Phi_n, F);
     } else {
-        localize(orb_prec, fock, F, Phi_n);
+        ComplexMatrix U = orbital::localize(orb_prec, Phi_n);
+        F = U*F*U.adjoint();
     }
 
     printConvergence(converged);
