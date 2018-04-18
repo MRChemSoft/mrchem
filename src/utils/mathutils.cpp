@@ -94,7 +94,7 @@ ComplexMatrix hermitian_matrix_pow(const ComplexMatrix &A, double b) {
 
     DoubleMatrix B = DoubleMatrix::Zero(A.rows(), A.cols());
     for (int i = 0; i < diag.size(); i++) {
-        if (std::abs(B(i,i)) < mrcpp::MachineZero) {
+        if (std::abs(diag(i)) < mrcpp::MachineZero) {
             B(i,i) = 0.0;
         } else {
             B(i,i) = std::pow(diag(i), b);
