@@ -1,20 +1,24 @@
-#include "RRMaximizer.h"
+#include "MRCPP/Printer"
+
+#include "utils/RRMaximizer.h"
+#include "utils/mathutils.h"
+
+#include "PositionOperator.h"
 
 namespace mrchem {
 
 /** Compute the position matrix <i|R_x|j>,<i|R_y|j>,<i|R_z|j>
  */
 RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
-    N = Phi.size();
-    if (N < 2) MSG_ERROR("Cannot localize less than two orbitals");
-    total_U = MatrixXd::Identity(N,N);
-    N2h = N*(N-1)/2;
-    gradient = VectorXd(N2h);
-    hessian = MatrixXd(N2h, N2h);
-    r_i_orig = MatrixXd::Zero(N,3*N);
-    r_i = MatrixXd(N,3*N);
+    this->N = Phi.size();
+    if (this->N < 2) MSG_ERROR("Cannot localize less than two orbitals");
+
+    this->total_U = DoubleMatrix::Identity(this->N,this->N);
+    this->N2h = this->N*(this->N-1)/2;
+    this->gradient = DoubleVector(this->N2h);
+    this->hessian = DoubleMatrix(this->N2h, this->N2h);
+    this->r_i_orig = DoubleMatrix::Zero(this->N,3*this->N);
+    this->r_i = DoubleMatrix(this->N,3*this->N);
 
     //Make R matrix
     PositionOperator r;
@@ -25,7 +29,8 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     RankZeroTensorOperator &r_z = r[2];
 
 #ifdef HAVE_MPI
-
+    NOT_IMPLEMENTED_ABORT;
+/*
     OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
     OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
     vector<int> orbsIx;             //to store own orbital indices
@@ -78,24 +83,19 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     //combine results from all processes
     MPI_Allreduce(MPI_IN_PLACE, &r_i_orig(0,0), N*3*N,
                   MPI_DOUBLE, MPI_SUM, mpiCommOrb);
-
+*/
 #else
-
-    for (int i = 0; i < N; i++) {
-        Orbital &phi_i = phi.getOrbital(i);
-        int spin_i = phi_i.getSpin();
+    for (int i = 0; i < this->N; i++) {
         for (int j = 0; j <= i; j++) {
-            Orbital &phi_j =  phi.getOrbital(j);
-            int spin_j = phi_j.getSpin();
-            if (spin_i != spin_j) {
+            if (Phi[i].spin() != Phi[j].spin())
                 MSG_ERROR("Spins must be separated before localization");
-            }
-            r_i_orig(i,j) = r_x(phi_i, phi_j);
-            r_i_orig(i,j+N) = r_y(phi_i, phi_j);
-            r_i_orig(i,j+2*N) = r_z(phi_i, phi_j);
-            r_i_orig(j,i) = r_i_orig(i,j);
-            r_i_orig(j,i+N) = r_i_orig(i,j+N);
-            r_i_orig(j,i+2*N) = r_i_orig(i,j+2*N);
+            this->r_i_orig(i,j          ) = r_x(Phi[i], Phi[j]).real();
+            this->r_i_orig(i,j+  this->N) = r_y(Phi[i], Phi[j]).real();
+            this->r_i_orig(i,j+2*this->N) = r_z(Phi[i], Phi[j]).real();
+
+            this->r_i_orig(j,i          ) = this->r_i_orig(i,j          );
+            this->r_i_orig(j,i+  this->N) = this->r_i_orig(i,j+  this->N);
+            this->r_i_orig(j,i+2*this->N) = this->r_i_orig(i,j+2*this->N);
         }
     }
 #endif
@@ -104,30 +104,25 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     r_z.clear();
 
     //rotate R matrices into orthonormal basis
-    IdentityOperator I;
-    I.setup(prec);
-    MatrixXd S_tilde = I(phi, phi);
-    MatrixXd S_tilde_m12 = MathUtils::hermitianMatrixPow(S_tilde, -1.0/2.0);
-    I.clear();
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
 
-    total_U=S_tilde_m12*total_U;
-    MatrixXd R(N, N);
-    for(int dim=0; dim<3; dim++){
-        for (int j=0; j<N; j++) {
-            for (int i=0; i<=j; i++) {
-                R(i,j)=r_i_orig(i,j+dim*N);
-                R(j,i)=r_i_orig(i,j+dim*N);//Enforce symmetry
+    this->total_U = S_m12.real()*this->total_U;
+    DoubleMatrix R(this->N, this->N);
+    for(int d = 0; d < 3; d++){
+        for (int j = 0; j < this->N; j++) {
+            for (int i = 0; i <= j; i++) {
+                R(i,j) = this->r_i_orig(i,j+d*this->N);
+                R(j,i) = this->r_i_orig(i,j+d*this->N);//Enforce symmetry
             }
         }
-        R=total_U.transpose()*R*total_U;
-        for (int j=0; j<N; j++) {
-            for (int i=0; i<=j; i++) {
-                r_i(i,j+dim*N)=R(i,j);
-                r_i(j,i+dim*N)=R(i,j);//Enforce symmetry
+        R = this->total_U.transpose()*R*this->total_U;
+        for (int j = 0; j < this->N; j++) {
+            for (int i = 0; i <= j; i++) {
+                this->r_i(i,j+d*this->N)=R(i,j);
+                this->r_i(j,i+d*this->N)=R(i,j);//Enforce symmetry
             }
         }
     }
-    */
 }
 
 /** compute the value of
@@ -138,7 +133,8 @@ double RRMaximizer::functional() const {
     double s1 = 0.0;
     for (int d = 0; d < 3; d++) {
         for (int j = 0; j < this->N; j++) {
-            s1 += this->r_i(j,j+d*this->N)*this->r_i(j,j+d*this->N);
+            double r_jj = this->r_i(j,j+d*this->N);
+            s1 += r_jj*r_jj;
         }
     }
     return s1;
@@ -153,7 +149,10 @@ double RRMaximizer::make_gradient() {
         int ij = 0;
         for (int j = 0; j < this->N; j++) {
             for (int i = 0; i < j; i++) {
-                this->gradient(ij) += 4.0*r_i(i,j+d*N)*(r_i(i,i+d*N)-r_i(j,j+d*N));
+                double r_ij = this->r_i(i,j+d*this->N);
+                double r_ii = this->r_i(i,i+d*this->N);
+                double r_jj = this->r_i(j,j+d*this->N);
+                this->gradient(ij) += 4.0*r_ij*(r_ii - r_jj);
                 ij++;
             }
         }
@@ -211,41 +210,38 @@ double RRMaximizer::make_hessian() {
 
 /** Given the step matrix, update the rotation matrix and the R matrix
  */
-void RRMaximizer::do_step(DoubleVector &step) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
-    MatrixXd A(N,N);
+void RRMaximizer::do_step(const DoubleVector &step) {
+    DoubleMatrix A(this->N, this->N);
     //define rotation U=exp(-A), A real antisymmetric, from step
-    int ij=0;
-    for (int j=0; j<N; j++) {
-        for (int i=0; i<j; i++) {
-            A(i,j)=step(ij);
-            A(j,i)=-A(i,j);
+    int ij = 0;
+    for (int j = 0; j < this->N; j++) {
+        for (int i = 0; i < j; i++) {
+            A(i,j) =  step(ij);
+            A(j,i) = -step(ij);
             ij++;
         }
-        A(j,j)=0.0;
+        A(j,j) = 0.0;
     }
 
     //calculate U=exp(-A) by diagonalization and U=Vexp(id)Vt with VdVt=iA
     //could also sum the term in the expansion if A is small
-    total_U*=MathUtils::SkewMatrixExp(A);
+    this->total_U *= mathutils::skew_matrix_exp(A);
 
     //rotate the original r matrix with total U
-    MatrixXd r(N, N);
-    for(int dim=0; dim<3; dim++){
-        for (int j=0; j<N; j++) {
-            for (int i=0; i<N; i++) {
-                r(i,j)=r_i_orig(i,j+dim*N);
+    DoubleMatrix r(this->N, this->N);
+    for (int d = 0; d < 3; d++){
+        for (int j = 0; j < this->N; j++) {
+            for (int i = 0; i < this->N; i++) {
+                r(i,j) = this->r_i_orig(i,j+d*this->N);
             }
         }
-        r=total_U.transpose()*r*total_U;
-        for (int j=0; j<N; j++) {
-            for (int i=0; i<N; i++) {
-                r_i(i,j+dim*N)=r(i,j);
+        r = this->total_U.transpose()*r*this->total_U;
+        for (int j = 0; j < this->N; j++) {
+            for (int i = 0; i < this->N; i++) {
+                this->r_i(i,j+d*this->N) = r(i,j);
             }
         }
     }
-    */
 }
 
 } //namespace mrchem

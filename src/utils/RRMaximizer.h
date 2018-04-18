@@ -1,5 +1,7 @@
 #include "utils/NonlinearMaximizer.h"
 
+#include "qmfunctions.h"
+
 /** subclass which defines the particular Gradient and Hessian
  * and other specific functions for a maximization of
  * f$  \sum_{i=1,N}\langle i| {\bf R}| i \rangle^2\f$
@@ -24,7 +26,7 @@ protected:
     double functional() const;
     double make_gradient();
     double make_hessian();
-    void do_step(DoubleVector &step);
+    void do_step(const DoubleVector &step);
 };
 
 } //namespace mrchem

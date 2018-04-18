@@ -3,6 +3,7 @@
 
 #include "parallel.h"
 #include "utils/mathutils.h"
+#include "utils/RRMaximizer.h"
 
 #include "qmfunctions.h"
 #include "Orbital.h"
@@ -452,22 +453,21 @@ ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi) {
  * Orbitals are rotated in place, and the transformation matrix is returned.
  */
 ComplexMatrix localize(double prec, OrbitalVector &Phi) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     Printer::printHeader(0, "Localizing orbitals");
     Timer timer;
 
-    MatrixXd U;
+    ComplexMatrix U;
     int n_it = 0;
     if (Phi.size() > 1) {
         Timer rr_t;
-        RR rr(this->orbPrec[0], Phi);
-        n_it = rr.maximize();//compute total U, rotation matrix
+        RRMaximizer rr(prec, Phi);
+        n_it = rr.maximize();
         rr_t.stop();
         Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime());
+
         if (n_it > 0) {
-            println(0, " Converged after iteration   " << setw(30) << n_it);
-            U = rr.getTotalU().transpose();
+            println(0, " Converged after iteration   " << std::setw(30) << n_it);
+            U.real() = rr.getTotalU().transpose();
         } else {
             println(0, " Foster-Boys localization did not converge!");
         }
@@ -477,21 +477,21 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
 
     if (n_it <= 0) {
         Timer orth_t;
-        U = orbital::calc_orthonormalization_matrix(Phi);
+        U = orbital::calc_lowdin_matrix(Phi);
         orth_t.stop();
         Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
     }
 
     Timer rot_t;
-    F = U*F*U.transpose();
-    fock.rotate(U);
-    this->add.rotate(Phi, U);
+    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    orbital::free(Phi);
+    Phi = Psi;
     rot_t.stop();
     Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
 
     timer.stop();
     Printer::printFooter(0, timer, 2);
-    */
+    return U;
 }
 
 /** @brief Perform the orbital rotation that diagonalizes the Fock matrix

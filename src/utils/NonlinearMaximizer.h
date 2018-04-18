@@ -28,7 +28,7 @@ protected:
     virtual double functional() const { return 0.0; }
     virtual double make_gradient() { return -1.0; }
     virtual double make_hessian() { return -1.0; }
-    virtual void do_step(DoubleVector &step) { }
+    virtual void do_step(const DoubleVector &step) { }
 };
 
 } //namespace mrchem
