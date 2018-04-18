@@ -467,7 +467,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
 
         if (n_it > 0) {
             println(0, " Converged after iteration   " << std::setw(30) << n_it);
-            U.real() = rr.getTotalU().transpose();
+            U = rr.getTotalU().transpose();
         } else {
             println(0, " Foster-Boys localization did not converge!");
         }
@@ -496,7 +496,8 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
 
 /** @brief Perform the orbital rotation that diagonalizes the Fock matrix
  *
- * @param Phi: orbitals to localize
+ * @param Phi: orbitals to rotate
+ * @param F: Fock matrix to diagonalize
  *
  * The resulting transformation includes the orthonormalization of the orbitals.
  * Orbitals are rotated in place and Fock matrix is diagonalized in place.
