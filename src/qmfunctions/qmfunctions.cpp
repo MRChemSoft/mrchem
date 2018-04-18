@@ -467,7 +467,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
 
         if (n_it > 0) {
             println(0, " Converged after iteration   " << std::setw(30) << n_it);
-            U = rr.getTotalU().transpose();
+            U = rr.getTotalU().transpose().cast<ComplexDouble>();
         } else {
             println(0, " Foster-Boys localization did not converge!");
         }
