@@ -219,7 +219,7 @@ def setup_keywords():
     scf.add_kw('property_thrs',         'DBL', -1.0)
     scf.add_kw('lambda_thrs',           'DBL', -1.0)
     scf.add_kw('orbital_prec',          'DBL_ARRAY', [1.0e-4,-1.0])
-    scf.add_kw('initial_guess',         'STR', 'SZ')
+    scf.add_kw('initial_guess',         'STR', 'none')
     scf.add_kw('write_orbitals',        'BOOL', False)
     top.add_sect(scf)
 

@@ -24,11 +24,12 @@ int main(int argc, char **argv) {
 
     // Reading input
     double prec = Input.get<double>("rel_prec");
+    bool wf_restricted = Input.get<bool>("WaveFunction.restricted");
     int mol_charge = Input.get<int>("Molecule.charge");
     int mol_multiplicity = Input.get<int>("Molecule.multiplicity");
     std::vector<std::string> mol_coords = Input.getData("Molecule.coords");
-    bool wf_restricted = Input.get<bool>("WaveFunction.restricted");
     std::string scf_guess = Input.get<string>("SCF.initial_guess");
+    std::string orb_file = Input.get<string>("Files.start_orbitals");
 
     int ig_zeta = 0;
          if (scf_guess == "SZ") { ig_zeta = 1; }
@@ -43,6 +44,7 @@ int main(int argc, char **argv) {
 
     // Setting up orbitals
     OrbitalVector Phi = hydrogen_guess::initial_guess(prec, mol, wf_restricted, ig_zeta);
+    orbital::save_orbitals(Phi, orb_file);
     orbital::free(Phi);
 
     timer.stop();

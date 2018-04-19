@@ -26,8 +26,7 @@ namespace mrchem {
  *  First index energy level (n)
  *  Second index angular momentum (l)
  */
-namespace hydrogen_guess {
-int PT[29][2] = {
+int hydrogen_guess::PT[29][2] = {
    /*s*/
    {1,0},                  /*p*/
    {2,0},                  {2,1},
@@ -40,10 +39,10 @@ int PT[29][2] = {
    {9,0},{6,4},{7,3},{8,2},{9,1}
 };
 
-OrbitalVector initial_guess(double prec,
-                            const Molecule &mol,
-                            bool restricted,
-                            int zeta) {
+OrbitalVector hydrogen_guess::initial_guess(double prec,
+                                            const Molecule &mol,
+                                            bool restricted,
+                                            int zeta) {
     int mult = mol.getMultiplicity();   //multiplicity
     int Ne = mol.getNElectrons();       //total electrons
     int Nd = Ne - (mult - 1);           //doubly occupied
@@ -108,7 +107,7 @@ OrbitalVector initial_guess(double prec,
     return Psi;
 }
 
-OrbitalVector project(double prec, const Nuclei &nucs, int zeta) {
+OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta) {
     Printer::printHeader(0, "Setting up occupied orbitals");
     println(0, "    N    Atom   Label                     SquareNorm");
     Printer::printSeparator(0, '-');
@@ -160,7 +159,7 @@ OrbitalVector project(double prec, const Nuclei &nucs, int zeta) {
     return Phi;
 }
 
-void populate(OrbitalVector &vec, int N, int spin) {
+void hydrogen_guess::populate(OrbitalVector &vec, int N, int spin) {
     int occ = 0;
     if (spin == SPIN::Paired) occ = 2;
     if (spin == SPIN::Alpha) occ = 1;
@@ -174,7 +173,5 @@ void populate(OrbitalVector &vec, int N, int spin) {
         }
     }
 }
-
-} //namespace hydrogen_guess
 
 } //namespace mrchem

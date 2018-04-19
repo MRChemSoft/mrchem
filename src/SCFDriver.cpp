@@ -221,7 +221,7 @@ bool SCFDriver::sanityCheck() const {
 
 void SCFDriver::setup() {
     // Setting up molecule
-    molecule = new Molecule(mol_coords, mol_charge);
+    molecule = new Molecule(mol_coords, mol_charge, mol_multiplicity);
     nuclei = &molecule->getNuclei();
 
     // Setting up empty orbitals
@@ -454,10 +454,10 @@ void SCFDriver::clear_np1() {
 
 void SCFDriver::setupInitialGroundState() {
     // Reading initial guess
-    if (scf_start == "GTO") {
-        NOT_IMPLEMENTED_ABORT;
-    } else if (scf_start == "MW") {
+    if (scf_start == "MW" or scf_start == "mw") {
         *phi = orbital::load_orbitals(file_start_orbitals);
+    } else if (scf_start == "GTO" or scf_start == "gto") {
+        NOT_IMPLEMENTED_ABORT;
     } else {
         // Setting up hydrogen initial guess
         int ig_zeta = 0;
