@@ -8,6 +8,7 @@
 #include "Getkw.h"
 
 #include "hydrogen_guess.h"
+#include "gto_guess.h"
 
 #include "SCFDriver.h"
 #include "Molecule.h"
@@ -457,7 +458,11 @@ void SCFDriver::setupInitialGroundState() {
     if (scf_start == "MW" or scf_start == "mw") {
         *phi = orbital::load_orbitals(file_start_orbitals);
     } else if (scf_start == "GTO" or scf_start == "gto") {
-        NOT_IMPLEMENTED_ABORT;
+        if (wf_restricted) {
+            *phi = gto_guess::initial_guess(rel_prec, *molecule, file_basis_set, file_mo_mat_a);
+        } else {
+            *phi = gto_guess::initial_guess(rel_prec, *molecule, file_basis_set, file_mo_mat_a, file_mo_mat_b);
+        }
     } else {
         // Setting up hydrogen initial guess
         int ig_zeta = 0;
