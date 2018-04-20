@@ -41,9 +41,9 @@ foreach(_header ${hydrogenguess_hpp})
 endforeach()
 
 # Install executable in bin
-add_executable(hydrogen-guess.x hydrogen.cpp)
-add_dependencies(hydrogen-guess.x external-modules)
-target_include_directories(hydrogen-guess.x PRIVATE
+add_executable(hydrogen-guess hydrogen.cpp)
+add_dependencies(hydrogen-guess external-modules)
+target_include_directories(hydrogen-guess PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
@@ -57,13 +57,13 @@ target_include_directories(hydrogen-guess.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
     )
-target_link_libraries(hydrogen-guess.x
+target_link_libraries(hydrogen-guess
     hydrogenguess
     mrchem
     mrcpp
     getkw
     )
-install(TARGETS hydrogen-guess.x
+install(TARGETS hydrogen-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
@@ -119,9 +119,9 @@ foreach(_header ${gtoguess_hpp})
 endforeach()
 
 # Install executable in bin
-add_executable(gto-guess.x gto.cpp)
-add_dependencies(gto-guess.x external-modules)
-target_include_directories(gto-guess.x PRIVATE
+add_executable(gto-guess gto.cpp)
+add_dependencies(gto-guess external-modules)
+target_include_directories(gto-guess PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
@@ -136,12 +136,12 @@ target_include_directories(gto-guess.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
     ${CMAKE_SOURCE_DIR}/src/initial_guess/gto
     )
-target_link_libraries(gto-guess.x
+target_link_libraries(gto-guess
     gtoguess
     mrchem
     mrcpp
     getkw
     )
-install(TARGETS gto-guess.x
+install(TARGETS gto-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
