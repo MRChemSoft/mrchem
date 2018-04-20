@@ -46,7 +46,7 @@ protected:
     bool needLocalization(int nIter) const;
     bool needDiagonalization(int nIter) const;
 
-    void adjustPrecision(double error);
+    double adjustPrecision(double error);
     void resetPrecision();
 
     void printUpdate(const std::string &name, double P, double dP) const;

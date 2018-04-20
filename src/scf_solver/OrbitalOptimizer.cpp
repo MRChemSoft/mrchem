@@ -16,8 +16,8 @@ using mrcpp::Timer;
 namespace mrchem {
 
 OrbitalOptimizer::OrbitalOptimizer(HelmholtzVector &h, Accelerator *k)
-    : GroundStateSolver(h),
-      kain(k) {
+        : GroundStateSolver(h),
+          kain(k) {
 }
 
 OrbitalOptimizer::~OrbitalOptimizer() {
@@ -29,7 +29,6 @@ void OrbitalOptimizer::setup(FockOperator &fock,
                              ComplexMatrix &F) {
     this->fMat_n = &F;
     this->fOper_n = &fock;
-
     this->orbitals_n = &Phi;
 }
 
@@ -37,7 +36,6 @@ void OrbitalOptimizer::clear() {
     this->fMat_n = 0;
     this->fOper_n = 0;
     this->orbitals_n = 0;
-
     if (this->kain != 0) this->kain->clear();
     resetPrecision();
 }
@@ -62,8 +60,7 @@ bool OrbitalOptimizer::optimize() {
         // Initialize SCF cycle
         Timer timer;
         printCycle(nIter);
-        adjustPrecision(err_o);
-        orb_prec = getOrbitalPrecision();
+        orb_prec = adjustPrecision(err_o);
 
         // Rotate orbitals
         if (needLocalization(nIter)) {
@@ -107,19 +104,11 @@ bool OrbitalOptimizer::optimize() {
         if (this->kain != 0) this->kain->accelerate(orb_prec, Phi_n, dPhi_n);
 
         // Compute errors
-        int Ni = dPhi_n.size();
-        DoubleVector errors = DoubleVector::Zero(Ni);
-        for (int i = 0; i < Ni; i++) {
-            if (mpi::my_orb(dPhi_n[i])) errors(i) = dPhi_n[i].norm();
-        }
-
-#ifdef HAVE_MPI
-        //distribute errors among all orbitals
-        MPI_Allreduce(MPI_IN_PLACE, &errors(0), Ni, MPI_DOUBLE, MPI_SUM, mpi::comm_orb);
-#endif
+        DoubleVector errors = orbital::get_norms(dPhi_n);
+        mpi::reduce_vector(errors, mpi::comm_orb);
 
         err_o = errors.maxCoeff();
-        err_t = sqrt(errors.dot(errors));
+        err_t = errors.norm();
         err_p = calcPropertyError();
         this->orbError.push_back(err_t);
         converged = checkConvergence(err_o, err_p);
@@ -145,13 +134,14 @@ bool OrbitalOptimizer::optimize() {
 
         if (converged) break;
     }
+
     if (this->kain != 0) this->kain->clear();
     fock.clear();
 
     if (this->canonical) {
-        orbital::diagonalize(orb_prec, Phi_n, F);
+        orbital::diagonalize(orb_prec/10, Phi_n, F);
     } else {
-        ComplexMatrix U = orbital::localize(orb_prec, Phi_n);
+        ComplexMatrix U = orbital::localize(orb_prec/10, Phi_n);
         F = U*F*U.adjoint();
     }
 

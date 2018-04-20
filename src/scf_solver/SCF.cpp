@@ -39,7 +39,7 @@ void SCF::setOrbitalPrec(double init, double final) {
     this->orbPrec[2] = final;
 }
 
-void SCF::adjustPrecision(double error) {
+double SCF::adjustPrecision(double error) {
     if (this->orbPrec[0] > 0.0 ) this->orbPrec[0] *= 0.75;
     this->orbPrec[0] = std::min(10.0*error*error, this->orbPrec[0]);
     this->orbPrec[0] = std::max(this->orbPrec[0], this->orbPrec[2]);
@@ -50,6 +50,7 @@ void SCF::adjustPrecision(double error) {
     Printer::printDouble(0, "Orbital threshold", this->orbThrs);
     Printer::printDouble(0, "Property threshold", this->propThrs);
     Printer::printSeparator(0, '=', 2);
+    return this->orbPrec[0];
 }
 
 void SCF::resetPrecision() {

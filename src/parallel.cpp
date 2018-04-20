@@ -81,6 +81,32 @@ bool my_orb(const Orbital &orb) {
     return (orb.rankID() < 0 or orb.rankID() == mpi::orb_rank) ? true : false;
 }
 
+void reduce_vector(DoubleVector &vec, MPI_Comm comm) {
+#ifdef HAVE_MPI
+        int N = vec.size();
+        MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE, MPI_SUM, comm);
+#endif
+}
+
+void reduce_vector(ComplexVector &vec, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    NOT_IMPLEMENTED_ABORT;
+#endif
+}
+
+void reduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
+#ifdef HAVE_MPI
+        int N = mat.size();
+        MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_DOUBLE, MPI_SUM, comm);
+#endif
+}
+
+void reduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    NOT_IMPLEMENTED_ABORT;
+#endif
+}
+
 //send an orbital with MPI
 void send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI

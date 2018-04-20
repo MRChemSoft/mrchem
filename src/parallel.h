@@ -2,14 +2,13 @@
 
 #include "MRCPP/Parallel"
 
+#include "qmfunctions.h"
+
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
 namespace mrchem {
-
-class Orbital;
-class Density;
 
 namespace omp {
 extern int n_threads;
@@ -45,6 +44,11 @@ void recv_orbital(Orbital &orb, int src, int tag);
 void send_density(Density &rho, int dst, int tag);
 void isend_density(Density &rho, int dst, int tag, MPI_Request& request);
 void recv_density(Density &rho, int src, int tag);
+
+void reduce_vector(DoubleVector &vec, MPI_Comm comm);
+void reduce_vector(ComplexVector &vec, MPI_Comm comm);
+void reduce_matrix(DoubleMatrix &mat, MPI_Comm comm);
+void reduce_matrix(ComplexMatrix &mat, MPI_Comm comm);
 
 } //namespace mpi
 

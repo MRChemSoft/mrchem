@@ -720,7 +720,7 @@ DoubleVector get_squared_norms(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     DoubleVector norms = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        norms(i) = vec[i].squaredNorm();
+        if (mpi::my_orb(vec[i])) norms(i) = vec[i].squaredNorm();
     }
     return norms;
 }
@@ -730,7 +730,7 @@ DoubleVector get_norms(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     DoubleVector norms = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        norms(i) = vec[i].norm();
+        if (mpi::my_orb(vec[i])) norms(i) = vec[i].norm();
     }
     return norms;
 }
