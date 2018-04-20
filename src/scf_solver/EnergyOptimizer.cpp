@@ -85,7 +85,7 @@ bool EnergyOptimizer::optimize() {
         // Apply Helmholtz operators
         Phi_np1 = H(Psi_n);
         orbital::free(Psi_n);
-        if (mpi::orb_size > 1) H.clear();
+        H.clear();
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
