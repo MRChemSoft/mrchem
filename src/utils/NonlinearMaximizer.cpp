@@ -348,12 +348,11 @@ int NonlinearMaximizer::maximize() {
     }//iterations
 
     if (iter < maxIter) {
-        println(0, "localization: convergence after " << iter-1 << " iterations");
-        return iter-1;
+        iter = iter - 1;
     } else {
-        println(0, "WARNING: localization convergence only to " <<gradient_norm<<" after "<< iter-1<<" iterations" << " max eigenval was: "<<maxEiVal);
-        return -1;
+        iter = -1;
     }
+    return iter;
 }
 
 } //namespace mrchem
