@@ -89,7 +89,7 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
 
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Rotating iterative subspace", t);
+    Printer::printDouble(0, "Rotating iterative subspace", t, 5);
 }
 
 /** Update iterative history with the latest orbitals and updates
@@ -149,7 +149,7 @@ void Accelerator::push_back(OrbitalVector &Phi,
 
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Push back orbitals", t);
+    Printer::printDouble(0, "Push back orbitals", t, 5);
 }
 
 /** Verify that the orbital overlap between the two last iterations
@@ -227,7 +227,7 @@ void Accelerator::solveLinearSystem() {
     }
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Solve linear system", t);
+    Printer::printDouble(0, "Solve linear system", t, 5);
 }
 
 
@@ -246,7 +246,7 @@ void Accelerator::copyOrbitals(OrbitalVector &Phi, int nHistory) {
 
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Copy orbitals", t);
+    Printer::printDouble(0, "Copy orbitals", t, 5);
 }
 
 /** Copy orbital updates at the given point in history into the given set.
@@ -264,7 +264,7 @@ void Accelerator::copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
 
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Copy orbital updates", t);
+    Printer::printDouble(0, "Copy orbital updates", t, 5);
 }
 
 /** Replaces the orbital set from a given point in history.

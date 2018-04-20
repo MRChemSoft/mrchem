@@ -55,14 +55,14 @@ int HelmholtzVector::initHelmholtzOperator(double energy, int i) {
             double relDiff = muDiff/mu;
             if (std::abs(relDiff) < this->threshold and false) {
                 double l = -0.5*mu_j*mu_j;
-                Printer::printDouble(0, "Re-using operator with lambda", l);
+                Printer::printDouble(0, "Re-using operator with lambda", l, 5);
                 return j;
             }
         }
     }
     mrcpp::HelmholtzOperator *oper = 0;
     if( i%mpi::orb_size == mpi::orb_rank) {
-        Printer::printDouble(0, "Creating operator with lambda", energy);
+        Printer::printDouble(0, "Creating operator with lambda", energy, 5);
         oper = new mrcpp::HelmholtzOperator(*MRA, mu, this->build_prec);
     }
     this->operators.push_back(oper);

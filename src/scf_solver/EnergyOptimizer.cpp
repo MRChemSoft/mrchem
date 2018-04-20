@@ -204,7 +204,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &Phi_np1, Orbi
 
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(0, "Nuclear potential matrix", t);
+        Printer::printDouble(0, "Nuclear potential matrix", t, 5);
     }
     */
 
@@ -214,7 +214,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &Phi_np1, Orbi
         dV_n = (*v_n)(Phi_np1, dPhi_n);
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(0, "Nuclear potential matrix", t);
+        Printer::printDouble(0, "Nuclear potential matrix", t), 5;
     }
 
     ComplexMatrix F_n;
@@ -224,7 +224,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &Phi_np1, Orbi
         F_n = fock_n(Phi_np1, Phi_n);
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(0, "Fock matrix n", t);
+        Printer::printDouble(0, "Fock matrix n", t, 5);
     }
 
     {   // The n+1 Fock operator needs orthonormalized orbitals
@@ -256,7 +256,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &Phi_np1, Orbi
         //ComplexMatrix F_np1 = F_1 + F_2 + F_3 + F_4;
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(0, "Fock matrix n+1", t);
+        Printer::printDouble(0, "Fock matrix n+1", t, 5);
     }
 
     // Re-computing non-orthogonal phi_np1

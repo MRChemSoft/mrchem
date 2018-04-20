@@ -64,7 +64,7 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         orbital::free(dKet);
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(1, "T_x", t);
+        Printer::printDouble(1, "T_x", t, 5);
     }
     {
         Timer timer;
@@ -79,7 +79,7 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         orbital::free(dKet);
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(1, "T_y", t);
+        Printer::printDouble(1, "T_y", t, 5);
     }
     {
         Timer timer;
@@ -94,7 +94,7 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         orbital::free(dKet);
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(1, "T_z", t);
+        Printer::printDouble(1, "T_z", t, 5);
     }
     timer.stop();
     Printer::printFooter(1, timer, 2);

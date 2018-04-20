@@ -56,7 +56,7 @@ FockOperator::FockOperator(KineticOperator  *t,
 void FockOperator::setup(double prec) {
     Timer timer;
     Printer::printHeader(0, "Setting up Fock operator");
-    Printer::printDouble(0, "Precision", prec);
+    Printer::printDouble(0, "Precision", prec, 5);
     Printer::printSeparator(0, '-');
     this->T.setup(prec);
     this->V.setup(prec);

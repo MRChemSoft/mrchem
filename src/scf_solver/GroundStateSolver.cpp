@@ -56,14 +56,14 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
         }
     }
     timer_1.stop();
-    Printer::printDouble(0, "Potential part", timer_1.getWallTime());
+    Printer::printDouble(0, "Potential part", timer_1.getWallTime(), 5);
 
     if (clearFock) fock.clear();
 
     Timer timer_2;
     OrbitalVector part_2 = orbital::multiply(M, Phi);
     timer_2.stop();
-    Printer::printDouble(0, "Matrix part", timer_2.getWallTime());
+    Printer::printDouble(0, "Matrix part", timer_2.getWallTime(), 5);
 
     OrbitalVector out = orbital::add(coef, part_1, coef, part_2);
     orbital::free(part_1);
@@ -119,7 +119,7 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     orbVecChunk_i.clearVec(false);
     workOrbVec.clear();
     timer_2.stop();
-    Printer::printDouble(0, "Matrix part", timer_2.getWallTime());
+    Printer::printDouble(0, "Matrix part", timer_2.getWallTime(), 5);
     */
 
     timer_tot.stop();

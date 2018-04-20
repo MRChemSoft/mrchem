@@ -45,10 +45,10 @@ double SCF::adjustPrecision(double error) {
     this->orbPrec[0] = std::max(this->orbPrec[0], this->orbPrec[2]);
 
     Printer::printSeparator(0, '=');
-    Printer::printDouble(0, "Current precision", this->orbPrec[0]);
+    Printer::printDouble(0, "Current precision", this->orbPrec[0], 5);
     Printer::printSeparator(0, '-');
-    Printer::printDouble(0, "Orbital threshold", this->orbThrs);
-    Printer::printDouble(0, "Property threshold", this->propThrs);
+    Printer::printDouble(0, "Orbital threshold", this->orbThrs, 5);
+    Printer::printDouble(0, "Property threshold", this->propThrs, 5);
     Printer::printSeparator(0, '=', 2);
     return this->orbPrec[0];
 }

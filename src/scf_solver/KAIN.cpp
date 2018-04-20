@@ -132,7 +132,7 @@ void KAIN::setupLinearSystem() {
 
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Setup linear system", t);
+    Printer::printDouble(0, "Setup linear system", t, 5);
 }
 
 /** Compute the next step for orbitals and orbital updates given the
@@ -237,7 +237,7 @@ void KAIN::expandSolution(double prec,
     }
     timer.stop();
     double t = timer.getWallTime();
-    Printer::printDouble(0, "Expand solution", t);
+    Printer::printDouble(0, "Expand solution", t, 5);
 }
 
 } //namespace mrchem

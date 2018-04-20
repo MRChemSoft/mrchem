@@ -463,7 +463,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
         RRMaximizer rr(prec, Phi);
         n_it = rr.maximize();
         rr_t.stop();
-        Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime());
+        Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime(), 5);
 
         if (n_it > 0) {
             println(0, " Converged after iteration   " << std::setw(30) << n_it);
@@ -479,7 +479,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
         Timer orth_t;
         U = orbital::calc_lowdin_matrix(Phi);
         orth_t.stop();
-        Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
+        Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
     }
 
     Timer rot_t;
@@ -487,7 +487,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
-    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
 
     timer.stop();
     Printer::printFooter(0, timer, 2);
@@ -511,7 +511,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
     F = S_m12.transpose()*F*S_m12;
     orth_t.stop();
-    Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime());
+    Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
 
     Timer diag_t;
     ComplexMatrix U = ComplexMatrix::Zero(F.rows(), F.cols());
@@ -523,14 +523,14 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     if (nb > 0) mathutils::diagonalize_block(F, U, np + na, nb);
     U = U * S_m12;
     diag_t.stop();
-    Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime());
+    Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
     Timer rot_t;
     OrbitalVector Psi = orbital::multiply(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
-    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime());
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
 
     timer.stop();
     Printer::printFooter(0, timer, 2);
