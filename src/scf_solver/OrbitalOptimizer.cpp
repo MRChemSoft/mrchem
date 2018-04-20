@@ -90,7 +90,7 @@ bool OrbitalOptimizer::optimize() {
         // Apply Helmholtz operators
         OrbitalVector Phi_np1 = H(Psi_n);
         orbital::free(Psi_n);
-        if (mpi::orb_size > 1) H.clear();
+        H.clear();
 
         if (not clearFock) fock.clear();
         ComplexMatrix U = orbital::orthonormalize(orb_prec, Phi_np1);

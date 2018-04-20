@@ -170,6 +170,10 @@ SCFDriver::SCFDriver(Getkw &input) {
 }
 
 bool SCFDriver::sanityCheck() const {
+    if (scf_lambda_thrs > 0.0) {
+        MSG_ERROR("Recycling of HelmholtzOperators currently disabled");
+        return true;
+    }
     if (wf_method == "DFT" and dft_spin) {
         MSG_ERROR("Spin DFT not implemented");
         return false;
