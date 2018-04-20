@@ -33,6 +33,7 @@ void EnergyOptimizer::setup(FockOperator &fock, OrbitalVector &phi, ComplexMatri
     this->fOper_n = &fock;
     this->fOper_np1 = &fock_np1;
     this->orbitals_n = &phi;
+    this->orbitals_np1 = &phi_np1;
 }
 
 void EnergyOptimizer::clear() {
@@ -40,6 +41,7 @@ void EnergyOptimizer::clear() {
     this->fOper_n = 0;
     this->fOper_np1 = 0;
     this->orbitals_n = 0;
+    this->orbitals_np1 = 0;
     resetPrecision();
 }
 
@@ -47,6 +49,7 @@ bool EnergyOptimizer::optimize() {
     ComplexMatrix &F_n = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
     OrbitalVector &Phi_n = *this->orbitals_n;
+    OrbitalVector &Phi_np1 = *this->orbitals_np1;
     HelmholtzVector &H = *this->helmholtz;
 
     double orb_prec = getOrbitalPrecision();
@@ -81,7 +84,7 @@ bool EnergyOptimizer::optimize() {
         OrbitalVector Psi_n = setupHelmholtzArguments(fock, L_n-F_n, Phi_n);
 
         // Apply Helmholtz operators
-        OrbitalVector Phi_np1 = H(Psi_n);
+        Phi_np1 = H(Psi_n);
         orbital::free(Psi_n);
         if (mpi::orb_size > 1) H.clear();
 
@@ -100,7 +103,7 @@ bool EnergyOptimizer::optimize() {
         converged = checkConvergence(err_o, err_p);
 
         // Compute Fock matrix
-        ComplexMatrix F_np1 = F_n + calcFockMatrixUpdate(Phi_np1, dPhi_n);
+        ComplexMatrix F_np1 = F_n + calcFockMatrixUpdate(dPhi_n);
         orbital::free(Phi_n);
         orbital::free(dPhi_n);
         fock.clear();
@@ -130,11 +133,12 @@ bool EnergyOptimizer::optimize() {
     return converged;
 }
 
-ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &Phi_np1, OrbitalVector &dPhi_n) {
+ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &dPhi_n) {
     if (this->fOper_np1 == 0) MSG_FATAL("Operator not initialized");
 
     double orb_prec = getOrbitalPrecision();
     OrbitalVector &Phi_n = *this->orbitals_n;
+    OrbitalVector &Phi_np1 = *this->orbitals_np1;
 
     Printer::printHeader(0,"Computing Fock matrix update");
 
@@ -214,7 +218,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &Phi_np1, Orbi
         dV_n = (*v_n)(Phi_np1, dPhi_n);
         timer.stop();
         double t = timer.getWallTime();
-        Printer::printDouble(0, "Nuclear potential matrix", t), 5;
+        Printer::printDouble(0, "Nuclear potential matrix", t, 5);
     }
 
     ComplexMatrix F_n;
