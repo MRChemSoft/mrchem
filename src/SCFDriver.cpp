@@ -13,6 +13,7 @@
 
 #include "HelmholtzVector.h"
 #include "OrbitalOptimizer.h"
+#include "EnergyOptimizer.h"
 #include "KAIN.h"
 
 #include "FockOperator.h"
@@ -474,8 +475,6 @@ OrbitalOptimizer* SCFDriver::setupOrbitalOptimizer() {
 }
 
 EnergyOptimizer* SCFDriver::setupEnergyOptimizer() {
-    NOT_IMPLEMENTED_ABORT;
-/*
     if (helmholtz == 0) MSG_ERROR("Helmholtz operators not initialized");
 
     EnergyOptimizer *optimizer = new EnergyOptimizer(*helmholtz);
@@ -485,7 +484,6 @@ EnergyOptimizer* SCFDriver::setupEnergyOptimizer() {
     optimizer->setOrbitalPrec(rel_prec, rel_prec);
 
     return optimizer;
-*/
 }
 
 LinearResponseSolver* SCFDriver::setupLinearResponseSolver(bool dynamic) {
@@ -609,8 +607,6 @@ bool SCFDriver::runGroundState() {
 
     // Optimize energy
     if (kin_free_run) {
-        NOT_IMPLEMENTED_ABORT;
-        /*
         setup_np1();
 
         EnergyOptimizer *solver = setupEnergyOptimizer();
@@ -620,7 +616,6 @@ bool SCFDriver::runGroundState() {
 
         clear_np1();
         delete solver;
-        */
     }
 
     if (scf_write_orbitals) NOT_IMPLEMENTED_ABORT;

@@ -2,20 +2,23 @@
 
 #include "GroundStateSolver.h"
 
-class EnergyOptimizer : public GroundStateSolver {
-public:
-    EnergyOptimizer(HelmholtzOperatorSet &h);
-    virtual ~EnergyOptimizer();
+namespace mrchem {
 
-    void setup(FockOperator &fock, OrbitalVector &phi, Eigen::MatrixXd &F,
+class EnergyOptimizer final : public GroundStateSolver {
+public:
+    EnergyOptimizer(HelmholtzVector &h);
+    ~EnergyOptimizer();
+
+    void setup(FockOperator &fock, OrbitalVector &phi, ComplexMatrix &F,
                FockOperator &fock_np1, OrbitalVector &phi_np1);
     void clear();
 
-    virtual bool optimize();
+    bool optimize();
 
 protected:
     FockOperator *fOper_np1;
 
-    Eigen::MatrixXd calcFockMatrixUpdate();
+    ComplexMatrix calcFockMatrixUpdate(OrbitalVector &Phi_np1, OrbitalVector &dPhi_n);
 };
 
+} //namespace mrchem
