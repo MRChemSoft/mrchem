@@ -21,6 +21,8 @@
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 
+#include "DipoleMoment.h"
+
 #include "H_E_dip.h"
 #include "H_B_dip.h"
 #include "H_M_pso.h"
@@ -668,20 +670,20 @@ void SCFDriver::calcGroundStateProperties() {
         Printer::printFooter(0, timer, 2);
         fock->clear();
     }
-    /*
     if (calc_dipole_moment) {
         Printer::printHeader(0, "Calculating dipole moment");
         Timer timer;
-        VectorXd &nuc = molecule->getDipoleMoment().getNuclear();
-        VectorXd &el = molecule->getDipoleMoment().getElectronic();
+        DoubleVector &nuc = molecule->getDipoleMoment().getNuclear();
+        DoubleVector &el = molecule->getDipoleMoment().getElectronic();
         H_E_dip mu(r_O);
         mu.setup(rel_prec);
-        nuc = mu.trace(*nuclei);
-        el = mu.trace(*phi);
+        nuc = mu.trace(*nuclei).real();
+        el = mu.trace(*phi).real();
         mu.clear();
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
+    /*
     if (calc_magnetizability) {
         Printer::printHeader(0, "Calculating diamagnetic magnetizability");
         Timer timer;
