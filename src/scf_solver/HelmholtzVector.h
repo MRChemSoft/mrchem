@@ -17,7 +17,8 @@ public:
     double getThreshold() const { return this->threshold; }
 
     double getLambda(int i) const { return this->lambda[i]; }
-    DoubleVector getLambda() const;
+    DoubleVector getLambdaVector() const;
+    ComplexMatrix getLambdaMatrix() const;
 
     mrcpp::HelmholtzOperator& operator[](int i);
     const mrcpp::HelmholtzOperator& operator[](int i) const;

@@ -79,8 +79,7 @@ bool EnergyOptimizer::optimize() {
 
         // Setup Helmholtz operators and argument
         H.setup(orb_prec, F_n.real().diagonal());
-        ComplexVector lambda = H.getLambda().cast<ComplexDouble>();
-        ComplexMatrix L_n = lambda.asDiagonal();
+        ComplexMatrix L_n = H.getLambdaMatrix();
         OrbitalVector Psi_n = setupHelmholtzArguments(fock, L_n-F_n, Phi_n);
 
         // Apply Helmholtz operators
@@ -95,7 +94,6 @@ bool EnergyOptimizer::optimize() {
         DoubleVector errors = orbital::get_norms(dPhi_n);
         mpi::reduce_vector(errors, mpi::comm_orb);
 
-        orbital::set_errors(Phi_n, errors);
         err_o = errors.maxCoeff();
         err_t = errors.norm();
         err_p = calcPropertyError();
@@ -113,6 +111,7 @@ bool EnergyOptimizer::optimize() {
         Phi_n = orbital::multiply(U, Phi_np1, orb_prec);
         F_n = U*F_np1*U.adjoint();
         orbital::free(Phi_np1);
+        orbital::set_errors(Phi_n, errors);
 
         timer.stop();
         printOrbitals(F_n.real().diagonal(), Phi_n, 0);
@@ -267,8 +266,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &dPhi_n) {
     orbital::free(Phi_np1);
     Phi_np1 = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
 
-    ComplexVector lambda = this->helmholtz->getLambda().cast<ComplexDouble>();
-    ComplexMatrix L = lambda.asDiagonal();
+    ComplexMatrix L = this->helmholtz->getLambdaMatrix();
     ComplexMatrix dF_1 = dS_1*(*this->fMat_n);
     ComplexMatrix dF_2 = dS_2*L;
     ComplexMatrix dF_3 = F_np1 - F_n;

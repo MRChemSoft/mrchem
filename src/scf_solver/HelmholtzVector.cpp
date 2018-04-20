@@ -127,13 +127,18 @@ const mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) const {
     return *oper;
 }
 
-DoubleVector HelmholtzVector::getLambda() const {
+DoubleVector HelmholtzVector::getLambdaVector() const {
     int nLambda = this->lambda.size();
     DoubleVector L = DoubleVector::Zero(nLambda);
     for (int i = 0; i < nLambda; i++) {
         L(i) = this->lambda[i];
     }
     return L;
+}
+
+ComplexMatrix HelmholtzVector::getLambdaMatrix() const {
+    ComplexVector lambda = getLambdaVector().cast<ComplexDouble>();
+    return lambda.asDiagonal();
 }
 
 /** Prints the number of trees and nodes kept in the operator set */
