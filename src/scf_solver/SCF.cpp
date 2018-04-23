@@ -8,9 +8,15 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** @brief constructor
+ *
+ * @param h: Helmholtz operators
+ *
+ * SCF solver will NOT take ownership of the HelmholtzVector, so the original object
+ * must be taken care of externally (do not delete until SCF goes out of scope).
+ */
 SCF::SCF(HelmholtzVector &h)
         : maxIter(-1),
           rotation(0),
@@ -21,17 +27,38 @@ SCF::SCF(HelmholtzVector &h)
           helmholtz(&h) {
 }
 
-void SCF::setThreshold(double orb_thrs, double prop_thrs) {
-    this->orbThrs = orb_thrs;
-    this->propThrs = prop_thrs;
+/** @brief Set convergence thresholds
+ *
+ * @param orb: threshold for orbitals
+ * @param prop: threshold for property
+ */
+void SCF::setThreshold(double orb, double prop) {
+    this->orbThrs = orb;
+    this->propThrs = prop;
 }
 
+/** @brief Set dynamic precision parameters
+ *
+ * @param init: initial precision
+ * @param final: final precision
+ *
+ * The precision will increase dynamically during the SCF optimization, starting
+ * from "init", ending at "final".
+ */
 void SCF::setOrbitalPrec(double init, double final) {
     this->orbPrec[0] = init;
     this->orbPrec[1] = init;
     this->orbPrec[2] = final;
 }
 
+/** @brief Adjust dynamic precision
+ *
+ * @param error: error in current SCF iteration
+ *
+ * The precision will increase dynamically following the current residual in
+ * the SCF equations, and at least by 25%. Sets the internal precision parameter
+ * and returns the current prec.
+ */
 double SCF::adjustPrecision(double error) {
     if (this->orbPrec[0] > 0.0 ) this->orbPrec[0] *= 0.75;
     this->orbPrec[0] = std::min(10.0*error*error, this->orbPrec[0]);
@@ -46,10 +73,13 @@ double SCF::adjustPrecision(double error) {
     return this->orbPrec[0];
 }
 
-void SCF::resetPrecision() {
-    this->orbPrec[0] = this->orbPrec[1];
-}
-
+/** @brief Test if current errors are within the thresholds
+ *
+ * @param err_o: current orbital error
+ * @param err_p: current property error
+ *
+ * A negative threshold means that it is inactive.
+ */
 bool SCF::checkConvergence(double err_o, double err_p) const {
     bool conv_o = false;
     bool conv_p = false;
@@ -58,6 +88,13 @@ bool SCF::checkConvergence(double err_o, double err_p) const {
     return (conv_o and conv_p);
 }
 
+/** @brief Test if orbitals needs localization
+ *
+ * @param nIter: current iteration number
+ *
+ * This check is based on the "canonical" and "rotation" parameters, where the latter
+ * tells how oftern (in terms of iterations) the orbitals should be rotated.
+ */
 bool SCF::needLocalization(int nIter) const {
     bool loc = false;
     if (this->canonical) {
@@ -72,6 +109,13 @@ bool SCF::needLocalization(int nIter) const {
     return loc;
 }
 
+/** @brief Test if orbitals needs diagonalization
+ *
+ * @param nIter: current iteration number
+ *
+ * This check is based on the "canonical" and "rotation" parameters, where the latter
+ * tells how oftern (in terms of iterations) the orbitals should be rotated.
+ */
 bool SCF::needDiagonalization(int nIter) const {
     bool diag = false;
     if (not this->canonical) {
@@ -86,6 +130,36 @@ bool SCF::needDiagonalization(int nIter) const {
     return diag;
 }
 
+/** @brief Get property update
+ *
+ * @param vec: convergence vector
+ * @param i: position in vector
+ * @param absPrec: return absolute value
+ *
+ * Returns the difference between the i-th and (i-1)-th entry of the convergence vector.
+ */
+double SCF::getUpdate(const std::vector<double> &vec, int i, bool absPrec) const {
+    if (i < 1 or i > vec.size()) MSG_ERROR("Invalid argument");
+    double E_i = vec[i-1];
+    double E_im1 = 0.0;
+    if (i > 1) {
+        E_im1 = vec[i-2];
+    }
+    double E_diff = E_i - E_im1;
+    if (not absPrec and std::abs(E_i) > mrcpp::MachineZero) {
+        E_diff *= 1.0/E_i;
+    }
+    return E_diff;
+}
+
+/** @brief Pretty printing of property update
+ *
+ * @param name: name of property
+ * @param P: current value
+ * @param dP: current update
+ *
+ * Adds convergence status based on the property threshold.
+ */
 void SCF::printUpdate(const std::string &name, double P, double dP) const {
     int oldPrec = Printer::setPrecision(15);
     double p = 1.0;
@@ -101,20 +175,12 @@ void SCF::printUpdate(const std::string &name, double P, double dP) const {
     Printer::setPrecision(oldPrec);
 }
 
-double SCF::getUpdate(const std::vector<double> &vec, int i, bool absPrec) const {
-    if (i < 1 or i > vec.size()) MSG_ERROR("Invalid argument");
-    double E_i = vec[i-1];
-    double E_im1 = 0.0;
-    if (i > 1) {
-        E_im1 = vec[i-2];
-    }
-    double E_diff = E_i - E_im1;
-    if (not absPrec and std::abs(E_i) > mrcpp::MachineZero) {
-        E_diff *= 1.0/E_i;
-    }
-    return E_diff;
-}
-
+/** @brief Pretty printing of orbitals with energies
+ *
+ * @param epsilon: orbital energies
+ * @param Phi: orbital vector
+ * @param flag: interpret epsilon as energy or norm
+ */
 void SCF::printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, int flag) const {
     Printer::printHeader(0, "Orbitals");
     if (flag == 0) println(0, " Orb    F(i,i)        Error         nNodes  Spin  Occ  Done ");
@@ -145,6 +211,12 @@ void SCF::printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, i
     Printer::setPrecision(oldprec);
 }
 
+/** @brief Pretty printing of convergence pattern
+ *
+ * @param converged: convergence status
+ *
+ * Prints convergence in both orbitals and property.
+ */
 void SCF::printConvergence(bool converged) const {
     int iter = this->orbError.size();
     int oldPrec = Printer::getPrecision();
@@ -173,7 +245,11 @@ void SCF::printConvergence(bool converged) const {
     Printer::printSeparator(0, '=', 2);
 }
 
-void SCF::printCycle(int nIter) const {
+/** @brief Pretty printing of SCF cycle header
+ *
+ * @param nIter: current iteration number
+ */
+void SCF::printCycleHeader(int nIter) const {
     printout(0, std::endl << std::endl);
     printout(0, "#######################");
     printout(0, " SCF cycle " << std::setw(2) << nIter << " ");
@@ -181,7 +257,11 @@ void SCF::printCycle(int nIter) const {
     printout(0, std::endl << std::endl << std::endl);
 }
 
-void SCF::printTimer(double t) const {
+/** @brief Pretty printing of SCF cycle footer
+ *
+ * @param t: timing for SCF cycle
+ */
+void SCF::printCycleFooter(double t) const {
     int oldPrec = Printer::setPrecision(5);
     printout(0, std::endl << std::endl);
     printout(0, "################");

@@ -5,6 +5,16 @@
 
 #include "qmfunctions.h"
 
+/** @class SCF
+ *
+ * @brief Abstract base class for different types of SCF solvers
+ *
+ * The ground state and linear response SCF solvers share some common features which
+ * are collected in this abstract base class. This mainly involves convergence routines
+ * and printing.
+ *
+ */
+
 namespace mrchem {
 
 class HelmholtzVector;
@@ -41,15 +51,15 @@ protected:
     bool needDiagonalization(int nIter) const;
 
     double adjustPrecision(double error);
-    void resetPrecision();
+    void resetPrecision() { this->orbPrec[0] = this->orbPrec[1]; }
 
     double getUpdate(const std::vector<double> &vec, int i, bool absPrec) const;
     void printUpdate(const std::string &name, double P, double dP) const;
 
     void printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, int flag) const;
     void printConvergence(bool converged) const;
-    void printCycle(int nIter) const;
-    void printTimer(double t) const;
+    void printCycleHeader(int nIter) const;
+    void printCycleFooter(double t) const;
 };
 
 } //namespace mrchem

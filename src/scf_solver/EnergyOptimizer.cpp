@@ -69,7 +69,7 @@ bool EnergyOptimizer::optimize() {
     while(nIter++ < this->maxIter or this->maxIter < 0) {
         // Initialize SCF cycle
         Timer timer;
-        printCycle(nIter);
+        printCycleHeader(nIter);
         orb_prec = adjustPrecision(err_o);
 
         // Compute electronic energy
@@ -116,7 +116,7 @@ bool EnergyOptimizer::optimize() {
         timer.stop();
         printOrbitals(F_n.real().diagonal(), Phi_n, 0);
         printProperty();
-        printTimer(timer.getWallTime());
+        printCycleFooter(timer.getWallTime());
 
         if (converged) break;
     }

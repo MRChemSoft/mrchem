@@ -59,7 +59,7 @@ bool OrbitalOptimizer::optimize() {
     while(nIter++ < this->maxIter or this->maxIter < 0) {
         // Initialize SCF cycle
         Timer timer;
-        printCycle(nIter);
+        printCycleHeader(nIter);
         orb_prec = adjustPrecision(err_o);
 
         // Rotate orbitals
@@ -129,7 +129,7 @@ bool OrbitalOptimizer::optimize() {
         timer.stop();
         printOrbitals(F.real().diagonal(), Phi_n, 0);
         printProperty();
-        printTimer(timer.getWallTime());
+        printCycleFooter(timer.getWallTime());
 
         if (converged) break;
     }
