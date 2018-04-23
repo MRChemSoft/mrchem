@@ -13,12 +13,30 @@ using mrcpp::Timer;
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** @brief constructor
+ *
+ * @param build: precision for construction of Helmholtz operators
+ * @param thrs: lambda threshold for re-use of operators
+ *
+ * The apply_prec is not assigned and no operators are constructed at this point.
+ * The setup() function must be called in order to initialize the operators before
+ * application.
+ */
 HelmholtzVector::HelmholtzVector(double build, double thrs)
         : threshold(thrs),
           build_prec(build),
           apply_prec(-1.0) {
 }
 
+/** @brief Prepare operators for application
+ *
+ * @param prec: Apply precision
+ * @param Phi: Vector of orbital energies
+ *
+ * This will construct the necessary HelmholtzOperators from the list of required
+ * orbital energies, and assign one operator to each orbital. The orbital energy
+ * vector must have the same size as the OrbitalVector on which to apply.
+ */
 void HelmholtzVector::setup(double prec, const DoubleVector &energies) {
     Printer::printHeader(0, "Setting up Helmholtz operators");
     this->apply_prec = prec;
@@ -45,6 +63,16 @@ void HelmholtzVector::setup(double prec, const DoubleVector &energies) {
     Printer::printFooter(0, timer, 2);
 }
 
+/** @brief Initialize a Helmholtz operator with given energy
+ *
+ * @param energy: Orbital energy
+ * @param i: Orbital index (position in OrbitalVector)
+ *
+ * This will construct a singel HelmholtzOperator with the given energy, and
+ * assign the operator to a specific orbital. If re-use is activated we will
+ * first look through the existing operators and assign to one of them if
+ * the energy matches.
+ */
 int HelmholtzVector::initHelmholtzOperator(double energy, int i) {
     if (energy > 0.0) MSG_ERROR("Complex Helmholtz not available");
     double mu = std::sqrt(-2.0*energy);
@@ -70,6 +98,10 @@ int HelmholtzVector::initHelmholtzOperator(double energy, int i) {
     return this->operators.size() - 1;
 }
 
+/** @brief Clear operators after application
+ *
+ * This will clear all existing operators, even if re-use is activated.
+ */
 void HelmholtzVector::clear() {
     int nOper = this->operators.size();
     for (int j = 0; j < nOper; j++) {
@@ -83,6 +115,10 @@ void HelmholtzVector::clear() {
     this->lambda.clear();
 }
 
+/** @brief Clear unused operators
+ *
+ * This will clear all operators that currently doesn't point to any orbital.
+ */
 void HelmholtzVector::clearUnused() {
     std::vector<mrcpp::HelmholtzOperator *> tmp;
     int nIdx = this->oper_idx.size();
@@ -111,6 +147,7 @@ void HelmholtzVector::clearUnused() {
     }
 }
 
+/** @brief Return the operator corresponding to the i-th orbital */
 mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) {
     int idx = this->oper_idx[i];
     if (idx < 0 or idx >= operators.size()) MSG_ERROR("Invalid operator index");
@@ -119,6 +156,7 @@ mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) {
     return *oper;
 }
 
+/** @brief Return the operator corresponding to the i-th orbital */
 const mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) const {
     int idx = this->oper_idx[i];
     if (idx < 0 or idx >= operators.size()) MSG_ERROR("Invalid operator index");
@@ -127,6 +165,7 @@ const mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) const {
     return *oper;
 }
 
+/** @brief Return a vector of the lambda parameters of the currently operators*/
 DoubleVector HelmholtzVector::getLambdaVector() const {
     int nLambda = this->lambda.size();
     DoubleVector L = DoubleVector::Zero(nLambda);
@@ -136,13 +175,13 @@ DoubleVector HelmholtzVector::getLambdaVector() const {
     return L;
 }
 
+/** @brief Return a diagonal matrix of the lambda parameters of the currently operators*/
 ComplexMatrix HelmholtzVector::getLambdaMatrix() const {
     ComplexVector lambda = getLambdaVector().cast<ComplexDouble>();
     return lambda.asDiagonal();
 }
 
-/** Prints the number of trees and nodes kept in the operator set */
-
+/** @brief Prints the total number of trees and nodes kept in the operator set */
 int HelmholtzVector::printTreeSizes() const {
     int totNodes = 0;
     int totTrees = 0;
@@ -159,7 +198,14 @@ int HelmholtzVector::printTreeSizes() const {
     return totNodes;
 }
 
-
+/** @brief Apply the i-th operator to an orbital
+ *
+ * @param i: Orbital index (position in OrbtialVector)
+ * @param inp: Orbital on which to apply
+ *
+ * This will apply the HelmholtzOperator onto both the real and imaginary
+ * parts of the input orbital.
+ */
 Orbital HelmholtzVector::operator()(int i, Orbital inp) {
     mrcpp::HelmholtzOperator &H_i = (*this)[i];
 
@@ -176,6 +222,13 @@ Orbital HelmholtzVector::operator()(int i, Orbital inp) {
     return out;
 }
 
+/** @brief Apply all operators to the corresponding orbital
+ *
+ * @param inp: Orbitals on which to apply
+ *
+ * This will produce an output OrbitalVector where each of the HelmholtzOperators
+ * have been applied to the corresponding orbital in the input vector.
+ */
 OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
     Printer::printHeader(0, "Applying Helmholtz operators");
     println(0, " Orb  RealNorm     ImagNorm      nNodes     Error   Timing   ");
