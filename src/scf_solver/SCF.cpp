@@ -191,20 +191,4 @@ void SCF::printTimer(double t) const {
     Printer::setPrecision(oldPrec);
 }
 
-void SCF::printMatrix(int level, const DoubleMatrix &M, const char &name, int pr) const {
-    int oldPrec = Printer::setPrecision(pr);
-    printout(level, std::endl);
-    printout(level, "----------------------------- ");
-    printout(level, name);
-    printout(level, " ----------------------------");
-    printout(level, std::endl);
-    printout(level, M);
-    printout(level, std::endl);
-    printout(level, "------------------------------");
-    printout(level, "------------------------------");
-    printout(level, std::endl);
-    printout(level, std::endl);
-    Printer::setPrecision(oldPrec);
-}
-
 } //namespace mrchem

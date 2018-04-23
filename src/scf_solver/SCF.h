@@ -50,7 +50,6 @@ protected:
     void printConvergence(bool converged) const;
     void printCycle(int nIter) const;
     void printTimer(double t) const;
-    void printMatrix(int level, const DoubleMatrix &M, const char &name, int pr = 5) const;
 };
 
 } //namespace mrchem
