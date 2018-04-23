@@ -81,17 +81,13 @@ bool OrbitalOptimizer::optimize() {
         // Setup Helmholtz operators and argument
         H.setup(orb_prec, F.real().diagonal());
         ComplexMatrix L = H.getLambdaMatrix();
-        bool adjoint = false;
-        bool clearFock = false;
-        if (mpi::orb_size > 1) clearFock = true;
-        OrbitalVector Psi_n = setupHelmholtzArguments(fock, L-F, Phi_n, adjoint, clearFock);
+        OrbitalVector Psi_n = setupHelmholtzArguments(fock, L-F, Phi_n, true);
 
         // Apply Helmholtz operators
         OrbitalVector Phi_np1 = H(Psi_n);
         orbital::free(Psi_n);
         H.clear();
 
-        if (not clearFock) fock.clear();
         ComplexMatrix U = orbital::orthonormalize(orb_prec, Phi_np1);
         F = U*F*U.adjoint();
 

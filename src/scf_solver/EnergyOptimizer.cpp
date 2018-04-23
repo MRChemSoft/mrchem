@@ -80,7 +80,7 @@ bool EnergyOptimizer::optimize() {
         // Setup Helmholtz operators and argument
         H.setup(orb_prec, F_n.real().diagonal());
         ComplexMatrix L_n = H.getLambdaMatrix();
-        OrbitalVector Psi_n = setupHelmholtzArguments(fock, L_n-F_n, Phi_n);
+        OrbitalVector Psi_n = setupHelmholtzArguments(fock, L_n-F_n, Phi_n, false);
 
         // Apply Helmholtz operators
         Phi_np1 = H(Psi_n);
