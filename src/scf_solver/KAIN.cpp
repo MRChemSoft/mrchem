@@ -11,15 +11,16 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-/** Calculates the A matrices and b vectors for each orbital individually.
+/** @brief Calculates the A matrices and b vectors for each orbital individually.
  *
-  * \f$ A_{ij} = \langle x^n - x^i | f(x^n) - f(x^j) \rangle \f$
-  * \f$ b_{i} = \langle x^n - x^i | f(x^n) \rangle \f$
-  *
-  * If Fock matrix is included this is treated as an additional ''orbital''
-  * and the return vectors have size nOrbs + 1. Frobenius inner product
-  * used for the Fock matrix. If separateOrbitals is false the A's and b's
-  * are later collected to single entities. */
+ * \f$ A_{ij} = \langle x^n - x^i | f(x^n) - f(x^j) \rangle \f$
+ * \f$ b_{i} = \langle x^n - x^i | f(x^n) \rangle \f$
+ *
+ * If Fock matrix is included this is treated as an additional ''orbital''
+ * and the return vectors have size nOrbs + 1. Frobenius inner product
+ * used for the Fock matrix. If separateOrbitals is false the A's and b's
+ * are later collected to single entities.
+ */
 void KAIN::setupLinearSystem() {
     Timer timer;
     int nHistory = this->orbitals.size() - 1;
@@ -135,12 +136,13 @@ void KAIN::setupLinearSystem() {
     Printer::printDouble(0, "Setup linear system", t, 5);
 }
 
-/** Compute the next step for orbitals and orbital updates given the
-  * solution \f$ c \f$ of the linear problem \f$ Ac = b \f$.
-  *
-  * The next step \f$ \delta x^n \f$ is constructed as
-  * \f$ \delta x^n = f(x^n) + \sum_{j=1}^m c_j[(x^j-x^n)+(f(x^j)-f(x^n))]\f$
-  */
+/** @brief Compute the next step for orbitals and orbital updates
+ *
+ * The next step \f$ \delta x^n \f$ is constructed from the solution
+ * solution \f$ c \f$ of the linear problem \f$ Ac = b \f$ as:
+ *
+ * \f$ \delta x^n = f(x^n) + \sum_{j=1}^m c_j[(x^j-x^n)+(f(x^j)-f(x^n))]\f$
+ */
 void KAIN::expandSolution(double prec,
                           OrbitalVector &Phi,
                           OrbitalVector &dPhi,

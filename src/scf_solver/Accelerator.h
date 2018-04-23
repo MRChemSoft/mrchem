@@ -5,22 +5,26 @@
 
 #include "qmfunctions.h"
 
+/** @class Acccelerator
+ *
+ *  Base class for iterative subspace accelerators for use in SCF
+ *  optimizations. Solves a linear system of equations \f$ Ac = b \f$
+ *  to obtain the coefficient vector \f$ c \f$ that gives the linear
+ *  combination of history orbitals that gives the next iteration.
+ *  The size of the problem (matrix A) is given by the length of the
+ *  history (not the number of orbitals).
+ *
+ *  The form of the linear problem (how to compute A and b) is given
+ *  in the subclass. It is possible to treat each orbital separately,
+ *  but usually you will benefit from including all orbitals in the
+ *  same subspace and solve for them simultaneously (default). It is
+ *  also possible to include the Fock matrix and corresponding update
+ *  to the subspace. In this case one entry is added (corresponding to
+ *  an extra orbital) using the Frobenius inner product of matrices.
+ */
+
 namespace mrchem {
 
-/** Base class for iterative subspace accelerators for use in SCF
-  * optimizations. Solves a linear system of equations \f$ Ac = b \f$
-  * to obtain the coefficient vector \f$ c \f$ that gives the linear
-  * combination of history orbitals that gives the next iteration.
-  * The size of the problem (matrix A) is given by the length of the
-  * history (not the number of orbitals).
-  *
-  * The form of the linear problem (how to compute A and b) is given
-  * in the subclass. It is possible to treat each orbital separately,
-  * but usually you will benefit from including all orbitals in the
-  * same subspace and solve for them simultaneously (default). It is
-  * also possible to include the Fock matrix and corresponding update
-  * to the subspace. In this case one entry is added (corresponding to
-  * an extra orbital) using the Frobenius inner product of matrices. */
 class Accelerator {
 public:
     Accelerator(int max, int min, bool sep);
@@ -44,6 +48,8 @@ public:
 
     void rotate(const ComplexMatrix &U, bool all = true);
 
+    int printTreeSizes() const;
+
 protected:
     int minHistory;   ///< Accelerator is activated when history reaches this size
     int maxHistory;   ///< Oldest iteration is discarded when history exceeds this size
@@ -55,8 +61,8 @@ protected:
 
     std::deque<OrbitalVector> orbitals;     ///< Orbital history
     std::deque<OrbitalVector> dOrbitals;    ///< Orbital update history
-    std::deque<ComplexMatrix> fock;          ///< Fock history
-    std::deque<ComplexMatrix> dFock;         ///< Fock update history
+    std::deque<ComplexMatrix> fock;         ///< Fock history
+    std::deque<ComplexMatrix> dFock;        ///< Fock update history
 
     bool verifyOverlap(OrbitalVector &phi);
 

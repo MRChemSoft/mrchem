@@ -12,6 +12,12 @@ using mrcpp::Timer;
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** @brief constructor
+ *
+ * @param max: max length of history
+ * @param min: min length of history
+ * @param sep: solve separate eqations for each orbital
+ */
 Accelerator::Accelerator(int max, int min, bool sep)
         : minHistory(min),
           maxHistory(max),
@@ -20,10 +26,11 @@ Accelerator::Accelerator(int max, int min, bool sep)
     if (this->maxHistory < this->minHistory) MSG_ERROR("Invalid argument");
 }
 
-/** Delete all orbitals and Fock matrices in history.
-  *
-  * Leaves the accelerator in the same state as after construction,
-  * ready for use in the next optimization. */
+/** @brief Delete all orbitals and Fock matrices in history.
+ *
+ * Leaves the accelerator in the same state as after construction,
+ * ready for use in the next optimization.
+ */
 void Accelerator::clear() {
     while (this->orbitals.size() > 0) {
         orbital::free(this->orbitals[0]);
@@ -42,22 +49,27 @@ void Accelerator::clear() {
     clearLinearSystem();
 }
 
-/** Delete the matrices and vectors used to compute the next step.
-  *
-  * The accelerator is now ready to move to the next iteration.*/
+/** @brief Delete the matrices and vectors used to compute the next step.
+ *
+ * The accelerator is now ready to move to the next iteration.
+ */
 void Accelerator::clearLinearSystem() {
     this->A.clear();
     this->b.clear();
     this->c.clear();
 }
 
-/** Rotate iterative history.
+/** @brief Rotate iterative history.
+ *
+ * @param U: rotation matrix
+ * @param all: rotate ALL orbitals in the history
  *
  * To keep phases and orbital ordering consistent one can apply
  * the latest orbital rotation to the entire orbital history.
  * Not recommended as rotations are expensive. Instead one should
  * clear history and start over. Option to rotate the last orbital
- * set or not. */
+ * set or not.
+ */
 void Accelerator::rotate(const ComplexMatrix &U, bool all) {
     Timer timer;
     int nOrbs = this->orbitals.size() - 1;
@@ -92,7 +104,12 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
     Printer::printDouble(0, "Rotating iterative subspace", t, 5);
 }
 
-/** Update iterative history with the latest orbitals and updates
+/** @brief Update iterative history with the latest orbitals and updates
+ *
+ * @param Phi: Next set ov orbitals
+ * @param dPhi: Next set of orbital updates
+ * @param F: Next Fock matrix
+ * @param dF: Next Fock matrix update
  *
  * The new orbitals are moved from the input sets and into the newly
  * constructed local sets. This means that the input sets contain a
@@ -152,13 +169,14 @@ void Accelerator::push_back(OrbitalVector &Phi,
     Printer::printDouble(0, "Push back orbitals", t, 5);
 }
 
-/** Verify that the orbital overlap between the two last iterations
-  * is positive.
-  *
-  * If the overlap is negative a sign change of the corresponding
-  * orbitals in the entire history is required (unless the history
-  * is cleared).
-  */
+/** @brief Verify that the orbital overlap between the two last iterations is positive.
+ *
+ * @param Phi: Next set of orbitals
+ *
+ * If the overlap is negative a sign change of the corresponding
+ * orbitals in the entire history is required (unless the history
+ * is cleared).
+ */
 bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
     bool verified = true;
     int nHistory = this->orbitals.size() - 1;
@@ -185,14 +203,21 @@ bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
     return verified;
 }
 
-/** Calculates the new orbitals and updates based on history information
+/** @brief Calculates the new orbitals and updates based on history information
+ *
+ * @param prec: Precision used in arithmetic operations
+ * @param Phi: Orbitals to accelerate (in/out)
+ * @param dPhi: Orbital updates to accelerate (in/out)
+ * @param F: Fock matrix to accelerate (in/out)
+ * @param dF: Fock matrix update to accelerate (in/out)
  *
  * Solves the linear system of equations \f$ Ac = b \f$ that defines the
  * coefficients \f$ c \f$ of the next step
  * copies the resulting orbitals into the output sets. If length of history
  * is less than minHistory, the latest orbitals are copied directly into
  * the output sets without solving the linear problem. Existing input
- * orbitals and updates are replaced by new ones. */
+ * orbitals and updates are replaced by new ones.
+ */
 void Accelerator::accelerate(double prec,
                              OrbitalVector &Phi,
                              OrbitalVector &dPhi,
@@ -217,6 +242,11 @@ void Accelerator::accelerate(double prec,
     Printer::printFooter(0, timer, 2);
 }
 
+/** @brief Solve the linear system of equations
+ *
+ * Solves the linear system of equations \f$ Ac = b \f$ that defines the
+ * coefficients \f$ c \f$ of the next step.
+ */
 void Accelerator::solveLinearSystem() {
     Timer timer;
     this->c.clear();
@@ -230,11 +260,14 @@ void Accelerator::solveLinearSystem() {
     Printer::printDouble(0, "Solve linear system", t, 5);
 }
 
-
-/** Copy orbitals at the given point in history into the given set.
+/** @brief Copy orbitals at the given point in history into the given set.
+ *
+ * @param Phi: OrbitalVector to copy into
+ * @param nHistory: point in history to copy
  *
  * Input set is overwritten if it contains orbitals. Counts backwards,
- * zero history input returns latest orbital set. */
+ * zero history input returns latest orbital set.
+ */
 void Accelerator::copyOrbitals(OrbitalVector &Phi, int nHistory) {
     Timer timer;
     int totHistory = this->orbitals.size();
@@ -249,7 +282,10 @@ void Accelerator::copyOrbitals(OrbitalVector &Phi, int nHistory) {
     Printer::printDouble(0, "Copy orbitals", t, 5);
 }
 
-/** Copy orbital updates at the given point in history into the given set.
+/** @brief Copy orbital updates at the given point in history into the given set.
+ *
+ * @param dPhi: OrbitalVector to copy into
+ * @param nHistory: point in history to copy
  *
  * Input set is overwritten if it contains orbitals. Counts backwards,
  * zero history input returns latest orbital set. */
@@ -267,7 +303,10 @@ void Accelerator::copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
     Printer::printDouble(0, "Copy orbital updates", t, 5);
 }
 
-/** Replaces the orbital set from a given point in history.
+/** @brief Replaces the orbital set from a given point in history.
+ *
+ * @param Phi: OrbitalVector to copy into
+ * @param nHistory: point in history to copy
  *
  * Deletes the old orbital set and copies the new. Counts backwards,
  * zero input returns latest orbital set. */
@@ -286,7 +325,10 @@ void Accelerator::replaceOrbitals(OrbitalVector &Phi, int nHistory) {
     //    this->orbitals[n] = orbSet;
 }
 
-/** Replaces the orbital update set from a given point in history
+/** @brief Replaces the orbital update set from a given point in history
+ *
+ * @param dPhi: OrbitalVector to copy into
+ * @param nHistory: point in history to copy
  *
  * Deletes the old orbital set and copies the new. Counts backwards,
  * zero input returns latest orbital set. */
@@ -305,11 +347,15 @@ void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
     //    this->dOrbitals[n] = orbSet;
 }
 
-/** Creates the final A matrices and b vectors.
+/** @brief Creates the final A matrices and b vectors.
+ *
+ * @param A_matrices: Matrices to collect
+ * @param b_vectors: Vectors to collect
  *
  * Input vectors may include nOrbs + 1 entries, one extra from the Fock matrix.
  * If orbitals are not separated these are added up to one final A matrix and
- * b vector, otherwise all individual entries are kept. */
+ * b vector, otherwise all individual entries are kept.
+ */
 void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices,
                                    std::vector<DoubleVector> &b_vectors) {
     int nOrbs = b_vectors.size();
@@ -336,29 +382,27 @@ void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices,
     }
 }
 
-/** Prints the number of trees and nodes kept in the iterative history */
-/*
+/** @brief Prints the number of trees and nodes kept in the iterative history */
 int Accelerator::printTreeSizes() const {
     int totNodes = 0;
     int totTrees = 0;
     int nHistory = this->orbitals.size();
     for (int i = 0; i < nHistory; i++) {
-        int nOrbitals = this->orbitals[i]->size();
+        int nOrbitals = this->orbitals[i].size();
         for (int j = 0; j < nOrbitals; j++) {
-            totNodes += this->orbitals[i]->getOrbital(j).getNNodes();
+            totNodes += this->orbitals[i][j].getNNodes();
         }
         totTrees += nOrbitals;
     }
     for (int i = 0; i < nHistory; i++) {
-        int nOrbitals = this->dOrbitals[i]->size();
+        int nOrbitals = this->dOrbitals[i].size();
         for (int j = 0; j < nOrbitals; j++) {
-            totNodes += this->dOrbitals[i]->getOrbital(j).getNNodes();
+            totNodes += this->dOrbitals[i][j].getNNodes();
         }
         totTrees += nOrbitals;
     }
-    println(0, " Accelerator       " << setw(15) << totTrees << setw(25) << totNodes);
+    println(0, " Accelerator       " << std::setw(15) << totTrees << std::setw(25) << totNodes);
     return totNodes;
 }
-*/
 
 } //namespace mrchem
