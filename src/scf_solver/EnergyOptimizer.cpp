@@ -12,30 +12,52 @@
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 
-using namespace std;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
+/** @brief constructor
+ *
+ * @param h: Helmholtz operators
+ *
+ * SCF solver will NOT take ownership of the HelmholtzVector, so the original object
+ * must be taken care of externally (do not delete until SCF goes out of scope).
+ * Fock matrix, FockOperator and OrbitalVector are not initialized at this stage,
+ * so the SCF solver needs to be "setup()" before "optimize()".
+ */
 EnergyOptimizer::EnergyOptimizer(HelmholtzVector &h)
         : GroundStateSolver(h),
-          fOper_np1(0) {
+          fOper_np1(0),
+          orbitals_np1(0) {
 }
 
-EnergyOptimizer::~EnergyOptimizer() {
-    if (this->fOper_np1 != 0) MSG_ERROR("Solver not properly cleared");
-}
-
-void EnergyOptimizer::setup(FockOperator &fock, OrbitalVector &phi, ComplexMatrix &F,
-                            FockOperator &fock_np1, OrbitalVector &phi_np1) {
+/** @brief Prepare solver for optimization
+ *
+ * @param fock: FockOperator defining the SCF equations
+ * @param Phi: Orbitals to optimize
+ * @param F: Fock matrix
+ * @param fock_np1: Next iteration FockOperator
+ * @param Phi_np1: Next iteration orbitals
+ *
+ * SCF solver will NOT take ownership of the input, so these objects must be taken
+ * care of externally (do not delete until SCF goes out of scope).
+ */
+void EnergyOptimizer::setup(FockOperator &fock, OrbitalVector &Phi, ComplexMatrix &F,
+                            FockOperator &fock_np1, OrbitalVector &Phi_np1) {
     this->fMat_n = &F;
     this->fOper_n = &fock;
     this->fOper_np1 = &fock_np1;
-    this->orbitals_n = &phi;
-    this->orbitals_np1 = &phi_np1;
+    this->orbitals_n = &Phi;
+    this->orbitals_np1 = &Phi_np1;
 }
 
+/** @brief Clear solver after optimization
+ *
+ * Clear pointers that was set during setup, and reset the precision parameter
+ * (only the current precision orbPrec[0], not the bounaary values orbPrec[1,2]).
+ * Solver can be re-used after another setup.
+ */
 void EnergyOptimizer::clear() {
     this->fMat_n = 0;
     this->fOper_n = 0;
@@ -45,6 +67,25 @@ void EnergyOptimizer::clear() {
     resetPrecision();
 }
 
+/** @brief Run energy optimization
+ *
+ * Optimize orbitals until convergence thresholds are met. This algorithm does NOT
+ * use any kinetic energy operator, but computes the Fock matrix as a potential
+ * update from the previous iteration. No KAIN accelerator and no diagonalization
+ * or localization within the SCF iterations. Main points of the algorithm:
+ *
+ * Pre SCF: diagonalize/localize orbitals
+ *
+ * 1) Setup Fock operator
+ * 2) Compute current SCF energy
+ * 3) Apply Helmholtz operator on all orbitals
+ * 4) Compute orbital updates
+ * 5) Compute errors and check for convergence
+ * 6) Compute Fock matrix update
+ * 7) Orthonormalize orbitals (Löwdin)
+ *
+ * Post SCF: diagonalize/localize orbitals
+ */
 bool EnergyOptimizer::optimize() {
     ComplexMatrix &F_n = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
@@ -132,6 +173,21 @@ bool EnergyOptimizer::optimize() {
     return converged;
 }
 
+/** @brief Compute Fock matrix update
+ *
+ * The Fock matrix is computed as a direct update from the previous iteration.
+ * This update is exact, provided that the orbital relation between the orbitals
+ * at iterations n and n+1 is exactly the application of the Helmholtz operator.
+ *
+ * \Delta F = \Delta S_1 F + \Delta S_2 \Lambda + \Delta F_{pot}
+ *
+ * (\Delta S_1^n)_{ij} = <\Delta \phi_i^{n}   | \phi_j^n>
+ * (\Delta S_2^n)_{ij} = <\Delta \phi_i^{n+1} | \Delta \phi_j^n>
+ *
+ * (\Delta F_^n{pot})_{ij} = <\phi_i^{n+1} | V^n | \Delta \phi_j^n>
+ *                         + <\phi_i^{n+1} | \Delta V^n | \phi_j^n>
+ *
+ */
 ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &dPhi_n) {
     if (this->fOper_np1 == 0) MSG_FATAL("Operator not initialized");
 

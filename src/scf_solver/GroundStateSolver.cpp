@@ -18,7 +18,7 @@ namespace mrchem {
  *
  * SCF solver will NOT take ownership of the HelmholtzVector, so the original object
  * must be taken care of externally (do not delete until SCF goes out of scope).
- * Fock matrix, Fock operator and OrbtialVector are not initialized at this stage,
+ * Fock matrix, FockOperator and OrbitalVector are not initialized at this stage,
  * so the SCF solver needs to be "setup()" before "optimize()".
  */
 GroundStateSolver::GroundStateSolver(HelmholtzVector &h)
