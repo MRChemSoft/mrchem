@@ -52,7 +52,7 @@ bool EnergyOptimizer::optimize() {
     OrbitalVector &Phi_np1 = *this->orbitals_np1;
     HelmholtzVector &H = *this->helmholtz;
 
-    double orb_prec = getOrbitalPrecision();
+    double orb_prec = this->orbPrec[0];
     double err_o = orbital::get_errors(Phi_n).maxCoeff();
     double err_t = 1.0;
     double err_p = 1.0;
@@ -101,7 +101,7 @@ bool EnergyOptimizer::optimize() {
         converged = checkConvergence(err_o, err_p);
 
         // Compute Fock matrix
-        ComplexMatrix F_np1 = F_n + calcFockMatrixUpdate(dPhi_n);
+        ComplexMatrix F_np1 = F_n + calcFockMatrixUpdate(orb_prec, dPhi_n);
         orbital::free(Phi_n);
         orbital::free(dPhi_n);
         fock.clear();
@@ -132,10 +132,9 @@ bool EnergyOptimizer::optimize() {
     return converged;
 }
 
-ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &dPhi_n) {
+ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &dPhi_n) {
     if (this->fOper_np1 == 0) MSG_FATAL("Operator not initialized");
 
-    double orb_prec = getOrbitalPrecision();
     OrbitalVector &Phi_n = *this->orbitals_n;
     OrbitalVector &Phi_np1 = *this->orbitals_np1;
 
@@ -231,7 +230,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &dPhi_n) {
     }
 
     {   // The n+1 Fock operator needs orthonormalized orbitals
-        orbital::orthonormalize(orb_prec, Phi_np1);
+        orbital::orthonormalize(prec, Phi_np1);
     }
 
     CoulombOperator  *j_np1 = this->fOper_np1->getCoulombOperator();
@@ -240,9 +239,9 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(OrbitalVector &dPhi_n) {
 
     println(0,"                                                            ");
     // Do not setup internal exchange, it must be applied on the fly anyway
-    if (j_np1 != 0)   j_np1->setup(orb_prec);
-    if (k_np1 != 0)   k_np1->setup(orb_prec);
-    //if (xc_np1 != 0) xc_np1->setup(orb_prec);
+    if (j_np1 != 0)   j_np1->setup(prec);
+    if (k_np1 != 0)   k_np1->setup(prec);
+    //if (xc_np1 != 0) xc_np1->setup(prec);
     println(0,"                                                            ");
 
     ComplexMatrix F_np1;

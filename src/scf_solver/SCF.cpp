@@ -4,7 +4,6 @@
 #include "SCF.h"
 #include "Orbital.h"
 
-using namespace std;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -18,14 +17,8 @@ SCF::SCF(HelmholtzVector &h)
           canonical(true),
           orbThrs(-1.0),
           propThrs(-1.0),
+          orbPrec{-1.0, -1.0, -1.0},
           helmholtz(&h) {
-    this->orbPrec[0] = -1.0;
-    this->orbPrec[1] = -1.0;
-    this->orbPrec[2] = -1.0;
-}
-
-SCF::~SCF() {
-    this->helmholtz = 0;
 }
 
 void SCF::setThreshold(double orb_thrs, double prop_thrs) {
@@ -58,13 +51,10 @@ void SCF::resetPrecision() {
 }
 
 bool SCF::checkConvergence(double err_o, double err_p) const {
-    double thrs_o = getOrbitalThreshold();
-    double thrs_p = getPropertyThreshold();
-
     bool conv_o = false;
     bool conv_p = false;
-    if (err_o < thrs_o or thrs_o < 0.0) conv_o = true;
-    if (err_p < thrs_p or thrs_p < 0.0) conv_p = true;
+    if (err_o < this->orbThrs or this->orbThrs < 0.0) conv_o = true;
+    if (err_p < this->propThrs or this->propThrs < 0.0) conv_p = true;
     return (conv_o and conv_p);
 }
 
@@ -96,23 +86,22 @@ bool SCF::needDiagonalization(int nIter) const {
     return diag;
 }
 
-void SCF::printUpdate(const string &name, double P, double dP) const {
+void SCF::printUpdate(const std::string &name, double P, double dP) const {
     int oldPrec = Printer::setPrecision(15);
     double p = 1.0;
     if (std::abs(P) > mrcpp::MachineZero) {
         p = P;
     }
-    double thrs = getPropertyThreshold();
-    bool done = (std::abs(dP/p) < thrs) or thrs < 0.0;
+    bool done = (std::abs(dP/p) < this->propThrs) or this->propThrs < 0.0;
     printout(0, name);
-    printout(0, setw(24) << P);
+    printout(0, std::setw(24) << P);
     Printer::setPrecision(5);
-    printout(0, setw(16) << dP);
-    println(0, setw(5) << done);
+    printout(0, std::setw(16) << dP);
+    println(0, std::setw(5) << done);
     Printer::setPrecision(oldPrec);
 }
 
-double SCF::getUpdate(const vector<double> &vec, int i, bool absPrec) const {
+double SCF::getUpdate(const std::vector<double> &vec, int i, bool absPrec) const {
     if (i < 1 or i > vec.size()) MSG_ERROR("Invalid argument");
     double E_i = vec[i-1];
     double E_im1 = 0.0;
@@ -133,16 +122,15 @@ void SCF::printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, i
     Printer::printSeparator(0, '-');
     int oldprec = Printer::setPrecision(5);
     bool tot_conv = true;
-    double thrs = getOrbitalThreshold();
     for (int i = 0; i < Phi.size(); i++) {
-        bool converged = (Phi[i].error() < thrs) ? true : false;
-        printout(0, setw(3) << i);
-        printout(0, " " << setw(13) << epsilon(i));
-        printout(0, " " << setw(13) << Phi[i].error());
-        printout(0, " " << setw(10) << Phi[i].getNNodes());
-        printout(0, setw(5) << Phi[i].printSpin());
-        printout(0, setw(5) << Phi[i].occ());
-        printout(0, setw(5) << converged << endl);
+        bool converged = (Phi[i].error() < this->orbThrs) ? true : false;
+        printout(0, std::setw(3) << i);
+        printout(0, " " << std::setw(13) << epsilon(i));
+        printout(0, " " << std::setw(13) << Phi[i].error());
+        printout(0, " " << std::setw(10) << Phi[i].getNNodes());
+        printout(0, std::setw(5) << Phi[i].printSpin());
+        printout(0, std::setw(5) << Phi[i].occ());
+        printout(0, std::setw(5) << converged << std::endl);
         if (not converged) tot_conv = false;
     }
 
@@ -151,8 +139,8 @@ void SCF::printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, i
 
     Printer::printSeparator(0, '-');
     printout(0, " Total error:                    ");
-    printout(0, setw(19) << tot_error << "  ");
-    printout(0, setw(3) << tot_conv << endl);
+    printout(0, std::setw(19) << tot_error << "  ");
+    printout(0, std::setw(3) << tot_conv << std::endl);
     Printer::printSeparator(0, '=', 2);
     Printer::setPrecision(oldprec);
 }
@@ -166,14 +154,14 @@ void SCF::printConvergence(bool converged) const {
     for (int i = 0; i < iter; i++) {
         double prop_i = this->property[i];
         double propDiff = getUpdate(this->property, i+1, true);
-        printout(0, setw(3) << i+1);
+        printout(0, std::setw(3) << i+1);
         Printer::setPrecision(5);
-        printout(0, setw(15) << this->orbError[i]);
+        printout(0, std::setw(15) << this->orbError[i]);
         Printer::setPrecision(15);
-        printout(0, setw(26) << prop_i);
+        printout(0, std::setw(26) << prop_i);
         Printer::setPrecision(5);
-        printout(0, setw(15) << propDiff);
-        printout(0, endl);
+        printout(0, std::setw(15) << propDiff);
+        printout(0, std::endl);
     }
     Printer::setPrecision(oldPrec);
     Printer::printSeparator(0, '-');
@@ -186,36 +174,36 @@ void SCF::printConvergence(bool converged) const {
 }
 
 void SCF::printCycle(int nIter) const {
-    printout(0, endl << endl);
+    printout(0, std::endl << std::endl);
     printout(0, "#######################");
-    printout(0, " SCF cycle " << setw(2) << nIter << " ");
+    printout(0, " SCF cycle " << std::setw(2) << nIter << " ");
     printout(0, "#######################");
-    printout(0, endl << endl << endl);
+    printout(0, std::endl << std::endl << std::endl);
 }
 
 void SCF::printTimer(double t) const {
     int oldPrec = Printer::setPrecision(5);
-    printout(0, endl << endl);
+    printout(0, std::endl << std::endl);
     printout(0, "################");
     printout(0, " Wall time: " << t << " sec ");
     printout(0, "################");
-    printout(0, endl << endl << endl);
+    printout(0, std::endl << std::endl << std::endl);
     Printer::setPrecision(oldPrec);
 }
 
 void SCF::printMatrix(int level, const DoubleMatrix &M, const char &name, int pr) const {
     int oldPrec = Printer::setPrecision(pr);
-    printout(level, endl);
+    printout(level, std::endl);
     printout(level, "----------------------------- ");
     printout(level, name);
     printout(level, " ----------------------------");
-    printout(level, endl);
+    printout(level, std::endl);
     printout(level, M);
-    printout(level, endl);
+    printout(level, std::endl);
     printout(level, "------------------------------");
     printout(level, "------------------------------");
-    printout(level, endl);
-    printout(level, endl);
+    printout(level, std::endl);
+    printout(level, std::endl);
     Printer::setPrecision(oldPrec);
 }
 

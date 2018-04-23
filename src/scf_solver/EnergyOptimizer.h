@@ -19,7 +19,7 @@ protected:
     FockOperator *fOper_np1;
     OrbitalVector *orbitals_np1;
 
-    ComplexMatrix calcFockMatrixUpdate(OrbitalVector &dPhi_n);
+    ComplexMatrix calcFockMatrixUpdate(double prec, OrbitalVector &dPhi_n);
 };
 
 } //namespace mrchem

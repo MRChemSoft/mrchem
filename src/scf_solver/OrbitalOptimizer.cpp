@@ -46,7 +46,7 @@ bool OrbitalOptimizer::optimize() {
     OrbitalVector &Phi_n = *this->orbitals_n;
     HelmholtzVector &H = *this->helmholtz;
 
-    double orb_prec = getOrbitalPrecision();
+    double orb_prec = this->orbPrec[0];
     double err_o = orbital::get_errors(Phi_n).maxCoeff();
     double err_t = 1.0;
     double err_p = 1.0;
