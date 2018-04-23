@@ -9,21 +9,36 @@
 #include "Accelerator.h"
 #include "Orbital.h"
 
-using namespace std;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
+/** @brief constructor
+ *
+ * @param h: Helmholtz operators
+ * @param k: Iterative accelerator
+ *
+ * SCF solver will NOT take ownership of the HelmholtzVector or the Accelerator,
+ * so the original objects must be taken care of externally (do not delete until
+ * SCF goes out of scope). Fock matrix, FockOperator and OrbitalVector are not
+ * initialized at this stage, so the SCF solver needs to be "setup()" before
+ * "optimize()".
+ */
 OrbitalOptimizer::OrbitalOptimizer(HelmholtzVector &h, Accelerator *k)
         : GroundStateSolver(h),
           kain(k) {
 }
 
-OrbitalOptimizer::~OrbitalOptimizer() {
-    this->kain = 0;
-}
-
+/** @brief Prepare solver for optimization
+ *
+ * @param fock: FockOperator defining the SCF equations
+ * @param Phi: Orbitals to optimize
+ * @param F: Fock matrix
+ *
+ * SCF solver will NOT take ownership of the input, so these objects must be taken
+ * care of externally (do not delete until SCF goes out of scope).
+ */
 void OrbitalOptimizer::setup(FockOperator &fock,
                              OrbitalVector &Phi,
                              ComplexMatrix &F) {
@@ -32,6 +47,12 @@ void OrbitalOptimizer::setup(FockOperator &fock,
     this->orbitals_n = &Phi;
 }
 
+/** @brief Clear solver after optimization
+ *
+ * Clear pointers that was set during setup, and reset the precision parameter
+ * (only the current precision orbPrec[0], not the bounaary values orbPrec[1,2]).
+ * Solver can be re-used after another setup.
+ */
 void OrbitalOptimizer::clear() {
     this->fMat_n = 0;
     this->fOper_n = 0;
@@ -40,6 +61,29 @@ void OrbitalOptimizer::clear() {
     resetPrecision();
 }
 
+/** @brief Run orbital optimization
+ *
+ * Optimize orbitals until convergence thresholds are met. This algorithm computes
+ * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
+ * accelerator to improve convergence. Diagonalization or localization may be performed
+ * during the SCF iterations. Main points of the algorithm:
+ *
+ * Pre SCF: setup Fock operator and compute Fock matrix
+ *
+ *  1) Diagonalize/localize orbitals
+ *  2) Compute current SCF energy
+ *  3) Apply Helmholtz operator on all orbitals
+ *  4) Orthonormalize orbitals (Löwdin)
+ *  5) Compute orbital updates
+ *  6) Compute KAIN update
+ *  7) Compute errors and check for convergence
+ *  8) Add orbital updates
+ *  9) Orthonormalize orbitals (Löwdin)
+ * 10) Setup Fock operator
+ * 11) Compute Fock matrix
+ *
+ * Post SCF: diagonalize/localize orbitals
+ */
 bool OrbitalOptimizer::optimize() {
     ComplexMatrix &F = *this->fMat_n;
     FockOperator &fock = *this->fOper_n;
@@ -142,24 +186,6 @@ bool OrbitalOptimizer::optimize() {
 
     printConvergence(converged);
     return converged;
-}
-
-/** Prints the number of trees and nodes kept in the solver at the given moment */
-void OrbitalOptimizer::printTreeSizes() const {
-    NOT_IMPLEMENTED_ABORT;
-    /*
-    void printTreeSizes() const;
-    TelePrompter::printHeader(0, "Printing Tree Sizes");
-
-    int nNodes = 0;
-    if (this->fOper_n != 0) nNodes += this->fOper_n->printTreeSizes();
-    if (this->orbitals_n != 0) nNodes += this->orbitals_n->printTreeSizes();
-    if (this->kain != 0) nNodes += this->kain->printTreeSizes();
-
-    TelePrompter::printSeparator(0, '-');
-    println(0," Total number of nodes                   " << setw(18) << nNodes);
-    TelePrompter::printSeparator(0, '=', 2);
-*/
 }
 
 } //namespace mrchem
