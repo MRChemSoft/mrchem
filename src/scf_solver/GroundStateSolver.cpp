@@ -7,12 +7,20 @@
 #include "FockOperator.h"
 #include "Orbital.h"
 
-using namespace std;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
 
+/** @brief constructor
+ *
+ * @param h: Helmholtz operators
+ *
+ * SCF solver will NOT take ownership of the HelmholtzVector, so the original object
+ * must be taken care of externally (do not delete until SCF goes out of scope).
+ * Fock matrix, Fock operator and OrbtialVector are not initialized at this stage,
+ * so the SCF solver needs to be "setup()" before "optimize()".
+ */
 GroundStateSolver::GroundStateSolver(HelmholtzVector &h)
         : SCF(h),
           fMat_n(0),
@@ -20,13 +28,12 @@ GroundStateSolver::GroundStateSolver(HelmholtzVector &h)
           orbitals_n(0) {
 }
 
-GroundStateSolver::~GroundStateSolver() {
-    if (this->fMat_n != 0) MSG_ERROR("Solver not properly cleared");
-    if (this->fOper_n != 0) MSG_ERROR("Solver not properly cleared");
-    if (this->orbitals_n != 0) MSG_ERROR("Solver not properly cleared");
-}
-
-/** Computes the Helmholtz argument for the all orbitals.
+/** @brief Computes the Helmholtz argument for the all orbitals.
+ *
+ * @param fock: Fock operator (potential part used in first term)
+ * @param M: Rotation matrix for second term
+ * @param Phi: Orbital vector
+ * @param clearFock: clear Fock operator after application
  *
  * Argument contains the potential operator acting on orbital i, and the sum
  * of all orbitals weighted by the Fock matrix. The effect of using inexact
@@ -34,12 +41,12 @@ GroundStateSolver::~GroundStateSolver() {
  * with the actual lambda parameters used in the Helmholtz operators
  * (input matrix M is assumed to be L-F).
  *
- * greenArg = \hat{V}orb_i + \sum_j (\Lambda_{ij}-F_{ij})orb_j
+ * psi_j = \hat{V}phi_i + \sum_j (\Lambda_{ij}-F_{ij})phi_j
+ *
  */
 OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
                                                          const ComplexMatrix &M,
                                                          OrbitalVector &Phi,
-                                                         bool adjoint,
                                                          bool clearFock) {
     Timer timer_tot;
     Printer::printHeader(0, "Setting up Helmholtz arguments");
@@ -129,6 +136,10 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     return out;
 }
 
+/** @brief Computes the SCF energy by tracing the Fock operator
+ *
+ * Prints the current nuclear, electronic and total energies.
+ */
 double GroundStateSolver::calcProperty() {
     Printer::printHeader(0, "Calculating SCF energy");
     Timer timer;
@@ -142,21 +153,23 @@ double GroundStateSolver::calcProperty() {
 
     timer.stop();
     int oldPrec = Printer::setPrecision(15);
-    println(0, " Nuclear energy              " << setw(30) << E.getNuclearEnergy());
-    println(0, " Electronic energy           " << setw(30) << E.getElectronicEnergy());
+    println(0, " Nuclear energy              " << std::setw(30) << E.getNuclearEnergy());
+    println(0, " Electronic energy           " << std::setw(30) << E.getElectronicEnergy());
     Printer::printSeparator(0, '-');
-    println(0, " Total energy                " << setw(30) << E.getTotalEnergy());
+    println(0, " Total energy                " << std::setw(30) << E.getTotalEnergy());
     Printer::printFooter(0, timer, 2);
     Printer::setPrecision(oldPrec);
 
     return E.getTotalEnergy();
 }
 
+/** @brief Computes the SCF energy update from last iteration */
 double GroundStateSolver::calcPropertyError() const {
     int iter = this->property.size();
     return std::abs(getUpdate(this->property, iter, false));
 }
 
+/** @brief Pretty printing of the different contributions to the SCF energy */
 void GroundStateSolver::printProperty() const {
     SCFEnergy scf_0, scf_1;
     int iter = this->energy.size();
