@@ -8,6 +8,15 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
+/** @brief Expectation value
+ *
+ * @param bra: orbital on the lhs
+ * @param ket: orbital on the rhs
+ *
+ * Instead of applying the full kinetic operator on the ket, the momentum
+ * operator is applied both to the left and right, thus taking advantage
+ * of symmetry and getting away with only first-derivative operators.
+ */
 ComplexDouble KineticOperator::operator()(Orbital bra, Orbital ket) {
     RankZeroTensorOperator &p_x = this->p[0];
     RankZeroTensorOperator &p_y = this->p[1];
@@ -34,10 +43,26 @@ ComplexDouble KineticOperator::operator()(Orbital bra, Orbital ket) {
     return 0.5*(T_x + T_y + T_z);
 }
 
+/** @brief Expectation value (dagger version)
+ *
+ * @param bra: orbital on the lhs
+ * @param ket: orbital on the rhs
+ *
+ * NOT IMPLEMENTED
+ */
 ComplexDouble KineticOperator::dagger(Orbital bra, Orbital ket) {
     NOT_IMPLEMENTED_ABORT;
 }
 
+/** @brief Expectation value matrix
+ *
+ * @param bra: orbitals on the lhs
+ * @param ket: orbitals on the rhs
+ *
+ * Instead of applying the full kinetic operator on the ket's, the momentum
+ * operator is applied both to the left and right, thus taking advantage
+ * of symmetry and getting away with only first-derivative operators.
+ */
 ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer timer;
     Printer::printHeader(1, "Compute Kinetic Matrix Elements");
@@ -102,6 +127,13 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
     return 0.5*(T_x + T_y + T_z);
 }
 
+/** @brief Expectation value (dagger version)
+ *
+ * @param bra: orbitals on the lhs
+ * @param ket: orbitals on the rhs
+ *
+ * NOT IMPLEMENTED
+ */
 ComplexMatrix KineticOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
     NOT_IMPLEMENTED_ABORT;
 }

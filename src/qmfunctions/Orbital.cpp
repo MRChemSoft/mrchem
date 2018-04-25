@@ -5,11 +5,23 @@
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+/** @brief Default constructor
+ *
+ * Initializes the QMFunction with NULL pointers for both real and imaginary part.
+ */
 Orbital::Orbital()
         : QMFunction(0, 0),
           meta({-1, 0, 0, 0, 0, false, 0.0}) {
 }
 
+/** @brief Constructor
+ *
+ * @param spin: electron spin (SPIN::Alpha/Beta/Paired)
+ * @param occ: occupancy
+ * @param rank: MPI ownership (-1 means all MPI ranks)
+ *
+ * Initializes the QMFunction with NULL pointers for both real and imaginary part.
+ */
 Orbital::Orbital(int spin, int occ, int rank)
         : QMFunction(0, 0),
           meta({rank, spin, occ, 0, 0, false, 0.0}) {
@@ -21,11 +33,25 @@ Orbital::Orbital(int spin, int occ, int rank)
     }
 }
 
+/** @brief Copy constructor
+ *
+ * @param orb: orbital to copy
+ *
+ * Shallow copy: meta data is copied along with the *re and *im pointers,
+ * NO transfer of ownership.
+ */
 Orbital::Orbital(const Orbital &orb)
         : QMFunction(orb),
           meta(orb.meta) {
 }
 
+/** @brief Assignment operator
+ *
+ * @param orb: orbital to copy
+ *
+ * Shallow copy: meta data is copied along with the *re and *im pointers,
+ * NO transfer of ownership.
+ */
 Orbital& Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
         this->re = orb.re;
@@ -35,12 +61,22 @@ Orbital& Orbital::operator=(const Orbital &orb) {
     return *this;
 }
 
+/** @brief Parameter copy
+ *
+ * Returns a new orbital with the same spin, occupancy and rank_id as *this orbital.
+ */
 Orbital Orbital::paramCopy() const {
     return Orbital(this->spin(), this->occ(), this->rankID());
 }
 
+/** @brief Deep copy
+ *
+ * Returns a new orbital which is a full blueprint copy of *this orbital. This is
+ * achieved by building a new grid for the real and imaginary parts and adding
+ * in place.
+ */
 Orbital Orbital::deepCopy() {
-    Orbital out(*this); // Shallow copy
+    Orbital out(*this); // Shallow copy (should copy all meta data)
     out.clear();        // Remove *re and *im pointers
     if (this->hasReal()) {
         out.alloc(NUMBER::Real);
@@ -59,13 +95,23 @@ Orbital Orbital::deepCopy() {
     return out;         // Return shallow copy
 }
 
+/** @brief Complex conjugation
+ *
+ * Returns a new orbital which is a shallow copy of *this orbital, with a flipped
+ * conjugate parameter. Pointer ownership is not transferred, so *this and the output
+ * orbital points to the same MW representations of the real and imaginary parts,
+ * however, they interpret the imaginary part with opposite sign.
+ */
 Orbital Orbital::dagger() const {
     Orbital out(*this); // Shallow copy
     out.meta.conjugate = not this->meta.conjugate;
     return out;         // Return shallow copy
 }
 
-/** Tree sizes (nChunks) are flushed before return. */
+/** @brief Returns the orbital meta data
+ *
+ * Tree sizes (nChunks) are flushed before return.
+ */
 OrbitalMeta& Orbital::getMetaData() {
     this->meta.nChunksReal = 0;
     this->meta.nChunksImag = 0;
@@ -74,12 +120,14 @@ OrbitalMeta& Orbital::getMetaData() {
     return this->meta;
 }
 
+/** @brief Returns the norm of the orbital */
 double Orbital::norm() const {
     double norm = this->squaredNorm();
     if (norm > 0.0) norm = sqrt(norm);
     return norm;
 }
 
+/** @brief Returns the squared norm of the orbital */
 double Orbital::squaredNorm() const {
     double sq_r = -1.0;
     double sq_i = -1.0;
@@ -96,7 +144,7 @@ double Orbital::squaredNorm() const {
     return sq_norm;
 }
 
-/** In place multiply with scalar */
+/** @brief In place multiply with scalar */
 void Orbital::rescale(ComplexDouble c) {
     double thrs = mrcpp::MachineZero;
     bool cHasReal = (std::abs(c.real()) > thrs);
@@ -128,7 +176,7 @@ void Orbital::rescale(ComplexDouble c) {
     }
 }
 
-/** In place orthogonalize against inp */
+/** @brief In place orthogonalize against inp */
 void Orbital::orthogonalize(Orbital inp) {
     ComplexDouble overlap = orbital::dot(inp, *this);
     double sq_norm = inp.squaredNorm();
@@ -137,14 +185,14 @@ void Orbital::orthogonalize(Orbital inp) {
     }
 }
 
-/** In place orthogonalize against all orbitals in inp */
+/** @brief In place orthogonalize against all orbitals in inp vector */
 void Orbital::orthogonalize(OrbitalVector inp_vec) {
     for (int i = 0; i < inp_vec.size(); i++) {
         this->orthogonalize(inp_vec[i]);
     }
 }
 
-/** In place addition */
+/** @brief In place addition */
 void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
     // The following sets the spin/occupancy only locally, e.i. the
     // original orbital is NOT changed. The effect of this is to
@@ -159,6 +207,7 @@ void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
     *this = tmp;
 }
 
+/** @brief Returns a character representing the spin (a/b/p) */
 char Orbital::printSpin() const {
     char sp = 'u';
     if (this->spin() == SPIN::Paired) sp = 'p';
@@ -167,6 +216,7 @@ char Orbital::printSpin() const {
     return sp;
 }
 
+/** @brief Pretty output of orbital meta data */
 std::ostream& Orbital::print(std::ostream &o) const {
     int oldprec = mrcpp::Printer::setPrecision(12);
     o << std::setw(6)  << this->rankID();

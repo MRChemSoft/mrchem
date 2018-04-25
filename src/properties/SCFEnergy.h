@@ -4,6 +4,12 @@
 
 #include "mrchem.h"
 
+/** @class SCFEnergy
+ *
+ * @brief Simple POD container to hold the different contributions to the SCF energy.
+ *
+ */
+
 namespace mrchem {
 
 class SCFEnergy final {
@@ -14,7 +20,6 @@ public:
               double xc = 0.0,  double x = 0.0) :
         E_nuc(nuc), E_el(el), E_orb(orb), E_kin(kin),
         E_en(en), E_ee(ee), E_x(x), E_xc(xc){ }
-    ~SCFEnergy() { }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
     double getNuclearEnergy() const { return this->E_nuc; }
@@ -37,26 +42,26 @@ public:
         o << "============================================================" << std::endl;
         o << "                         SCF Energy                         " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
-        o <<"                                                            "<<std::endl;
+        o << "                                                            " << std::endl;
         o << " Sum orbital energy:          " << std::setw(29) << en.E_orb  << std::endl;
         o << " Kinetic energy:              " << std::setw(29) << en.E_kin  << std::endl;
         o << " E-N energy:                  " << std::setw(29) << en.E_en   << std::endl;
         o << " Coulomb energy:              " << std::setw(29) << en.E_ee   << std::endl;
         o << " Exchange energy:             " << std::setw(29) << en.E_x    << std::endl;
         o << " X-C energy:                  " << std::setw(29) << en.E_xc   << std::endl;
-        o <<"                                                            "<<std::endl;
+        o << "                                                            " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
-        o <<"                                                            "<<std::endl;
+        o << "                                                            " << std::endl;
         o << " Electronic energy            " << std::setw(29) << en.E_el   << std::endl;
         o << " Nuclear energy               " << std::setw(29) << en.E_nuc  << std::endl;
-        o <<"                                                            "<<std::endl;
+        o << "                                                            " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
-        o <<"                                                            "<<std::endl;
+        o << "                                                            " << std::endl;
         o << " Total energy       (au)      " << std::setw(29) << E_au      << std::endl;
         o << "                    (kJ/mol)  " << std::setw(29) << E_kJ      << std::endl;
         o << "                    (kcal/mol)" << std::setw(29) << E_kcal    << std::endl;
         o << "                    (eV)      " << std::setw(29) << E_eV      << std::endl;
-        o <<"                                                            "<<std::endl;
+        o << "                                                            " << std::endl;
         o << "============================================================" << std::endl;
         o << "                                                            " << std::endl;
         mrcpp::Printer::setPrecision(oldPrec);

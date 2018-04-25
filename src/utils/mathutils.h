@@ -1,5 +1,11 @@
 #include "mrchem.h"
 
+/** @file mathutils.h
+ *
+ * @brief Collection of stand-alone math related functions
+ *
+ */
+
 namespace mrchem {
 namespace mathutils {
 

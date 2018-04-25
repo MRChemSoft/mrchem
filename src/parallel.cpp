@@ -77,10 +77,12 @@ void finalize() {
  * Orbital related MPI functions *
  *********************************/
 
+/** @brief Test if orbital belongs to this MPI rank */
 bool my_orb(const Orbital &orb) {
     return (orb.rankID() < 0 or orb.rankID() == mpi::orb_rank) ? true : false;
 }
 
+/** @brief Add up each entry of the vector with contributions from all MPI ranks */
 void reduce_vector(DoubleVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
         int N = vec.size();
@@ -88,12 +90,14 @@ void reduce_vector(DoubleVector &vec, MPI_Comm comm) {
 #endif
 }
 
+/** @brief Add up each entry of the vector with contributions from all MPI ranks */
 void reduce_vector(ComplexVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
     NOT_IMPLEMENTED_ABORT;
 #endif
 }
 
+/** @brief Add up each entry of the matrix with contributions from all MPI ranks */
 void reduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
 #ifdef HAVE_MPI
         int N = mat.size();
@@ -101,6 +105,7 @@ void reduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
 #endif
 }
 
+/** @brief Add up each entry of the matrix with contributions from all MPI ranks */
 void reduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 #ifdef HAVE_MPI
     NOT_IMPLEMENTED_ABORT;
