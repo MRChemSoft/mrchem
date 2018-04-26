@@ -905,7 +905,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
     }
 
     if (mpi::orb_rank == 0 and not rho.isShared()) {
-        if (total_vec.size() > 5) {
+        if (total_vec.size() > 5 and add_prec > 0.0) {
             rho.alloc(DENSITY::Total);
             mrcpp::add(add_prec, rho.total(), total_vec);
         } else if (total_vec.size() > 0) {
@@ -913,7 +913,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::copy_grid(rho.total(), total_vec);
             mrcpp::add(-1.0, rho.total(), total_vec, 0);
         }
-        if (spin_vec.size() > 5) {
+        if (spin_vec.size() > 5 and add_prec > 0.0) {
             rho.alloc(DENSITY::Spin);
             mrcpp::add(add_prec, rho.spin(), spin_vec);
         } else if (spin_vec.size() > 0) {
@@ -921,7 +921,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::copy_grid(rho.spin(), spin_vec);
             mrcpp::add(-1.0, rho.spin(), spin_vec, 0);
         }
-        if (alpha_vec.size() > 5) {
+        if (alpha_vec.size() > 5 and add_prec > 0.0) {
             rho.alloc(DENSITY::Alpha);
             mrcpp::add(add_prec, rho.alpha(), alpha_vec);
         } else if (alpha_vec.size() > 0) {
@@ -929,7 +929,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::copy_grid(rho.alpha(), alpha_vec);
             mrcpp::add(-1.0, rho.alpha(), alpha_vec, 0);
         }
-        if (beta_vec.size() > 5) {
+        if (beta_vec.size() > 5 and add_prec > 0.0) {
             rho.alloc(DENSITY::Beta);
             mrcpp::add(add_prec, rho.beta(), beta_vec);
         } else if (beta_vec.size() > 0) {
