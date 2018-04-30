@@ -3,12 +3,13 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
+#include "parallel.h"
+#include "utils/mathutils.h"
+
 #include "gto_guess.h"
 #include "OrbitalExp.h"
 #include "Intgrl.h"
 
-#include "utils/mathutils.h"
-#include "parallel.h"
 #include "Molecule.h"
 #include "Orbital.h"
 
@@ -18,6 +19,30 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
+namespace gto_guess {
+
+// Forward declare helper functions
+void project(double prec, OrbitalVector &Phi, OrbitalExp &gto_exp);
+
+} //namespace gto_guess
+
+
+/** @brief Produce an initial guess of orbitals
+ *
+ * @param prec: precision used in projection
+ * @param mol: molecule
+ * @param bas_file: basis set file (LSDalton format)
+ * @param mo_file: file with MO coefficients
+ *
+ * Sets up a precomputed MO basis from a spin restricted LSDalton calculation.
+ * Requires the LSDalton basis file and the corresponding MO matrix (not in any
+ * official format!). The MO file should start with one entry giving the number
+ * of AOs, followed by the columns of the MO matrix concatenated into a single
+ * column.
+ *
+ * Projects only the occupied orbitals.
+ *
+ */
 OrbitalVector gto_guess::initial_guess(double prec,
                                        const Molecule &mol,
                                        const std::string &bas_file,
@@ -56,6 +81,23 @@ OrbitalVector gto_guess::initial_guess(double prec,
     return Phi;
 }
 
+/** @brief Produce an initial guess of orbitals
+ *
+ * @param prec: precision used in projection
+ * @param mol: molecule
+ * @param bas_file: basis set file (LSDalton format)
+ * @param moa_file: file with alpha MO coefficients
+ * @param mob_file: file with beta MO coefficients
+ *
+ * Sets up a precomputed MO basis from an unrestricted LSDalton calculation.
+ * Requires the LSDalton basis file and the corresponding MO matrices (not in
+ * any official format!). The MO files should start with one entry giving the
+ * number of AOs, followed by the columns of the MO matrix concatenated into
+ * a single column.
+ *
+ * Projects only the occupied orbitals of each spin.
+ *
+ */
 OrbitalVector gto_guess::initial_guess(double prec,
                                        const Molecule &mol,
                                        const std::string &bas_file,
@@ -118,7 +160,17 @@ OrbitalVector gto_guess::initial_guess(double prec,
     return orbital::adjoin(Phi_a, Phi_b);
 }
 
-
+/** @brief Project the N first GTO expansions of the MO basis
+ *
+ * @param prec: precision used in projection
+ * @param Phi: vector or MW orbitals
+ * @param gto_exp: vector of GTO orbitals
+ *
+ * Projects the GTO orbital expansions into the corresponding MW orbitals.
+ * The length is decided by the MW vector and it is assumed that the GTO
+ * vector is at least of the same size.
+ *
+ */
 void gto_guess::project(double prec, OrbitalVector &Phi, gto_guess::OrbitalExp &gto_exp) {
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {

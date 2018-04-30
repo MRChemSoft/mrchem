@@ -16,6 +16,24 @@ mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 using namespace mrcpp;
 using namespace mrchem;
 
+/** @file gto.cpp
+ *
+ * Standalone executable (gto-guess) for reading a GTO initial guess and
+ * writing the resulting MW orbitals to disk.
+ *
+ * Requires the following input files (file names can be changed in input):
+ * @mrchem.inp: regular input file, parsed through getkw (./mrchem -D)
+ * initial_guess/mrchem.bas: basis set file (LSDalton format)
+ * initial_guess/mrchem.moa: MO matrix (alpha orbitals or closed-shell)
+ * initial_guess/mrchem.mob: MO matrix (beta orbitals)
+ *
+ * Produces the following output files (file names can be changed in input):
+ * orbitals/phi_0.meta: orbital meta data
+ * orbitals/phi_0_re.tree: MW representation of real part
+ * orbitals/phi_1.meta: orbital meta data
+ * orbitals/phi_1_re.tree: MW representation of real part
+ */
+
 int main(int argc, char **argv) {
     mpi::initialize(argc, argv);
     mrenv::initialize(argc, argv);
