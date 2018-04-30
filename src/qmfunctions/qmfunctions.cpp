@@ -23,7 +23,7 @@ namespace orbital {
  * Orbital related standalone functions *
  ****************************************/
 
-/** Compute <bra|ket> = int bra^\dag(r) * ket(r) dr.
+/** @brief Compute <bra|ket> = int bra^\dag(r) * ket(r) dr.
  *
  *  Complicated by the fact that both bra and ket can be interpreted
  *  as complex conjugate versions of themselves. Notice that the <bra|
@@ -49,7 +49,7 @@ ComplexDouble dot(Orbital bra, Orbital ket) {
     return ComplexDouble(real_part, imag_part);
 }
 
-/** Compare spin and occupancy of two orbitals
+/** @brief Compare spin and occupancy of two orbitals
  *
  *  Returns true if orbital parameters are the same.
  *
@@ -67,7 +67,7 @@ bool compare(const Orbital &orb_a, const Orbital &orb_b) {
     return comp;
 }
 
-/** Compare occupancy of two orbitals
+/** @brief Compare occupancy of two orbitals
  *
  *  Returns the common occupancy if they match, -1 if they differ.
  *
@@ -78,7 +78,7 @@ int compare_occ(const Orbital &orb_a, const Orbital &orb_b) {
     return comp;
 }
 
-/** Compare spin of two orbitals
+/** @brief Compare spin of two orbitals
  *
  *  Returns the common spin if they match, -1 if they differ.
  *
@@ -89,7 +89,7 @@ int compare_spin(const Orbital &orb_a, const Orbital &orb_b) {
     return comp;
 }
 
-/** out = a*inp_a + b*inp_b
+/** @brief out = a*inp_a + b*inp_b
   * Complicated by the fact that both inputs can be interpreted as complex
   * conjugate versions of themselves. */
 Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, double prec) {
@@ -104,7 +104,7 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
     return multiply(coefs, orbs, prec);
 }
 
-/** out_i = a*(inp_a)_i + b*(inp_b)_i
+/** @brief out_i = a*(inp_a)_i + b*(inp_b)_i
  *
  *  Component-wise addition of orbitals.
  *
@@ -122,7 +122,7 @@ OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a,
     return out;
 }
 
-/** out = inp_a * inp_b
+/** @brief out = inp_a * inp_b
   *
   * Complicated by the fact that both inputs can be interpreted
   * as complex conjugate versions of themselves.
@@ -222,7 +222,7 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
     return out;
 }
 
-/** out = c_0*inp_0 + c_1*inp_1 + ...
+/** @brief out = c_0*inp_0 + c_1*inp_1 + ...
   *
   * Complicated by the fact that both inputs can be interpreted as complex
   * conjugate versions of themselves.
@@ -287,7 +287,7 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
     return out;
 }
 
-/* Orbital transformation out_vec = U*inp_vec
+/** @brief Orbital transformation out_vec = U*inp_vec
  *
  * The transformation matrix is not necessarily square.
  *
@@ -304,7 +304,7 @@ OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) 
     return out;
 }
 
-/** Deep copy
+/** @brief Deep copy
  *
  * New orbitals are constructed as deep copies of the input set.
  *
@@ -318,7 +318,7 @@ OrbitalVector deep_copy(OrbitalVector &inp) {
     return out;
 }
 
-/** Parameter copy
+/** @brief Parameter copy
  *
  * New orbitals are constructed as parameter copies of the input set.
  *
@@ -332,7 +332,7 @@ OrbitalVector param_copy(const OrbitalVector &inp) {
     return out;
 }
 
-/** Adjoin two vectors
+/** @brief Adjoin two vectors
  *
  * The orbitals of the input vector are appended to
  * (*this) vector, the ownership is transferred. Leaves
@@ -348,7 +348,7 @@ OrbitalVector adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b) {
     return out;
 }
 
-/** Disjoin vector in two parts
+/** @brief Disjoin vector in two parts
  *
  * All orbitals of a particular spin is collected in a new vector
  * and returned. These orbitals are removed from (*this) vector,
@@ -371,7 +371,7 @@ OrbitalVector disjoin(OrbitalVector &inp, int spin) {
     return out;
 }
 
-/** Write orbitals to disk
+/** @brief Write orbitals to disk
  *
  * @param Phi: orbitals to save
  * @param file: file name prefix
@@ -392,13 +392,13 @@ void save_orbitals(OrbitalVector &Phi, const std::string &file, int n_orbs) {
     }
 }
 
-/** Read orbitals from disk
+/** @brief Read orbitals from disk
  *
  * @param file: file name prefix
  * @param n_orbs: number of orbitals to read
  *
  * The given file name (e.g. "phi") will be appended with orbital number ("phi_0").
- * Produces separate files for meta data ("phi_0.meta"), real ("phi_0_re.tree") and
+ * Reads separate files for meta data ("phi_0.meta"), real ("phi_0_re.tree") and
  * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals matching
  * the prefix name will be read.
  */
@@ -419,7 +419,7 @@ OrbitalVector load_orbitals(const std::string &file, int n_orbs) {
     return Phi;
 }
 
-/** Frees each orbital in the vector
+/** @brief Frees each orbital in the vector
  *
  * Leaves an empty vector. Orbitals are freed.
  *
@@ -429,14 +429,14 @@ void free(OrbitalVector &vec) {
     vec.clear();
 }
 
-/** Normalize all orbitals in the set */
+/** @brief Normalize all orbitals in the set */
 void normalize(OrbitalVector &vec) {
     for (int i = 0; i < vec.size(); i++) {
         vec[i].normalize();
     }
 }
 
-/** Gram-Schmidt orthogonalize orbitals within the set */
+/** @brief Gram-Schmidt orthogonalize orbitals within the set */
 void orthogonalize(OrbitalVector &vec) {
     for (int i = 0; i < vec.size(); i++) {
         Orbital &orb_i = vec[i];
@@ -447,7 +447,7 @@ void orthogonalize(OrbitalVector &vec) {
     }
 }
 
-/** Orthogonalize the out orbital against all orbitals in inp */
+/** @brief Orthogonalize the out orbital against all orbitals in inp */
 void orthogonalize(OrbitalVector &vec, OrbitalVector &inp) {
     for (int i = 0; i < vec.size(); i++) {
         vec[i].orthogonalize(inp);
@@ -600,7 +600,7 @@ ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi) {
     return U;
 }
 
-/** Returns the number of occupied orbitals */
+/** @brief Returns the number of occupied orbitals */
 int size_occupied(const OrbitalVector &vec) {
     int nOcc = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -609,7 +609,7 @@ int size_occupied(const OrbitalVector &vec) {
     return nOcc;
 }
 
-/** Returns the number of empty orbitals */
+/** @brief Returns the number of empty orbitals */
 int size_empty(const OrbitalVector &vec) {
     int nEmpty = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -618,7 +618,7 @@ int size_empty(const OrbitalVector &vec) {
     return nEmpty;
 }
 
-/** Returns the number of singly occupied orbitals */
+/** @brief Returns the number of singly occupied orbitals */
 int size_singly(const OrbitalVector &vec) {
     int nSingly = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -627,7 +627,7 @@ int size_singly(const OrbitalVector &vec) {
     return nSingly;
 }
 
-/** Returns the number of doubly occupied orbitals */
+/** @brief Returns the number of doubly occupied orbitals */
 int size_doubly(const OrbitalVector &vec) {
     int nDoubly = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -636,7 +636,7 @@ int size_doubly(const OrbitalVector &vec) {
     return nDoubly;
 }
 
-/** Returns the number of paired orbitals */
+/** @brief Returns the number of paired orbitals */
 int size_paired(const OrbitalVector &vec) {
     int nPaired = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -645,7 +645,7 @@ int size_paired(const OrbitalVector &vec) {
     return nPaired;
 }
 
-/** Returns the number of alpha orbitals */
+/** @brief Returns the number of alpha orbitals */
 int size_alpha(const OrbitalVector &vec) {
     int nAlpha = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -654,7 +654,7 @@ int size_alpha(const OrbitalVector &vec) {
     return nAlpha;
 }
 
-/** Returns the number of beta orbitals */
+/** @brief Returns the number of beta orbitals */
 int size_beta(const OrbitalVector &vec) {
     int nBeta = 0;
     for (int i = 0; i < vec.size(); i++) {
@@ -663,7 +663,7 @@ int size_beta(const OrbitalVector &vec) {
     return nBeta;
 }
 
-/** Returns the spin multiplicity of the vector */
+/** @brief Returns the spin multiplicity of the vector */
 int get_multiplicity(const OrbitalVector &vec) {
     int nAlpha = get_electron_number(vec, SPIN::Alpha);
     int nBeta = get_electron_number(vec, SPIN::Beta);
@@ -671,7 +671,7 @@ int get_multiplicity(const OrbitalVector &vec) {
     return S + 1;
 }
 
-/** Returns the number of electrons with the given spin
+/** @brief Returns the number of electrons with the given spin
  *
  * Paired spin (default input) returns the total number of electrons.
  *
@@ -697,7 +697,7 @@ int get_electron_number(const OrbitalVector &vec, int spin) {
     return nElectrons;
 }
 
-/** Returns a vector containing the orbital errors */
+/** @brief Returns a vector containing the orbital errors */
 DoubleVector get_errors(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     DoubleVector errors = DoubleVector::Zero(nOrbs);
@@ -707,7 +707,7 @@ DoubleVector get_errors(const OrbitalVector &vec) {
     return errors;
 }
 
-/** Assign errors to each orbital.
+/** @brief Assign errors to each orbital.
  *
  * Length of input vector must match the number of orbitals in the set.
  *
@@ -719,7 +719,7 @@ void set_errors(OrbitalVector &vec, const DoubleVector &errors) {
     }
 }
 
-/** Returns a vector containing the orbital spins */
+/** @brief Returns a vector containing the orbital spins */
 IntVector get_spins(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     IntVector spins = IntVector::Zero(nOrbs);
@@ -729,7 +729,7 @@ IntVector get_spins(const OrbitalVector &vec) {
     return spins;
 }
 
-/** Assigns spin to each orbital
+/** @brief Assigns spin to each orbital
  *
  * Length of input vector must match the number of orbitals in the set.
  *
@@ -741,7 +741,7 @@ void set_spins(OrbitalVector &vec, const IntVector &spins) {
     }
 }
 
-/** Returns a vector containing the orbital occupancies */
+/** @brief Returns a vector containing the orbital occupancies */
 IntVector get_occupancies(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     IntVector occ = IntVector::Zero(nOrbs);
@@ -751,7 +751,7 @@ IntVector get_occupancies(const OrbitalVector &vec) {
     return occ;
 }
 
-/** Assigns spin to each orbital
+/** @brief Assigns spin to each orbital
  *
  * Length of input vector must match the number of orbitals in the set.
  *
@@ -763,7 +763,7 @@ void set_occupancies(OrbitalVector &vec, const IntVector &occ) {
     }
 }
 
-/** Returns a vector containing the orbital square norms */
+/** @brief Returns a vector containing the orbital square norms */
 DoubleVector get_squared_norms(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     DoubleVector norms = DoubleVector::Zero(nOrbs);
@@ -773,7 +773,7 @@ DoubleVector get_squared_norms(const OrbitalVector &vec) {
     return norms;
 }
 
-/** Returns a vector containing the orbital norms */
+/** @brief Returns a vector containing the orbital norms */
 DoubleVector get_norms(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     DoubleVector norms = DoubleVector::Zero(nOrbs);

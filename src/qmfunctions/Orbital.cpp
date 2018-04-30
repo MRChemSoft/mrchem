@@ -209,6 +209,14 @@ void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
     *this = tmp;
 }
 
+/** @brief Write orbital to disk
+ *
+ * @param file: file name prefix
+ *
+ * Given a file name prefix (e.g. "phi_0"), this will produce separate
+ * binary files for meta data ("phi_0.meta"), real ("phi_0_re.tree")
+ * and imaginary ("phi_0_im.tree") parts.
+ */
 void Orbital::saveOrbital(const std::string &file) {
     //writing meta data
     std::stringstream metafile;
@@ -238,6 +246,14 @@ void Orbital::saveOrbital(const std::string &file) {
     }
 }
 
+/** @brief Read orbital from disk
+ *
+ * @param file: file name prefix
+ *
+ * Given a file name prefix (e.g. "phi_0"), this will read separate
+ * binary files for meta data ("phi_0.meta"), real ("phi_0_re.tree")
+ * and imaginary ("phi_0_im.tree") parts.
+ */
 void Orbital::loadOrbital(const std::string &file) {
     if (hasReal()) MSG_ERROR("Orbital not empty");
     if (hasImag()) MSG_ERROR("Orbital not empty");
