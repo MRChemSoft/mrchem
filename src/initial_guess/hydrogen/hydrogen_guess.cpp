@@ -6,6 +6,8 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
+#include "utils/mathutils.h"
+
 #include "hydrogen_guess.h"
 
 #include "HydrogenFunction.h"
@@ -21,12 +23,13 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-/** Helper struct to get the orbital ordering right
+namespace hydrogen_guess {
+/** @brief Helper struct to get the orbital ordering right
  *
  *  First index energy level (n)
  *  Second index angular momentum (l)
  */
-int hydrogen_guess::PT[29][2] = {
+int PT[29][2] = {
    /*s*/
    {1,0},                  /*p*/
    {2,0},                  {2,1},
@@ -39,6 +42,25 @@ int hydrogen_guess::PT[29][2] = {
    {9,0},{6,4},{7,3},{8,2},{9,1}
 };
 
+// Forward declare helper functions
+OrbitalVector project(double prec, const Nuclei &nucs, int zeta);
+void populate(OrbitalVector &Phi, int N, int spin);
+
+} //namespace hydrogen_guess
+
+
+/** @brief Produce an initial guess of orbitals
+ *
+ * @param prec: precision used in projection
+ * @param mol: molecule
+ * @param restricted: spin restriction
+ * @param zeta: quality of hydrogen AO basis
+ *
+ * Sets up an AO basis of hydrogen functions with the given zeta quality
+ * (SZ, DZ, TZ, QZ), computes and diagonalizes the core Hamiltonian matrix,
+ * and fills the resulting orbitals by the Aufbau principle.
+ *
+ */
 OrbitalVector hydrogen_guess::initial_guess(double prec,
                                             const Molecule &mol,
                                             bool restricted,
@@ -49,9 +71,10 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
     if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
     if (not restricted) NOT_IMPLEMENTED_ABORT;
 
-    //project AO basis of hydrogen functions
+    // Project AO basis of hydrogen functions
     OrbitalVector Phi = hydrogen_guess::project(prec, mol.getNuclei(), zeta);
 
+    // Compute orthonormalization matrix S^(-1/2)
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
 
     // Compute core Hamiltonian matrix
@@ -107,6 +130,26 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
     return Psi;
 }
 
+/** @brief Project AO basis of hydrogen functions
+ *
+ * @param prec: precision used in projection
+ * @param nucs: the nuclei of the molecule
+ * @param zeta: quality of hydrogen AO basis
+ *
+ * Sets up an AO basis of hydrogen functions with the given zeta quality
+ * (SZ, DZ, TZ, QZ), and projects it onto the MW basis. The basis at each
+ * atomic center is always a complete shell: single zeta (SZ) means that
+ * the current shell is completed, double zeta (DZ) means that also the
+ * next shell will be completed, etc. E.i. the oxygen atom will get the
+ * following AO basis:
+ *
+ * Oxygen AOs:
+ * SZ: 1s2s2p                 (2s +  3p)
+ * DZ: 1s2s2p3s3p             (3s +  6p)
+ * TZ: 1s2s2p3s3p4s3d4p       (4s +  9p +  5d)
+ * QZ: 1s2s2p3s3p4s3d4p5s4d5p (5s + 12p + 10d)
+ *
+ */
 OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta) {
     Printer::printHeader(0, "Setting up occupied orbitals");
     println(0, "    N    Atom   Label                     SquareNorm");
@@ -159,17 +202,28 @@ OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta)
     return Phi;
 }
 
-void hydrogen_guess::populate(OrbitalVector &vec, int N, int spin) {
+/** @brief Populate orbital vector with electrons
+ *
+ * @param Phi: orbital vector to populate
+ * @param N: number of orbitals to populate
+ * @param spin: spin of populated orbitals
+ *
+ * This populates the N first orbtials in the vector with electrons of
+ * the given spin. Occupancy is deduced from the spin parameter. Trailing
+ * orbitals in the vector will remain unoccupied.
+ *
+ */
+void hydrogen_guess::populate(OrbitalVector &Phi, int N, int spin) {
     int occ = 0;
     if (spin == SPIN::Paired) occ = 2;
     if (spin == SPIN::Alpha) occ = 1;
     if (spin == SPIN::Beta) occ = 1;
-    for (int i = 0; i < vec.size(); i++) {
-        vec[i].setSpin(spin);
+    for (int i = 0; i < Phi.size(); i++) {
+        Phi[i].setSpin(spin);
         if (i < N) {
-            vec[i].setOcc(occ);
+            Phi[i].setOcc(occ);
         } else {
-            vec[i].setOcc(0);
+            Phi[i].setOcc(0);
         }
     }
 }

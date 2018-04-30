@@ -7,7 +7,6 @@
 #include "parallel.h"
 #include "hydrogen_guess.h"
 
-#include "HydrogenFunction.h"
 #include "Molecule.h"
 #include "Orbital.h"
 
@@ -16,6 +15,25 @@ mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
 using namespace mrcpp;
 using namespace mrchem;
+
+/** @file hydrogen.cpp
+ *
+ * Standalone executable (hydrogen-guess) for setting up an initial guess
+ * from hydrogen orbitals and writing the resulting MW orbitals to disk.
+ *
+ * Sets up an AO basis of hydrogen functions with the given zeta quality
+ * (SZ, DZ, TZ, QZ), computes and diagonalizes the core Hamiltonian matrix,
+ * and fills the resulting orbitals by the Aufbau principle.
+ *
+ * Requires the following input files:
+ * @mrchem.inp: regular input file, parsed through getkw (./mrchem -D)
+ *
+ * Produces the following output files (file names can be changed in input):
+ * orbitals/phi_0.meta: orbital meta data
+ * orbitals/phi_0_re.tree: MW representation of real part
+ * orbitals/phi_1.meta: orbital meta data
+ * orbitals/phi_1_re.tree: MW representation of real part
+ */
 
 int main(int argc, char **argv) {
     mpi::initialize(argc, argv);
