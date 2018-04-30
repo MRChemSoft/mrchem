@@ -474,7 +474,7 @@ void SCFDriver::setupInitialGroundState() {
 
         *phi = hydrogen_guess::initial_guess(rel_prec, *molecule, wf_restricted, ig_zeta);
     }
-    println(0, *phi);
+    orbital::print(*phi);
 }
 
 OrbitalOptimizer* SCFDriver::setupOrbitalOptimizer() {

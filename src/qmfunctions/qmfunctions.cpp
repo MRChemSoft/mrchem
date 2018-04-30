@@ -783,6 +783,22 @@ DoubleVector get_norms(const OrbitalVector &vec) {
     return norms;
 }
 
+void print(const OrbitalVector &vec) {
+    Printer::setScientific();
+    printout(0, "============================================================\n");
+    printout(0, "*OrbitalVector: ");
+    printout(0, std::setw(4) << vec.size()          << " orbitals  ");
+    printout(0, std::setw(4) << size_occupied(vec)  << " occupied  ");
+    printout(0, std::setw(4) << get_electron_number(vec) << " electrons\n");
+    printout(0, "------------------------------------------------------------\n");
+    printout(0, "   n  RankID           Norm          Spin Occ      Error    \n");
+    printout(0, "------------------------------------------------------------\n");
+    for (int i = 0; i < vec.size(); i++) {
+        println(0, std::setw(4) << i << vec[i]);
+    }
+    printout(0, "============================================================\n\n");
+}
+
 } //namespace orbital
 
 
@@ -1008,21 +1024,3 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
 } //namespace density
 
 } //namespace mrchem
-
-/** Collective printing of all orbitals in the vector */
-std::ostream& operator<<(std::ostream &o, const mrchem::OrbitalVector &vec) {
-    Printer::setScientific();
-    o << "============================================================\n";
-    o << "*OrbitalVector: ";
-    o << std::setw(4) << vec.size()          << " orbitals  ";
-    o << std::setw(4) << mrchem::orbital::size_occupied(vec)  << " occupied  ";
-    o << std::setw(4) << mrchem::orbital::get_electron_number(vec) << " electrons " << std::endl;
-    o << "------------------------------------------------------------\n";
-    o << "   n  RankID           Norm          Spin Occ      Error    \n";
-    o << "------------------------------------------------------------\n";
-    for (int i = 0; i < vec.size(); i++) {
-        o << std::setw(4) << i << vec[i] << std::endl;
-    }
-    o << "============================================================\n\n";
-    return o;
-}

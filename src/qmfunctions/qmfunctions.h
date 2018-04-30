@@ -69,6 +69,8 @@ DoubleVector get_errors(const OrbitalVector &vec);
 DoubleVector get_norms(const OrbitalVector &vec);
 DoubleVector get_squared_norms(const OrbitalVector &vec);
 
+void print(const OrbitalVector &vec);
+
 } //namespace orbital
 
 
@@ -83,5 +85,3 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec = -1.0);
 
 
 } //namespace mrchem
-
-std::ostream& operator<<(std::ostream &o, const mrchem::OrbitalVector &vec);
