@@ -10,11 +10,18 @@
 #include "HyperFineCoupling.h"
 #include "SpinSpinCoupling.h"
 
-using namespace std;
 using mrcpp::Printer;
 
 namespace mrchem {
 
+/** @brief Constructor
+ *
+ * @param nucs: list of nuclei
+ * @param c: total charge
+ * @param m: spin multiplicity
+ *
+ * Nuclei are copied, all properties are uninitialized at this point.
+ */
 Molecule::Molecule(const Nuclei &nucs, int c, int m)
         : charge(c),
           multiplicity(m),
@@ -30,7 +37,15 @@ Molecule::Molecule(const Nuclei &nucs, int c, int m)
     allocNuclearProperties();
 }
 
-Molecule::Molecule(const string &coord_file, int c, int m)
+/** @brief Constructor
+ *
+ * @param coord_file: xyz file with nuclear coordinates
+ * @param c: total charge
+ * @param m: spin multiplicity
+ *
+ * Nuclei are copied, all properties are uninitialized at this point.
+ */
+Molecule::Molecule(const std::string &coord_file, int c, int m)
         : charge(c),
           multiplicity(m),
           energy(0),
@@ -45,7 +60,15 @@ Molecule::Molecule(const string &coord_file, int c, int m)
     allocNuclearProperties();
 }
 
-Molecule::Molecule(const vector<string> &coord_str, int c, int m)
+/** @brief Constructor
+ *
+ * @param coord_file: list of stings with nuclear coordinates
+ * @param c: total charge
+ * @param m: spin multiplicity
+ *
+ * Nuclei are copied, all properties are uninitialized at this point.
+ */
+Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
         : charge(c),
           multiplicity(m),
           energy(0),
@@ -60,6 +83,11 @@ Molecule::Molecule(const vector<string> &coord_str, int c, int m)
     allocNuclearProperties();
 }
 
+/** @brief Alloc containers for nuclear properties
+ *
+ * Alloc pointers with one entry per nucleus for each of the nuclear properties.
+ * The properties themselves are uninitialized.
+ */
 void Molecule::allocNuclearProperties() {
     int nNucs = this->nuclei.size();
     this->nmr = new NMRShielding*[nNucs];
@@ -75,6 +103,10 @@ void Molecule::allocNuclearProperties() {
     }
 }
 
+/** @brief Destructor
+ *
+ * Clears any property that might have been initialized.
+ */
 Molecule::~Molecule() {
     clearSCFEnergy();
     clearDipoleMoment();
@@ -86,6 +118,11 @@ Molecule::~Molecule() {
     this->nuclei.clear();
 }
 
+/** @brief Free containers for nuclear properties
+ *
+ * Clears the nuclear properties that might have been initialized,
+ * and deallocates the pointers.
+ */
 void Molecule::freeNuclearProperties() {
     int nNucs = this->nuclei.size();
     for (int k = 0; k < nNucs; k++) {
@@ -105,6 +142,7 @@ void Molecule::freeNuclearProperties() {
     this->sscc = 0; 
 }
 
+/** @brief Delete property SCFEnergy */
 void Molecule::clearSCFEnergy() {
     if (this->energy != 0) {
         delete this->energy;
@@ -112,6 +150,7 @@ void Molecule::clearSCFEnergy() {
     }
 }
 
+/** @brief Delete property DipoleMoment */
 void Molecule::clearDipoleMoment() {
     if (this->dipole != 0) {
         delete this->dipole;
@@ -119,6 +158,7 @@ void Molecule::clearDipoleMoment() {
     }
 }
 
+/** @brief Delete property QuadrupoleMoment */
 void Molecule::clearQuadrupoleMoment() {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -129,6 +169,7 @@ void Molecule::clearQuadrupoleMoment() {
     */
 }
 
+/** @brief Delete property Magnetizability */
 void Molecule::clearMagnetizability() {
     if (this->magnetizability != 0) {
         delete this->magnetizability;
@@ -136,6 +177,7 @@ void Molecule::clearMagnetizability() {
     }
 }
 
+/** @brief Delete property NMRShielding */
 void Molecule::clearNMRShielding(int k) {
     if (this->nmr == 0) MSG_ERROR("Properties not allocated");
     if (this->nmr[k] != 0) {
@@ -144,6 +186,7 @@ void Molecule::clearNMRShielding(int k) {
     }
 }
 
+/** @brief Delete property HyperFineCoupling */
 void Molecule::clearHyperFineCoupling(int k) {
     if (this->hfcc == 0) MSG_ERROR("Properties not allocated");
     if (this->hfcc[k] != 0) {
@@ -152,6 +195,7 @@ void Molecule::clearHyperFineCoupling(int k) {
     }
 }
 
+/** @brief Delete property SpinSpinCoupling */
 void Molecule::clearSpinSpinCoupling(int k, int l) {
     if (this->sscc == 0) MSG_ERROR("Properties not allocated");
     if (this->sscc[k] == 0) MSG_ERROR("Properties not allocated");
@@ -161,6 +205,7 @@ void Molecule::clearSpinSpinCoupling(int k, int l) {
     }
 }
 
+/** @brief Delete property Polarizability */
 void Molecule::clearPolarizability() {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -175,6 +220,7 @@ void Molecule::clearPolarizability() {
     */
 }
 
+/** @brief Delete property OpticalRotation */
 void Molecule::clearOpticalRotation() {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -189,16 +235,19 @@ void Molecule::clearOpticalRotation() {
     */
 }
 
+/** @brief Initialize property SCFEnergy */
 void Molecule::initSCFEnergy() {
     if (this->energy != 0) MSG_WARN("SCFEnergy already initialized");
     this->energy = new SCFEnergy();
 }
 
+/** @brief Initialize property DipoleMoment */
 void Molecule::initDipoleMoment() {
     if (this->dipole != 0) MSG_WARN("Dipole moment already initialized");
     this->dipole = new DipoleMoment();
 }
 
+/** @brief Initialize property QuadrupoleMoment */
 void Molecule::initQuadrupoleMoment() {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -209,11 +258,13 @@ void Molecule::initQuadrupoleMoment() {
     */
 }
 
+/** @brief Initialize property Magnetizability */
 void Molecule::initMagnetizability() {
     if (this->magnetizability != 0) MSG_WARN("Magnetizability already initialized");
     this->magnetizability = new Magnetizability();
 }
 
+/** @brief Initialize property NMRShielding */
 void Molecule::initNMRShielding(int k) {
     if (this->nmr == 0) MSG_ERROR("Properties not allocated");
     if (this->nmr[k] != 0) MSG_ERROR("NMR shielding tensor already initialized");
@@ -222,6 +273,7 @@ void Molecule::initNMRShielding(int k) {
     this->nmr[k] = new NMRShielding(nuc_K);
 }
 
+/** @brief Initialize property HyperFineCoupling */
 void Molecule::initHyperFineCoupling(int k) {
     if (this->hfcc == 0) MSG_ERROR("Properties not allocated");
     if (this->hfcc[k] != 0) MSG_ERROR("HyperFine coupling tensor already initialized");
@@ -230,6 +282,7 @@ void Molecule::initHyperFineCoupling(int k) {
     this->hfcc[k] = new HyperFineCoupling(nuc_K);
 }
 
+/** @brief Initialize property SpinSpinCoupling */
 void Molecule::initSpinSpinCoupling(int k, int l) {
     if (this->sscc == 0) MSG_ERROR("Properties not allocated");
     if (this->sscc[k] == 0) MSG_ERROR("Properties not allocated");
@@ -240,6 +293,7 @@ void Molecule::initSpinSpinCoupling(int k, int l) {
     this->sscc[k][l] = new SpinSpinCoupling(nuc_K, nuc_L);
 }
 
+/** @brief Initialize property Polarizability */
 void Molecule::initPolarizability(double omega) {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -256,6 +310,7 @@ void Molecule::initPolarizability(double omega) {
     */
 }
 
+/** @brief Initialize property OpticalRotation */
 void Molecule::initOpticalRotation(double omega) {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -272,16 +327,19 @@ void Molecule::initOpticalRotation(double omega) {
     */
 }
 
+/** @brief Return property SCFEnergy */
 SCFEnergy& Molecule::getSCFEnergy() {
     if (this->energy == 0) MSG_ERROR("Uninitialized SCF energy");
     return *this->energy;
 }
 
+/** @brief Return property DipoleMoment */
 DipoleMoment& Molecule::getDipoleMoment() {
     if (this->dipole == 0) MSG_ERROR("Uninitialized dipole moment");
     return *this->dipole;
 }
 
+/** @brief Return property QuadrupoleMoment */
 QuadrupoleMoment& Molecule::getQuadrupoleMoment() {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -290,23 +348,27 @@ QuadrupoleMoment& Molecule::getQuadrupoleMoment() {
     */
 }
 
+/** @brief Return property Magnetizability */
 Magnetizability& Molecule::getMagnetizability() {
     if (this->magnetizability == 0) MSG_ERROR("Uninitialized magnetizability");
     return *this->magnetizability;
 }
 
+/** @brief Return property NMRShielding */
 NMRShielding& Molecule::getNMRShielding(int k) {
     if (this->nmr == 0) MSG_ERROR("Properties not allocated");
     if (this->nmr[k] == 0) MSG_ERROR("Uninitialized NMR shielding tensor " << k);
     return *this->nmr[k];
 }
 
+/** @brief Return property HyperFineCoupling */
 HyperFineCoupling& Molecule::getHyperFineCoupling(int k) {
     if (this->hfcc == 0) MSG_ERROR("Properties not allocated");
     if (this->hfcc[k] == 0) MSG_ERROR("Uninitialized hyperfine coupling tensor " << k);
     return *this->hfcc[k];
 }
 
+/** @brief Return property SpinSpinCoupling */
 SpinSpinCoupling& Molecule::getSpinSpinCoupling(int k, int l) {
     if (this->sscc == 0) MSG_ERROR("Properties not allocated");
     if (this->sscc[k] == 0) MSG_ERROR("Properties not allocated");
@@ -314,6 +376,7 @@ SpinSpinCoupling& Molecule::getSpinSpinCoupling(int k, int l) {
     return *this->sscc[k][l];
 }
 
+/** @brief Return property Polarizability */
 Polarizability& Molecule::getPolarizability(double omega) {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -330,6 +393,7 @@ Polarizability& Molecule::getPolarizability(double omega) {
     */
 }
 
+/** @brief Return property OpticalRotation */
 OpticalRotation& Molecule::getOpticalRotation(double omega) {
     NOT_IMPLEMENTED_ABORT;
     /*
@@ -346,6 +410,7 @@ OpticalRotation& Molecule::getOpticalRotation(double omega) {
     */
 }
 
+/** @brief Return number of electrons */
 int Molecule::getNElectrons() const {
     int totZ = 0;
     for (int i = 0; i < getNNuclei(); i++) {
@@ -354,6 +419,7 @@ int Molecule::getNElectrons() const {
     return totZ - this->charge;
 }
 
+/** @brief Compute nuclear center of mass */
 void Molecule::calcCenterOfMass() {
     this->COM[0] = 0.0;
     this->COM[1] = 0.0;
@@ -374,15 +440,25 @@ void Molecule::calcCenterOfMass() {
     }
 }
 
-void Molecule::readCoordinateFile(const string &coord_file) {
-    fstream ifs;
+/** @brief Read nuclear coordinates from xyz file
+ *
+ * First entry in file is number of atoms:
+ *
+ * nAtoms
+ * symbol   x_coord     y_coord     z_coord
+ * symbol   x_coord     y_coord     z_coord
+ * symbol   x_coord     y_coord     z_coord
+ *
+ */
+void Molecule::readCoordinateFile(const std::string &coord_file) {
+    std::fstream ifs;
     ifs.open(coord_file.c_str());
     if (not ifs) {
         MSG_FATAL("Failed to open basis set file: " << coord_file);
     }
 
     int nNuclei;
-    string sym;
+    std::string sym;
     double coord[3];
     ifs >> nNuclei;
     for (int i = 0; i < nNuclei; i++) {
@@ -395,12 +471,19 @@ void Molecule::readCoordinateFile(const string &coord_file) {
     ifs.close();
 }
 
-void Molecule::readCoordinateString(const vector<string> &coord_str) {
+/** @brief Read nuclear coordinates from vector of strings
+ *
+ * Each entry in the vector of strings contains one atom:
+ *
+ *      "symbol   x_coord     y_coord     z_coord"
+ *
+ */
+void Molecule::readCoordinateString(const std::vector<std::string> &coord_str) {
     int nNuclei = coord_str.size();
-    string sym;
+    std::string sym;
     double coord[3];
     for (int i = 0; i < nNuclei; i++) {
-        stringstream ss;
+        std::stringstream ss;
         ss.str(coord_str[i]);
         ss >> sym;
         ss >> coord[0];
@@ -410,6 +493,7 @@ void Molecule::readCoordinateString(const vector<string> &coord_str) {
     }
 }
 
+/** @brief Pretty output of molecular geometry */
 void Molecule::printGeometry() const {
     Printer::printHeader(0, "Molecule");
     println(0, " Nr  Element             x             y             z      ");
@@ -420,24 +504,28 @@ void Molecule::printGeometry() const {
     for (int i = 0; i < nNuclei; i++) {
         const Nucleus &nuc = getNucleus(i);
         const double *coord = nuc.getCoord();
-        stringstream symbol;
+        std::stringstream symbol;
         symbol << nuc.getElement().getSymbol();
         symbol << "  ";
-        printout(0, setw(3) << i+1 << "     ");
+        printout(0, std::setw(3) << i+1 << "     ");
         printout(0, symbol.str()[0] << symbol.str()[1]);
-        printout(0, setw(21) << coord[0]);
-        printout(0, setw(14) << coord[1]);
-        printout(0, setw(14) << coord[2] << endl);
+        printout(0, std::setw(21) << coord[0]);
+        printout(0, std::setw(14) << coord[1]);
+        printout(0, std::setw(14) << coord[2] << std::endl);
     }
     Printer::printSeparator(0, '-');
     printout(0, " Center of mass: ");
-    printout(0, setw(14) << this->COM[0]);
-    printout(0, setw(14) << this->COM[1]);
-    printout(0, setw(14) << this->COM[2] << endl);
+    printout(0, std::setw(14) << this->COM[0]);
+    printout(0, std::setw(14) << this->COM[1]);
+    printout(0, std::setw(14) << this->COM[2] << std::endl);
     Printer::setPrecision(oldPrec);
     Printer::printSeparator(0, '=', 2);
 }
 
+/** @brief Pretty output of molecular properties
+ *
+ * Only properties that have been initialized will be printed.
+ */
 void Molecule::printProperties() const {
     if (this->energy != 0) println(0, *this->energy);
     if (this->dipole != 0) println(0, *this->dipole);

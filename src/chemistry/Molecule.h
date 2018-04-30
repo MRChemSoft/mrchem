@@ -15,6 +15,15 @@
 #include "Nucleus.h"
 #include "SCFEnergy.h"
 
+/** @class Molecule
+ *
+ * @brief Collection of properties related to a molecule.
+ *
+ * A molecule is basically a collection of nuclei and a collection of properties.
+ * Mainly used for bookkeeping and printing of properties.
+ *
+ */
+
 namespace mrchem {
 
 class DipoleMoment;
