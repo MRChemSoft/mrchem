@@ -20,11 +20,9 @@ from copy import deepcopy
 
 sys.path.append("@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
-if not os.environ.has_key('MRCHEM_FILTER_DIR'):
-    os.environ['MRCHEM_FILTER_DIR'] = "@MW_FILTER_DIR@"
+
+from periodictable import PeriodicTable as PT
 import getkw
-# from @INITIAL_GUESS_PROGRAM@ import run_initial_guess
-# from @INITIAL_GUESS_PROGRAM@ import estimate_energy
 
 def main():
     global topsect, debug, executable, printlevel, dryrun
@@ -61,19 +59,6 @@ def main():
         print >> fd, inkw.top
         fd.close()
     else:
-        mol = topsect.fetch_sect('Molecule')
-        lsdalton = topsect.fetch_sect('LSDalton');
-        run_lsdalton = lsdalton.get('run').get()
-        # Run LSDalton for initial guess
-        if run_lsdalton:
-            coords = mol.get('coords').get()
-            mult = mol.get('multiplicity').get()
-            charge = mol.get('charge').get()
-            basis = lsdalton.get('basis').get()
-            method = lsdalton.get('method').get()
-#            if run_initial_guess(coords, basis, method, charge, mult) is not None:
-#                print "Error in initial guess step"
-#                sys.exit(1)
         # Write processed input file and run MRChem
         with tempfile.TemporaryFile(mode='w+r') as fd:
             fd.write(str(inkw.top))
@@ -281,22 +266,22 @@ def verify_top(top):
     if not top.get('rel_prec').is_set():
         if not top.get('est_norm').is_set():
             mol = topsect.fetch_sect('Molecule')
-#            if mol.get('coords').is_set():
-#                coords = mol.get('coords').get()
-#                est_au = estimate_energy(coords)
-#                if top['energy_unit'][0] == 'eV':
-#                    top['est_norm'][0] = 27.2*est_au
-#                elif top['energy_unit'][0] == 'kcal':
-#                    top['est_norm'][0] = 627.5*est_au
-#                elif top['energy_unit'][0] == 'kJ':
-#                    top['est_norm'][0] = 2625.5*est_au
-#                else:
-#                    top['est_norm'][0] = est_au
-                #print "\nPrecision is set by energy estimate Z^(5/2)"
+            if mol.get('coords').is_set():
+                coords = mol.get('coords').get()
+                est_au = estimate_energy(coords)
+                if top['energy_unit'][0] == 'eV':
+                    top['est_norm'][0] = 27.2*est_au
+                elif top['energy_unit'][0] == 'kcal':
+                    top['est_norm'][0] = 627.5*est_au
+                elif top['energy_unit'][0] == 'kJ':
+                    top['est_norm'][0] = 2625.5*est_au
+                else:
+                    top['est_norm'][0] = est_au
+                print "\nPrecision is set by energy estimate Z^(5/2)"
         top['rel_prec'][0] = 10*top['abs_prec'][0] / top['est_norm'][0]
-        #print "   est_norm  ", top['est_norm'][0]
-        #print "   abs_prec  ", top['abs_prec'][0]
-        #print "   rel_prec  ", top['rel_prec'][0]
+        print "   est_norm  ", top['est_norm'][0]
+        print "   abs_prec  ", top['abs_prec'][0]
+        print "   rel_prec  ", top['rel_prec'][0]
 
     if not top.get('nuc_prec').is_set():
         top['nuc_prec'][0] = top['rel_prec'][0]
@@ -407,6 +392,18 @@ def verify_kinetic_free(kinetic_free):
     if not kinetic_free['orbital_thrs'].is_set() and not kinetic_free['property_thrs'].is_set():
         kinetic_free['property_thrs'][0] = topsect['rel_prec'][0]/10
         kinetic_free['orbital_thrs'][0] = math.sqrt(kinetic_free['property_thrs'][0])
+
+# Estimate total energy of a moleucule as the sum of the nuclear charges
+# to the power Z^(5/2). This is to get an order of magnitude estimate that
+# is used to set the precision parameter in mrchem in case of abs_prec.
+def estimate_energy(coords):
+    est_en = 0.0
+    for line in coords[:]:
+        sp = line.split()
+        elm = sp[0].lower()
+        Z = PT[elm].Z
+        est_en += pow(Z, 2.5)
+    return est_en
 
 
 if __name__ == '__main__':
