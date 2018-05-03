@@ -89,9 +89,9 @@ protected:
     std::vector<double> gauge;
 
     // Derivative operators
-    string diff_kin;
-    string diff_orb;
-    string diff_pso;
+    std::string diff_kin;
+    std::string diff_orb;
+    std::string diff_pso;
 
     // Run parameters
     bool calc_scf_energy;
@@ -108,8 +108,8 @@ protected:
 
     bool pol_velocity;
     bool optrot_velocity;
-    string nmr_perturbation;
-    string optrot_perturbation;
+    std::string nmr_perturbation;
+    std::string optrot_perturbation;
     std::vector<double> pol_frequency;
     std::vector<double> optrot_frequency;
     std::vector<int> nmr_nucleus_k;
