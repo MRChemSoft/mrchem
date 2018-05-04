@@ -9,7 +9,7 @@
  *
  */
 
-#include "Getkw.h"
+#include "Getkw.hpp"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 

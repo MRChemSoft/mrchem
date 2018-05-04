@@ -25,13 +25,11 @@ ExternalProject_Add(submodule-mrcpp
 add_dependencies(submodule-mrcpp git-submodule-init)
 add_dependencies(external-modules submodule-mrcpp)
 
-enable_language(C)
 ExternalProject_Add(submodule-libgetkw
     DOWNLOAD_COMMAND ""
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libgetkw
     CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
                 -DCMAKE_BUILD_TYPE=Release
-                -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
                 -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     CMAKE_CACHE_ARGS
                 -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
@@ -42,6 +40,7 @@ ExternalProject_Add(submodule-libgetkw
 add_dependencies(submodule-libgetkw git-submodule-init)
 add_dependencies(external-modules submodule-libgetkw)
 
+enable_language(C)
 option(ENABLE_XCFUN "Use XCFun library" OFF)
 if (ENABLE_XCFUN)
     ExternalProject_Add(submodule-xcfun

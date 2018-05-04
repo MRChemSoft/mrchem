@@ -5,7 +5,7 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "Getkw.h"
+#include "Getkw.hpp"
 
 #include "hydrogen_guess.h"
 #include "gto_guess.h"
