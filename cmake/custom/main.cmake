@@ -20,14 +20,11 @@ ExternalProject_Add(${PROJECT_NAME}_core
     -DCMAKE_CXX_STANDARD=11
     -DCMAKE_CXX_EXTENSIONS=OFF
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
-    # FIXME
+    # FIXME Use Eigen3 imported target, requires Eigen 3.3
+    #-DEigen3_DIR=${Eigen3_DIR}
     -DEIGEN3_INCLUDE_DIR=${EIGEN3_INCLUDE_DIR}
     -DMRCPP_DIR=${MRCPP_DIR}
     -DXCFun_DIR=${XCFun_DIR}
-    # FIXME
-    -DXCFun_INCLUDEDIR=${XCFun_INCLUDEDIR}
-    # FIXME
-    -DXCFun_LIBRARIES=${XCFun_LIBRARIES}
     -DGetkw_DIR=${Getkw_DIR}
     # FIXME
     -DGetkw_INCLUDEDIR=${Getkw_INCLUDEDIR}

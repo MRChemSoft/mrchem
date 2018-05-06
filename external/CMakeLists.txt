@@ -50,7 +50,6 @@ else()
                   -DCMAKE_BUILD_TYPE=Release
                   -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       CMAKE_CACHE_ARGS
-                  -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
                   -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
       INSTALL_COMMAND
                   DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install

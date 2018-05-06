@@ -11,11 +11,11 @@ message(STATUS "Using MRCPP: ${_loc} (version ${MRCPP_VERSION})")
 #find_package(Getkw CONFIG REQUIRED)
 #get_property(_loc TARGET Getkw::getkw PROPERTY LOCATION)
 #message(STATUS "Using Getkw: ${_loc} (version ${Getkw_VERSION})")
-#find_package(XCFun CONFIG REQUIRED)
-#get_property(_loc TARGET XCFun::xcfun PROPERTY LOCATION)
-#message(STATUS "Using XCFun: ${_loc} (version ${XCFun_VERSION})")
+find_package(XCFun CONFIG REQUIRED)
+get_property(_loc TARGET XCFun::xcfun PROPERTY LOCATION)
+message(STATUS "Using XCFun: ${_loc} (version ${XCFun_VERSION})")
 
-add_library(mrchem 
+add_library(mrchem
     SCFDriver.cpp
     parallel.cpp
     mrenv.cpp
@@ -47,8 +47,6 @@ target_include_directories(mrchem
   PUBLIC
     # FIXME Remove as soon as moving to Eigen 3.3
     ${EIGEN3_INCLUDE_DIR}
-    # FIXME Remove as soon as updating to the latest and greatest XCFun
-    ${XCFun_INCLUDEDIR}
     # FIXME Remove as soon as updating to the latest and greatest Getkw
     ${Getkw_INCLUDEDIR}
     )
@@ -65,9 +63,7 @@ target_link_libraries(mrchem.x
     mrchem
     hydrogenguess
     gtoguess
-    # FIXME
-    #XCFun::xcfun
-    ${XCFun_LIBRARIES}
+    XCFun::xcfun
     # FIXME
     #Getkw::getkw
     ${Getkw_LIBRARIES}
