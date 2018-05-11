@@ -8,7 +8,7 @@
 #include "parallel.h"
 #include "mathutils.h"
 
-#include "hydrogen_guess.h"
+#include "core_guess.h"
 
 #include "HydrogenFunction.h"
 #include "Molecule.h"
@@ -23,7 +23,7 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-namespace hydrogen_guess {
+namespace core_guess {
 /** @brief Helper struct to get the orbital ordering right
  *
  *  First index energy level (n)
@@ -46,7 +46,7 @@ int PT[29][2] = {
 OrbitalVector project(double prec, const Nuclei &nucs, int zeta);
 void populate(OrbitalVector &Phi, int N, int spin);
 
-} //namespace hydrogen_guess
+} //namespace core_guess
 
 
 /** @brief Produce an initial guess of orbitals
@@ -61,7 +61,7 @@ void populate(OrbitalVector &Phi, int N, int spin);
  * and fills the resulting orbitals by the Aufbau principle.
  *
  */
-OrbitalVector hydrogen_guess::initial_guess(double prec,
+OrbitalVector core_guess::initial_guess(double prec,
                                             const Molecule &mol,
                                             bool restricted,
                                             int zeta) {
@@ -72,7 +72,7 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
     if (not restricted) NOT_IMPLEMENTED_ABORT;
 
     // Project AO basis of hydrogen functions
-    OrbitalVector Phi = hydrogen_guess::project(prec, mol.getNuclei(), zeta);
+    OrbitalVector Phi = core_guess::project(prec, mol.getNuclei(), zeta);
 
     // Compute orthonormalization matrix S^(-1/2)
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
@@ -109,7 +109,7 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
         if (mult != 1) MSG_FATAL("Restricted open-shell not available");
 
         //set spin and occupation number
-        hydrogen_guess::populate(Psi, Nd, SPIN::Paired);
+        core_guess::populate(Psi, Nd, SPIN::Paired);
     } else {
         NOT_IMPLEMENTED_ABORT;
         /*
@@ -120,8 +120,8 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
         int Nb = Nd/2;                  //beta electrons
 
         //set spin and occupation number
-        hydrogen_guess::populate(Phi_a, Na, SPIN::Alpha);
-        hydrogen_guess::populate(Phi_b, Nb, SPIN::Beta);
+        core_guess::populate(Phi_a, Na, SPIN::Alpha);
+        core_guess::populate(Phi_b, Nb, SPIN::Beta);
 
         Phi.clear();
         Phi = orbital::adjoin(Phi_a, Phi_b);
@@ -150,7 +150,7 @@ OrbitalVector hydrogen_guess::initial_guess(double prec,
  * QZ: 1s2s2p3s3p4s3d4p5s4d5p (5s + 12p + 10d)
  *
  */
-OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta) {
+OrbitalVector core_guess::project(double prec, const Nuclei &nucs, int zeta) {
     Printer::printHeader(0, "Setting up occupied orbitals");
     println(0, "    N    Atom   Label                     SquareNorm");
     Printer::printSeparator(0, '-');
@@ -171,8 +171,8 @@ OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta)
         int zetaReached = 0;
         bool minAOReached = false;
         while (true) {
-            int n = hydrogen_guess::PT[nShell][0];
-            int l = hydrogen_guess::PT[nShell][1];
+            int n = core_guess::PT[nShell][0];
+            int l = core_guess::PT[nShell][1];
             int M = 2*l + 1;
 
             if (minAOReached and l == 0) zetaReached++;
@@ -213,7 +213,7 @@ OrbitalVector hydrogen_guess::project(double prec, const Nuclei &nucs, int zeta)
  * orbitals in the vector will remain unoccupied.
  *
  */
-void hydrogen_guess::populate(OrbitalVector &Phi, int N, int spin) {
+void core_guess::populate(OrbitalVector &Phi, int N, int spin) {
     int occ = 0;
     if (spin == SPIN::Paired) occ = 2;
     if (spin == SPIN::Alpha) occ = 1;

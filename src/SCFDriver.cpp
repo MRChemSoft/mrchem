@@ -7,7 +7,7 @@
 #include "MRCPP/Timer"
 #include "Getkw.h"
 
-#include "hydrogen_guess.h"
+#include "core_guess.h"
 #include "gto_guess.h"
 
 #include "SCFDriver.h"
@@ -474,7 +474,7 @@ void SCFDriver::setupInitialGroundState() {
         else if (scf_start == "QZ") { ig_zeta = 4; }
         else { MSG_FATAL("Invalid initial guess"); }
 
-        *phi = hydrogen_guess::initial_guess(rel_prec, *molecule, wf_restricted, ig_zeta);
+        *phi = core_guess::initial_guess(rel_prec, *molecule, wf_restricted, ig_zeta);
     }
     orbital::print(*phi);
 }

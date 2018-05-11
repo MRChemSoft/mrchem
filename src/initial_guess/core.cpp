@@ -8,7 +8,7 @@
 
 #include "Molecule.h"
 #include "Orbital.h"
-#include "hydrogen_guess.h"
+#include "core_guess.h"
 
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
@@ -16,9 +16,9 @@ mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 using namespace mrcpp;
 using namespace mrchem;
 
-/** @file hydrogen.cpp
+/** @file core.cpp
  *
- * Standalone executable (hydrogen-guess) for setting up an initial guess
+ * Standalone executable (core-guess) for setting up an initial guess
  * from hydrogen orbitals and writing the resulting MW orbitals to disk.
  *
  * Sets up an AO basis of hydrogen functions with the given zeta quality
@@ -61,7 +61,7 @@ int main(int argc, char **argv) {
     mol.printGeometry();
 
     // Setting up orbitals
-    OrbitalVector Phi = hydrogen_guess::initial_guess(prec, mol, wf_restricted, ig_zeta);
+    OrbitalVector Phi = core_guess::initial_guess(prec, mol, wf_restricted, ig_zeta);
     orbital::save_orbitals(Phi, orb_file);
     orbital::free(Phi);
 

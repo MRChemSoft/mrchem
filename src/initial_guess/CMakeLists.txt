@@ -2,14 +2,14 @@ link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTA
 
 # Install sources in lib
 target_sources(mrchem PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/hydrogen_guess.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/core_guess.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gto_guess.cpp
 )
 
-# Install hydrogen guess executable in bin
-add_executable(hydrogen-guess hydrogen.cpp)
-add_dependencies(hydrogen-guess external-modules)
-target_include_directories(hydrogen-guess PRIVATE
+# Install core guess executable in bin
+add_executable(core-guess core.cpp)
+add_dependencies(core-guess external-modules)
+target_include_directories(core-guess PRIVATE
     ${CMAKE_BINARY_DIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
@@ -25,12 +25,12 @@ target_include_directories(hydrogen-guess PRIVATE
     ${CMAKE_SOURCE_DIR}/src/scf_solver
     ${CMAKE_SOURCE_DIR}/src/utils
     )
-target_link_libraries(hydrogen-guess
+target_link_libraries(core-guess
     mrchem
     mrcpp
     getkw
     )
-install(TARGETS hydrogen-guess
+install(TARGETS core-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
