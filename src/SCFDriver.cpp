@@ -381,7 +381,7 @@ void SCFDriver::setup() {
         int order = 1; // HACK or maybe not?
         XC = new XCOperator(*xcfun, *phi, order);
         if (dft_x_fac > mrcpp::MachineZero) {
-            K = new ExchangeOperator(*P, *phi);
+            K = new ExchangeOperator(*P, *phi, dft_x_fac);
         }
         fock = new FockOperator(T, V, J, K, XC);
     } else {

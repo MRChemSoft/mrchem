@@ -29,7 +29,6 @@ public:
 
     void setupInternal(double prec) { this->exchange->setupInternal(prec); }
     void rotate(const ComplexMatrix &U) { this->exchange->rotate(U); }
-    double getExchangeFactor() { return this->exchange->xFactor;} const;
 
     ComplexDouble trace(OrbitalVector &Phi) { return 0.5*RankZeroTensorOperator::trace(Phi); }
 

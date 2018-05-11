@@ -24,11 +24,11 @@ public:
     ~ExchangePotential() { }
 
     void rotate(const ComplexMatrix &U);
+
     void setupInternal(double prec);
 
 protected:
     bool screen;                ///< Apply screening in exchange evaluation
-    double xFactor              ///< Weight of the exact exchange for DFT calculations
     DoubleVector tot_norms;     ///< Total norms for use in screening
     DoubleMatrix part_norms;    ///< Partial norms for use in screening
     OrbitalVector exchange;     ///< Precomputed exchange orbitals from the occupied orbital set
