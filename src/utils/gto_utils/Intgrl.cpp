@@ -13,7 +13,7 @@ using mrcpp::GaussExp;
     MSG_FATAL("Unexpected end of file while reading basis sets!");
 
 namespace mrchem {
-namespace gto_guess {
+namespace gto_utils {
 
 Intgrl::Intgrl(const std::string &file) {
     std::fstream ifs;
@@ -147,5 +147,5 @@ GaussExp<3> Intgrl::getMolBasis(bool norm) const {
     return molexp;
 }
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

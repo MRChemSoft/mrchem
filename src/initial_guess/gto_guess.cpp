@@ -4,11 +4,11 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
-#include "utils/mathutils.h"
+#include "mathutils.h"
 
 #include "gto_guess.h"
-#include "OrbitalExp.h"
-#include "Intgrl.h"
+#include "gto_utils/OrbitalExp.h"
+#include "gto_utils/Intgrl.h"
 
 #include "Molecule.h"
 #include "Orbital.h"
@@ -22,7 +22,7 @@ namespace mrchem {
 namespace gto_guess {
 
 // Forward declare helper functions
-void project(double prec, OrbitalVector &Phi, OrbitalExp &gto_exp);
+void project(double prec, OrbitalVector &Phi, gto_utils::OrbitalExp &gto_exp);
 
 } //namespace gto_guess
 
@@ -59,10 +59,10 @@ OrbitalVector gto_guess::initial_guess(double prec,
     if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
 
     // Read basis set file
-    Intgrl intgrl(bas_file);
+    gto_utils::Intgrl intgrl(bas_file);
 
     // Setup AO basis
-    gto_guess::OrbitalExp gto_exp(intgrl);
+    gto_utils::OrbitalExp gto_exp(intgrl);
 
     // Read MO file and rotate into MO basis
     DoubleMatrix MO = mathutils::read_matrix_file(mo_file);
@@ -117,13 +117,13 @@ OrbitalVector gto_guess::initial_guess(double prec,
     int Nb = Nd/2;                      //beta electrons
 
     // Read basis set file
-    Intgrl intgrl(bas_file);
+    gto_utils::Intgrl intgrl(bas_file);
 
     // Alpha orbitals
     OrbitalVector Phi_a;
     {
         // Setup AO basis
-        OrbitalExp gto_exp(intgrl);
+        gto_utils::OrbitalExp gto_exp(intgrl);
 
         // Read MO file and rotate into MO basis
         DoubleMatrix MO_a = mathutils::read_matrix_file(moa_file);
@@ -143,7 +143,7 @@ OrbitalVector gto_guess::initial_guess(double prec,
         DoubleMatrix MO_b = mathutils::read_matrix_file(mob_file);
 
         // Setup AO basis and rotate into MOs
-        gto_guess::OrbitalExp gto_exp(intgrl);
+        gto_utils::OrbitalExp gto_exp(intgrl);
         gto_exp.rotate(MO_b.transpose());
 
         // Setup empty orbitals
@@ -171,7 +171,7 @@ OrbitalVector gto_guess::initial_guess(double prec,
  * vector is at least of the same size.
  *
  */
-void gto_guess::project(double prec, OrbitalVector &Phi, gto_guess::OrbitalExp &gto_exp) {
+void gto_guess::project(double prec, OrbitalVector &Phi, gto_utils::OrbitalExp &gto_exp) {
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
             Phi[i].alloc(NUMBER::Real);

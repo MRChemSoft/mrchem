@@ -6,7 +6,7 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
-#include "utils/mathutils.h"
+#include "mathutils.h"
 
 #include "hydrogen_guess.h"
 

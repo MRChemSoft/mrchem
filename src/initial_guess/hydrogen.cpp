@@ -5,10 +5,10 @@
 #include "mrenv.h"
 #include "mrchem.h"
 #include "parallel.h"
-#include "hydrogen_guess.h"
 
 #include "Molecule.h"
 #include "Orbital.h"
+#include "hydrogen_guess.h"
 
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;

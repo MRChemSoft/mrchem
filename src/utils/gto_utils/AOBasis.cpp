@@ -6,7 +6,7 @@
 using mrcpp::GaussExp;
 
 namespace mrchem {
-namespace gto_guess {
+namespace gto_utils {
 
 AOBasis::AOBasis() {
     this->nPrim = 0;
@@ -74,5 +74,5 @@ GaussExp<3> AOBasis::getNormBasis(const double *center) const {
     return abas;
 }
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

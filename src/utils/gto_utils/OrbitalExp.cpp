@@ -13,7 +13,7 @@ using mrcpp::GaussFunc;
 using mrcpp::Gaussian;
 
 namespace mrchem {
-namespace gto_guess {
+namespace gto_utils {
 
 OrbitalExp::OrbitalExp(Intgrl &intgrl)
         : cartesian(true) {
@@ -174,5 +174,5 @@ int OrbitalExp::getAngularMomentum(int n) const {
     return l;
 }
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

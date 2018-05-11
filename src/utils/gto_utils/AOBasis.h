@@ -4,7 +4,7 @@
 #include "AOContraction.h"
 
 namespace mrchem {
-namespace gto_guess {
+namespace gto_utils {
 
 class AOBasis final {
 public:
@@ -38,5 +38,5 @@ private:
     std::vector<AOContraction *> ctrs;
 };
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

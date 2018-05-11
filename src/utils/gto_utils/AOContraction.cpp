@@ -6,7 +6,7 @@ using mrcpp::GaussExp;
 using mrcpp::GaussFunc;
 
 namespace mrchem {
-namespace gto_guess {
+namespace gto_utils {
 
 static const int s_gto[][3] = {
     {0, 0, 0}
@@ -119,5 +119,5 @@ void AOContraction::append(double e, double c) {
     this->coefs.push_back(c);
 }
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

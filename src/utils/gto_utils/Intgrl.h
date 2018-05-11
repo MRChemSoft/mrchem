@@ -11,7 +11,7 @@
 namespace mrchem {
 class Nucleus;
 
-namespace gto_guess {
+namespace gto_utils {
 class AOBasis;
 
 class Intgrl final {
@@ -40,5 +40,5 @@ protected:
     void readAtomData(std::iostream &ifs, int n_atoms, double z);
 };
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

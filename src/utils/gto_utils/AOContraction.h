@@ -6,7 +6,7 @@
 #include "MRCPP/Gaussians"
 
 namespace mrchem {
-namespace gto_guess {
+namespace gto_utils {
 
 static const int MAX_L = 3; // Max f-functions
 
@@ -42,5 +42,5 @@ protected:
     std::vector<double> coefs;
 };
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem

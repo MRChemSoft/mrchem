@@ -8,7 +8,7 @@
 
 namespace mrchem {
 
-namespace gto_guess {
+namespace gto_utils {
 class Intgrl;
 
 class OrbitalExp final {
@@ -31,5 +31,5 @@ protected:
     void transformToSpherical();
 };
 
-} //namespace gto_guess
+} //namespace gto_utils
 } //namespace mrchem
