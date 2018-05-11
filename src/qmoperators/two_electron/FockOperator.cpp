@@ -9,7 +9,7 @@
 #include "XCFunctional.h"
 #include "XCOperator.h"
 #include "SCFEnergy.h"
-#include "utils/mathutils.h"
+#include "utils/math_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -121,7 +121,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
                 double Z_j = nuc_j.getCharge();
                 const double *R_i = nuc_i.getCoord();
                 const double *R_j = nuc_j.getCoord();
-                double R_ij = mathutils::calc_distance(R_i, R_j);
+                double R_ij = math_utils::calc_distance(R_i, R_j);
                 E_nuc += (Z_i*Z_j)/R_ij;
             }
         }

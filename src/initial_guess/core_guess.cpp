@@ -6,7 +6,7 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
-#include "mathutils.h"
+#include "math_utils.h"
 
 #include "core_guess.h"
 

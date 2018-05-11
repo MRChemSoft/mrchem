@@ -2,7 +2,7 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
-#include "utils/mathutils.h"
+#include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
 #include "qmfunctions.h"
@@ -483,7 +483,7 @@ ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi) {
     printout(1, "Calculating Löwdin orthonormalization matrix      ");
 
     ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
-    ComplexMatrix S_m12 = mathutils::hermitian_matrix_pow(S_tilde, -1.0/2.0);
+    ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0/2.0);
 
     timer.stop();
     println(1, timer.getWallTime());
@@ -566,9 +566,9 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     int np = orbital::size_paired(Phi);
     int na = orbital::size_alpha(Phi);
     int nb = orbital::size_beta(Phi);
-    if (np > 0) mathutils::diagonalize_block(F, U, 0,       np);
-    if (na > 0) mathutils::diagonalize_block(F, U, np,      na);
-    if (nb > 0) mathutils::diagonalize_block(F, U, np + na, nb);
+    if (np > 0) math_utils::diagonalize_block(F, U, 0,       np);
+    if (na > 0) math_utils::diagonalize_block(F, U, np,      na);
+    if (nb > 0) math_utils::diagonalize_block(F, U, np + na, nb);
     U = U * S_m12;
     diag_t.stop();
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);

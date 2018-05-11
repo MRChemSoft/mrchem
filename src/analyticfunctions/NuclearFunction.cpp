@@ -1,6 +1,6 @@
 #include "NuclearFunction.h"
 #include "Nucleus.h"
-#include "utils/mathutils.h"
+#include "utils/math_utils.h"
 
 namespace mrchem {
 
@@ -16,7 +16,7 @@ double NuclearFunction::evalf(const double *r) const {
         double S_i = this->smooth[i];
         double Z_i = this->nuclei[i].getCharge();
         const double *R = this->nuclei[i].getCoord();
-        double R1 = mathutils::calc_distance(R, r)/S_i;
+        double R1 = math_utils::calc_distance(R, r)/S_i;
         double partResult = -std::erf(R1)/R1 + c*(std::exp(-R1*R1) + 16.0*std::exp(-4.0*R1*R1));
         result += Z_i*partResult/S_i;
     }

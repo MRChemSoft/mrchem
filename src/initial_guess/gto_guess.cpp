@@ -4,7 +4,7 @@
 #include "MRCPP/Timer"
 
 #include "parallel.h"
-#include "mathutils.h"
+#include "math_utils.h"
 
 #include "gto_guess.h"
 #include "gto_utils/OrbitalExp.h"
@@ -65,7 +65,7 @@ OrbitalVector gto_guess::initial_guess(double prec,
     gto_utils::OrbitalExp gto_exp(intgrl);
 
     // Read MO file and rotate into MO basis
-    DoubleMatrix MO = mathutils::read_matrix_file(mo_file);
+    DoubleMatrix MO = math_utils::read_matrix_file(mo_file);
     gto_exp.rotate(MO.transpose());
 
     // Setup empty orbitals
@@ -126,7 +126,7 @@ OrbitalVector gto_guess::initial_guess(double prec,
         gto_utils::OrbitalExp gto_exp(intgrl);
 
         // Read MO file and rotate into MO basis
-        DoubleMatrix MO_a = mathutils::read_matrix_file(moa_file);
+        DoubleMatrix MO_a = math_utils::read_matrix_file(moa_file);
         gto_exp.rotate(MO_a.transpose());
 
         // Setup empty orbitals
@@ -140,7 +140,7 @@ OrbitalVector gto_guess::initial_guess(double prec,
     OrbitalVector Phi_b;
     {
         // Read MO file
-        DoubleMatrix MO_b = mathutils::read_matrix_file(mob_file);
+        DoubleMatrix MO_b = math_utils::read_matrix_file(mob_file);
 
         // Setup AO basis and rotate into MOs
         gto_utils::OrbitalExp gto_exp(intgrl);

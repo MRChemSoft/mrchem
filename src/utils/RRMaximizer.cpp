@@ -1,7 +1,7 @@
 #include "MRCPP/Printer"
 
 #include "utils/RRMaximizer.h"
-#include "utils/mathutils.h"
+#include "utils/math_utils.h"
 
 #include "PositionOperator.h"
 
@@ -225,7 +225,7 @@ void RRMaximizer::do_step(const DoubleVector &step) {
 
     //calculate U=exp(-A) by diagonalization and U=Vexp(id)Vt with VdVt=iA
     //could also sum the term in the expansion if A is small
-    this->total_U *= mathutils::skew_matrix_exp(A);
+    this->total_U *= math_utils::skew_matrix_exp(A);
 
     //rotate the original r matrix with total U
     DoubleMatrix r(this->N, this->N);

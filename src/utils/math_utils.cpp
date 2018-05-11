@@ -2,10 +2,10 @@
 
 #include "MRCPP/Printer"
 
-#include "mathutils.h"
+#include "math_utils.h"
 
 namespace mrchem {
-namespace mathutils {
+namespace math_utils {
 
 /** @brief Calculate the distance between two points in three dimensions */
 double calc_distance(const double *a, const double *b) {
@@ -151,5 +151,5 @@ void diagonalize_block(ComplexMatrix &A, ComplexMatrix &U, int nstart, int nsize
     A.block(nstart, nstart, nsize, nsize) = ei_val.asDiagonal();
 }
 
-} //namespace mathutils
+} //namespace math_utils
 } //namespace mrchem
