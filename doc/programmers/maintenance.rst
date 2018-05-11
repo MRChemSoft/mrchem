@@ -102,6 +102,7 @@ The Python script checks the ``.gitattributes`` file to determine which license
 headers need to be maintained and in which files:
 
 .. code-block:: bash
+
    src/pedra/pedra_dlapack.F90 !licensefile
    src/solver/*.hpp licensefile=.githooks/LICENSE-C++
 
