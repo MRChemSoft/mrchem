@@ -42,7 +42,7 @@ FockOperator::FockOperator(KineticOperator  *t,
     if (this->nuc  != 0) this->V += *this->nuc;
     if (this->coul != 0) this->V += *this->coul;
     if (this->ex   != 0) this->V -= *this->ex;
-    if (this->xc   != 0) this->V += *this->xc;
+    if (this->xc   != 0) this->V += *this->xc->getExchangeFactor() * *this->xc;
 
     RankZeroTensorOperator &F = (*this);
     F = this->T + this->V;

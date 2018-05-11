@@ -20,15 +20,16 @@ namespace mrchem {
 
 class ExchangePotential final : public QMOperator {
 public:
-    ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &phi, bool s);
+    ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &phi, bool s, double xF = 1.0);
     ~ExchangePotential() { }
 
     void rotate(const ComplexMatrix &U);
-
     void setupInternal(double prec);
+    double getExchangeFactor() { return xFactor;} const;
 
 protected:
     bool screen;                ///< Apply screening in exchange evaluation
+    double xFactor              ///< Weight of the exact exchange for DFT calculations
     DoubleVector tot_norms;     ///< Total norms for use in screening
     DoubleMatrix part_norms;    ///< Partial norms for use in screening
     OrbitalVector exchange;     ///< Precomputed exchange orbitals from the occupied orbital set
