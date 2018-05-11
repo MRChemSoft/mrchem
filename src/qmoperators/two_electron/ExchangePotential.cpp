@@ -22,8 +22,7 @@ namespace mrchem {
 ExchangePotential::ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &Phi, bool s)
             : screen(s),
               orbitals(&Phi),
-              poisson(&P),
-              xFactor(xF) {
+              poisson(&P) {
     this->tot_norms = DoubleVector::Zero(Phi.size());
     this->part_norms = DoubleMatrix::Zero(Phi.size(), Phi.size());
 }

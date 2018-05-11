@@ -20,12 +20,11 @@ namespace mrchem {
 
 class ExchangePotential final : public QMOperator {
 public:
-    ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &phi, bool s, double xF = 1.0);
+    ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &phi, bool s);
     ~ExchangePotential() { }
 
     void rotate(const ComplexMatrix &U);
     void setupInternal(double prec);
-    double getExchangeFactor() { return xFactor;} const;
 
 protected:
     bool screen;                ///< Apply screening in exchange evaluation
