@@ -6,7 +6,7 @@ link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTA
 
 # Install sources in lib
 list(APPEND hydrogenguess_cpp
-    hydrogen/hydrogen_guess.cpp
+    hydrogen_guess.cpp
 )
 add_library(hydrogenguess STATIC ${hydrogenguess_cpp})
 add_dependencies(hydrogenguess external-modules)
@@ -33,7 +33,7 @@ install(TARGETS hydrogenguess
 
 # Install headers in include
 list(APPEND hydrogenguess_hpp
-    hydrogen/hydrogen_guess.h
+    hydrogen_guess.h
 )
 foreach(_header ${hydrogenguess_hpp})
    install(FILES ${_header}
@@ -55,7 +55,7 @@ target_include_directories(hydrogen-guess PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
+    ${CMAKE_SOURCE_DIR}/src/initial_guess
     )
 target_link_libraries(hydrogen-guess
     hydrogenguess
@@ -78,7 +78,7 @@ list(APPEND gtoguess_cpp
     gto/AOContraction.cpp
     gto/Intgrl.cpp
     gto/OrbitalExp.cpp
-    gto/gto_guess.cpp
+    gto_guess.cpp
 )
 add_library(gtoguess STATIC ${gtoguess_cpp})
 add_dependencies(gtoguess external-modules)
@@ -94,7 +94,7 @@ target_include_directories(gtoguess PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
+    ${CMAKE_SOURCE_DIR}/src/initial_guess
     ${CMAKE_SOURCE_DIR}/src/initial_guess/gto
     )
 target_link_libraries(gtoguess
@@ -110,7 +110,7 @@ list(APPEND gtoguess_hpp
     gto/AOContraction.h
     gto/Intgrl.h
     gto/OrbitalExp.h
-    gto/gto_guess.h
+    gto_guess.h
 )
 foreach(_header ${gtoguess_hpp})
    install(FILES ${_header}
@@ -133,7 +133,7 @@ target_include_directories(gto-guess PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
+    ${CMAKE_SOURCE_DIR}/src/initial_guess
     ${CMAKE_SOURCE_DIR}/src/initial_guess/gto
     )
 target_link_libraries(gto-guess

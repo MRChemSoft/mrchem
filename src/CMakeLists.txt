@@ -29,8 +29,7 @@ target_include_directories(mrchem PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/scf_solver
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/gto
+    ${CMAKE_SOURCE_DIR}/src/initial_guess
     )
 target_link_libraries(mrchem
     hydrogenguess
@@ -59,8 +58,7 @@ target_include_directories(mrchem.x PRIVATE
     ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
     ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
     ${CMAKE_SOURCE_DIR}/src/scf_solver
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/hydrogen
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/gto
+    ${CMAKE_SOURCE_DIR}/src/initial_guess
     )
 target_link_libraries(mrchem.x
     hydrogenguess
