@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Plot.h"
+#include "MRCPP/Printer"
+#include "MRCPP/Plotter"
 #include "Molecule.h"
 #include "Nucleus.h"
-#include "MathUtils.h"
 
-class MolPlot : public Plot<3> {
+namespace mrchem {
+
+class MolPlot : public mrcpp::Plotter<3> {
 public:
-    MolPlot(Molecule &mol) : Plot<3>() { this->molecule = &mol; }
+    MolPlot(Molecule &mol) : mrcpp::Plotter<3>() { this->molecule = &mol; }
     virtual ~MolPlot() { this->molecule = 0; }
 
 protected:
@@ -20,7 +22,7 @@ protected:
 
         int nNuclei = this->molecule->getNNuclei();
         int nPerDim = (int) floor(cbrt(this->nPoints));
-        int nRealPoints = MathUtils::ipow(nPerDim, 3);
+        int nRealPoints = nPerDim*nPerDim*nPerDim;
 
         double step[3];
         for (int d = 0; d < 3; d++) {
@@ -64,12 +66,14 @@ protected:
         }
 
         isoval = isoval / np;
-        int oldprec = TelePrompter::setPrecision(5);
+        int oldprec = mrcpp::Printer::setPrecision(5);
         printout(0, "MolPlot:");
         printout(0, "   Min val:" << std::setw(13) << min);
         printout(0, "   Max val:" << std::setw(13) << max);
         println(0,  "   Isoval:" << std::setw(13) << isoval);
-        TelePrompter::setPrecision(oldprec);
+        mrcpp::Printer::setPrecision(oldprec);
     }
 };
+
+} //namespace mrchem
 
