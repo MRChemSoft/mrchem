@@ -23,7 +23,7 @@ public:
         this->exchange = new ExchangePotential(P, Phi, true);
 
         RankZeroTensorOperator &K = (*this);
-        K = *exchange * xFac;
+        K = xFac * (*exchange);
     }
     ~ExchangeOperator() { delete this->exchange; }
 
