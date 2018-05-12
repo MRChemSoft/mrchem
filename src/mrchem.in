@@ -368,6 +368,13 @@ def verify_hfcc(hfcc):
         hfcc['nucleus_k'].get().append(-1);
 
 def verify_dft(dft):
+    if not dft['spin'].is_set():
+        wf = topsect.fetch_sect('WaveFunction')
+        if wf['restricted'][0]:
+            dft['spin'][0] = False
+        else:
+            dft['spin'][0] = True
+
     n = 0
     for line in dft['functionals'][:]:
         split_line = line.split()
