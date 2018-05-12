@@ -164,9 +164,10 @@ This section specifies the exchange-correlation functional used in DFT
 .. code-block:: bash
 
     DFT {
-        spin_polarized = false              # Use spin-polarized functionals
+        spin = false                        # Use spin-polarized functionals
         exact_exchange = 0.0                # Amount of exact HF exchange
         density_cutoff = 0.0                # Cutoff to set XC potential to zero
+        explicit_der = true                 # Use explicit derivatives or gamma
         $functionals
         <func1>     1.0                     # Functional name and coefficient
         <func2>     1.0
@@ -176,7 +177,11 @@ This section specifies the exchange-correlation functional used in DFT
 You can specify as many functionals as you want, and they will be added on top
 of each other with the given coefficient. Both exchange and correlation
 functionals must be set explicitly, e.g. ``SLATERX`` and ``VWN5C`` for the
-standard LDA functional. For hybrid functionals you must
+standard LDA functional. If the ``spin`` parameter is not explicitly set it will
+follow the ``restricted`` parameter of the ``WaveFunction`` section.
+Option to use explicit partial derivatives for the density gradients
+(:math:`\delta f_{xc}/\delta\nabla\rho`) or the invariants
+(:math:`\gamma=\nabla\rho\cdot\nabla\rho`). For hybrid functionals you must
 specify the amount of exact Hartree-Fock exchange that should be used (0.2 for
 B3LYP and 0.25 for PBE0 etc.). Option to use spin-polarized functionals.
 XC functionals are provided by the `XCFun <https://github.com/dftlibs/xcfun>`_
