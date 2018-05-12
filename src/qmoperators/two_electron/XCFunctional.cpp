@@ -749,7 +749,7 @@ int XCFunctional::getPotentialFunctionIndex(const Orbital &orb) {
     else if (spinSeparatedFunctional and orbitalSpin == SPIN::Beta) {
         potentialFunctionIndex = 1;
     }
-    else if (!spinSeparatedFunctional and orbitalSpin == SPIN::Paired) {
+    else if (not spinSeparatedFunctional) {
         potentialFunctionIndex = 0;
     }
     else {
