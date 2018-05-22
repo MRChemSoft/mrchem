@@ -169,6 +169,11 @@ def setup_keywords():
     properties.add_kw('hyperfine_coupling',     'BOOL', False)
     top.add_sect(properties)
 
+    external_field=getkw.Section('ExternalField', callback=verify_ext_field)
+    external_field.add_kw('electric_field',     'DBL_ARRAY') 
+    external_field.add_kw('magnetic_field',     'DBL_ARRAY') 
+    top.add_sect(external_field)
+
     polarizability=getkw.Section('Polarizability', callback=verify_pol)
     polarizability.add_kw('velocity',           'BOOL', False)
     polarizability.add_kw('frequency',          'DBL_ARRAY')
@@ -330,6 +335,28 @@ def verify_response(rsp):
     if rsp['property_thrs'][0] < 0:
         rsp['property_thrs'][0] = 1.0
 
+def verify_ext_field(ext_field):
+    if ext_field.get('electric_field').is_set():
+        len_e = len(ext_field['electric_field'].get())
+        if (len_e != 3):
+            print "invalid length of electric field vector:", len_e
+            exit()
+        for i in range(3):
+            val = abs(ext_field['electric_field'][i])
+            if val > 10.0 or val < 1.0e-10:
+                print "magnitude of el. field component ", i, "is out of range [1.0e-10 - 10.0]:", val
+                exit()
+    if ext_field.get('magnetic_field').is_set():
+        len_m = len(ext_field['magnetic_field'].get())
+        if (len_m != 3):
+            print "invalid length of magnetic field vector:", len_m
+            exit()
+        for i in range(3):
+            val = abs(ext_field['magnetic_field'][i])
+            if val > 10.0 or val < 1.0e-10:
+                print "magnitude of mag. field component ", i, "is out of range [1.0e-10 - 10.0]", val
+                exit()
+    
 def verify_pol(pol):
     if pol.get('wavelength').is_set():
         for wlength in pol['wavelength'].get():
