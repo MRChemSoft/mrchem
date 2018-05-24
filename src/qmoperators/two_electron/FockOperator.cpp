@@ -44,7 +44,7 @@ FockOperator::FockOperator(KineticOperator  *t,
     if (this->xc   != 0) this->V += *this->xc;
 
     RankZeroTensorOperator &F = (*this);
-    F = this->T + this->V;
+    F = this->T + this->V + this->V_ext;
 }
 
 /** @brief prepare operator for application
@@ -147,4 +147,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x);
 }
 
+void FockOperator::addExternalPotential(RankZeroTensorOperator &O) {
+    this->V_ext += O;
+}
+    
 } //namespace mrchem

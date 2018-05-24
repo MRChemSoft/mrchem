@@ -28,6 +28,8 @@
 #include "CoulombOperator.h"
 #include "XCOperator.h"
 #include "ExchangeOperator.h"
+#include "ElectricFieldOperator.h"
+#include "MagneticFieldOperator.h"
 
 #include "DipoleMoment.h"
 
@@ -125,10 +127,16 @@ SCFDriver::SCFDriver(Getkw &input) {
     ext_electric = input.get<bool>("ExternalField.electric_run");
     ext_magnetic = input.get<bool>("ExternalField.magnetic_run");
     if (ext_electric) {
-        ext_electric_field = input.getDblVec("ExternalField.electric_field");
+        std::vector<double> tmp = input.getDblVec("ExternalField.electric_field");
+        ext_electric_field[0] = tmp[0];
+        ext_electric_field[1] = tmp[1];
+        ext_electric_field[2] = tmp[2];
     }
     if (ext_magnetic) {
-        ext_magnetic_field = input.getDblVec("ExternalField.magnetic_field");
+        std::vector<double> tmp = input.getDblVec("ExternalField.magnetic_field");
+        ext_magnetic_field[0] = tmp[0];
+        ext_magnetic_field[1] = tmp[1];
+        ext_magnetic_field[2] = tmp[2];
     }
     
     file_start_orbitals = input.get<string>("Files.start_orbitals");
@@ -367,7 +375,6 @@ void SCFDriver::setup() {
     if (diff_kin == "ABGV_00") T = new KineticOperator(*ABGV_00);
     if (diff_kin == "ABGV_55") T = new KineticOperator(*ABGV_55);
 
-
     V = new NuclearOperator(*nuclei, nuc_prec);
 
     if (wf_method == "Core") {
@@ -396,6 +403,19 @@ void SCFDriver::setup() {
         fock = new FockOperator(T, V, J, K, XC);
     } else {
         MSG_ERROR("Invalid method");
+    }
+
+    if (ext_electric) {
+        ElectricFieldOperator ef(ext_electric_field);
+        fock->addExternalPotential(ef);
+    }
+    if (ext_magnetic) {
+        mrcpp::DerivativeOperator<3> * der_ext_mag = 0;
+        if (diff_orb == "PH_1")    der_ext_mag = PH_1;
+        if (diff_orb == "ABGV_00") der_ext_mag = ABGV_00;
+        if (diff_orb == "ABGV_55") der_ext_mag = ABGV_55;
+        MagneticFieldOperator bf(ext_magnetic_field, *der_ext_mag);
+        fock->addExternalPotential(bf);
     }
 }
 

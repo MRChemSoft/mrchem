@@ -17,7 +17,7 @@ namespace mrchem {
 
 class ElectricFieldOperator final : public RankZeroTensorOperator {
 public:
- ElectricFieldOperator(Eigen::Vector3D f)
+ ElectricFieldOperator(const Eigen::Vector3d &f)
      : field(f) {
         RankZeroTensorOperator &d_x = this->dipole[0];
         RankZeroTensorOperator &d_y = this->dipole[1];
@@ -28,7 +28,7 @@ public:
     }
 
 protected:
-    Eigen::Vector3D field;
+    Eigen::Vector3d field;
     H_E_dip dipole;
     
 };

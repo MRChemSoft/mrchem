@@ -29,7 +29,9 @@ class KineticOperator;
 class NuclearOperator;
 class ExchangeOperator;
 class XCOperator;
-
+class XCFunctional;
+class ElectricFieldOperator;
+class MagneticFieldOperator;
 
 class ResponseCalculation  final {
 public:
@@ -171,8 +173,8 @@ protected:
     // External field input
     bool ext_electric;
     bool ext_magnetic;
-    std::vector<double> ext_electric_field;
-    std::vector<double> ext_magnetic_field;
+    Eigen::Vector3d ext_electric_field;
+    Eigen::Vector3d ext_magnetic_field;
     
     // File input
     std::string file_start_orbitals;

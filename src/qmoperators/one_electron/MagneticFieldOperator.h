@@ -17,8 +17,8 @@ namespace mrchem {
 
 class MagneticFieldOperator final : public RankZeroTensorOperator {
 public:
- MagneticFieldOperator(Eigen::Vector3D f)
-     : field(f) {
+ MagneticFieldOperator(const Eigen::Vector3d &f, mrcpp::DerivativeOperator<3> &D, const double *o = 0)
+     : field(f), dipole(D, o) {
         RankZeroTensorOperator &d_x = this->dipole[0];
         RankZeroTensorOperator &d_y = this->dipole[1];
         RankZeroTensorOperator &d_z = this->dipole[2];
@@ -28,7 +28,7 @@ public:
     }
 
 protected:
-    Eigen::Vector3D field;
+    Eigen::Vector3d field;
     H_B_dip dipole;
     
 };
