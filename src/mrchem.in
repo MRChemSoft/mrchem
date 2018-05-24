@@ -170,7 +170,9 @@ def setup_keywords():
     top.add_sect(properties)
 
     external_field=getkw.Section('ExternalField', callback=verify_ext_field)
+    external_field.add_kw('electric_run',       'BOOL', False)
     external_field.add_kw('electric_field',     'DBL_ARRAY') 
+    external_field.add_kw('magnetic_run',       'BOOL', False)
     external_field.add_kw('magnetic_field',     'DBL_ARRAY') 
     top.add_sect(external_field)
 

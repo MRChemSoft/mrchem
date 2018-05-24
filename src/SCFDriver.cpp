@@ -122,8 +122,8 @@ SCFDriver::SCFDriver(Getkw &input) {
     rsp_directions = input.getIntVec("Response.directions");
     rsp_orbital_prec = input.getDblVec("Response.orbital_prec");
 
-    ext_electric = input.getKeyword<vector<double> >("ExternalField.electric_field").isDefined();
-    ext_magnetic = input.getKeyword<vector<double> >("ExternalField.electric_field").isDefined();
+    ext_electric = input.get<bool>("ExternalField.electric_run");
+    ext_magnetic = input.get<bool>("ExternalField.magnetic_run");
     if (ext_electric) {
         ext_electric_field = input.getDblVec("ExternalField.electric_field");
     }
