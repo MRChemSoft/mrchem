@@ -6,6 +6,8 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 #include "Getkw.h"
+#include "Section.h"
+#include "Keyword.h"
 
 #include "initial_guess/core.h"
 #include "initial_guess/gto.h"
@@ -120,6 +122,15 @@ SCFDriver::SCFDriver(Getkw &input) {
     rsp_directions = input.getIntVec("Response.directions");
     rsp_orbital_prec = input.getDblVec("Response.orbital_prec");
 
+    ext_electric = input.getKeyword<vector<double> >("ExternalField.electric_field").isDefined();
+    ext_magnetic = input.getKeyword<vector<double> >("ExternalField.electric_field").isDefined();
+    if (ext_electric) {
+        ext_electric_field = input.getDblVec("ExternalField.electric_field");
+    }
+    if (ext_magnetic) {
+        ext_magnetic_field = input.getDblVec("ExternalField.magnetic_field");
+    }
+    
     file_start_orbitals = input.get<string>("Files.start_orbitals");
     file_final_orbitals = input.get<string>("Files.final_orbitals");
     file_basis_set = input.get<string>("Files.basis_set");

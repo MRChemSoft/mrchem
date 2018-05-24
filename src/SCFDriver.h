@@ -168,6 +168,12 @@ protected:
     std::vector<int> rsp_directions;
     std::vector<double> rsp_orbital_prec;
 
+    // External field input
+    bool ext_electric;
+    bool ext_magnetic;
+    std::vector<double> ext_electric_field;
+    std::vector<double> ext_magnetic_field;
+    
     // File input
     std::string file_start_orbitals;
     std::string file_final_orbitals;
