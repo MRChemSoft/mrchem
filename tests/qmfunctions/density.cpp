@@ -1,7 +1,6 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "Density.h"
 #include "Orbital.h"
 #include "HydrogenFunction.h"
 
@@ -13,40 +12,8 @@ TEST_CASE("Density", "[density]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-12;
 
-    SECTION("alloc") {
-        Density rho(true, false);
-        REQUIRE( not rho.hasTotal() );
-        REQUIRE( not rho.hasSpin() );
-        REQUIRE( not rho.hasAlpha() );
-        REQUIRE( not rho.hasBeta() );
-
-        rho.alloc(DENSITY::Total);
-        REQUIRE( rho.hasTotal() );
-        REQUIRE( not rho.hasSpin() );
-        REQUIRE( not rho.hasAlpha() );
-        REQUIRE( not rho.hasBeta() );
-
-        rho.alloc(DENSITY::Alpha);
-        REQUIRE( rho.hasTotal() );
-        REQUIRE( not rho.hasSpin() );
-        REQUIRE( rho.hasAlpha() );
-        REQUIRE( not rho.hasBeta() );
-
-        rho.free(DENSITY::Total);
-        REQUIRE( not rho.hasTotal() );
-        REQUIRE( not rho.hasSpin() );
-        REQUIRE( rho.hasAlpha() );
-        REQUIRE( not rho.hasBeta() );
-
-        rho.free(DENSITY::Alpha);
-        REQUIRE( not rho.hasTotal() );
-        REQUIRE( not rho.hasSpin() );
-        REQUIRE( not rho.hasAlpha() );
-        REQUIRE( not rho.hasBeta() );
-    }
-
     SECTION("calc density") {
-        Density rho(false, false);
+        Density rho(*MRA);
 
         SECTION("single orbital") {
             HydrogenFunction h(1,0,0);
@@ -54,14 +21,8 @@ TEST_CASE("Density", "[density]") {
             phi.alloc(NUMBER::Real);
             mrcpp::project(prec, phi.real(), h);
 
-            density::calc_density(rho, phi);
-
-            REQUIRE( rho.hasTotal() );
-            REQUIRE( not rho.hasSpin() );
-            REQUIRE( not rho.hasAlpha() );
-            REQUIRE( not rho.hasBeta() );
-
-            REQUIRE( rho.total().integrate() == Approx(1.0) );
+            density::compute(-1.0, rho, phi, DENSITY::Total);
+            REQUIRE( rho.integrate() == Approx(1.0) );
 
             phi.free();
         }
@@ -81,22 +42,18 @@ TEST_CASE("Density", "[density]") {
             mrcpp::project(prec, Phi[1].real(), h_2);
             mrcpp::project(prec, Phi[2].imag(), h_3);
 
-            density::calc_density(rho, Phi, prec);
-
-            REQUIRE( rho.hasTotal() );
-            REQUIRE( not rho.hasSpin() );
-            REQUIRE( not rho.hasAlpha() );
-            REQUIRE( not rho.hasBeta() );
-
-            REQUIRE( rho.total().integrate() == Approx(4.0) );
+            density::compute(prec, rho, Phi, DENSITY::Total);
+            REQUIRE( rho.integrate() == Approx(4.0) );
 
             orbital::free(Phi);
         }
-        rho.free();
     }
 
     SECTION("calc spin density") {
-        Density rho(true, false);
+        Density rho_t(*MRA);
+        Density rho_s(*MRA);
+        Density rho_a(*MRA);
+        Density rho_b(*MRA);
 
         SECTION("single orbital") {
             HydrogenFunction h(1,0,0);
@@ -104,17 +61,15 @@ TEST_CASE("Density", "[density]") {
             phi.alloc(NUMBER::Real);
             mrcpp::project(prec, phi.real(), h);
 
-            density::calc_density(rho, phi);
+            density::compute(-1.0, rho_t, phi, DENSITY::Total);
+            density::compute(-1.0, rho_s, phi, DENSITY::Spin);
+            density::compute(-1.0, rho_a, phi, DENSITY::Alpha);
+            density::compute(-1.0, rho_b, phi, DENSITY::Beta);
 
-            REQUIRE( rho.hasTotal() );
-            REQUIRE( rho.hasSpin() );
-            REQUIRE( rho.hasAlpha() );
-            REQUIRE( rho.hasBeta() );
-
-            REQUIRE( rho.total().integrate() == Approx(1.0) );
-            REQUIRE(  rho.spin().integrate() == Approx(1.0) );
-            REQUIRE( rho.alpha().integrate() == Approx(1.0) );
-            REQUIRE(  rho.beta().integrate() == Approx(0.0) );
+            REQUIRE( rho_t.integrate() == Approx(1.0) );
+            REQUIRE( rho_s.integrate() == Approx(1.0) );
+            REQUIRE( rho_a.integrate() == Approx(1.0) );
+            REQUIRE( rho_b.integrate() == Approx(0.0) );
 
             phi.free();
         }
@@ -150,21 +105,18 @@ TEST_CASE("Density", "[density]") {
             mrcpp::project(prec, Phi[5].real(), s1);
             mrcpp::project(prec, Phi[6].real(), s2);
 
-            density::calc_density(rho, Phi, prec);
+            density::compute(prec, rho_t, Phi, DENSITY::Total);
+            density::compute(prec, rho_s, Phi, DENSITY::Spin);
+            density::compute(prec, rho_a, Phi, DENSITY::Alpha);
+            density::compute(prec, rho_b, Phi, DENSITY::Beta);
 
-            REQUIRE( rho.hasTotal() );
-            REQUIRE( rho.hasSpin() );
-            REQUIRE( rho.hasAlpha() );
-            REQUIRE( rho.hasBeta() );
-
-            REQUIRE( rho.total().integrate() == Approx(7.0) );
-            REQUIRE(  rho.spin().integrate() == Approx(3.0) );
-            REQUIRE( rho.alpha().integrate() == Approx(5.0) );
-            REQUIRE(  rho.beta().integrate() == Approx(2.0) );
+            REQUIRE( rho_t.integrate() == Approx(7.0) );
+            REQUIRE( rho_s.integrate() == Approx(3.0) );
+            REQUIRE( rho_a.integrate() == Approx(5.0) );
+            REQUIRE( rho_b.integrate() == Approx(2.0) );
 
             orbital::free(Phi);
         }
-        rho.free();
     }
 }
 
