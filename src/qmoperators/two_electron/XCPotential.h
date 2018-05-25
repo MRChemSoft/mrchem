@@ -1,7 +1,7 @@
 #pragma once
 
 #include "QMPotential.h"
-#include "XCFunctional.h"
+#include "mrdft/XCFunctional.h"
 
 /** @class XCPotential
  *

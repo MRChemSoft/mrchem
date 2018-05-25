@@ -1,7 +1,6 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "XCFunctional.h"
 #include "XCPotential.h"
 #include "Orbital.h"
 

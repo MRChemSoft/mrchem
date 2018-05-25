@@ -3,7 +3,7 @@
 #include "qmfunctions.h"
 #include "qmoperators.h"
 
-#include "XCFunctional.h"
+#include "mrdft/XCFunctional.h"
 
 class Getkw;
 
