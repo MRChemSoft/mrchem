@@ -4,11 +4,13 @@
 
 #include "CoulombPotential.h"
 
+using mrcpp::FunctionTree;
 using mrcpp::PoissonOperator;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
+extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief constructor
  *
@@ -20,28 +22,32 @@ namespace mrchem {
  * the vector can change throughout the calculation. The density and (*this)
  * QMPotential is uninitialized at this point and will be computed at setup.
  */
-CoulombPotential::CoulombPotential(PoissonOperator &P, OrbitalVector &Phi)
+CoulombPotential::CoulombPotential(PoissonOperator &P, OrbitalVector *Phi)
         : QMPotential(1),
-          density(false, true),
-          orbitals(&Phi),
+          density(nullptr),
+          orbitals(Phi),
           poisson(&P) {
+}
+
+FunctionTree<3>& CoulombPotential::getDensity() {
+    if (this->density == nullptr) this->density = new Density(*MRA);
+    return *this->density;
 }
 
 /** @brief prepare operator for application
  *
  * @param prec: apply precision
  *
- * This will compute the electron density from the current orbitals, and
- * then compute the Coulomb potential by application of the Poisson operator
- * to the density. Clear the density afterwards.
+ * This will compute the Coulomb potential by application of the Poisson
+ * operator to the density. If the density is not available it is computed
+ * from the current orbitals (assuming that the orbitals are available).
  */
 void CoulombPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
 
-    setupDensity(prec);
+    if (this->density == nullptr) setupDensity(prec);
     setupPotential(prec);
-    this->density.free();   // delete FunctionTree pointers
 }
 
 /** @brief clear operator after application
@@ -50,8 +56,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    free();           // delete FunctionTree pointers
-    clearApplyPrec(); // apply_prec = -1
+    if (this->density != nullptr) delete this->density;
+    QMFunction::free(); // delete FunctionTree pointers
+    clearApplyPrec();   // apply_prec = -1
 }
 
 /** @brief compute electron density
@@ -61,13 +68,14 @@ void CoulombPotential::clear() {
  * This will compute the electron density as the sum of squares of the orbitals.
  */
 void CoulombPotential::setupDensity(double prec) {
-    if (this->orbitals == 0) MSG_ERROR("Orbitals not initialized");
+    if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
+    if (this->density == nullptr) this->density = new Density(*MRA);
 
-    Density &rho = this->density;
     OrbitalVector &Phi = *this->orbitals;
+    Density &rho = *this->density;
 
     Timer timer;
-    density::calc_density(rho, Phi, prec);
+    density::calc_density(prec, rho, Phi, SPIN::Paired);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes();
@@ -82,17 +90,18 @@ void CoulombPotential::setupDensity(double prec) {
  * to the precomputed electron density.
  */
 void CoulombPotential::setupPotential(double prec) {
+    if (this->density == 0) MSG_ERROR("Coulomb density not initialized");
     if (this->poisson == 0) MSG_ERROR("Poisson operator not initialized");
     if (hasReal()) MSG_ERROR("Potential not properly cleared");
     if (hasImag()) MSG_ERROR("Potential not properly cleared");
 
     PoissonOperator &P = *this->poisson;
     QMPotential &V = *this;
-    Density &rho = this->density;
+    Density &rho = *this->density;
 
     Timer timer;
     V.alloc(NUMBER::Real);
-    mrcpp::apply(prec, V.real(), P, rho.total());
+    mrcpp::apply(prec, V.real(), P, rho);
     timer.stop();
     int n = V.getNNodes();
     double t = timer.getWallTime();

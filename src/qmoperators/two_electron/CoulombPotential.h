@@ -1,29 +1,39 @@
 #pragma once
 
 #include "QMPotential.h"
-#include "Density.h"
 
 /** @class CoulombPotential
  *
- * @brief Coulomb potential defined by a particular set of orbitals
+ * @brief Coulomb potential defined by a particular electron density
  *
- * The OrbitalVector defining the operator is fixed throughout the operators life time,
- * but the orbitals themselves are allowed to change in between each application. When
- * the operator has been setup, it will be fixed until it's cleared and setup again
- * (even if the orbitals change).
+ * The Coulomb potential is computed by application of the Poisson operator
+ * an electron density. There are two ways of defining the density:
+ *
+ *  1) Use getDensity() prior to setup() and build the density as you like.
+ *  2) Provide a default set of orbitals in the constructor that is used to
+ *     compute the density on-the-fly in setup().
+ *
+ * If a set of orbitals has NOT been given in the constructor, the density
+ * MUST be explicitly computed prior to setup(). The density will be computed
+ * on-the-fly in setup() ONLY if it is not already available. After setup() the
+ * operator will be fixed until clear(), which deletes both the density and the
+ * potential.
  */
 
 namespace mrchem {
 
 class CoulombPotential final : public QMPotential {
 public:
-    CoulombPotential(mrcpp::PoissonOperator &P, OrbitalVector &Phi);
-    ~CoulombPotential() { }
+    CoulombPotential(mrcpp::PoissonOperator &P, OrbitalVector *Phi = nullptr);
+
+    Density &getDensity();
+
+    friend class CoulombOperator;
 
 protected:
-    Density density;                        // Density that defines the potential
-    OrbitalVector *orbitals;          // Pointer to external object
-    mrcpp::PoissonOperator *poisson;  // Pointer to external object
+    Density *density;                 ///< Electron density defining the potential
+    OrbitalVector *orbitals;          ///< Orbitals defining the electron density
+    mrcpp::PoissonOperator *poisson;  ///< Operator used to compute the potential
 
     void setup(double prec);
     void clear();
