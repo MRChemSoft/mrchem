@@ -2,7 +2,6 @@
 
 #include "parallel.h"
 #include "Orbital.h"
-#include "Density.h"
 
 namespace mrchem {
 
@@ -160,51 +159,6 @@ void recv_orbital(Orbital &orb, int src, int tag) {
         if (orb.hasImag()) MSG_FATAL("Orbital not empty");
         orb.alloc(NUMBER::Imag);
         mrcpp::recv_tree(orb.imag(), src, tag+10000, mpi::comm_orb, orbinfo.nChunksImag);
-    }
-#endif
-}
-
-/*********************************
- * Density related MPI functions *
- *********************************/
-
-//send Density with MPI
-void send_density(Density &rho, int dst, int tag) {
-#ifdef HAVE_MPI
-
-    DensityMeta &densinfo = rho.getMetaData();
-    MPI_Send(&densinfo, sizeof(DensityMeta), MPI_BYTE, dst, tag, mpi::comm_orb);
-
-    if (rho.hasTotal()) mrcpp::send_tree(rho.total(), dst, tag+10000, mpi::comm_orb, densinfo.nChunksTotal);
-    if (rho.hasSpin())  mrcpp::send_tree(rho.spin() , dst, tag+15000, mpi::comm_orb, densinfo.nChunksSpin );
-    if (rho.hasAlpha()) mrcpp::send_tree(rho.alpha(), dst, tag+20000, mpi::comm_orb, densinfo.nChunksAlpha);
-    if (rho.hasBeta())  mrcpp::send_tree(rho.beta() , dst, tag+30000, mpi::comm_orb, densinfo.nChunksBeta );
-#endif
-}
-
-//receive Density with MPI
-void recv_density(Density &rho, int src, int tag) {
-#ifdef HAVE_MPI
-    MPI_Status status;
-
-    DensityMeta &densinfo = rho.getMetaData();
-    MPI_Recv(&densinfo, sizeof(DensityMeta), MPI_BYTE, src, tag, mpi::comm_orb, &status);
-
-    if (densinfo.nChunksTotal > 0) {
-        if (not rho.hasTotal()) rho.alloc(DENSITY::Total);
-        mrcpp::recv_tree(rho.total(), src, tag+10000, mpi::comm_orb, densinfo.nChunksTotal);
-    }
-    if (densinfo.nChunksSpin > 0) {
-        if (not rho.hasSpin()) rho.alloc(DENSITY::Spin);
-        mrcpp::recv_tree(rho.spin(), src, tag+10000, mpi::comm_orb, densinfo.nChunksSpin);
-    }
-    if (densinfo.nChunksAlpha > 0) {
-        if (not rho.hasAlpha()) rho.alloc(DENSITY::Alpha);
-        mrcpp::recv_tree(rho.alpha(), src, tag+10000, mpi::comm_orb, densinfo.nChunksAlpha);
-    }
-    if (densinfo.nChunksBeta > 0) {
-        if (not rho.hasBeta()) rho.alloc(DENSITY::Beta);
-        mrcpp::recv_tree(rho.beta(), src, tag+10000, mpi::comm_orb, densinfo.nChunksBeta);
     }
 #endif
 }

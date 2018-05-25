@@ -75,7 +75,7 @@ void CoulombPotential::setupDensity(double prec) {
     Density &rho = *this->density;
 
     Timer timer;
-    density::calc_density(prec, rho, Phi, SPIN::Paired);
+    density::compute(prec, rho, Phi, DENSITY::Total);
     timer.stop();
     double t = timer.getWallTime();
     int n = rho.getNNodes();

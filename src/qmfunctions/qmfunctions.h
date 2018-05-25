@@ -74,14 +74,13 @@ void print(const OrbitalVector &vec);
 } //namespace orbital
 
 
-class Density;
-typedef std::vector<Density> DensityVector;
+typedef mrcpp::FunctionTree<3> Density;
+typedef mrcpp::FunctionTreeVector<3> DensityVector;
 namespace density {
 
-void calc_density(Density &rho, Orbital phi, double prec = -1.0);
-void calc_density(Density &rho, OrbitalVector &Phi, double prec = -1.0);
+void compute(double prec, Density &rho, Orbital phi, int spin);
+void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
 
- 
 } //namespace density
 
 
