@@ -23,7 +23,6 @@
 #include "KineticOperator.h"
 #include "NuclearOperator.h"
 #include "CoulombOperator.h"
-#include "XCFunctional.h"
 #include "XCOperator.h"
 #include "ExchangeOperator.h"
 
@@ -52,7 +51,6 @@ SCFDriver::SCFDriver(Getkw &input) {
     diff_kin = input.get<string>("Derivatives.kinetic");
     diff_orb = input.get<string>("Derivatives.h_orb");
     diff_pso = input.get<string>("Derivatives.h_pso");
-    diff_dft = input.get<string>("Derivatives.dft");
 
     calc_scf_energy = input.get<bool>("Properties.scf_energy");
     calc_dipole_moment = input.get<bool>("Properties.dipole_moment");
@@ -85,7 +83,7 @@ SCFDriver::SCFDriver(Getkw &input) {
 
     if (wf_method == "DFT") {
         dft_spin         = input.get<bool>("DFT.spin");
-        dft_explicit_der = input.get<bool>("DFT.explicit_der");
+        dft_use_gamma    = input.get<bool>("DFT.use_gamma");
         dft_x_fac        = input.get<double>("DFT.exact_exchange");
         dft_cutoff       = input.get<double>("DFT.density_cutoff");
         dft_func_coefs   = input.getDblVec("DFT.func_coefs");
@@ -362,24 +360,22 @@ void SCFDriver::setup() {
     if (wf_method == "Core") {
         fock = new FockOperator(T, V);
     } else if (wf_method == "Hartree") {
-        J = new CoulombOperator(*P, *phi);
+        J = new CoulombOperator(P, phi);
         fock = new FockOperator(T, V, J);
     } else if (wf_method == "HF") {
-        J = new CoulombOperator(*P, *phi);
+        J = new CoulombOperator(P, phi);
         K = new ExchangeOperator(*P, *phi);
         fock = new FockOperator(T, V, J, K);
     } else if (wf_method == "DFT") {
-        J = new CoulombOperator(*P, *phi);
-        mrcpp::DerivativeOperator<3> * der_dft = 0;
-        if (diff_dft == "PH_1")    der_dft = PH_1;
-        if (diff_dft == "ABGV_00") der_dft = ABGV_00;
-        if (diff_dft == "ABGV_55") der_dft = ABGV_55;
-        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff, *phi, der_dft);
+        J = new CoulombOperator(P, phi);
+        xcfun = new mrdft::XCFunctional(*MRA, dft_spin);
+        xcfun->setUseGamma(dft_use_gamma);
+        xcfun->setDensityCutoff(dft_cutoff);
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        int order = 1; // HACK or maybe not?
-        XC = new XCOperator(*xcfun, *phi, order);
+        xcfun->evalSetup(1);
+        XC = new XCOperator(xcfun, phi);
         if (dft_x_fac > mrcpp::MachineZero) {
             K = new ExchangeOperator(*P, *phi, dft_x_fac);
         }
@@ -397,10 +393,10 @@ void SCFDriver::clear() {
     if (h_B != 0) delete h_B;
     if (h_E != 0) delete h_E;
 
-    //if (xcfun != 0) delete xcfun;
+    if (xcfun != 0) delete xcfun;
 
     if (fock != 0) delete fock;
-    //if (XC != 0) delete XC;
+    if (XC != 0) delete XC;
     if (K != 0) delete K;
     if (J != 0) delete J;
     if (V != 0) delete V;
@@ -429,14 +425,13 @@ void SCFDriver::setup_np1() {
 
     if (wf_method == "Core") {
     } else if (wf_method == "Hartree") {
-        J_np1 = new CoulombOperator(*P, *phi_np1);
+        J_np1 = new CoulombOperator(P, phi_np1);
     } else if (wf_method == "HF") {
-        J_np1 = new CoulombOperator(*P, *phi_np1);
+        J_np1 = new CoulombOperator(P, phi_np1);
         K_np1 = new ExchangeOperator(*P, *phi_np1);
     } else if (wf_method == "DFT") {
-        J_np1 = new CoulombOperator(*P, *phi_np1);
-        int order = 1; //HACK: or maybe not, given that order has to be 1 for SCF?
-        XC_np1 = new XCOperator(*xcfun, *phi_np1, order);
+        J_np1 = new CoulombOperator(P, phi_np1);
+        XC_np1 = new XCOperator(xcfun, phi_np1);
         if (dft_x_fac > mrcpp::MachineZero) {
             K_np1 = new ExchangeOperator(*P, *phi_np1);
         }
@@ -449,7 +444,7 @@ void SCFDriver::setup_np1() {
 
 void SCFDriver::clear_np1() {
     if (fock_np1 != 0) delete fock_np1;
-    //if (XC_np1   != 0) delete XC_np1;
+    if (XC_np1   != 0) delete XC_np1;
     if (K_np1    != 0) delete K_np1;
     if (J_np1    != 0) delete J_np1;
     if (phi_np1  != 0) delete phi_np1;

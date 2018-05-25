@@ -3,6 +3,8 @@
 #include "qmfunctions.h"
 #include "qmoperators.h"
 
+#include "XCFunctional.h"
+
 class Getkw;
 
 namespace mrchem {
@@ -27,7 +29,6 @@ class KineticOperator;
 class NuclearOperator;
 class ExchangeOperator;
 class XCOperator;
-class XCFunctional;
 
 
 class ResponseCalculation  final {
@@ -129,7 +130,7 @@ protected:
 
     // DFT input
     bool dft_spin;
-    bool dft_explicit_der;
+    bool dft_use_gamma;
     double dft_x_fac;
     double dft_cutoff;
     std::vector<double> dft_func_coefs;
@@ -221,7 +222,7 @@ protected:
     FockOperator *d_fock;
 
     // XCFun
-    XCFunctional *xcfun;
+    mrdft::XCFunctional *xcfun;
 
     // Perturbation operators
     H_E_dip  *h_E; // dH/dE

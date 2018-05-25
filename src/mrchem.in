@@ -149,7 +149,7 @@ def setup_keywords():
     dft=getkw.Section('DFT', callback = verify_dft)
     dft.add_kw('spin',                  'BOOL', False)
     dft.add_kw('orbital_free',          'BOOL', False)
-    dft.add_kw('explicit_der',          'BOOL', True)
+    dft.add_kw('use_gamma',             'BOOL', False)
     dft.add_kw('exact_exchange',        'DBL', 0.0)
     dft.add_kw('density_cutoff',        'DBL', 0.0)
     dft.add_kw('functionals',           'DATA')
