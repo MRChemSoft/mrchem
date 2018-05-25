@@ -817,7 +817,7 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     if (spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
     if (spin == DENSITY::Spin)  occ = occ_a - occ_b;
 
-    if (occ < mrcpp::MachineZero) {
+    if (std::abs(occ) < mrcpp::MachineZero) {
         rho.setZero();
         return;
     }
