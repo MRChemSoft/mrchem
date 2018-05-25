@@ -3,30 +3,29 @@
 #include "RankZeroTensorOperator.h"
 #include "XCPotential.h"
 
-/**
- * \class XCOperator
- * \brief Exchange and Correlation operator
+/** @class XCOperator
  *
- * Notes for myself: I need a way to "select" the correct potential to apply
+ * @brief DFT Exchange-Correlation operator containing a single XCPotential
+ *
+ * This class is a simple TensorOperator realization of @class XCPotential.
+ *
  */
 
 namespace mrchem {
-class XCFunctional;
     
 class XCOperator final : public RankZeroTensorOperator {
 public:
-    XCOperator(XCFunctional &F, OrbitalVector &Phi, int k)
-            : xcPotential(0) {
-        this->xcPotential = new XCPotential(F, Phi, k);
-
+    XCOperator(mrdft::XCFunctional *F, OrbitalVector *Phi = nullptr)
+            : potential(F, Phi) {
         RankZeroTensorOperator &XC = (*this);
-        XC = *xcPotential;
+        XC = this->potential;
     }
-    ~XCOperator() { delete this->xcPotential; }
 
-    double getEnergy() { return xcPotential->getEnergy(); }
+    double getEnergy() { return this->potential.getEnergy(); }
+    Density &getDensity(int spin) { return this->potential.getDensity(spin); }
+
 protected:
-    XCPotential *xcPotential;
+    XCPotential potential;
 };
 
 } //namespace mrchem
