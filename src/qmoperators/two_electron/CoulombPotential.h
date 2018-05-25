@@ -26,14 +26,14 @@ class CoulombPotential final : public QMPotential {
 public:
     CoulombPotential(mrcpp::PoissonOperator &P, OrbitalVector *Phi = nullptr);
 
-    Density &getDensity();
-
     friend class CoulombOperator;
 
 protected:
     Density *density;                 ///< Electron density defining the potential
     OrbitalVector *orbitals;          ///< Orbitals defining the electron density
     mrcpp::PoissonOperator *poisson;  ///< Operator used to compute the potential
+
+    Density &getDensity();
 
     void setup(double prec);
     void clear();

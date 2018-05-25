@@ -45,8 +45,7 @@ FunctionTree<3>& CoulombPotential::getDensity() {
 void CoulombPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
-
-    if (this->density == nullptr) setupDensity(prec);
+    setupDensity(prec);
     setupPotential(prec);
 }
 
@@ -56,9 +55,10 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    if (this->density != nullptr) delete this->density;
     QMFunction::free(); // delete FunctionTree pointers
     clearApplyPrec();   // apply_prec = -1
+    if (this->density != nullptr) delete this->density;
+    this->density = nullptr;
 }
 
 /** @brief compute electron density
@@ -68,8 +68,9 @@ void CoulombPotential::clear() {
  * This will compute the electron density as the sum of squares of the orbitals.
  */
 void CoulombPotential::setupDensity(double prec) {
+    if (this->density != nullptr) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
-    if (this->density == nullptr) this->density = new Density(*MRA);
+    this->density = new Density(*MRA);
 
     OrbitalVector &Phi = *this->orbitals;
     Density &rho = *this->density;
@@ -90,8 +91,8 @@ void CoulombPotential::setupDensity(double prec) {
  * to the precomputed electron density.
  */
 void CoulombPotential::setupPotential(double prec) {
-    if (this->density == 0) MSG_ERROR("Coulomb density not initialized");
-    if (this->poisson == 0) MSG_ERROR("Poisson operator not initialized");
+    if (this->density == nullptr) MSG_ERROR("Coulomb density not initialized");
+    if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
     if (hasReal()) MSG_ERROR("Potential not properly cleared");
     if (hasImag()) MSG_ERROR("Potential not properly cleared");
 
