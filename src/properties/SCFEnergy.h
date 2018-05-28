@@ -14,12 +14,11 @@ namespace mrchem {
 
 class SCFEnergy final {
 public:
-    SCFEnergy(double nuc = 0.0, double el = 0.0,
-              double orb = 0.0, double kin = 0.0,
-              double en = 0.0,  double ee = 0.0,
-              double xc = 0.0,  double x = 0.0) :
-        E_nuc(nuc), E_el(el), E_orb(orb), E_kin(kin),
-        E_en(en), E_ee(ee), E_x(x), E_xc(xc){ }
+    SCFEnergy(double nuc = 0.0, double el = 0.0, double orb = 0.0,
+              double kin = 0.0, double en = 0.0, double ee = 0.0,
+              double xc = 0.0, double x = 0.0, double ext = 0.0) :
+        E_nuc(nuc), E_el(el), E_orb(orb), E_kin(kin), E_en(en),
+        E_ee(ee), E_x(x), E_xc(xc), E_ext(ext){ }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
     double getNuclearEnergy() const { return this->E_nuc; }
@@ -49,6 +48,7 @@ public:
         o << " Coulomb energy:              " << std::setw(29) << en.E_ee   << std::endl;
         o << " Exchange energy:             " << std::setw(29) << en.E_x    << std::endl;
         o << " X-C energy:                  " << std::setw(29) << en.E_xc   << std::endl;
+        o << " External field energy:       " << std::setw(29) << en.E_ext  << std::endl;
         o << "                                                            " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
         o << "                                                            " << std::endl;
@@ -78,6 +78,7 @@ protected:
     double E_ee;
     double E_x;
     double E_xc;
+    double E_ext;
 };
 
 } //namespace mrchem
