@@ -339,26 +339,25 @@ def verify_response(rsp):
 
 def verify_ext_field(ext_field):
     if ext_field.get('electric_field').is_set():
-        len_e = len(ext_field['electric_field'].get())
-        if (len_e != 3):
-            print "invalid length of electric field vector:", len_e
+        elf = ext_field['electric_field'].get()
+        if (len(elf) != 3):
+            print "invalid length of electric field vector:", len(elf)
             exit()
-        for i in range(3):
-            val = abs(ext_field['electric_field'][i])
-            if val > 10.0 or val < 1.0e-10:
-                print "magnitude of el. field component ", i, "is out of range [1.0e-10 - 10.0]:", val
-                exit()
+        val = math.sqrt(elf[0]**2 + elf[1]**2 + elf[2]**2)
+        if val > 10.0 or val < 1.0e-10:
+            print "magnitude of el. field is out of range [1.0e-10 - 10.0]:", val
+            exit()
+            
     if ext_field.get('magnetic_field').is_set():
-        len_m = len(ext_field['magnetic_field'].get())
-        if (len_m != 3):
-            print "invalid length of magnetic field vector:", len_m
+        maf = ext_field['magnetic_field'].get()
+        if (len(maff) != 3):
+            print "invalid length of magnetic field vector:", len(maf)
             exit()
-        for i in range(3):
-            val = abs(ext_field['magnetic_field'][i])
-            if val > 10.0 or val < 1.0e-10:
-                print "magnitude of mag. field component ", i, "is out of range [1.0e-10 - 10.0]", val
-                exit()
-    
+        val = math.sqrt(maf[0]**2 + maf[1]**2 + maf[2]**2)
+        if val > 10.0 or val < 1.0e-10:
+            print "magnitude of mag. field is out of range [1.0e-10 - 10.0]:", val
+            exit()
+
 def verify_pol(pol):
     if pol.get('wavelength').is_set():
         for wlength in pol['wavelength'].get():
