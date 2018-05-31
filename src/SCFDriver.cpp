@@ -173,6 +173,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     J = 0;
     K = 0;
     XC = 0;
+    Vext = 0;
     fock = 0;
 
     phi_np1 = 0;
@@ -376,47 +377,64 @@ void SCFDriver::setup() {
     if (diff_kin == "ABGV_55") T = new KineticOperator(*ABGV_55);
 
     V = new NuclearOperator(*nuclei, nuc_prec);
+        std::cout << "and here -10" << std::endl;
 
-    if (wf_method == "Core") {
-        fock = new FockOperator(T, V);
-    } else if (wf_method == "Hartree") {
-        J = new CoulombOperator(P, phi);
-        fock = new FockOperator(T, V, J);
-    } else if (wf_method == "HF") {
-        J = new CoulombOperator(P, phi);
+    // All cases need kinetic energy and nuclear potential
+    fock = new FockOperator(T, V);
+    // For Hartree, HF and DFT we need the coulomb part
+    if (wf_method == "Hartree" or wf_method == "HF" or wf_method == "DFT") {
+        J = new CoulombOperator(*P, *phi);
+        fock->setCoulombOperator(J);
+    }
+    // For HF we need the full HF exchange
+    if (wf_method == "HF") {
         K = new ExchangeOperator(*P, *phi);
-        fock = new FockOperator(T, V, J, K);
-    } else if (wf_method == "DFT") {
-        J = new CoulombOperator(P, phi);
-        xcfun = new mrdft::XCFunctional(*MRA, dft_spin);
-        xcfun->setUseGamma(dft_use_gamma);
-        xcfun->setDensityCutoff(dft_cutoff);
+        fock->setExchangeOperator(K);
+    }
+    //For hybrid DFT we need a partial HF exchange
+    if (wf_method == "DFT" and (dft_x_fac > mrcpp::MachineZero)) {
+        K = new ExchangeOperator(*P, *phi, dft_x_fac);
+        fock->setExchangeOperator(K);
+    }
+    //For DFT we need the XC operator
+    if (wf_method == "DFT") {
+        mrcpp::DerivativeOperator<3> * der_dft = 0;
+        if (diff_dft == "PH_1")    der_dft = PH_1;
+        if (diff_dft == "ABGV_00") der_dft = ABGV_00;
+        if (diff_dft == "ABGV_55") der_dft = ABGV_55;
+        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff, *phi, der_dft);
+        std::cout << "and here -1" << std::endl;
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
-        setupInitialGrid(*xcfun, *molecule);
-        xcfun->evalSetup(1);
+        std::cout << "and here 0" << std::endl;
         XC = new XCOperator(xcfun, phi);
-        if (dft_x_fac > mrcpp::MachineZero) {
-            K = new ExchangeOperator(*P, *phi, dft_x_fac);
-        }
-        fock = new FockOperator(T, V, J, K, XC);
-    } else {
-        MSG_ERROR("Invalid method");
+        std::cout << "and here 1" << std::endl;
+        fock->setXCOperator(XC);
+        std::cout << "and here 2" << std::endl;
     }
 
-    if (ext_electric) {
-        ElectricFieldOperator ef(ext_electric_field);
-        fock->addExternalPotential(ef);
+    
+    //HACK we need a better way to decide whether to initialize the external potential operator
+    if(ext_electric or ext_magnetic) {
+        Vext = new RankZeroTensorOperator();
+        if (ext_electric) {
+            ElectricFieldOperator ef(ext_electric_field);
+            *Vext += ef;
+        }
+        if (ext_magnetic) {
+            mrcpp::DerivativeOperator<3> * der_ext_mag = 0;
+            if (diff_orb == "PH_1")    der_ext_mag = PH_1;
+            if (diff_orb == "ABGV_00") der_ext_mag = ABGV_00;
+            if (diff_orb == "ABGV_55") der_ext_mag = ABGV_55;
+            MagneticFieldOperator bf(ext_magnetic_field, *der_ext_mag);
+            *Vext += bf;
+        }
     }
-    if (ext_magnetic) {
-        mrcpp::DerivativeOperator<3> * der_ext_mag = 0;
-        if (diff_orb == "PH_1")    der_ext_mag = PH_1;
-        if (diff_orb == "ABGV_00") der_ext_mag = ABGV_00;
-        if (diff_orb == "ABGV_55") der_ext_mag = ABGV_55;
-        MagneticFieldOperator bf(ext_magnetic_field, *der_ext_mag);
-        fock->addExternalPotential(bf);
-    }
+    fock->setExtOperator(Vext);
+    
+    fock->build();
+    std::cout << "and here" << std::endl;
 }
 
 void SCFDriver::clear() {
@@ -474,6 +492,7 @@ void SCFDriver::setup_np1() {
     }
 
     fock_np1 = new FockOperator(0, V, J_np1, K_np1, XC_np1);
+    fock_np1->build();
 }
 
 void SCFDriver::clear_np1() {

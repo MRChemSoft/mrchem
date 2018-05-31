@@ -24,7 +24,7 @@ public:
         RankZeroTensorOperator &d_z = this->dipole[2];
 
         RankZeroTensorOperator &HEF = (*this);
-        HEF = 0.5*(f[0]*d_x + f[1]*d_y + f[2]*d_z);
+        HEF = f[0]*d_x + f[1]*d_y + f[2]*d_z;
     }
 
 protected:

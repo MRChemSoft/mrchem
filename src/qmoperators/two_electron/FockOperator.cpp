@@ -18,11 +18,12 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief constructor
  *
- * @param t:  Kinetic operator
- * @param v:  Nuclear potential operator
- * @param j:  Coulomb operator
- * @param k:  HF exchange operator
- * @param xc: Exchange-Correlation operator
+ * @param t:   Kinetic operator
+ * @param v:   Nuclear potential operator
+ * @param j:   Coulomb operator
+ * @param k:   HF exchange operator
+ * @param xc:  Exchange-Correlation operator
+ * @param ext: External Field operator
  *
  * Each of the arguments can be NULL, so this operators includes both core Hamiltonian,
  * the Hartree(-Fock) method and (pure/hybrid) Density Functional Theory.
@@ -31,20 +32,28 @@ FockOperator::FockOperator(KineticOperator  *t,
                            NuclearOperator  *v,
                            CoulombOperator  *j,
                            ExchangeOperator *k,
-                           XCOperator       *xc)
+                           XCOperator       *xc,
+                           RankZeroTensorOperator *ext)
         : kin(t),
           nuc(v),
           coul(j),
           ex(k),
-          xc(xc) {
-    if (this->kin  != 0) this->T += *this->kin;
-    if (this->nuc  != 0) this->V += *this->nuc;
+          xc(xc),
+          ext(ext){
+}
+
+/** @brief build the Fock operator once all contributions are in place
+ * 
+ */
+void FockOperator::build() {
+    if (this->kin  != 0) this->T  = *this->kin;
+    if (this->nuc  != 0) this->V  = *this->nuc;
     if (this->coul != 0) this->V += *this->coul;
     if (this->ex   != 0) this->V -= *this->ex;
     if (this->xc   != 0) this->V += *this->xc;
-
+    //    if (this->ext  != 0) this->V += *this->ext;
     RankZeroTensorOperator &F = (*this);
-    F = this->T + this->V + this->V_ext;
+    F = this->T + this->V;
 }
 
 /** @brief prepare operator for application
@@ -60,7 +69,9 @@ void FockOperator::setup(double prec) {
     Printer::printDouble(0, "Precision", prec, 5);
     Printer::printSeparator(0, '-');
     this->T.setup(prec);
+    std::cout << "Before V setup" << std::endl;
     this->V.setup(prec);
+    std::cout << "After V setup" << std::endl;
     if (this->ex != 0) this->ex->setupInternal(prec);
     timer.stop();
     Printer::printFooter(0, timer, 2);
@@ -107,6 +118,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     double E_x   = 0.0;
     double E_xc  = 0.0;
     double E_xc2 = 0.0;
+    double E_ext = 0.0;
 
     // Nuclear part
     if (this->nuc != 0) {
@@ -138,17 +150,14 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     if (this->ex   != 0) E_x   = -this->ex->trace(Phi).real();
     if (this->xc   != 0) E_xc  =  this->xc->getEnergy();
     if (this->xc   != 0) E_xc2 =  this->xc->trace(Phi).real();
+    if (this->ext  != 0) E_ext =  this->ext->trace(Phi).real();
 
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;
-    E_kin = E_orbxc2 - 2.0*E_eex - E_en;
+    E_kin = E_orbxc2 - 2.0*E_eex - E_en - E_ext;
     E_el  = E_orbxc2 -     E_eex + E_xc;
 
-    return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x);
+    return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x, E_ext);
 }
 
-void FockOperator::addExternalPotential(RankZeroTensorOperator &O) {
-    this->V_ext += O;
-}
-    
 } //namespace mrchem

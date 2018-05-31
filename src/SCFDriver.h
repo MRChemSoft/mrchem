@@ -212,6 +212,7 @@ protected:
     CoulombOperator *J;
     ExchangeOperator *K;
     XCOperator *XC;
+    RankZeroTensorOperator *Vext;
     FockOperator *fock;
     ComplexMatrix F;
 

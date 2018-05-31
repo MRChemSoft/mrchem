@@ -344,8 +344,8 @@ def verify_ext_field(ext_field):
             print "invalid length of electric field vector:", len(elf)
             exit()
         val = math.sqrt(elf[0]**2 + elf[1]**2 + elf[2]**2)
-        if val > 10.0 or val < 1.0e-10:
-            print "magnitude of el. field is out of range [1.0e-10 - 10.0]:", val
+        if val > 10.0:
+            print "magnitude of el. field is greater than 10.0:", val
             exit()
             
     if ext_field.get('magnetic_field').is_set():
@@ -354,8 +354,8 @@ def verify_ext_field(ext_field):
             print "invalid length of magnetic field vector:", len(maf)
             exit()
         val = math.sqrt(maf[0]**2 + maf[1]**2 + maf[2]**2)
-        if val > 10.0 or val < 1.0e-10:
-            print "magnitude of mag. field is out of range [1.0e-10 - 10.0]:", val
+        if val > 10.0:
+            print "magnitude of mag. field is greater than 10.0:", val
             exit()
 
 def verify_pol(pol):

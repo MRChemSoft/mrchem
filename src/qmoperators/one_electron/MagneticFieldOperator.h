@@ -24,7 +24,7 @@ public:
         RankZeroTensorOperator &d_z = this->dipole[2];
 
         RankZeroTensorOperator &HMF = (*this);
-        HMF = 0.5*(f[0]*d_x + f[1]*d_y + f[2]*d_z);
+        HMF = f[0]*d_x + f[1]*d_y + f[2]*d_z;
     }
 
 protected:
