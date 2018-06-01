@@ -98,11 +98,7 @@ public:
                                               mrcpp::FunctionTreeVector<3> grad_rhoa,
                                               mrcpp::FunctionTreeVector<3> grad_rhob);
 
-    mrcpp::FunctionTree<3> * addPotentialContributions(mrcpp::FunctionTreeVector<3> & contributions);
     mrcpp::FunctionTree<3> * calcGradDotPotDensVec(mrcpp::FunctionTree<3> &V, mrcpp::FunctionTreeVector<3> &rho);
-    mrcpp::FunctionTree<3> * calcDotProduct(mrcpp::FunctionTreeVector<3> &vec_a, mrcpp::FunctionTreeVector<3> &vec_b);
-    mrcpp::FunctionTree<3> * calcDivergence(mrcpp::FunctionTreeVector<3> &inp);
-    mrcpp::FunctionTreeVector<3> calcGradient(mrcpp::FunctionTree<3> &inp);
 };
  
 } //namespace mrdft

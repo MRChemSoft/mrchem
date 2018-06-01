@@ -36,12 +36,12 @@ XCFunctional::XCFunctional(mrcpp::MultiResolutionAnalysis<3> &mra, bool spin)
           rho_a(nullptr),
           rho_b(nullptr),
           rho_t(nullptr) {
-    derivative = new mrcpp::ABGVOperator<3>(this->MRA, 0.0, 0.0);
+    derivative = new mrcpp::ABGVOperator<3>(MRA, 0.0, 0.0);
     if (isSpinSeparated()) {
-        rho_a = new FunctionTree<3>(this->MRA);
-        rho_b = new FunctionTree<3>(this->MRA);
+        rho_a = new FunctionTree<3>(MRA);
+        rho_b = new FunctionTree<3>(MRA);
     } else {
-        rho_t = new FunctionTree<3>(this->MRA);
+        rho_t = new FunctionTree<3>(MRA);
     }
 }
 
@@ -134,19 +134,31 @@ FunctionTree<3> & XCFunctional::getDensity(DensityType type) {
 void XCFunctional::setup() {
     if (isGGA()) {
         if (isSpinSeparated()) {
-            grad_a = calcGradient(*rho_a);
-            grad_b = calcGradient(*rho_b);
+            grad_a = mrcpp::gradient(*derivative, *rho_a);
+            grad_b = mrcpp::gradient(*derivative, *rho_b);
         } else {
-            grad_t = calcGradient(*rho_t);
+            grad_t = mrcpp::gradient(*derivative, *rho_t);
         }
     }
     if (useGamma()) {
         if (isSpinSeparated()) {
-            gamma.push_back(calcDotProduct(grad_a, grad_a));
-            gamma.push_back(calcDotProduct(grad_a, grad_b));
-            gamma.push_back(calcDotProduct(grad_b, grad_b));
+            FunctionTree<3> *gamma_aa = new FunctionTree<3>(MRA);
+            FunctionTree<3> *gamma_ab = new FunctionTree<3>(MRA);
+            FunctionTree<3> *gamma_bb = new FunctionTree<3>(MRA);
+            mrcpp::build_grid(*gamma_aa, *rho_a);
+            mrcpp::build_grid(*gamma_ab, *rho_a);
+            mrcpp::build_grid(*gamma_bb, *rho_a);
+            mrcpp::dot(-1.0, *gamma_aa, grad_a, grad_a);
+            mrcpp::dot(-1.0, *gamma_ab, grad_a, grad_b);
+            mrcpp::dot(-1.0, *gamma_bb, grad_b, grad_b);
+            gamma.push_back(std::make_tuple(1.0, gamma_aa));
+            gamma.push_back(std::make_tuple(1.0, gamma_ab));
+            gamma.push_back(std::make_tuple(1.0, gamma_bb));
         } else {
-            gamma.push_back(calcDotProduct(grad_t, grad_t));
+            FunctionTree<3> *gamma_tt = new FunctionTree<3>(MRA);
+            mrcpp::build_grid(*gamma_tt, *rho_t);
+            mrcpp::dot(-1.0, *gamma_tt, grad_t, grad_t);
+            gamma.push_back(std::make_tuple(1.0, gamma_tt));
         }
     }
     setupXCInput();
@@ -160,12 +172,12 @@ void XCFunctional::setup() {
  * before this function is called.
  */
 void XCFunctional::clear() {
-    xcInput.clear(false);
-    xcOutput.clear(true);
-    grad_a.clear(true);
-    grad_b.clear(true);
-    grad_t.clear(true);
-    gamma.clear(true);
+    mrcpp::clear(xcInput, false);
+    mrcpp::clear(xcOutput, true);
+    mrcpp::clear(grad_a, true);
+    mrcpp::clear(grad_b, true);
+    mrcpp::clear(grad_t, true);
+    mrcpp::clear(gamma, true);
     if (rho_a != nullptr) rho_a->clear(); // resets the tree to only root nodes
     if (rho_b != nullptr) rho_b->clear(); // resets the tree to only root nodes
     if (rho_t != nullptr) rho_t->clear(); // resets the tree to only root nodes
@@ -187,9 +199,6 @@ void XCFunctional::setupXCInput() {
     if (isGGA()) nUsed += setupXCInputGradient();
 
     if (nInp != nUsed) MSG_ERROR("Mismatch between used vs requested " << nUsed << " : " << nInp);
-    for (int i = 0; i < nInp; i++) {
-        if (xcInput[i] == 0) MSG_ERROR("Invalid XC input");
-    }
 }
 
 /** @brief Sets xcInput pointers for the density
@@ -201,12 +210,12 @@ int XCFunctional::setupXCInputDensity() {
     if (isSpinSeparated()) {
         if (rho_a == nullptr) MSG_FATAL("Invalid alpha density");
         if (rho_b == nullptr) MSG_FATAL("Invalid beta density");
-        xcInput.push_back(rho_a);
-        xcInput.push_back(rho_b);
+        xcInput.push_back(std::make_tuple(1.0, rho_a));
+        xcInput.push_back(std::make_tuple(1.0, rho_b));
         nUsed = 2;
     } else {
         if (rho_t == nullptr) MSG_FATAL("Invalid total density");
-        xcInput.push_back(rho_t);
+        xcInput.push_back(std::make_tuple(1.0, rho_t));
         nUsed = 1;
     }
     return nUsed;
@@ -219,15 +228,15 @@ int XCFunctional::setupXCInputDensity() {
 int XCFunctional::setupXCInputGradient() {
     int nUsed = 0;
     if (useGamma()) {
-        xcInput.push_back(gamma);
+        xcInput.insert(xcInput.end(), gamma.begin(), gamma.end());
         nUsed += gamma.size();
     } else {
         if (isSpinSeparated()) {
-            xcInput.push_back(grad_a);
-            xcInput.push_back(grad_b);
+            xcInput.insert(xcInput.end(), grad_a.begin(), grad_a.end());
+            xcInput.insert(xcInput.end(), grad_b.begin(), grad_b.end());
             nUsed += grad_a.size() + grad_b.size();
         } else {
-            xcInput.push_back(grad_t);
+            xcInput.insert(xcInput.end(), grad_t.begin(), grad_t.end());
             nUsed += grad_t.size();
         }
     }
@@ -246,13 +255,13 @@ void XCFunctional::setupXCOutput() {
     if (xcInput.size() == 0) MSG_ERROR("XC input not initialized");
 
     // Fetch input density to copy its grid
-    FunctionTree<3> &rho = *xcInput[0];
+    FunctionTree<3> &rho = mrcpp::get_func(xcInput, 0);
 
     int nOut = getOutputLength();
     for (int i = 0; i < nOut; i++) {
-        FunctionTree<3> * tmp = new FunctionTree<3>(this->MRA);
+        FunctionTree<3> * tmp = new FunctionTree<3>(MRA);
         mrcpp::copy_grid(*tmp, rho);
-        xcOutput.push_back(tmp);
+        xcOutput.push_back(std::make_tuple(1.0, tmp));
     }
 }
 
@@ -274,7 +283,7 @@ void XCFunctional::evaluate() {
 
 #pragma omp parallel firstprivate(nInp, nOut)
     {
-        int nNodes = xcInput[0]->getNEndNodes();
+        int nNodes = mrcpp::get_func(xcInput, 0).getNEndNodes();
 #pragma omp for schedule(guided)
         for (int n = 0; n < nNodes; n++) {
             MatrixXd inpData, outData;
@@ -284,12 +293,12 @@ void XCFunctional::evaluate() {
         }
     }
     for (int i = 0; i < nOut; i++) {
-        xcOutput[i]->mwTransform(mrcpp::BottomUp);
-        xcOutput[i]->calcSquareNorm();
+        mrcpp::get_func(xcOutput, i).mwTransform(mrcpp::BottomUp);
+        mrcpp::get_func(xcOutput, i).calcSquareNorm();
     }
 
     timer.stop();
-    Printer::printTree(0, "XC evaluate xcfun", xcOutput.sumNodes(), timer.getWallTime());
+    Printer::printTree(0, "XC evaluate xcfun", mrcpp::sum_nodes(xcOutput), timer.getWallTime());
     printout(2, std::endl);
 }
 
@@ -387,13 +396,12 @@ void XCFunctional::evaluateBlock(MatrixXd &inp, MatrixXd &out) const {
 void XCFunctional::compressNodeData(int n, int nFuncs, FunctionTreeVector<3> trees, MatrixXd &data) {
     if (trees.size() == 0) MSG_ERROR("Invalid input");
 
-    FunctionTree<3> &tree = *trees[0];
+    FunctionTree<3> &tree = mrcpp::get_func(trees, 0);
     int nCoefs = tree.getTDim()*tree.getKp1_d();
     data = MatrixXd::Zero(nCoefs, nFuncs);
 
     for (int i = 0; i < nFuncs; i++) {
-        if (trees[i] == 0) MSG_ERROR("Uninitialized input tree");
-        FunctionNode<3> &node = trees[i]->getEndFuncNode(n);
+        FunctionNode<3> &node = mrcpp::get_func(trees, i).getEndFuncNode(n);
         VectorXd col_i;
         node.getValues(col_i);
         data.col(i) = col_i;
@@ -413,9 +421,8 @@ void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTreeVector<3> trees
     if (trees.size() == 0) MSG_ERROR("Invalid input");
 
     for (int i = 0; i < nFuncs; i++) {
-        if (trees[i] == 0) MSG_ERROR("Uninitialized output tree " << i);
         VectorXd col_i = data.col(i);
-        FunctionNode<3> &node = trees[i]->getEndFuncNode(n);
+        FunctionNode<3> &node = mrcpp::get_func(trees, i).getEndFuncNode(n);
         node.setValues(col_i);
     }
 }
@@ -423,12 +430,12 @@ void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTreeVector<3> trees
 /** @brief Computes the XC energy as the integral of the functional */
 double XCFunctional::calcEnergy() {
     if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
-    if (xcOutput[0] == 0) MSG_ERROR("Invalid XC output");
 
     Timer timer;
-    double energy = xcOutput[0]->integrate();
+    FunctionTree<3> E_dens = mrcpp::get_func(xcOutput, 0);
+    double energy = E_dens.integrate();
     timer.stop();
-    Printer::printTree(0, "XC energy", xcOutput[0]->getNNodes(), timer.getWallTime());
+    Printer::printTree(0, "XC energy", E_dens.getNNodes(), timer.getWallTime());
     return energy;
 }
 
@@ -465,15 +472,11 @@ void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
     if (order != 1) NOT_IMPLEMENTED_ABORT;
 
     for (int i = 0; i < nPotentials; i++) {
-        int outputIndex = i + 1;
-        if (xcOutput[outputIndex] == 0) MSG_ERROR("Invalid XC output");
-        // Deep copy
-        mrcpp::FunctionTreeVector<3> vec;
-        vec.push_back(xcOutput[outputIndex]);
-        FunctionTree<3> *pot = new FunctionTree<3>(this->MRA);
-        mrcpp::copy_grid(*pot, vec);
-        mrcpp::add(-1.0, *pot, vec);
-        potentials.push_back(pot);
+        FunctionTree<3> &out_i = mrcpp::get_func(xcOutput, i+1);
+        FunctionTree<3> *pot = new FunctionTree<3>(MRA);
+        mrcpp::copy_grid(*pot, out_i);
+        mrcpp::copy_func(*pot, out_i);
+        potentials.push_back(std::make_tuple(1.0, pot));
     }
 }
 
@@ -487,16 +490,16 @@ void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
 void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
     FunctionTree<3> * pot;
     if (isSpinSeparated()) {
-        FunctionTree<3> & df_da = *xcOutput[1];
-        FunctionTree<3> & df_db = *xcOutput[2];
+        FunctionTree<3> & df_da = mrcpp::get_func(xcOutput, 1);
+        FunctionTree<3> & df_db = mrcpp::get_func(xcOutput, 2);
         if (useGamma()) {
-            FunctionTree<3> & df_dgaa = *xcOutput[3];
-            FunctionTree<3> & df_dgab = *xcOutput[4];
-            FunctionTree<3> & df_dgbb = *xcOutput[5];
+            FunctionTree<3> & df_dgaa = mrcpp::get_func(xcOutput, 3);
+            FunctionTree<3> & df_dgab = mrcpp::get_func(xcOutput, 4);
+            FunctionTree<3> & df_dgbb = mrcpp::get_func(xcOutput, 5);
             pot = calcPotentialGGA(df_da, df_dgaa, df_dgab, grad_a, grad_b);
-            potentials.push_back(pot);
+            potentials.push_back(std::make_tuple(1.0, pot));
             pot = calcPotentialGGA(df_db, df_dgbb, df_dgab, grad_b, grad_a);
-            potentials.push_back(pot);
+            potentials.push_back(std::make_tuple(1.0, pot));
         } else {
             FunctionTreeVector<3> df_dga;
             FunctionTreeVector<3> df_dgb;
@@ -507,23 +510,23 @@ void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
             df_dgb.push_back(xcOutput[7]);
             df_dgb.push_back(xcOutput[8]);
             pot = calcPotentialGGA(df_da, df_dga);
-            potentials.push_back(pot);
+            potentials.push_back(std::make_tuple(1.0, pot));
             pot = calcPotentialGGA(df_db, df_dgb);
-            potentials.push_back(pot);
+            potentials.push_back(std::make_tuple(1.0, pot));
         }
     } else {
-        FunctionTree<3> & df_dt = *xcOutput[1];
+        FunctionTree<3> & df_dt = mrcpp::get_func(xcOutput, 1);
         if (useGamma()) {
-            FunctionTree<3> & df_dgamma = *xcOutput[2];
+            FunctionTree<3> & df_dgamma = mrcpp::get_func(xcOutput, 2);
             pot = calcPotentialGGA(df_dt, df_dgamma, grad_t);
-            potentials.push_back(pot);
+            potentials.push_back(std::make_tuple(1.0, pot));
         } else {
             FunctionTreeVector<3> df_dgt;
             df_dgt.push_back(xcOutput[2]);
             df_dgt.push_back(xcOutput[3]);
             df_dgt.push_back(xcOutput[4]);
             pot = calcPotentialGGA(df_dt, df_dgt);
-            potentials.push_back(pot);
+            potentials.push_back(std::make_tuple(1.0, pot));
         }
     }
     pot = 0;
@@ -550,7 +553,9 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
     tmp = calcGradDotPotDensVec(df_dgamma, grad_rho);
     funcs.push_back(std::make_tuple(-2.0, tmp));
 
-    FunctionTree<3> * V = addPotentialContributions(funcs);
+    FunctionTree<3> *V = new FunctionTree<3>(MRA);
+    mrcpp::build_grid(*V, funcs);
+    mrcpp::add(-1, *V, funcs, -1);
     mrcpp::clear(funcs, false);
     delete tmp;
     return V;
@@ -587,7 +592,9 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
     tmp2 = calcGradDotPotDensVec(df_dgab, grad_rhob);
     funcs.push_back(std::make_tuple(-1.0, tmp2));
 
-    FunctionTree<3> * V = addPotentialContributions(funcs);
+    FunctionTree<3> *V = new FunctionTree<3>(MRA);
+    mrcpp::build_grid(*V, funcs);
+    mrcpp::add(-1, *V, funcs, -1);
     mrcpp::clear(funcs, false);
     delete tmp1;
     delete tmp2;
@@ -608,54 +615,19 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
     FunctionTreeVector<3> funcs;
     funcs.push_back(std::make_tuple(1.0, &df_drho));
 
-    FunctionTree<3> * tmp = calcDivergence(df_dgr);
+    FunctionTree<3> *tmp = new FunctionTree<3>(MRA);
+    mrcpp::divergence(*tmp, *derivative, df_dgr);
     funcs.push_back(std::make_tuple(-1.0, tmp));
 
-    FunctionTree<3> * V = addPotentialContributions(funcs);
+    FunctionTree<3> *V = new FunctionTree<3>(MRA);
+    mrcpp::build_grid(*V, funcs);
+    mrcpp::add(-1, *V, funcs, -1);
     mrcpp::clear(funcs, false);
     delete tmp;
     return V;
 }
 
-/** @brief adds all potential contributions together
- *
- * @param[in] contributions vctor with all contributions
- *
- * NOTE: this should possibly be moved to the new mrcpp module
- * as it only involves mwtrees
- */
-FunctionTree<3> * XCFunctional::addPotentialContributions(FunctionTreeVector<3> & contributions) {
-    FunctionTree<3> *V = new FunctionTree<3>(*MRA);
-    mrcpp::build_grid(*V, contributions);
-    mrcpp::add(-1, *V, contributions, -1);
-    return V;
-}
-
-/** @brief computes the divergence of a vector field
- *
- * @param[in] inp the vector field expressed as function trees
- * @param[in] derivative the derivative operator
- *
- * NOTE: this should possibly be moved to the new mrcpp module
- * as it only involves mwtrees
- */
-FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp) {
-    if (derivative == 0) MSG_ERROR("No derivative operator");
-
-    FunctionTreeVector<3> tmp_vec;
-    for (int d = 0; d < 3; d++) {
-        FunctionTree<3> *out_d = new FunctionTree<3>(MRA);
-        mrcpp::apply(*out_d, *derivative, mrcpp::get_func(inp, d), d);
-        tmp_vec.push_back(std::make_tuple(1.0, out_d));
-    }
-    FunctionTree<3> *out = new FunctionTree<3>(MRA);
-    mrcpp::build_grid(*out, tmp_vec);
-    mrcpp::add(-1.0, *out, tmp_vec, 0); // Addition on union grid
-    mrcpp::clear(tmp_vec, true);
-    return out;
-}
-
-/** brief divergenge of a vector field times a function
+/** brief divergence of a vector field times a function
  *
  * @param[in]V Function (derivative of the functional wrt gamma)
  * @param[in]rho vector field (density gradient)
@@ -667,10 +639,10 @@ FunctionTree<3>* XCFunctional::calcDivergence(FunctionTreeVector<3> &inp) {
 FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
                                                      FunctionTreeVector<3> &rho) {
     FunctionTreeVector<3> vec;
-    for (int d = 0; d < 3; d++) {
+    for (int d = 0; d < rho.size(); d++) {
         Timer timer;
         FunctionTree<3> &rho_d = mrcpp::get_func(rho, d);
-        FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
+        FunctionTree<3> *Vrho = new FunctionTree<3>(MRA);
         mrcpp::copy_grid(*Vrho, rho_d);
         mrcpp::multiply(-1.0, *Vrho, 1.0, V, rho_d, -1);
         vec.push_back(std::make_tuple(1.0, Vrho));
@@ -682,7 +654,8 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
     }
 
     Timer timer;
-    FunctionTree<3> *result = calcDivergence(vec);
+    FunctionTree<3> *result = new FunctionTree<3>(MRA);
+    mrcpp::divergence(*result, *derivative, vec);
     mrcpp::clear(vec, true);
 
     timer.stop();
@@ -691,52 +664,4 @@ FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
     Printer::printTree(2, "Gradient", n, t);
     return result;
 }
-
-/** @brief computes and stores the gradient of a function
- *
- * @param[in] function
- *
- * Note: this should also be handled at a lower level (mrcpp)
- *
- */
-FunctionTreeVector<3> XCFunctional::calcGradient(FunctionTree<3> &function) {
-    if (derivative == 0) MSG_ERROR("No derivative operator");
-    FunctionTreeVector<3> gradient;
-    for (int d = 0; d < 3; d++) {
-        FunctionTree<3> *gradient_comp = new FunctionTree<3>(this->MRA);
-        mrcpp::apply(*gradient_comp, *derivative, function, d);
-        gradient.push_back(std::make_tuple(1.0, gradient_comp));
-    }
-    return gradient;
-}
-
-/** @brief scalar product of two FunctionTreeVector(s)
- *
- * param[in] vec_a first vector
- * param[in] vec_b second vector
- *
- * Note: should be a mrcpp functionality.
- *
- */
-FunctionTree<3>* XCFunctional::calcDotProduct(FunctionTreeVector<3> &vec_a,
-                                              FunctionTreeVector<3> &vec_b) {
-    if (vec_a.size() != vec_b.size()) MSG_ERROR("Invalid input");
-
-    FunctionTreeVector<3> out_vec;
-    for (int d = 0; d < vec_a.size(); d++) {
-        FunctionTree<3> &tree_a = mrcpp::get_func(vec_a, d);
-        FunctionTree<3> &tree_b = mrcpp::get_func(vec_b, d);
-        FunctionTree<3> *out_d = new FunctionTree<3>(*MRA);
-        mrcpp::build_grid(*out_d, tree_a);
-        mrcpp::build_grid(*out_d, tree_b);
-        mrcpp::multiply(-1.0, *out_d, 1.0, tree_a, tree_b, 0);
-        out_vec.push_back(std::make_tuple(1.0, out_d));
-    }
-    FunctionTree<3> *out = new FunctionTree<3>(*MRA);
-    build_grid(*out, out_vec);
-    mrcpp::add(-1.0, *out, out_vec, -1);
-    mrcpp::clear(out_vec, true);
-    return out;
-}
-
 } //namespace mrdft

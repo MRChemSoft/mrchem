@@ -49,7 +49,7 @@ void XCPotential::setup(double prec) {
  */
 void XCPotential::clear() {
     this->energy = 0.0;
-    this->potentials.clear(true);
+    mrcpp::clear(this->potentials, true);
     clearApplyPrec();
 }
 
@@ -94,7 +94,7 @@ void XCPotential::setupPotential(double prec) {
     this->functional->clear();
 
     timer.stop();
-    int n = this->potentials.sumNodes();
+    int n = mrcpp::sum_nodes(this->potentials);
     double t = timer.getWallTime();
     Printer::printTree(0, "XC potential", n, t);
 }
@@ -126,7 +126,7 @@ FunctionTree<3>& XCPotential::getPotential(int spin) {
     } else {
         NOT_IMPLEMENTED_ABORT;
     }
-    return this->potentials.getFunc(pot_idx);
+    return mrcpp::get_func(this->potentials, pot_idx);
 }
 
 /** @brief XCPotential application

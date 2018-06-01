@@ -21,6 +21,7 @@ TEST_CASE("Density", "[density]") {
             phi.alloc(NUMBER::Real);
             mrcpp::project(prec, phi.real(), h);
 
+            mrcpp::build_grid(rho, phi.real());
             density::compute(-1.0, rho, phi, DENSITY::Total);
             REQUIRE( rho.integrate() == Approx(1.0) );
 
@@ -61,6 +62,10 @@ TEST_CASE("Density", "[density]") {
             phi.alloc(NUMBER::Real);
             mrcpp::project(prec, phi.real(), h);
 
+            mrcpp::build_grid(rho_t, phi.real());
+            mrcpp::build_grid(rho_s, phi.real());
+            mrcpp::build_grid(rho_a, phi.real());
+            mrcpp::build_grid(rho_b, phi.real());
             density::compute(-1.0, rho_t, phi, DENSITY::Total);
             density::compute(-1.0, rho_s, phi, DENSITY::Spin);
             density::compute(-1.0, rho_a, phi, DENSITY::Alpha);
