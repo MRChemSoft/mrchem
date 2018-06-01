@@ -36,6 +36,9 @@ namespace mrchem {
 // Convenience typedef
 typedef std::vector<QMOperator *> QMOperatorVector;
 
+class Nucleus;
+class Nuclei;
+ 
 class RankZeroTensorOperator {
 public:
     RankZeroTensorOperator() { }
@@ -60,7 +63,7 @@ public:
 
     ComplexDouble trace(OrbitalVector &Phi);
     ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y);
-
+    
     RankZeroTensorOperator& operator=(QMOperator &O);
     RankZeroTensorOperator& operator+=(QMOperator &O);
     RankZeroTensorOperator& operator-=(QMOperator &O);

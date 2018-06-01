@@ -212,7 +212,7 @@ protected:
     CoulombOperator *J;
     ExchangeOperator *K;
     XCOperator *XC;
-    RankZeroTensorOperator *Vext;
+    ElectricFieldOperator *Vext;
     FockOperator *fock;
     ComplexMatrix F;
 
@@ -266,6 +266,8 @@ protected:
     void printEigenvalues(OrbitalVector &orbs, ComplexMatrix &f_mat);
 
     void extendRotationMatrix(const OrbitalVector &orbs, ComplexMatrix &O);
+
+    mrcpp::DerivativeOperator<3>* useDerivative(string derivative_name);
 };
 
 } //namespace mrchem

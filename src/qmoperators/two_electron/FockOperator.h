@@ -20,6 +20,7 @@ class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
 class XCOperator;
+class ElectricFieldOperator;
 
 class FockOperator final : public RankZeroTensorOperator {
 public:
@@ -28,7 +29,7 @@ public:
                  CoulombOperator        *j = 0,
                  ExchangeOperator       *k = 0,
                  XCOperator             *xc = 0,
-                 RankZeroTensorOperator *ext = 0);
+                 ElectricFieldOperator  *ext = 0);
     ~FockOperator() { }
 
     RankZeroTensorOperator& kinetic()   { return this->T; }
@@ -39,14 +40,14 @@ public:
     CoulombOperator        *getCoulombOperator()  { return this->coul; }
     ExchangeOperator       *getExchangeOperator() { return this->ex;   }
     XCOperator             *getXCOperator()       { return this->xc;   }
-    RankZeroTensorOperator *getExtOperator()      { return this->ext;  }
+    ElectricFieldOperator  *getExtOperator()      { return this->ext;  }
     
     void setKineticOperator (KineticOperator        *t)  { this->kin = t;  }
     void setNuclearOperator (NuclearOperator        *v)  { this->nuc = v;  }
     void setCoulombOperator (CoulombOperator        *j)  { this->coul = j; }
     void setExchangeOperator(ExchangeOperator       *k)  { this->ex = k;   }
     void setXCOperator      (XCOperator             *xc) { this->xc = xc;  }
-    void setExtOperator     (RankZeroTensorOperator *ext){ this->ext = ext;}
+    void setExtOperator     (ElectricFieldOperator  *ext){ this->ext = ext;}
     
     void rotate(const ComplexMatrix &U);
 
@@ -65,7 +66,7 @@ protected:
     CoulombOperator        *coul;
     ExchangeOperator       *ex;
     XCOperator             *xc;
-    RankZeroTensorOperator *ext; ///< Total external potential
+    ElectricFieldOperator  *ext; ///< Total external potential
 
 };
 

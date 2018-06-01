@@ -6,6 +6,8 @@
 #include "NuclearOperator.h"
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
+#include "ElectricFieldOperator.h"
+#include "XCFunctional.h"
 #include "XCOperator.h"
 #include "SCFEnergy.h"
 #include "utils/math_utils.h"
@@ -33,7 +35,7 @@ FockOperator::FockOperator(KineticOperator  *t,
                            CoulombOperator  *j,
                            ExchangeOperator *k,
                            XCOperator       *xc,
-                           RankZeroTensorOperator *ext)
+                           ElectricFieldOperator *ext)
         : kin(t),
           nuc(v),
           coul(j),
@@ -51,7 +53,7 @@ void FockOperator::build() {
     if (this->coul != 0) this->V += *this->coul;
     if (this->ex   != 0) this->V -= *this->ex;
     if (this->xc   != 0) this->V += *this->xc;
-    //    if (this->ext  != 0) this->V += *this->ext;
+    if (this->ext  != 0) this->V += *this->ext;
     RankZeroTensorOperator &F = (*this);
     F = this->T + this->V;
 }
@@ -69,9 +71,7 @@ void FockOperator::setup(double prec) {
     Printer::printDouble(0, "Precision", prec, 5);
     Printer::printSeparator(0, '-');
     this->T.setup(prec);
-    std::cout << "Before V setup" << std::endl;
     this->V.setup(prec);
-    std::cout << "After V setup" << std::endl;
     if (this->ex != 0) this->ex->setupInternal(prec);
     timer.stop();
     Printer::printFooter(0, timer, 2);
@@ -109,19 +109,21 @@ void FockOperator::rotate(const ComplexMatrix &U) {
  * by tracing the Fock matrix and subtracting all other contributions.
  */
 SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
-    double E_nuc = 0.0;
-    double E_el  = 0.0;
-    double E_orb = 0.0;
-    double E_kin = 0.0;
-    double E_en  = 0.0;
-    double E_ee  = 0.0;
-    double E_x   = 0.0;
-    double E_xc  = 0.0;
-    double E_xc2 = 0.0;
-    double E_ext = 0.0;
+    double E_nuc = 0.0; // Nuclear repulsion
+    double E_el  = 0.0; // Electronic energy
+    double E_orb = 0.0; // Orbital energy
+    double E_kin = 0.0; // Kinetic energy
+    double E_en  = 0.0; // Nuclear-electronic interaction
+    double E_ee  = 0.0; // Electronic repulsion
+    double E_x   = 0.0; // Exact Exchange
+    double E_xc  = 0.0; // Exchange and Correlation
+    double E_xc2 = 0.0; // Trace of the XC operator
+    double E_ext = 0.0; // External field contribution to the electronic energy
+    double E_nex = 0.0; // External field contribution to the nuclear energy
 
     // Nuclear part
     if (this->nuc != 0) {
+        std::cout << "Computing nuc conts " << ext << std::endl;
         Nuclei &nucs = this->nuc->getNuclei();
         int nNucs = nucs.size();
         for (int i = 0; i < nNucs; i++) {
@@ -135,6 +137,11 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
                 double R_ij = math_utils::calc_distance(R_i, R_j);
                 E_nuc += (Z_i*Z_j)/R_ij;
             }
+        }
+        if (this->ext  != 0) {
+            std::cout << "Computing nuc conts to dip ener" << std::endl;
+            E_nex = this->ext->trace(nucs).real();
+            E_nuc += E_nex;
         }
     }
 
@@ -155,9 +162,10 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;
     E_kin = E_orbxc2 - 2.0*E_eex - E_en - E_ext;
-    E_el  = E_orbxc2 -     E_eex + E_xc;
+    E_el  = E_orbxc2 -     E_eex + E_xc + E_ext;
 
-    return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x, E_ext);
+    return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x,
+                     E_nex, E_ext);
 }
 
 } //namespace mrchem

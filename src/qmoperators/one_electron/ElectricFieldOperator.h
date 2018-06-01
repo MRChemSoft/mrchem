@@ -27,10 +27,27 @@ public:
         HEF = f[0]*d_x + f[1]*d_y + f[2]*d_z;
     }
 
-protected:
+    ComplexDouble trace(const Nuclei &nucs) {
+        ComplexDouble result = 0.0;
+        for (int k = 0; k < nucs.size(); k++) {
+            result += trace(nucs[k]);
+        }
+        return result;
+    }
+
+    ComplexDouble trace(const Nucleus &nuc) {
+        ComplexDouble val = dipole.trace(nuc).dot(field);
+        std::cout << "Dipole val " << val << std::endl;
+        return val;
+    }
+
+    using RankZeroTensorOperator::trace;
+
+ protected:
     Eigen::Vector3d field;
     H_E_dip dipole;
     
+
 };
 
 } //namespace mrchem

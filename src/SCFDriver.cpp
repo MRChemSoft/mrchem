@@ -29,7 +29,7 @@
 #include "XCOperator.h"
 #include "ExchangeOperator.h"
 #include "ElectricFieldOperator.h"
-#include "MagneticFieldOperator.h"
+//#include "MagneticFieldOperator.h"
 
 #include "DipoleMoment.h"
 
@@ -270,15 +270,11 @@ void SCFDriver::setup() {
     // Setting up perturbation operators
     int nNucs = molecule->getNNuclei();
     h_E = new H_E_dip(r_O);
-    if (diff_orb == "PH")      h_B = new H_B_dip(*PH_1, r_O);
-    if (diff_orb == "ABGV_00") h_B = new H_B_dip(*ABGV_00, r_O);
-    if (diff_orb == "ABGV_55") h_B = new H_B_dip(*ABGV_55, r_O);
+    h_B = new H_B_dip(*(useDerivative(diff_orb)), r_O);
     h_M = new H_M_pso*[nNucs];
     for (int k = 0; k < nNucs; k++) {
         const double *r_K = molecule->getNucleus(k).getCoord();
-        if (diff_pso == "PH")      h_M[k] = new H_M_pso(*PH_1, r_K);
-        if (diff_pso == "ABGV_00") h_M[k] = new H_M_pso(*ABGV_00, r_K);
-        if (diff_pso == "ABGV_55") h_M[k] = new H_M_pso(*ABGV_55, r_K);
+        new H_M_pso(*(useDerivative(diff_pso)), r_K);
     }
 
     // Setting up properties
@@ -372,13 +368,8 @@ void SCFDriver::setup() {
     if (rsp_kain > 0) kain_y = new KAIN(rsp_kain);
 
     // Setting up Fock operator
-    if (diff_kin == "PH")      T = new KineticOperator(*PH_1);
-    if (diff_kin == "ABGV_00") T = new KineticOperator(*ABGV_00);
-    if (diff_kin == "ABGV_55") T = new KineticOperator(*ABGV_55);
-
+    T = new KineticOperator(*(useDerivative(diff_kin)));
     V = new NuclearOperator(*nuclei, nuc_prec);
-        std::cout << "and here -10" << std::endl;
-
     // All cases need kinetic energy and nuclear potential
     fock = new FockOperator(T, V);
     // For Hartree, HF and DFT we need the coulomb part
@@ -399,44 +390,36 @@ void SCFDriver::setup() {
     //For DFT we need the XC operator
     if (wf_method == "DFT") {
         mrcpp::DerivativeOperator<3> * der_dft = 0;
-        if (diff_dft == "PH_1")    der_dft = PH_1;
-        if (diff_dft == "ABGV_00") der_dft = ABGV_00;
-        if (diff_dft == "ABGV_55") der_dft = ABGV_55;
-        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff, *phi, der_dft);
-        std::cout << "and here -1" << std::endl;
+        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff, *phi, useDerivative(diff_dft));
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
         std::cout << "and here 0" << std::endl;
         XC = new XCOperator(xcfun, phi);
-        std::cout << "and here 1" << std::endl;
         fock->setXCOperator(XC);
-        std::cout << "and here 2" << std::endl;
     }
-
-    
     //HACK we need a better way to decide whether to initialize the external potential operator
-    if(ext_electric or ext_magnetic) {
-        Vext = new RankZeroTensorOperator();
-        if (ext_electric) {
-            ElectricFieldOperator ef(ext_electric_field);
-            *Vext += ef;
-        }
-        if (ext_magnetic) {
-            mrcpp::DerivativeOperator<3> * der_ext_mag = 0;
-            if (diff_orb == "PH_1")    der_ext_mag = PH_1;
-            if (diff_orb == "ABGV_00") der_ext_mag = ABGV_00;
-            if (diff_orb == "ABGV_55") der_ext_mag = ABGV_55;
-            MagneticFieldOperator bf(ext_magnetic_field, *der_ext_mag);
-            *Vext += bf;
-        }
+    if(ext_electric) {
+        Vext = new ElectricFieldOperator(ext_electric_field);
     }
     fock->setExtOperator(Vext);
-    
     fock->build();
-    std::cout << "and here" << std::endl;
 }
 
+/** @brief choose the right derivative operator to use
+ *
+ * param[in] nam of the chosen derivative operator
+ *
+ * Returns the pointer to the correct derivative operator
+ *
+ */
+mrcpp::DerivativeOperator<3>* SCFDriver::useDerivative(string derivative_name) {
+    if (derivative_name == "PH_1")    return PH_1;
+    if (derivative_name == "ABGV_00") return ABGV_00;
+    if (derivative_name == "ABGV_55") return ABGV_55;
+    MSG_FATAL("No such derivative operator");
+}
+    
 void SCFDriver::clear() {
     for (int k = 0; k < molecule->getNNuclei(); k++) {
         if (h_M[k] != 0) delete h_M[k];

@@ -15,7 +15,7 @@
 
 namespace mrchem {
 
-class MagneticFieldOperator final : public RankZeroTensorOperator {
+class MagneticFieldOperator final : public ExternalFieldOperator {
 public:
  MagneticFieldOperator(const Eigen::Vector3d &f, mrcpp::DerivativeOperator<3> &D, const double *o = 0)
      : field(f), dipole(D, o) {
@@ -25,6 +25,14 @@ public:
 
         RankZeroTensorOperator &HMF = (*this);
         HMF = f[0]*d_x + f[1]*d_y + f[2]*d_z;
+    }
+    
+    ComplexDouble trace(const Nuclei &nucs) {
+        return 0.0;
+    }
+
+    ComplexDouble trace(const Nucleus &nuc) {
+        return 0.0;
     }
 
 protected:
