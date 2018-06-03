@@ -14,12 +14,12 @@ matrix:
             - cmake3
             - cmake3-data
             - g++-4.8
-            - libeigen3-dev
             - libboost-math-dev
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
         - PYTHON_VER='2.7'
+        - EIGEN_VER='3.3.4'
     - os: linux
       addons:
         apt:
@@ -27,13 +27,13 @@ matrix:
             - cmake3
             - cmake3-data
             - g++-4.8
-            - libeigen3-dev
             - libboost-math-dev
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
         - OPENMP='--omp'
         - PYTHON_VER='2.7'
+        - EIGEN_VER='3.3.4'
     - os: linux
       addons:
         apt:
@@ -41,7 +41,6 @@ matrix:
             - cmake3
             - cmake3-data
             - g++-4.8
-            - libeigen3-dev
             - libboost-math-dev
             - lcov
       env:
@@ -49,15 +48,29 @@ matrix:
         - CXX_COMPILER='g++-4.8'
         - COVERAGE='--coverage'
         - PYTHON_VER='2.7'
+        - EIGEN_VER='3.3.4'
+
 
 before_script:
-  - cd ${TRAVIS_BUILD_DIR}
+  - |
+    if [[ ! -d "$HOME/Deps/eigen" ]]; then
+      mkdir -p $HOME/Downloads/eigen
+      cd $HOME/Downloads
+      curl -Ls http://bitbucket.org/eigen/eigen/get/${EIGEN_VER}.tar.gz | tar -xz -C eigen --strip-components=1
+      cd eigen
+      cmake -H. -Bbuild_eigen -DCMAKE_INSTALL_PREFIX=$HOME/Deps/eigen &> /dev/null
+      cmake --build build_eigen -- install &> /dev/null
+      cd ${TRAVIS_BUILD_DIR}
+      rm -rf $HOME/Downloads/eigen
+    fi
   - python --version
   - cmake --version
   - ${CXX_COMPILER} --version
 
 script:
   - export OMP_NUM_THREADS=2
+  - export EIGEN3_ROOT=$HOME/Deps/eigen
+  - export Eigen3_DIR=$HOME/Deps/eigen
   - ./setup --enable-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP}
   - cd build
   - cmake --build . -- VERBOSE=1 -j2
