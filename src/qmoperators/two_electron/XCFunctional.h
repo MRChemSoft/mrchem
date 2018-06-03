@@ -40,7 +40,7 @@ public:
     void evalSetup(const int order);
 
     int getPotentialFunctionIndex(const Orbital &orb);
-    mrcpp::FunctionTree<3>* getPotentialFunction(int index) { return this->potentialFunction[index]; }
+    mrcpp::FunctionTree<3>* getPotentialFunction(int index) { return &mrcpp::get_func(potentialFunction, index); }
 
  protected:
     Density density;                                ///< Unperturbed density

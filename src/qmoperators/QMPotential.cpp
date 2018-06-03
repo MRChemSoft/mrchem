@@ -107,7 +107,7 @@ FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*tree, phi.real());
         mrcpp::multiply(prec, *tree, coef, V.real(), phi.real(), adap);
-        vec.push_back(tree);
+        vec.push_back(std::make_tuple(1.0, tree));
     }
     if (V.hasImag() and phi.hasImag()) {
         double coef = -1.0;
@@ -116,19 +116,19 @@ FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*tree, phi.imag());
         mrcpp::multiply(prec, *tree, coef, V.imag(), phi.imag(), adap);
-        vec.push_back(tree);
+        vec.push_back(std::make_tuple(1.0, tree));
     }
 
     FunctionTree<3> *out = 0;
     if (vec.size() == 1) {
-        out = vec[0];
-        vec.clear(false);
+        out = &mrcpp::get_func(vec, 0);
+        mrcpp::clear(vec, false);
     }
     if (vec.size() == 2) {
         out = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*out, vec);
+        mrcpp::build_grid(*out, vec);
         mrcpp::add(-1.0, *out, vec, 0);
-        vec.clear(true);
+        mrcpp::clear(vec, true);
     }
     return out;
 }
@@ -154,7 +154,7 @@ FunctionTree<3>* QMPotential::calcImagPart(Orbital &phi, bool dagger) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*tree, phi.imag());
         mrcpp::multiply(prec, *tree, coef, V.real(), phi.imag(), adap);
-        vec.push_back(tree);
+        vec.push_back(std::make_tuple(1.0, tree));
     }
     if (V.hasImag() and phi.hasReal()) {
         double coef = 1.0;
@@ -162,19 +162,19 @@ FunctionTree<3>* QMPotential::calcImagPart(Orbital &phi, bool dagger) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*tree, phi.real());
         mrcpp::multiply(prec, *tree, coef, V.imag(), phi.real(), adap);
-        vec.push_back(tree);
+        vec.push_back(std::make_tuple(1.0, tree));
     }
 
     FunctionTree<3> *out = 0;
     if (vec.size() == 1) {
-        out = vec[0];
-        vec.clear(false);
+        out = &mrcpp::get_func(vec, 0);
+        mrcpp::clear(vec, false);
     }
     if (vec.size() == 2) {
         out = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*out, vec);
+        mrcpp::build_grid(*out, vec);
         mrcpp::add(-1.0, *out, vec, 0);
-        vec.clear(true);
+        mrcpp::clear(vec, true);
     }
     return out;
 }

@@ -144,36 +144,36 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
             double coef = 1.0;
             if (prec < 0.0) {
                 // Union grid
-                mrcpp::copy_grid(*tree, inp_a.real());
-                mrcpp::copy_grid(*tree, inp_b.real());
+                mrcpp::build_grid(*tree, inp_a.real());
+                mrcpp::build_grid(*tree, inp_b.real());
                 mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), 0);
             } else {
                 // Adaptive grid
                 mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real());
             }
-            vec.push_back(tree);
+            vec.push_back(std::make_tuple(1.0, tree));
         }
         if (inp_a.hasImag() and inp_b.hasImag()) {
             FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
             double coef = -1.0*a_conj*b_conj;
             if (prec < 0.0) {
-                mrcpp::copy_grid(*tree, inp_a.imag());
-                mrcpp::copy_grid(*tree, inp_b.imag());
+                mrcpp::build_grid(*tree, inp_a.imag());
+                mrcpp::build_grid(*tree, inp_b.imag());
                 mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), 0);
             } else {
                 mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag());
             }
-            vec.push_back(tree);
+            vec.push_back(std::make_tuple(1.0, tree));
         }
         if (vec.size() == 1) {
-            out.setReal(vec[0]);
-            vec.clear(false);
+            out.setReal(&mrcpp::get_func(vec, 0));
+            mrcpp::clear(vec, false);
         }
         if (vec.size() == 2) {
             out.alloc(NUMBER::Real);
-            mrcpp::copy_grid(out.real(), vec);
+            mrcpp::build_grid(out.real(), vec);
             mrcpp::add(prec, out.real(), vec, 0);
-            vec.clear(true);
+            mrcpp::clear(vec, true);
         }
     }
 
@@ -184,38 +184,38 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
             double coef = b_conj;
             if (prec < 0.0) {
                 // Union grid
-                mrcpp::copy_grid(*tree, inp_a.real());
-                mrcpp::copy_grid(*tree, inp_b.imag());
+                mrcpp::build_grid(*tree, inp_a.real());
+                mrcpp::build_grid(*tree, inp_b.imag());
                 mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), 0);
             } else {
                 // Adaptive grid
                 mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag());
             }
-            vec.push_back(tree);
+            vec.push_back(std::make_tuple(1.0, tree));
         }
         if (inp_a.hasImag() and inp_b.hasReal()) {
             FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
             double coef = a_conj;
             if (prec < 0.0) {
                 // Union grid
-                mrcpp::copy_grid(*tree, inp_a.imag());
-                mrcpp::copy_grid(*tree, inp_b.real());
+                mrcpp::build_grid(*tree, inp_a.imag());
+                mrcpp::build_grid(*tree, inp_b.real());
                 mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), 0);
             } else {
                 // Adaptive grid
                 mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real());
             }
-            vec.push_back(tree);
+            vec.push_back(std::make_tuple(1.0, tree));
         }
         if (vec.size() == 1) {
-            out.setImag(vec[0]);
-            vec.clear(false);
+            out.setImag(&mrcpp::get_func(vec, 0));
+            mrcpp::clear(vec, false);
         }
         if (vec.size() == 2) {
             out.alloc(NUMBER::Imag);
-            mrcpp::copy_grid(out.imag(), vec);
+            mrcpp::build_grid(out.imag(), vec);
             mrcpp::add(prec, out.imag(), vec, 0);
-            vec.clear(true);
+            mrcpp::clear(vec, true);
         }
     }
 
@@ -259,17 +259,17 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
         double conj(1.0);
         if (inp[i].conjugate()) conj = -1.0;
 
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(      c[i].real(), &inp[i].real());
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(-conj*c[i].imag(), &inp[i].imag());
+        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(      c[i].real(), &inp[i].real()));
+        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-conj*c[i].imag(), &inp[i].imag()));
 
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(      c[i].imag(), &inp[i].real());
-        if (cHasReal and inp[i].hasImag()) ivec.push_back( conj*c[i].real(), &inp[i].imag());
+        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(      c[i].imag(), &inp[i].real()));
+        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( conj*c[i].real(), &inp[i].imag()));
     }
 
     if (rvec.size() > 0) {
         out.alloc(NUMBER::Real);
         if (prec < 0.0) {
-            mrcpp::copy_grid(out.real(), rvec);
+            mrcpp::build_grid(out.real(), rvec);
             mrcpp::add(prec, out.real(), rvec, 0);
         } else {
             mrcpp::add(prec, out.real(), rvec);
@@ -278,7 +278,7 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
     if (ivec.size() > 0) {
         out.alloc(NUMBER::Imag);
         if (prec < 0.0) {
-            mrcpp::copy_grid(out.imag(), ivec);
+            mrcpp::build_grid(out.imag(), ivec);
             mrcpp::add(prec, out.imag(), ivec, 0);
         } else {
             mrcpp::add(prec, out.imag(), ivec);
@@ -821,62 +821,62 @@ void calc_density(Density &rho, Orbital phi, double prec) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*real_2, phi.real());
         mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real(), 1);
-        sum_vec.push_back(real_2);
+        sum_vec.push_back(std::make_tuple(1.0, real_2));
     }
     if (phi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*imag_2, phi.imag());
         mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag(), 1);
-        sum_vec.push_back(imag_2);
+        sum_vec.push_back(std::make_tuple(1.0, imag_2));
     }
 
     if (rho.isSpinDensity()) {
         if (phi.spin() == SPIN::Paired) {
             rho.alloc(DENSITY::Alpha);
-            mrcpp::copy_grid(rho.alpha(), sum_vec);
+            mrcpp::build_grid(rho.alpha(), sum_vec);
             mrcpp::add(-1.0, rho.alpha(), sum_vec, 0);
 
             rho.alloc(DENSITY::Beta);
-            mrcpp::copy_grid(rho.beta(), sum_vec);
+            mrcpp::build_grid(rho.beta(), sum_vec);
             mrcpp::add(-1.0, rho.beta(), sum_vec, 0);
         }
         if (phi.spin() == SPIN::Alpha) {
             rho.alloc(DENSITY::Alpha);
-            mrcpp::copy_grid(rho.alpha(), sum_vec);
+            mrcpp::build_grid(rho.alpha(), sum_vec);
             mrcpp::add(-1.0, rho.alpha(), sum_vec, 0);
 
             rho.alloc(DENSITY::Beta);
-            mrcpp::copy_grid(rho.beta(), sum_vec);
+            mrcpp::build_grid(rho.beta(), sum_vec);
             rho.beta().setZero();
         }
         if (phi.spin() == SPIN::Beta) {
             rho.alloc(DENSITY::Alpha);
-            mrcpp::copy_grid(rho.alpha(), sum_vec);
+            mrcpp::build_grid(rho.alpha(), sum_vec);
             rho.alpha().setZero();
 
             rho.alloc(DENSITY::Beta);
-            mrcpp::copy_grid(rho.beta(), sum_vec);
+            mrcpp::build_grid(rho.beta(), sum_vec);
             mrcpp::add(-1.0, rho.beta(), sum_vec, 0);
         }
         FunctionTreeVector<3> tot_vec;
-        tot_vec.push_back(1.0, &rho.alpha());
-        tot_vec.push_back(1.0, &rho.beta());
+        tot_vec.push_back(std::make_tuple(1.0, &rho.alpha()));
+        tot_vec.push_back(std::make_tuple(1.0, &rho.beta()));
         rho.alloc(DENSITY::Total);
-        mrcpp::copy_grid(rho.total(), tot_vec);
+        mrcpp::build_grid(rho.total(), tot_vec);
         mrcpp::add(-1.0, rho.total(), tot_vec, 0);
 
         FunctionTreeVector<3> spin_vec;
-        spin_vec.push_back( 1.0, &rho.alpha());
-        spin_vec.push_back(-1.0, &rho.beta());
+        spin_vec.push_back(std::make_tuple(1.0, &rho.alpha()));
+        spin_vec.push_back(std::make_tuple(-1.0, &rho.beta()));
         rho.alloc(DENSITY::Spin);
-        mrcpp::copy_grid(rho.spin(), spin_vec);
+        mrcpp::build_grid(rho.spin(), spin_vec);
         mrcpp::add(-1.0, rho.spin(), spin_vec, 0);
     } else {
         rho.alloc(DENSITY::Total);
-        mrcpp::copy_grid(rho.total(), sum_vec);
+        mrcpp::build_grid(rho.total(), sum_vec);
         mrcpp::add(-1.0, rho.total(), sum_vec, 0);
     }
-    sum_vec.clear(true);
+    mrcpp::clear(sum_vec, true);
 }
 
 void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
@@ -923,35 +923,35 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
                 }
                 if (rho_i->hasTotal()) {
                     if (not rho_tmp1->hasTotal()) rho_tmp1->alloc(DENSITY::Total);
-                    total_vec.push_back(&rho_tmp2->total());
-                    total_vec.push_back(&rho_i->total());
-                    mrcpp::copy_grid(rho_tmp1->total(), total_vec);
+                    total_vec.push_back(std::make_tuple(1.0, &rho_tmp2->total()));
+                    total_vec.push_back(std::make_tuple(1.0, &rho_i->total()));
+                    mrcpp::build_grid(rho_tmp1->total(), total_vec);
                     mrcpp::add(-1.0, rho_tmp1->total(), total_vec, 0);
-                    total_vec.clear(true);
+                    mrcpp::clear(total_vec, true);
                 }
                 if (rho_i->hasSpin()) {
                     if (not rho_tmp1->hasSpin()) rho_tmp1->alloc(DENSITY::Spin);
-                    spin_vec.push_back(&rho_tmp2->spin());
-                    spin_vec.push_back(&rho_i->spin());
-                    mrcpp::copy_grid(rho_tmp1->spin(), spin_vec);
+                    spin_vec.push_back(std::make_tuple(1.0, &rho_tmp2->spin()));
+                    spin_vec.push_back(std::make_tuple(1.0, &rho_i->spin()));
+                    mrcpp::build_grid(rho_tmp1->spin(), spin_vec);
                     mrcpp::add(-1.0, rho_tmp1->spin(), spin_vec, 0);
-                    spin_vec.clear(true);
+                    mrcpp::clear(spin_vec, true);
                 }
                 if (rho_i->hasAlpha()) {
                     if (not rho_tmp1->hasAlpha()) rho_tmp1->alloc(DENSITY::Alpha);
-                    alpha_vec.push_back(&rho_tmp2->alpha());
-                    alpha_vec.push_back(&rho_i->alpha());
-                    mrcpp::copy_grid(rho_tmp1->alpha(), alpha_vec);
+                    alpha_vec.push_back(std::make_tuple(1.0, &rho_tmp2->alpha()));
+                    alpha_vec.push_back(std::make_tuple(1.0, &rho_i->alpha()));
+                    mrcpp::build_grid(rho_tmp1->alpha(), alpha_vec);
                     mrcpp::add(-1.0, rho_tmp1->alpha(), alpha_vec, 0);
-                    alpha_vec.clear(true);
+                    mrcpp::clear(alpha_vec, true);
                 }
                 if (rho_i->hasBeta()) {
                     if (not rho_tmp1->hasBeta()) rho_tmp1->alloc(DENSITY::Beta);
-                    beta_vec.push_back(&rho_tmp2->beta());
-                    beta_vec.push_back(&rho_i->beta());
-                    mrcpp::copy_grid(rho_tmp1->beta(), beta_vec);
+                    beta_vec.push_back(std::make_tuple(1.0, &rho_tmp2->beta()));
+                    beta_vec.push_back(std::make_tuple(1.0, &rho_i->beta()));
+                    mrcpp::build_grid(rho_tmp1->beta(), beta_vec);
                     mrcpp::add(-1.0, rho_tmp1->beta(), beta_vec, 0);
-                    beta_vec.clear(true);
+                    mrcpp::clear(beta_vec, true);
                 }
             }
         }
@@ -960,10 +960,10 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
         for (int i = 0; i < Phi.size(); i++) {
             Density rho_i(rho);
             calc_density(rho_i, Phi[i], mult_prec);
-            if (rho_i.hasTotal()) total_vec.push_back(&rho_i.total());
-            if (rho_i.hasSpin())   spin_vec.push_back(&rho_i.spin());
-            if (rho_i.hasAlpha()) alpha_vec.push_back(&rho_i.alpha());
-            if (rho_i.hasBeta())   beta_vec.push_back(&rho_i.beta());
+            if (rho_i.hasTotal()) total_vec.push_back(std::make_tuple(1.0, &rho_i.total()));
+            if (rho_i.hasSpin())   spin_vec.push_back(std::make_tuple(1.0, &rho_i.spin()));
+            if (rho_i.hasAlpha()) alpha_vec.push_back(std::make_tuple(1.0, &rho_i.alpha()));
+            if (rho_i.hasBeta())   beta_vec.push_back(std::make_tuple(1.0, &rho_i.beta()));
             rho_i.clear(); // not free
         }
     }
@@ -974,7 +974,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::add(add_prec, rho.total(), total_vec);
         } else if (total_vec.size() > 0) {
             rho.alloc(DENSITY::Total);
-            mrcpp::copy_grid(rho.total(), total_vec);
+            mrcpp::build_grid(rho.total(), total_vec);
             mrcpp::add(-1.0, rho.total(), total_vec, 0);
         }
         if (spin_vec.size() > 5 and add_prec > 0.0) {
@@ -982,7 +982,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::add(add_prec, rho.spin(), spin_vec);
         } else if (spin_vec.size() > 0) {
             rho.alloc(DENSITY::Spin);
-            mrcpp::copy_grid(rho.spin(), spin_vec);
+            mrcpp::build_grid(rho.spin(), spin_vec);
             mrcpp::add(-1.0, rho.spin(), spin_vec, 0);
         }
         if (alpha_vec.size() > 5 and add_prec > 0.0) {
@@ -990,7 +990,7 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::add(add_prec, rho.alpha(), alpha_vec);
         } else if (alpha_vec.size() > 0) {
             rho.alloc(DENSITY::Alpha);
-            mrcpp::copy_grid(rho.alpha(), alpha_vec);
+            mrcpp::build_grid(rho.alpha(), alpha_vec);
             mrcpp::add(-1.0, rho.alpha(), alpha_vec, 0);
         }
         if (beta_vec.size() > 5 and add_prec > 0.0) {
@@ -998,13 +998,13 @@ void calc_density(Density &rho, OrbitalVector &Phi, double prec) {
             mrcpp::add(add_prec, rho.beta(), beta_vec);
         } else if (beta_vec.size() > 0) {
             rho.alloc(DENSITY::Beta);
-            mrcpp::copy_grid(rho.beta(), beta_vec);
+            mrcpp::build_grid(rho.beta(), beta_vec);
             mrcpp::add(-1.0, rho.beta(), beta_vec, 0);
         }
-        total_vec.clear(true);
-        spin_vec.clear(true);
-        alpha_vec.clear(true);
-        beta_vec.clear(true);
+        mrcpp::clear(total_vec, true);
+        mrcpp::clear(spin_vec, true);
+        mrcpp::clear(alpha_vec, true);
+        mrcpp::clear(beta_vec, true);
     }
 
     if (mpi::orb_size > 1) {

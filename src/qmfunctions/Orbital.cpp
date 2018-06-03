@@ -82,17 +82,13 @@ Orbital Orbital::deepCopy() {
     out.clear();        // Remove *re and *im pointers
     if (this->hasReal()) {
         out.alloc(NUMBER::Real);
-        mrcpp::FunctionTreeVector<3> vec;
-        vec.push_back(&this->real());
-        mrcpp::copy_grid(out.real(), vec);
-        mrcpp::add(-1.0, out.real(), vec);
+        mrcpp::copy_grid(out.real(), this->real());
+        mrcpp::copy_func(out.real(), this->real());
     }
     if (this->hasImag()) {
         out.alloc(NUMBER::Imag);
-        mrcpp::FunctionTreeVector<3> vec;
-        vec.push_back(&this->imag());
-        mrcpp::copy_grid(out.imag(), vec);
-        mrcpp::add(-1.0, out.imag(), vec);
+        mrcpp::copy_grid(out.imag(), this->imag());
+        mrcpp::copy_func(out.imag(), this->imag());
     }
     return out;         // Return shallow copy
 }
