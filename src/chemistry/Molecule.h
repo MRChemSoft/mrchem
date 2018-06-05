@@ -48,6 +48,7 @@ public:
     int getNElectrons() const;
 
     const double *getCenterOfMass() const { return this->COM; }
+    const double *getCenterOfCharge() const { return this->COC; }
 
     Nuclei &getNuclei() { return this->nuclei; }
     const Nuclei &getNuclei() const { return this->nuclei; }
@@ -84,6 +85,7 @@ protected:
 
     // Properties
     double COM[3];
+    double COC[3];
     SCFEnergy *energy;
     DipoleMoment *dipole;
     QuadrupoleMoment *quadrupole;
@@ -95,6 +97,7 @@ protected:
     std::vector<OpticalRotation *> optical_rotation;
 
     void calcCenterOfMass();
+    void calcCenterOfCharge();
 
     void allocNuclearProperties();
     void freeNuclearProperties();

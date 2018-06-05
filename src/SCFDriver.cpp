@@ -52,6 +52,7 @@ SCFDriver::SCFDriver(Getkw &input) {
 
     gauge = input.getDblVec("MRA.gauge_origin");
     center_of_mass = input.get<bool>("MRA.center_of_mass");
+    center_of_charge = input.get<bool>("MRA.center_of_charge");
 
     diff_kin = input.get<string>("Derivatives.kinetic");
     diff_orb = input.get<string>("Derivatives.h_orb");
@@ -243,6 +244,7 @@ bool SCFDriver::sanityCheck() const {
 void SCFDriver::setup() {
     // Setting up molecule
     molecule = new Molecule(mol_coords, mol_charge, mol_multiplicity);
+    molecule->printGeometry();
     nuclei = &molecule->getNuclei();
 
     // Setting up empty orbitals
@@ -250,7 +252,12 @@ void SCFDriver::setup() {
 
     // Defining gauge origin
     const double *COM = molecule->getCenterOfMass();
+    const double *COC = molecule->getCenterOfCharge();
     if (center_of_mass) {
+        r_O[0] = COM[0];
+        r_O[1] = COM[1];
+        r_O[2] = COM[2];
+    } else if (center_of_charge) {
         r_O[0] = COM[0];
         r_O[1] = COM[1];
         r_O[2] = COM[2];
