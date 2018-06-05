@@ -139,7 +139,6 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
             }
         }
         if (this->ext  != 0) {
-            std::cout << "Computing nuc conts to dip ener" << std::endl;
             E_nex = this->ext->trace(nucs).real();
             E_nuc += E_nex;
         }
@@ -162,7 +161,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;
     E_kin = E_orbxc2 - 2.0*E_eex - E_en - E_ext;
-    E_el  = E_orbxc2 -     E_eex + E_xc + E_ext;
+    E_el  = E_orbxc2 -     E_eex + E_xc;
 
     return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x,
                      E_nex, E_ext);

@@ -24,7 +24,7 @@ public:
         RankZeroTensorOperator &d_z = this->dipole[2];
 
         RankZeroTensorOperator &HEF = (*this);
-        HEF = f[0]*d_x + f[1]*d_y + f[2]*d_z;
+        HEF = + f[0]*d_x + f[1]*d_y + f[2]*d_z;
     }
 
     ComplexDouble trace(const Nuclei &nucs) {
@@ -36,9 +36,7 @@ public:
     }
 
     ComplexDouble trace(const Nucleus &nuc) {
-        ComplexDouble val = dipole.trace(nuc).dot(field);
-        std::cout << "Dipole val " << val << std::endl;
-        return val;
+        return dipole.trace(nuc).dot(field);
     }
 
     using RankZeroTensorOperator::trace;
