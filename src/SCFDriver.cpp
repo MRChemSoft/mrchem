@@ -258,9 +258,9 @@ void SCFDriver::setup() {
         r_O[1] = COM[1];
         r_O[2] = COM[2];
     } else if (center_of_charge) {
-        r_O[0] = COM[0];
-        r_O[1] = COM[1];
-        r_O[2] = COM[2];
+        r_O[0] = COC[0];
+        r_O[1] = COC[1];
+        r_O[2] = COC[2];
     } else {
         r_O[0] = gauge[0];
         r_O[1] = gauge[1];
