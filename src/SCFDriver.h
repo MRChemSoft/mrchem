@@ -89,6 +89,7 @@ protected:
 
     // World input
     bool center_of_mass;
+    bool center_of_charge;
     std::vector<double> gauge;
 
     // Derivative operators

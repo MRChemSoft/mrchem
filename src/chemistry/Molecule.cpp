@@ -441,23 +441,23 @@ void Molecule::calcCenterOfMass() {
 }
 
 /** @brief Compute nuclear center of charge */
-void Molecule::calcCenterOfMass() {
+void Molecule::calcCenterOfCharge() {
     this->COC[0] = 0.0;
     this->COC[1] = 0.0;
     this->COC[2] = 0.0;
 
-    double M = 0.0;
+    double Z = 0.0;
     for (int i = 0; i < getNNuclei(); i++) {
         const Nucleus &nuc = getNucleus(i);
         const double *r_i = nuc.getCoord();
-        const double z_i = nuc.getElement().getCharge();
+        const double z_i = nuc.getElement().getZ();
         for (int d = 0; d < 3; d++) {
             this->COM[d] += r_i[d] * z_i;
         }
-        M += m_i;
+        Z += z_i;
     }
     for (int d = 0; d < 3; d++) {
-        this->COC[d] *= 1.0/M;
+        this->COC[d] *= 1.0/Z;
     }
 }
 

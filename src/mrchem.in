@@ -124,6 +124,7 @@ def setup_keywords():
     mra.add_kw('boxes',                 'INT_ARRAY', [1, 1, 1])
     mra.add_kw('corner',                'INT_ARRAY', [0, 0, 0])
     mra.add_kw('center_of_mass',        'BOOL', False)
+    mra.add_kw('center_of_charge',      'BOOL', False)
     mra.add_kw('gauge_origin',          'DBL_ARRAY', [0.0, 0.0, 0.0])
     top.add_sect(mra)
 
