@@ -34,6 +34,7 @@ Molecule::Molecule(const Nuclei &nucs, int c, int m)
           hfcc(0),
           sscc(0) {
     calcCenterOfMass();
+    calcCenterOfCharge();
     allocNuclearProperties();
 }
 
@@ -57,6 +58,7 @@ Molecule::Molecule(const std::string &coord_file, int c, int m)
           sscc(0) {
     readCoordinateFile(coord_file);
     calcCenterOfMass();
+    calcCenterOfCharge();
     allocNuclearProperties();
 }
 
@@ -80,6 +82,7 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
           sscc(0) {
     readCoordinateString(coord_str);
     calcCenterOfMass();
+    calcCenterOfCharge();
     allocNuclearProperties();
 }
 
