@@ -36,7 +36,7 @@ public:
     }
 
     ComplexDouble trace(const Nucleus &nuc) {
-        return dipole.trace(nuc).dot(field);
+        return - dipole.trace(nuc).dot(field);
     }
 
     using RankZeroTensorOperator::trace;
