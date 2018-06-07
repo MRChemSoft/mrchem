@@ -172,8 +172,8 @@ void XCFunctional::pruneGrid(double prec, bool abs_prec) {
         if (abs_prec) scale = rho_a->integrate() + rho_b->integrate();
         rho_a->crop(prec/scale, 1.0, false);
         rho_b->crop(prec/scale, 1.0, false);
-        mrcpp::build_grid(*rho_a, *rho_b);
-        mrcpp::build_grid(*rho_b, *rho_a);
+        mrcpp::refine_grid(*rho_a, *rho_b);
+        mrcpp::refine_grid(*rho_b, *rho_a);
     } else {
         if (rho_t == nullptr) MSG_FATAL("Uninitialized total density");
         if (abs_prec) scale = rho_t->integrate();
@@ -191,8 +191,8 @@ void XCFunctional::refineGrid(double prec, bool abs_prec) {
         if (abs_prec) scale = rho_a->integrate() + rho_b->integrate();
         mrcpp::refine_grid(*rho_a, prec/scale);
         mrcpp::refine_grid(*rho_b, prec/scale);
-        mrcpp::build_grid(*rho_a, *rho_b);
-        mrcpp::build_grid(*rho_b, *rho_a);
+        mrcpp::refine_grid(*rho_a, *rho_b);
+        mrcpp::refine_grid(*rho_b, *rho_a);
     } else {
         if (rho_t == nullptr) MSG_FATAL("Uninitialized total density");
         if (abs_prec) scale = rho_t->integrate();
