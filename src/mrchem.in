@@ -128,7 +128,7 @@ def setup_keywords():
     top.add_sect(mra)
 
     derivatives=getkw.Section('Derivatives')
-    derivatives.add_kw('kinetic',       'STR', 'ABGV_00')
+    derivatives.add_kw('kinetic',       'STR', 'ABGV_55')
     derivatives.add_kw('h_orb',         'STR', 'ABGV_00')
     derivatives.add_kw('h_pso',         'STR', 'ABGV_00')
     derivatives.add_kw('dft',           'STR', 'ABGV_00')
