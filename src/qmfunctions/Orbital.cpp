@@ -13,7 +13,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  */
 Orbital::Orbital()
         : QMFunction(0, 0),
-          meta({-1, 0, 0, 0, 0, false, 0.0}) {
+          meta({-1, 0, 0, 0, 0, false, 1.0}) {
 }
 
 /** @brief Constructor
@@ -26,7 +26,7 @@ Orbital::Orbital()
  */
 Orbital::Orbital(int spin, int occ, int rank)
         : QMFunction(0, 0),
-          meta({rank, spin, occ, 0, 0, false, 0.0}) {
+          meta({rank, spin, occ, 0, 0, false, 1.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
         if (this->spin() == SPIN::Paired) this->meta.occ = 2;

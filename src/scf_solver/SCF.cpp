@@ -60,7 +60,7 @@ void SCF::setOrbitalPrec(double init, double final) {
  * and returns the current prec.
  */
 double SCF::adjustPrecision(double error) {
-    if (this->orbPrec[0] > 0.0 ) this->orbPrec[0] *= 0.75;
+    if (this->orbPrec[0] > 0.0 ) this->orbPrec[0] *= 0.5;
     this->orbPrec[0] = std::min(10.0*error*error, this->orbPrec[0]);
     this->orbPrec[0] = std::max(this->orbPrec[0], this->orbPrec[2]);
 
