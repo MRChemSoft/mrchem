@@ -103,7 +103,6 @@ void XCPotential::setupPotential(double prec) {
     int newNodes = this->functional->getNNodes() - inpNodes;
     int newPoints = this->functional->getNPoints() - inpPoints;
 
-    Printer::printSeparator(0, '-');
     println(0, " XC grid size   " << std::setw(26) << inpNodes << std::setw(17) << inpPoints);
     println(0, " XC grid change " << std::setw(26) << newNodes << std::setw(17) << newPoints);
 }

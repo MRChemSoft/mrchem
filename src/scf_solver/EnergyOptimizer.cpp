@@ -11,6 +11,7 @@
 #include "NuclearOperator.h"
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
+#include "XCOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -126,7 +127,6 @@ bool EnergyOptimizer::optimize() {
         // Apply Helmholtz operators
         Phi_np1 = H(Psi_n);
         orbital::free(Psi_n);
-        H.clear();
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
@@ -143,6 +143,7 @@ bool EnergyOptimizer::optimize() {
 
         // Compute Fock matrix
         ComplexMatrix F_np1 = F_n + calcFockMatrixUpdate(orb_prec, dPhi_n);
+        H.clear();
         orbital::free(Phi_n);
         orbital::free(dPhi_n);
         fock.clear();
@@ -297,7 +298,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &
     // Do not setup internal exchange, it must be applied on the fly anyway
     if (j_np1 != 0)   j_np1->setup(prec);
     if (k_np1 != 0)   k_np1->setup(prec);
-    //if (xc_np1 != 0) xc_np1->setup(prec);
+    if (xc_np1 != 0) xc_np1->setup(prec);
     println(0,"                                                            ");
 
     ComplexMatrix F_np1;
