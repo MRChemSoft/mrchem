@@ -374,6 +374,7 @@ void SCFDriver::setup() {
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
+        setupInitialGrid(*xcfun, *molecule);
         xcfun->evalSetup(1);
         XC = new XCOperator(xcfun, phi);
         if (dft_x_fac > mrcpp::MachineZero) {
@@ -851,6 +852,23 @@ void SCFDriver::extendRotationMatrix(const OrbitalVector &orbs, ComplexMatrix &O
     O.conservativeResize(nPaired + nAlpha + nBeta, NoChange);
     O.block(nPaired + nAlpha, 0, nBeta, nCols) = O.block(nPaired, 0, nBeta, nCols);
     */
+}
+
+void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol) {
+    Printer::printHeader(0, "Initialize DFT grid");
+    println(0, " Nr  Element                        nNodes          nPoints");
+    Printer::printSeparator(0, '-');
+    Timer timer;
+    const Nuclei &nucs = mol.getNuclei();
+    for (int k = 0; k < nucs.size(); k++) {
+        func.buildGrid(nucs[k].getCharge(), nucs[k].getCoord());
+        printout(0, std::setw(3) << k);
+        printout(0, std::setw(7) << nucs[k].getElement().getSymbol());
+        printout(0, std::setw(32) << func.getNNodes());
+        printout(0, std::setw(17) << func.getNPoints() << "\n");
+    }
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
 }
 
 } //namespace mrchem

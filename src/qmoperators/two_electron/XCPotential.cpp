@@ -40,7 +40,7 @@ XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
 void XCPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
-    setupDensity(prec);
+    setupDensity();
     setupPotential(prec);
 }
 
@@ -53,26 +53,29 @@ void XCPotential::clear() {
     clearApplyPrec();
 }
 
-void XCPotential::setupDensity(double prec) {
+void XCPotential::setupDensity() {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
 
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
-        Timer timer;
+        Timer time_a;
         Density &rho_a = this->functional->getDensity(mrdft::DensityType::Alpha);
+        density::compute(-1.0, rho_a, Phi, DENSITY::Alpha);
+        time_a.stop();
+        Printer::printTree(0, "XC alpha density", rho_a.getNNodes(), time_a.getWallTime());
+
+        Timer time_b;
         Density &rho_b = this->functional->getDensity(mrdft::DensityType::Beta);
-        density::compute(prec, rho_a, Phi, DENSITY::Alpha);
-        density::compute(prec, rho_b, Phi, DENSITY::Beta);
-        timer.stop();
-        int nNodes = rho_a.getNNodes() + rho_b.getNNodes();
-        Printer::printTree(0, "XC density", nNodes, timer.getWallTime());
+        density::compute(-1.0, rho_b, Phi, DENSITY::Beta);
+        time_b.stop();
+        Printer::printTree(0, "XC beta density", rho_b.getNNodes(), time_b.getWallTime());
     } else {
-        Timer timer;
+        Timer time_t;
         Density &rho_t = this->functional->getDensity(mrdft::DensityType::Total);
-        density::compute(prec, rho_t, Phi, DENSITY::Total);
-        timer.stop();
-        Printer::printTree(0, "XC density", rho_t.getNNodes(), timer.getWallTime());
+        density::compute(-1.0, rho_t, Phi, DENSITY::Total);
+        time_t.stop();
+        Printer::printTree(0, "XC total density", rho_t.getNNodes(), time_t.getWallTime());
     }
 }
 
@@ -86,17 +89,23 @@ void XCPotential::setupPotential(double prec) {
     if (not this->functional->hasDensity()) MSG_ERROR("XC density not initialized");
     if (this->potentials.size() != 0) MSG_ERROR("Potential not properly cleared");
 
-    Timer timer;
+    int inpNodes = this->functional->getNNodes();
+    int inpPoints = this->functional->getNPoints();
+
     this->functional->setup();
     this->functional->evaluate();
     this->energy = this->functional->calcEnergy();
     this->potentials = this->functional->calcPotential();
+    this->functional->pruneGrid(prec);
+    this->functional->refineGrid(prec);
     this->functional->clear();
 
-    timer.stop();
-    int n = mrcpp::sum_nodes(this->potentials);
-    double t = timer.getWallTime();
-    Printer::printTree(0, "XC potential", n, t);
+    int newNodes = this->functional->getNNodes() - inpNodes;
+    int newPoints = this->functional->getNPoints() - inpPoints;
+
+    Printer::printSeparator(0, '-');
+    println(0, " XC grid size   " << std::setw(26) << inpNodes << std::setw(17) << inpPoints);
+    println(0, " XC grid change " << std::setw(26) << newNodes << std::setw(17) << newPoints);
 }
 
 Density &XCPotential::getDensity(int spin) {

@@ -785,7 +785,7 @@ DoubleVector get_norms(const OrbitalVector &vec) {
 void print(const OrbitalVector &vec) {
     Printer::setScientific();
     printout(0, "============================================================\n");
-    printout(0, "*OrbitalVector: ");
+    printout(0, " OrbitalVector:");
     printout(0, std::setw(4) << vec.size()          << " orbitals  ");
     printout(0, std::setw(4) << size_occupied(vec)  << " occupied  ");
     printout(0, std::setw(4) << get_electron_number(vec) << " electrons\n");
@@ -825,14 +825,14 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*real_2, phi.real());
-        mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real(), 1);
+        mrcpp::copy_grid(*real_2, rho);
+        mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real());
         sum_vec.push_back(std::make_tuple(1.0, real_2));
     }
     if (phi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*imag_2, phi.imag());
-        mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag(), 1);
+        mrcpp::copy_grid(*imag_2, rho);
+        mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag());
         sum_vec.push_back(std::make_tuple(1.0, imag_2));
     }
     mrcpp::build_grid(rho, sum_vec);
@@ -847,6 +847,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     DensityVector dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
         Density *rho_i = new Density(*MRA);
+        mrcpp::copy_grid(*rho_i, rho);
         density::compute(mult_prec, *rho_i, Phi[i], spin);
         dens_vec.push_back(std::make_tuple(1.0, rho_i));
     }

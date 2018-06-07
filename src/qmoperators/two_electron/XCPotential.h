@@ -46,7 +46,7 @@ protected:
     void setup(double prec);
     void clear();
 
-    void setupDensity(double prec);
+    void setupDensity();
     void setupPotential(double prec);
 
     Orbital apply(Orbital phi);

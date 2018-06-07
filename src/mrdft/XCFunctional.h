@@ -32,13 +32,21 @@ public:
     bool hasDensity() const;
     mrcpp::FunctionTree<3> & getDensity(DensityType type);
 
+    int getNNodes() const;
+    int getNPoints() const;
+
+    void buildGrid(double Z, const double *R);
+    void pruneGrid(double prec, bool abs_prec = true);
+    void refineGrid(double prec, bool abs_prec = true);
+    void clearGrid();
+
     void setDensityCutoff(double thrs) { this->cutoff = thrs; }
     void setFunctional(const std::string &name, double coef = 1.0);
 
     void setUseGamma(bool use) { this->use_gamma = use; }
     bool useGamma() const { return this->use_gamma; }
 
-    bool isLDA() const { return (not (isGGA() || isMetaGGA())); }
+    bool isLDA() const { return (not (isGGA() or isMetaGGA())); }
     bool isGGA() const { return (xc_is_gga(this->functional)); }
     bool isMetaGGA() const { return (xc_is_metagga(this->functional)); }
     bool isSpinSeparated() const { return this->spin_separated; }
