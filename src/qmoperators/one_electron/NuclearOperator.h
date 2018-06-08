@@ -33,7 +33,11 @@ public:
     Nuclei &getNuclei() { return this->r_m1.getNuclei(); }
     const Nuclei &getNuclei() const { return this->r_m1.getNuclei(); }
 
-protected:
+    double trace(const Nuclei &nucs); 
+
+    using RankZeroTensorOperator::trace;
+    
+ protected:
     NuclearPotential r_m1;
 };
 

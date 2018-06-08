@@ -123,25 +123,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
 
     // Nuclear part
     if (this->nuc != 0) {
-        std::cout << "Computing nuc conts " << ext << std::endl;
-        Nuclei &nucs = this->nuc->getNuclei();
-        int nNucs = nucs.size();
-        for (int i = 0; i < nNucs; i++) {
-            for (int j = i+1; j < nNucs; j++) {
-                const Nucleus &nuc_i = nucs[i];
-                const Nucleus &nuc_j = nucs[j];
-                double Z_i = nuc_i.getCharge();
-                double Z_j = nuc_j.getCharge();
-                const double *R_i = nuc_i.getCoord();
-                const double *R_j = nuc_j.getCoord();
-                double R_ij = math_utils::calc_distance(R_i, R_j);
-                E_nuc += (Z_i*Z_j)/R_ij;
-            }
-        }
-        if (this->ext  != 0) {
-            E_nex = this->ext->trace(nucs).real();
-            E_nuc += E_nex;
-        }
+        E_nuc = this->nuc->trace(this->nuc->getNuclei());
     }
 
     // Orbital energies
