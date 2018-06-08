@@ -49,8 +49,10 @@ void KAIN::setupLinearSystem() {
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
                     orbA(i,j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
+                    dfPhi_jm.free();
                 }
                 orbB(i) += orbital::dot(dPhi_im, fPhi_m).real();
+                dPhi_im.free();
             }
         }
         A_matrices.push_back(orbA);
