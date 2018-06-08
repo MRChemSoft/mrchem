@@ -10,16 +10,14 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-/** @brief constructor
+/** @brief Constructor
  *
- * @param[in] k order of the operator
  * @param[in] F XCFunctional pointer
- * @param[in] Phi vector of orbitals
+ * @param[in] Phi Vector of orbitals
  *
- * Based on the order and spin the correct nr. of potential functions is determined
+ * Based on the order and spin the correct nr. of potential functions is determined.
  * Then the functional is set up for subsequent calculations, fixing some internals of
  * xcfun when F.evalSetup is invoked.
- *
  */
 XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
         : QMPotential(1),
@@ -27,14 +25,16 @@ XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
           functional(F) {
 }
 
-/** @brief setup the XCPotential
+/** @brief Prepare the operator for application
  * 
- * @param[in] prec apply precision
+ * @param[in] prec Apply precision
  *
- * Sequence of steps required to compute the XC potentials The most
- * important steps are evaluateXCFunctional and calcPotential where
- * the functional derivatives are computed and the potential assembled
- * respectively
+ * Sequence of steps required to compute the XC potentials:
+ *
+ * 1) Compute density
+ * 2) Setup xcfun input functions (gradients etc.)
+ * 3) Evaluate xcfun
+ * 4) Compute XC potential(s) from xcfun output
  *
  */
 void XCPotential::setup(double prec) {
@@ -44,15 +44,19 @@ void XCPotential::setup(double prec) {
     setupPotential(prec);
 }
 
-/** @brief clears all data in the XCPotential object
- *
- */
+/** @brief Clears all data in the XCPotential object */
 void XCPotential::clear() {
     this->energy = 0.0;
     mrcpp::clear(this->potentials, true);
     clearApplyPrec();
 }
 
+/** @brief Compute electron density
+ *
+ * The density is computed on the grid provided by the MRDFT module. The grid
+ * is kept as is, e.i. no additional refinement at this point, since the grid
+ * size is determined inside the module.
+ */
 void XCPotential::setupDensity() {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
@@ -79,9 +83,21 @@ void XCPotential::setupDensity() {
     }
 }
 
-/** @brief compute XC potential
+/** @brief Compute XC potential(s)
  *
- * @param prec: apply precision (not used atm)
+ * @param prec Precision used in refinement of density grid
+ *
+ * This will invoke a sequence of steps in the XCFunctional to compute the final
+ * XC potential(s) that define this operator. Assuming the density has alredy been
+ * computed:
+ *
+ * 1) Setup xcfun input functions (gradients etc.)
+ * 2) Evaluate xcfun
+ * 3) Compute XC energy by integrating energy density
+ * 4) Compute XC potential(s) from xcfun output functions
+ * 5) Remove excess grid nodes based on precision
+ * 6) Add extra grid nodes based on precision
+ * 7) Clear internal functions in XCFunctional (density grid is kept)
  *
  */
 void XCPotential::setupPotential(double prec) {
@@ -107,6 +123,10 @@ void XCPotential::setupPotential(double prec) {
     println(0, " XC grid change " << std::setw(26) << newNodes << std::setw(17) << newPoints);
 }
 
+/** @brief Return FunctionTree for the input density from the XCFunctional
+ *
+ * @param[in] type Which density to return (alpha, beta or total)
+ */
 Density &XCPotential::getDensity(int spin) {
     if (spin == DENSITY::Total) return this->functional->getDensity(mrdft::DensityType::Total);
     if (spin == DENSITY::Alpha) return this->functional->getDensity(mrdft::DensityType::Alpha);
@@ -114,13 +134,9 @@ Density &XCPotential::getDensity(int spin) {
     MSG_FATAL("Invalid density type");
 }
 
-/** @brief fetches the correct index for the potential function to use
+/** @brief Return FunctionTree for the XC spin potential
  *
- * @param[in] spin of orbital on which to apply
- *
- * Based on the orbital spin, and whether the functional is spin
- * separated, the correct potential index is selected.
- *
+ * @param[in] type Which spin potential to return (alpha, beta or total)
  */
 FunctionTree<3>& XCPotential::getPotential(int spin) {
     bool spinFunctional = this->functional->isSpinSeparated();
@@ -139,12 +155,11 @@ FunctionTree<3>& XCPotential::getPotential(int spin) {
 
 /** @brief XCPotential application
  *
+ * @param[in] phi Orbital to which the potential is applied
+ *
  * The operator is applied by choosing the correct potential function
  * which is then assigned to the real function part of the operator
  * base-class before the base class function is called.
- *
- * @param[in] phi orbital to which the potential is applied.
- *
  */
 Orbital XCPotential::apply(Orbital phi) {
     if (this->hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
