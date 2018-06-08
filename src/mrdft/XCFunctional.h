@@ -17,6 +17,20 @@
  * other is simpler to implement. We keep both options open and
  * compute the gradient invariants if and when necessary.
  *
+ * The XCFunctional keeps track of the density grid, whose size is
+ * controlled through the interface functions buildGrid(), pruneGrid()
+ * and refineGrid(). The grid is kept _fixed_ for all internal calculations
+ * within the module.
+ *
+ * Typical usage within one SCF cycle:
+ *
+ * 1) getDensity() and compute density on given grid
+ * 2) setup()
+ * 3) evaluate()
+ * 4) calcEnergy()
+ * 5) calcPotential()
+ * 6) refineGrid()
+ * 7) clear()
  *
  */
 

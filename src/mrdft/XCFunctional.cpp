@@ -22,9 +22,12 @@ namespace mrdft {
  * Initializes the new functional
  *
  * @param[in] mra Computational domain for the density grid
- * @param[in] spin True for spin-separated calculations
- * @param[in] order Order of XC kernel derivatives
+ * @param[in] spin Use spin-separated functionals
  *
+ * The MRA and spin parameters are const and cannot be changed after construction.
+ * The constructor allocates a derivative operator (must be ABGV_00 since the grids
+ * are fixed) and the density FunctionTrees (rho_a and rho_b for spin DFT, otherwise
+ * only rho_t).
  */
 XCFunctional::XCFunctional(mrcpp::MultiResolutionAnalysis<3> &mra, bool spin)
         : spin_separated(spin),
@@ -56,12 +59,9 @@ XCFunctional::~XCFunctional() {
 
 /** @brief User-friendly setup of the xcfun calculation
  *
- * Setup the XC functional for evaluation. In MRChem we use only a subset
- * of the alternatives offered by xcfun. More functionality might be enabled
- * at a later stage.
+ *  @param[in] order Functional derivative order (1 for potential, 2 for hessian, ...)
  *
- * @param[in] order Order of the requested operator (1 for potential, 2 for hessian, ...)
- *
+ * Prepare the XCFun object for evaluation based on the chosen parameters.
  */
 void XCFunctional::evalSetup(int order) {
     unsigned int func_type = isGGA();               //!< only LDA and GGA supported for now
@@ -75,19 +75,25 @@ void XCFunctional::evalSetup(int order) {
     xc_user_eval_setup(functional, order, func_type, dens_type, mode_type, laplacian, kinetic, current, exp_derivative);
 }
 
-/** @brief Functional setup
+/** @brief Set density functional
  *
  * @param[in] name The name of the chosen functional
  * @param[in] coef The amount of the chosen functional
  *
  * For each functional part in calculation a corresponding token is
- * created in xcfun.
- *
+ * created in xcfun. All functionals are added on top of each other
+ * with the given coefficient.
  */
 void XCFunctional::setFunctional(const std::string &name, double coef) {
     xc_set(functional, name.c_str(), coef);
 }
 
+/** @brief Check whether the density has been computed
+ *
+ * Checks if the required input densities has been computed and are valid
+ * function representations. For spin separated functionals both the alpha
+ * and beta densities are tested, otherwise only the total density.
+ */
 bool XCFunctional::hasDensity() const {
     bool out = true;
     if (isSpinSeparated()) {
@@ -99,13 +105,12 @@ bool XCFunctional::hasDensity() const {
     return out;
 }
 
-/** @brief Return FunctionTree for the xcfun input density
+/** @brief Return FunctionTree for the input density
  *
  * @param[in] type Which density to return (alpha, beta or total)
  *
- * Returns a reference to the internal density function so that
- * it can be projected by the host program. This needs to be done
- * before setup().
+ * Returns a reference to the internal density function so that it can be
+ * computed by the host program. This needs to be done before setup().
  */
 FunctionTree<3> & XCFunctional::getDensity(DensityType type) {
     switch (type) {
@@ -124,6 +129,7 @@ FunctionTree<3> & XCFunctional::getDensity(DensityType type) {
     }
 }
 
+/** @brief Return the number of nodes in the density grid (including branch nodes)*/
 int XCFunctional::getNNodes() const {
     int nodes = 0;
     if (isSpinSeparated()) {
@@ -135,6 +141,7 @@ int XCFunctional::getNNodes() const {
     return nodes;
 }
 
+/** @brief Return the number of grid points in the density grid (only leaf nodes)*/
 int XCFunctional::getNPoints() const {
     int nodes = 0;
     int points = 0;
@@ -149,6 +156,16 @@ int XCFunctional::getNPoints() const {
     return nodes * points;
 }
 
+/** @brief Construct initial density grid based on nuclear charge and position
+ *
+ * @param[in] Z Nuclear charge
+ * @param[in] R Nuclear position
+ *
+ * This will _extend_ the density grid with extra nodes surrounding a nuclear site.
+ * The refinement level depends on the nuclear charge (higher charge -> more
+ * refinement). This is meant only to provide an initial guess for the grid, there
+ * are no guarantees regarding the precision.
+ */
 void XCFunctional::buildGrid(double Z, const double *R) {
     mrcpp::GaussFunc<3> gauss(Z*Z, 1.0, R);
     if (isSpinSeparated()) {
@@ -162,6 +179,15 @@ void XCFunctional::buildGrid(double Z, const double *R) {
     }
 }
 
+/** @brief Remove excess grid nodes based on precision
+ *
+ * @param[in] prec Requested precision
+ * @param[in] abs_prec Use absolute or relative precision
+ *
+ * This will _remove_ from the density grid nodes that are found unnecessary
+ * in order to reach the requested precision. The density must already have
+ * been computed for this to take effect.
+ */
 void XCFunctional::pruneGrid(double prec, bool abs_prec) {
     if (not hasDensity()) return;
 
@@ -181,6 +207,15 @@ void XCFunctional::pruneGrid(double prec, bool abs_prec) {
     }
 }
 
+/** @brief Add extra grid nodes based on precision
+ *
+ * @param[in] prec Requested precision
+ * @param[in] abs_prec Use absolute or relative precision
+ *
+ * This will _add_ to the density grid extra nodes where the local error is found
+ * to be unsatisfactory (it does _not_ guarantee that the new grid is sufficient).
+ * The density must already have been computed for this to take effect.
+ */
 void XCFunctional::refineGrid(double prec, bool abs_prec) {
     if (not hasDensity()) return;
 
@@ -200,6 +235,11 @@ void XCFunctional::refineGrid(double prec, bool abs_prec) {
     }
 }
 
+/** @brief Remove all grid refinement
+ *
+ * This will _remove_ all existing grid refinement and leave only root nodes
+ * in the density grids.
+ */
 void XCFunctional::clearGrid() {
     if (rho_a != nullptr) rho_a->clear();
     if (rho_b != nullptr) rho_b->clear();
@@ -211,7 +251,8 @@ void XCFunctional::clearGrid() {
  * This computes the necessary input functions (gradients and gamma) and
  * constructs empty grids to hold the output functions of xcfun, and
  * collects them in the xcInput and xcOutput vectors, respectively.
- * Assumes that the density functions rho_t or rho_a/rho_b are already computed.
+ * Assumes that the density functions rho_t or rho_a/rho_b have already
+ * been computed.
  */
 void XCFunctional::setup() {
     if (isGGA()) {
@@ -251,7 +292,8 @@ void XCFunctional::setup() {
  *
  * This deallocates the memory used by both the input and output functions
  * to xcfun. The output must be collected (calcEnergy() and calcPotential())
- * before this function is called.
+ * before this function is called. The density grids will keep their current
+ * refinement, but their MW coefs will be cleared.
  */
 void XCFunctional::clear() {
     mrcpp::clear(xcInput, false);
@@ -272,7 +314,6 @@ void XCFunctional::clear() {
  * Based on the xcfun setup, the requested array of FunctionTrees(s)
  * is allocared and its pointers assigned to the required input
  * functions.
- *
  */
 void XCFunctional::setupXCInput() {
     if (xcInput.size() != 0) MSG_ERROR("XC input not empty");
@@ -287,7 +328,7 @@ void XCFunctional::setupXCInput() {
 
 /** @brief Sets xcInput pointers for the density
  *
- * Returns the nr. of pointers used for sanity checking
+ * Returns the nr. of pointers used for sanity checking.
  */
 int XCFunctional::setupXCInputDensity() {
     int nUsed = 0;
@@ -307,7 +348,7 @@ int XCFunctional::setupXCInputDensity() {
 
 /** @brief Sets xcInput pointers for the gradient(s)
  *
- * Returns the nr. of pointers used for sanity checking
+ * Returns the nr. of pointers used for sanity checking.
  */
 int XCFunctional::setupXCInputGradient() {
     int nUsed = 0;
@@ -331,8 +372,7 @@ int XCFunctional::setupXCInputGradient() {
  *
  * Based on the xcfun setup, the requested array of FunctionTrees(s)
  * is allocated and the function objects are created, borrowing the
- * grid from the electronic density.
- *
+ * grid from the input density.
  */
 void XCFunctional::setupXCOutput() {
     if (xcOutput.size() != 0) MSG_ERROR("XC output not empty");
@@ -353,7 +393,6 @@ void XCFunctional::setupXCOutput() {
  *
  * The data contained in the xcInput is converted in matrix form and fed to
  * the functional. The output matrix is then converted back to function form.
- *
  */
 void XCFunctional::evaluate() {
     if (xcInput.size() == 0) MSG_ERROR("XC input not initialized");
@@ -436,9 +475,8 @@ void XCFunctional::evaluate() {
  * and nPts is the number of points requested. Similarly the output is provided
  * as a matrix nOut x nPts.
  *
- * param[in] k the order of the requested derivatives
- * param[in] input values
- * param[out] output values
+ * param[in] inp Input values
+ * param[out] out Output values
  *
 */
 void XCFunctional::evaluateBlock(MatrixXd &inp, MatrixXd &out) const {
@@ -470,10 +508,10 @@ void XCFunctional::evaluateBlock(MatrixXd &inp, MatrixXd &out) const {
  * dimensions are the overall number of grid points (nCoefs) and the
  * number of functions (nFuncs).
  *
- * parma[in] n the index of the requested node
- * param[in] nFuncs the number of functions
- * param[in] trees the array of FunctionTree(s)
- * param[in] the matrix object
+ * parma[in] n the Index of the requested node
+ * param[in] nFuncs The number of functions
+ * param[in] trees The array of FunctionTree(s)
+ * param[in] data The matrix object
  */
 void XCFunctional::compressNodeData(int n, int nFuncs, FunctionTreeVector<3> trees, MatrixXd &data) {
     if (trees.size() == 0) MSG_ERROR("Invalid input");
@@ -494,10 +532,10 @@ void XCFunctional::compressNodeData(int n, int nFuncs, FunctionTreeVector<3> tre
  *
  * The matrix containing the output from xcfun is converted back to the corresponding FunctionNode(s). The matrix dimensions are the overall number of grid points (nCoefs) and the number of functions (nFuncs).
  *
- * parma[in] n the index of the requested node
- * param[in] nFuncs the number of functions
- * param[in] trees the array of FunctionTree(s)
- * param[in] the matrix object
+ * parma[in] n the Index of the requested node
+ * param[in] nFuncs The number of functions
+ * param[in] trees The array of FunctionTree(s)
+ * param[in] data The matrix object
  */
 void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTreeVector<3> trees, MatrixXd &data) {
     if (trees.size() == 0) MSG_ERROR("Invalid input");
@@ -509,7 +547,7 @@ void XCFunctional::expandNodeData(int n, int nFuncs, FunctionTreeVector<3> trees
     }
 }
 
-/** @brief Computes the XC energy as the integral of the functional */
+/** @brief Computes the XC energy as the integral of the energy density */
 double XCFunctional::calcEnergy() {
     if (xcOutput.size() == 0) MSG_ERROR("XC output not initialized");
 
@@ -521,11 +559,10 @@ double XCFunctional::calcEnergy() {
     return energy;
 }
 
-/** @brief Compute the XC potential
+/** @brief Compute the XC potential(s)
  *
  * Combines the xcfun output functions into the final XC potential functions.
- * Different calls for LDA and GGA.
- *
+ * Different calls for LDA and GGA, and for gamma-type vs explicit derivatives.
  */
 FunctionTreeVector<3> XCFunctional::calcPotential() {
     FunctionTreeVector<3> xc_pot;
@@ -550,7 +587,6 @@ FunctionTreeVector<3> XCFunctional::calcPotential() {
  *
  * The potential conicides with the xcfun output, which is then
  * deep copied into the corresponding potential functions.
- *
  */
 void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
     int nPotentials = isSpinSeparated() ? 2 : 1;
@@ -563,12 +599,11 @@ void XCFunctional::calcPotentialLDA(FunctionTreeVector<3> &potentials) {
     }
 }
 
-/** @brief  potential calculation for GGA functionals
+/** @brief Potential calculation for GGA functionals
  *
- * the potential functions are assembled from the xcfun output functions
+ * The potential functions are assembled from the xcfun output functions.
  * The method used depends on whether the functional is spin-separated
  * and whether explicit or gamma-type derivatives have been used in xcfun.
- *
  */
 void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
     FunctionTree<3> * pot;
@@ -617,14 +652,12 @@ void XCFunctional::calcPotentialGGA(FunctionTreeVector<3> &potentials) {
 
 /** @brief XC potential calculation
  *
+ * @param[in] df_drho Functional derivative wrt rho
+ * @param[in] df_dgamma Functional_derivative wrt gamma
+ * @param[in] grad_rho Gradient of rho
+ *
  * Computes the XC potential for a non-spin separated functional and
- * gamma-type derivatives
- *
- * @param[in] df_drho functional derivative wrt rho
- * @param[in] df_dgamma functional_derivative wrt gamma
- * @param[in] grad_rho gradient of rho
- * @param[in] derivative derivative operator to use
- *
+ * gamma-type derivatives.
  */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  FunctionTree<3> & df_dgamma,
@@ -644,18 +677,16 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
 
 /** @brief XC potential calculation
  *
+ * @param[in] df_drhoa Functional derivative wrt rhoa
+ * @param[in] df_dgaa  Functional_derivative wrt gamma_aa
+ * @param[in] df_dgab  Functional_derivative wrt gamma_ab
+ * @param[in] df_dgbb  Functional_derivative wrt gamma_bb
+ * @param[in] grad_rhoa Gradient of rho_a
+ * @param[in] grad_rhob Gradient of rho_b
+ *
  * Computes the XC potential for a spin separated functional and
- * gamma-type derivatives
- *
- * @param[in] df_drhoa functional derivative wrt rhoa
- * @param[in] df_drhob functional derivative wrt rhob
- * @param[in] df_dgaa  functional_derivative wrt gamma_aa
- * @param[in] df_dgab  functional_derivative wrt gamma_ab
- * @param[in] df_dgbb  functional_derivative wrt gamma_bb
- * @param[in] grad_rhoa gradient of rho_a
- * @param[in] grad_rhob gradient of rho_b
- * @param[in] derivative derivative operator to use
- *
+ * gamma-type derivatives. Can be used both for alpha and beta
+ * potentials by permuting the spin parameter.
  */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
                                                  FunctionTree<3> & df_dgaa,
@@ -681,12 +712,10 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drhoa,
 
 /** @brief XC potential calculation
  *
+ * @param[in] df_drho Functional derivative wrt rho
+ * @param[in] df_dgr  Functional_derivative wrt grad_rho
+ *
  * Computes the XC potential for explicit derivatives.
- *
- * @param[in] df_drho functional derivative wrt rho
- * @param[in] df_dgr  functional_derivative wrt grad_rho
- * @param[in] derivative derivative operator to use
- *
  */
 FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
                                                  FunctionTreeVector<3> & df_dgr) {
@@ -704,17 +733,14 @@ FunctionTree<3> * XCFunctional::calcPotentialGGA(FunctionTree<3> & df_drho,
     return V;
 }
 
-/** brief divergenge of a vector field times a function
+/** @brief Helper function to compute divergence of a vector field times a function
  *
- * @param[in]V Function (derivative of the functional wrt gamma)
- * @param[in]rho vector field (density gradient)
- * @param[in] derivative the derivative operator
+ * @param[in] V Function (derivative of the functional wrt gamma)
+ * @param[in] rho Vector field (density gradient)
  *
- * NOTE: this should possibly be moved to the new mrcpp module
- * as it only involves mwtrees
  */
-FunctionTree<3>* XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
-                                                     FunctionTreeVector<3> &rho) {
+FunctionTree<3> * XCFunctional::calcGradDotPotDensVec(FunctionTree<3> &V,
+                                                      FunctionTreeVector<3> &rho) {
     FunctionTreeVector<3> vec;
     for (int d = 0; d < rho.size(); d++) {
         Timer timer;
