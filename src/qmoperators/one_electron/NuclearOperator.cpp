@@ -1,5 +1,6 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+#include "utils/math_utils.h"
 
 #include "NuclearOperator.h"
 
@@ -59,12 +60,11 @@ void NuclearPotential::clear() {
     clearApplyPrec(); // apply_prec = -1
 }
 
-    /** @brief computes the repulsion self energy of a set of nuclei
-     * 
-     * @param[in] nucs the set of nuclei
-     *
-     */
-    
+/** @brief computes the repulsion self energy of a set of nuclei
+ * 
+ * @param[in] nucs the set of nuclei
+ *
+ */    
 double NuclearOperator::trace(const Nuclei &nucs) {
     int nNucs = nucs.size();
     double E_nuc = 0.0;

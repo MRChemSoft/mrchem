@@ -24,12 +24,9 @@ class H_E_dip final : public PositionOperator {
 public:
     H_E_dip(const double *o = 0) : PositionOperator(o) { 
         RankOneTensorOperator<3> &h = (*this);
-        h[0] = (*this)[0];
-        h[1] = (*this)[1];
-        h[2] = (*this)[2];
-        h[0] = -1.0 * h[0];
-        h[1] = -1.0 * h[1];
-        h[2] = -1.0 * h[2];
+        h[0] = -1.0 * (*this)[0];
+        h[1] = -1.0 * (*this)[1];
+        h[2] = -1.0 * (*this)[2];
     }
     ~H_E_dip() { }
 

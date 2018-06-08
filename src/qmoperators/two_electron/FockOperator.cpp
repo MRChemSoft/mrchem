@@ -123,7 +123,12 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
 
     // Nuclear part
     if (this->nuc != 0) {
-        E_nuc = this->nuc->trace(this->nuc->getNuclei());
+        Nuclei &nucs = this->nuc->getNuclei();
+        E_nuc = this->nuc->trace(nucs);
+        if (this->ext  != 0) {
+            E_nex = this->ext->trace(nucs).real();
+            E_nuc += E_nex;
+        }
     }
 
     // Orbital energies
