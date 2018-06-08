@@ -854,6 +854,14 @@ void SCFDriver::extendRotationMatrix(const OrbitalVector &orbs, ComplexMatrix &O
     */
 }
 
+/** @brief Build initial density grid for DFT
+ *
+ * This will refine the density grid in XCFunctional around each nuclear site
+ * of the molecule. Uses the refinement algorithm for Gaussians in MRCPP by
+ * placing a narrow Gaussian function on each atom with exponent set to the
+ * square of the nuclear charge. This grid will be adaptively refined during
+ * the SCF procedure.
+ */
 void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol) {
     Printer::printHeader(0, "Initialize DFT grid");
     println(0, " Nr  Element                        nNodes          nPoints");
