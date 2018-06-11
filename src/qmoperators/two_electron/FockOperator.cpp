@@ -11,6 +11,7 @@
 #include "XCOperator.h"
 #include "SCFEnergy.h"
 #include "utils/math_utils.h"
+#include "chemistry/chem_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -124,7 +125,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     // Nuclear part
     if (this->nuc != 0) {
         Nuclei &nucs = this->nuc->getNuclei();
-        E_nuc = this->nuc->trace(nucs);
+        E_nuc = compute_nuclear_repulsion(nucs);
         if (this->ext  != 0) {
             E_nex = this->ext->trace(nucs).real();
             E_nuc += E_nex;
