@@ -20,6 +20,7 @@
 #include "HelmholtzVector.h"
 #include "OrbitalOptimizer.h"
 #include "EnergyOptimizer.h"
+#include "LinearResponseSolver.h"
 #include "KAIN.h"
 
 #include "FockOperator.h"
@@ -32,10 +33,12 @@
 //#include "MagneticFieldOperator.h"
 
 #include "DipoleMoment.h"
+#include "Magnetizability.h"
 
 #include "H_E_dip.h"
 #include "H_B_dip.h"
 #include "H_M_pso.h"
+#include "H_BB_dia.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -220,10 +223,6 @@ bool SCFDriver::sanityCheck() const {
     }
     if (calc_optical_rotation) {
         MSG_ERROR("Optical rotation not implemented");
-        return false;
-    }
-    if (calc_magnetizability) {
-        MSG_ERROR("Magnetizability not implemented");
         return false;
     }
     if (calc_nmr_shielding) {
@@ -532,8 +531,6 @@ EnergyOptimizer* SCFDriver::setupEnergyOptimizer() {
 }
 
 LinearResponseSolver* SCFDriver::setupLinearResponseSolver(bool dynamic) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     if (helmholtz == 0) MSG_ERROR("Helmholtz operators not initialized");
 
     LinearResponseSolver *lrs = 0;
@@ -545,37 +542,39 @@ LinearResponseSolver* SCFDriver::setupLinearResponseSolver(bool dynamic) {
     lrs->setMaxIterations(rsp_max_iter);
     lrs->setThreshold(rsp_orbital_thrs, rsp_property_thrs);
     lrs->setOrbitalPrec(rsp_orbital_prec[0], rsp_orbital_prec[1]);
-    lrs->setupUnperturbed(rsp_orbital_prec[1], *fock, *phi, F);
+    lrs->setupUnperturbed(rsp_orbital_prec[1], fock, phi, &F);
 
     return lrs;
-    */
 }
 
 void SCFDriver::setupPerturbedOrbitals(bool dynamic) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     if (phi == 0) MSG_ERROR("Orbitals not initialized");
 
-    phi_x = new OrbitalVector(*phi);
+    phi_x = new OrbitalVector;
+    *phi_x = orbital::param_copy(*phi);
     if (dynamic) {
-        phi_y = new OrbitalVector(*phi);
+        phi_y = new OrbitalVector;
+        *phi_y = orbital::param_copy(*phi);
     } else {
         phi_y = phi_x;
     }
-    */
 }
 
 void SCFDriver::clearPerturbedOrbitals(bool dynamic) {
     if (not dynamic) phi_y = 0;
-    if (phi_x != 0) delete phi_x;
-    if (phi_y != 0) delete phi_y;
-    phi_x = 0;
-    phi_y = 0;
+    if (phi_x != 0) {
+        orbital::free(*phi_x);
+        delete phi_x;
+        phi_x = 0;
+    }
+    if (phi_y != 0) {
+        orbital::free(*phi_y);
+        delete phi_y;
+        phi_y = 0;
+    }
 }
 
 void SCFDriver::setupPerturbedOperators(const ResponseCalculation &rsp_calc) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     if (phi == 0) MSG_ERROR("Orbitals not initialized");
     if (phi_x == 0) MSG_ERROR("X orbitals not initialized");
     if (phi_y == 0) MSG_ERROR("Y orbitals not initialized");
@@ -597,13 +596,12 @@ void SCFDriver::setupPerturbedOperators(const ResponseCalculation &rsp_calc) {
     }
 
     d_fock = new FockOperator(0, 0, dJ, dK, dXC);
-    d_fock->setPerturbationOperator(dH[d]);
-    */
+    d_fock->perturbation() += dH[d];
 }
 
 void SCFDriver::clearPerturbedOperators() {
     if (d_fock != 0) delete d_fock;
-    //if (dXC != 0) delete dXC;
+    if (dXC != 0) delete dXC;
     if (dK != 0) delete dK;
     if (dJ != 0) delete dJ;
 
@@ -672,8 +670,6 @@ bool SCFDriver::runGroundState() {
 }
 
 void SCFDriver::runLinearResponse(const ResponseCalculation &rsp_calc) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     double omega = rsp_calc.freq;
     bool dynamic = false;
     if (fabs(omega) > mrcpp::MachineZero) dynamic = true;
@@ -683,7 +679,7 @@ void SCFDriver::runLinearResponse(const ResponseCalculation &rsp_calc) {
     bool converged = true;
     if (rsp_run) {
         LinearResponseSolver *solver = setupLinearResponseSolver(dynamic);
-        solver->setup(*d_fock, *phi_x);
+        solver->setup(d_fock, phi_x);
         converged = solver->optimize();
         solver->clear();
         delete solver;
@@ -696,7 +692,6 @@ void SCFDriver::runLinearResponse(const ResponseCalculation &rsp_calc) {
 
     clearPerturbedOperators();
     clearPerturbedOrbitals(dynamic);
-    */
 }
 
 void SCFDriver::calcGroundStateProperties() {
@@ -723,18 +718,18 @@ void SCFDriver::calcGroundStateProperties() {
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
-    /*
     if (calc_magnetizability) {
         Printer::printHeader(0, "Calculating diamagnetic magnetizability");
         Timer timer;
-        MatrixXd &dia = molecule->getMagnetizability().getDiamagnetic();
+        DoubleMatrix &dia = molecule->getMagnetizability().getDiamagnetic();
         H_BB_dia h(r_O);
         h.setup(rel_prec);
-        dia = -h.trace(*phi);
+        dia = -h.trace(*phi).real();
         h.clear();
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
+    /*
     if (calc_nmr_shielding) {
         Printer::printHeader(0, "Calculating diamagnetic NMR shielding");
         Timer timer;
@@ -788,20 +783,19 @@ void SCFDriver::calcGroundStateProperties() {
 }
 
 void SCFDriver::calcLinearResponseProperties(const ResponseCalculation &rsp_calc) {
-    NOT_IMPLEMENTED_ABORT;
-    /*
     int j = rsp_calc.dir;
 
     if (calc_magnetizability and rsp_calc.pert == h_B) {
         Printer::printHeader(0, "Calculating paramagnetic magnetizability");
         Timer timer;
-        MatrixXd &para = molecule->getMagnetizability().getParamagnetic();
+        DoubleMatrix &para = molecule->getMagnetizability().getParamagnetic();
         h_B->setup(rel_prec);
-        para.row(j) = -h_B->trace(*phi, *phi_x, *phi_y);
+        para.row(j) = -h_B->trace(*phi, *phi_x, *phi_y).real();
         h_B->clear();
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
+    /*
     if (calc_nmr_shielding) {
         if (nmr_perturbation == "B" and rsp_calc.pert == h_B) {
             Timer timer;

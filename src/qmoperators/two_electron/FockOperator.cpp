@@ -72,6 +72,7 @@ void FockOperator::setup(double prec) {
     Printer::printSeparator(0, '-');
     this->T.setup(prec);
     this->V.setup(prec);
+    this->H_1.setup(prec);
     if (this->ex != 0) this->ex->setupInternal(prec);
     timer.stop();
     Printer::printFooter(0, timer, 2);
@@ -85,6 +86,7 @@ void FockOperator::setup(double prec) {
 void FockOperator::clear() {
     this->T.clear();
     this->V.clear();
+    this->H_1.clear();
 }
 
 /** @brief rotate orbitals of two-electron operators

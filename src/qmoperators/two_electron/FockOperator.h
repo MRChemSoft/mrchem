@@ -30,10 +30,10 @@ public:
                  ExchangeOperator       *k = 0,
                  XCOperator             *xc = 0,
                  ElectricFieldOperator  *ext = 0);
-    ~FockOperator() { }
 
-    RankZeroTensorOperator& kinetic()   { return this->T; }
-    RankZeroTensorOperator& potential() { return this->V; }
+    RankZeroTensorOperator& kinetic()       { return this->T; }
+    RankZeroTensorOperator& potential()     { return this->V; }
+    RankZeroTensorOperator& perturbation()  { return this->H_1; }
 
     KineticOperator        *getKineticOperator()  { return this->kin;  }
     NuclearOperator        *getNuclearOperator()  { return this->nuc;  }
@@ -60,14 +60,14 @@ public:
 protected:
     RankZeroTensorOperator T;     ///< Total kinetic energy operator
     RankZeroTensorOperator V;     ///< Total potential energy operator
+    RankZeroTensorOperator H_1;   ///< Perturbation operators
 
     KineticOperator        *kin;
     NuclearOperator        *nuc;
     CoulombOperator        *coul;
     ExchangeOperator       *ex;
     XCOperator             *xc;
-    ElectricFieldOperator  *ext; ///< Total external potential
-
+    ElectricFieldOperator  *ext;  ///< Total external potential
 };
 
 } //namespace mrchem

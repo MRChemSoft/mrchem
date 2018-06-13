@@ -296,7 +296,6 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
 ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi,
                                             OrbitalVector &X,
                                             OrbitalVector &Y) {
-    NEEDS_TESTING;
     RankZeroTensorOperator &O = *this;
 
     ComplexDouble result(0.0, 0.0);
