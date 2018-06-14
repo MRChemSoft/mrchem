@@ -7,7 +7,6 @@
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
 #include "ElectricFieldOperator.h"
-#include "XCFunctional.h"
 #include "XCOperator.h"
 #include "SCFEnergy.h"
 #include "utils/math_utils.h"

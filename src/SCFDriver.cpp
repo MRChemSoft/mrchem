@@ -381,7 +381,7 @@ void SCFDriver::setup() {
     fock = new FockOperator(T, V);
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "Hartree" or wf_method == "HF" or wf_method == "DFT") {
-        J = new CoulombOperator(*P, *phi);
+        J = new CoulombOperator(P, phi);
         fock->setCoulombOperator(J);
     }
     // For HF we need the full HF exchange
@@ -397,7 +397,7 @@ void SCFDriver::setup() {
     //For DFT we need the XC operator
     if (wf_method == "DFT") {
         mrcpp::DerivativeOperator<3> * der_dft = 0;
-        xcfun = new XCFunctional(dft_spin, dft_explicit_der, dft_cutoff, *phi, useDerivative(diff_dft));
+        xcfun = new mrdft::XCFunctional(*MRA, dft_spin); //, dft_use_gamma, dft_cutoff, *phi, useDerivative(diff_dft));
         for (int i = 0; i < dft_func_names.size(); i++) {
             xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
         }
