@@ -60,27 +60,24 @@ void NuclearPotential::clear() {
     clearApplyPrec(); // apply_prec = -1
 }
 
-/** @brief computes the repulsion self energy of a set of nuclei
+/** @brief computes the interaction energy of the nuclear potential with a second set of nuclei.
  * 
  * @param[in] nucs the set of nuclei
  *
+ * Note: this function is not suited to compute the nuclear self-energy
+ *
  */    
 double NuclearOperator::trace(const Nuclei &nucs) {
+    MSG_WARN("This routine has never been tested!")
     int nNucs = nucs.size();
     double E_nuc = 0.0;
     for (int i = 0; i < nNucs; i++) {
-        for (int j = i+1; j < nNucs; j++) {
-            const Nucleus &nuc_i = nucs[i];
-            const Nucleus &nuc_j = nucs[j];
-            double Z_i = nuc_i.getCharge();
-            double Z_j = nuc_j.getCharge();
-            const double *R_i = nuc_i.getCoord();
-                const double *R_j = nuc_j.getCoord();
-                double R_ij = math_utils::calc_distance(R_i, R_j);
-                E_nuc += (Z_i*Z_j)/R_ij;
-        }
+        const Nucleus &nuc_i = nucs[i];
+        double Z_i = nuc_i.getCharge();
+        const double *R_i = nuc_i.getCoord();
+        E_nuc += Z_i*this->r_m1.evalf(R_i);
     }
     return E_nuc;
 }
-
+    
 } //namespace mrchem

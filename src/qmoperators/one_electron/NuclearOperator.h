@@ -16,7 +16,8 @@ public:
 
     Nuclei &getNuclei() { return this->func.getNuclei(); }
     const Nuclei &getNuclei() const { return this->func.getNuclei(); }
-
+    double evalf(const double *r)  { return this->func.evalf(r); }
+    
 protected:
     NuclearFunction func;
 };

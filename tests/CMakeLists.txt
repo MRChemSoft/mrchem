@@ -14,6 +14,7 @@ target_include_directories(mrchem-tests PRIVATE
     ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/chemistry
+    ${CMAKE_SOURCE_DIR}/src/properties
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/qmfunctions
     ${CMAKE_SOURCE_DIR}/src/qmoperators
