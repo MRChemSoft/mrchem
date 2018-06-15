@@ -50,7 +50,7 @@ void OrbitalOptimizer::setup(FockOperator &fock,
 /** @brief Clear solver after optimization
  *
  * Clear pointers that was set during setup, and reset the precision parameter
- * (only the current precision orbPrec[0], not the bounaary values orbPrec[1,2]).
+ * (only the current precision orbPrec[0], not the boundary values orbPrec[1,2]).
  * Solver can be re-used after another setup.
  */
 void OrbitalOptimizer::clear() {

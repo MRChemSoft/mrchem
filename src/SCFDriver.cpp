@@ -542,7 +542,6 @@ LinearResponseSolver* SCFDriver::setupLinearResponseSolver(bool dynamic) {
     lrs->setMaxIterations(rsp_max_iter);
     lrs->setThreshold(rsp_orbital_thrs, rsp_property_thrs);
     lrs->setOrbitalPrec(rsp_orbital_prec[0], rsp_orbital_prec[1]);
-    lrs->setupUnperturbed(rsp_orbital_prec[1], fock, phi, &F);
 
     return lrs;
 }
@@ -679,9 +678,11 @@ void SCFDriver::runLinearResponse(const ResponseCalculation &rsp_calc) {
     bool converged = true;
     if (rsp_run) {
         LinearResponseSolver *solver = setupLinearResponseSolver(dynamic);
+        solver->setupUnperturbed(rsp_orbital_prec[1], fock, phi, &F);
         solver->setup(d_fock, phi_x);
         converged = solver->optimize();
         solver->clear();
+        solver->clearUnperturbed();
         delete solver;
     }
 

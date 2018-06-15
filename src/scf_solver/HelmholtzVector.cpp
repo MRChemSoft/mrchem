@@ -231,7 +231,7 @@ Orbital HelmholtzVector::operator()(int i, Orbital inp) {
  */
 OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
     Printer::printHeader(0, "Applying Helmholtz operators");
-    println(0, " Orb  RealNorm     ImagNorm      nNodes     Error   Timing   ");
+    println(0, " Orb    RealNorm   Nodes     ImagNorm   Nodes     Timing");
     Printer::printSeparator(0, '-');
     int oldprec = Printer::setPrecision(5);
 
@@ -247,7 +247,6 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
 
         int rNodes = out[i].getNNodes(NUMBER::Real);
         int iNodes = out[i].getNNodes(NUMBER::Imag);
-        double dNorm = std::abs(out[i].norm() - 1.0);
         double rNorm = 0.0;
         double iNorm = 0.0;
         if (out[i].hasReal()) rNorm = std::sqrt(out[i].real().getSquareNorm());
@@ -256,13 +255,11 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
         timer.stop();
         Printer::setPrecision(5);
         printout(0, std::setw(3) << i);
-        printout(0, " " << std::setw(12) << rNorm);
-        printout(0, " " << std::setw(12) << iNorm);
-        Printer::setPrecision(1);
+        printout(0, " " << std::setw(14) << rNorm);
         printout(0, " " << std::setw(5) << rNodes);
+        printout(0, " " << std::setw(14) << iNorm);
         printout(0, " " << std::setw(5) << iNodes);
-        printout(0, " " << std::setw(8) << dNorm);
-        printout(0, std::setw(9) << timer.getWallTime() << std::endl);
+        printout(0, std::setw(14) << timer.getWallTime() << std::endl);
     }
 
 #ifdef HAVE_MPI

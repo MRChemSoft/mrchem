@@ -43,9 +43,8 @@ protected:
                                           const ComplexMatrix &M,
                                           bool adjoint);
 
-    double calcProperty();
-    double calcPropertyError() const;
     void printProperty() const;
+    double calcProperty();
 };
 
 } //namespace mrchem
