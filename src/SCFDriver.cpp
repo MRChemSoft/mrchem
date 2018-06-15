@@ -280,7 +280,7 @@ void SCFDriver::setup() {
     h_M = new H_M_pso*[nNucs];
     for (int k = 0; k < nNucs; k++) {
         const double *r_K = molecule->getNucleus(k).getCoord();
-        new H_M_pso(*(useDerivative(diff_pso)), r_K);
+        h_M[k] = new H_M_pso(*(useDerivative(diff_pso)), r_K);
     }
 
     // Setting up properties
@@ -400,7 +400,7 @@ void SCFDriver::setup() {
         fock->setXCOperator(XC);
     }
     //HACK we need a better way to decide whether to initialize the external potential operator
-    if(ext_electric) {
+    if (ext_electric) {
         Vext = new ElectricFieldOperator(ext_electric_field);
     }
     fock->setExtOperator(Vext);
@@ -432,6 +432,7 @@ void SCFDriver::clear() {
     if (xcfun != 0) delete xcfun;
 
     if (fock != 0) delete fock;
+    if (Vext != 0) delete Vext;
     if (XC != 0) delete XC;
     if (K != 0) delete K;
     if (J != 0) delete J;
