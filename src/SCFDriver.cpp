@@ -396,12 +396,7 @@ void SCFDriver::setup() {
     }
     //For DFT we need the XC operator
     if (wf_method == "DFT") {
-        mrcpp::DerivativeOperator<3> * der_dft = 0;
-        xcfun = new mrdft::XCFunctional(*MRA, dft_spin); //, dft_use_gamma, dft_cutoff, *phi, useDerivative(diff_dft));
-        for (int i = 0; i < dft_func_names.size(); i++) {
-            xcfun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
-        }
-        std::cout << "and here 0" << std::endl;
+        xcfun = setupFunctional(1);
         XC = new XCOperator(xcfun, phi);
         fock->setXCOperator(XC);
     }
@@ -915,4 +910,23 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
     Printer::printFooter(0, timer, 2);
 }
 
+    /** @brief helper routine to set up the correct parameters in the functional before using it
+     *
+     * param[in] order the requested order of the derivative (order=1 for SCF)
+     *
+     */
+
+mrdft::XCFunctional* SCFDriver::setupFunctional(int order) {
+    mrdft::XCFunctional* fun = new mrdft::XCFunctional(*MRA, dft_spin);
+    for (int i = 0; i < dft_func_names.size(); i++) {
+        fun->setFunctional(dft_func_names[i], dft_func_coefs[i]);
+    }
+    fun->setUseGamma(dft_use_gamma);
+    fun->setDensityCutoff(dft_cutoff);
+    fun->evalSetup(order);
+    setupInitialGrid(*fun, *molecule);
+    return fun;
+}
+    
 } //namespace mrchem
+
