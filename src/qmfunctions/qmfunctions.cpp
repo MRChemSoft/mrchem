@@ -846,10 +846,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
 
     DensityVector dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
-        Density *rho_i = new Density(*MRA);
-        mrcpp::copy_grid(*rho_i, rho);
-        density::compute(mult_prec, *rho_i, Phi[i], spin);
-        dens_vec.push_back(std::make_tuple(1.0, rho_i));
+        if (mpi::my_orb(Phi[i])) {
+            Density *rho_i = new Density(*MRA);
+            mrcpp::copy_grid(*rho_i, rho);
+            density::compute(mult_prec, *rho_i, Phi[i], spin);
+            dens_vec.push_back(std::make_tuple(1.0, rho_i));
+        }
     }
 
     // Adaptive prec addition if more than 5 contributions,
@@ -861,6 +863,9 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
         mrcpp::add(-1.0, rho, dens_vec, 0);
     }
     mrcpp::clear(dens_vec, true);
+
+    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
 } //namespace mrchem

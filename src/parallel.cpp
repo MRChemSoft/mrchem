@@ -1,7 +1,11 @@
 #include "MRCPP/Printer"
+#include "MRCPP/Timer"
 
 #include "parallel.h"
 #include "Orbital.h"
+
+using mrcpp::Printer;
+using mrcpp::Timer;
 
 namespace mrchem {
 
@@ -23,7 +27,9 @@ int share_size = 1;
 MPI_Comm comm_orb;
 MPI_Comm comm_share;
 
-void initialize(int argc, char **argv) {
+} //namespace mpi
+
+void mpi::initialize(int argc, char **argv) {
     omp_set_dynamic(0);
 
 #ifdef HAVE_MPI
@@ -65,7 +71,7 @@ void initialize(int argc, char **argv) {
 #endif
 }
   
-void finalize() {
+void mpi::finalize() {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -77,12 +83,12 @@ void finalize() {
  *********************************/
 
 /** @brief Test if orbital belongs to this MPI rank */
-bool my_orb(const Orbital &orb) {
+bool mpi::my_orb(const Orbital &orb) {
     return (orb.rankID() < 0 or orb.rankID() == mpi::orb_rank) ? true : false;
 }
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
-void reduce_vector(DoubleVector &vec, MPI_Comm comm) {
+void mpi::reduce_vector(DoubleVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
         int N = vec.size();
         MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE, MPI_SUM, comm);
@@ -90,14 +96,14 @@ void reduce_vector(DoubleVector &vec, MPI_Comm comm) {
 }
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
-void reduce_vector(ComplexVector &vec, MPI_Comm comm) {
+void mpi::reduce_vector(ComplexVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
     NOT_IMPLEMENTED_ABORT;
 #endif
 }
 
 /** @brief Add up each entry of the matrix with contributions from all MPI ranks */
-void reduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
+void mpi::reduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
 #ifdef HAVE_MPI
         int N = mat.size();
         MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_DOUBLE, MPI_SUM, comm);
@@ -112,7 +118,7 @@ void reduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 }
 
 //send an orbital with MPI
-void send_orbital(Orbital &orb, int dst, int tag) {
+void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI
     NEEDS_TESTING;
 
@@ -125,7 +131,7 @@ void send_orbital(Orbital &orb, int dst, int tag) {
 }
 
 //send an orbital with MPI
-void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request) {
+void mpi::isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request) {
 #ifdef HAVE_MPI
     NEEDS_TESTING;
 
@@ -139,7 +145,7 @@ void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request) {
 }
 
 //receive an orbital with MPI
-void recv_orbital(Orbital &orb, int src, int tag) {
+void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #ifdef HAVE_MPI
     NEEDS_TESTING;
     MPI_Status status;
@@ -163,6 +169,66 @@ void recv_orbital(Orbital &orb, int src, int tag) {
 #endif
 }
 
-} //namespace mpi
+
+void mpi::reduce_density(Density &rho, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    int comm_size, comm_rank;
+    MPI_Comm_rank(comm, &comm_rank);
+    MPI_Comm_size(comm, &comm_size);
+
+    if (comm_size == 1) return;
+
+    Timer timer;
+    if (comm_rank == 0) {
+	Density *rho_0 = new Density(*MRA);
+	mrcpp::copy_grid(*rho_0, rho);
+	mrcpp::copy_func(*rho_0, rho);
+	rho.clear();
+
+	DensityVector rho_vec;
+	rho_vec.push_back(std::make_tuple(1.0, rho_0));
+	for (int src = 1; src < comm_size; src++) {
+	    Density *rho_i = new Density(*MRA);
+	    int tag = 3333+src;
+	    mrcpp::recv_tree(*rho_i, src, tag, comm);
+	    if (rho_i->getSquareNorm() > 0.0) rho_vec.push_back(std::make_tuple(1.0, rho_i));
+	}
+	mrcpp::build_grid(rho, rho_vec);
+	mrcpp::add(-1.0, rho, rho_vec, 0);
+	mrcpp::clear(rho_vec, true);
+    } else {
+	int tag = 3333+comm_rank;
+	mrcpp::send_tree(rho, 0, tag, comm);
+	rho.clear();
+    }
+    MPI_Barrier(comm);
+    timer.stop();
+    Printer::printDouble(0, "Reduce density", timer.getWallTime(), 5);
+#endif
+}
+
+void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    int comm_size, comm_rank;
+    MPI_Comm_rank(comm, &comm_rank);
+    MPI_Comm_size(comm, &comm_size);
+
+    if (comm_size == 1) return;
+
+    Timer timer;
+    if (comm_rank == 0) {
+	for (int dst = 1; dst < comm_size; dst++) {
+	    int tag = 4444+dst;
+	    mrcpp::send_tree(rho, dst, tag, comm);
+	}
+    } else {
+	int tag = 4444+comm_rank;
+	mrcpp::recv_tree(rho, 0, tag, comm);
+    }
+    MPI_Barrier(comm);
+    timer.stop();
+    Printer::printDouble(0, "Broadcast density", timer.getWallTime(), 5);
+#endif
+}
 
 } //namespace mrchem
