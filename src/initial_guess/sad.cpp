@@ -151,11 +151,18 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
 
     OrbitalVector Psi;
     for (int i = 0; i < N; i++) {
-        ComplexVector v_i = U.row(i);
-        Orbital psi_i = orbital::multiply(v_i, Phi, prec);
-        psi_i.setSpin(spin);
-        psi_i.setOcc(occ);
-        Psi.push_back(psi_i);
+	int i_rank = i%mpi::orb_size;
+	if (mpi::orb_rank == i_rank) {
+            ComplexVector v_i = U.row(i);
+            Orbital psi_i = orbital::multiply(v_i, Phi, prec);
+            psi_i.setRankId(i_rank);
+            psi_i.setSpin(spin);
+            psi_i.setOcc(occ);
+            Psi.push_back(psi_i);
+	} else {
+	    Orbital psi_i(spin, occ, i_rank);
+            Psi.push_back(psi_i);
+	}
     }
     t.stop();
     Printer::printDouble(0, "Rotate orbitals", t.getWallTime(), 5);
