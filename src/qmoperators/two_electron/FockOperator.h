@@ -24,16 +24,16 @@ class ElectricFieldOperator;
 
 class FockOperator final : public RankZeroTensorOperator {
 public:
-    FockOperator(KineticOperator        *t = 0,
-                 NuclearOperator        *v = 0,
-                 CoulombOperator        *j = 0,
-                 ExchangeOperator       *k = 0,
-                 XCOperator             *xc = 0,
-                 ElectricFieldOperator  *ext = 0);
+    FockOperator(KineticOperator         *t = nullptr,
+                 NuclearOperator         *v = nullptr,
+                 CoulombOperator         *j = nullptr,
+                 ExchangeOperator        *k = nullptr,
+                 XCOperator             *xc = nullptr,
+                 ElectricFieldOperator *ext = nullptr);
 
-    RankZeroTensorOperator& kinetic()       { return this->T; }
-    RankZeroTensorOperator& potential()     { return this->V; }
-    RankZeroTensorOperator& perturbation()  { return this->H_1; }
+    KineticOperator        &kinetic()       { return *this->kin; }
+    RankZeroTensorOperator &potential()     { return this->V; }
+    RankZeroTensorOperator &perturbation()  { return this->H_1; }
 
     KineticOperator        *getKineticOperator()  { return this->kin;  }
     NuclearOperator        *getNuclearOperator()  { return this->nuc;  }
@@ -58,7 +58,6 @@ public:
     SCFEnergy trace(OrbitalVector &Phi, const ComplexMatrix &F);
 
 protected:
-    RankZeroTensorOperator T;     ///< Total kinetic energy operator
     RankZeroTensorOperator V;     ///< Total potential energy operator
     RankZeroTensorOperator H_1;   ///< Perturbation operators
 

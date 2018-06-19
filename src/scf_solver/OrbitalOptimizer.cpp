@@ -5,6 +5,7 @@
 
 #include "OrbitalOptimizer.h"
 #include "HelmholtzVector.h"
+#include "KineticOperator.h"
 #include "FockOperator.h"
 #include "Accelerator.h"
 #include "Orbital.h"
@@ -96,7 +97,7 @@ bool OrbitalOptimizer::optimize() {
     double err_p = 1.0;
 
     fock.setup(orb_prec);
-    F = fock(Phi_n, Phi_n);
+    F = fock.kinetic()(Phi_n, Phi_n) + fock.potential()(Phi_n, Phi_n);
 
     int nIter = 0;
     bool converged = false;
@@ -163,7 +164,7 @@ bool OrbitalOptimizer::optimize() {
 
         // Compute Fock matrix
         fock.setup(orb_prec);
-        F = fock(Phi_n, Phi_n);
+        F = fock.kinetic()(Phi_n, Phi_n) + fock.potential()(Phi_n, Phi_n);
 
         // Finalize SCF cycle
         timer.stop();

@@ -48,14 +48,15 @@ FockOperator::FockOperator(KineticOperator  *t,
  * 
  */
 void FockOperator::build() {
-    if (this->kin  != 0) this->T  = *this->kin;
-    if (this->nuc  != 0) this->V  = *this->nuc;
-    if (this->coul != 0) this->V += *this->coul;
-    if (this->ex   != 0) this->V -= *this->ex;
-    if (this->xc   != 0) this->V += *this->xc;
-    if (this->ext  != 0) this->V += *this->ext;
+    this->V = RankZeroTensorOperator();
+    if (this->nuc  != nullptr) this->V += *this->nuc;
+    if (this->coul != nullptr) this->V += *this->coul;
+    if (this->ex   != nullptr) this->V -= *this->ex;
+    if (this->xc   != nullptr) this->V += *this->xc;
+    if (this->ext  != nullptr) this->V += *this->ext;
+
     RankZeroTensorOperator &F = (*this);
-    F = this->T + this->V;
+    F = this->kinetic() + this->potential();
 }
 
 /** @brief prepare operator for application
@@ -70,9 +71,9 @@ void FockOperator::setup(double prec) {
     Printer::printHeader(0, "Setting up Fock operator");
     Printer::printDouble(0, "Precision", prec, 5);
     Printer::printSeparator(0, '-');
-    this->T.setup(prec);
-    this->V.setup(prec);
-    this->H_1.setup(prec);
+    this->kinetic().setup(prec);
+    this->potential().setup(prec);
+    this->perturbation().setup(prec);
     if (this->ex != 0) this->ex->setupInternal(prec);
     timer.stop();
     Printer::printFooter(0, timer, 2);
@@ -84,9 +85,9 @@ void FockOperator::setup(double prec) {
  * to the state after construction. The operator can now be reused after another setup.
  */
 void FockOperator::clear() {
-    this->T.clear();
-    this->V.clear();
-    this->H_1.clear();
+    this->kinetic().clear();
+    this->potential().clear();
+    this->perturbation().clear();
 }
 
 /** @brief rotate orbitals of two-electron operators
@@ -98,7 +99,7 @@ void FockOperator::clear() {
  * internal exchange potentials.
  */
 void FockOperator::rotate(const ComplexMatrix &U) {
-    if (this->ex != 0) this->ex->rotate(U);
+    if (this->ex != nullptr) this->ex->rotate(U);
 }
 
 /** @brief compute the SCF energy
@@ -124,10 +125,10 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     double E_nex = 0.0; // External field contribution to the nuclear energy
 
     // Nuclear part
-    if (this->nuc != 0) {
+    if (this->nuc != nullptr) {
         Nuclei &nucs = this->nuc->getNuclei();
         E_nuc = compute_nuclear_repulsion(nucs);
-        if (this->ext  != 0) {
+        if (this->ext  != nullptr) {
             E_nex = this->ext->trace(nucs).real();
             E_nuc += E_nex;
         }
@@ -140,12 +141,12 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     }
 
     // Electronic part
-    if (this->nuc  != 0) E_en  =  this->nuc->trace(Phi).real();
-    if (this->coul != 0) E_ee  =  this->coul->trace(Phi).real();
-    if (this->ex   != 0) E_x   = -this->ex->trace(Phi).real();
-    if (this->xc   != 0) E_xc  =  this->xc->getEnergy();
-    if (this->xc   != 0) E_xc2 =  this->xc->trace(Phi).real();
-    if (this->ext  != 0) E_ext =  this->ext->trace(Phi).real();
+    if (this->nuc  != nullptr) E_en  =  this->nuc->trace(Phi).real();
+    if (this->coul != nullptr) E_ee  =  this->coul->trace(Phi).real();
+    if (this->ex   != nullptr) E_x   = -this->ex->trace(Phi).real();
+    if (this->xc   != nullptr) E_xc  =  this->xc->getEnergy();
+    if (this->xc   != nullptr) E_xc2 =  this->xc->trace(Phi).real();
+    if (this->ext  != nullptr) E_ext =  this->ext->trace(Phi).real();
 
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;
