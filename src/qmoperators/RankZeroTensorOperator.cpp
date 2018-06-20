@@ -197,15 +197,10 @@ OrbitalVector RankZeroTensorOperator::dagger(OrbitalVector &inp) {
  * the corresponding coefficient to yield the final result.
  */
 ComplexDouble RankZeroTensorOperator::operator()(Orbital bra, Orbital ket) {
-    ComplexDouble out(0.0, 0.0);
-    if (mpi::my_orb(bra) and mpi::my_orb(ket)) {
-        for (int n = 0; n < this->oper_exp.size(); n++) {
-            Orbital Oket = applyOperTerm(n, ket);
-            ComplexDouble c_n = this->coef_exp[n];
-            out += c_n*orbital::dot(bra, Oket);
-            Oket.free();
-        }
-    }
+    RankZeroTensorOperator &O = *this;
+    Orbital Oket = O(ket);
+    ComplexDouble out = orbital::dot(bra, Oket);
+    Oket.free();
     return out;
 }
 
@@ -231,18 +226,10 @@ ComplexDouble RankZeroTensorOperator::dagger(Orbital bra, Orbital ket) {
  * the final result.
  */
 ComplexMatrix RankZeroTensorOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
-    ComplexMatrix out = ComplexMatrix::Zero(bra.size(), ket.size());
-    for (int n = 0; n < this->oper_exp.size(); n++) {
-        OrbitalVector Oket;
-        for (int j = 0; j < ket.size(); j++) {
-            Orbital Oket_j = applyOperTerm(n, ket[j]);
-            Oket.push_back(Oket_j);
-        }
-        ComplexDouble c_n = this->coef_exp[n];
-        ComplexMatrix O_n = orbital::calc_overlap_matrix(bra, Oket);
-        out = out + c_n*O_n;
-        orbital::free(Oket);
-    }
+    RankZeroTensorOperator &O = *this;
+    OrbitalVector Oket = O(ket);
+    ComplexMatrix out = orbital::calc_overlap_matrix(bra, Oket);
+    orbital::free(Oket);
     return out;
 }
 
@@ -268,18 +255,11 @@ ComplexMatrix RankZeroTensorOperator::dagger(OrbitalVector &bra, OrbitalVector &
  */
 ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
     RankZeroTensorOperator &O = *this;
-
-    ComplexDouble result = 0.0;
-    for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) {
-            double eta_i = (double) Phi[i].occ();
-            result += eta_i*O(Phi[i], Phi[i]);
-        }
-    }
-#ifdef HAVE_MPI
-    MPI_Allreduce(MPI_IN_PLACE, &result, 1, MPI_C_DOUBLE_COMPLEX, MPI_SUM, mpi::comm_orb);
-#endif
-    return result;
+    OrbitalVector OPhi = O(Phi);
+    ComplexVector eta = orbital::get_occupancies(Phi).cast<ComplexDouble>();
+    ComplexVector phi_vec = orbital::dot(Phi, OPhi);
+    orbital::free(OPhi);
+    return eta.dot(phi_vec);
 }
 
 /** @brief compute trace of operator expansion
