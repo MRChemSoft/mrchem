@@ -87,41 +87,59 @@ bool mpi::my_orb(const Orbital &orb) {
     return (orb.rankID() < 0 or orb.rankID() == mpi::orb_rank) ? true : false;
 }
 
+/** @brief Clear all orbitals not belonging to this MPI rank */
+void mpi::free_foreign(OrbitalVector &Phi) {
+    for (int i = 0; i < Phi.size(); i++) {
+        if (not mpi::my_orb(Phi[i])) Phi[i].free();
+    }
+}
+
+/** @brief Return the subset of an OrbitalVector that belongs to this MPI rank */
+OrbitalChunk mpi::get_my_chunk(OrbitalVector &Phi) {
+    OrbitalChunk chunk;
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) {
+            chunk.push_back(std::make_tuple(i, Phi[i]));
+        }
+    }
+    return chunk;
+}
+
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
-void mpi::reduce_vector(DoubleVector &vec, MPI_Comm comm) {
+void mpi::allreduce_vector(DoubleVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
-        int N = vec.size();
-        MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE, MPI_SUM, comm);
+    int N = vec.size();
+    MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE, MPI_SUM, comm);
 #endif
 }
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
-void mpi::reduce_vector(ComplexVector &vec, MPI_Comm comm) {
+void mpi::allreduce_vector(ComplexVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
-    NOT_IMPLEMENTED_ABORT;
+    int N = vec.size();
+    MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
 #endif
 }
 
 /** @brief Add up each entry of the matrix with contributions from all MPI ranks */
-void mpi::reduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
+void mpi::allreduce_matrix(DoubleMatrix &mat, MPI_Comm comm) {
 #ifdef HAVE_MPI
-        int N = mat.size();
-        MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_DOUBLE, MPI_SUM, comm);
+    int N = mat.size();
+    MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_DOUBLE, MPI_SUM, comm);
 #endif
 }
 
 /** @brief Add up each entry of the matrix with contributions from all MPI ranks */
-void reduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
+void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 #ifdef HAVE_MPI
-    NOT_IMPLEMENTED_ABORT;
+    int N = mat.size();
+    MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
 #endif
 }
 
 //send an orbital with MPI
 void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI
-    NEEDS_TESTING;
-
     OrbitalMeta &orbinfo = orb.getMetaData();
     MPI_Send(&orbinfo, sizeof(OrbitalMeta), MPI_BYTE, dst, 0, mpi::comm_orb);
 
@@ -147,7 +165,6 @@ void mpi::isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request) {
 //receive an orbital with MPI
 void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #ifdef HAVE_MPI
-    NEEDS_TESTING;
     MPI_Status status;
 
     OrbitalMeta &orbinfo = orb.getMetaData();
@@ -168,7 +185,6 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag) {
     }
 #endif
 }
-
 
 void mpi::reduce_density(Density &rho, MPI_Comm comm) {
 #ifdef HAVE_MPI

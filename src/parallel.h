@@ -36,6 +36,8 @@ void initialize(int argc, char **argv);
 void finalize();
 
 bool my_orb(const Orbital &orb);
+void free_foreign(OrbitalVector &Phi);
+OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 
 void send_orbital(Orbital &orb, int dst, int tag);
 void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request);
@@ -44,10 +46,10 @@ void recv_orbital(Orbital &orb, int src, int tag);
 void reduce_density(Density &rho, MPI_Comm comm);
 void broadcast_density(Density &rho, MPI_Comm comm);
 
-void reduce_vector(DoubleVector &vec, MPI_Comm comm);
-void reduce_vector(ComplexVector &vec, MPI_Comm comm);
-void reduce_matrix(DoubleMatrix &mat, MPI_Comm comm);
-void reduce_matrix(ComplexMatrix &mat, MPI_Comm comm);
+void allreduce_vector(DoubleVector &vec, MPI_Comm comm);
+void allreduce_vector(ComplexVector &vec, MPI_Comm comm);
+void allreduce_matrix(DoubleMatrix &mat, MPI_Comm comm);
+void allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm);
 
 } //namespace mpi
 
