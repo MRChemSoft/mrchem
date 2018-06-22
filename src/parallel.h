@@ -36,6 +36,7 @@ void initialize(int argc, char **argv);
 void finalize();
 
 bool my_orb(const Orbital &orb);
+bool my_unique_orb(const Orbital &orb);
 void free_foreign(OrbitalVector &Phi);
 OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 

@@ -7,6 +7,7 @@
 
 #include "qmfunctions.h"
 #include "Orbital.h"
+#include "OrbitalIterator.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;
@@ -46,6 +47,34 @@ ComplexDouble dot(Orbital bra, Orbital ket) {
     double real_part = rr + bra_conj*ket_conj*ii;
     double imag_part = ket_conj*ri - bra_conj*ir;
     return ComplexDouble(real_part, imag_part);
+}
+
+/** @brief Compute the diagonal dot products <bra_i|ket_i>
+ *
+ * MPI: dot product is computed by the ket owner and the corresponding
+ *      bra is communicated. The resulting vector is allreduced, and
+ *      the foreign bra's are cleared.
+ *
+ */
+ComplexVector dot(OrbitalVector &bra, OrbitalVector &ket) {
+    if (bra.size() != ket.size()) MSG_FATAL("Size mismatch");
+
+    int N = bra.size();
+    ComplexVector result = ComplexVector::Zero(N);
+    for (int i = 0; i < N; i++) {
+        // The bra is sent to the owner of the ket
+        if (bra[i].rankID() != ket[i].rankID()) {
+            int tag = 8765*i;
+            int src = bra[i].rankID();
+            int dst = ket[i].rankID();
+            if (mpi::my_orb(bra[i])) mpi::send_orbital(bra[i], dst, tag);
+            if (mpi::my_orb(ket[i])) mpi::recv_orbital(bra[i], src, tag);
+        }
+        result[i] = orbital::dot(bra[i], ket[i]);
+    }
+    mpi::free_foreign(bra);
+    mpi::allreduce_vector(result, mpi::comm_orb);
+    return result;
 }
 
 /** @brief Compare spin and occupancy of two orbitals
@@ -457,17 +486,43 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &braket) {
     return orbital::calc_overlap_matrix(braket, braket);
 }
 
+/** @brief Compute the overlap matrix S_ij = <bra_i|ket_j>
+ *
+ * MPI: Each rank will compute the full columns related to their
+ *      orbitals in the ket vector. The bra orbitals are communicated
+ *      one rank at the time (all orbitals belonging to a given rank
+ *      is communicated at the same time). This algorithm sets NO
+ *      restrictions on the distributions of the bra or ket orbitals
+ *      among the available ranks. After the columns have been computed,
+ *      the full matrix is allreduced, e.i. all MPIs will have the full
+ *      matrix at exit.
+ *
+ */
 ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
-    int Ni = bra.size();
-    int Nj = ket.size();
-    ComplexMatrix S(Ni, Nj);
-    S.setZero();
+    ComplexMatrix S = ComplexMatrix::Zero(bra.size(), ket.size());
 
-    for (int i = 0; i < Ni; i++) {
-        for (int j = 0; j < Nj; j++) {
-            S(i,j) = orbital::dot(bra[i], ket[j]);
+    // Get all ket orbitals belonging to this MPI
+    OrbitalChunk my_ket = mpi::get_my_chunk(ket);
+
+    // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
+    // Computes the FULL columns assosiated with MY orbitals on the ket side
+    OrbitalIterator iter(bra);
+    while (iter.next()) {
+        OrbitalChunk &recv_bra = iter.get();
+        for (int i = 0; i < recv_bra.size(); i++) {
+            int idx_i = std::get<0>(recv_bra[i]);
+            Orbital &bra_i = std::get<1>(recv_bra[i]);
+            for (int j = 0; j < my_ket.size(); j++) {
+                int idx_j = std::get<0>(my_ket[j]);
+                Orbital &ket_j = std::get<1>(my_ket[j]);
+                if (mpi::my_unique_orb(ket_j) or mpi::orb_rank == 0) {
+                    S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
+                }
+            }
         }
     }
+    // Assumes all MPIs have (only) computed their own columns of the matrix
+    mpi::allreduce_matrix(S, mpi::comm_orb);
     return S;
 }
 

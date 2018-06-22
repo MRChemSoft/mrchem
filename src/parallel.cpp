@@ -82,9 +82,14 @@ void mpi::finalize() {
  * Orbital related MPI functions *
  *********************************/
 
-/** @brief Test if orbital belongs to this MPI rank */
+/** @brief Test if orbital belongs to this MPI rank (or is common)*/
 bool mpi::my_orb(const Orbital &orb) {
     return (orb.rankID() < 0 or orb.rankID() == mpi::orb_rank) ? true : false;
+}
+
+/** @brief Test if orbital belongs to this MPI rank */
+bool mpi::my_unique_orb(const Orbital &orb) {
+    return (orb.rankID() == mpi::orb_rank) ? true : false;
 }
 
 /** @brief Clear all orbitals not belonging to this MPI rank */

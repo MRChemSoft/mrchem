@@ -644,7 +644,7 @@ bool SCFDriver::runGroundState() {
         delete solver;
     } else {
         fock->setup(rel_prec);
-        F = fock->kinetic()(*phi, *phi) + fock->potential()(*phi, *phi);
+        F = (*fock)(*phi, *phi);
         fock->clear();
     }
 
