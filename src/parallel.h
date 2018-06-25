@@ -47,8 +47,10 @@ void recv_orbital(Orbital &orb, int src, int tag);
 void reduce_density(Density &rho, MPI_Comm comm);
 void broadcast_density(Density &rho, MPI_Comm comm);
 
+void allreduce_vector(IntVector &vec, MPI_Comm comm);
 void allreduce_vector(DoubleVector &vec, MPI_Comm comm);
 void allreduce_vector(ComplexVector &vec, MPI_Comm comm);
+void allreduce_matrix(IntMatrix &vec, MPI_Comm comm);
 void allreduce_matrix(DoubleMatrix &mat, MPI_Comm comm);
 void allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm);
 

@@ -111,6 +111,14 @@ OrbitalChunk mpi::get_my_chunk(OrbitalVector &Phi) {
 }
 
 /** @brief Add up each entry of the vector with contributions from all MPI ranks */
+void mpi::allreduce_vector(IntVector &vec, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    int N = vec.size();
+    MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_INT, MPI_SUM, comm);
+#endif
+}
+
+/** @brief Add up each entry of the vector with contributions from all MPI ranks */
 void mpi::allreduce_vector(DoubleVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
     int N = vec.size();
@@ -123,6 +131,14 @@ void mpi::allreduce_vector(ComplexVector &vec, MPI_Comm comm) {
 #ifdef HAVE_MPI
     int N = vec.size();
     MPI_Allreduce(MPI_IN_PLACE, vec.data(), N, MPI_DOUBLE_COMPLEX, MPI_SUM, comm);
+#endif
+}
+
+/** @brief Add up each entry of the matrix with contributions from all MPI ranks */
+void mpi::allreduce_matrix(IntMatrix &mat, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    int N = mat.size();
+    MPI_Allreduce(MPI_IN_PLACE, mat.data(), N, MPI_INT, MPI_SUM, comm);
 #endif
 }
 
