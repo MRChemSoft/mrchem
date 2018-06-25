@@ -34,16 +34,19 @@ void KAIN::setupLinearSystem() {
         DoubleMatrix orbA = DoubleMatrix::Zero(nHistory, nHistory);
         DoubleVector orbB = DoubleVector::Zero(nHistory);
 
-        if (mpi::orb_rank == n%mpi::orb_size) {
-            Orbital &phi_m = this->orbitals[nHistory][n];
-            Orbital &fPhi_m = this->dOrbitals[nHistory][n];
+        Orbital &phi_m = this->orbitals[nHistory][n];
+        Orbital &fPhi_m = this->dOrbitals[nHistory][n];
+        if (mpi::my_orb(phi_m)) {
+            if (not mpi::my_orb(fPhi_m)) MSG_FATAL("MPI rank mismatch: fPhi_m");
 
             for (int i = 0; i < nHistory; i++) {
                 Orbital &phi_i = this->orbitals[i][n];
+                if (not mpi::my_orb(phi_i)) MSG_FATAL("MPI rank mismatch: phi_i");
                 Orbital dPhi_im = orbital::add(1.0, phi_i, -1.0, phi_m);
 
                 for (int j = 0; j < nHistory; j++) {
                     Orbital &fPhi_j = this->dOrbitals[j][n];
+                    if (not mpi::my_orb(fPhi_j)) MSG_FATAL("MPI rank mismatch: fPhi_j");
                     Orbital dfPhi_jm = orbital::add(1.0, fPhi_j, -1.0, fPhi_m);
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
@@ -59,52 +62,10 @@ void KAIN::setupLinearSystem() {
         b_vectors.push_back(orbB);
     }
 
-    /*
-#ifdef HAVE_MPI
-    //combine results from all processes
-    //make a super matrix, so that all coefficients are consecutive
-    MatrixXd orbsAB(nHistory, (nHistory+1)*nOrbitals);
-    
-    int jn = 0;
-    for (int n = 0; n < nOrbitals; n++) {
-        MatrixXd *orbA = A_matrices[n];
-        for (int j = 0; j < nHistory; j++) {
-            for (int i = 0; i < nHistory; i++) {
-                orbsAB(i,jn) = (*orbA)(i,j);
-            }
-            jn++;
-        }
+    for (int i = 0; i < nOrbitals; i++) {
+        mpi::allreduce_matrix(A_matrices[i], mpi::comm_orb);
+        mpi::allreduce_vector(b_vectors[i], mpi::comm_orb);
     }
-    for (int n = 0; n < nOrbitals; n++) {
-        VectorXd *orbB = b_vectors[n];
-        for (int i = 0; i < nHistory; i++) {
-            orbsAB(i,jn) = (*orbB)(i);
-        }
-        jn++;
-    }
-
-    MPI_Allreduce(MPI_IN_PLACE, &orbsAB(0,0), (nHistory+1)*nHistory*nOrbitals,
-                  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
-    
-    jn = 0;
-    for (int n = 0; n < nOrbitals; n++) {
-        MatrixXd *orbA = A_matrices[n];
-        for (int j = 0; j < nHistory; j++) {
-            for (int i = 0; i < nHistory; i++) {
-                (*orbA)(i,j) = orbsAB(i,jn);
-            }
-            jn++;
-        }
-    }
-    for (int n = 0; n < nOrbitals; n++) {
-        VectorXd *orbB = b_vectors[n];
-        for (int i = 0; i < nHistory; i++) {
-            (*orbB)(i) = orbsAB(i,jn);
-        }
-        jn++;
-    }
-#endif
-*/
 
     // Fock matrix is treated as a whole using the Frobenius inner product
     if (this->orbitals.size() == this->fock.size()) {
@@ -112,7 +73,6 @@ void KAIN::setupLinearSystem() {
         const ComplexMatrix &fX_m = this->dFock[nHistory];
 
         ComplexMatrix fockA = ComplexMatrix::Zero(nHistory, nHistory);
-
         ComplexVector fockB = ComplexVector::Zero(nHistory);
 
         for (int i = 0; i < nHistory; i++) {
@@ -154,18 +114,15 @@ void KAIN::expandSolution(double prec,
     int nHistory = this->orbitals.size() - 1;
     int nOrbitals = this->orbitals[nHistory].size();
 
-    Phi.clear();
-    dPhi.clear();
-
-    // Orbitals are unchanged
+    // Orbitals are unchanged, updates will change
     Phi = orbital::deep_copy(this->orbitals[nHistory]);
+    dPhi = orbital::param_copy(this->dOrbitals[nHistory]);
 
     int m = 0;
     for (int n = 0; n < nOrbitals; n++) {
-        if (this->sepOrbitals) {
-            m = n;
-        }
-        if (mpi::orb_rank == n%mpi::orb_size) {
+        dPhi[n].clear();
+        if (this->sepOrbitals) m = n;
+        if (mpi::my_orb(Phi[n])) {
             std::vector<ComplexDouble> totCoefs;
             OrbitalVector totOrbs;
 
@@ -183,10 +140,12 @@ void KAIN::expandSolution(double prec,
 
                 partCoefs(0) = 1.0;
                 Orbital &phi_j = this->orbitals[j][n];
+                if (not mpi::my_orb(phi_j)) MSG_FATAL("MPI rank mismatch: phi_j");
                 partOrbs.push_back(phi_j);
 
                 partCoefs(1) = 1.0;
                 Orbital &fPhi_j = this->dOrbitals[j][n];
+                if (not mpi::my_orb(fPhi_j)) MSG_FATAL("MPI rank mismatch: fPhi_j");
                 partOrbs.push_back(fPhi_j);
 
                 partCoefs(2) = -1.0;
@@ -206,8 +165,7 @@ void KAIN::expandSolution(double prec,
             ComplexVector coefsVec(totCoefs.size());
             for (int i = 0; i < totCoefs.size(); i++) coefsVec(i) = totCoefs[i];
 
-            Orbital dPhi_n = orbital::multiply(coefsVec, totOrbs, prec);
-            dPhi.push_back(dPhi_n);
+            dPhi[n] = orbital::multiply(coefsVec, totOrbs, prec);
 
             // First entry is the last orbital update and should not be deallocated,
             // all other entries are locally allocated partSteps that must be deleted

@@ -178,29 +178,27 @@ void Accelerator::push_back(OrbitalVector &Phi,
  * is cleared).
  */
 bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
-    bool verified = true;
+    int nOrbs = Phi.size();
+    IntVector out = IntVector::Zero(nOrbs);
     int nHistory = this->orbitals.size() - 1;
     if (nHistory > 0) {
-        for (int i = 0; i < Phi.size(); i++) {
-            if (mpi::orb_rank == i%mpi::orb_size) {
-                Orbital &phi_i = Phi[i];
+        for (int i = 0; i < nOrbs; i++) {
+            Orbital &phi_i = Phi[i];
+            if (mpi::my_orb(phi_i)) {
                 Orbital &last_i = this->orbitals[nHistory][i];
+                if (not mpi::my_orb(last_i)) MSG_FATAL("MPI rank mismatch");
                 double sqNorm = phi_i.squaredNorm();
                 ComplexDouble overlap = orbital::dot(phi_i, last_i);
                 if (std::abs(overlap) < 0.5*sqNorm) {
                     Printer::printDouble(0, "Overlap not verified ", std::abs(overlap));
-                    verified = false;
+                    out(i) = 1;
                 }
             }
         }
     }
-#ifdef HAVE_MPI
-    int iverified = verified;
-    MPI_Allreduce(MPI_IN_PLACE, &iverified, 1, MPI_INT, MPI_LAND, mpi::comm_orb);
-    verified = iverified;
-#endif
+    mpi::allreduce_vector(out, mpi::comm_orb);
 
-    return verified;
+    return (out.sum() < 1) ? true : false;
 }
 
 /** @brief Calculates the new orbitals and updates based on history information
