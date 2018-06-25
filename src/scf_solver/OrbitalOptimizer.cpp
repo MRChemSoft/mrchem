@@ -97,7 +97,7 @@ bool OrbitalOptimizer::optimize() {
     double err_p = 1.0;
 
     fock.setup(orb_prec);
-    F = fock.kinetic()(Phi_n, Phi_n) + fock.potential()(Phi_n, Phi_n);
+    F = fock(Phi_n, Phi_n);
 
     int nIter = 0;
     bool converged = false;
@@ -118,7 +118,6 @@ bool OrbitalOptimizer::optimize() {
             fock.rotate(U);
             if (this->kain != 0) this->kain->clear();
         }
-
         // Compute electronic energy
         double E = calcProperty();
         this->property.push_back(E);
@@ -164,7 +163,7 @@ bool OrbitalOptimizer::optimize() {
 
         // Compute Fock matrix
         fock.setup(orb_prec);
-        F = fock.kinetic()(Phi_n, Phi_n) + fock.potential()(Phi_n, Phi_n);
+        F = fock(Phi_n, Phi_n);
 
         // Finalize SCF cycle
         timer.stop();
