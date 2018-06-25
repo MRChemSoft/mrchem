@@ -19,6 +19,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 namespace orbital {
 
+
 /****************************************
  * Orbital related standalone functions *
  ****************************************/
@@ -144,6 +145,7 @@ OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a,
 
     OrbitalVector out;
     for (int i = 0; i < inp_a.size(); i++) {
+        if (inp_a[i].rankID() != inp_b[i].rankID()) MSG_FATAL("MPI rank mismatch");
         Orbital out_i = add(a, inp_a[i], b, inp_b[i]);
         out.push_back(out_i);
     }
@@ -321,13 +323,26 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
  *
  */
 OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
-    if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
+    // Get all out orbitals belonging to this MPI
+    OrbitalVector out = orbital::param_copy(inp);
 
-    OrbitalVector out;
-    for (int i = 0; i < U.rows(); i++) {
-        const ComplexVector &c = U.row(i);
-        Orbital out_i = multiply(c, inp, prec);
-        out.push_back(out_i);
+    OrbitalIterator iter(inp);
+    while (iter.next()) {
+        OrbitalChunk &recv_chunk = iter.get();
+        for (int i = 0; i < out.size(); i++) {
+            if (not mpi::my_orb(out[i])) continue;
+            OrbitalVector orb_vec;
+            ComplexVector coef_vec(recv_chunk.size());
+            for (int j = 0; j < recv_chunk.size(); j++) {
+                int idx_j = std::get<0>(recv_chunk[j]);
+                Orbital &recv_j = std::get<1>(recv_chunk[j]);
+                coef_vec[j] = U(i, idx_j);
+                orb_vec.push_back(recv_j);
+            }
+            Orbital tmp_i = multiply(coef_vec, orb_vec, prec);
+            out[i].add(1.0, tmp_i, prec); // In place addition
+            tmp_i.free();
+        }
     }
     return out;
 }
