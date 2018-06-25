@@ -18,8 +18,7 @@ Density::Density()
 
 /** @brief Constructor
  *
- * @param spin: electron spin (SPIN::Alpha/Beta/Paired)
- * @param occ: occupancy
+ * @param spin: electron spin (DENSITY::Total/Alpha/Beta/Spin)
  * @param rank: MPI ownership (-1 means all MPI ranks)
  *
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
@@ -264,9 +263,10 @@ void Density::loadDensity(const std::string &file) {
 /** @brief Returns a character representing the spin (a/b/p) */
 char Density::printSpin() const {
     char sp = 'u';
-    if (this->spin() == SPIN::Paired) sp = 'p';
-    if (this->spin() == SPIN::Alpha) sp = 'a';
-    if (this->spin() == SPIN::Beta) sp = 'b';
+    if (this->spin() == DENSITY::Total) sp = 'p';
+    if (this->spin() == DENSITY::Alpha) sp = 'a';
+    if (this->spin() == DENSITY::Beta)  sp = 'b';
+    if (this->spin() == DENSITY::Spin)  sp = 's';
     return sp;
 }
 

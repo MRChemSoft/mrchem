@@ -64,7 +64,9 @@ void XCPotential::setupDensity() {
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
-        Density &rho_a = this->functional->getDensity(mrdft::DensityType::Alpha);
+        FunctionTree<3> &tree_a = this->functional->getDensity(mrdft::DensityType::Alpha);
+        Density rho_a;
+        rho_a.setReal(&tree_a);
         density::compute(-1.0, rho_a, Phi, DENSITY::Alpha);
         time_a.stop();
         Printer::printTree(0, "XC alpha density", rho_a.getNNodes(), time_a.getWallTime());

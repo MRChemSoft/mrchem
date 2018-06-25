@@ -37,8 +37,8 @@ public:
     Density();
     Density(int spin, int rank = -1);
 
-    Density(const Density &orb);
-    Density &operator=(const Density &orb);
+    Density(const Density &dens);
+    Density &operator=(const Density &dens);
     Density paramCopy() const;
     Density deepCopy();
     Density dagger() const;
@@ -65,7 +65,7 @@ public:
     void loadDensity(const std::string &file);
 
     char printSpin() const;
-    friend std::ostream& operator<<(std::ostream &o, Density orb) { return orb.print(o); }
+    friend std::ostream& operator<<(std::ostream &o, Density dens) { return dens.print(o); }
 
 protected:
     DensityMeta meta;
