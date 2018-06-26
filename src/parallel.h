@@ -34,6 +34,7 @@ extern MPI_Comm comm_sh_group;
 
 void initialize(int argc, char **argv);
 void finalize();
+void barrier(MPI_Comm comm);
 
 bool my_orb(const Orbital &orb);
 bool my_unique_orb(const Orbital &orb);

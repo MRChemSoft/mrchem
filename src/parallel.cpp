@@ -78,6 +78,13 @@ void mpi::finalize() {
 }
 
 
+void mpi::barrier(MPI_Comm comm) {
+#ifdef HAVE_MPI
+    MPI_Barrier(comm);
+#endif
+}
+
+
 /*********************************
  * Orbital related MPI functions *
  *********************************/

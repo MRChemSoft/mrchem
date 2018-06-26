@@ -136,8 +136,7 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
         printout(0, std::setw(44) << phi_i.norm() << std::endl);
         Phi.push_back(phi_i);
     }
-
-    MPI_Barrier(mpi::comm_orb);
+    mpi::barrier(mpi::comm_orb);
     timer.stop();
     Printer::printFooter(0, timer, 2);
 
@@ -184,8 +183,7 @@ OrbitalVector initial_guess::gto::project_ao(double prec,
         printout(0, std::setw(44) << phi_i.norm() << std::endl);
         Phi.push_back(phi_i);
     }
-
-    MPI_Barrier(mpi::comm_orb);
+    mpi::barrier(mpi::comm_orb);
     timer.stop();
     Printer::printFooter(0, timer, 2);
 
