@@ -28,77 +28,22 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     RankZeroTensorOperator &r_y = r[1];
     RankZeroTensorOperator &r_z = r[2];
 
-#ifdef HAVE_MPI
-    NOT_IMPLEMENTED_ABORT;
-/*
-    OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
-    OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
-    vector<int> orbsIx;             //to store own orbital indices
-    int rcvOrbsIx[workOrbVecSize];  //to store received orbital indices
+    ComplexMatrix R_x = r_x(Phi, Phi);
+    ComplexMatrix R_y = r_y(Phi, Phi);
+    ComplexMatrix R_z = r_z(Phi, Phi);
 
-    //make vector with adresses of own orbitals
-    for (int Ix = mpiOrbRank; Ix < N; Ix += mpiOrbSize) {
-        orbVecChunk_i.push_back(Phi.getOrbital(Ix));//i orbitals
-        orbsIx.push_back(Ix);
-    }
-
-    for (int iter = 0; iter >= 0; iter++) {
-        //get a new chunk from other processes
-        orbVecChunk_i.getOrbVecChunk_sym(orbsIx, rcvOrbs, rcvOrbsIx, N, iter);
-        for (int i = 0; i<orbVecChunk_i.size(); i++){
-            Orbital &phi_i = orbVecChunk_i.getOrbital(i);
-            int spin_i = phi_i.getSpin();
-            for (int j = 0; j < rcvOrbs.size(); j++) {
-                Orbital &phi_j = rcvOrbs.getOrbital(j);
-                int spin_j = phi_j.getSpin();
-                if (spin_i != spin_j) {
-                    MSG_ERROR("Spins must be separated before localization");
-                }
-                //NOTE: the "if" should not be necessary, but since outside the required precision
-                //r_x(phi_i, phi_j) != r_x(phi_j, phi_i), we prefer to have consistent results for
-                //different mpiOrbSize
-                if(rcvOrbsIx[j]<=orbsIx[i]){
-                    r_i_orig(orbsIx[i],rcvOrbsIx[j]) = r_x(phi_i, phi_j);
-                    r_i_orig(orbsIx[i],rcvOrbsIx[j]+N) = r_y(phi_i, phi_j);
-                    r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N) = r_z(phi_i, phi_j);
-                    r_i_orig(rcvOrbsIx[j],orbsIx[i]) = r_i_orig(orbsIx[i],rcvOrbsIx[j]);
-                    r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) =  r_i_orig(orbsIx[i],rcvOrbsIx[j]+N);
-                    r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N) = r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N);
-                }else{
-                    if(rcvOrbsIx[j]%mpiOrbSize != mpiOrbRank){ //need only compute j<=i in own block
-                        r_i_orig(rcvOrbsIx[j],orbsIx[i]) = r_x(phi_j, phi_i);
-                        r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) =  r_y(phi_j, phi_i);
-                        r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N) = r_z(phi_j, phi_i);
-                        r_i_orig(orbsIx[i],rcvOrbsIx[j]) = r_i_orig(rcvOrbsIx[j],orbsIx[i]);
-                        r_i_orig(orbsIx[i],rcvOrbsIx[j]+N) = r_i_orig(rcvOrbsIx[j],orbsIx[i]+N) ;
-                        r_i_orig(orbsIx[i],rcvOrbsIx[j]+2*N) = r_i_orig(rcvOrbsIx[j],orbsIx[i]+2*N);
-                    }
-                }
-            }
-        }
-        rcvOrbs.clearVec(false);
-    }
-    orbVecChunk_i.clearVec(false);
-    workOrbVec.clear();
-    //combine results from all processes
-    MPI_Allreduce(MPI_IN_PLACE, &r_i_orig(0,0), N*3*N,
-                  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
-*/
-#else
     for (int i = 0; i < this->N; i++) {
         for (int j = 0; j <= i; j++) {
-            if (Phi[i].spin() != Phi[j].spin())
-                MSG_ERROR("Spins must be separated before localization");
-            this->r_i_orig(i,j          ) = r_x(Phi[i], Phi[j]).real();
-            this->r_i_orig(i,j+  this->N) = r_y(Phi[i], Phi[j]).real();
-            this->r_i_orig(i,j+2*this->N) = r_z(Phi[i], Phi[j]).real();
+            if (Phi[i].spin() != Phi[j].spin()) MSG_ERROR("Spins must be separated before localization");
+            this->r_i_orig(i,j          ) = R_x(i,j).real();
+            this->r_i_orig(i,j+  this->N) = R_y(i,j).real();
+            this->r_i_orig(i,j+2*this->N) = R_z(i,j).real();
 
             this->r_i_orig(j,i          ) = this->r_i_orig(i,j          );
             this->r_i_orig(j,i+  this->N) = this->r_i_orig(i,j+  this->N);
             this->r_i_orig(j,i+2*this->N) = this->r_i_orig(i,j+2*this->N);
         }
     }
-#endif
     r_x.clear();
     r_y.clear();
     r_z.clear();
