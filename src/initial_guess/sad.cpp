@@ -12,6 +12,7 @@
 #include "initial_guess/core.h"
 
 #include "Molecule.h"
+#include "OrbitalIterator.h"
 
 #include "NuclearOperator.h"
 #include "KineticOperator.h"
@@ -151,18 +152,27 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
 
     OrbitalVector Psi;
     for (int i = 0; i < N; i++) {
-	int i_rank = i%mpi::orb_size;
-	if (mpi::orb_rank == i_rank) {
-            ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::multiply(v_i, Phi, prec);
-            psi_i.setRankId(i_rank);
-            psi_i.setSpin(spin);
-            psi_i.setOcc(occ);
-            Psi.push_back(psi_i);
-	} else {
-	    Orbital psi_i(spin, occ, i_rank);
-            Psi.push_back(psi_i);
-	}
+        Orbital psi_i(spin, occ, i%mpi::orb_size);
+        Psi.push_back(psi_i);
+    }
+
+    OrbitalIterator iter(Phi);
+    while (iter.next()) {
+        OrbitalChunk &recv_chunk = iter.get();
+        for (int i = 0; i < Psi.size(); i++) {
+            if (not mpi::my_orb(Psi[i])) continue;
+            OrbitalVector orb_vec;
+            ComplexVector coef_vec(recv_chunk.size());
+            for (int j = 0; j < recv_chunk.size(); j++) {
+                int idx_j = std::get<0>(recv_chunk[j]);
+                Orbital &recv_j = std::get<1>(recv_chunk[j]);
+                coef_vec[j] = U(i, idx_j);
+                orb_vec.push_back(recv_j);
+            }
+            Orbital tmp_i = orbital::multiply(coef_vec, orb_vec, prec);
+            Psi[i].add(1.0, tmp_i, prec); // In place addition
+            tmp_i.free();
+        }
     }
     t.stop();
     Printer::printDouble(0, "Rotate orbitals", t.getWallTime(), 5);
