@@ -22,9 +22,10 @@ else()
                  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                  -DENABLE_OPENMP=${ENABLE_OPENMP}
                  -DENABLE_MPI=${ENABLE_MPI}
+                 -DEigen3_DIR=${Eigen3_DIR}
                  -DENABLE_TESTS=FALSE
                  -DENABLE_EXAMPLES=FALSE
-                 -DSTATIC_LIBRARY_ONLY=TRUE 
+                 -DSTATIC_LIBRARY_ONLY=TRUE
       CMAKE_CACHE_ARGS
                  -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
       INSTALL_COMMAND

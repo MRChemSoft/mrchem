@@ -4,13 +4,17 @@ project(MRChem_core LANGUAGES CXX)
 
 include(GNUInstallDirs)
 
+find_package(Eigen3 3.3 CONFIG REQUIRED)
+message(STATUS "Eigen3 v${EIGEN3_VERSION_STRING} found in ${EIGEN3_INCLUDE_DIR}")
+
 find_package(MRCPP CONFIG REQUIRED)
 get_property(_loc TARGET MRCPP::mrcpp PROPERTY LOCATION)
 message(STATUS "Using MRCPP: ${_loc} (version ${MRCPP_VERSION})")
-# FIXME Uncomment these
-#find_package(Getkw CONFIG REQUIRED)
-#get_property(_loc TARGET Getkw::getkw PROPERTY LOCATION)
-#message(STATUS "Using Getkw: ${_loc} (version ${Getkw_VERSION})")
+
+find_package(getkw CONFIG REQUIRED)
+get_property(_loc TARGET getkw::getkw PROPERTY LOCATION)
+message(STATUS "Using getkw: ${_loc} (version ${getkw_VERSION})")
+
 find_package(XCFun CONFIG REQUIRED)
 get_property(_loc TARGET XCFun::xcfun PROPERTY LOCATION)
 message(STATUS "Using XCFun: ${_loc} (version ${XCFun_VERSION})")
@@ -47,13 +51,12 @@ target_include_directories(mrchem
   PUBLIC
     # FIXME Remove as soon as moving to Eigen 3.3
     ${EIGEN3_INCLUDE_DIR}
-    # FIXME Remove as soon as updating to the latest and greatest Getkw
-    ${Getkw_INCLUDEDIR}
     )
 target_link_libraries(mrchem
   PUBLIC
     MRCPP::mrcpp
-    )
+    Eigen3::Eigen
+  )
 install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
 
 add_executable(mrchem.x
@@ -64,9 +67,7 @@ target_link_libraries(mrchem.x
     hydrogenguess
     gtoguess
     XCFun::xcfun
-    # FIXME
-    #Getkw::getkw
-    ${Getkw_LIBRARIES}
+    getkw::getkw
     )
 install(TARGETS mrchem.x RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 

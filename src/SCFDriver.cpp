@@ -5,9 +5,9 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "Getkw.h"
-#include "Section.h"
-#include "Keyword.h"
+#include "getkw/Getkw.hpp"
+#include "getkw/Section.hpp"
+#include "getkw/Keyword.hpp"
 
 #include "initial_guess/core.h"
 #include "initial_guess/gto.h"

@@ -1,7 +1,7 @@
 #include "MRCPP/MWFunctions"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "Getkw.h"
+#include "getkw/Getkw.hpp"
 
 #include "mrenv.h"
 #include "mrchem.h"
