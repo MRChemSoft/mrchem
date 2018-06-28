@@ -1,6 +1,6 @@
 [submodule "external/libgetkw"]
 	path = external/libgetkw
-	url = https://github.com/juselius/libgetkw.git
+	url = https://github.com/robertodr/libgetkw.git
 [submodule "external/xcfun"]
 	path = external/xcfun
 	url = https://github.com/dftlibs/xcfun.git
