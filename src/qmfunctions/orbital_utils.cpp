@@ -5,7 +5,7 @@
 #include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 #include "Orbital.h"
 
 using mrcpp::Timer;
@@ -32,7 +32,7 @@ namespace orbital {
 ComplexDouble dot(Orbital bra, Orbital ket) {
     if ((bra.spin() == SPIN::Alpha) and (ket.spin() == SPIN::Beta)) return 0.0;
     if ((bra.spin() == SPIN::Beta) and (ket.spin() == SPIN::Alpha)) return 0.0;
-
+    
     double bra_conj(1.0), ket_conj(1.0);
     if (bra.conjugate()) bra_conj = -1.0;
     if (ket.conjugate()) ket_conj = -1.0;
@@ -100,7 +100,7 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
     orbs.push_back(inp_a);
     orbs.push_back(inp_b);
 
-    return multiply(coefs, orbs, prec);
+    return linear_combination(coefs, orbs, prec);
 }
 
 /** @brief out_i = a*(inp_a)_i + b*(inp_b)_i
@@ -108,7 +108,7 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
  *  Component-wise addition of orbitals.
  *
  */
-OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a,
+OrbitalVector pairwise_add(ComplexDouble a, OrbitalVector &inp_a,
                   ComplexDouble b, OrbitalVector &inp_b,
                   double prec) {
     if (inp_a.size() != inp_b.size()) MSG_ERROR("Size mismatch");
@@ -131,93 +131,7 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
     int occ = compare_occ(inp_a, inp_b);
     int spin = compare_spin(inp_a, inp_b);
     Orbital out(spin, occ);
-
-    double a_conj(1.0), b_conj(1.0);
-    if (inp_a.conjugate()) a_conj = -1.0;
-    if (inp_b.conjugate()) b_conj = -1.0;
-
-    { // Real part
-        FunctionTreeVector<3> vec;
-        if (inp_a.hasReal() and inp_b.hasReal()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = 1.0;
-            if (prec < 0.0) {
-                // Union grid
-                mrcpp::build_grid(*tree, inp_a.real());
-                mrcpp::build_grid(*tree, inp_b.real());
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), 0);
-            } else {
-                // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (inp_a.hasImag() and inp_b.hasImag()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = -1.0*a_conj*b_conj;
-            if (prec < 0.0) {
-                mrcpp::build_grid(*tree, inp_a.imag());
-                mrcpp::build_grid(*tree, inp_b.imag());
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), 0);
-            } else {
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (vec.size() == 1) {
-            out.setReal(&mrcpp::get_func(vec, 0));
-            mrcpp::clear(vec, false);
-        }
-        if (vec.size() == 2) {
-            out.alloc(NUMBER::Real);
-            mrcpp::build_grid(out.real(), vec);
-            mrcpp::add(prec, out.real(), vec, 0);
-            mrcpp::clear(vec, true);
-        }
-    }
-
-    { // Imaginary part
-        FunctionTreeVector<3> vec;
-        if (inp_a.hasReal() and inp_b.hasImag()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = b_conj;
-            if (prec < 0.0) {
-                // Union grid
-                mrcpp::build_grid(*tree, inp_a.real());
-                mrcpp::build_grid(*tree, inp_b.imag());
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), 0);
-            } else {
-                // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (inp_a.hasImag() and inp_b.hasReal()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = a_conj;
-            if (prec < 0.0) {
-                // Union grid
-                mrcpp::build_grid(*tree, inp_a.imag());
-                mrcpp::build_grid(*tree, inp_b.real());
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), 0);
-            } else {
-                // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (vec.size() == 1) {
-            out.setImag(&mrcpp::get_func(vec, 0));
-            mrcpp::clear(vec, false);
-        }
-        if (vec.size() == 2) {
-            out.alloc(NUMBER::Imag);
-            mrcpp::build_grid(out.imag(), vec);
-            mrcpp::add(prec, out.imag(), vec, 0);
-            mrcpp::clear(vec, true);
-        }
-    }
-
+    qmfunction::multiply(prec, out, 1.0, inp_a, inp_a.conjugate(), inp_b, inp_b.conjugate());
     return out;
 }
 
@@ -227,62 +141,30 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
   * conjugate versions of themselves.
   *
   */
-Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
+Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double prec) {
     if (c.size() != inp.size()) MSG_ERROR("Size mismatch");
     double thrs = mrcpp::MachineZero;
 
     Orbital out;
+    QMFunctionVector inp_qmf;
+    std::vector<bool> conj;
     // set output spin from first contributing input
     for (int i = 0; i < inp.size(); i++) {
         if (std::abs(c[i]) < thrs) continue;
         out = inp[i].paramCopy();
         break;
     }
-    // all contributing input spins must be equal
+    // check that contributing input spins must be equal and fill bool vector
     for (int i = 0; i < inp.size(); i++) {
-        if (std::abs(c[i]) < thrs) continue;
+        if (std::abs(c[i]) < thrs) continue; //
         if (out.spin() != inp[i].spin()) {
             // empty orbitals with wrong spin can occur
-            if (inp[i].hasReal()) MSG_FATAL("Mixing spins");
-            if (inp[i].hasImag()) MSG_FATAL("Mixing spins");
+            if (inp[i].hasReal() or inp[i].hasImag()) MSG_FATAL("Mixing spins");
         }
+        conj[i] = inp[i].conjugate();
+        inp_qmf.push_back(inp[i]); //LUCA: the best would be to have a conversion from OrbitalVector to QMFunctionVector
     }
-
-    FunctionTreeVector<3> rvec;
-    FunctionTreeVector<3> ivec;
-
-    for (int i = 0; i < inp.size(); i++) {
-        bool cHasReal = (std::abs(c[i].real()) > thrs);
-        bool cHasImag = (std::abs(c[i].imag()) > thrs);
-
-        double conj(1.0);
-        if (inp[i].conjugate()) conj = -1.0;
-
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(      c[i].real(), &inp[i].real()));
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-conj*c[i].imag(), &inp[i].imag()));
-
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(      c[i].imag(), &inp[i].real()));
-        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( conj*c[i].real(), &inp[i].imag()));
-    }
-
-    if (rvec.size() > 0) {
-        out.alloc(NUMBER::Real);
-        if (prec < 0.0) {
-            mrcpp::build_grid(out.real(), rvec);
-            mrcpp::add(prec, out.real(), rvec, 0);
-        } else {
-            mrcpp::add(prec, out.real(), rvec);
-        }
-    }
-    if (ivec.size() > 0) {
-        out.alloc(NUMBER::Imag);
-        if (prec < 0.0) {
-            mrcpp::build_grid(out.imag(), ivec);
-            mrcpp::add(prec, out.imag(), ivec, 0);
-        } else {
-            mrcpp::add(prec, out.imag(), ivec);
-        }
-    }
+    qmfunction::linear_combination(c, inp_qmf, conj, out, prec);
     return out;
 }
 
@@ -291,13 +173,13 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
  * The transformation matrix is not necessarily square.
  *
  */
-OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
+OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
     if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
 
     OrbitalVector out;
     for (int i = 0; i < U.rows(); i++) {
         const ComplexVector &c = U.row(i);
-        Orbital out_i = multiply(c, inp, prec);
+        Orbital out_i = linear_combination(c, inp, prec);
         out.push_back(out_i);
     }
     return out;
@@ -331,14 +213,14 @@ OrbitalVector param_copy(const OrbitalVector &inp) {
     return out;
 }
 
-/** @brief Adjoin two vectors
+/** @brief join two vectors
  *
  * The orbitals of the input vector are appended to
  * (*this) vector, the ownership is transferred. Leaves
  * the input vector empty.
  *
  */
-OrbitalVector adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b) {
+OrbitalVector join(OrbitalVector &inp_a, OrbitalVector &inp_b) {
     OrbitalVector out;
     for (int i = 0; i < inp_a.size(); i++) out.push_back(inp_a[i]);
     for (int i = 0; i < inp_b.size(); i++) out.push_back(inp_b[i]);
@@ -347,14 +229,14 @@ OrbitalVector adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b) {
     return out;
 }
 
-/** @brief Disjoin vector in two parts
+/** @brief Separate vector in two parts
  *
- * All orbitals of a particular spin is collected in a new vector
+ * All orbitals of a particular spin are collected in a new vector
  * and returned. These orbitals are removed from (*this) vector,
  * and the ownership is transferred.
  *
  */
-OrbitalVector disjoin(OrbitalVector &inp, int spin) {
+OrbitalVector split(OrbitalVector &inp, int spin) {
     OrbitalVector out;
     OrbitalVector tmp;
     for (int i = 0; i < inp.size(); i++) {
@@ -530,7 +412,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
     }
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -573,7 +455,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -593,7 +475,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
  */
 ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     return U;
@@ -799,68 +681,5 @@ void print(const OrbitalVector &vec) {
 }
 
 } //namespace orbital
-
-
-/****************************************
- * Density related standalone functions *
- ****************************************/
-
-void density::compute(double prec, Density &rho, Orbital phi, int spin) {
-    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
-    if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
-    if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
-    if (phi.spin() == SPIN::Paired) occ_p = (double) phi.occ();
-
-    double occ(0.0);
-    if (spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;
-    if (spin == DENSITY::Alpha) occ = occ_a + 0.5*occ_p;
-    if (spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
-    if (spin == DENSITY::Spin)  occ = occ_a - occ_b;
-
-    if (std::abs(occ) < mrcpp::MachineZero) {
-        rho.setZero();
-        return;
-    }
-
-    FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal()) {
-        FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*real_2, rho);
-        mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real());
-        sum_vec.push_back(std::make_tuple(1.0, real_2));
-    }
-    if (phi.hasImag()) {
-        FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*imag_2, rho);
-        mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag());
-        sum_vec.push_back(std::make_tuple(1.0, imag_2));
-    }
-    mrcpp::build_grid(rho, sum_vec);
-    mrcpp::add(-1.0, rho, sum_vec, 0);
-    mrcpp::clear(sum_vec, true);
-}
-
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
-    double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
-    double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
-
-    DensityVector dens_vec;
-    for (int i = 0; i < Phi.size(); i++) {
-        Density *rho_i = new Density(*MRA);
-        mrcpp::copy_grid(*rho_i, rho);
-        density::compute(mult_prec, *rho_i, Phi[i], spin);
-        dens_vec.push_back(std::make_tuple(1.0, rho_i));
-    }
-
-    // Adaptive prec addition if more than 5 contributions,
-    // otherwise addition on union grid
-    if (dens_vec.size() > 5 and add_prec > 0.0) {
-        mrcpp::add(add_prec, rho, dens_vec);
-    } else if (dens_vec.size() > 0) {
-        mrcpp::build_grid(rho, dens_vec);
-        mrcpp::add(-1.0, rho, dens_vec, 0);
-    }
-    mrcpp::clear(dens_vec, true);
-}
 
 } //namespace mrchem

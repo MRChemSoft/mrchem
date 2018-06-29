@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 
 /** @file gto.h
  *

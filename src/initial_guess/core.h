@@ -1,6 +1,6 @@
 #pragma once
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 
 /** @file core.h
  *

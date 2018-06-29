@@ -4,13 +4,9 @@
 
 namespace mrchem {
 
-namespace SPIN { enum type { Paired, Alpha, Beta }; }
-namespace NUMBER { enum type { Total, Real, Imag }; }
-namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
-
-
+class QMFunction;
 class Orbital;
-typedef std::vector<Orbital> OrbitalVector;
+class Density;
 
 namespace orbital {
 
@@ -21,17 +17,17 @@ int compare_occ(const Orbital &orb_a, const Orbital &orb_b);
 int compare_spin(const Orbital &orb_a, const Orbital &orb_b);
 
 Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, double prec = -1.0);
-OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a, ComplexDouble b, OrbitalVector &inp_b, double prec = -1.0);
+OrbitalVector pairwise_add(ComplexDouble a, OrbitalVector &inp_a, ComplexDouble b, OrbitalVector &inp_b, double prec = -1.0);
 
 Orbital multiply(Orbital inp_a, Orbital inp_b, double prec = -1.0);
-Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec = -1.0);
-OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec = -1.0);
+Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double prec = -1.0);
+OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, double prec = -1.0);
 
 OrbitalVector deep_copy(OrbitalVector &inp);
 OrbitalVector param_copy(const OrbitalVector &inp);
 
-OrbitalVector adjoin(OrbitalVector &inp_a, OrbitalVector &inp_b);
-OrbitalVector disjoin(OrbitalVector &inp, int spin);
+OrbitalVector join(OrbitalVector &inp_a, OrbitalVector &inp_b);
+OrbitalVector split(OrbitalVector &inp, int spin);
 
 void save_orbitals(OrbitalVector &Phi, const std::string &file, int n_orbs = -1);
 OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
@@ -72,16 +68,6 @@ DoubleVector get_squared_norms(const OrbitalVector &vec);
 void print(const OrbitalVector &vec);
 
 } //namespace orbital
-
-
-typedef mrcpp::FunctionTree<3> Density;
-typedef mrcpp::FunctionTreeVector<3> DensityVector;
-namespace density {
-
-void compute(double prec, Density &rho, Orbital phi, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
-
-} //namespace density
 
 
 } //namespace mrchem

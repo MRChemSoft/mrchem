@@ -55,4 +55,7 @@ int QMFunction::getNNodes(int type) const {
     return nNodes;
 }
 
+
+
+
 } //namespace mrchem

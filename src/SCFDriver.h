@@ -1,6 +1,12 @@
 #pragma once
 
-#include "qmfunctions.h"
+#include "QMFunction.h"
+#include "Orbital.h"
+#include "Density.h"
+#include "qmfunction_utils.h"
+#include "orbital_utils.h"
+#include "density_utils.h"
+
 #include "qmoperators.h"
 
 #include "mrdft/XCFunctional.h"

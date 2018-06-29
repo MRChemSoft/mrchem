@@ -1,0 +1,28 @@
+#pragma once
+
+#include "mrchem.h"
+#include "qmfunction_utils.h"
+
+namespace mrchem {
+    
+class QMFunction;
+class Orbital;
+class Density;
+
+namespace density {
+
+void compute(double prec, Density &rho, Orbital &phi, int spin);
+void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
+double calc_density_occupancy(int spin_orb, int spin_dens, double occ_orb);
+double calc_singlet_density_occupancy(int spin_orb_0, int spin_orb_1, int spin_dens,
+                                      double occ_orb_0,  double occ_orb_1);
+double calc_triplet_density_occupancy(int spin_orb_0, int spin_orb_1, int spin_dens,
+                                      double occ_orb_0, double occ_orb_1);
+Density add(ComplexDouble a, Density inp_a, ComplexDouble b, Density inp_b, double prec = -1.0);
+ 
+//void compute(double prec, Density &rho, OrbitalVector &Phi_0, &Phi_1, int spin);
+
+} //namespace density
+
+
+} //namespace mrchem
