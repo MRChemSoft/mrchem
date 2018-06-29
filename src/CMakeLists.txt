@@ -5,7 +5,7 @@ project(MRChem_core LANGUAGES CXX)
 include(GNUInstallDirs)
 
 find_package(Eigen3 3.3 CONFIG REQUIRED)
-message(STATUS "Eigen3 v${EIGEN3_VERSION_STRING} found in ${EIGEN3_INCLUDE_DIR}")
+message(STATUS "Using Eigen3: ${EIGEN3_ROOT_DIR} (version ${Eigen3_VERSION})")
 
 find_package(MRCPP CONFIG REQUIRED)
 get_property(_loc TARGET MRCPP::mrcpp PROPERTY LOCATION)
@@ -19,11 +19,14 @@ find_package(XCFun CONFIG REQUIRED)
 get_property(_loc TARGET XCFun::xcfun PROPERTY LOCATION)
 message(STATUS "Using XCFun: ${_loc} (version ${XCFun_VERSION})")
 
-add_library(mrchem
+add_library(mrchem "")
+
+target_sources(mrchem
+  PRIVATE
     SCFDriver.cpp
     parallel.cpp
     mrenv.cpp
-    )
+  )
 add_subdirectory(chemistry)
 add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
@@ -35,6 +38,8 @@ add_subdirectory(utils)
 
 target_include_directories(mrchem
   PUBLIC
+    # Unbelievably ugly... config.h has to be generated here!
+    ${CMAKE_BINARY_DIR}/../../..
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/chemistry
     ${CMAKE_CURRENT_SOURCE_DIR}/properties
@@ -44,31 +49,24 @@ target_include_directories(mrchem
     ${CMAKE_CURRENT_SOURCE_DIR}/qmoperators/one_electron
     ${CMAKE_CURRENT_SOURCE_DIR}/qmoperators/two_electron
     ${CMAKE_CURRENT_SOURCE_DIR}/scf_solver
-    ${CMAKE_CURRENT_SOURCE_DIR}/initial_guess
-    )
-target_include_directories(mrchem
-  SYSTEM
-  PUBLIC
-    # FIXME Remove as soon as moving to Eigen 3.3
-    ${EIGEN3_INCLUDE_DIR}
-    )
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
+  )
 target_link_libraries(mrchem
   PUBLIC
     MRCPP::mrcpp
     Eigen3::Eigen
+    getkw::getkw
+    XCFun::xcfun
   )
 install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
 
 add_executable(mrchem.x
     mrchem.cpp
-    )
+  )
 target_link_libraries(mrchem.x
+  PRIVATE
     mrchem
-    hydrogenguess
-    gtoguess
-    XCFun::xcfun
-    getkw::getkw
-    )
+  )
 install(TARGETS mrchem.x RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 option(MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)

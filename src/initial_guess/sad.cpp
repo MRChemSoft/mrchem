@@ -5,6 +5,7 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
+#include "config.h"
 #include "parallel.h"
 #include "utils/math_utils.h"
 #include "initial_guess/sad.h"

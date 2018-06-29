@@ -45,7 +45,7 @@ void initialize(int argc, char **argv) {
 
     // Initialize scaling basis
     int order = Input.get<int>("MRA.order");
-    string btype = Input.get<string>("MRA.basis_type");
+    string btype = Input.get<std::string>("MRA.basis_type");
 
     int max_depth = max_scale - min_scale;
     if (min_scale < MinScale) MSG_FATAL("Root scale too large");
