@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QMFunction.h"
+#include "density_utils.h"
 
 /** @class Density
  *
@@ -45,7 +46,6 @@ public:
 
     void setError(double error) { this->meta.error = error; }
     void setSpin(int spin) { this->meta.spin = spin; }
-    void setOcc(int occ) { this->meta.occ = occ; }
 
     DensityMeta &getMetaData();
     int spin() const { return this->meta.spin; }

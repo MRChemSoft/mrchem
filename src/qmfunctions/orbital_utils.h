@@ -4,17 +4,9 @@
 
 namespace mrchem {
 
-namespace SPIN { enum type { Paired, Alpha, Beta }; }
-namespace NUMBER { enum type { Total, Real, Imag }; }
-namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
-
-
 class QMFunction;
-typedef std::vector<QMFunction> QMFunctionVector;
 class Orbital;
-typedef std::vector<Orbital> OrbitalVector;
-class Density
-typedef std::vector<Density> DensityVector;
+class Density;
 
 namespace orbital {
 

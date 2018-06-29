@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QMFunction.h"
+#include "orbital_utils.h"
 
 /** @class Orbital
  *

@@ -2,6 +2,7 @@
 
 #include "MRCPP/Printer"
 
+#include "density_utils.h"
 #include "Density.h"
 
 namespace mrchem {
@@ -23,7 +24,7 @@ Density::Density()
  *
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
-Density::Density(int spin, int occ, int rank)
+Density::Density(int spin, int rank)
         : QMFunction(0, 0),
           meta({rank, spin, 0, 0, false, 1.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
@@ -31,25 +32,25 @@ Density::Density(int spin, int occ, int rank)
 
 /** @brief Copy constructor
  *
- * @param orb: density to copy
+ * @param dens: density to copy
  *
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
 Density::Density(const Density &dens)
         : QMFunction(dens),
-          meta(orb.meta) {
+          meta(dens.meta) {
 }
 
 /** @brief Assignment operator
  *
- * @param orb: density to copy
+ * @param dens: density to copy
  *
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
 Density& Density::operator=(const Density &dens) {
-    if (this != &orb) {
+    if (this != &dens) {
         this->re = dens.re;
         this->im = dens.im;
         this->meta = dens.meta;

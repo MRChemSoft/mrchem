@@ -5,7 +5,7 @@
 #include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;
@@ -26,7 +26,7 @@ void add(ComplexDouble a, QMFunction &inp_a, bool conj_a,
     linear_combination(coefs, inp, conj, out, prec);
 }
 
-void linear_combination(ComplexVector &coeff,
+void linear_combination(const ComplexVector &coeff,
                         QMFunctionVector &inp,
                         std::vector<bool> &conj,
                         QMFunction &out,
@@ -66,14 +66,14 @@ void linear_combination(ComplexVector &coeff,
     }
 }
 
-void linear_combination(ComplexMatrix &U, QMFunctionVector &inp, std::vector<bool> &conj,
+void linear_combination(const ComplexMatrix &U, QMFunctionVector &inp, std::vector<bool> &conj,
                         QMFunctionVector &out, double prec = -1.0) {
 
     if (U.rows() != out.size()) MSG_ABORT("Output size mismatch");
     if (U.cols() != inp.size()) MSG_ABORT("Input size mismatch");
     
     for (int i = 0; i < U.rows(); i++) {
-        const ComplexVector &c = U.row(i); 
+        ComplexVector &c = U.row(i); 
         linear_combination(c, inp, conj, out[i], prec);
     }
 }
@@ -88,6 +88,15 @@ void pairwise_add(ComplexDouble coeff_a, QMFunctionVector &inp_a, std::vector<bo
     }
 }
 
+void rescale(ComplexDouble coeff, QMFunction &inp, bool conj, double prec) {
+    QMFunction tmp;
+    qmfunction::multiply(coeff, inp, tmp, conj, prec);
+    inp.free();
+    inp.setReal(tmp.real());
+    inp.setReal(tmp.imag());
+    tmp.clear();
+}
+    
 void multiply(ComplexDouble coeff, QMFunction &inp, QMFunction &out, bool conj, double prec) {
     bool cHasReal = (std::abs(coeff.real()) > thrs);
     bool cHasImag = (std::abs(coeff.imag()) > thrs);

@@ -5,7 +5,7 @@
 #include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 #include "Orbital.h"
 
 using mrcpp::Timer;
@@ -100,7 +100,7 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
     orbs.push_back(inp_a);
     orbs.push_back(inp_b);
 
-    return multiply(coefs, orbs, prec);
+    return linear_combination(coefs, orbs, prec);
 }
 
 /** @brief out_i = a*(inp_a)_i + b*(inp_b)_i
@@ -131,7 +131,7 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
     int occ = compare_occ(inp_a, inp_b);
     int spin = compare_spin(inp_a, inp_b);
     Orbital out(spin, occ);
-    qmfunction::multiply(prec, out, 1.0, inp_a, inp_a.conjugate(), inp_b, inp_b.conjugate())
+    qmfunction::multiply(prec, out, 1.0, inp_a, inp_a.conjugate(), inp_b, inp_b.conjugate());
     return out;
 }
 
@@ -146,6 +146,7 @@ Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double pr
     double thrs = mrcpp::MachineZero;
 
     Orbital out;
+    QMFunctionVector inp_qmf;
     std::vector<bool> conj;
     // set output spin from first contributing input
     for (int i = 0; i < inp.size(); i++) {
@@ -158,11 +159,12 @@ Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double pr
         if (std::abs(c[i]) < thrs) continue; //
         if (out.spin() != inp[i].spin()) {
             // empty orbitals with wrong spin can occur
-            if (inp[i].hasReal().or.inp[i].hasImag()) MSG_FATAL("Mixing spins");
+            if (inp[i].hasReal() or inp[i].hasImag()) MSG_FATAL("Mixing spins");
         }
         conj[i] = inp[i].conjugate();
+        inp_qmf.push_back(inp[i]); //LUCA: the best would be to have a conversion from OrbitalVector to QMFunctionVector
     }
-    qmfunction::linear_combination(c, inp, conj, out, prec);
+    qmfunction::linear_combination(c, inp_qmf, conj, out, prec);
     return out;
 }
 
@@ -177,7 +179,7 @@ OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, dou
     OrbitalVector out;
     for (int i = 0; i < U.rows(); i++) {
         const ComplexVector &c = U.row(i);
-        Orbital out_i = (c, inp, prec);
+        Orbital out_i = linear_combination(c, inp, prec);
         out.push_back(out_i);
     }
     return out;
@@ -410,7 +412,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
     }
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -453,7 +455,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -473,7 +475,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
  */
 ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     return U;

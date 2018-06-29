@@ -1,6 +1,6 @@
 #include "utils/NonlinearMaximizer.h"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 
 /** subclass which defines the particular Gradient and Hessian
  * and other specific functions for a maximization of

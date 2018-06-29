@@ -5,8 +5,11 @@
 #include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
-#include "qmfunctions.h"
+#include "QMFunction.h"
+#include "Orbital.h"
 #include "Density.h"
+#include "qmfunction_utils.h"
+#include "density_utils.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;
@@ -21,13 +24,12 @@ namespace density {
  * Density related standalone functions *
  ****************************************/
 
-Density compute(double prec, Orbital phi, int spin) {
-    occ = calc_density_occupancy(phi.spin(), spin, phi.occ());
-    Density rho(spin);
+void compute(double prec, Density &rho, Orbital &phi, int spin) {
+    double occ = calc_density_occupancy(phi.spin(), spin, phi.occ());
     if (std::abs(occ) < mrcpp::MachineZero) {
         rho.real().setZero();
         rho.imag().setZero();
-        return 0;
+        return;
     }
 
     FunctionTreeVector<3> sum_vec;
@@ -46,7 +48,7 @@ Density compute(double prec, Orbital phi, int spin) {
     mrcpp::build_grid(rho.real(), sum_vec);
     mrcpp::add(-1.0, rho.real(), sum_vec, 0);
     mrcpp::clear(sum_vec, true);
-    return rho;
+    return;
 }
 
 /*
@@ -65,25 +67,25 @@ Density compute_singlet_tranition_density(double prec, Density &rho, Orbital phi
 }
 */
 
-Density compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
+void compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
     double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
 
-    DensityVector dens_vec;
+    FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
-        Density *rho_i = new Density(*MRA);
-        mrcpp::copy_grid(*rho_i, rho);
-        density::compute(mult_prec, *rho_i, Phi[i], spin);
-        dens_vec.push_back(std::make_tuple(1.0, rho_i));
+        Density rho_i(rho.spin());
+        mrcpp::copy_grid(rho_i.real(), rho.real());
+        density::compute(mult_prec, rho_i, Phi[i], spin);
+        dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
     }
 
     // Adaptive prec addition if more than 5 contributions,
     // otherwise addition on union grid
     if (dens_vec.size() > 5 and add_prec > 0.0) {  
-        mrcpp::add(add_prec, rho, dens_vec);
+        mrcpp::add(add_prec, rho.real(), dens_vec);
     } else if (dens_vec.size() > 0) {
-        mrcpp::build_grid(rho, dens_vec); //LUCA: this does not seem to fit with XCPotential (grid kept as provided by MRDFT)
-        mrcpp::add(-1.0, rho, dens_vec, 0);
+        mrcpp::build_grid(rho.real(), dens_vec); //LUCA: this does not seem to fit with XCPotential (grid kept as provided by MRDFT)
+        mrcpp::add(-1.0, rho.real(), dens_vec, 0);
     }
     mrcpp::clear(dens_vec, true);
 }
@@ -136,14 +138,14 @@ Density compute(double prec, Density &rho, OrbitalVector &Phi_0,
  * Note: this is valid for a density of a single Slater determinant:
  * both close and open shell
  */
-double density::calc_density_occupancy(int spin_orb, int spin_dens, double occ_orb) {
+double calc_density_occupancy(int spin_orb, int spin_dens, double occ_orb) {
 
-    Double occ_a(0.0), occ_b(0.0), occ_p(0.0);
+    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
     switch (spin_orb){
       case (SPIN::Alpha):  occ_a = (double) occ_orb; break;
       case (SPIN::Beta):   occ_b = (double) occ_orb; break;
       case (SPIN::Paired): occ_p = (double) occ_orb; break;
-      case default: MSG_ABORT("Invalid orbital spin");
+      default: MSG_FATAL("Invalid orbital spin");
     }
     
     double occ(0.0);
@@ -152,7 +154,7 @@ double density::calc_density_occupancy(int spin_orb, int spin_dens, double occ_o
       case (DENSITY::Alpha): occ = occ_a + 0.5*occ_p;     break;
       case (DENSITY::Beta):  occ = occ_b + 0.5*occ_p;     break;
       case (DENSITY::Spin):  occ = occ_a - occ_b;         break;
-      case default: MSG_ABORT("Invalid density spin");   
+      default: MSG_FATAL("Invalid density spin");   
     }
     return occ;
 }
@@ -166,18 +168,23 @@ double density::calc_density_occupancy(int spin_orb, int spin_dens, double occ_o
  * Note: this is valid for a density of a single Slater determinant:
  * both close and open shell
  */
-double density::calc_singlet_density_occupancy(spin_orb_0, spin_orb_1, spin_dens, occ_orb_0, occ_orb_1) {
-
-    if(spin_orb_0 != spin_orb_1) MSG_ABORT("Inconsistent spins"); 
-    if(occ_orb_0  != occ_orb_1)  MSG_ABORT("Inconsistent occupancies"); 
-    return calc_density_occupancy(spin_orb_0, spin_dens, occ_orb_0;
+double calc_singlet_density_occupancy(int spin_orb_0,
+                                               int spin_orb_1,
+                                               int spin_dens,
+                                               double occ_orb_0,
+                                               double occ_orb_1) {
+    if(spin_orb_0 != spin_orb_1) MSG_FATAL("Inconsistent spins");
+    if(occ_orb_0  != occ_orb_1)  MSG_FATAL("Inconsistent occupancies"); 
+    return calc_density_occupancy(spin_orb_0, spin_dens, occ_orb_0);
 }
-
+                                  
         
-double density::calc_triplet_density_occupancy(spin_orb_0, spin_orb_1, spin_dens, occ_orb_0, occ_orb_1) {
+double calc_triplet_density_occupancy(int spin_orb_0,
+                                               int spin_orb_1,
+                                               int spin_dens,
+                                               double occ_orb_0,
+                                               double occ_orb_1) {
         NOT_IMPLEMENTED_ABORT;
-    }
-
 }
 
 } //namespace density
