@@ -11,18 +11,10 @@ target_sources(mrchem PRIVATE
 
 # Install core guess executable in bin
 add_executable(core-guess core_guess.cpp)
-target_include_directories(core-guess PRIVATE
-    ${PROJECT_SOURCE_DIR}
-    ${PROJECT_SOURCE_DIR}/qmfunctions
-    ${PROJECT_SOURCE_DIR}/analyticfunctions
-    ${PROJECT_SOURCE_DIR}/chemistry
-    ${PROJECT_SOURCE_DIR}/properties
-    ${PROJECT_SOURCE_DIR}/qmoperators
-    ${PROJECT_SOURCE_DIR}/qmoperators/one_electron
-    )
 target_link_libraries(core-guess
+  PRIVATE
     mrchem
-    )
+  )
 install(
   TARGETS core-guess
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -30,51 +22,20 @@ install(
 
 # Install SAD guess executable in bin
 add_executable(sad-guess sad_guess.cpp)
-target_include_directories(sad-guess PRIVATE
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/analyticfunctions
-    ${CMAKE_SOURCE_DIR}/src/chemistry
-    ${CMAKE_SOURCE_DIR}/src/initial_guess
-    ${CMAKE_SOURCE_DIR}/src/properties
-    ${CMAKE_SOURCE_DIR}/src/qmfunctions
-    ${CMAKE_SOURCE_DIR}/src/qmoperators
-    ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
-    ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
-    ${CMAKE_SOURCE_DIR}/src/scf_solver
-    ${CMAKE_SOURCE_DIR}/src/utils
-    ${CMAKE_SOURCE_DIR}/src/initial_guess/sad
-    )
 target_link_libraries(sad-guess
+  PRIVATE
     mrchem
-    )
+  )
 install(TARGETS sad-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 # Install GTO guess executable in bin
 add_executable(gto-guess gto_guess.cpp)
-target_include_directories(gto-guess PRIVATE
-    ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/src/analyticfunctions
-    ${CMAKE_SOURCE_DIR}/src/chemistry
-    ${CMAKE_SOURCE_DIR}/src/initial_guess
-    ${CMAKE_SOURCE_DIR}/src/properties
-    ${CMAKE_SOURCE_DIR}/src/qmfunctions
-    ${CMAKE_SOURCE_DIR}/src/qmoperators
-    ${CMAKE_SOURCE_DIR}/src/qmoperators/one_electron
-    ${CMAKE_SOURCE_DIR}/src/qmoperators/two_electron
-    ${CMAKE_SOURCE_DIR}/src/scf_solver
-    ${CMAKE_SOURCE_DIR}/src/utils
-    )
 target_link_libraries(gto-guess
+  PRIVATE
     mrchem
-    )
+  )
 install(
   TARGETS
     gto-guess

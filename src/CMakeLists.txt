@@ -21,42 +21,37 @@ message(STATUS "Using XCFun: ${_loc} (version ${XCFun_VERSION})")
 
 add_library(mrchem "")
 
+target_include_directories(mrchem
+  PUBLIC
+    $<BUILD_INTERFACE:${CONFIG_H_LOCATION}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/properties>
+  )
+
+add_subdirectory(analyticfunctions)
+add_subdirectory(chemistry)
+add_subdirectory(mrdft)
+add_subdirectory(qmfunctions)
+add_subdirectory(qmoperators)
+add_subdirectory(scf_solver)
+add_subdirectory(utils)
+add_subdirectory(initial_guess)
+
 target_sources(mrchem
   PRIVATE
     SCFDriver.cpp
     parallel.cpp
     mrenv.cpp
   )
-add_subdirectory(chemistry)
-add_subdirectory(analyticfunctions)
-add_subdirectory(qmfunctions)
-add_subdirectory(qmoperators)
-add_subdirectory(mrdft)
-add_subdirectory(scf_solver)
-add_subdirectory(initial_guess)
-add_subdirectory(utils)
 
-target_include_directories(mrchem
-  PUBLIC
-    ${CONFIG_H_LOCATION}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/chemistry
-    ${CMAKE_CURRENT_SOURCE_DIR}/properties
-    ${CMAKE_CURRENT_SOURCE_DIR}/analyticfunctions
-    ${CMAKE_CURRENT_SOURCE_DIR}/qmfunctions
-    ${CMAKE_CURRENT_SOURCE_DIR}/qmoperators
-    ${CMAKE_CURRENT_SOURCE_DIR}/qmoperators/one_electron
-    ${CMAKE_CURRENT_SOURCE_DIR}/qmoperators/two_electron
-    ${CMAKE_CURRENT_SOURCE_DIR}/scf_solver
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils
-  )
 target_link_libraries(mrchem
   PUBLIC
-    MRCPP::mrcpp
     Eigen3::Eigen
-    getkw::getkw
+    MRCPP::mrcpp
     XCFun::xcfun
+    getkw::getkw
   )
+
 install(
   TARGETS
     mrchem
@@ -67,10 +62,12 @@ install(
 add_executable(mrchem.x
     mrchem.cpp
   )
+
 target_link_libraries(mrchem.x
   PRIVATE
     mrchem
   )
+
 install(
   TARGETS
     mrchem.x
