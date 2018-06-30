@@ -38,8 +38,7 @@ add_subdirectory(utils)
 
 target_include_directories(mrchem
   PUBLIC
-    # Unbelievably ugly... config.h has to be generated here!
-    ${CMAKE_BINARY_DIR}/../../..
+    ${CONFIG_H_LOCATION}
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/chemistry
     ${CMAKE_CURRENT_SOURCE_DIR}/properties
@@ -58,7 +57,12 @@ target_link_libraries(mrchem
     getkw::getkw
     XCFun::xcfun
   )
-install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
+install(
+  TARGETS
+    mrchem
+  ARCHIVE DESTINATION
+    ${CMAKE_INSTALL_LIBDIR}
+  )
 
 add_executable(mrchem.x
     mrchem.cpp
@@ -67,9 +71,19 @@ target_link_libraries(mrchem.x
   PRIVATE
     mrchem
   )
-install(TARGETS mrchem.x RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(
+  TARGETS
+    mrchem.x
+  RUNTIME DESTINATION
+    ${CMAKE_INSTALL_BINDIR}
+  )
 
 option(MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mrchem.in ${CMAKE_CURRENT_BINARY_DIR}/mrchem)
-install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mrchem DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mrchem.in ${CMAKE_CURRENT_BINARY_DIR}/mrchem @ONLY)
+install(
+  PROGRAMS
+    ${CMAKE_CURRENT_BINARY_DIR}/mrchem
+  DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
+  )

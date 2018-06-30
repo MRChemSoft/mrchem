@@ -1,7 +1,7 @@
-configure_file (
-    "${CMAKE_SOURCE_DIR}/config.h.in"
-    "${CMAKE_BINARY_DIR}/config.h"
-    )
+configure_file(
+  ${CMAKE_SOURCE_DIR}/config.h.in
+  ${CMAKE_BINARY_DIR}/config.h
+  )
 
 add_subdirectory(external)
 
@@ -14,10 +14,12 @@ ExternalProject_Add(${PROJECT_NAME}_core
   SOURCE_DIR
     ${PROJECT_SOURCE_DIR}/src
   CMAKE_ARGS
+    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_CXX_STANDARD=11
     -DCMAKE_CXX_EXTENSIONS=OFF
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
+    -DCONFIG_H_LOCATION=${CMAKE_BINARY_DIR}
     -DEigen3_DIR=${Eigen3_DIR}
     -DMRCPP_DIR=${MRCPP_DIR}
     -DXCFun_DIR=${XCFun_DIR}
@@ -29,7 +31,7 @@ ExternalProject_Add(${PROJECT_NAME}_core
   BUILD_ALWAYS
     1
   INSTALL_COMMAND
-    ""
+    DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
   )
 
 add_subdirectory(pilot)

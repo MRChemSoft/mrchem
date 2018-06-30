@@ -22,13 +22,9 @@ target_include_directories(core-guess PRIVATE
     )
 target_link_libraries(core-guess
     mrchem
-    MRCPP::mrcpp
-    # FIXME
-    #Getkw::getkw
-    ${Getkw_LIBRARIES}
     )
 install(
-  TARGETS core-guess 
+  TARGETS core-guess
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   )
 
@@ -53,10 +49,6 @@ target_include_directories(sad-guess PRIVATE
     )
 target_link_libraries(sad-guess
     mrchem
-    MRCPP::mrcpp
-    # FIXME
-    #Getkw::getkw
-    ${Getkw_LIBRARIES}
     )
 install(TARGETS sad-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -82,10 +74,6 @@ target_include_directories(gto-guess PRIVATE
     )
 target_link_libraries(gto-guess
     mrchem
-    MRCPP::mrcpp
-    # FIXME
-    #Getkw::getkw
-    ${Getkw_LIBRARIES}
     )
 install(
   TARGETS
