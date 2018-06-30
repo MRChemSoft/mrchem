@@ -5,6 +5,7 @@
 #include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
+#include "QMFunction.h"
 #include "qmfunction_utils.h"
 
 using mrcpp::Timer;
@@ -19,9 +20,11 @@ namespace qmfunction {
 
 void add(ComplexDouble a, QMFunction &inp_a, bool conj_a,
          ComplexDouble b, QMFunction &inp_b, bool conj_b,
-         QMFunction &out, double prec = -1.0) {
+         QMFunction &out, double prec) {
     std::vector<bool> conj = {conj_a, conj_b};
-    QMFunctionVector  inp  = {inp_a,  inp_b};
+    QMFunctionVector  inp;
+    inp.push_back(inp_a);
+    inp.push_back(inp_b);
     ComplexVector     coefs(2); coefs(0) = a; coefs(1) = b;   
     linear_combination(coefs, inp, conj, out, prec);
 }
@@ -30,20 +33,21 @@ void linear_combination(const ComplexVector &coeff,
                         QMFunctionVector &inp,
                         std::vector<bool> &conj,
                         QMFunction &out,
-                        double prec = -1.0) {
+                        double prec) {
 
+    double thrs = mrcpp::MachineZero;
     FunctionTreeVector<3> rvec;
     FunctionTreeVector<3> ivec;
     for (int i = 0; i < inp.size(); i++) {
         bool cHasReal = (std::abs(coeff[i].real()) > thrs);
         bool cHasImag = (std::abs(coeff[i].imag()) > thrs);
-        double sign = conj[i] ? : -1.0 : 1.0;
+        double sign = conj[i] ? -1.0 : 1.0;
 
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(      c[i].real(), &inp[i].real()));
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-conj*c[i].imag(), &inp[i].imag()));
+        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(      coeff[i].real(), &inp[i].real()));
+        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-sign*coeff[i].imag(), &inp[i].imag()));
 
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(      c[i].imag(), &inp[i].real()));
-        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( conj*c[i].real(), &inp[i].imag()));
+        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(      coeff[i].imag(), &inp[i].real()));
+        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( sign*coeff[i].real(), &inp[i].imag()));
     }
 
     if (rvec.size() > 0) {
@@ -67,13 +71,13 @@ void linear_combination(const ComplexVector &coeff,
 }
 
 void linear_combination(const ComplexMatrix &U, QMFunctionVector &inp, std::vector<bool> &conj,
-                        QMFunctionVector &out, double prec = -1.0) {
+                        QMFunctionVector &out, double prec) {
 
-    if (U.rows() != out.size()) MSG_ABORT("Output size mismatch");
-    if (U.cols() != inp.size()) MSG_ABORT("Input size mismatch");
+    if (U.rows() != out.size()) MSG_FATAL("Output size mismatch");
+    if (U.cols() != inp.size()) MSG_FATAL("Input size mismatch");
     
     for (int i = 0; i < U.rows(); i++) {
-        ComplexVector &c = U.row(i); 
+        const ComplexVector &c = U.row(i); 
         linear_combination(c, inp, conj, out[i], prec);
     }
 }
@@ -84,7 +88,7 @@ void pairwise_add(ComplexDouble coeff_a, QMFunctionVector &inp_a, std::vector<bo
                   QMFunctionVector out, double prec) {
     if (inp_a.size() != inp_b.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < inp_a.size(); i++) {
-        void add(coeff_a, inp_a[i], conj_a[i], inp_b[i], conj_b[i], out[i], prec);
+        add(coeff_a, inp_a[i], conj_a[i], coeff_b, inp_b[i], conj_b[i], out[i], prec);
     }
 }
 
@@ -92,21 +96,22 @@ void rescale(ComplexDouble coeff, QMFunction &inp, bool conj, double prec) {
     QMFunction tmp;
     qmfunction::multiply(coeff, inp, tmp, conj, prec);
     inp.free();
-    inp.setReal(tmp.real());
-    inp.setReal(tmp.imag());
+    inp.setReal(&tmp.real());
+    inp.setImag(&tmp.imag());
     tmp.clear();
 }
     
 void multiply(ComplexDouble coeff, QMFunction &inp, QMFunction &out, bool conj, double prec) {
+    double thrs = mrcpp::MachineZero;
     bool cHasReal = (std::abs(coeff.real()) > thrs);
     bool cHasImag = (std::abs(coeff.imag()) > thrs);
-    double sign = conj ? : -1.0; 1.0;
+    double sign = conj ? -1.0: 1.0;
     FunctionTreeVector<3> rvec;
-    FunctionTreeVector<3> ivac;
-    if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(        coeff.real(), &inp[i].real()));
-    if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-sign * coeff.imag(), &inp[i].imag()));
-    if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(        coeff.imag(), &inp[i].real()));
-    if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( sign * coeff.real(), &inp[i].imag()));
+    FunctionTreeVector<3> ivec;
+    if (cHasReal and inp.hasReal()) rvec.push_back(std::make_tuple(        coeff.real(), &inp.real()));
+    if (cHasImag and inp.hasImag()) rvec.push_back(std::make_tuple(-sign * coeff.imag(), &inp.imag()));
+    if (cHasImag and inp.hasReal()) ivec.push_back(std::make_tuple(        coeff.imag(), &inp.real()));
+    if (cHasReal and inp.hasImag()) ivec.push_back(std::make_tuple( sign * coeff.real(), &inp.imag()));
     
     if (rvec.size() > 0) {
         out.alloc(NUMBER::Real);
@@ -149,8 +154,8 @@ void multiply(QMFunction &inp_ab, bool conj_b,
               QMFunction &inp_cd, bool conj_d,
               QMFunction &out, double out_coef, double prec) {
 
-    double sign_b = conj_b ? : -1.0 : 1.0;
-    double sign_d = conj_d ? : -1.0 : 1.0;
+    double sign_b = conj_b ? -1.0 : 1.0;
+    double sign_d = conj_d ? -1.0 : 1.0;
     bool ac = (inp_ab.hasReal() and inp_cd.hasReal());
     bool bd = (inp_ab.hasImag() and inp_cd.hasImag());
     bool ad = (inp_ab.hasReal() and inp_cd.hasImag());
