@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
-project(MRChem_core LANGUAGES CXX)
+project(MRChem_core
+  VERSION 1.0.0
+  LANGUAGES CXX
+  )
 
 include(GNUInstallDirs)
 
@@ -26,6 +29,7 @@ target_include_directories(mrchem
     $<BUILD_INTERFACE:${CONFIG_H_LOCATION}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/properties>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
   )
 
 add_subdirectory(analyticfunctions)
@@ -37,11 +41,20 @@ add_subdirectory(scf_solver)
 add_subdirectory(utils)
 add_subdirectory(initial_guess)
 
+list(APPEND _public_headers
+  SCFDriver.h
+  mrchem.h
+  mrenv.h
+  parallel.h
+  ${CONFIG_H_LOCATION}/config.h
+  )
 target_sources(mrchem
   PRIVATE
     SCFDriver.cpp
     parallel.cpp
     mrenv.cpp
+  PUBLIC
+    $<BUILD_INTERFACE:$<JOIN:${CMAKE_CURRENT_LIST_DIR}/,${_public_headers}>>
   )
 
 target_link_libraries(mrchem
@@ -52,16 +65,46 @@ target_link_libraries(mrchem
     getkw::getkw
   )
 
+set_target_properties(mrchem
+  PROPERTIES
+    POSITION_INDEPENDENT_CODE 1
+    MACOSX_RPATH ON
+    PUBLIC_HEADER "${_public_headers}"
+  )
+
+set(INSTALL_CMAKEDIR "share/cmake/MRChem")
+
 install(
   TARGETS
     mrchem
-  ARCHIVE DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}
+  EXPORT
+    MRChemTargets
+  ARCHIVE
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    COMPONENT lib
+  RUNTIME
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT bin
+  LIBRARY
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    COMPONENT lib
+  PUBLIC_HEADER
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/MRChem
+    COMPONENT dev
   )
 
-add_executable(mrchem.x
-    mrchem.cpp
+install(
+  EXPORT
+    MRChemTargets
+  NAMESPACE
+    "MRChem::"
+  DESTINATION
+    ${INSTALL_CMAKEDIR}
+  COMPONENT
+    dev
   )
+
+add_executable(mrchem.x mrchem.cpp)
 
 target_link_libraries(mrchem.x
   PRIVATE
@@ -71,8 +114,43 @@ target_link_libraries(mrchem.x
 install(
   TARGETS
     mrchem.x
-  RUNTIME DESTINATION
-    ${CMAKE_INSTALL_BINDIR}
+  EXPORT
+    MRChemTargets-mrchemx
+  RUNTIME
+    DESTINATION ${CMAKE_INSTALL_BINDIR}
+    COMPONENT bin
+  )
+
+install(
+  EXPORT
+    MRChemTargets-mrchemx
+  NAMESPACE
+    "MRChem::"
+  DESTINATION
+    ${INSTALL_CMAKEDIR}
+  COMPONENT
+    bin
+  )
+
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/MRChemConfigVersion.cmake
+  VERSION ${PROJECT_VERSION}
+  COMPATIBILITY SameMajorVersion
+  )
+
+configure_package_config_file(
+  ${CMAKE_CURRENT_LIST_DIR}/MRChemConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/MRChemConfig.cmake
+  INSTALL_DESTINATION ${INSTALL_CMAKEDIR}
+  )
+
+install(
+  FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/MRChemConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/MRChemConfigVersion.cmake
+  DESTINATION
+    ${INSTALL_CMAKEDIR}
   )
 
 option(MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
@@ -84,3 +162,31 @@ install(
   DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
   )
+
+macro(add_catch_test _name _labels)
+  # _labels is not a list, it's a string... Transform it into a list
+  set(labels)
+  string(REPLACE ";" " " _labels "${_labels}")
+  foreach(_label "${_labels}")
+    list(APPEND labels ${_label})
+  endforeach()
+  unset(_labels)
+
+  add_test(NAME ${_name}
+           COMMAND ${PROJECT_BINARY_DIR}/tests/mrchem-tests [${_name}] --success --out ${PROJECT_BINARY_DIR}/tests/${_name}.log --durations yes
+           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+  if(labels)
+    set_tests_properties(${_name} PROPERTIES LABELS "${labels}")
+  endif()
+endmacro()
+
+
+# Prepare Catch "library" for other executables
+set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/../external/catch)
+add_library(Catch INTERFACE)
+target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
+
+enable_testing()
+include(CTest)
+add_subdirectory(${CMAKE_CURRENT_LIST_DIR}/../tests ${CMAKE_CURRENT_BINARY_DIR}/tests)

@@ -23,7 +23,6 @@ Options:
   --mpi                                  Enable MPI parallelization [default: False].
   --omp                                  Enable OpenMP parallelization [default: False].
   --coverage                             Enable code coverage [default: OFF].
-  --enable-tests                         Enable tests [default: False].
   --type=<TYPE>                          Set the CMake build type (debug, release, relwithdebinfo, minsizerel) [default: release].
   --generator=<STRING>                   Set the CMake build system generator [default: Unix Makefiles].
   --show                                 Show CMake command and exit.
@@ -45,7 +44,6 @@ def gen_cmake_command(options, arguments):
     command.append('-DENABLE_MPI={0}'.format(arguments['--mpi']))
     command.append('-DENABLE_OPENMP={0}'.format(arguments['--omp']))
     command.append('-DENABLE_CODE_COVERAGE={0}'.format(arguments['--coverage']))
-    command.append('-DENABLE_TESTS={0}'.format(arguments['--enable-tests']))
     command.append('-DCMAKE_BUILD_TYPE={0}'.format(arguments['--type']))
     command.append('-G"{0}"'.format(arguments['--generator']))
     if arguments['--cmake-options'] != "''":

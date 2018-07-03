@@ -1,0 +1,47 @@
+# MRChemConfig.cmake
+# ---------------------
+#
+# MRChem cmake module.
+# This module sets the following variables in your project:
+#
+# ::
+#
+#   MRChem_FOUND - true if MRChem found on the system
+#   MRChem_VERSION - MRChem version in format Major.Minor.Release
+#
+#
+# Exported targets:
+#
+# ::
+#
+# If MRChem is found, this module defines the following :prop_tgt:`IMPORTED`
+# targets. ::
+#   MRChem::MRChem - the main MRChem shared (or static) library with header & defs attached.
+#   MRChem::mrchem.x - the mrchem.x program.
+#
+#
+# Suggested usage:
+#
+# ::
+#
+#   find_package(MRChem)
+#   find_package(MRChem 1.1.7 CONFIG REQUIRED)
+#
+#
+# The following variables can be set to guide the search for this package:
+#
+# ::
+#
+#   MRChem_DIR - CMake variable, set to directory containing this Config file
+#   CMAKE_PREFIX_PATH - CMake variable, set to root directory of this package
+#   PATH - environment variable, set to bin directory of this package
+#   CMAKE_DISABLE_FIND_PACKAGE_MRChem - CMake variable, disables
+#       find_package(MRChem) perhaps to force internal build
+
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/MRChemTargets-mrchemx.cmake")
+check_required_components("MRChem-mrchemx")
+
+include("${CMAKE_CURRENT_LIST_DIR}/MRChemTargets.cmake")
+check_required_components("MRChem")

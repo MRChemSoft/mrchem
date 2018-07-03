@@ -34,8 +34,8 @@ modules:
     - 'custom/git.cmake'
     - 'custom/main.cmake'
     - 'custom/feature_summary.cmake'
-- tests:
-  - source:
-    - 'custom/tests.cmake'
+#- tests:
+#  - source:
+#    - 'custom/tests.cmake'
 - save_flags:
   - source: '%(url_root)modules/save_flags.cmake'
