@@ -12,7 +12,7 @@ ExternalProject_Add(${PROJECT_NAME}_core
     getkw_external
     xcfun_external
   SOURCE_DIR
-    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}/mrchem
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
