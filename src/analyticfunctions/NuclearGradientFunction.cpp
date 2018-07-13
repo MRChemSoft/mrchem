@@ -9,7 +9,7 @@ double NuclearGradientFunction::evalf(const double *r) const {
     double c_A = this->smooth;
     double Z_A = this->nucleus.getCharge();
     const double *R_A = this->nucleus.getCoord();
-    double x_A = r[this->dir] - R_A[this->dir];
+    double x_A =  R_A[this->dir] - r[this->dir];
     double r_A = math_utils::calc_distance(R_A, r);
     return -Z_A*(x_A/r_A)*du_dr(r_A/c_A)/(c_A*c_A);
 }

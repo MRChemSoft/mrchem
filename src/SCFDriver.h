@@ -103,6 +103,7 @@ protected:
     bool calc_scf_energy;
     bool calc_dipole_moment;
     bool calc_quadrupole_moment;
+    bool calc_geometry_derivatives;
     bool calc_polarizability;
     bool calc_hyperpolarizability;
     bool calc_optical_rotation;

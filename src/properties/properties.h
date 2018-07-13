@@ -11,5 +11,6 @@ class HyperFineCoupling;
 class SpinSpinCoupling;
 class Polarizability;
 class OpticalRotation;
+class GeometryDerivatives;
 
 } //namespace mrchem

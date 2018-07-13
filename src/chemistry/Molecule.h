@@ -52,6 +52,7 @@ public:
 
     void initSCFEnergy();
     void initDipoleMoment();
+    void initGeometryDerivatives();
     void initMagnetizability();
     void initQuadrupoleMoment();
     void initNMRShielding(int k);
@@ -63,6 +64,7 @@ public:
     SCFEnergy& getSCFEnergy();
     DipoleMoment& getDipoleMoment();
     QuadrupoleMoment& getQuadrupoleMoment();
+    GeometryDerivatives& getGeometryDerivatives();
     Magnetizability& getMagnetizability();
     NMRShielding& getNMRShielding(int k);
     HyperFineCoupling& getHyperFineCoupling(int k);
@@ -81,6 +83,7 @@ protected:
     SCFEnergy *energy;
     DipoleMoment *dipole;
     QuadrupoleMoment *quadrupole;
+    GeometryDerivatives *geomderiv;
     Magnetizability *magnetizability;
     NMRShielding **nmr;
     HyperFineCoupling **hfcc;
@@ -97,6 +100,7 @@ protected:
     void clearSCFEnergy();
     void clearDipoleMoment();
     void clearQuadrupoleMoment();
+    void clearGeometryDerivatives();
     void clearMagnetizability();
     void clearNMRShielding(int k);
     void clearHyperFineCoupling(int k);

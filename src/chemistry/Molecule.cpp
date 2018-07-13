@@ -5,6 +5,7 @@
 #include "Molecule.h"
 #include "Nucleus.h"
 #include "DipoleMoment.h"
+#include "GeometryDerivatives.h"
 #include "Magnetizability.h"
 #include "NMRShielding.h"
 #include "HyperFineCoupling.h"
@@ -29,6 +30,7 @@ Molecule::Molecule(const Nuclei &nucs, int c, int m)
           energy(0),
           dipole(0),
           quadrupole(0),
+          geomderiv(0),
           magnetizability(0),
           nmr(0),
           hfcc(0),
@@ -52,6 +54,7 @@ Molecule::Molecule(const std::string &coord_file, int c, int m)
           energy(0),
           dipole(0),
           quadrupole(0),
+          geomderiv(0),
           magnetizability(0),
           nmr(0),
           hfcc(0),
@@ -76,6 +79,7 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
           energy(0),
           dipole(0),
           quadrupole(0),
+          geomderiv(0),
           magnetizability(0),
           nmr(0),
           hfcc(0),
@@ -113,6 +117,7 @@ void Molecule::allocNuclearProperties() {
 Molecule::~Molecule() {
     clearSCFEnergy();
     clearDipoleMoment();
+    clearGeometryDerivatives();
     //clearQuadrupoleMoment();
     clearMagnetizability();
     //clearPolarizability();
@@ -135,14 +140,14 @@ void Molecule::freeNuclearProperties() {
             clearSpinSpinCoupling(k, l);
         }
         delete[] this->sscc[k];
-        this->sscc[k] = 0; 
+        this->sscc[k] = 0;
     }
     delete[] this->nmr;
     delete[] this->hfcc;
     delete[] this->sscc;
-    this->nmr = 0; 
-    this->hfcc = 0; 
-    this->sscc = 0; 
+    this->nmr = 0;
+    this->hfcc = 0;
+    this->sscc = 0;
 }
 
 /** @brief Delete property SCFEnergy */
@@ -172,7 +177,15 @@ void Molecule::clearQuadrupoleMoment() {
     */
 }
 
-/** @brief Delete property Magnetizability */
+/** @brief Delete property GeometryDerivatives */
+void Molecule::clearGeometryDerivatives() {
+    if (this->geomderiv != 0) {
+        delete this->geomderiv;
+        this->geomderiv = 0;
+    }
+}
+
+//** @brief Delete property Magnetizability */
 void Molecule::clearMagnetizability() {
     if (this->magnetizability != 0) {
         delete this->magnetizability;
@@ -259,6 +272,12 @@ void Molecule::initQuadrupoleMoment() {
     }
     this->quadrupole = new QuadrupoleMoment();
     */
+}
+
+/** @brief Initialize property GeometryDerivatives */
+void Molecule::initGeometryDerivatives() {
+    if (this->geomderiv != 0) MSG_WARN("Geometry derivatives already initialized");
+    this->geomderiv = new GeometryDerivatives(this->nuclei.size());
 }
 
 /** @brief Initialize property Magnetizability */
@@ -349,6 +368,12 @@ QuadrupoleMoment& Molecule::getQuadrupoleMoment() {
     if (this->quadrupole == 0) MSG_ERROR("Uninitialized quadrupole moment");
     return *this->quadrupole;
     */
+}
+
+/** @brief Return property GeometryDerivatives */
+GeometryDerivatives& Molecule::getGeometryDerivatives() {
+    if (this->geomderiv == 0) MSG_ERROR("Uninitialized geometry derivatives");
+    return *this->geomderiv;
 }
 
 /** @brief Return property Magnetizability */
@@ -455,7 +480,7 @@ void Molecule::calcCenterOfCharge() {
         const double *r_i = nuc.getCoord();
         const double z_i = nuc.getElement().getZ();
         for (int d = 0; d < 3; d++) {
-            this->COM[d] += r_i[d] * z_i;
+            this->COC[d] += r_i[d] * z_i;
         }
         Z += z_i;
     }
@@ -553,6 +578,7 @@ void Molecule::printGeometry() const {
 void Molecule::printProperties() const {
     if (this->energy != 0) println(0, *this->energy);
     if (this->dipole != 0) println(0, *this->dipole);
+    if (this->geomderiv != 0) println(0, *this->geomderiv);
     if (this->magnetizability != 0) println(0, *this->magnetizability);
     if (this->nmr != 0) {
         for (int k = 0; k < this->nuclei.size(); k++) {

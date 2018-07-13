@@ -5,6 +5,7 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+
 #include "getkw/Getkw.hpp"
 #include "getkw/Section.hpp"
 #include "getkw/Keyword.hpp"
@@ -12,9 +13,11 @@
 #include "initial_guess/core.h"
 #include "initial_guess/gto.h"
 #include "initial_guess/sad.h"
+#include "utils/math_utils.h"
 
 #include "Orbital.h"
 #include "Density.h"
+
 #include "SCFDriver.h"
 #include "Molecule.h"
 #include "HydrogenFunction.h"
@@ -39,11 +42,14 @@
 
 #include "DipoleMoment.h"
 #include "Magnetizability.h"
+#include "GeometryDerivatives.h"
 
 #include "H_E_dip.h"
 #include "H_B_dip.h"
 #include "H_M_pso.h"
 #include "H_BB_dia.h"
+#include "X_rm3.h"
+#include "NuclearGradientOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -76,6 +82,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     calc_polarizability = input.get<bool>("Properties.polarizability");
     calc_hyperpolarizability = input.get<bool>("Properties.hyperpolarizability");
     calc_optical_rotation = input.get<bool>("Properties.optical_rotation");
+    calc_geometry_derivatives = input.get<bool>("Properties.geometry_derivatives");
 
     nmr_perturbation = input.get<string>("NMRShielding.perturbation");
     nmr_nucleus_k = input.getIntVec("NMRShielding.nucleus_k");
@@ -317,6 +324,7 @@ void SCFDriver::setup() {
     if (calc_scf_energy) molecule->initSCFEnergy();
     if (calc_dipole_moment) molecule->initDipoleMoment();
     if (calc_quadrupole_moment) molecule->initQuadrupoleMoment();
+    if (calc_geometry_derivatives) molecule->initGeometryDerivatives();
     if (calc_magnetizability) {
         molecule->initMagnetizability();
         for (int d = 0; d < 3; d++) {
@@ -725,6 +733,54 @@ void SCFDriver::calcGroundStateProperties() {
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
+    if (calc_geometry_derivatives) {
+        Printer::printHeader(0, "Calculating geometry derivatives");
+        Timer timer;
+        DoubleMatrix &nuc = molecule->getGeometryDerivatives().getNuclear();
+        DoubleMatrix &el = molecule->getGeometryDerivatives().getElectronic();
+        DoubleVector vecsum = DoubleVector::Zero(3);
+        DoubleVector torque = DoubleVector::Zero(3);
+
+        for (int k = 0; k < nuclei->size(); k++) {
+            const Nucleus &nuc_k = (*nuclei)[k];
+            double Z_k = nuc_k.getCharge();
+            const double *R_k = nuc_k.getCoord();
+            Nuclei nucs;
+            nucs.push_back("H", R_k);
+            NuclearGradientOperator r_rm3(nuc_k, 1.0e-2);
+            r_rm3.setup(1.0e-4);
+            for (int l = 0; l < nuclei->size(); l++) {
+                if (l == k) continue;
+                const Nucleus &nuc_l = (*nuclei)[l];
+                double Z_l = nuc_l.getCharge();
+                const double *R_l = nuc_l.getCoord();
+                double r_x = (R_k[0] - R_l[0]);
+                double r_y = (R_k[1] - R_l[1]);
+                double r_z = (R_k[2] - R_l[2]);
+                double R_kl = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);;
+                nuc(k,0) -= Z_k*Z_l*r_x/R_kl;
+                nuc(k,1) -= Z_k*Z_l*r_y/R_kl;
+                nuc(k,2) -= Z_k*Z_l*r_z/R_kl;
+            }
+            el.row(k) = r_rm3.trace(*phi).real();
+            r_rm3.clear();
+            vecsum += el.row(k);
+            vecsum += nuc.row(k);
+            torque[0] += R_k[1]*(el(k,2)+nuc(k,2)) - R_k[2]*(el(k,1)+nuc(k,1));
+            torque[1] += R_k[2]*(el(k,0)+nuc(k,0)) - R_k[0]*(el(k,2)+nuc(k,2));
+            torque[2] += R_k[0]*(el(k,1)+nuc(k,1)) - R_k[1]*(el(k,0)+nuc(k,0));
+        }
+        println(0, "nuclear part    ");
+        println(0, nuc);
+        println(0, "electronic part ");
+        println(0, el);
+        println(0, "Total force acting on nuclei");
+        println(0, vecsum.transpose());
+        println(0, "Torque acting on nuclei");
+        println(0, torque.transpose());
+        timer.stop();
+        Printer::printFooter(0, timer, 2);
+    }
     if (calc_magnetizability) {
         Printer::printHeader(0, "Calculating diamagnetic magnetizability");
         Timer timer;
@@ -911,7 +967,7 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
     Printer::printFooter(0, timer, 2);
 }
 
-    /** @brief helper routine to set up the correct parameters in the functional before using it
+/** @brief helper routine to set up the correct parameters in the functional before using it
      *
      * param[in] order the requested order of the derivative (order=1 for SCF)
      *
