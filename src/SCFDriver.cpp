@@ -13,6 +13,8 @@
 #include "initial_guess/gto.h"
 #include "initial_guess/sad.h"
 
+#include "utils/math_utils.h"
+
 #include "SCFDriver.h"
 #include "Molecule.h"
 #include "HydrogenFunction.h"
@@ -34,11 +36,13 @@
 
 #include "DipoleMoment.h"
 #include "Magnetizability.h"
+#include "GeometryDerivatives.h"
 
 #include "H_E_dip.h"
 #include "H_B_dip.h"
 #include "H_M_pso.h"
 #include "H_BB_dia.h"
+#include "X_rm3.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -71,6 +75,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     calc_polarizability = input.get<bool>("Properties.polarizability");
     calc_hyperpolarizability = input.get<bool>("Properties.hyperpolarizability");
     calc_optical_rotation = input.get<bool>("Properties.optical_rotation");
+    calc_geometry_derivatives = input.get<bool>("Properties.geometry_derivatives");
 
     nmr_perturbation = input.get<string>("NMRShielding.perturbation");
     nmr_nucleus_k = input.getIntVec("NMRShielding.nucleus_k");
@@ -142,7 +147,7 @@ SCFDriver::SCFDriver(Getkw &input) {
         ext_magnetic_field[1] = tmp[1];
         ext_magnetic_field[2] = tmp[2];
     }
-    
+
     file_start_orbitals = input.get<string>("Files.start_orbitals");
     file_final_orbitals = input.get<string>("Files.final_orbitals");
     file_basis_set = input.get<string>("Files.basis_set");
@@ -312,6 +317,7 @@ void SCFDriver::setup() {
     if (calc_scf_energy) molecule->initSCFEnergy();
     if (calc_dipole_moment) molecule->initDipoleMoment();
     if (calc_quadrupole_moment) molecule->initQuadrupoleMoment();
+    if (calc_geometry_derivatives) molecule->initGeometryDerivatives();
     if (calc_magnetizability) {
         molecule->initMagnetizability();
         for (int d = 0; d < 3; d++) {
@@ -420,7 +426,7 @@ mrcpp::DerivativeOperator<3>* SCFDriver::useDerivative(string derivative_name) {
     if (derivative_name == "ABGV_55") return ABGV_55;
     MSG_FATAL("No such derivative operator");
 }
-    
+
 void SCFDriver::clear() {
     for (int k = 0; k < molecule->getNNuclei(); k++) {
         if (h_M[k] != 0) delete h_M[k];
@@ -720,6 +726,43 @@ void SCFDriver::calcGroundStateProperties() {
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
+    if (calc_geometry_derivatives) {
+        Printer::printHeader(0, "Calculating geometry derivatives");
+        Timer timer;
+        DoubleMatrix &nuc = molecule->getGeometryDerivatives().getNuclear();
+	DoubleMatrix &el = molecule->getGeometryDerivatives().getElectronic();
+	for (int k = 0; k < nuclei->size(); k++) {
+	    const Nucleus &nuc_k = (*nuclei)[k];
+	    double Z_k = nuc_k.getCharge();
+	    const double *R_k = nuc_k.getCoord();
+	    //X_rm3 gd(R_k);
+	    Nuclei nucs;
+	    nucs.push_back("H", R_k);
+	    X_rm3 gd(nucs, rel_prec);
+	    gd.setup(1.0e-9);
+	    //nuc = gd.trace(*nuclei).real();
+	    for (int l = 0; l < nuclei->size(); l++) {
+		if (l == k) continue;
+		const Nucleus &nuc_l = (*nuclei)[l];
+		double Z_l = nuc_l.getCharge();
+		const double *R_l = nuc_l.getCoord();
+		double r_x = (R_k[0] - R_l[0]);
+		double r_y = (R_k[1] - R_l[1]);
+		double r_z = (R_k[2] - R_l[2]);
+		println(0, r_x << "  " << r_y << "  " << r_z);
+		double R_kl = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);;
+		nuc(k,0) -= Z_k*Z_l*r_x/R_kl;
+		nuc(k,1) -= Z_k*Z_l*r_y/R_kl;
+		nuc(k,2) -= Z_k*Z_l*r_z/R_kl;
+	    }
+	    el.row(k) = gd.trace(*phi).real();
+	    gd.clear();
+	}
+	println(0, nuc);
+	println(0, el);
+        timer.stop();
+        Printer::printFooter(0, timer, 2);
+    }
     if (calc_magnetizability) {
         Printer::printHeader(0, "Calculating diamagnetic magnetizability");
         Timer timer;
@@ -923,6 +966,6 @@ mrdft::XCFunctional* SCFDriver::setupFunctional(int order) {
     setupInitialGrid(*fun, *molecule);
     return fun;
 }
-    
+
 } //namespace mrchem
 

@@ -102,6 +102,7 @@ protected:
     bool calc_scf_energy;
     bool calc_dipole_moment;
     bool calc_quadrupole_moment;
+    bool calc_geometry_derivatives;
     bool calc_polarizability;
     bool calc_hyperpolarizability;
     bool calc_optical_rotation;
@@ -176,7 +177,7 @@ protected:
     bool ext_magnetic;
     Eigen::Vector3d ext_electric_field;
     Eigen::Vector3d ext_magnetic_field;
-    
+
     // File input
     std::string file_start_orbitals;
     std::string file_final_orbitals;
