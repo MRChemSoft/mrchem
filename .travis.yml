@@ -12,25 +12,28 @@ matrix:
       addons: &1
         apt:
           packages:
-            - g++-4.8
+            - g++
+            - gcc
             - libboost-all-dev
             - lcov
       env:
         - BUILD_TYPE='release'
-        - CXX_COMPILER='g++-4.8'
+        - CXX_COMPILER='g++'
+        - C_COMPILER='gcc'
         - PYTHON_VER='2.7'
     - os: linux
       addons: *1
       env:
         - BUILD_TYPE='release'
-        - CXX_COMPILER='g++-4.8'
+        - CXX_COMPILER='g++'
         - OPENMP='--omp'
         - PYTHON_VER='2.7'
     - os: linux
       addons: *1
       env:
         - BUILD_TYPE='debug'
-        - CXX_COMPILER='g++-4.8'
+        - CXX_COMPILER='g++'
+        - C_COMPILER='gcc'
         - COVERAGE='--coverage'
         - PYTHON_VER='2.7'
 
@@ -68,7 +71,7 @@ before_script:
 script:
   - ./.ci/report_versions.sh
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
-  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake"
+  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
   - cmake --build build --target install -- VERBOSE=1 -j2
   # Unit tests currently run _within_ superbuild
   #- cd build
