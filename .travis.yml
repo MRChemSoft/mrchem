@@ -41,7 +41,7 @@ env:
     - LANGUAGE="en_US.UTF-8"
     - PYTHONIOENCODING=UTF-8
     - OMP_NUM_THREADS=2
-    - CMAKE_VERSION="3.3.2"
+    - CMAKE_VERSION="3.6.3"
     - Eigen_VERSION='3.3.4'
 
 cache:
