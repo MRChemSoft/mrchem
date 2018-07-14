@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: devcafe/ubuntu16.04-intel2018.1
+      - image: devcafe/ubuntu18.04-gcc7.3.0-openmpi2.1.0-mkl2017.4.239
     steps:
       - checkout:
          post:
@@ -10,7 +10,7 @@ jobs:
            - git submodule update --recursive --init
       - run:
           name: Configure MRChem
-          command: python ./setup --enable-unit-tests --type=release --cxx=icpc --omp 
+          command: python ./setup --enable-unit-tests --type=release --cxx=g++ --omp 
       - run:
           name: Build MRChem
           command: cmake --build build --target install -- VERBOSE=1
