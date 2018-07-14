@@ -1,6 +1,6 @@
 language: cpp
-dist: trusty
 sudo: false
+dist: trusty
 
 notifications:
   slack:
@@ -19,6 +19,7 @@ matrix:
             - cmake3-data
             - g++-4.8
             - libboost-all-dev
+            - lcov
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
@@ -33,15 +34,7 @@ matrix:
         - PYTHON_VER='2.7'
         - EIGEN_VER='3.3.4'
     - os: linux
-      addons:
-        apt:
-          packages:
-            - cmake3
-            - cmake3-data
-            - g++-4.8
-            - libboost-all-dev
-      env:
-            - lcov
+      addons: *1
       env:
         - BUILD_TYPE='debug'
         - CXX_COMPILER='g++-4.8'
@@ -49,8 +42,12 @@ matrix:
         - PYTHON_VER='2.7'
         - EIGEN_VER='3.3.4'
 
+before_install:
+  - test -n $CC && unset CC
+  - test -n $CXX && unset CXX
+  - test -n $FC && unset FC
 
-before_script:
+install:
   - |
     if [[ ! -d "$HOME/Deps/eigen" ]]; then
       mkdir -p $HOME/Downloads/eigen
@@ -62,6 +59,9 @@ before_script:
       cd ${TRAVIS_BUILD_DIR}
       rm -rf $HOME/Downloads/eigen
     fi
+
+before_script:
+  - echo 'Build set up summary'
   - python --version
   - cmake --version
   - ${CXX_COMPILER} --version
