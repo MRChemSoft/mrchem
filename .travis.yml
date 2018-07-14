@@ -48,6 +48,7 @@ before_install:
   - test -n $FC && unset FC
 
 install:
+  # Install Eigen
   - |
     if [[ ! -d "$HOME/Deps/eigen" ]]; then
       mkdir -p $HOME/Downloads/eigen
@@ -59,6 +60,11 @@ install:
       cd ${TRAVIS_BUILD_DIR}
       rm -rf $HOME/Downloads/eigen
     fi
+  # Install getkw
+  # FIXME Temporary workaround!!!
+  - cd external/getkw
+  - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} --prefix=$HOME/Deps/getkw build_getkw
+  - cmake --build build_getkw --target install 
 
 before_script:
   - echo 'Build set up summary'
@@ -68,7 +74,7 @@ before_script:
 
 script:
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
-  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake"
+  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -Dgetkw_DIR=${HOME}/Deps/getkw/share/cmake/getkw"
   - cmake --build build --target install -- VERBOSE=1 #-j2
   # Unit tests currently run _within_ superbuild
   #- cd build
