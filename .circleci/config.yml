@@ -3,10 +3,6 @@ jobs:
   build:
     docker:
       - image: devcafe/ubuntu18.04-gcc7.3.0-openmpi2.1.0-mkl2017.4.239
-    dependencies:
-      pre:
-        - pip3 install --user pipenv
-        - pipenv --three install numpy
     steps:
       - checkout:
          post:
@@ -14,7 +10,7 @@ jobs:
            - git submodule update --recursive --init
       - run:
           name: Configure MRChem
-          command: pipenv run python ./setup --enable-unit-tests --type=release --cxx=g++ --omp 
+          command: python3 ./setup --enable-unit-tests --type=release --cxx=g++ --omp 
       - run:
           name: Build MRChem
           command: cmake --build build --target install -- VERBOSE=1
