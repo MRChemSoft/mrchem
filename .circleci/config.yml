@@ -4,10 +4,13 @@ jobs:
     docker:
       - image: devcafe/ubuntu16.04-intel2018.1
     steps:
-      - checkout
+      - checkout:
+         - post:
+           - git submodule sync --recursive
+           - git submodule update --recursive --init
       - run:
-          name: Greeting
-          command: echo Hello, world.
+          name: Configure MRChem
+          command: python ./setup --enable-unit-tests --type=release --cxx=icpc --omp 
       - run:
-          name: Print the Current Time
-          command: date
+          name: Build MRChem
+          command: cmake --build build --target install -- VERBOSE=1
