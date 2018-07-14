@@ -26,6 +26,7 @@ matrix:
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++'
+        - C_COMPILER='gcc'
         - OPENMP='--omp'
         - PYTHON_VER='2.7'
     - os: linux
