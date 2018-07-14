@@ -66,11 +66,11 @@ install:
   - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} --prefix=$HOME/Deps/getkw build_getkw
   - cmake --build build_getkw --target install -- VERBOSE=1 
 
-before_script:
-  - echo 'Build set up summary'
-  - python --version
-  - cmake --version
-  - ${CXX_COMPILER} --version
+#before_script:
+#  - echo 'Build set up summary'
+#  - python --version
+#  - cmake --version
+#  - ${CXX_COMPILER} --version
 
 script:
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
