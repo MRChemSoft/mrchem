@@ -64,7 +64,7 @@ install:
   # FIXME Temporary workaround!!!
   - cd external/libgetkw
   - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} --prefix=$HOME/Deps/getkw build_getkw
-  - cmake --build build_getkw --target install 
+  - cmake --build build_getkw --target install -- VERBOSE=1 
 
 before_script:
   - echo 'Build set up summary'
