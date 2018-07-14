@@ -6,17 +6,12 @@ notifications:
   slack:
     secure: PSksBCDscyT65LOQbb5rk/ArV+QD5RJ0WANZYX2j3ONwcbNWv5LfbosnpORcXeD/OSQQi62jk2geOtGI+FGZbSy80nEwl3xk4JB7y0y+wLzYz4453l+OGWxndGpMUea2HNJu6DJsUVimin1y+4KHRakL3gvWkrbnwWFiWE+awnQw5I4zlxCC+IZ/7xhmA74tLIFq+PbqjvscrPv8hUwcpU6j3Cu0jvs4mpIi4/fgUCoMBJ0Cu+5ZZeraYHCjcB25zGpJlcZPUJP3qMQxCclXPIBTNEMNuYYU2Q6C5I8PiU/w+3Jwi7MDYTWlQ9UIdKz7xUzBQV6PDPm5Z46YNJKO2TJuVWOOdZ7BRivfnfX2gFA+oKCJ/ViBNK0WyK9guzcW6k7b0AHu/8Mgu7+QqRdap85XT4hNBYNlMJwx8lKMoMXIy7WL1ijCI9q0SvL7bb1jrEGPeFlSBYW3cVlhvPQc1duy6XqlzxHl55ZRbC7vKbPbfOTFG5uKg7u7YdCxxaKJ050EK4p94Vvocg0wO5aeMZOmH3cioK3yJZOKlGAJoGsAHWlU3aHzhH6NSO+2+T7ro+pXrZy7ZQ3SILGIXzPsTMsi1lR78Be4x2F7qjl0CWMeilfornGbI5VC/7iKYOKZ2JyP7fhjeX+BQb8DuDXzyW9wb3/w4zwb0BDfxQJMmYw=
 
-env:
-  - OMP_NUM_THREADS=2
-
 matrix:
   include:
     - os: linux
       addons: &1
         apt:
           packages:
-            - cmake3
-            - cmake3-data
             - g++-4.8
             - libboost-all-dev
             - lcov
@@ -24,7 +19,6 @@ matrix:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++-4.8'
         - PYTHON_VER='2.7'
-        - EIGEN_VER='3.3.4'
     - os: linux
       addons: *1
       env:
@@ -32,7 +26,6 @@ matrix:
         - CXX_COMPILER='g++-4.8'
         - OPENMP='--omp'
         - PYTHON_VER='2.7'
-        - EIGEN_VER='3.3.4'
     - os: linux
       addons: *1
       env:
@@ -40,39 +33,44 @@ matrix:
         - CXX_COMPILER='g++-4.8'
         - COVERAGE='--coverage'
         - PYTHON_VER='2.7'
-        - EIGEN_VER='3.3.4'
+
+env:
+  global:
+    - LC_ALL="en_US.UTF-8"
+    - LANG="en_US.UTF-8"
+    - LANGUAGE="en_US.UTF-8"
+    - PYTHONIOENCODING=UTF-8
+    - OMP_NUM_THREADS=2
+    - CMAKE_VERSION="3.11.4"
+    - Eigen_VERSION='3.3.4'
+
+cache:
+  timeout: 1000
+  pip: true
+  directories:
+    - $HOME/Deps/cmake/${CMAKE_VERSION}
+    - $HOME/Deps/eigen
 
 before_install:
+  # Dependencies are downloaded in $HOME/Downloads and installed in $HOME/Deps
+  - mkdir -p $HOME/Downloads $HOME/Deps
+
+install:
+  - ./testing/dependencies/travis/cmake.sh
+  - ./testing/dependencies/travis/eigen.sh
+  # Install getkw
+  # FIXME Temporary workaround!!!
+  #- cd external/libgetkw
+  #- ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} --prefix=$HOME/Deps/getkw build_getkw
+  #- cmake --build build_getkw --target install -- VERBOSE=1 
+
+before_script:
   - test -n $CC && unset CC
   - test -n $CXX && unset CXX
   - test -n $FC && unset FC
 
-install:
-  # Install Eigen
-  - |
-    if [[ ! -d "$HOME/Deps/eigen" ]]; then
-      mkdir -p $HOME/Downloads/eigen
-      cd $HOME/Downloads
-      curl -Ls http://bitbucket.org/eigen/eigen/get/${EIGEN_VER}.tar.gz | tar -xz -C eigen --strip-components=1
-      cd eigen
-      cmake -H. -Bbuild_eigen -DCMAKE_INSTALL_PREFIX=$HOME/Deps/eigen &> /dev/null
-      cmake --build build_eigen -- install &> /dev/null
-      cd ${TRAVIS_BUILD_DIR}
-      rm -rf $HOME/Downloads/eigen
-    fi
-  # Install getkw
-  # FIXME Temporary workaround!!!
-  - cd external/libgetkw
-  - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} --prefix=$HOME/Deps/getkw build_getkw
-  - cmake --build build_getkw --target install -- VERBOSE=1 
-
-#before_script:
-#  - echo 'Build set up summary'
-#  - python --version
-#  - cmake --version
-#  - ${CXX_COMPILER} --version
-
 script:
+  - ./.ci/report_versions.sh
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
   - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -Dgetkw_DIR=${HOME}/Deps/getkw/share/cmake/getkw"
   - cmake --build build --target install -- VERBOSE=1 #-j2
