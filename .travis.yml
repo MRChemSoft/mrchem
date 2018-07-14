@@ -17,14 +17,14 @@ matrix:
             - libboost-all-dev
             - lcov
       env:
-        - BUILD_TYPE='release'
+        - BUILD_TYPE='debug'
         - CXX_COMPILER='g++'
         - C_COMPILER='gcc'
         - PYTHON_VER='2.7'
     - os: linux
       addons: *1
       env:
-        - BUILD_TYPE='release'
+        - BUILD_TYPE='debug'
         - CXX_COMPILER='g++'
         - C_COMPILER='gcc'
         - OPENMP='--omp'
@@ -72,7 +72,15 @@ before_script:
 script:
   - ./.ci/report_versions.sh
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
-  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
+  - |
+    python ./setup \
+           --enable-unit-tests \
+           --type=${BUILD_TYPE} \
+           --prefix=$HOME/Software/MRChem \
+           --cxx=${CXX_COMPILER} \
+           ${COVERAGE} \
+           ${OPENMP} \
+           --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
   - cmake --build build --target install -- VERBOSE=1 -j2
   # Unit tests currently run _within_ superbuild
   #- cd build
