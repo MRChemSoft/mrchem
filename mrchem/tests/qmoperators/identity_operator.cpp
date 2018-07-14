@@ -2,8 +2,8 @@
 
 #include "mrchem.h"
 
-#include "IdentityOperator.h"
-#include "Orbital.h"
+#include "qmoperators/one_electron/IdentityOperator.h"
+#include "qmfunctions/Orbital.h"
 
 using namespace mrchem;
 using namespace orbital;

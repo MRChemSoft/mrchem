@@ -5,6 +5,8 @@ project(MRChem_core
   LANGUAGES CXX
   )
 
+list(APPEND CMAKE_MODULE_PATH ${MRChem_SOURCE_ROOT}/cmake/custom)
+
 include(GNUInstallDirs)
 
 find_package(Eigen3 3.3 CONFIG REQUIRED)
@@ -33,3 +35,10 @@ install(
   DESTINATION
     ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}
   )
+
+if(ENABLE_UNIT_TESTS)
+  include(tests)
+  enable_testing()
+  include(CTest)
+  add_subdirectory(tests) # This must come last!!
+endif()

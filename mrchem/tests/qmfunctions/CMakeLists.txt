@@ -5,6 +5,17 @@ target_sources(mrchem-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/orbital_vector.cpp
   )
 
-add_catch_test(density "density")
-add_catch_test(orbital "orbital")
-add_catch_test(orbital_vector "orbital_vector")
+add_Catch_test(
+  NAME density
+  LABELS "density"
+  )
+
+add_Catch_test(
+  NAME orbital
+  LABELS "orbital"
+  )
+
+add_Catch_test(
+  NAME orbital_vector
+  LABELS "orbital_vector"
+  )

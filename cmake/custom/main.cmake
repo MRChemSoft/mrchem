@@ -1,18 +1,19 @@
 configure_file(
-  ${CMAKE_SOURCE_DIR}/config.h.in
-  ${CMAKE_BINARY_DIR}/config.h
+  ${MRChem_SOURCE_DIR}/config.h.in
+  ${MRChem_BINARY_DIR}/config.h
+  @ONLY
   )
 
 add_subdirectory(external)
 
 include(ExternalProject)
-ExternalProject_Add(${PROJECT_NAME}_core
+ExternalProject_Add(MRChem_core
   DEPENDS
     mrcpp_external
     getkw_external
     xcfun_external
   SOURCE_DIR
-    ${PROJECT_SOURCE_DIR}/mrchem
+    ${MRChem_SOURCE_DIR}/mrchem
   CMAKE_ARGS
     -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -20,19 +21,23 @@ ExternalProject_Add(${PROJECT_NAME}_core
     -DCMAKE_CXX_EXTENSIONS=OFF
     -DCMAKE_CXX_STANDARD_REQUIRED=ON
     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-    -DCONFIG_H_LOCATION=${CMAKE_BINARY_DIR}
+    -DMRChem_SOURCE_ROOT=${MRChem_SOURCE_DIR}
+    -DMRChem_BINARY_ROOT=${MRChem_BINARY_DIR}
     -DEigen3_DIR=${Eigen3_DIR}
     -DMRCPP_DIR=${MRCPP_DIR}
     -DXCFun_DIR=${XCFun_DIR}
     -Dgetkw_DIR=${getkw_DIR}
     -DPYTHON_SITE_INSTALL_DIR=${PYTHON_SITE_INSTALL_DIR}
+    -DENABLE_UNIT_TESTS=${ENABLE_UNIT_TESTS}
   CMAKE_CACHE_ARGS
     -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     -DCMAKE_PREFIX_PATH:PATH=${CMAKE_PREFIX_PATH}
   BUILD_ALWAYS
     1
+  TEST_BEFORE_INSTALL
+    1
   INSTALL_COMMAND
-    DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
+    DESTDIR=${MRChem_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
   )
 
 add_subdirectory(pilot)

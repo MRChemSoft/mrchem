@@ -1,8 +1,8 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "Orbital.h"
-#include "HydrogenFunction.h"
+#include "qmfunctions/Orbital.h"
+#include "analyticfunctions/HydrogenFunction.h"
 
 using namespace mrchem;
 

@@ -15,21 +15,24 @@ else()
   message(STATUS "Suitable MRCPP could not be located. Building the local git submodule!")
   include(ExternalProject)
   ExternalProject_Add(mrcpp_external
-    DOWNLOAD_COMMAND ""
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mrcpp
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-               -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-               -DENABLE_OPENMP=${ENABLE_OPENMP}
-               -DENABLE_MPI=${ENABLE_MPI}
-               -DEigen3_DIR=${Eigen3_DIR}
-               -DENABLE_TESTS=FALSE
-               -DENABLE_EXAMPLES=FALSE
-               -DSTATIC_LIBRARY_ONLY=TRUE
+    DOWNLOAD_COMMAND
+      ""
+    SOURCE_DIR
+      ${CMAKE_CURRENT_SOURCE_DIR}/mrcpp
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+      -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DENABLE_OPENMP=${ENABLE_OPENMP}
+      -DENABLE_MPI=${ENABLE_MPI}
+      -DEigen3_DIR=${Eigen3_DIR}
+      -DENABLE_TESTS=FALSE
+      -DENABLE_EXAMPLES=FALSE
+      -DSTATIC_LIBRARY_ONLY=TRUE
     CMAKE_CACHE_ARGS
-               -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
+      -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     INSTALL_COMMAND
-               DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
+      DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
     )
   set(MRCPP_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/MRCPP CACHE PATH "Path to internally built MRCPPConfig.cmake" FORCE)
   # This is very annoying, because it updates the submodule unexpectedly
@@ -45,15 +48,18 @@ else()
   message(STATUS "Suitable getkw could not be located. Building the local git submodule!")
   include(ExternalProject)
   ExternalProject_Add(getkw_external
-    DOWNLOAD_COMMAND ""
-    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libgetkw
-    CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-                -DCMAKE_BUILD_TYPE=Release
-                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+    DOWNLOAD_COMMAND
+      ""
+    SOURCE_DIR
+      ${CMAKE_CURRENT_SOURCE_DIR}/libgetkw
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+      -DCMAKE_BUILD_TYPE=Release
+      -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     CMAKE_CACHE_ARGS
-                -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
+      -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     INSTALL_COMMAND
-                DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
+      DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
     )
   set(getkw_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/getkw CACHE PATH "Path to internally built getkwConfig.cmake" FORCE)
   # This is very annoying, because it updates the submodule unexpectedly
@@ -72,21 +78,24 @@ else()
   message(STATUS "Suitable XCFun could not be located. Building the local git submodule!")
   include(ExternalProject)
   ExternalProject_Add(xcfun_external
-      DOWNLOAD_COMMAND ""
-      SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/xcfun
-      CMAKE_ARGS  -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
-                  -DCMAKE_BUILD_TYPE=Release
-                  -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
-                  -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
-                  -DENABLE_FC_SUPPORT=FALSE
-                  -DSTATIC_LIBRARY_ONLY=TRUE
-                  -DENABLE_TESTALL=FALSE
-                  -DENABLE_OPENMP=${ENABLE_OPENMP}
+      DOWNLOAD_COMMAND
+        ""
+      SOURCE_DIR
+        ${CMAKE_CURRENT_SOURCE_DIR}/xcfun
+      CMAKE_ARGS
+        -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
+        -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+        -DENABLE_FC_SUPPORT=FALSE
+        -DSTATIC_LIBRARY_ONLY=TRUE
+        -DENABLE_TESTALL=FALSE
+        -DENABLE_OPENMP=${ENABLE_OPENMP}
       CMAKE_CACHE_ARGS
-                  -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
-                  -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
+        -DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}
+        -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
       INSTALL_COMMAND
-                  DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
+        DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
       )
   set(XCFun_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/XCFun CACHE PATH "Path to internally built XCFunConfig.cmake" FORCE)
   # This is very annoying, because it updates the submodule unexpectedly
@@ -100,8 +109,3 @@ install(
     ${CMAKE_INSTALL_PREFIX}
   USE_SOURCE_PERMISSIONS
   )
-
-# Prepare Catch "library" for other executables
-set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/catch)
-add_library(Catch INTERFACE)
-target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})

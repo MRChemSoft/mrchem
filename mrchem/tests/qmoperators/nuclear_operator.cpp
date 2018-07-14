@@ -4,9 +4,9 @@
 
 #include "mrchem.h"
 
-#include "HydrogenFunction.h"
-#include "NuclearOperator.h"
-#include "Orbital.h"
+#include "analyticfunctions/HydrogenFunction.h"
+#include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmfunctions/Orbital.h"
 
 using namespace mrchem;
 using namespace orbital;

@@ -1,7 +1,7 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "Orbital.h"
+#include "qmfunctions/Orbital.h"
 
 using namespace mrchem;
 

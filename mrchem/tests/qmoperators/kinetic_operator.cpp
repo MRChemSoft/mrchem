@@ -4,9 +4,9 @@
 
 #include "mrchem.h"
 
-#include "HarmonicOscillatorFunction.h"
-#include "KineticOperator.h"
-#include "Orbital.h"
+#include "analyticfunctions/HarmonicOscillatorFunction.h"
+#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmfunctions/Orbital.h"
 
 using namespace mrchem;
 using namespace orbital;

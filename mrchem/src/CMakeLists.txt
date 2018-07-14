@@ -6,7 +6,7 @@ add_library(mrchem
 
 target_include_directories(mrchem
   PUBLIC
-    $<BUILD_INTERFACE:${CONFIG_H_LOCATION}>
+    $<BUILD_INTERFACE:${MRChem_BINARY_ROOT}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/mrchem>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
@@ -17,7 +17,7 @@ list(APPEND _public_headers
   mrchem.h
   mrenv.h
   parallel.h
-  ${CONFIG_H_LOCATION}/config.h
+  ${MRChem_BINARY_ROOT}/config.h
   )
 
 add_subdirectory(mrchem)

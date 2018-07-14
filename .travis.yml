@@ -72,10 +72,11 @@ before_script:
 
 script:
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
-  - ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake"
+  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake"
   - cmake --build build --target install -- VERBOSE=1 -j2
-  - cd build
-  - ctest --output-on-failure --verbose
+  # Unit tests currently run _within_ superbuild
+  #- cd build
+  #- ctest --output-on-failure --verbose
 
 after_success:
   - |
