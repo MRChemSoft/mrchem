@@ -41,14 +41,14 @@ env:
     - LANGUAGE="en_US.UTF-8"
     - PYTHONIOENCODING=UTF-8
     - OMP_NUM_THREADS=2
-    - CMAKE_VERSION="3.11.4"
+    - CMAKE_VERSION="3.3.2"
     - Eigen_VERSION='3.3.4'
 
 cache:
   timeout: 1000
   pip: true
   directories:
-    - $HOME/Deps/cmake/${CMAKE_VERSION}
+    - $HOME/Deps/cmake/$CMAKE_VERSION
     - $HOME/Deps/eigen
 
 before_install:
@@ -57,12 +57,8 @@ before_install:
 
 install:
   - ./.ci/cmake.sh
+  - export PATH=$HOME/Deps/cmake/$CMAKE_VERSION/bin${PATH:+:$PATH}
   - ./.ci/eigen.sh
-  # Install getkw
-  # FIXME Temporary workaround!!!
-  #- cd external/libgetkw
-  #- ./setup --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} --prefix=$HOME/Deps/getkw build_getkw
-  #- cmake --build build_getkw --target install -- VERBOSE=1 
 
 before_script:
   - test -n $CC && unset CC
@@ -72,8 +68,15 @@ before_script:
 script:
   - ./.ci/report_versions.sh
   # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
-  - ./setup --enable-unit-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP} --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -Dgetkw_DIR=${HOME}/Deps/getkw/share/cmake/getkw"
-  - cmake --build build --target install -- VERBOSE=1 #-j2
+  - >
+      python ./setup
+             --enable-unit-tests
+             --type=${BUILD_TYPE}
+             --cxx=${CXX_COMPILER}
+             ${COVERAGE}
+             ${OPENMP}
+             --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake"
+  - cmake --build build --target install -- VERBOSE=1 -j2
   # Unit tests currently run _within_ superbuild
   #- cd build
   #- ctest --output-on-failure --verbose
@@ -90,4 +93,3 @@ after_success:
       lcov --list coverage.info
       bash <(curl -s https://codecov.io/bash) -X gcov || echo "Codecov did not collect coverage reports"
     fi
-
