@@ -5,7 +5,7 @@ jobs:
       - image: devcafe/ubuntu16.04-intel2018.1
     steps:
       - checkout:
-         - post:
+         post:
            - git submodule sync --recursive
            - git submodule update --recursive --init
       - run:
