@@ -33,9 +33,14 @@ matrix:
         - PYTHON_VER='2.7'
         - EIGEN_VER='3.3.4'
     - os: linux
-      addons: *1
+      addons:
         apt:
           packages:
+            - cmake3
+            - cmake3-data
+            - g++-4.8
+            - libboost-all-dev
+      env:
             - lcov
       env:
         - BUILD_TYPE='debug'
