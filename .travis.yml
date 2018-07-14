@@ -56,8 +56,8 @@ before_install:
   - mkdir -p $HOME/Downloads $HOME/Deps
 
 install:
-  - ./testing/dependencies/travis/cmake.sh
-  - ./testing/dependencies/travis/eigen.sh
+  - ./.ci/cmake.sh
+  - ./.ci/eigen.sh
   # Install getkw
   # FIXME Temporary workaround!!!
   #- cd external/libgetkw
