@@ -17,14 +17,14 @@ matrix:
             - libboost-all-dev
             - lcov
       env:
-        - BUILD_TYPE='debug'
+        - BUILD_TYPE='release'
         - CXX_COMPILER='g++'
         - C_COMPILER='gcc'
         - PYTHON_VER='2.7'
     - os: linux
       addons: *1
       env:
-        - BUILD_TYPE='debug'
+        - BUILD_TYPE='release'
         - CXX_COMPILER='g++'
         - C_COMPILER='gcc'
         - OPENMP='--omp'
