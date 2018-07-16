@@ -261,10 +261,10 @@ PeriodicTableByZ = {
 }
 
 def main():
-    print 'PeriodicTableByZ = {'
-    for i in PeriodicTableByName.keys():
-        print '%s : PeriodicTableByName["%s"],' % (PeriodicTableByName[i].Z, i)
-    print '}'
+    print('PeriodicTableByZ = {')
+    for i in list(PeriodicTableByName.keys()):
+        print('%s : PeriodicTableByName["%s"],' % (PeriodicTableByName[i].Z, i))
+    print('}')
 
 
 if __name__ == '__main__':
