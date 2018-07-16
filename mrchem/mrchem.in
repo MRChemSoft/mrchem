@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:filetype=python:
 #
@@ -37,7 +37,7 @@ def main():
     inpfil = parse_cmdline(valid_keywords)
 
     if printlevel > 1:
-        print "Starting " + sys.argv[0]
+        print("Starting " + sys.argv[0])
 
     if inpfil is None:
         inpfil = "mrchem.inp"
@@ -56,7 +56,7 @@ def main():
     if dryrun:
         xfile='@' + inpfil
         fd=open(xfile,'w')
-        print >> fd, inkw.top
+        print(inkw.top, file=fd)
         fd.close()
     else:
         # Write processed input file and run MRChem
@@ -288,11 +288,11 @@ def verify_top(top):
                     top['est_norm'][0] = 2625.5*est_au
                 else:
                     top['est_norm'][0] = est_au
-                print "\nPrecision is set by energy estimate Z^(5/2)"
+                print("\nPrecision is set by energy estimate Z^(5/2)")
         top['rel_prec'][0] = 10*top['abs_prec'][0] / top['est_norm'][0]
-        print "   est_norm  ", top['est_norm'][0]
-        print "   abs_prec  ", top['abs_prec'][0]
-        print "   rel_prec  ", top['rel_prec'][0]
+        print("   est_norm  ", top['est_norm'][0])
+        print("   abs_prec  ", top['abs_prec'][0])
+        print("   rel_prec  ", top['rel_prec'][0])
 
     if not top.get('nuc_prec').is_set():
         top['nuc_prec'][0] = top['rel_prec'][0]
@@ -305,7 +305,7 @@ def verify_mra(mra):
     elif re.match('inter.*', wlet, re.I):
         basis_type.set("I")
     else:
-        print "Invalid basis type: ", basis_type
+        print("Invalid basis type: ", basis_type)
         sys.exit(1)
     if not mra.get('order').is_set():
         mra.get('order')[0] = int(math.ceil(-1.5*math.log10(topsect['rel_prec'][0])));
@@ -321,7 +321,7 @@ def verify_molecule(mol):
     for line in coords[:]:
         sp = line.split()
         elm = sp[0].lower()
-        x_a, y_a, z_a = map(float, sp[1:])
+        x_a, y_a, z_a = list(map(float, sp[1:]))
         x_b, y_b, z_b = AA*x_a, AA*y_a, AA*z_a
         coords[i] = "%s       % 10.10f    % 10.10f    % 10.10f" % (elm.title(), x_b, y_b, z_b)
         i = i+1
@@ -342,21 +342,21 @@ def verify_ext_field(ext_field):
     if ext_field.get('electric_field').is_set():
         elf = ext_field['electric_field'].get()
         if (len(elf) != 3):
-            print "invalid length of electric field vector:", len(elf)
+            print("invalid length of electric field vector:", len(elf))
             exit()
         val = math.sqrt(elf[0]**2 + elf[1]**2 + elf[2]**2)
         if val > 10.0:
-            print "magnitude of el. field is greater than 10.0:", val
+            print("magnitude of el. field is greater than 10.0:", val)
             exit()
             
     if ext_field.get('magnetic_field').is_set():
         maf = ext_field['magnetic_field'].get()
         if (len(maff) != 3):
-            print "invalid length of magnetic field vector:", len(maf)
+            print("invalid length of magnetic field vector:", len(maf))
             exit()
         val = math.sqrt(maf[0]**2 + maf[1]**2 + maf[2]**2)
         if val > 10.0:
-            print "magnitude of mag. field is greater than 10.0:", val
+            print("magnitude of mag. field is greater than 10.0:", val)
             exit()
 
 def verify_pol(pol):
@@ -370,7 +370,7 @@ def verify_pol(pol):
 def verify_optrot(optrot):
     pert = optrot['perturbation'].get()
     if pert != 'B' and pert != 'E':
-        print "invalid optical rotation perturbation:", pert
+        print("invalid optical rotation perturbation:", pert)
         exit()
     if optrot.get('wavelength').is_set():
         for wlength in optrot['wavelength'].get():
@@ -382,7 +382,7 @@ def verify_optrot(optrot):
 def verify_nmr(nmr):
     pert = nmr['perturbation'].get()
     if pert != 'B' and pert != 'M':
-        print "invalid NMR shielding perturbation:", pert
+        print("invalid NMR shielding perturbation:", pert)
         exit()
     if not nmr.get('nucleus_k').is_set():
         nmr['nucleus_k'].get().append(-1);
