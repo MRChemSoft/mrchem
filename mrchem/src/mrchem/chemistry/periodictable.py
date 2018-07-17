@@ -1,27 +1,38 @@
-class Element:
-    def __init__(self, l):
-        self.radius = float(l[0])
-        self.covalent = float(l[1])
-        self.Z = int(l[2])
-        self.mass = float(l[3])
-        self.symbol = l[4]
-        self.bpt = float(l[5])
-        self.mpt = float(l[6])
-        self.density = float(l[7])
-        self.volume = float(l[8])
-        self.name = l[9]
-        self.debye = float(l[10])
-        self.a = float(l[11])
-        self.crystal = l[12]
-        self.cpera = float(l[13])
-        self.conf = l[14]
-
-    def __repr__(self):
-        return "%s (%s): {%s}, Z=%s, m=%s" % (self.name, self.symbol,
-                                              self.conf, self.Z, self.mass)
+from collections import OrderedDict, namedtuple
 
 
-PeriodicTable = {
+class Element(
+        namedtuple(
+            'Element',
+            'radius covalent Z mass symbol bpt mpt density volume name debye a crystal cpera conf'
+        )):
+    __slots__ = ()
+
+    def __new__(cls, iterable):
+        return super(cls, Element).__new__(
+            cls,
+            radius=float(iterable[0]),
+            covalent=float(iterable[1]),
+            Z=int(iterable[2]),
+            mass=float(iterable[3]),
+            symbol=iterable[4],
+            bpt=float(iterable[5]),
+            mpt=float(iterable[6]),
+            density=float(iterable[7]),
+            volume=float(iterable[8]),
+            name=iterable[9],
+            debye=float(iterable[10]),
+            a=float(iterable[11]),
+            crystal=iterable[12],
+            cpera=float(iterable[13]),
+            conf=iterable[14])
+
+    def __str__(self):
+        return "{:s} ({:s}): {{{:s}}}, Z={:d}, m={:f}".format(
+            self.name, self.symbol, self.conf, self.Z, self.mass)
+
+
+PeriodicTable = OrderedDict({
     'h':
     Element([
         '0.79', '0.32', '1', '1.00794', 'H', '20.268', '14.025', '0.0899',
@@ -600,11 +611,11 @@ PeriodicTable = {
         '0.0', '0.0', '0', '0', 'Q', '0.0', '0.0', '0.0', '0.0', 'Q', '0.0',
         '0.00', '', '0.00', '-'
     ])
-}
+})
 
 PeriodicTableByName = PeriodicTable
 
-PeriodicTableByZ = {
+PeriodicTableByZ = OrderedDict({
     32: PeriodicTableByName["ge"],
     64: PeriodicTableByName["gd"],
     31: PeriodicTableByName["ga"],
@@ -719,15 +730,14 @@ PeriodicTableByZ = {
     62: PeriodicTableByName["sm"],
     39: PeriodicTableByName["y"],
     51: PeriodicTableByName["sb"],
-    34: PeriodicTableByName["se"],
-}
+    34: PeriodicTableByName["se"]
+})
 
 
 def main():
     print('PeriodicTableByZ = {')
-    for i in list(PeriodicTableByName.keys()):
-        print('%s : PeriodicTableByName["%s"],' % (PeriodicTableByName[i].Z,
-                                                   i))
+    for k, v in PeriodicTableByName.items():
+        print('{:d} : PeriodicTableByName[\'{:s}\'],'.format(v.Z, k))
     print('}')
 
 
