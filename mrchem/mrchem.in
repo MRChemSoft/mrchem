@@ -32,31 +32,36 @@ def main():
     # FIXME Is there a way to avoid global variables?
     global topsect
 
-    valid_keywords = setup_keywords()
-    # FIXME Why this?
-    printlevel = int(valid_keywords.getkw('printlevel')[0])
-
     # Parse command line
-    # FIXME Shouldn't this be done first?
     executable, dryrun, printlevel, debug, inpfil = parse_cmdline()
+
+    # The input file is assumed to be relative to the current working directory
+    # Resolve the path, so we can call this script with the input
+    # in any subdirectory
+    # FIXME Using Python 3 and pathlib would make this more robust!
+    # root_dir is thus the current working directory
+    root_dir = os.getcwd()
+    # Now inpfil is the absolute path
+    inpfil = os.path.join(root_dir, inpfil)
+    input_dir = os.path.abspath(os.path.join(inpfil, os.pardir))
+
+    # If no input file was passed, assume it's called mrchem.inp
+    # and it's located right here.
+    if inpfil is None:
+        inpfil = os.path.join(root_dir, 'mrchem.inp')
+        input_dir = root_dir
+
+    valid_keywords = setup_keywords(input_dir)
     valid_keywords.setkw('printlevel', printlevel)
 
     if printlevel > 1:
         print("Starting " + sys.argv[0])
-
-    if inpfil is None:
-        inpfil = "mrchem.inp"
 
     input = getkw.GetkwParser()
     inkw = input.parseFile(inpfil)
     inkw.sanitize(valid_keywords)
     topsect = inkw.get_topsect()
     inkw.run_callbacks(valid_keywords)
-
-    if not os.path.exists('initial_guess'):
-        os.mkdir('initial_guess')
-    if not os.path.exists('orbitals'):
-        os.mkdir('orbitals')
 
     if dryrun:
         xfile = '@' + inpfil
@@ -128,7 +133,7 @@ def parse_cmdline():
     return executable, dryrun, printlevel, debug, inpfil
 
 
-def setup_keywords():
+def setup_keywords(input_dir):
     top = getkw.Section('toplevel', callback=verify_top)
     top.set_status(True)
     # yapf: disable
@@ -303,20 +308,31 @@ def setup_keywords():
     top.add_sect(initial)
 
     files = getkw.Section('Files')
+    # Set up directory for orbitals, subdirectory of input_dir
+    orbs_dir = os.path.join(input_dir, 'orbitals')
+    if not os.path.exists(orbs_dir):
+        os.mkdir(orbs_dir)
     # yapf: disable
-    files.add_kw('start_orbitals',      'STR', 'orbitals/phi')
-    files.add_kw('final_orbitals',      'STR', 'orbitals/phi')
-    files.add_kw('start_x_orbs',        'STR', 'orbitals/phi_x')
-    files.add_kw('final_x_orbs',        'STR', 'orbitals/phi_x')
-    files.add_kw('start_y_orbs',        'STR', 'orbitals/phi_y')
-    files.add_kw('final_y_orbs',        'STR', 'orbtials/phi_y')
-    files.add_kw('basis_set',           'STR', 'initial_guess/mrchem.bas')
-    files.add_kw('dens_mat_a',          'STR', 'initial_guess/mrchem.densa')
-    files.add_kw('dens_mat_b',          'STR', 'initial_guess/mrchem.densb')
-    files.add_kw('fock_mat',            'STR', 'initial_guess/mrchem.fock')
-    files.add_kw('energy_vec',          'STR', 'initial_guess/mrchem.en')
-    files.add_kw('mo_mat_a',            'STR', 'initial_guess/mrchem.moa')
-    files.add_kw('mo_mat_b',            'STR', 'initial_guess/mrchem.mob')
+    files.add_kw('start_orbitals',      'STR', os.path.join(orbs_dir, 'phi'))
+    files.add_kw('final_orbitals',      'STR', os.path.join(orbs_dir, 'phi'))
+    files.add_kw('start_x_orbs',        'STR', os.path.join(orbs_dir, 'phi_x'))
+    files.add_kw('final_x_orbs',        'STR', os.path.join(orbs_dir, 'phi_x'))
+    files.add_kw('start_y_orbs',        'STR', os.path.join(orbs_dir, 'phi_y'))
+    files.add_kw('final_y_orbs',        'STR', os.path.join(orbs_dir, 'phi_y'))
+    # yapf: enable
+
+    # Set up directory for initial guess, subdirectory of input_dir
+    init_guess_dir = os.path.join(input_dir, 'initial_guess')
+    if not os.path.exists(init_guess_dir):
+        os.mkdir(init_guess_dir)
+    # yapf: disable
+    files.add_kw('basis_set',           'STR', os.path.join(init_guess_dir, 'mrchem.bas'))
+    files.add_kw('dens_mat_a',          'STR', os.path.join(init_guess_dir, 'mrchem.densa'))
+    files.add_kw('dens_mat_b',          'STR', os.path.join(init_guess_dir, 'mrchem.densb'))
+    files.add_kw('fock_mat',            'STR', os.path.join(init_guess_dir, 'mrchem.fock'))
+    files.add_kw('energy_vec',          'STR', os.path.join(init_guess_dir, 'mrchem.en'))
+    files.add_kw('mo_mat_a',            'STR', os.path.join(init_guess_dir, 'mrchem.moa'))
+    files.add_kw('mo_mat_b',            'STR', os.path.join(init_guess_dir, 'mrchem.mob'))
     # yapf: enable
     top.add_sect(files)
 
