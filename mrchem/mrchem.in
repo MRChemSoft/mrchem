@@ -9,12 +9,6 @@
 ON=1
 OFF=0
 
-executable="@MRCHEM_EXECUTABLE@"
-debug=@MRCHEM_DRIVER_DEBUG@
-printlevel=0
-dryrun=False
-version="@PROGRAM_VERSION@"
-
 import math
 import optparse
 import os
@@ -25,6 +19,8 @@ import sys
 import tempfile
 from copy import deepcopy
 
+# FIXME This assumes getkw was built together with MRChem,
+# but it might be we're using a version installed somewhere else!
 sys.path.append("@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
 
@@ -33,16 +29,17 @@ from periodictable import PeriodicTable as PT  # isort:skip
 
 
 def main():
-    global topsect, debug, executable, printlevel, dryrun
-
-    if debug == ON:
-        debug = True
-    else:
-        debug = False
+    # FIXME Is there a way to avoid global variables?
+    global topsect
 
     valid_keywords = setup_keywords()
+    # FIXME Why this?
     printlevel = int(valid_keywords.getkw('printlevel')[0])
-    inpfil = parse_cmdline(valid_keywords)
+
+    # Parse command line
+    # FIXME Shouldn't this be done first?
+    executable, dryrun, printlevel, debug, inpfil = parse_cmdline()
+    valid_keywords.setkw('printlevel', printlevel)
 
     if printlevel > 1:
         print("Starting " + sys.argv[0])
@@ -74,9 +71,9 @@ def main():
             sts = os.waitpid(p.pid, 0)[1]
 
 
-def parse_cmdline(valid_keywords):
-    global debug, executable, printlevel, dryrun
+def parse_cmdline():
     usage = "usage: %prog [options] [config] inpfile"
+    version="@PROGRAM_VERSION@"
     cmdln = optparse.OptionParser(
         usage=usage, version="%prog {0}".format(version))
     cmdln.add_option(
@@ -91,30 +88,33 @@ def parse_cmdline(valid_keywords):
         '--debug',
         action='store_true',
         dest='debug',
-        default=False,
+        default=@MRCHEM_DRIVER_DEBUG@,
         help='debug')
     cmdln.add_option(
-        '-p', '--print', action='store', dest='printlevel', help='print level')
+        '-p',
+        '--print',
+        action='store',
+        dest='printlevel',
+        type='int',
+        default=0,
+        help='print level')
     cmdln.add_option(
         '-x',
         '--executable',
         action='store',
         dest='executable',
+        type='string',
+        default='@MRCHEM_EXECUTABLE@',
         help='set executable name')
-    (opts, args) = cmdln.parse_args()
 
-    if opts.executable:
-        executable = opts.executable
+    opts, args = cmdln.parse_args()
 
-    if opts.dryrun:
-        dryrun = opts.dryrun
+    executable = opts.executable
+    dryrun = opts.dryrun
+    printlevel = int(opts.printlevel)
 
-    if opts.printlevel:
-        printlevel = int(opts.printlevel)
-        valid_keywords.setkw('printlevel', printlevel)
-
-    if opts.debug == True:
-        debug = opts.debug
+    debug = opts.debug
+    if debug:
         printlevel = 1
 
     if (len(args) == 0):
@@ -124,7 +124,8 @@ def parse_cmdline(valid_keywords):
     else:
         cmdln.error('incorrect number of files')
         sys.exit(0)
-    return inpfil
+
+    return executable, dryrun, printlevel, debug, inpfil
 
 
 def setup_keywords():
