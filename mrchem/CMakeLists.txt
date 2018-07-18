@@ -26,6 +26,7 @@ message(STATUS "Using XCFun: ${_loc} (version ${XCFun_VERSION})")
 
 add_subdirectory(src)
 
+# FIXME What is this?
 option(MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mrchem.in ${CMAKE_CURRENT_BINARY_DIR}/mrchem @ONLY)
@@ -37,7 +38,7 @@ install(
   )
 
 if(ENABLE_UNIT_TESTS)
-  include(tests)
+  include(testing_macros)
   enable_testing()
   include(CTest)
   add_subdirectory(tests) # This must come last!!
