@@ -1,5 +1,6 @@
-#!/bin/bash
-requirements="yaml matplotlib recommonmark sphinx breathe"
+#!/usr/bin/env bash
+
+requirements="yaml recommonmark sphinx breathe"
 for r in $requirements
 do
     python -c "import re, $r; print(re.compile('/__init__.py.*').sub('',$r.__file__))"
