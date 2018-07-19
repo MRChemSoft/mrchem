@@ -21,7 +21,7 @@ from copy import deepcopy
 
 # FIXME This assumes getkw was built together with MRChem,
 # but it might be we're using a version installed somewhere else!
-sys.path.append("@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
+#sys.path.append("@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
 
 import getkw  # isort:skip

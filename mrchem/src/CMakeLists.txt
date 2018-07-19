@@ -34,6 +34,7 @@ set_target_properties(mrchem
   PROPERTIES
     POSITION_INDEPENDENT_CODE 1
     MACOSX_RPATH ON
+    OUTPUT_NAME "mrchem"
     PUBLIC_HEADER "${_public_headers}"
   )
 
@@ -82,6 +83,23 @@ target_sources(mrchem.x
 target_link_libraries(mrchem.x
   PRIVATE
     mrchem
+  )
+
+# RPATH fixing
+file(RELATIVE_PATH _rel ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR} ${CMAKE_INSTALL_PREFIX})
+if(APPLE)
+  set(_rpath "@loader_path/${_rel}")
+else()
+  set(_rpath "\$ORIGIN/${_rel}")
+endif()
+file(TO_NATIVE_PATH "${_rpath}/${CMAKE_INSTALL_LIBDIR}" MRChem_RPATH)
+set_target_properties(mrchem.x
+  PROPERTIES
+    MACOSX_RPATH ON
+    SKIP_BUILD_RPATH OFF
+    BUILD_WITH_INSTALL_RPATH OFF
+    INSTALL_RPATH "${MRChem_RPATH}"
+    INSTALL_RPATH_USE_LINK_PATH ON
   )
 
 install(

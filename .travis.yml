@@ -71,9 +71,9 @@ before_script:
 
 script:
   - ./.ci/report_versions.sh
-  # FIXME --enable-tests currently (and TEMPORARILY!!!) removed
   - |
     python ./setup \
+           --enable-tests \
            --enable-unit-tests \
            --type=${BUILD_TYPE} \
            --prefix=$HOME/Software/MRChem \
@@ -83,8 +83,9 @@ script:
            --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
   - cmake --build build --target install -- VERBOSE=1 -j2
   # Unit tests currently run _within_ superbuild
-  #- cd build
-  #- ctest --output-on-failure --verbose
+  # This will run the integration tests
+  - cd build
+  - ctest --output-on-failure --verbose
 
 after_success:
   - |
