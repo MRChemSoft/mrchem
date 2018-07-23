@@ -736,13 +736,10 @@ void SCFDriver::calcGroundStateProperties() {
 	    const Nucleus &nuc_k = (*nuclei)[k];
 	    double Z_k = nuc_k.getCharge();
 	    const double *R_k = nuc_k.getCoord();
-	    //X_rm3 gd(R_k);
 	    Nuclei nucs;
 	    nucs.push_back("H", R_k);
-	    //X_rm3 gd(nucs, rel_prec);
 	    NuclearGradientOperator r_rm3(nuc_k, 1.0e-2);
 	    r_rm3.setup(1.0e-4);
-	    //nuc = gd.trace(*nuclei).real();
 	    for (int l = 0; l < nuclei->size(); l++) {
 		if (l == k) continue;
 		const Nucleus &nuc_l = (*nuclei)[l];
