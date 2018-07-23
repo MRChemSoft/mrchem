@@ -21,7 +21,7 @@ namespace mrchem {
 
 class ExchangePotential final : public QMOperator {
 public:
-    ExchangePotential(mrcpp::PoissonOperator &P, OrbitalVector &phi, bool s);
+    ExchangePotential(mrcpp::PoissonOperator *P, OrbitalVector *phi, bool s);
     ~ExchangePotential() { }
 
     void rotate(const ComplexMatrix &U);
@@ -54,9 +54,7 @@ protected:
     Orbital calcExchange(Orbital phi_p);
 
     void calcInternal(int i);
-    void calcInternal(int i, int j);
     void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);
-    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j, Orbital *V_ij );
 };
 
 } //namespace mrchem

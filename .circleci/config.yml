@@ -93,6 +93,16 @@ jobs:
       - *configure-omp
       - *build
       - *tests
+  mpi-py3:
+    <<: *ubuntu-1804
+    environment:
+      - PYTHON_VER: "3"
+    steps:
+      - checkout
+      - *setup
+      - *report
+      - *configure-mpi
+      - *build
 
 workflows:
   version: 2
@@ -100,3 +110,4 @@ workflows:
     jobs:
       - serial-py3
       - omp-py3
+      - mpi-py3

@@ -256,7 +256,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &
         workOrbVec.clear();
 
         MPI_Allreduce(MPI_IN_PLACE, &dV_n(0,0), Ni*Nj,
-                      MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+                      MPI_DOUBLE, MPI_SUM, mpi::comm_orb);
 
 #else
         dV_n = (*v_n)(phi_np1, dPhi_n);

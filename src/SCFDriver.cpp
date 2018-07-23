@@ -398,12 +398,12 @@ void SCFDriver::setup() {
     }
     // For HF we need the full HF exchange
     if (wf_method == "HF") {
-        K = new ExchangeOperator(*P, *phi);
+        K = new ExchangeOperator(P, phi);
         fock->setExchangeOperator(K);
     }
     //For hybrid DFT we need a partial HF exchange
     if (wf_method == "DFT" and (dft_x_fac > mrcpp::MachineZero)) {
-        K = new ExchangeOperator(*P, *phi, dft_x_fac);
+        K = new ExchangeOperator(P, phi, dft_x_fac);
         fock->setExchangeOperator(K);
     }
     //For DFT we need the XC operator
@@ -481,12 +481,12 @@ void SCFDriver::setup_np1() {
     }
     // For HF we need the full HF exchange
     if (wf_method == "HF") {
-        K_np1 = new ExchangeOperator(*P, *phi);
+        K_np1 = new ExchangeOperator(P, phi);
         fock_np1->setExchangeOperator(K_np1);
     }
     //For hybrid DFT we need a partial HF exchange
     if (wf_method == "DFT" and (dft_x_fac > mrcpp::MachineZero)) {
-        K_np1 = new ExchangeOperator(*P, *phi_np1, dft_x_fac);
+        K_np1 = new ExchangeOperator(P, phi_np1, dft_x_fac);
         fock_np1->setExchangeOperator(K_np1);
     }
     //For DFT we need the XC operator

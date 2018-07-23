@@ -225,28 +225,33 @@ void mpi::reduce_density(Density &rho, MPI_Comm comm) {
 
     if (comm_size == 1) return;
 
+    if (not rho.hasReal()) NOT_IMPLEMENTED_ABORT;
+    if (rho.hasImag()) NOT_IMPLEMENTED_ABORT;
+
     Timer timer;
     if (comm_rank == 0) {
-	Density *rho_0 = new Density(*MRA);
-	mrcpp::copy_grid(*rho_0, rho);
-	mrcpp::copy_func(*rho_0, rho);
-	rho.clear();
+        Density *rho_0 = new Density;
+        rho_0->alloc(NUMBER::Real);
+        mrcpp::copy_grid(rho_0->real(), rho.real());
+        mrcpp::copy_func(rho_0->real(), rho.real());
+        rho.real().clear();
 
-	DensityVector rho_vec;
-	rho_vec.push_back(std::make_tuple(1.0, rho_0));
-	for (int src = 1; src < comm_size; src++) {
-	    Density *rho_i = new Density(*MRA);
-	    int tag = 3333+src;
-	    mrcpp::recv_tree(*rho_i, src, tag, comm);
-	    if (rho_i->getSquareNorm() > 0.0) rho_vec.push_back(std::make_tuple(1.0, rho_i));
-	}
-	mrcpp::build_grid(rho, rho_vec);
-	mrcpp::add(-1.0, rho, rho_vec, 0);
-	mrcpp::clear(rho_vec, true);
+        mrcpp::FunctionTreeVector<3> rho_vec;
+        rho_vec.push_back(std::make_tuple(1.0, &rho_0->real()));
+        for (int src = 1; src < comm_size; src++) {
+            Density *rho_i = new Density;
+            int tag = 3333+src;
+            rho_i->alloc(NUMBER::Real);
+            mrcpp::recv_tree(rho_i->real(), src, tag, comm);
+            if (rho_i->real().getSquareNorm() > 0.0) rho_vec.push_back(std::make_tuple(1.0, &rho_i->real()));
+        }
+        mrcpp::build_grid(rho.real(), rho_vec);
+        mrcpp::add(-1.0, rho.real(), rho_vec, 0);
+        mrcpp::clear(rho_vec, true);
     } else {
-	int tag = 3333+comm_rank;
-	mrcpp::send_tree(rho, 0, tag, comm);
-	rho.clear();
+        int tag = 3333+comm_rank;
+        mrcpp::send_tree(rho.real(), 0, tag, comm);
+        rho.real().clear();
     }
     MPI_Barrier(comm);
     timer.stop();
@@ -262,15 +267,18 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
 
     if (comm_size == 1) return;
 
+    if (not rho.hasReal()) NOT_IMPLEMENTED_ABORT;
+    if (rho.hasImag()) NOT_IMPLEMENTED_ABORT;
+
     Timer timer;
     if (comm_rank == 0) {
-	for (int dst = 1; dst < comm_size; dst++) {
-	    int tag = 4444+dst;
-	    mrcpp::send_tree(rho, dst, tag, comm);
-	}
+        for (int dst = 1; dst < comm_size; dst++) {
+            int tag = 4444+dst;
+            mrcpp::send_tree(rho.real(), dst, tag, comm);
+        }
     } else {
-	int tag = 4444+comm_rank;
-	mrcpp::recv_tree(rho, 0, tag, comm);
+        int tag = 4444+comm_rank;
+        mrcpp::recv_tree(rho.real(), 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();

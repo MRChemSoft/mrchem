@@ -74,8 +74,8 @@ void initialize(int argc, char **argv) {
     println(0,"***    VERSION " << PROGRAM_VERSION << " (rev. " << GIT_REVISION << ")                      ***");
     println(0,"***                                                      ***");
     println(0,"***    Stig Rune Jensen <stig.r.jensen@uit.no>           ***");
-    println(0,"***    Jonas Juselius   <jonas.juselius@uit.no>          ***");
     println(0,"***    Luca Frediani    <luca.frediani@uit.no>           ***");
+    println(0,"***    Peter Wind       <peter.wind@uit.no>              ***");
     println(0,"***                                                      ***");
     println(0,"************************************************************");
     println(0,endl);

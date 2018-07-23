@@ -128,8 +128,8 @@ Orbital orbital::add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital in
  *
  */
 OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &inp_a,
-                       ComplexDouble b, OrbitalVector &inp_b,
-                       double prec) {
+                           ComplexDouble b, OrbitalVector &inp_b,
+                           double prec) {
     if (inp_a.size() != inp_b.size()) MSG_ERROR("Size mismatch");
 
     OrbitalVector out;
@@ -207,14 +207,13 @@ OrbitalVector orbital::linear_combination(const ComplexMatrix &U, OrbitalVector 
     OrbitalVector out = orbital::param_copy(inp);
     OrbitalIterator iter(inp);
     while (iter.next()) {
-        OrbitalChunk &recv_chunk = iter.get();
         for (int i = 0; i < out.size(); i++) {
             if (not mpi::my_orb(out[i])) continue;
             OrbitalVector orb_vec;
-            ComplexVector coef_vec(recv_chunk.size());
-            for (int j = 0; j < recv_chunk.size(); j++) {
-                int idx_j = std::get<0>(recv_chunk[j]);
-                Orbital &recv_j = std::get<1>(recv_chunk[j]);
+            ComplexVector coef_vec(iter.get_size());
+            for (int j = 0; j < iter.get_size(); j++) {
+                int idx_j = iter.idx(j);
+                Orbital &recv_j = iter.orbital(j);
                 coef_vec[j] = U(i, idx_j);
                 orb_vec.push_back(recv_j);
             }
@@ -308,6 +307,7 @@ void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, int n_o
     if (n_orbs < 0) n_orbs = Phi.size();
     if (n_orbs > Phi.size()) MSG_ERROR("Index out of bounds");
     for (int i = 0; i < n_orbs; i++) {
+        if (not mpi::my_orb(Phi[i])) continue; //only save own orbitals
         std::stringstream orbname;
         orbname << file << "_" << i;
         Phi[i].saveOrbital(orbname.str());
@@ -328,16 +328,26 @@ OrbitalVector orbital::load_orbitals(const std::string &file, int n_orbs) {
     OrbitalVector Phi;
     for (int i = 0; true; i++) {
         if (n_orbs > 0 and i >= n_orbs) break;
+        Orbital phi_i;
         std::stringstream orbname;
         orbname << file << "_" << i;
-        Orbital phi_i;
         phi_i.loadOrbital(orbname.str());
+        phi_i.setRankId(mpi::orb_rank);
         if (phi_i.hasReal() or phi_i.hasImag()) {
+            phi_i.setRankId(i%mpi::orb_size);
             Phi.push_back(phi_i);
+            if (i%mpi::orb_size != mpi::orb_rank) phi_i.clear(true);
         } else {
             break;
         }
     }
+    //distribute errors
+    DoubleVector errors = DoubleVector::Zero(Phi.size());
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) errors(i) = Phi[i].error();
+    }
+    mpi::allreduce_vector(errors, mpi::comm_orb);
+    orbital::set_errors(Phi, errors);
     return Phi;
 }
 
@@ -377,7 +387,32 @@ void orbital::orthogonalize(OrbitalVector &vec, OrbitalVector &inp) {
 }
 
 ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &braket) {
-    return orbital::calc_overlap_matrix(braket, braket);
+    ComplexMatrix S = ComplexMatrix::Zero(braket.size(), braket.size());
+
+    // Get all ket orbitals belonging to this MPI
+    OrbitalChunk my_ket = mpi::get_my_chunk(braket);
+
+    // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
+    // Computes the FULL columns associated with MY orbitals on the ket side
+    OrbitalIterator iter(braket, true); // use symmetry
+    while (iter.next()) {
+        for (int i = 0; i < iter.get_size(); i++) {
+            int idx_i = iter.idx(i);
+            Orbital &bra_i = iter.orbital(i);
+            for (int j = 0; j < my_ket.size(); j++) {
+                int idx_j = std::get<0>(my_ket[j]);
+                Orbital &ket_j = std::get<1>(my_ket[j]);
+                if (mpi::my_orb(bra_i) and idx_j > idx_i) continue;
+                if (mpi::my_unique_orb(ket_j) or mpi::orb_rank == 0) {
+                    S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
+                    S(idx_j, idx_i) = std::conj(S(idx_i, idx_j));
+                }
+            }
+        }
+    }
+    // Assumes all MPIs have (only) computed their own columns of the matrix
+    mpi::allreduce_matrix(S, mpi::comm_orb);
+    return S;
 }
 
 /** @brief Compute the overlap matrix S_ij = <bra_i|ket_j>
@@ -399,13 +434,12 @@ ComplexMatrix orbital::calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ke
     OrbitalChunk my_ket = mpi::get_my_chunk(ket);
 
     // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
-    // Computes the FULL columns assosiated with MY orbitals on the ket side
+    // Computes the FULL columns associated with MY orbitals on the ket side
     OrbitalIterator iter(bra);
     while (iter.next()) {
-        OrbitalChunk &recv_bra = iter.get();
-        for (int i = 0; i < recv_bra.size(); i++) {
-            int idx_i = std::get<0>(recv_bra[i]);
-            Orbital &bra_i = std::get<1>(recv_bra[i]);
+        for (int i = 0; i < iter.get_size(); i++) {
+            int idx_i = iter.idx(i);
+            Orbital &bra_i = iter.orbital(i);
             for (int j = 0; j < my_ket.size(); j++) {
                 int idx_j = std::get<0>(my_ket[j]);
                 Orbital &ket_j = std::get<1>(my_ket[j]);
