@@ -360,7 +360,7 @@ void ExchangePotential::setupInternal(double prec) {
 	    }
 	}
 	//tot_norms are used for screening. Since we use symmetri, we might need factors from others
-	MPI_Allreduce(MPI_IN_PLACE, &this->tot_norms(0), nOrbs, MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+	MPI_Allreduce(MPI_IN_PLACE, &this->tot_norms(0), nOrbs, MPI_DOUBLE, MPI_SUM, mpi::comm_orb);
 #endif
     }
 */

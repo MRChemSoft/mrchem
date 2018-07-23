@@ -84,7 +84,7 @@ void KAIN::setupLinearSystem() {
     }
 
     MPI_Allreduce(MPI_IN_PLACE, &orbsAB(0,0), (nHistory+1)*nHistory*nOrbitals,
-                  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+                  MPI_DOUBLE, MPI_SUM, mpi::comm_orb);
     
     jn = 0;
     for (int n = 0; n < nOrbitals; n++) {

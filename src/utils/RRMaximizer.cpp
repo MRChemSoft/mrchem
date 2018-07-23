@@ -82,7 +82,7 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     workOrbVec.clear();
     //combine results from all processes
     MPI_Allreduce(MPI_IN_PLACE, &r_i_orig(0,0), N*3*N,
-                  MPI_DOUBLE, MPI_SUM, mpiCommOrb);
+                  MPI_DOUBLE, MPI_SUM, mpi::comm_orb);
 */
 #else
     for (int i = 0; i < this->N; i++) {
