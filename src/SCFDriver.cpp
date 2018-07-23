@@ -43,6 +43,7 @@
 #include "H_M_pso.h"
 #include "H_BB_dia.h"
 #include "X_rm3.h"
+#include "NuclearGradientOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -738,8 +739,9 @@ void SCFDriver::calcGroundStateProperties() {
 	    //X_rm3 gd(R_k);
 	    Nuclei nucs;
 	    nucs.push_back("H", R_k);
-	    X_rm3 gd(nucs, rel_prec);
-	    gd.setup(1.0e-9);
+	    //X_rm3 gd(nucs, rel_prec);
+	    NuclearGradientOperator r_rm3(nuc_k, 1.0e-2);
+	    r_rm3.setup(1.0e-4);
 	    //nuc = gd.trace(*nuclei).real();
 	    for (int l = 0; l < nuclei->size(); l++) {
 		if (l == k) continue;
@@ -755,8 +757,8 @@ void SCFDriver::calcGroundStateProperties() {
 		nuc(k,1) -= Z_k*Z_l*r_y/R_kl;
 		nuc(k,2) -= Z_k*Z_l*r_z/R_kl;
 	    }
-	    el.row(k) = gd.trace(*phi).real();
-	    gd.clear();
+	    el.row(k) = r_rm3.trace(*phi).real();
+	    r_rm3.clear();
 	}
 	println(0, nuc);
 	println(0, el);

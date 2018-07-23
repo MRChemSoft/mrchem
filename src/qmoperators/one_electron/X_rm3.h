@@ -9,21 +9,18 @@ namespace mrchem {
 
 class X_rm3 final : public RankOneTensorOperator<3> {
 public:
-    //X_rm3(const double *R_k = 0)
-            //: r_m3(3.0, R_k, 1.0e-3),
-    X_rm3(const Nuclei &nucs, double prec)
-            : r_m1(nucs, prec),
-              r(nucs[0].getCoord()) {
+    X_rm3(const double *R_k = 0)
+	: r_m3(3.0, R_k, 1.0e-3),
+	    r(nucs[0].getCoord()) {
         RankOneTensorOperator<3> &h = (*this);
-        h[0] = r_m1*r_m1*r_m1*r[0];
-        h[1] = r_m1*r_m1*r_m1*r[1];
-        h[2] = r_m1*r_m1*r_m1*r[2];
+        h[0] = r_m3*r[0];
+        h[1] = r_m3*r[1];
+        h[2] = r_m3*r[2];
     }
     ~X_rm3() { }
 
 protected:
-    //DistanceOperator r_m3;
-    NuclearPotential r_m1;
+    DistanceOperator r_m3;
     PositionOperator r;
 };
 
