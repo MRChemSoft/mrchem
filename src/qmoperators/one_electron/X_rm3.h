@@ -9,7 +9,7 @@ namespace mrchem {
 
 class X_rm3 final : public RankOneTensorOperator<3> {
 public:
-    X_rm3(const double *R_k = 0)
+    X_rm3(const Nuclei &nucs, const double *R_k = 0)
 	: r_m3(3.0, R_k, 1.0e-3),
 	    r(nucs[0].getCoord()) {
         RankOneTensorOperator<3> &h = (*this);
