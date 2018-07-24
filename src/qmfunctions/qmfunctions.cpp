@@ -895,15 +895,15 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*real_2, rho);
-        mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real());
-        sum_vec.push_back(std::make_tuple(1.0, real_2));
+        mrcpp::copy_grid(*real_2, phi.real());
+        mrcpp::square(prec, *real_2, phi.real());
+        sum_vec.push_back(std::make_tuple(occ, real_2));
     }
     if (phi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*imag_2, rho);
-        mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag());
-        sum_vec.push_back(std::make_tuple(1.0, imag_2));
+        mrcpp::copy_grid(*imag_2, phi.imag());
+        mrcpp::square(prec, *imag_2, phi.imag());
+        sum_vec.push_back(std::make_tuple(occ, imag_2));
     }
     mrcpp::build_grid(rho, sum_vec);
     mrcpp::add(-1.0, rho, sum_vec, 0);
@@ -924,9 +924,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
         }
     }
 
-    // Adaptive prec addition if more than 5 contributions,
-    // otherwise addition on union grid
-    if (dens_vec.size() > 5 and add_prec > 0.0) {
+    if (add_prec > 0.0) {
         mrcpp::add(add_prec, rho, dens_vec);
     } else if (dens_vec.size() > 0) {
         mrcpp::build_grid(rho, dens_vec);
