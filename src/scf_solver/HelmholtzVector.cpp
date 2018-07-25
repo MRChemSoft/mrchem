@@ -262,9 +262,7 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
         printout(0, std::setw(14) << timer.getWallTime() << std::endl);
     }
 
-#ifdef HAVE_MPI
-    MPI_Barrier(mpi::comm_orb); // barrier to align printing
-#endif
+    mpi::barrier(mpi::comm_orb); // barrier to align printing
 
     tottimer.stop();
     Printer::printFooter(0, tottimer, 2);

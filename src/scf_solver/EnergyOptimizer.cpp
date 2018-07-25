@@ -133,7 +133,7 @@ bool EnergyOptimizer::optimize() {
 
         // Compute orbital errors
         DoubleVector errors = orbital::get_norms(dPhi_n);
-        mpi::reduce_vector(errors, mpi::comm_orb);
+        mpi::allreduce_vector(errors, mpi::comm_orb);
 
         err_o = errors.maxCoeff();
         err_t = errors.norm();

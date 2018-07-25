@@ -45,6 +45,7 @@ public:
     Orbital dagger() const;
 
     void setError(double error) { this->meta.error = error; }
+    void setRankId(int rank) { this->meta.rank_id = rank; }
     void setSpin(int spin) { this->meta.spin = spin; }
     void setOcc(int occ) { this->meta.occ = occ; }
 

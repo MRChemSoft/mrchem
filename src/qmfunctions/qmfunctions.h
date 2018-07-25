@@ -11,10 +11,12 @@ namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 
 class Orbital;
 typedef std::vector<Orbital> OrbitalVector;
+typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
 
 namespace orbital {
 
 ComplexDouble dot(Orbital bra, Orbital ket);
+ComplexVector dot(OrbitalVector &bra, OrbitalVector &ket);
 
 bool compare(const Orbital &orb_a, const Orbital &orb_b);
 int compare_occ(const Orbital &orb_a, const Orbital &orb_b);

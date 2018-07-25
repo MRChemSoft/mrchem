@@ -7,6 +7,7 @@
 
 #include "qmfunctions.h"
 #include "Orbital.h"
+#include "OrbitalIterator.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;
@@ -17,6 +18,7 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 namespace orbital {
+
 
 /****************************************
  * Orbital related standalone functions *
@@ -46,6 +48,34 @@ ComplexDouble dot(Orbital bra, Orbital ket) {
     double real_part = rr + bra_conj*ket_conj*ii;
     double imag_part = ket_conj*ri - bra_conj*ir;
     return ComplexDouble(real_part, imag_part);
+}
+
+/** @brief Compute the diagonal dot products <bra_i|ket_i>
+ *
+ * MPI: dot product is computed by the ket owner and the corresponding
+ *      bra is communicated. The resulting vector is allreduced, and
+ *      the foreign bra's are cleared.
+ *
+ */
+ComplexVector dot(OrbitalVector &bra, OrbitalVector &ket) {
+    if (bra.size() != ket.size()) MSG_FATAL("Size mismatch");
+
+    int N = bra.size();
+    ComplexVector result = ComplexVector::Zero(N);
+    for (int i = 0; i < N; i++) {
+        // The bra is sent to the owner of the ket
+        if (bra[i].rankID() != ket[i].rankID()) {
+            int tag = 8765*i;
+            int src = bra[i].rankID();
+            int dst = ket[i].rankID();
+            if (mpi::my_orb(bra[i])) mpi::send_orbital(bra[i], dst, tag);
+            if (mpi::my_orb(ket[i])) mpi::recv_orbital(bra[i], src, tag);
+        }
+        result[i] = orbital::dot(bra[i], ket[i]);
+    }
+    mpi::free_foreign(bra);
+    mpi::allreduce_vector(result, mpi::comm_orb);
+    return result;
 }
 
 /** @brief Compare spin and occupancy of two orbitals
@@ -115,6 +145,7 @@ OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a,
 
     OrbitalVector out;
     for (int i = 0; i < inp_a.size(); i++) {
+        if (inp_a[i].rankID() != inp_b[i].rankID()) MSG_FATAL("MPI rank mismatch");
         Orbital out_i = add(a, inp_a[i], b, inp_b[i]);
         out.push_back(out_i);
     }
@@ -292,13 +323,26 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
  *
  */
 OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
-    if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
+    // Get all out orbitals belonging to this MPI
+    OrbitalVector out = orbital::param_copy(inp);
 
-    OrbitalVector out;
-    for (int i = 0; i < U.rows(); i++) {
-        const ComplexVector &c = U.row(i);
-        Orbital out_i = multiply(c, inp, prec);
-        out.push_back(out_i);
+    OrbitalIterator iter(inp);
+    while (iter.next()) {
+        OrbitalChunk &recv_chunk = iter.get();
+        for (int i = 0; i < out.size(); i++) {
+            if (not mpi::my_orb(out[i])) continue;
+            OrbitalVector orb_vec;
+            ComplexVector coef_vec(recv_chunk.size());
+            for (int j = 0; j < recv_chunk.size(); j++) {
+                int idx_j = std::get<0>(recv_chunk[j]);
+                Orbital &recv_j = std::get<1>(recv_chunk[j]);
+                coef_vec[j] = U(i, idx_j);
+                orb_vec.push_back(recv_j);
+            }
+            Orbital tmp_i = multiply(coef_vec, orb_vec, prec);
+            out[i].add(1.0, tmp_i, prec); // In place addition
+            tmp_i.free();
+        }
     }
     return out;
 }
@@ -457,17 +501,43 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &braket) {
     return orbital::calc_overlap_matrix(braket, braket);
 }
 
+/** @brief Compute the overlap matrix S_ij = <bra_i|ket_j>
+ *
+ * MPI: Each rank will compute the full columns related to their
+ *      orbitals in the ket vector. The bra orbitals are communicated
+ *      one rank at the time (all orbitals belonging to a given rank
+ *      is communicated at the same time). This algorithm sets NO
+ *      restrictions on the distributions of the bra or ket orbitals
+ *      among the available ranks. After the columns have been computed,
+ *      the full matrix is allreduced, e.i. all MPIs will have the full
+ *      matrix at exit.
+ *
+ */
 ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
-    int Ni = bra.size();
-    int Nj = ket.size();
-    ComplexMatrix S(Ni, Nj);
-    S.setZero();
+    ComplexMatrix S = ComplexMatrix::Zero(bra.size(), ket.size());
 
-    for (int i = 0; i < Ni; i++) {
-        for (int j = 0; j < Nj; j++) {
-            S(i,j) = orbital::dot(bra[i], ket[j]);
+    // Get all ket orbitals belonging to this MPI
+    OrbitalChunk my_ket = mpi::get_my_chunk(ket);
+
+    // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
+    // Computes the FULL columns assosiated with MY orbitals on the ket side
+    OrbitalIterator iter(bra);
+    while (iter.next()) {
+        OrbitalChunk &recv_bra = iter.get();
+        for (int i = 0; i < recv_bra.size(); i++) {
+            int idx_i = std::get<0>(recv_bra[i]);
+            Orbital &bra_i = std::get<1>(recv_bra[i]);
+            for (int j = 0; j < my_ket.size(); j++) {
+                int idx_j = std::get<0>(my_ket[j]);
+                Orbital &ket_j = std::get<1>(my_ket[j]);
+                if (mpi::my_unique_orb(ket_j) or mpi::orb_rank == 0) {
+                    S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
+                }
+            }
         }
     }
+    // Assumes all MPIs have (only) computed their own columns of the matrix
+    mpi::allreduce_matrix(S, mpi::comm_orb);
     return S;
 }
 
@@ -825,15 +895,15 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*real_2, rho);
-        mrcpp::multiply(prec, *real_2, occ, phi.real(), phi.real());
-        sum_vec.push_back(std::make_tuple(1.0, real_2));
+        mrcpp::copy_grid(*real_2, phi.real());
+        mrcpp::square(prec, *real_2, phi.real());
+        sum_vec.push_back(std::make_tuple(occ, real_2));
     }
     if (phi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*imag_2, rho);
-        mrcpp::multiply(prec, *imag_2, occ, phi.imag(), phi.imag());
-        sum_vec.push_back(std::make_tuple(1.0, imag_2));
+        mrcpp::copy_grid(*imag_2, phi.imag());
+        mrcpp::square(prec, *imag_2, phi.imag());
+        sum_vec.push_back(std::make_tuple(occ, imag_2));
     }
     mrcpp::build_grid(rho, sum_vec);
     mrcpp::add(-1.0, rho, sum_vec, 0);
@@ -846,21 +916,24 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
 
     DensityVector dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
-        Density *rho_i = new Density(*MRA);
-        mrcpp::copy_grid(*rho_i, rho);
-        density::compute(mult_prec, *rho_i, Phi[i], spin);
-        dens_vec.push_back(std::make_tuple(1.0, rho_i));
+        if (mpi::my_orb(Phi[i])) {
+            Density *rho_i = new Density(*MRA);
+            mrcpp::copy_grid(*rho_i, rho);
+            density::compute(mult_prec, *rho_i, Phi[i], spin);
+            dens_vec.push_back(std::make_tuple(1.0, rho_i));
+        }
     }
 
-    // Adaptive prec addition if more than 5 contributions,
-    // otherwise addition on union grid
-    if (dens_vec.size() > 5 and add_prec > 0.0) {
+    if (add_prec > 0.0) {
         mrcpp::add(add_prec, rho, dens_vec);
     } else if (dens_vec.size() > 0) {
         mrcpp::build_grid(rho, dens_vec);
         mrcpp::add(-1.0, rho, dens_vec, 0);
     }
     mrcpp::clear(dens_vec, true);
+
+    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
 } //namespace mrchem

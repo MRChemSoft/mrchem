@@ -167,15 +167,17 @@ int XCFunctional::getNPoints() const {
  * are no guarantees regarding the precision.
  */
 void XCFunctional::buildGrid(double Z, const double *R) {
-    mrcpp::GaussFunc<3> gauss(Z*Z, 1.0, R);
-    if (isSpinSeparated()) {
-        if (rho_a == nullptr) MSG_FATAL("Uninitialized alpha density");
-        if (rho_b == nullptr) MSG_FATAL("Uninitialized beta density");
-        mrcpp::build_grid(*rho_a, gauss);
-        mrcpp::build_grid(*rho_b, gauss);
-    } else {
-        if (rho_t == nullptr) MSG_FATAL("Uninitialized total density");
-        mrcpp::build_grid(*rho_t, gauss);
+    for (int i = 0; i < 5; i++) {
+        mrcpp::GaussFunc<3> gauss(std::pow(Z, i), 1.0, R);
+        if (isSpinSeparated()) {
+            if (rho_a == nullptr) MSG_FATAL("Uninitialized alpha density");
+            if (rho_b == nullptr) MSG_FATAL("Uninitialized beta density");
+            mrcpp::build_grid(*rho_a, gauss);
+            mrcpp::build_grid(*rho_b, gauss);
+        } else {
+            if (rho_t == nullptr) MSG_FATAL("Uninitialized total density");
+            mrcpp::build_grid(*rho_t, gauss);
+        }
     }
 }
 

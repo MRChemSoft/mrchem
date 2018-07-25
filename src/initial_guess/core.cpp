@@ -205,8 +205,9 @@ OrbitalVector initial_guess::core::project_ao(double prec,
                 HydrogenFunction h_func(n, l, m, Z, R);
 
                 Phi.push_back(spin);
+                Phi.back().setRankId(Phi.size()%mpi::orb_size);
                 Phi.back().alloc(NUMBER::Real);
-                mrcpp::project(prec, Phi.back().real(), h_func);
+                if (mpi::my_orb(Phi.back())) mrcpp::project(prec, Phi.back().real(), h_func);
 
                 printout(0, std::setw(5)  << Phi.size());
                 printout(0, std::setw(6)  << nuc.getElement().getSymbol() << i+1);

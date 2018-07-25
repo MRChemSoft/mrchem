@@ -76,58 +76,24 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     orbital::free(part_1);
     orbital::free(part_2);
 
-    /*
-    Timer timer_2;
-    OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
-    OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
-    vector<int> orbsIx;             //to store own orbital indices
-    int rcvOrbsIx[workOrbVecSize];  //to store received orbital indices
+    Printer::printSeparator(0, '-');
+    for (int i = 0; i < out.size(); i++) {
+        if (mpi::my_orb(out[i])) {
+            int rNodes = out[i].getNNodes(NUMBER::Real);
+            int iNodes = out[i].getNNodes(NUMBER::Imag);
+            double rNorm = 0.0;
+            double iNorm = 0.0;
+            if (out[i].hasReal()) rNorm = std::sqrt(out[i].real().getSquareNorm());
+            if (out[i].hasImag()) iNorm = std::sqrt(out[i].imag().getSquareNorm());
 
-    //make vector with adresses of own orbitals
-    int Ni = phi.size();
-    int maxOrbPerMpi = Ni/mpiOrbSize + 1;//upper bound
-    for (int ix = mpiOrbRank; ix < Ni; ix += mpiOrbSize) {
-        orbVecChunk_i.push_back(phi.getOrbital(ix));//i orbitals
-        orbsIx.push_back(ix);
-    }
-
-    for (int iter = 0; iter >= 0; iter++) {
-        //get a new chunk from other processes
-        orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, Ni, iter);
-        for (int i = mpiOrbRank; i < Ni; i += mpiOrbSize) {
-            Orbital &phi_i = phi.getOrbital(i);
-
-            vector<complex<double> > coefs;
-            vector<Orbital *> orbs;
-
-            int ix = i;
-            for (int j = 0; j < rcvOrbs.size(); j++) {
-                int jx = rcvOrbsIx[j];
-                double coef = M(ix,jx);
-                // Linear scaling screening inserted here
-                // if (std::abs(coef) > MachineZero) {
-                    Orbital &phi_j = rcvOrbs.getOrbital(j);
-                    double norm_j = sqrt(phi_j.getSquareNorm());
-                    if (norm_j > 0.01*getOrbitalPrecision()) {
-                        coefs.push_back(coef);
-                        orbs.push_back(&phi_j);
-                    }
-                //}
-            }
-
-            Orbital *tmp_i = new Orbital(phi_i);
-            if (orbs.size() > 0) this->add(*tmp_i, coefs, orbs, false);
-
-            this->add.inPlace(out[i], coef, *tmp_i);
-            delete tmp_i;
+            Printer::setPrecision(5);
+            printout(0, std::setw(4) << i);
+            printout(0, " " << std::setw(17) << rNorm);
+            printout(0, " " << std::setw(6) << rNodes);
+            printout(0, " " << std::setw(22) << iNorm);
+            printout(0, " " << std::setw(6) << iNodes << "\n");
         }
-        rcvOrbs.clearVec(false);//reset to zero size orbital vector
     }
-    orbVecChunk_i.clearVec(false);
-    workOrbVec.clear();
-    timer_2.stop();
-    Printer::printDouble(0, "Matrix part", timer_2.getWallTime(), 5);
-    */
 
     timer_tot.stop();
     Printer::printFooter(0, timer_tot, 2);

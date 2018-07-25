@@ -36,11 +36,13 @@ OrbitalVector setup(double prec,
 OrbitalVector project_ao(double prec,
                          const std::string &bas_file,
                          int spin,
+                         int occ,
                          int N = -1);
 OrbitalVector project_mo(double prec,
                          const std::string &bas_file,
                          const std::string &mo_file,
                          int spin,
+                         int occ,
                          int N = -1);
 Density* project_density(double prec,
                          const Nucleus &nuc,

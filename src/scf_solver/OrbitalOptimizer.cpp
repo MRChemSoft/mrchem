@@ -5,6 +5,7 @@
 
 #include "OrbitalOptimizer.h"
 #include "HelmholtzVector.h"
+#include "KineticOperator.h"
 #include "FockOperator.h"
 #include "Accelerator.h"
 #include "Orbital.h"
@@ -117,7 +118,6 @@ bool OrbitalOptimizer::optimize() {
             fock.rotate(U);
             if (this->kain != 0) this->kain->clear();
         }
-
         // Compute electronic energy
         double E = calcProperty();
         this->property.push_back(E);
@@ -144,7 +144,7 @@ bool OrbitalOptimizer::optimize() {
 
         // Compute errors
         DoubleVector errors = orbital::get_norms(dPhi_n);
-        mpi::reduce_vector(errors, mpi::comm_orb);
+        mpi::allreduce_vector(errors, mpi::comm_orb);
 
         err_o = errors.maxCoeff();
         err_t = errors.norm();
