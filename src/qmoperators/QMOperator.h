@@ -2,7 +2,7 @@
 
 #include "MRCPP/Printer"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 #include "qmoperators.h"
 
 /** @class QMOperator

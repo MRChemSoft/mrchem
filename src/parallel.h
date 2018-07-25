@@ -2,7 +2,7 @@
 
 #include "MRCPP/Parallel"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 
 #ifdef HAVE_MPI
 #include <mpi.h>

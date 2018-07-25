@@ -5,7 +5,7 @@
 #include "utils/math_utils.h"
 #include "utils/RRMaximizer.h"
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 #include "Orbital.h"
 #include "OrbitalIterator.h"
 

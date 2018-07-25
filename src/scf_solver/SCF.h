@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "qmfunctions.h"
+#include "qmfunction_utils.h"
 
 /** @class SCF
  *
