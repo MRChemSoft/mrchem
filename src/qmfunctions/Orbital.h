@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QMFunction.h"
+#include "orbital_utils.h" //LUCA Is this kosher?
 
 /** @class Orbital
  *

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "qmfunction_utils.h"
 #include "qmoperators.h"
 
 #include "mrdft/XCFunctional.h"

@@ -4,11 +4,6 @@
 
 namespace mrchem {
 
-namespace SPIN { enum type { Paired, Alpha, Beta }; }
-namespace NUMBER { enum type { Total, Real, Imag }; }
-namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
-
-
 class Orbital;
 typedef std::vector<Orbital> OrbitalVector;
 typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
