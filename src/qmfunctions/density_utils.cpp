@@ -62,21 +62,21 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
     double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
 
-    FunctionTreeVector dens_vec;
+    FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
-            Density *rho_i = new Density(); //LUCA: Right creator here (it was Density(*MRA);
+            Density *rho_i = new Density(); //LUCA: Is it the right creator here (it was Density(*MRA);
             mrcpp::copy_grid(rho_i->real(), rho.real());
             density::compute(mult_prec, *rho_i, Phi[i], spin);
-            dens_vec.push_back(std::make_tuple(1.0, rho_i->real()));
+            dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
         }
     }
 
     if (add_prec > 0.0) {
-        mrcpp::add(add_prec, rho, dens_vec);
+        mrcpp::add(add_prec, rho.real(), dens_vec);
     } else if (dens_vec.size() > 0) {
         mrcpp::build_grid(rho.real(), dens_vec);
-        mrcpp::add(-1.0, rho, dens_vec, 0);
+        mrcpp::add(-1.0, rho.real(), dens_vec, 0);
     }
     mrcpp::clear(dens_vec, true);
 
