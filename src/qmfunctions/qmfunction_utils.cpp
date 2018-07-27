@@ -115,7 +115,46 @@ void qmfunction::multiply(QMFunction &inp_a, double conj_a,
     }    
 }
 
+void qmfunction::linear_combination(const ComplexVector &c,
+                                    QMFunctionVector &inp,
+                                    QMFunction &out,
+                                    double prec) {
+    double thrs = mrcpp::MachineZero;
+    FunctionTreeVector<3> rvec;
+    FunctionTreeVector<3> ivec;
 
+    for (int i = 0; i < inp.size(); i++) {
+        bool cHasReal = (std::abs(c[i].real()) > thrs);
+        bool cHasImag = (std::abs(c[i].imag()) > thrs);
+
+        double sign = std::get<0>(inp[i]);
+        QMFunction &inp_i = std::get<1>(inp[i]);
+        if (cHasReal and inp_i.hasReal()) rvec.push_back(std::make_tuple(      c[i].real(), &inp_i.real()));
+        if (cHasImag and inp_i.hasImag()) rvec.push_back(std::make_tuple(-sign*c[i].imag(), &inp_i.imag()));
+
+        if (cHasImag and inp_i.hasReal()) ivec.push_back(std::make_tuple(      c[i].imag(), &inp_i.real()));
+        if (cHasReal and inp_i.hasImag()) ivec.push_back(std::make_tuple( sign*c[i].real(), &inp_i.imag()));
+    }
+
+    if (rvec.size() > 0) {
+        out.alloc(NUMBER::Real);
+        if (prec < 0.0) {
+            mrcpp::build_grid(out.real(), rvec);
+            mrcpp::add(prec, out.real(), rvec, 0);
+        } else {
+            mrcpp::add(prec, out.real(), rvec);
+        }
+    }
+    if (ivec.size() > 0) {
+        out.alloc(NUMBER::Imag);
+        if (prec < 0.0) {
+            mrcpp::build_grid(out.imag(), ivec);
+            mrcpp::add(prec, out.imag(), ivec, 0);
+        } else {
+            mrcpp::add(prec, out.imag(), ivec);
+        }
+    }
+}
 /****************************************
  * Density related standalone functions *
  ****************************************/

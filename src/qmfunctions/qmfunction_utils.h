@@ -10,7 +10,7 @@ namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 
 
 class QMFunction;
-typedef std::vector<QMFunction> QMFunctionVector;
+typedef std::vector<std::tuple<double,QMFunction> > QMFunctionVector;
 
 class Orbital;
 typedef std::vector<Orbital> OrbitalVector;
@@ -18,11 +18,17 @@ typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
 
 namespace qmfunction {
     
-ComplexDouble dot(QMFunction &bra, double bra_conj, QMFunction &ket, double ket_conj);    
+ComplexDouble dot(QMFunction &bra, double bra_conj, QMFunction &ket, double ket_conj);
+ 
 void multiply(QMFunction &inp_a, double conj_a,
               QMFunction &inp_b, double conj_b,
               QMFunction &out,   double prec);
 
+void linear_combination(const ComplexVector &c,
+                        QMFunctionVector &inp,
+                        QMFunction &out,
+                        double prec);
+ 
 } //namespace qmfunction
 
 typedef mrcpp::FunctionTree<3> Density;

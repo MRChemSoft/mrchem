@@ -176,6 +176,7 @@ Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double pr
     double thrs = mrcpp::MachineZero;
 
     Orbital out;
+    QMFunctionVector tmp;
     // set output spin from first contributing input
     for (int i = 0; i < inp.size(); i++) {
         if (std::abs(c[i]) < thrs) continue;
@@ -190,43 +191,10 @@ Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double pr
             if (inp[i].hasReal()) MSG_FATAL("Mixing spins");
             if (inp[i].hasImag()) MSG_FATAL("Mixing spins");
         }
+        double sign = (inp[i].conjugate()) ? -1.0 : 1.0;
+        tmp.push_back(std::make_tuple(sign, inp[i]));
     }
-
-    FunctionTreeVector<3> rvec;
-    FunctionTreeVector<3> ivec;
-
-    for (int i = 0; i < inp.size(); i++) {
-        bool cHasReal = (std::abs(c[i].real()) > thrs);
-        bool cHasImag = (std::abs(c[i].imag()) > thrs);
-
-        double conj(1.0);
-        if (inp[i].conjugate()) conj = -1.0;
-
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(      c[i].real(), &inp[i].real()));
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-conj*c[i].imag(), &inp[i].imag()));
-
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(      c[i].imag(), &inp[i].real()));
-        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( conj*c[i].real(), &inp[i].imag()));
-    }
-
-    if (rvec.size() > 0) {
-        out.alloc(NUMBER::Real);
-        if (prec < 0.0) {
-            mrcpp::build_grid(out.real(), rvec);
-            mrcpp::add(prec, out.real(), rvec, 0);
-        } else {
-            mrcpp::add(prec, out.real(), rvec);
-        }
-    }
-    if (ivec.size() > 0) {
-        out.alloc(NUMBER::Imag);
-        if (prec < 0.0) {
-            mrcpp::build_grid(out.imag(), ivec);
-            mrcpp::add(prec, out.imag(), ivec, 0);
-        } else {
-            mrcpp::add(prec, out.imag(), ivec);
-        }
-    }
+    qmfunction::linear_combination(c, tmp, out, prec);
     return out;
 }
 
