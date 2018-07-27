@@ -303,7 +303,7 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
         timer_2.start();
         if (M.row(i).norm() > 0.1*this->orbThrs) {
             ComplexVector c = M.row(i);
-            Orbital part_2 = orbital::multiply(c, Phi_1);
+            Orbital part_2 = orbital::linear_combination(c, Phi_1);
             arg_parts.push_back(part_2);
         }
         timer_2.stop();
@@ -319,7 +319,7 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
         arg_parts.push_back(part_3);
 
         ComplexVector c = ComplexVector::Constant(arg_parts.size(), -1.0/(2.0*MATHCONST::pi));
-        out[i] = orbital::multiply(c, arg_parts, -1.0);
+        out[i] = orbital::linear_combination(c, arg_parts, -1.0);
         orbital::free(arg_parts);
     }
 

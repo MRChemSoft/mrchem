@@ -68,7 +68,7 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     if (clearFock) fock.clear();
 
     Timer timer_2;
-    OrbitalVector part_2 = orbital::multiply(M, Phi);
+    OrbitalVector part_2 = orbital::linear_combination(M, Phi);
     timer_2.stop();
     Printer::printDouble(0, "Matrix part", timer_2.getWallTime(), 5);
 

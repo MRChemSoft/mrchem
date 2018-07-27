@@ -123,7 +123,7 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
     orbs.push_back(inp_a);
     orbs.push_back(inp_b);
 
-    return multiply(coefs, orbs, prec);
+    return linear_combination(coefs, orbs, prec);
 }
 
 /** @brief out_i = a*(inp_a)_i + b*(inp_b)_i
@@ -171,7 +171,7 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
   * conjugate versions of themselves.
   *
   */
-Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
+Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double prec) {
     if (c.size() != inp.size()) MSG_ERROR("Size mismatch");
     double thrs = mrcpp::MachineZero;
 
@@ -235,7 +235,7 @@ Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec) {
  * The transformation matrix is not necessarily square.
  *
  */
-OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
+OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
     // Get all out orbitals belonging to this MPI
     OrbitalVector out = orbital::param_copy(inp);
 
@@ -252,7 +252,7 @@ OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) 
                 coef_vec[j] = U(i, idx_j);
                 orb_vec.push_back(recv_j);
             }
-            Orbital tmp_i = multiply(coef_vec, orb_vec, prec);
+            Orbital tmp_i = linear_combination(coef_vec, orb_vec, prec);
             out[i].add(1.0, tmp_i, prec); // In place addition
             tmp_i.free();
         }
@@ -513,7 +513,7 @@ ComplexMatrix localize(double prec, OrbitalVector &Phi) {
     }
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -556,7 +556,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -576,7 +576,7 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
  */
 ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    OrbitalVector Psi = orbital::multiply(U, Phi, prec);
+    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     return U;

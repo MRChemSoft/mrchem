@@ -109,7 +109,7 @@ OrbitalVector initial_guess::core::setup(double prec,
         int Np = Nd/2;                  //paired orbitals
         for (int i = 0; i < Np; i++) {
             ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::multiply(v_i, Phi, prec);
+            Orbital psi_i = orbital::linear_combination(v_i, Phi, prec);
             psi_i.setOcc(2);
             psi_i.setSpin(SPIN::Paired);
             Psi.push_back(psi_i);
@@ -121,7 +121,7 @@ OrbitalVector initial_guess::core::setup(double prec,
         OrbitalVector Psi_a;
         for (int i = 0; i < Na; i++) {
             ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::multiply(v_i, Phi, prec);
+            Orbital psi_i = orbital::linear_combination(v_i, Phi, prec);
             psi_i.setOcc(1);
             psi_i.setSpin(SPIN::Alpha);
             Psi_a.push_back(psi_i);
@@ -130,7 +130,7 @@ OrbitalVector initial_guess::core::setup(double prec,
         OrbitalVector Psi_b;
         for (int i = 0; i < Nb; i++) {
             ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::multiply(v_i, Phi, prec);
+            Orbital psi_i = orbital::linear_combination(v_i, Phi, prec);
             psi_i.setOcc(1);
             psi_i.setSpin(SPIN::Beta);
             Psi_b.push_back(psi_i);

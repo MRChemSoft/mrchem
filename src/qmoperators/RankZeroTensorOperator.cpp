@@ -145,7 +145,7 @@ Orbital RankZeroTensorOperator::operator()(Orbital inp) {
         Orbital out_n = applyOperTerm(n, inp);
         orb_vec.push_back(out_n);
     }
-    Orbital out = orbital::multiply(coef_vec, orb_vec);
+    Orbital out = orbital::linear_combination(coef_vec, orb_vec);
     orbital::free(orb_vec);
     return out;
 }

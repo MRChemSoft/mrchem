@@ -59,7 +59,7 @@ void ExchangePotential::clear() {
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
 
-    OrbitalVector tmp = orbital::multiply(U, this->exchange, this->apply_prec);
+    OrbitalVector tmp = orbital::linear_combination(U, this->exchange, this->apply_prec);
     orbital::free(this->exchange);
     this->exchange = tmp;
 
@@ -149,7 +149,7 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
     }
 
     // compute ex_p = sum_i c_i*phi_iip
-    Orbital ex_p = orbital::multiply(coef_vec, orb_vec, -1.0);
+    Orbital ex_p = orbital::linear_combination(coef_vec, orb_vec, -1.0);
     orbital::free(orb_vec);
 
     timer.stop();

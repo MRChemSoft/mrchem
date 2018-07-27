@@ -21,8 +21,8 @@ Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, doub
 OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a, ComplexDouble b, OrbitalVector &inp_b, double prec = -1.0);
 
 Orbital multiply(Orbital inp_a, Orbital inp_b, double prec = -1.0);
-Orbital multiply(const ComplexVector &c, OrbitalVector &inp, double prec = -1.0);
-OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec = -1.0);
+Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double prec = -1.0);
+OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, double prec = -1.0);
 
 OrbitalVector deep_copy(OrbitalVector &inp);
 OrbitalVector param_copy(const OrbitalVector &inp);

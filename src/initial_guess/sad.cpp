@@ -169,7 +169,7 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
                 coef_vec[j] = U(i, idx_j);
                 orb_vec.push_back(recv_j);
             }
-            Orbital tmp_i = orbital::multiply(coef_vec, orb_vec, prec);
+            Orbital tmp_i = orbital::linear_combination(coef_vec, orb_vec, prec);
             Psi[i].add(1.0, tmp_i, prec); // In place addition
             tmp_i.free();
         }

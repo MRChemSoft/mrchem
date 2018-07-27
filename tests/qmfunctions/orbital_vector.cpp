@@ -327,7 +327,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         U(1,1) =  cos(theta);
 
         SECTION("unitary transformation") {
-            OrbitalVector Psi = multiply(U, Phi, prec);
+            OrbitalVector Psi = linear_combination(U, Phi, prec);
             for (int i = 0; i < nOrbs; i++) {
                 for (int j = 0; j < nOrbs; j++) {
                     ComplexDouble S_ij = orbital::dot(Psi[i], Psi[j]);

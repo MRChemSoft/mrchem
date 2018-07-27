@@ -154,7 +154,7 @@ void KAIN::expandSolution(double prec,
                 partCoefs(3) = -1.0;
                 partOrbs.push_back(fPhi_m);
 
-                Orbital partStep = orbital::multiply(partCoefs, partOrbs, prec);
+                Orbital partStep = orbital::linear_combination(partCoefs, partOrbs, prec);
 
                 ComplexDouble c_j = this->c[m](j);
                 totCoefs.push_back(c_j);
@@ -165,7 +165,7 @@ void KAIN::expandSolution(double prec,
             ComplexVector coefsVec(totCoefs.size());
             for (int i = 0; i < totCoefs.size(); i++) coefsVec(i) = totCoefs[i];
 
-            dPhi[n] = orbital::multiply(coefsVec, totOrbs, prec);
+            dPhi[n] = orbital::linear_combination(coefsVec, totOrbs, prec);
 
             // First entry is the last orbital update and should not be deallocated,
             // all other entries are locally allocated partSteps that must be deleted
