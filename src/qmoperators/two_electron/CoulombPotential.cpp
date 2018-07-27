@@ -2,6 +2,7 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
+#include "Density.h";
 #include "CoulombPotential.h"
 
 using mrcpp::FunctionTree;
