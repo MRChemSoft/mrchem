@@ -70,15 +70,4 @@ void print(const OrbitalVector &vec);
 
 } //namespace orbital
 
-
-typedef mrcpp::FunctionTree<3> Density;
-typedef mrcpp::FunctionTreeVector<3> DensityVector;
-namespace density {
-
-void compute(double prec, Density &rho, Orbital phi, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
-
-} //namespace density
-
-
 } //namespace mrchem
