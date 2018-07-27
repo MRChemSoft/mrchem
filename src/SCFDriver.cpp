@@ -13,6 +13,7 @@
 #include "initial_guess/gto.h"
 #include "initial_guess/sad.h"
 
+#include "Density.h"
 #include "SCFDriver.h"
 #include "Molecule.h"
 #include "HydrogenFunction.h"

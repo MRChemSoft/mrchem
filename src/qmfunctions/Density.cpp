@@ -13,7 +13,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  */
 Density::Density()
         : QMFunction(0, 0),
-          meta({-1, 0, 0, 0, 0, false, 1.0}) {
+          meta({-1, 0, 0, 0, false, 1.0}) {
 }
 
 /** @brief Constructor
@@ -31,28 +31,28 @@ Density::Density(int spin, int rank)
 
 /** @brief Copy constructor
  *
- * @param orb: density to copy
+ * @param dens: density to copy
  *
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
-Density::Density(const Density &orb)
-        : QMFunction(orb),
-          meta(orb.meta) {
+Density::Density(const Density &dens)
+        : QMFunction(dens),
+          meta(dens.meta) {
 }
 
 /** @brief Assignment operator
  *
- * @param orb: density to copy
+ * @param dens: density to copy
  *
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
-Density& Density::operator=(const Density &orb) {
-    if (this != &orb) {
-        this->re = orb.re;
-        this->im = orb.im;
-        this->meta = orb.meta;
+Density& Density::operator=(const Density &dens) {
+    if (this != &dens) {
+        this->re = dens.re;
+        this->im = dens.im;
+        this->meta = dens.meta;
     }
     return *this;
 }
@@ -136,67 +136,68 @@ double Density::squaredNorm() const {
     return sq_norm;
 }
 
-/** @brief In place multiply with scalar */
-void Density::rescale(ComplexDouble c) {
-    double thrs = mrcpp::MachineZero;
-    bool cHasReal = (std::abs(c.real()) > thrs);
-    bool cHasImag = (std::abs(c.imag()) > thrs);
 
-    if (cHasReal and cHasImag) {
-        Density tmp = density::add(c, *this, 0.0, *this);
-        this->free();
-        *this = tmp;
-    }
-    if (cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().rescale(c.real());
-        if (this->hasImag()) this->imag().rescale(c.real());
-    }
-    if (not cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().setZero();
-        if (this->hasImag()) this->imag().setZero();
-    }
-    if (not cHasReal and cHasImag) {
-        double conj = 1.0;
-        if (this->conjugate()) conj = -1.0;
-        mrcpp::FunctionTree<3> *tmp_re = this->re;
-        mrcpp::FunctionTree<3> *tmp_im = this->im;
-        if (tmp_re != 0) tmp_re->rescale(c.imag());
-        if (tmp_im != 0) tmp_im->rescale(-1.0*conj*c.imag());
-        this->clear();
-        this->setReal(tmp_im);
-        this->setImag(tmp_re);
-    }
-}
+///** @brief In place multiply with scalar */
+//void Density::rescale(ComplexDouble c) {
+//    double thrs = mrcpp::MachineZero;
+//    bool cHasReal = (std::abs(c.real()) > thrs);
+//    bool cHasImag = (std::abs(c.imag()) > thrs);
+//
+//    if (cHasReal and cHasImag) {
+//        Density tmp = density::add(c, *this, 0.0, *this);
+//        this->free();
+//        *this = tmp;
+//    }
+//    if (cHasReal and not cHasImag) {
+//        if (this->hasReal()) this->real().rescale(c.real());
+//        if (this->hasImag()) this->imag().rescale(c.real());
+//    }
+//    if (not cHasReal and not cHasImag) {
+//        if (this->hasReal()) this->real().setZero();
+//        if (this->hasImag()) this->imag().setZero();
+//    }
+//    if (not cHasReal and cHasImag) {
+//        double conj = 1.0;
+//        if (this->conjugate()) conj = -1.0;
+//        mrcpp::FunctionTree<3> *tmp_re = this->re;
+//        mrcpp::FunctionTree<3> *tmp_im = this->im;
+//        if (tmp_re != 0) tmp_re->rescale(c.imag());
+//        if (tmp_im != 0) tmp_im->rescale(-1.0*conj*c.imag());
+//        this->clear();
+//        this->setReal(tmp_im);
+//        this->setImag(tmp_re);
+//    }
+//}
 
-/** @brief In place orthogonalize against inp */
-void Density::orthogonalize(Density inp) {
-    ComplexDouble overlap = density::dot(inp, *this);
-    double sq_norm = inp.squaredNorm();
-    if (std::abs(overlap) > mrcpp::MachineZero) {
-        this->add(-1.0*(overlap/sq_norm), inp);
-    }
-}
+///** @brief In place orthogonalize against inp */
+//void Density::orthogonalize(Density inp) {
+//    ComplexDouble overlap = density::dot(inp, *this);
+//    double sq_norm = inp.squaredNorm();
+//    if (std::abs(overlap) > mrcpp::MachineZero) {
+//        this->add(-1.0*(overlap/sq_norm), inp);
+//    }
+//}
+//
+///** @brief In place orthogonalize against all densitys in inp vector */
+//void Density::orthogonalize(DensityVector inp_vec) {
+//    for (int i = 0; i < inp_vec.size(); i++) {
+//        this->orthogonalize(inp_vec[i]);
+//    }
+//}
 
-/** @brief In place orthogonalize against all densitys in inp vector */
-void Density::orthogonalize(DensityVector inp_vec) {
-    for (int i = 0; i < inp_vec.size(); i++) {
-        this->orthogonalize(inp_vec[i]);
-    }
-}
-
-/** @brief In place addition */
-void Density::add(ComplexDouble c, Density inp, double prec) {
-    // The following sets the spin only locally, e.i. the
-    // original density is NOT changed. The effect of this is to
-    // disable spin sanity checks in the following addition.
-    // Since this is an in-place operation, we assume that the spin
-    // of the result is already defined and that it
-    // should not change.
-    inp.setSpin(this->spin());
-    Density tmp = density::add(1.0, *this, c, inp, prec);
-    this->free();
-    *this = tmp;
-}
+///** @brief In place addition */
+//void Density::add(ComplexDouble c, Density inp, double prec) {
+//    // The following sets the spin only locally, e.i. the
+//    // original density is NOT changed. The effect of this is to
+//    // disable spin sanity checks in the following addition.
+//    // Since this is an in-place operation, we assume that the spin
+//    // of the result is already defined and that it
+//    // should not change.
+//    inp.setSpin(this->spin());
+//    Density tmp = density::add(1.0, *this, c, inp, prec);
+//    this->free();
+//    *this = tmp;
+//}
 
 /** @brief Write density to disk
  *

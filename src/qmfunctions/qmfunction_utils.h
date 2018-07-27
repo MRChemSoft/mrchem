@@ -16,6 +16,10 @@ class Orbital;
 typedef std::vector<Orbital> OrbitalVector;
 typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
 
+class Density;
+typedef std::vector<Density> DensityVector;
+typedef std::vector<std::tuple<int, Density> > DensityChunk;
+
 namespace qmfunction {
     
 ComplexDouble dot(QMFunction &bra, double bra_conj, QMFunction &ket, double ket_conj);
@@ -30,15 +34,5 @@ void linear_combination(const ComplexVector &c,
                         double prec);
  
 } //namespace qmfunction
-
-typedef mrcpp::FunctionTree<3> Density;
-typedef mrcpp::FunctionTreeVector<3> DensityVector;
-
-namespace density {
-
-void compute(double prec, Density &rho, Orbital phi, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
-
-} //namespace density
 
 } //namespace mrchem

@@ -34,7 +34,7 @@ protected:
     mrcpp::PoissonOperator *poisson;  ///< Operator used to compute the potential
 
     Density &getDensity() { return this->density; }
-    bool hasDensity() const { return (this->density.getSquareNorm() < 0.0) ? false : true; }
+    bool hasDensity() const { return (this->density.squaredNorm() < 0.0) ? false : true; }
 
     void setup(double prec);
     void clear();
