@@ -153,8 +153,6 @@ OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a,
   */
 Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
 
-    std::cout << "Multiply" << std::endl;
-
     int occ = compare_occ(inp_a, inp_b);
     int spin = compare_spin(inp_a, inp_b);
     Orbital out(spin, occ);
@@ -164,10 +162,6 @@ Orbital multiply(Orbital inp_a, Orbital inp_b, double prec) {
     if (inp_b.conjugate()) conj_b = -1.0;
     
     qmfunction::multiply(inp_a, conj_a, inp_b, conj_b, out, prec);
-    std::cout << "End" << std::endl;
-    std::cout << inp_a << std::endl;
-    std::cout << inp_b << std::endl;
-    std::cout << out << std::endl;
     return out;
 }
 

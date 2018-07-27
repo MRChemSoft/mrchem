@@ -16,10 +16,10 @@ typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
 
 namespace qmfunction {
     
-ComplexDouble dot(QMFunction bra, double bra_conj, QMFunction ket, double ket_conj);    
-void multiply(QMFunction inp_a, double conj_a,
-              QMFunction inp_b, double conj_b,
-              QMFunction out,   double prec);
+ComplexDouble dot(QMFunction &bra, double bra_conj, QMFunction &ket, double ket_conj);    
+void multiply(QMFunction &inp_a, double conj_a,
+              QMFunction &inp_b, double conj_b,
+              QMFunction &out,   double prec);
 
 } //namespace qmfunction
 

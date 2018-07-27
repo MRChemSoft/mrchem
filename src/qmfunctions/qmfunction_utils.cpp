@@ -17,7 +17,7 @@ using mrcpp::FunctionTreeVector;
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-ComplexDouble qmfunction::dot(QMFunction bra, double bra_conj, QMFunction ket, double ket_conj) {
+ComplexDouble qmfunction::dot(QMFunction &bra, double bra_conj, QMFunction &ket, double ket_conj) {
     double rr(0.0), ri(0.0), ir(0.0), ii(0.0);
     if (bra.hasReal() and ket.hasReal()) rr = mrcpp::dot(bra.real(), ket.real());
     if (bra.hasReal() and ket.hasImag()) ri = mrcpp::dot(bra.real(), ket.imag());
@@ -29,10 +29,9 @@ ComplexDouble qmfunction::dot(QMFunction bra, double bra_conj, QMFunction ket, d
     return ComplexDouble(real_part, imag_part);
 }
 
-void qmfunction::multiply(QMFunction inp_a, double conj_a,
-                          QMFunction inp_b, double conj_b,
-                          QMFunction out, double prec) {
-    std::cout << "Real part" << std::endl;
+void qmfunction::multiply(QMFunction &inp_a, double conj_a,
+                          QMFunction &inp_b, double conj_b,
+                          QMFunction &out, double prec) {
     { // Real part
         FunctionTreeVector<3> vec;
         if (inp_a.hasReal() and inp_b.hasReal()) {
@@ -73,7 +72,6 @@ void qmfunction::multiply(QMFunction inp_a, double conj_a,
         }
     }
     
-    std::cout << "Imag part" << std::endl;
     { // Imaginary part
         FunctionTreeVector<3> vec;
         if (inp_a.hasReal() and inp_b.hasImag()) {
