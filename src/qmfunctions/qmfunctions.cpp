@@ -429,6 +429,7 @@ void save_orbitals(OrbitalVector &Phi, const std::string &file, int n_orbs) {
     if (n_orbs < 0) n_orbs = Phi.size();
     if (n_orbs > Phi.size()) MSG_ERROR("Index out of bounds");
     for (int i = 0; i < n_orbs; i++) {
+	if (!mpi::my_orb(Phi[i])) continue; //only save own orbitals
         std::stringstream orbname;
         orbname << file << "_" << i;
         Phi[i].saveOrbital(orbname.str());
@@ -449,16 +450,26 @@ OrbitalVector load_orbitals(const std::string &file, int n_orbs) {
     OrbitalVector Phi;
     for (int i = 0; true; i++) {
         if (n_orbs > 0 and i >= n_orbs) break;
+        Orbital phi_i;
         std::stringstream orbname;
         orbname << file << "_" << i;
-        Orbital phi_i;
         phi_i.loadOrbital(orbname.str());
+	phi_i.setRankId(mpi::orb_rank);
         if (phi_i.hasReal() or phi_i.hasImag()) {
+	    phi_i.setRankId(i%mpi::orb_size);
             Phi.push_back(phi_i);
+	    if(i%mpi::orb_size != mpi::orb_rank)phi_i.clear(true);
         } else {
             break;
         }
     }
+    //distribute errors
+    DoubleVector errors = DoubleVector::Zero(Phi.size());
+    for (int i = 0; i < Phi.size(); i++) {
+	if (mpi::my_orb(Phi[i])) errors(i) = Phi[i].error();
+    }
+    mpi::allreduce_vector(errors, mpi::comm_orb);
+    orbital::set_errors(Phi, errors);
     return Phi;
 }
 
@@ -771,7 +782,7 @@ DoubleVector get_errors(const OrbitalVector &vec) {
     int nOrbs = vec.size();
     DoubleVector errors = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) {
-        errors(i) = vec[i].error();
+	errors(i) = vec[i].error();
     }
     return errors;
 }
