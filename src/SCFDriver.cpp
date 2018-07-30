@@ -732,6 +732,9 @@ void SCFDriver::calcGroundStateProperties() {
         Timer timer;
         DoubleMatrix &nuc = molecule->getGeometryDerivatives().getNuclear();
 	DoubleMatrix &el = molecule->getGeometryDerivatives().getElectronic();
+	DoubleVector vecsum = DoubleVector::Zero(3);
+	DoubleVector torque = DoubleVector::Zero(3);
+
 	for (int k = 0; k < nuclei->size(); k++) {
 	    const Nucleus &nuc_k = (*nuclei)[k];
 	    double Z_k = nuc_k.getCharge();
@@ -748,7 +751,6 @@ void SCFDriver::calcGroundStateProperties() {
 		double r_x = (R_k[0] - R_l[0]);
 		double r_y = (R_k[1] - R_l[1]);
 		double r_z = (R_k[2] - R_l[2]);
-		println(0, r_x << "  " << r_y << "  " << r_z);
 		double R_kl = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);;
 		nuc(k,0) -= Z_k*Z_l*r_x/R_kl;
 		nuc(k,1) -= Z_k*Z_l*r_y/R_kl;
@@ -756,9 +758,20 @@ void SCFDriver::calcGroundStateProperties() {
 	    }
 	    el.row(k) = r_rm3.trace(*phi).real();
 	    r_rm3.clear();
+	    vecsum += el.row(k);
+	    vecsum += nuc.row(k);
+	    torque[0] += R_k[1]*(el(k,2)+nuc(k,2)) - R_k[2]*(el(k,1)+nuc(k,1));
+	    torque[1] += R_k[2]*(el(k,0)+nuc(k,0)) - R_k[0]*(el(k,2)+nuc(k,2));
+	    torque[2] += R_k[0]*(el(k,1)+nuc(k,1)) - R_k[1]*(el(k,0)+nuc(k,0));
 	}
+	println(0, "nuclear part    ");
 	println(0, nuc);
+	println(0, "electronic part ");
 	println(0, el);
+	println(0, "Total force acting on nuclei");
+	println(0, vecsum.transpose());
+	println(0, "Torque acting on nuclei");
+	println(0, torque.transpose());
         timer.stop();
         Printer::printFooter(0, timer, 2);
     }
