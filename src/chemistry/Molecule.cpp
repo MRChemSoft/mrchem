@@ -480,7 +480,7 @@ void Molecule::calcCenterOfCharge() {
         const double *r_i = nuc.getCoord();
         const double z_i = nuc.getElement().getZ();
         for (int d = 0; d < 3; d++) {
-            this->COM[d] += r_i[d] * z_i;
+            this->COC[d] += r_i[d] * z_i;
         }
         Z += z_i;
     }
