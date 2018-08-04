@@ -22,7 +22,7 @@ public:
     }
 
     double getEnergy() { return this->potential.getEnergy(); }
-    Density &getDensity(int spin) { return this->potential.getDensity(spin); }
+    mrcpp::FunctionTree<3> &getDensity(int spin) { return this->potential.getDensity(spin); }
 
 protected:
     XCPotential potential;

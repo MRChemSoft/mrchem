@@ -29,7 +29,7 @@ namespace sad {
 
 ComplexMatrix diagonalize_fock(RankZeroTensorOperator &F, OrbitalVector &Phi, int spin);
 OrbitalVector rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin);
-void project_atomic_densities(double prec, const Molecule &mol, DensityVector &rho_atomic);
+void project_atomic_densities(double prec, const Molecule &mol, mrcpp::FunctionTreeVector<3> &rho_atomic);
 
 } //namespace sad
 } //namespace initial_guess
@@ -60,22 +60,22 @@ OrbitalVector initial_guess::sad::setup(double prec,
     RankZeroTensorOperator F = T + V + J + XC;
 
     // Compute SAD density
-    DensityVector rho_atomic;
+    mrcpp::FunctionTreeVector<3> rho_atomic;
     initial_guess::sad::project_atomic_densities(prec, mol, rho_atomic);
 
     // Compute Coulomb density
-    Density &rho_j = J.getDensity();
+    mrcpp::FunctionTree<3> &rho_j = J.getDensity().real();
     mrcpp::add(prec, rho_j, rho_atomic);
     mrcpp::clear(rho_atomic, true);
 
     // Compute XC density
     if (restricted) {
-        Density &rho_xc = XC.getDensity(DENSITY::Total);
+        mrcpp::FunctionTree<3> &rho_xc = XC.getDensity(DENSITY::Total);
         mrcpp::copy_grid(rho_xc, rho_j);
         mrcpp::copy_func(rho_xc, rho_j);
     } else {
-        Density &rho_a = XC.getDensity(DENSITY::Alpha);
-        Density &rho_b = XC.getDensity(DENSITY::Beta);
+        mrcpp::FunctionTree<3> &rho_a = XC.getDensity(DENSITY::Alpha);
+        mrcpp::FunctionTree<3> &rho_b = XC.getDensity(DENSITY::Beta);
         mrcpp::add(prec, rho_a, 1.0, rho_j, -1.0*Nb/Ne, rho_j);
         mrcpp::add(prec, rho_b, 1.0, rho_j, -1.0*Na/Ne, rho_j);
     }
@@ -181,7 +181,7 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
 
 void initial_guess::sad::project_atomic_densities(double prec,
                                                   const Molecule &mol,
-                                                  DensityVector &rho_atomic) {
+                                                  mrcpp::FunctionTreeVector<3> &rho_atomic) {
     Timer timer;
     Printer::printHeader(0, "Projecting Gaussian-type density");
     println(0, " Nr  Element                                 Rho_i");
@@ -199,7 +199,7 @@ void initial_guess::sad::project_atomic_densities(double prec,
         bas << sad_path << sym << ".bas";
         dens << sad_path << sym << ".dens";
 
-        Density *rho = initial_guess::gto::project_density(prec, nucs[k], bas.str(), dens.str());
+        mrcpp::FunctionTree<3> *rho = initial_guess::gto::project_density(prec, nucs[k], bas.str(), dens.str());
         printout(0, std::setw(3) << k);
         printout(0, std::setw(7) << sym);
         printout(0, std::setw(49) << rho->integrate() << "\n");

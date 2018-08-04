@@ -1,5 +1,6 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+#include "MRCPP/Gaussians"
 
 #include "parallel.h"
 #include "utils/math_utils.h"
@@ -84,5 +85,11 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
+void density::project(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {
+    FunctionTree<3> dens(*MRA);
+    rho.setSpin(spin);
+    mrcpp::project(prec, dens, dens_exp);
+    rho.setReal(&dens);
+}
 
 } //namespace mrchem

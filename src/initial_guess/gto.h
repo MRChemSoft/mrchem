@@ -44,7 +44,7 @@ OrbitalVector project_mo(double prec,
                          int spin,
                          int occ,
                          int N = -1);
-Density* project_density(double prec,
+ mrcpp::FunctionTree<3>* project_density(double prec,
                          const Nucleus &nuc,
                          const std::string &bas_file,
                          const std::string &dens_file);

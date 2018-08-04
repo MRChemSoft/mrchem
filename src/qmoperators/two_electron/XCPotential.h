@@ -40,7 +40,7 @@ protected:
     mrcpp::FunctionTreeVector<3> potentials;   ///< XC Potential functions collected in a vector
 
     double getEnergy() const { return this->energy; }
-    Density &getDensity(int spin);
+    mrcpp::FunctionTree<3> &getDensity(int spin);
     mrcpp::FunctionTree<3> &getPotential(int spin);
 
     void setup(double prec);

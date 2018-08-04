@@ -1,6 +1,7 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
+#include "Density.h"
 #include "FockOperator.h"
 #include "KineticOperator.h"
 #include "NuclearOperator.h"

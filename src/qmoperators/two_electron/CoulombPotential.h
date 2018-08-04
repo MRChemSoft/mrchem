@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QMPotential.h"
+#include "Density.h"
 
 /** @class CoulombPotential
  *

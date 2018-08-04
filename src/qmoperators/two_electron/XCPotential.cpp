@@ -3,6 +3,7 @@
 
 #include "XCPotential.h"
 #include "Orbital.h"
+#include "Density.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;
@@ -60,23 +61,28 @@ void XCPotential::clear() {
 void XCPotential::setupDensity() {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
-
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
-        Density &rho_a = this->functional->getDensity(mrdft::DensityType::Alpha);
+        FunctionTree<3> tmp_a = this->functional->getDensity(mrdft::DensityType::Alpha);
+        Density rho_a;
+        rho_a.setReal(&tmp_a);
         density::compute(-1.0, rho_a, Phi, DENSITY::Alpha);
         time_a.stop();
         Printer::printTree(0, "XC alpha density", rho_a.getNNodes(), time_a.getWallTime());
 
         Timer time_b;
-        Density &rho_b = this->functional->getDensity(mrdft::DensityType::Beta);
+        FunctionTree<3> tmp_b = this->functional->getDensity(mrdft::DensityType::Beta);
+        Density rho_b;
+        rho_b.setReal(&tmp_b);
         density::compute(-1.0, rho_b, Phi, DENSITY::Beta);
         time_b.stop();
         Printer::printTree(0, "XC beta density", rho_b.getNNodes(), time_b.getWallTime());
     } else {
         Timer time_t;
-        Density &rho_t = this->functional->getDensity(mrdft::DensityType::Total);
+        FunctionTree<3> tmp_t = this->functional->getDensity(mrdft::DensityType::Total);
+        Density rho_t;
+        rho_t.setReal(&tmp_t);
         density::compute(-1.0, rho_t, Phi, DENSITY::Total);
         time_t.stop();
         Printer::printTree(0, "XC total density", rho_t.getNNodes(), time_t.getWallTime());
@@ -127,7 +133,7 @@ void XCPotential::setupPotential(double prec) {
  *
  * @param[in] type Which density to return (alpha, beta or total)
  */
-Density &XCPotential::getDensity(int spin) {
+FunctionTree<3> &XCPotential::getDensity(int spin) {
     if (spin == DENSITY::Total) return this->functional->getDensity(mrdft::DensityType::Total);
     if (spin == DENSITY::Alpha) return this->functional->getDensity(mrdft::DensityType::Alpha);
     if (spin == DENSITY::Beta)  return this->functional->getDensity(mrdft::DensityType::Beta);

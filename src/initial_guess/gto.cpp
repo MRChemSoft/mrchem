@@ -204,7 +204,7 @@ OrbitalVector initial_guess::gto::project_ao(double prec,
  * corresponding MW orbitals. All orbitals get the same spin parameter.
  *
  */
-Density* initial_guess::gto::project_density(double prec,
+mrcpp::FunctionTree<3> *initial_guess::gto::project_density(double prec,
                                              const Nucleus &nuc,
                                              const std::string &bas_file,
                                              const std::string &dens_file) {
@@ -217,7 +217,7 @@ Density* initial_guess::gto::project_density(double prec,
     DoubleMatrix D = math_utils::read_matrix_file(dens_file);
     GaussExp<3> dens_exp = gto_exp.getDens(D);
 
-    Density *rho = new Density(*MRA);
+    mrcpp::FunctionTree<3> *rho = new mrcpp::FunctionTree<3>(*MRA);
     mrcpp::project(prec, *rho, dens_exp);
     return rho;
 }
