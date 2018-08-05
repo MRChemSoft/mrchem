@@ -67,6 +67,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
             Density *rho_i = new Density(); //LUCA: Is it the right creator here (it was Density(*MRA);
+            rho_i->setReal(new mrcpp::FunctionTree<3>(*MRA));
             mrcpp::copy_grid(rho_i->real(), rho.real());
             density::compute(mult_prec, *rho_i, Phi[i], spin);
             dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));

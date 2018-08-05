@@ -15,19 +15,20 @@ TEST_CASE("Density", "[density]") {
 
     SECTION("calc density") {
         Density rho;
+        rho.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
         SECTION("single orbital") {
             HydrogenFunction h(1,0,0);
             Orbital phi(SPIN::Alpha);
             phi.alloc(NUMBER::Real);
             mrcpp::project(prec, phi.real(), h);
-
             mrcpp::build_grid(rho.real(), phi.real());
             density::compute(-1.0, rho, phi, DENSITY::Total);
             REQUIRE( rho.real().integrate() == Approx(1.0) );
 
             phi.free();
         }
+        
         SECTION("orbital vector") {
             HydrogenFunction h_1(2,1,0);
             HydrogenFunction h_2(2,1,1);
@@ -46,7 +47,6 @@ TEST_CASE("Density", "[density]") {
 
             density::compute(prec, rho, Phi, DENSITY::Total);
             REQUIRE( rho.real().integrate() == Approx(4.0) );
-
             orbital::free(Phi);
         }
     }
@@ -56,6 +56,10 @@ TEST_CASE("Density", "[density]") {
         Density rho_s;
         Density rho_a;
         Density rho_b;
+        rho_t.setReal(new mrcpp::FunctionTree<3>(*MRA));
+        rho_s.setReal(new mrcpp::FunctionTree<3>(*MRA));
+        rho_a.setReal(new mrcpp::FunctionTree<3>(*MRA));
+        rho_b.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
         SECTION("single orbital") {
             HydrogenFunction h(1,0,0);
