@@ -44,6 +44,7 @@ void CoulombPotential::setup(double prec) {
     setApplyPrec(prec);
     setupDensity(prec);
     setupPotential(prec);
+    std::cout << "CoulombPotential end of setup" << std::endl;
 }
 
 /** @brief clear operator after application

@@ -39,9 +39,12 @@ XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
  *
  */
 void XCPotential::setup(double prec) {
+    std::cout << "XCPotential setup" << std::endl;
     if (isSetup(prec)) return;
     setApplyPrec(prec);
+    std::cout << "Setup density" << std::endl;
     setupDensity();
+    std::cout << "Setup density" << std::endl;
     setupPotential(prec);
 }
 
@@ -62,6 +65,7 @@ void XCPotential::setupDensity() {
     if (this->functional->hasDensity()) return;
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
     OrbitalVector &Phi = *this->orbitals;
+    std::cout << "wtf" << std::endl;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
         FunctionTree<3> tmp_a = this->functional->getDensity(mrdft::DensityType::Alpha);
@@ -83,7 +87,9 @@ void XCPotential::setupDensity() {
         FunctionTree<3> tmp_t = this->functional->getDensity(mrdft::DensityType::Total);
         Density rho_t;
         rho_t.setReal(&tmp_t);
+        std::cout << "wtf2 " << tmp_t << std::endl;
         density::compute(-1.0, rho_t, Phi, DENSITY::Total);
+        std::cout << "wtf3" << std::endl;
         time_t.stop();
         Printer::printTree(0, "XC total density", rho_t.getNNodes(), time_t.getWallTime());
     }
@@ -114,6 +120,7 @@ void XCPotential::setupPotential(double prec) {
     int inpNodes = this->functional->getNNodes();
     int inpPoints = this->functional->getNPoints();
 
+    std::cout << "setup and evaluate functional" << std::endl;
     this->functional->setup();
     this->functional->evaluate();
     this->energy = this->functional->calcEnergy();

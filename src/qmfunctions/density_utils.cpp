@@ -68,8 +68,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
         if (mpi::my_orb(Phi[i])) {
             Density *rho_i = new Density(); //LUCA: Is it the right creator here (it was Density(*MRA);
             rho_i->setReal(new mrcpp::FunctionTree<3>(*MRA));
+            std::cout << "dens " << i << std::endl;
+            std::cout << rho_i->real() << rho.real() << std::endl;
             mrcpp::copy_grid(rho_i->real(), rho.real());
+            std::cout << "grid copied " << i << std::endl;
             density::compute(mult_prec, *rho_i, Phi[i], spin);
+            std::cout << rho.real() << std::endl;
             dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
         }
     }
