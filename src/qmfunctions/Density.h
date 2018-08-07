@@ -1,7 +1,7 @@
 #pragma once
 
 #include "QMFunction.h"
-#include "density_utils.h" //LUCA Is this kosher?
+#include "density_utils.h"
 
 /** @class Density
  *
@@ -43,11 +43,14 @@ public:
     Density paramCopy() const;
     Density deepCopy();
     Density dagger() const;
-
+    
     void setError(double error) { this->meta.error = error; }
     void setRankId(int rank) { this->meta.rank_id = rank; }
     void setSpin(int spin) { this->meta.spin = spin; }
 
+    void allocReal();
+    void allocImag();
+    
     DensityMeta &getMetaData();
     int spin() const { return this->meta.spin; }
     int rankID() const { return this->meta.rank_id; }
@@ -56,14 +59,8 @@ public:
     double norm() const;
     double squaredNorm() const;
 
-    //    void add(ComplexDouble c, Density inp, double prec = -1.0);
     void multiply(Density inp, double prec = -1.0);
-    //    void rescale(ComplexDouble c);
-
-    //    void normalize() { rescale(1.0/this->norm()); }
-    //    void orthogonalize(Density inp);
-    //    void orthogonalize(DensityVector inp_vec);
-
+    
     void saveDensity(const std::string &file);
     void loadDensity(const std::string &file);
 

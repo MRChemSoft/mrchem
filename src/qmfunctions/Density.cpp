@@ -298,5 +298,22 @@ std::ostream& Density::print(std::ostream &o) const {
     return o;
 }
 
+void Density::allocReal() {
+    if (re == 0) {
+        this->setReal(new mrcpp::FunctionTree<3>(*MRA));
+    }
+    else {
+        MSG_FATAL("Real part of Density already allocated");
+    }
+}
+void Density::allocImag() {
+    if (im == 0) {
+        this->setImag(new mrcpp::FunctionTree<3>(*MRA));
+    }
+    else {
+        MSG_FATAL("Imaginary part of Density already allocated");
+    }
+}
+
 } //namespace mrchem
 
