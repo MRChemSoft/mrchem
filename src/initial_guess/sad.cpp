@@ -158,14 +158,13 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
 
     OrbitalIterator iter(Phi);
     while (iter.next()) {
-        OrbitalChunk &recv_chunk = iter.get();
         for (int i = 0; i < Psi.size(); i++) {
             if (not mpi::my_orb(Psi[i])) continue;
             OrbitalVector orb_vec;
-            ComplexVector coef_vec(recv_chunk.size());
-            for (int j = 0; j < recv_chunk.size(); j++) {
-                int idx_j = std::get<0>(recv_chunk[j]);
-                Orbital &recv_j = std::get<1>(recv_chunk[j]);
+            ComplexVector coef_vec(iter.get_size());
+            for (int j = 0; j < iter.get_size(); j++) {
+		int idx_j = iter.get_idx(j);
+		Orbital &recv_j = iter.get_orbital(j);
                 coef_vec[j] = U(i, idx_j);
                 orb_vec.push_back(recv_j);
             }

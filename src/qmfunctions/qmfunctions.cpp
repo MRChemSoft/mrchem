@@ -328,14 +328,13 @@ OrbitalVector multiply(const ComplexMatrix &U, OrbitalVector &inp, double prec) 
 
     OrbitalIterator iter(inp);
     while (iter.next()) {
-        OrbitalChunk &recv_chunk = iter.get();
         for (int i = 0; i < out.size(); i++) {
             if (not mpi::my_orb(out[i])) continue;
             OrbitalVector orb_vec;
-            ComplexVector coef_vec(recv_chunk.size());
-            for (int j = 0; j < recv_chunk.size(); j++) {
-                int idx_j = std::get<0>(recv_chunk[j]);
-                Orbital &recv_j = std::get<1>(recv_chunk[j]);
+            ComplexVector coef_vec(iter.get_size());
+            for (int j = 0; j < iter.get_size(); j++) {
+		int idx_j = iter.get_idx(j);
+		Orbital &recv_j = iter.get_orbital(j);
                 coef_vec[j] = U(i, idx_j);
                 orb_vec.push_back(recv_j);
             }
@@ -531,18 +530,20 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &bra, OrbitalVector &ket) {
     OrbitalChunk my_ket = mpi::get_my_chunk(ket);
 
     // Receive ALL orbitals on the bra side, use only MY orbitals on the ket side
-    // Computes the FULL columns assosiated with MY orbitals on the ket side
+    // Computes the FULL columns associated with MY orbitals on the ket side
     OrbitalIterator iter(bra);
-    while (iter.next()) {
-        OrbitalChunk &recv_bra = iter.get();
-        for (int i = 0; i < recv_bra.size(); i++) {
-            int idx_i = std::get<0>(recv_bra[i]);
-            Orbital &bra_i = std::get<1>(recv_bra[i]);
+    bool use_symmetri = (&bra == &ket);
+    while (iter.next(use_symmetri)) {
+        for (int i = 0; i < iter.get_size(); i++) {
+	    int idx_i = iter.get_idx(i);
+	    Orbital &bra_i = iter.get_orbital(i);
             for (int j = 0; j < my_ket.size(); j++) {
-                int idx_j = std::get<0>(my_ket[j]);
-                Orbital &ket_j = std::get<1>(my_ket[j]);
+		int idx_j = std::get<0>(my_ket[j]);
+		if( use_symmetri and mpi::my_orb(bra_i) and idx_j>idx_i ) continue;
+		Orbital &ket_j = std::get<1>(my_ket[j]);
                 if (mpi::my_unique_orb(ket_j) or mpi::orb_rank == 0) {
                     S(idx_i, idx_j) = orbital::dot(bra_i, ket_j);
+		    if( use_symmetri ) S(idx_j, idx_i) = conj(S(idx_i, idx_j));
                 }
             }
         }

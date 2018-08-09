@@ -7,12 +7,15 @@ class OrbitalIterator final {
 public:
     OrbitalIterator(OrbitalVector &Phi);
 
-    bool next();
-    OrbitalChunk &get() { return this->chunk; }
+    bool next( bool symmetric = false );
+    Orbital &get_orbital(int i) { return (this->received_orbitals)[i]; }
+    int get_idx(int i) { return (this->received_orbital_index)[i]; }
+    int get_size() { return this->received_orbitals.size(); }
 
 protected:
     int iter;
-    OrbitalChunk chunk;
+    OrbitalVector received_orbitals;
+    std::vector<int> received_orbital_index;
     OrbitalVector *orbitals;
 };
 
