@@ -180,9 +180,7 @@ Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double pr
     ComplexVector tmp_coef(c.size());
     // set output spin from first contributing input
     for (int i = 0; i < inp.size(); i++) {
-        std::cout << "Lin comb try" << i << std::endl; 
         if (std::abs(c[i]) < thrs) continue;
-        std::cout << "Lin comb found" << i << std::endl; 
         out = inp[i].paramCopy();
         break;
     }
@@ -196,7 +194,6 @@ Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double pr
         }
         double sign = (inp[i].conjugate()) ? -1.0 : 1.0;
         tmp_orb.push_back(std::make_tuple(sign, inp[i]));
-        std::cout << i << " aa " << tmp_orb.size() << " bb " << c.size() << std::endl;
         tmp_coef[tmp_orb.size()-1] = c[i];
     }
     qmfunction::linear_combination(tmp_coef, tmp_orb, out, prec);
@@ -212,8 +209,6 @@ OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, dou
     // Get all out orbitals belonging to this MPI
     //LUCA: if one does the following, then the matrix must be square...
     OrbitalVector out = orbital::param_copy(inp);
-    std::cout << "OUT before" << std::endl;
-    orbital::print(out);
     OrbitalIterator iter(inp);
     while (iter.next()) {
         OrbitalChunk &recv_chunk = iter.get();
@@ -221,28 +216,17 @@ OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, dou
             if (not mpi::my_orb(out[i])) continue;
             OrbitalVector orb_vec;
             ComplexVector coef_vec(recv_chunk.size());
-            std::cout << "Output loop" << i << " " << out.size() << std::endl;
             for (int j = 0; j < recv_chunk.size(); j++) {
-                std::cout << "Input loop" << j << " "  << recv_chunk.size() << std::endl;
                 int idx_j = std::get<0>(recv_chunk[j]);
                 Orbital &recv_j = std::get<1>(recv_chunk[j]);
                 coef_vec[j] = U(i, idx_j);
                 orb_vec.push_back(recv_j);
             }
-            std::cout << "out[i] before" << out[i] << std::endl;
-            std::cout << "orb_vec before" << std::endl;
-            std::cout << "coef_vec " << coef_vec << std::endl;
-            orbital::print(orb_vec);
             Orbital tmp_i = linear_combination(coef_vec, orb_vec, prec);
-            std::cout << "tmp_i" << tmp_i << std::endl;
             out[i].add(1.0, tmp_i, prec); // In place addition
-            std::cout << "out[i] after" << out[i] << std::endl;
             tmp_i.free();
         }
     }
-    std::cout << "OUT after" << std::endl;
-    orbital::print(out);
-    std::exit(-1);
     return out;
 }
 
@@ -534,7 +518,6 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     int np = orbital::size_paired(Phi);
     int na = orbital::size_alpha(Phi);
     int nb = orbital::size_beta(Phi);
-    std::cout << "np, na, nb " << np << " " << na << " " << nb << std::endl;
     if (np > 0) math_utils::diagonalize_block(F, U, 0,       np);
     if (na > 0) math_utils::diagonalize_block(F, U, np,      na);
     if (nb > 0) math_utils::diagonalize_block(F, U, np + na, nb);
@@ -544,7 +527,6 @@ ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
 
     Timer rot_t;
     OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
-    orbital::print(Psi);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
