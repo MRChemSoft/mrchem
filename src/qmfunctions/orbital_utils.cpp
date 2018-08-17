@@ -455,8 +455,11 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U;
     int n_it = 0;
     if (Phi.size() > 1) {
-        Timer rr_t;
+        Timer rmat;
         RRMaximizer rr(prec, Phi);
+        rmat.stop();
+        Printer::printDouble(0, "Computing position matrices", rmat.getWallTime(), 5);
+        Timer rr_t;
         n_it = rr.maximize();
         rr_t.stop();
         Printer::printDouble(0, "Computing Foster-Boys matrix", rr_t.getWallTime(), 5);

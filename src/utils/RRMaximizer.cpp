@@ -111,7 +111,6 @@ double RRMaximizer::make_gradient() {
     }
     return std::sqrt(norm);
 }
-
 /** Make Hessian matrix for the RRMaximizer case
  */
 double RRMaximizer::make_hessian() {
@@ -153,6 +152,165 @@ double RRMaximizer::make_hessian() {
         }
     }
     return 0.0;
+}
+/** Multiply a vector with Hessian for the RRMaximizer case.
+ *  Does not store the Hessian values.
+ */
+void RRMaximizer::multiply_hessian(DoubleVector &vec, DoubleVector &Hv) {
+    double djk, djl, dik, dil;
+    for (int d = 0; d < 3; d++) {
+        int kl = 0;
+        for (int l = 0; l < this->N; l++) {
+            for (int k = 0; k < l; k++) {
+                if (d==0) Hv(kl) = 0.0;
+                int ij = 0;
+                for (int j = 0; j < this->N; j++) {
+                    if (j == k) {
+                        djk = 1.0;
+                        if (j == l) {
+                            //(j == k) and (j == l)
+                            for (int i = 0; i < j; i++) {
+                                djl = 1.0;
+                                dik = (i == k) ? 1.0 : 0.0;
+                                dil = (i == l) ? 1.0 : 0.0;
+
+                                Hv(kl) += vec(ij)*2.0*(
+                                            r_i(i,i+d*N)*r_i(l,i+d*N)
+                                            -r_i(i,i+d*N)*r_i(k,i+d*N)
+                                            -dik*r_i(j,j+d*N)*r_i(l,j+d*N)
+                                            +dil*r_i(j,j+d*N)*r_i(k,j+d*N)
+                                            -2.0*dil*r_i(i,i+d*N)*r_i(k,j+d*N)
+                                            +2.0*dik*r_i(i,i+d*N)*r_i(l,j+d*N)
+                                            +2.0*r_i(j,j+d*N)*r_i(k,i+d*N)
+                                            -2.0*r_i(j,j+d*N)*r_i(l,i+d*N)
+                                            +r_i(l,l+d*N)*r_i(i,l+d*N)
+                                            -dik*r_i(l,l+d*N)*r_i(j,l+d*N)
+                                            -r_i(k,k+d*N)*r_i(i,k+d*N)
+                                            +dil*r_i(k,k+d*N)*r_i(j,k+d*N)
+                                            -4.0*(dil-dik)*r_i(i,j+d*N)*r_i(k,l+d*N));
+                                ij++;
+                            }
+                        } else {
+                            //(j == k) and (j != l)
+                            for (int i = 0; i < j; i++) {
+                                djl = 0.0;
+                                dik = (i == k) ? 1.0 : 0.0;
+                                dil = (i == l) ? 1.0 : 0.0;
+
+                                Hv(kl) += vec(ij)*2.0*(
+                                            r_i(i,i+d*N)*r_i(l,i+d*N)
+                                            -dik*r_i(j,j+d*N)*r_i(l,j+d*N)
+                                            +dil*r_i(j,j+d*N)*r_i(k,j+d*N)
+                                            -2.0*dil*r_i(i,i+d*N)*r_i(k,j+d*N)
+                                            +2.0*dik*r_i(i,i+d*N)*r_i(l,j+d*N)
+                                            -2.0*r_i(j,j+d*N)*r_i(l,i+d*N)
+                                            +r_i(l,l+d*N)*r_i(i,l+d*N)
+                                            -dik*r_i(l,l+d*N)*r_i(j,l+d*N)
+                                            +dil*r_i(k,k+d*N)*r_i(j,k+d*N)
+                                            -4.0*(dil-dik+djk)*r_i(i,j+d*N)*r_i(k,l+d*N));
+                                ij++;
+                            }
+                        }
+                    } else {
+                        //(j != k)
+                        djk = 0.0;
+                        if (j == l) {
+                            //(j != k) and (j == l) {
+                            for (int i = 0; i < j; i++) {
+                                djl = 1.0;
+                                dik = (i == k) ? 1.0 : 0.0;
+                                dil = (i == l) ? 1.0 : 0.0;
+
+                                Hv(kl) += vec(ij)*2.0*(
+                                            -djl*r_i(i,i+d*N)*r_i(k,i+d*N)
+                                            -dik*r_i(j,j+d*N)*r_i(l,j+d*N)
+                                            +dil*r_i(j,j+d*N)*r_i(k,j+d*N)
+                                            -2.0*dil*r_i(i,i+d*N)*r_i(k,j+d*N)
+                                            +2.0*dik*r_i(i,i+d*N)*r_i(l,j+d*N)
+                                            +2.0*djl*r_i(j,j+d*N)*r_i(k,i+d*N)
+                                            -dik*r_i(l,l+d*N)*r_i(j,l+d*N)
+                                            -djl*r_i(k,k+d*N)*r_i(i,k+d*N)
+                                            +dil*r_i(k,k+d*N)*r_i(j,k+d*N)
+                                            -4.0*(dil-dik-djl)*r_i(i,j+d*N)*r_i(k,l+d*N));
+                                ij++;
+                            }
+                        } else {
+                            //(j != k) and (j != l)
+                            djl = 0.0;
+                            for (int i = 0; i < j; i++) {
+                                if (i == k) {
+                                    //(j != k) and (j != l) and (i == k)
+                                    dik = 1.0 ;
+                                    dil = (i == l) ? 1.0 : 0.0;
+
+                                    Hv(kl) += vec(ij)*2.0*(-r_i(j,j+d*N)*r_i(l,j+d*N)
+                                                           +dil*r_i(j,j+d*N)*r_i(k,j+d*N)
+                                                           -2.0*dil*r_i(i,i+d*N)*r_i(k,j+d*N)
+                                                           +2.0*r_i(i,i+d*N)*r_i(l,j+d*N)
+                                                           -r_i(l,l+d*N)*r_i(j,l+d*N)
+                                                           +dil*r_i(k,k+d*N)*r_i(j,k+d*N)
+                                                           -4.0*(dil-dik)*r_i(i,j+d*N)*r_i(k,l+d*N));
+
+                                } else {
+                                    //(j != k) and (j != l) and (i != k)
+                                    if( i == l ) {
+                                        Hv(kl) += vec(ij)*2.0*(r_i(j,j+d*N)*r_i(k,j+d*N)
+                                                               -2.0*r_i(i,i+d*N)*r_i(k,j+d*N)
+                                                               +r_i(k,k+d*N)*r_i(j,k+d*N)
+                                                               -4.0*r_i(i,j+d*N)*r_i(k,l+d*N));
+                                    }
+                                    //else (j != k) and (j != l) and (i != k)and ( i != l ) -> zero
+                                }
+                                ij++;
+                            }
+                        }
+                    }
+                }
+                kl++;
+            }
+        }
+    }
+}
+/** Returns Hessian value for the RRMaximizer case
+ */
+double RRMaximizer::get_hessian(int ij, int kl) {
+    double hessian_val = 0.0;
+
+    double jr = 0.5*(std::sqrt(9.0+8.0*ij)+1.0);
+    int j = (int) (jr-1.0E-9);//the last jr is exactly the integer *over* the wanted j, if something is not subtracted
+    int i = ij-(j*(j-1))/2;
+
+    if(i>=j or i<0 or j<0)std::cout<<" ij ERROR "<<i<<" "<<j<<" "<<ij<<std::endl;
+    //std::cout<<"i "<<i<<" j"<<j<<" ij"<<ij<<std::endl;
+    double lr = 0.5*(std::sqrt(9.0+8.0*kl)+1.0);
+    int l = (int) (lr-1.0E-9);
+    int k = kl-(l*(l-1))/2;
+
+    if(k>=l or k<0 or l<0)std::cout<<" kl ERROR "<<k<<" "<<l<<" "<<kl<<std::endl;
+
+    double djk, djl, dik, dil;
+    for (int d = 0; d < 3; d++) {
+        djk = (j == k) ? 1.0 : 0.0;
+        djl = (j == l) ? 1.0 : 0.0;
+        dik = (i == k) ? 1.0 : 0.0;
+        dil = (i == l) ? 1.0 : 0.0;
+
+        hessian_val += 2.0*(
+                    djk*r_i(i,i+d*N)*r_i(l,i+d*N)
+                    -djl*r_i(i,i+d*N)*r_i(k,i+d*N)
+                    -dik*r_i(j,j+d*N)*r_i(l,j+d*N)
+                    +dil*r_i(j,j+d*N)*r_i(k,j+d*N)
+                    -2.0*dil*r_i(i,i+d*N)*r_i(k,j+d*N)
+                    +2.0*dik*r_i(i,i+d*N)*r_i(l,j+d*N)
+                    +2.0*djl*r_i(j,j+d*N)*r_i(k,i+d*N)
+                    -2.0*djk*r_i(j,j+d*N)*r_i(l,i+d*N)
+                    +djk*r_i(l,l+d*N)*r_i(i,l+d*N)
+                    -dik*r_i(l,l+d*N)*r_i(j,l+d*N)
+                    -djl*r_i(k,k+d*N)*r_i(i,k+d*N)
+                    +dil*r_i(k,k+d*N)*r_i(j,k+d*N)
+                    -4.0*(dil-dik-djl+djk)*r_i(i,j+d*N)*r_i(k,l+d*N));
+    }
+    return hessian_val;
 }
 
 /** Given the step matrix, update the rotation matrix and the R matrix

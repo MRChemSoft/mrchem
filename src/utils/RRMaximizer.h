@@ -17,6 +17,8 @@ class RRMaximizer final : public NonlinearMaximizer {
 public:
     RRMaximizer(double prec, OrbitalVector &Phi);
     const DoubleMatrix &getTotalU() const { return this->total_U; }
+    double get_hessian(int i, int j);
+    void multiply_hessian(DoubleVector &vec, DoubleVector &Hv);
 
 protected:
     int N;                  // number of orbitals
