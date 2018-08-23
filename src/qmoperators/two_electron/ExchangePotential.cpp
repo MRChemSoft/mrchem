@@ -5,6 +5,7 @@
 #include "ExchangePotential.h"
 #include "Orbital.h"
 #include "parallel.h"
+#include "OrbitalIterator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -52,7 +53,7 @@ void ExchangePotential::clear() {
     clearApplyPrec();
 }
 
-/** @brief Perform a unitary transormation among the precomputed exchange contributions
+/** @brief Perform a unitary transformation among the precomputed exchange contributions
  *
  * @param[in] U unitary matrix defining the rotation
  */
@@ -118,34 +119,38 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
     ComplexVector coef_vec(Phi.size());
     OrbitalVector orb_vec;
 
-    for (int i = 0; i < Phi.size(); i++) {
-        Orbital &phi_i = Phi[i];
+    OrbitalIterator iter(Phi);
+    while (iter.next()) {
+        for (int i = 0; i < iter.get_size(); i++) {
+	    int idx_i = iter.get_idx(i);
+	    Orbital &phi_i = iter.get_orbital(i);
 
-        double spin_fac = getSpinFactor(phi_i.spin(), phi_p.spin());
-        if (std::abs(spin_fac) < mrcpp::MachineZero) continue;
+	    double spin_fac = getSpinFactor(phi_i.spin(), phi_p.spin());
+	    if (std::abs(spin_fac) < mrcpp::MachineZero) continue;
 
-        // compute phi_ip = phi_i^dag * phi_p
-        Orbital phi_ip = orbital::multiply(phi_i.dagger(), phi_p);
+	    // compute phi_ip = phi_i^dag * phi_p
+	    Orbital phi_ip = orbital::multiply(phi_i.dagger(), phi_p);
 
-        // compute V_ip = P[phi_ip]
-        Orbital V_ip = phi_p.paramCopy();
-        if (phi_ip.hasReal()) {
-            V_ip.alloc(NUMBER::Real);
-            mrcpp::apply(prec, V_ip.real(), P, phi_ip.real());
-        }
-        if (phi_ip.hasImag()) {
-            V_ip.alloc(NUMBER::Imag);
-            mrcpp::apply(prec, V_ip.imag(), P, phi_ip.imag());
-        }
-        phi_ip.free();
+	    // compute V_ip = P[phi_ip]
+	    Orbital V_ip = phi_p.paramCopy();
+	    if (phi_ip.hasReal()) {
+		V_ip.alloc(NUMBER::Real);
+		mrcpp::apply(prec, V_ip.real(), P, phi_ip.real());
+	    }
+	    if (phi_ip.hasImag()) {
+		V_ip.alloc(NUMBER::Imag);
+		mrcpp::apply(prec, V_ip.imag(), P, phi_ip.imag());
+	    }
+	    phi_ip.free();
 
-        // compute phi_iip = phi_i * V_ip
-        Orbital phi_iip = orbital::multiply(phi_i, V_ip);
-        V_ip.free();
+	    // compute phi_iip = phi_i * V_ip
+	    Orbital phi_iip = orbital::multiply(phi_i, V_ip);
+	    V_ip.free();
 
-        coef_vec(i) = spin_fac/phi_i.squaredNorm();
-        orb_vec.push_back(phi_iip);
-        phi_iip.clear();
+	    coef_vec(i) = spin_fac/phi_i.squaredNorm();
+	    orb_vec.push_back(phi_iip);
+	    phi_iip.clear();
+	}
     }
 
     // compute ex_p = sum_i c_i*phi_iip
@@ -158,61 +163,6 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
     Printer::printTree(1, "Applied exchange", n, t);
 
     return ex_p;
-/*
-#ifdef HAVE_MPI
-
-    OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
-    OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
-    vector<int> orbsIx;             //to store own orbital indices
-    int rcvOrbsIx[workOrbVecSize];  //to store received orbital indices
-
-    //make vector with adresses of own orbitals
-    for (int Ix = mpiOrbRank;  Ix < nOrbs; Ix += mpiOrbSize) {
-	orbVecChunk_i.push_back(this->orbitals->getOrbital(Ix));//i orbitals
-	orbsIx.push_back(Ix);
-    }
-
-    for (int iter = 0;  iter >= 0; iter++) {
-	//get a new chunk from other processes
-	orbVecChunk_i.getOrbVecChunk(orbsIx, rcvOrbs, rcvOrbsIx, nOrbs, iter, workOrbVecSize, 2);
-	for (int i = 0; i<rcvOrbs.size(); i++){
-	    Orbital &phi_i = rcvOrbs.getOrbital(i);
-
-	    double spinFactor = phi_i.getExchangeFactor(phi_p);
-	    if (IS_EQUAL(spinFactor, 0.0)) continue;
-	    Orbital *phi_ip = new Orbital(phi_p);
-	    mult.adjoint(*phi_ip, 1.0, phi_i, phi_p);
-
-	    Orbital *V_ip = new Orbital(phi_p);
-	    if (phi_ip->hasReal()) {
-		V_ip->allocReal();
-		apply(V_ip->real(), P, phi_ip->real());
-	    }
-	    if (phi_ip->hasImag()) {
-		V_ip->allocImag();
-		apply(V_ip->imag(), P, phi_ip->imag());
-	    }
-	    delete phi_ip;
-
-	    double multFac = - spinFactor * (this->x_factor / phi_i.getSquareNorm());
-	    Orbital *phi_iip = new Orbital(phi_p);
-	    mult(*phi_iip, multFac, phi_i, *V_ip);
-	    delete V_ip;
-
-	    coef_vec.push_back(1.0);
-	    orb_vec.push_back(phi_iip);
-	}
-    }
-    orbVecChunk_i.clearVec(false);
-    rcvOrbs.clearVec(false);
-    workOrbVec2.clear();
-
-    add(*ex_p, coef_vec, orb_vec, true);
-
-    for (int i = 0; i < orb_vec.size(); i++) delete orb_vec[i];
-    orb_vec.clear();
-#else
-    */
 }
 
 /** @brief precomputes the exchange potential
@@ -223,7 +173,7 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
  */
 void ExchangePotential::setupInternal(double prec) {
     setApplyPrec(prec);
-    if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
+    //if (mpi::orb_size > 1) NOT_IMPLEMENTED_ABORT;
 
     if (this->exchange.size() != 0) MSG_ERROR("Exchange not properly cleared");
 
@@ -237,12 +187,19 @@ void ExchangePotential::setupInternal(double prec) {
 	calcInternal(phi_i, i);
     }
     // Off-diagonal must come last because it IS in-place
-    for (int i = 0; i < Phi.size(); i++) {
-	Orbital &phi_i = (*this->orbitals)[i];
-        for (int j = 0; j < i; j++) {
-	    Orbital &phi_j = (*this->orbitals)[j];
-            calcInternal(phi_i, phi_j, i, j);
-        }
+    OrbitalIterator iter(Phi);
+    while (iter.next()) {
+	for (int i = 0; i < iter.get_size(); i++) {
+	    Orbital &phi_i = iter.get_orbital(i);
+	    int idx = iter.get_idx(i);
+	    //for (int j = 0; j < i; j++) {
+	    //for now we compute every element, and do not use symmetri
+	    for (int j = 0; j < Phi.size(); j++) {
+		Orbital &phi_j = (*this->orbitals)[j];
+		if (!mpi::my_orb(phi_j) or idx==j) continue;
+		calcInternal(phi_i, phi_j, idx, j);
+	    }
+	}
     }
 
     int n = 0;
@@ -413,35 +370,43 @@ void ExchangePotential::calcInternal(int i) {
  * The diagonal term K_ii is computed.
  */
 void ExchangePotential::calcInternal(Orbital &phi_i, int i) {
-    double prec = std::min(getScaledPrecision(i,i), 1.0e-1);
 
-    mrcpp::PoissonOperator &P = *this->poisson;
+    if(mpi::my_orb(phi_i)){
+	double prec = std::min(getScaledPrecision(i,i), 1.0e-1);
 
-    // compute phi_ii = phi_i^dag * phi_i
-    Orbital phi_ii = orbital::multiply(phi_i.dagger(), phi_i, prec);
+	mrcpp::PoissonOperator &P = *this->poisson;
 
-    // compute V_ii = P[phi_ii]
-    Orbital V_ii = phi_i.paramCopy();
-    if (phi_ii.hasReal()) {
-        V_ii.alloc(NUMBER::Real);
-        mrcpp::apply(prec, V_ii.real(), P, phi_ii.real());
+	// compute phi_ii = phi_i^dag * phi_i
+	Orbital phi_ii = orbital::multiply(phi_i.dagger(), phi_i, prec);
+
+	// compute V_ii = P[phi_ii]
+	Orbital V_ii = phi_i.paramCopy();
+	if (phi_ii.hasReal()) {
+	    V_ii.alloc(NUMBER::Real);
+	    mrcpp::apply(prec, V_ii.real(), P, phi_ii.real());
+	}
+	if (phi_ii.hasImag()) {
+	    V_ii.alloc(NUMBER::Imag);
+	    mrcpp::apply(prec, V_ii.imag(), P, phi_ii.imag());
+	}
+	phi_ii.free();
+
+	// compute phi_iii = phi_i * V_ii
+	Orbital phi_iii = orbital::multiply(phi_i, V_ii, prec);
+	phi_iii.rescale(1.0/phi_i.squaredNorm());
+	this->part_norms(i,i) = phi_iii.norm();
+	V_ii.free();
+
+	//PW set rankID. Should be put elsewhere?
+	phi_iii.setRankId(mpi::orb_rank);
+
+	this->exchange.push_back(phi_iii);
+    }else{
+	//put empty orbital to fill the exchange vector
+	Orbital phi_iii;
+	phi_iii.setRankId(phi_i.rankID());//must mark who has the valid exchange
+	this->exchange.push_back(phi_iii);
     }
-    if (phi_ii.hasImag()) {
-        V_ii.alloc(NUMBER::Imag);
-        mrcpp::apply(prec, V_ii.imag(), P, phi_ii.imag());
-    }
-    phi_ii.free();
-
-    // compute phi_iii = phi_i * V_ii
-    Orbital phi_iii = orbital::multiply(phi_i, V_ii, prec);
-    phi_iii.rescale(1.0/phi_i.squaredNorm());
-    this->part_norms(i,i) = phi_iii.norm();
-    V_ii.free();
-
-    //PW set rankID. Should be put elsewhere?
-    phi_iii.setRankId(mpi::orb_rank);
-
-    this->exchange.push_back(phi_iii);
 }
 
 /** @brief computes the off-diagonal part of the exchange potential
@@ -497,7 +462,7 @@ void ExchangePotential::calcInternal(int i, int j) {
 
     // compute phi_iij = phi_i * V_ij
     Orbital phi_iij = orbital::multiply(Phi[i], V_ij, prec);
-    phi_jij.rescale(1.0/Phi[i].squaredNorm());
+    phi_jij.rescale(1.0/Phi[i].squaredNorm()); //BUG? should be phi_iij.rescale ?
     this->part_norms(i,j) = phi_iij.norm();
 
     V_ij.free();
@@ -559,27 +524,29 @@ void ExchangePotential::calcInternal(Orbital &phi_i, Orbital &phi_j, int i, int 
     phi_ij.free();
 
     // compute phi_jij = phi_j * V_ij
-    Orbital phi_jij = orbital::multiply(phi_j, V_ij, prec);
-    phi_jij.rescale(1.0/phi_j.squaredNorm());
-    this->part_norms(j,i) = phi_jij.norm();
+    //PW NB: we do not take advantage of symmetri!
+    //PW       Orbital phi_jij = orbital::multiply(phi_j, V_ij, prec);
+    //PW    phi_jij.rescale(1.0/phi_j.squaredNorm());
+    //PW    this->part_norms(j,i) = phi_jij.norm();
 
     // compute phi_iij = phi_i * V_ij
     Orbital phi_iij = orbital::multiply(phi_i, V_ij, prec);
-    phi_jij.rescale(1.0/phi_i.squaredNorm());
+    phi_iij.rescale(1.0/phi_i.squaredNorm()); //BUG in original? was phi_jij.rescale
     this->part_norms(i,j) = phi_iij.norm();
 
     V_ij.free();
 
     // compute x_i += phi_jij
-    Ex[i].add(i_fac, phi_jij);
-    phi_jij.free();
+    //PW NB: we do not take advantage of symmetri!
+    //PW   Ex[i].add(i_fac, phi_jij);
+    //PW  phi_jij.free();
 
     // compute x_j += phi_iij
     Ex[j].add(j_fac, phi_iij);
     phi_iij.free();
 
     //PW set rankID. Should be put elsewhere?
-    Ex[i].setRankId(mpi::orb_rank);
+    //PW Ex[i].setRankId(mpi::orb_rank);
     Ex[j].setRankId(mpi::orb_rank);
 }
 
