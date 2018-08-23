@@ -57,8 +57,6 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 
     int my_rank = mpi::orb_rank;
     int max_rank = mpi::orb_size;
-    int already_received = 0; //counter for requested received orbitals jumped over this call
-    int already_sent = 0; //counter for requested sent orbitals jumped over this call
     int received = 0; //number of new received orbitals this call
     int sent = 0; //number of new sent orbitals this call
     int maxget = max_recv; //max number of orbitals to receive
@@ -82,16 +80,13 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 	if (other_rank == my_rank) {
 	    // We receive from ourself
 	    IamSender   = false; //sending data is "for free"
-	    for (int i = 0; i < send_size and received < maxget; i++) {
+	    for (int i = this->received_counter; i < send_size and received < maxget; i++) {
 		int orb_ix = this->orb_ix_map[my_rank][i];
 		Orbital &phi_i = (*this->orbitals)[orb_ix];
-		already_received++;
-		if (already_received > this->received_counter) {
-		    this->received_orbital_index.push_back(orb_ix);
-		    this->received_orbitals.push_back(phi_i);
-		    this->received_counter++;
-		    received++;
-		}
+		this->received_orbital_index.push_back(orb_ix);
+		this->received_orbitals.push_back(phi_i);
+		this->received_counter++;
+		received++;
 	    }
 	} else {
 
@@ -111,58 +106,46 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 	    // highest mpi rank send first receive after, the other does the opposite
 	    if(my_rank > other_rank) {
 		//send
-		for (int i = 0; i < send_size and IamSender  and  sent < maxget; i++) {
+		for (int i = this->sent_counter; i < send_size and IamSender  and  sent < maxget; i++) {
 		    int tag = this->orbitals->size()*this->iter + i;
 		    int orb_ix = this->orb_ix_map[my_rank][i];
 		    Orbital &phi_i = (*this->orbitals)[orb_ix];
-		    already_sent++;
-		    if (already_sent > this->sent_counter) {
-			mpi::send_orbital(phi_i, other_rank, tag);
-			this->sent_counter++;//total to other_rank
-			sent++;//this call
-		    }
+		    mpi::send_orbital(phi_i, other_rank, tag);
+		    this->sent_counter++;//total to other_rank
+		    sent++;//this call
 		}
 		//receive
-		for (int i = 0; i < recv_size and IamReceiver and received < maxget; i++) {
+		for (int i = this->received_counter; i < recv_size and IamReceiver and received < maxget; i++) {
 		    int tag = this->orbitals->size()*this->iter + i;
 		    int orb_ix = this->orb_ix_map[other_rank][i];
 		    Orbital &phi_i = (*this->orbitals)[orb_ix];
-		    already_received++;
-		    if (already_received>this->received_counter) {
-			mpi::recv_orbital(phi_i, other_rank, tag);
-			this->received_orbital_index.push_back(orb_ix);
-			this->received_orbitals.push_back(phi_i);
-			this->received_counter++;//total from other_rank
-			received++;//this call
-		    }
+		    mpi::recv_orbital(phi_i, other_rank, tag);
+		    this->received_orbital_index.push_back(orb_ix);
+		    this->received_orbitals.push_back(phi_i);
+		    this->received_counter++;//total from other_rank
+		    received++;//this call
 		}
 	    } else {
 		//my_rank < other_rank   -> receive first, send after
 		//receive
-		for (int i = 0; i < recv_size and IamReceiver and received < maxget; i++) {
+		for (int i = this->received_counter; i < recv_size and IamReceiver and received < maxget; i++) {
 		    int tag = this->orbitals->size()*this->iter + i;
 		    int orb_ix = this->orb_ix_map[other_rank][i];
 		    Orbital &phi_i = (*this->orbitals)[orb_ix];
-		    already_received++;
-		    if (already_received>this->received_counter) {
-			mpi::recv_orbital(phi_i, other_rank, tag);
-			this->received_orbital_index.push_back(orb_ix);
-			this->received_orbitals.push_back(phi_i);
-			this->received_counter++;//total from other_rank
-			received++;//this call
-		    }
+		    mpi::recv_orbital(phi_i, other_rank, tag);
+		    this->received_orbital_index.push_back(orb_ix);
+		    this->received_orbitals.push_back(phi_i);
+		    this->received_counter++;//total from other_rank
+		    received++;//this call
 		}
 		//send
-		for (int i = 0; i < send_size and IamSender and sent < maxget; i++) {
+		for (int i = this->sent_counter; i < send_size and IamSender and sent < maxget; i++) {
 		    int tag = this->orbitals->size()*this->iter + i;
 		    int orb_ix = this->orb_ix_map[my_rank][i];
 		    Orbital &phi_i = (*this->orbitals)[orb_ix];
-		    already_sent++;
-		    if (already_sent > this->sent_counter) {
-			mpi::send_orbital(phi_i, other_rank, tag);
-			this->sent_counter++;//total to other_rank
-			sent++;//this call
-		    }
+		    mpi::send_orbital(phi_i, other_rank, tag);
+		    this->sent_counter++;//total to other_rank
+		    sent++;//this call
 		}
 
 	    }
