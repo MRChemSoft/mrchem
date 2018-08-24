@@ -183,147 +183,59 @@ void ExchangePotential::setupInternal(double prec) {
     Timer timer;
     // Diagonal must come first because it's NOT in-place
     for (int i = 0; i < Phi.size(); i++) {
-	Orbital &phi_i = (*this->orbitals)[i];
-	calcInternal(phi_i, i);
+	calcInternal(i);
     }
     // Off-diagonal must come last because it IS in-place
     OrbitalIterator iter(Phi);
-    while (iter.next()) {
-	for (int i = 0; i < iter.get_size(); i++) {
-	    Orbital &phi_i = iter.get_orbital(i);
-	    int idx = iter.get_idx(i);
-	    //for (int j = 0; j < i; j++) {
-	    //for now we compute every element, and do not use symmetri
+    Orbital Ex_rcv;
+    while (iter.next(true, 1)) { //NB: get only one orbital at a time
+	if(iter.get_size()>0){
+	    Orbital &phi_i = iter.get_orbital(0);
+	    int idx = iter.get_idx(0);
 	    for (int j = 0; j < Phi.size(); j++) {
+		if(mpi::my_orb(phi_i) and j <= idx) continue; //compute only i<j for own block
 		Orbital &phi_j = (*this->orbitals)[j];
-		if (!mpi::my_orb(phi_j) or idx==j) continue;
-		calcInternal(phi_i, phi_j, idx, j);
+		if (mpi::my_orb(phi_j)) calcInternal(idx, j, phi_i, phi_j);
+	    }
+	    //must send exchange_i to owner and receive exchange computed by other
+	    if (iter.get_step(0) and !mpi::my_orb(phi_i)) mpi::send_orbital(Ex[idx], phi_i.rankID(), idx);
+
+	    if (iter.get_sent_size()) {
+		//get exchange from where we sent orbital to
+		int idx_sent = iter.get_idx_sent(0);
+		int sent_rank =iter.get_mpirank_sent(0);
+		mpi::recv_orbital(Ex_rcv, sent_rank, idx_sent);
+		Ex[idx_sent].add(1.0, Ex_rcv);
+	    }
+
+	    if (!iter.get_step(0) and !mpi::my_orb(phi_i))mpi::send_orbital(Ex[idx], phi_i.rankID(), idx);
+	    if(!mpi::my_orb(Ex[idx]))Ex[idx].clear();
+	} else {
+	    if (iter.get_sent_size()) { //must receive exchange computed by other
+		//get exchange from where we sent orbital to
+		int idx_sent = iter.get_idx_sent(0);
+		int sent_rank =iter.get_mpirank_sent(0);
+		mpi::recv_orbital(Ex_rcv, sent_rank, idx_sent);
+		Ex[idx_sent].add(1.0, Ex_rcv);
 	    }
 	}
+	Ex_rcv.free();//needed?
     }
 
     int n = 0;
     // Collect info from the calculation
     for (int i = 0; i < Phi.size(); i++) {
-        this->tot_norms(i) = Ex[i].norm();
+        if(mpi::my_orb(Phi[i])) this->tot_norms(i) = Ex[i].norm();
         n += Ex[i].getNNodes();
     }
+
+    mpi::allreduce_vector(this->tot_norms, mpi::comm_orb);//to be checked
+    mpi::allreduce_matrix(this->part_norms, mpi::comm_orb); //to be checked
 
     timer.stop();
     double t = timer.getWallTime();
     Printer::printTree(0, "Hartree-Fock exchange", n, t);
-/*
-#ifdef HAVE_MPI
 
-	//use symmetri
-	//send one orbital at a time
-	MPI_Request request=MPI_REQUEST_NULL;
-	MPI_Status status;
-	//has to distribute the calculations evenly among processors
-	OrbitalVector orbVecChunk_i(0); //to store adresses of own i_orbs
-	OrbitalVector rcvOrbs(0);       //to store adresses of received orbitals
-	vector<int> orbsIx;             //to store own orbital indices
-	int rcvOrbsIx[workOrbVecSize];  //to store received orbital indices
-
-	int sndtoMPI[workOrbVecSize];   //to store rank of MPI where orbitals were sent
-	int sndOrbIx[workOrbVecSize];   //to store indices of where orbitals were sent
-
-	//make vector with adresses of own orbitals
-	for (int Ix = mpiOrbRank;  Ix < nOrbs; Ix += mpiOrbSize) {
-	    orbVecChunk_i.push_back(this->orbitals->getOrbital(Ix));//i orbitals
-	    orbsIx.push_back(Ix);
-	}
-
-	OrbitalAdder add(-1.0, this->max_scale);
-	for (int i = 0; i < workOrbVecSize; i++) sndtoMPI[i]=-1;//init
-	int mpiiter = 0;
-	for (int iter = 0;  iter >= 0; iter++) {
-	    mpiiter++;
-	    //get a new chunk from other processes
-	    sndOrbIx[0] = 0;//init
-	    sndtoMPI[0] = -1;//init
-	    orbVecChunk_i.getOrbVecChunk_sym(orbsIx, rcvOrbs, rcvOrbsIx, nOrbs, iter, sndtoMPI, sndOrbIx,1,2);
-	    int rcv_left = 1;//normally we get one phi_jji per ii, maybe none
-	    if (sndtoMPI[0] < 0 or sndtoMPI[0] == mpiOrbRank) rcv_left = 0;//we haven't sent anything, will not receive anything back
-	    //convention: all indices with "i" are owned locally
-	    for (int ii = 0; ii < orbVecChunk_i.size()+1 ; ii++){ //we may have to do one extra iteration to fetch all data
-		int j = 0; //because we limited the size in getOrbVecChunk_sym to 1
-		int i = ii;
-		if (ii >= orbVecChunk_i.size()) i = 0; //so that phi_i is defined, but will not be used
-
-		Orbital &phi_i = orbVecChunk_i.getOrbital(i);
-		Orbital *phi_iij = new Orbital(phi_i);
-		int i_rcv = sndOrbIx[j];
-		Orbital &phi_i_rcv = this->orbitals->getOrbital(i_rcv);
-		Orbital *phi_jji_rcv = new Orbital(phi_i_rcv);
-		if (rcvOrbs.size() > 0 and ii < orbVecChunk_i.size()) {
-		    if (orbsIx[i] == rcvOrbsIx[j]) {
-			//orbital should be own and i and j point to same orbital
-			calcInternal(orbsIx[i]);
-		    } else {
-			Orbital &phi_j = rcvOrbs.getOrbital(j);
-			if (rcvOrbsIx[j]%mpiOrbSize != mpiOrbRank) {
-			    calcInternal(orbsIx[i], rcvOrbsIx[j], phi_i, phi_j, phi_iij);
-			    //we send back the locally computed result to where j came from
-			    phi_iij->setOccupancy(orbsIx[i]);//We temporarily use Occupancy to send Orbital rank
-			    phi_iij->setSpin(orbVecChunk_i.size()-i-1);//We temporarily use Spin to send info about number of transfers left
-			    phi_iij->setError( this->part_norms(rcvOrbsIx[j],orbsIx[i]));//We temporarily use Error to send part_norm
-			    phi_iij->Isend_Orbital(rcvOrbsIx[j]%mpiOrbSize, mpiiter%10, request);
-			} else {
-			    //only compute j < i in own block
-			    if (rcvOrbsIx[j] < orbsIx[i]) calcInternal(orbsIx[i], rcvOrbsIx[j], phi_i, phi_j, phi_iij);
-			}
-		    }
-		}
-		if (rcv_left > 0) {
-		    //we expect to receive data
-		    phi_jji_rcv->Rcv_Orbital(sndtoMPI[j], mpiiter%10);//we get back phi_jji from where we sent i
-		}
-		if (rcvOrbsIx[j]%mpiOrbSize != mpiOrbRank and rcvOrbs.size() > 0 and ii < orbVecChunk_i.size()){
-		    MPI_Wait(&request, &status);//do not continue before isend is finished
-		}
-		if (rcv_left > 0) {
-		    // phi_jji_rcv is ready
-		    int i_rcv = sndOrbIx[j];
-		    int j_rcv = phi_jji_rcv->getOccupancy();//occupancy was used to send rank!
-		    rcv_left = phi_jji_rcv->getSpin();//occupancy was used to send number of transfers left!
-		    if (i_rcv!=j_rcv) {
-			phi_jji_rcv->setOccupancy(this->orbitals->getOrbital(j_rcv).getOccupancy());//restablish occupancy
-			phi_jji_rcv->setSpin(this->orbitals->getOrbital(j_rcv).getSpin());//restablish spin
-			this->part_norms(i_rcv,j_rcv) = phi_jji_rcv->getError();//does not seem to matter?
-			phi_jji_rcv->setError(this->orbitals->getOrbital(j_rcv).getError());//restablish error
-			//j_rcv and i_rcv are now the active indices j_rcv is the remote orbital
-			// compute x_i_rcv += phi_jji_rcv j_rcv is the remote orbital here i_rcv is what has been used to compute phi_jji_rcv
-			this->part_norms(j_rcv,i_rcv) = sqrt(phi_jji_rcv->getSquareNorm());
-			Orbital &ex_i_rcv = this->exchange.getOrbital(i_rcv);
-			Orbital &phi_j_rcv = this->orbitals->getOrbital(j_rcv);
-			double i_factor_rcv = phi_i_rcv.getExchangeFactor(phi_j_rcv);
-			add.inPlace(ex_i_rcv, i_factor_rcv, *phi_jji_rcv);
-		    }
-		}
-
-		if (phi_jji_rcv != 0) delete phi_jji_rcv;
-		if (phi_iij != 0) delete phi_iij;
-	    }
-	    rcvOrbs.clearVec(false);//reset to zero size orbital vector
-	}
-	orbVecChunk_i.clearVec(false);
-	workOrbVec2.clear();
-
-	for (int i = 0; i < nOrbs; i++) {
-	    if (i%mpiOrbSize == mpiOrbRank) {
-		Orbital &ex_i = this->exchange.getOrbital(i);
-		this->tot_norms(i) = sqrt(ex_i.getSquareNorm());
-		n = max(n, ex_i.getNNodes());
-	    } else {
-		this->tot_norms(i) = 0.0;
-	    }
-	}
-	//tot_norms are used for screening. Since we use symmetri, we might need factors from others
-	MPI_Allreduce(MPI_IN_PLACE, &this->tot_norms(0), nOrbs, MPI_DOUBLE, MPI_SUM, mpi::comm_orb);
-#endif
-    }
-*/
 }
 
 /** @brief Computes the diagonal part of the internal exchange potential
@@ -333,44 +245,8 @@ void ExchangePotential::setupInternal(double prec) {
  * The diagonal term K_ii is computed.
  */
 void ExchangePotential::calcInternal(int i) {
-    double prec = std::min(getScaledPrecision(i,i), 1.0e-1);
 
     Orbital &phi_i = (*this->orbitals)[i];
-    mrcpp::PoissonOperator &P = *this->poisson;
-
-    // compute phi_ii = phi_i^dag * phi_i
-    Orbital phi_ii = orbital::multiply(phi_i.dagger(), phi_i, prec);
-
-    // compute V_ii = P[phi_ii]
-    Orbital V_ii = phi_i.paramCopy();
-    if (phi_ii.hasReal()) {
-        V_ii.alloc(NUMBER::Real);
-        mrcpp::apply(prec, V_ii.real(), P, phi_ii.real());
-    }
-    if (phi_ii.hasImag()) {
-        V_ii.alloc(NUMBER::Imag);
-        mrcpp::apply(prec, V_ii.imag(), P, phi_ii.imag());
-    }
-    phi_ii.free();
-
-    // compute phi_iii = phi_i * V_ii
-    Orbital phi_iii = orbital::multiply(phi_i, V_ii, prec);
-    phi_iii.rescale(1.0/phi_i.squaredNorm());
-    this->part_norms(i,i) = phi_iii.norm();
-    V_ii.free();
-
-    this->exchange.push_back(phi_iii);
-}
-
-
-/** @brief Computes the diagonal part of the internal exchange potential
- *
- *  \param[in] i orbital index
- *
- * The diagonal term K_ii is computed.
- */
-void ExchangePotential::calcInternal(Orbital &phi_i, int i) {
-
     if(mpi::my_orb(phi_i)){
 	double prec = std::min(getScaledPrecision(i,i), 1.0e-1);
 
@@ -416,75 +292,7 @@ void ExchangePotential::calcInternal(Orbital &phi_i, int i) {
  *
  * The off-diagonal terms K_ij and K_ji are computed.
  */
-void ExchangePotential::calcInternal(int i, int j) {
-    mrcpp::PoissonOperator &P = *this->poisson;
-    OrbitalVector &Phi = *this->orbitals;
-    OrbitalVector &Ex = this->exchange;
-
-    if (i == j) MSG_FATAL("Cannot handle diagonal term");
-    if (Ex.size() != Phi.size()) MSG_FATAL("Size mismatch");
-    if (Phi[i].hasImag() or Phi[j].hasImag()) MSG_FATAL("Orbitals must be real");
-
-    double i_fac = getSpinFactor(Phi[i], Phi[j]);
-    double j_fac = getSpinFactor(Phi[j], Phi[i]);
-
-    double thrs = mrcpp::MachineZero;
-    if (std::abs(i_fac) < thrs or std::abs(j_fac) < thrs) {
-        this->part_norms(i,j) = 0.0;
-        return;
-    }
-
-    // set correctly scaled precision for components ij and ji
-    double prec = std::min(getScaledPrecision(i,j), getScaledPrecision(j,i));
-    if (prec > 1.0e00) return;      // orbital does not contribute within the threshold
-    prec = std::min(prec, 1.0e-1);  // very low precision does not work properly
-
-    // compute phi_ij = phi_i^dag * phi_j (dagger NOT used, orbitals must be real!)
-    Orbital phi_ij = orbital::multiply(Phi[i], Phi[j], prec);
-
-    // compute V_ij = P[phi_ij]
-    Orbital V_ij = Phi[i].paramCopy();
-    if (phi_ij.hasReal()) {
-        V_ij.alloc(NUMBER::Real);
-        mrcpp::apply(prec, V_ij.real(), P, phi_ij.real());
-    }
-    if (phi_ij.hasImag()) {
-        MSG_FATAL("Orbitals must be real");
-        V_ij.alloc(NUMBER::Imag);
-        mrcpp::apply(prec, V_ij.imag(), P, phi_ij.imag());
-    }
-    phi_ij.free();
-
-    // compute phi_jij = phi_j * V_ij
-    Orbital phi_jij = orbital::multiply(Phi[j], V_ij, prec);
-    phi_jij.rescale(1.0/Phi[j].squaredNorm());
-    this->part_norms(j,i) = phi_jij.norm();
-
-    // compute phi_iij = phi_i * V_ij
-    Orbital phi_iij = orbital::multiply(Phi[i], V_ij, prec);
-    phi_jij.rescale(1.0/Phi[i].squaredNorm()); //BUG? should be phi_iij.rescale ?
-    this->part_norms(i,j) = phi_iij.norm();
-
-    V_ij.free();
-
-    // compute x_i += phi_jij
-    Ex[i].add(i_fac, phi_jij);
-    phi_jij.free();
-
-    // compute x_j += phi_iij
-    Ex[j].add(j_fac, phi_iij);
-    phi_iij.free();
-}
-
-
-/** @brief computes the off-diagonal part of the exchange potential
- *
- *  \param[in] i first orbital index
- *  \param[in] j second orbital index
- *
- * The off-diagonal terms K_ij and K_ji are computed.
- */
-void ExchangePotential::calcInternal(Orbital &phi_i, Orbital &phi_j, int i, int j) {
+void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j) {
     mrcpp::PoissonOperator &P = *this->poisson;
     OrbitalVector &Phi = *this->orbitals;
     OrbitalVector &Ex = this->exchange;
@@ -524,10 +332,9 @@ void ExchangePotential::calcInternal(Orbital &phi_i, Orbital &phi_j, int i, int 
     phi_ij.free();
 
     // compute phi_jij = phi_j * V_ij
-    //PW NB: we do not take advantage of symmetri!
-    //PW       Orbital phi_jij = orbital::multiply(phi_j, V_ij, prec);
-    //PW    phi_jij.rescale(1.0/phi_j.squaredNorm());
-    //PW    this->part_norms(j,i) = phi_jij.norm();
+    Orbital phi_jij = orbital::multiply(phi_j, V_ij, prec);
+    phi_jij.rescale(1.0/phi_j.squaredNorm());
+    this->part_norms(j,i) = phi_jij.norm();
 
     // compute phi_iij = phi_i * V_ij
     Orbital phi_iij = orbital::multiply(phi_i, V_ij, prec);
@@ -537,162 +344,16 @@ void ExchangePotential::calcInternal(Orbital &phi_i, Orbital &phi_j, int i, int 
     V_ij.free();
 
     // compute x_i += phi_jij
-    //PW NB: we do not take advantage of symmetri!
-    //PW   Ex[i].add(i_fac, phi_jij);
-    //PW  phi_jij.free();
+    Ex[i].add(i_fac, phi_jij);
+    phi_jij.free();
 
     // compute x_j += phi_iij
     Ex[j].add(j_fac, phi_iij);
     phi_iij.free();
 
     //PW set rankID. Should be put elsewhere?
-    //PW Ex[i].setRankId(mpi::orb_rank);
-    Ex[j].setRankId(mpi::orb_rank);
-}
-
-/** @brief computes the off-diagonal part of the exchange potential for own orbitals
- *  \param[in] i first orbital index
- *  \param[in] j second orbital index
- *
- * The off-diagonal term X_ij is computed.
- */
-void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j) {
-    NOT_IMPLEMENTED_ABORT;
-    /* waiting for MPI version
-    //NB: this routine only compute ex_i, never ex_j
-    OrbitalAdder add(-1.0, this->max_scale);
-    OrbitalMultiplier mult(-1.0, this->max_scale);
-    MWConvolution<3> apply(-1.0, this->max_scale);
-
-    PoissonOperator &P = *this->poisson;
-
-    double i_factor = phi_i.getExchangeFactor(phi_j);
-    double j_factor = phi_j.getExchangeFactor(phi_i);
-    if (IS_EQUAL(i_factor, 0.0) or IS_EQUAL(j_factor, 0.0)) {
-        this->part_norms(i,j) = 0.0;
-        return;
-    }
-
-    double prec = std::min(getScaledPrecision(i, j), getScaledPrecision(j, i));
-
-    if (prec > 1.0e00) return;
-    prec = min(prec, 1.0e-1);
-
-    mult.setPrecision(prec);
-    apply.setPrecision(prec);
-
-    // compute phi_ij = phi_i^dag * phi_j
-    Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
-
-    // compute V_ij = P[phi_ij]
-    Orbital *V_ij = new Orbital(phi_i);
-    if (phi_ij->hasReal()) {
-        V_ij->allocReal();
-        apply(V_ij->real(), P, phi_ij->real());
-    }
-    if (phi_ij->hasImag()) {
-        V_ij->allocImag();
-        apply(V_ij->imag(), P, phi_ij->imag());
-    }
-    if (phi_ij != 0) delete phi_ij;
-
-    // compute phi_jij = phi_j * V_ij
-    double fac_jij = -(this->x_factor/phi_j.getSquareNorm());
-    Orbital *phi_jij = new Orbital(phi_i);
-    mult(*phi_jij, fac_jij, *V_ij, phi_j);
-    this->part_norms(j,i) = sqrt(phi_jij->getSquareNorm());
-
-    //part_norms(i,j) MUST be computed to use for symmetric screening
-    // compute phi_iij = phi_i * V_ij
-    Orbital *phi_iij = new Orbital(phi_i);
-    double fac_iij = -(this->x_factor/phi_i.getSquareNorm());
-    mult.adjoint(*phi_iij, fac_iij, *V_ij, phi_i);
-    this->part_norms(i,j) = sqrt(phi_iij->getSquareNorm());
-    if (phi_iij != 0) delete phi_iij;
-
-    if (V_ij != 0) delete V_ij;
-
-    // compute x_i += phi_jij
-    Orbital &ex_i = this->exchange.getOrbital(i);
-    add.inPlace(ex_i, i_factor, *phi_jij);
-    if (phi_jij != 0) delete phi_jij;
-    */
-}
-
-/** @brief computes the off-diagonal part of the exchange potential for own orbitals
- *  and return V_ij for further use
- *  \param[in] i first orbital index
- *  \param[in] j second orbital index
- *
- * The off-diagonal term X_ij is computed.
- */
-void ExchangePotential::calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j, Orbital* phi_iij) {
-    NOT_IMPLEMENTED_ABORT;
-    /* wait for MPI version
-    //to check: adjoint or not?
-    OrbitalAdder add(-1.0, this->max_scale);
-    OrbitalMultiplier mult(-1.0, this->max_scale);
-    MWConvolution<3> apply(-1.0, this->max_scale);
-
-    PoissonOperator &P = *this->poisson;
-
-    double i_factor = phi_i.getExchangeFactor(phi_j);
-    double j_factor = phi_j.getExchangeFactor(phi_i);
-    if (IS_EQUAL(i_factor, 0.0) or IS_EQUAL(j_factor, 0.0)) {
-        this->part_norms(i,j) = 0.0;
-        return;
-    }
-
-    double prec = std::min(getScaledPrecision(i, j), getScaledPrecision(j, i));
-    if (prec > 1.0e00) return;
-    prec = min(prec, 1.0e-1);
-
-    mult.setPrecision(prec);
-    apply.setPrecision(prec);
-
-    // compute phi_ij = phi_i^dag * phi_j
-    Orbital *phi_ij = new Orbital(phi_i);
-    mult.adjoint(*phi_ij, 1.0, phi_i, phi_j);
-
-    // compute V_ij = P[phi_ij]
-    Orbital *V_ij = new Orbital(phi_i);
-    if (phi_ij->hasReal()) {
-        V_ij->allocReal();
-        apply(V_ij->real(), P, phi_ij->real());
-    }
-    if (phi_ij->hasImag()) {
-        V_ij->allocImag();
-        apply(V_ij->imag(), P, phi_ij->imag());
-    }
-    if (phi_ij != 0) delete phi_ij;
-
-    // compute phi_jij = phi_j * V_ij
-    double fac_jij = -(this->x_factor/phi_j.getSquareNorm());
-    Orbital *phi_jij = new Orbital(phi_i);
-    mult(*phi_jij, fac_jij, *V_ij, phi_j);
-    this->part_norms(j,i) = sqrt(phi_jij->getSquareNorm());
-
-    // compute x_i += phi_jij
-    Orbital &ex_i = this->exchange.getOrbital(i);
-    add.inPlace(ex_i, i_factor, *phi_jij);
-    if (phi_jij != 0) delete phi_jij;
-
-    //part_norms(i,j) MUST be computed to use for symmetric screening
-    // compute phi_iij = phi_i * V_ij
-    double fac_iij = -(this->x_factor/phi_i.getSquareNorm());
-    mult.adjoint(*phi_iij, fac_iij, *V_ij, phi_i);
-    this->part_norms(i,j) = sqrt(phi_iij->getSquareNorm());
-
-    if (V_ij != 0) delete V_ij;
-
-    //This part (phi_iij) is sent to owner of j orbital if it is on another MPI
-    if (j%mpiOrbSize == mpiOrbRank) {
-	// compute x_j += phi_iij
-        Orbital &ex_j = this->exchange.getOrbital(j);
-        add.inPlace(ex_j, j_factor, *phi_iij);
-    }
-    */
+    Ex[i].setRankId(phi_i.rankID());
+    Ex[j].setRankId(phi_j.rankID());
 }
 
 /** @brief Test if a given contribution has been precomputed

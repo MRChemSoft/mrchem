@@ -53,11 +53,7 @@ protected:
     Orbital calcExchange(Orbital phi_p);
 
     void calcInternal(int i);
-    void calcInternal(int i, int j);
-    void calcInternal(Orbital &phi_i, Orbital &phi_j, int i, int j);
-    void calcInternal(Orbital &phi_i, int i);
     void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j);
-    void calcInternal(int i, int j, Orbital &phi_i, Orbital &phi_j, Orbital *V_ij );
 };
 
 } //namespace mrchem

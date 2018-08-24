@@ -41,6 +41,9 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
     //NB: for now we completely delete orbitals at each iteration. Could reuse the memory in next iteration.
     this->received_orbital_index.clear();
     this->received_orbitals.clear();
+    this->sent_orbital_index.clear();
+    this->sent_orbital_mpirank.clear();
+    this->rcv_step.clear();
 
     if (this->iter >= mpi::orb_size) {
         // We have talked to all MPIs -> return
@@ -83,6 +86,7 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 	    for (int i = this->received_counter; i < send_size and received < maxget; i++) {
 		int orb_ix = this->orb_ix_map[my_rank][i];
 		Orbital &phi_i = (*this->orbitals)[orb_ix];
+		this->rcv_step.push_back(step);
 		this->received_orbital_index.push_back(orb_ix);
 		this->received_orbitals.push_back(phi_i);
 		this->received_counter++;
@@ -96,7 +100,8 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 		//(my_rank + other_rank )%2 flips each time other_rank changes by one
 		//(my_rank < other_rank) ensures that my_rank and other_rank are opposite
 		// my_rank = other_rank must correspond to a receive (since it implicitely means extra work later on)
-		if ((my_rank + other_rank + (my_rank < other_rank))%2) {
+		// NB: must take care that if at one step other_rank == my_rank, the other step must not be a receive!! not trivial
+		if ((my_rank + other_rank + (my_rank > other_rank))%2) {
 		    IamReceiver = false;
 		} else {
 		    IamSender   = false;
@@ -111,6 +116,8 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 		    int orb_ix = this->orb_ix_map[my_rank][i];
 		    Orbital &phi_i = (*this->orbitals)[orb_ix];
 		    mpi::send_orbital(phi_i, other_rank, tag);
+		    this->sent_orbital_index.push_back(orb_ix);
+		    this->sent_orbital_mpirank.push_back(other_rank);
 		    this->sent_counter++;//total to other_rank
 		    sent++;//this call
 		}
@@ -122,6 +129,7 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 		    mpi::recv_orbital(phi_i, other_rank, tag);
 		    this->received_orbital_index.push_back(orb_ix);
 		    this->received_orbitals.push_back(phi_i);
+		    this->rcv_step.push_back(step);
 		    this->received_counter++;//total from other_rank
 		    received++;//this call
 		}
@@ -135,6 +143,7 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 		    mpi::recv_orbital(phi_i, other_rank, tag);
 		    this->received_orbital_index.push_back(orb_ix);
 		    this->received_orbitals.push_back(phi_i);
+		    this->rcv_step.push_back(step);
 		    this->received_counter++;//total from other_rank
 		    received++;//this call
 		}
@@ -144,6 +153,8 @@ bool OrbitalIterator::next( bool symmetric, int max_recv ) {
 		    int orb_ix = this->orb_ix_map[my_rank][i];
 		    Orbital &phi_i = (*this->orbitals)[orb_ix];
 		    mpi::send_orbital(phi_i, other_rank, tag);
+		    this->sent_orbital_index.push_back(orb_ix);
+		    this->sent_orbital_mpirank.push_back(other_rank);
 		    this->sent_counter++;//total to other_rank
 		    sent++;//this call
 		}
