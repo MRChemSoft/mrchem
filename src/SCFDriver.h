@@ -1,10 +1,10 @@
 #pragma once
 
-#include "qmoperators.h"
-
-#include "mrdft/XCFunctional.h"
-
 class Getkw;
+
+namespace mrdft {
+class XCFunctional;
+}
 
 namespace mrchem {
 
@@ -28,11 +28,14 @@ class KineticOperator;
 class NuclearOperator;
 class ExchangeOperator;
 class XCOperator;
-class XCFunctional;
 class ElectricFieldOperator;
 class MagneticFieldOperator;
 
-class ResponseCalculation  final {
+class RankZeroTensorOperator;
+template<int I> class RankOneTensorOperator;
+template<int I, int J> class RankTwoTensorOperator;
+
+class ResponseCalculation final {
 public:
     ResponseCalculation(RankOneTensorOperator<3> *h, double w, bool im, int d)
         : pert(h), freq(w), imag(im), dir(d) { }

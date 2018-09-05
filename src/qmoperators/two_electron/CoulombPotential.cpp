@@ -2,8 +2,10 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "Density.h"
 #include "CoulombPotential.h"
+#include "Orbital.h"
+#include "orbital_utils.h"
+#include "density_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::PoissonOperator;

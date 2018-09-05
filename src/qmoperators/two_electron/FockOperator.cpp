@@ -1,7 +1,8 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "Density.h"
+#include "Orbital.h"
+#include "orbital_utils.h"
 #include "FockOperator.h"
 #include "KineticOperator.h"
 #include "NuclearOperator.h"

@@ -2,8 +2,10 @@
 
 #include "mrchem.h"
 #include "Orbital.h"
-#include "HydrogenFunction.h"
+#include "orbital_utils.h"
 #include "Density.h"
+#include "density_utils.h"
+#include "HydrogenFunction.h"
 
 using namespace mrchem;
 

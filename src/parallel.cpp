@@ -3,6 +3,9 @@
 
 #include "parallel.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
+#include "Density.h"
+#include "density_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

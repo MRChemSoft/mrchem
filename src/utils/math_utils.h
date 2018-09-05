@@ -1,3 +1,5 @@
+#pragma once
+
 #include "mrchem.h"
 
 /** @file math_utils.h

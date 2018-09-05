@@ -2,7 +2,6 @@
 
 #include "MRCPP/Printer"
 
-#include "qmfunction_utils.h"
 #include "qmoperators.h"
 
 /** @class QMOperator
@@ -25,6 +24,8 @@
  *
  */
 namespace mrchem {
+
+class Orbital;
 
 class QMOperator {
 public:

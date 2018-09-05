@@ -9,6 +9,7 @@
 
 #include "Molecule.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;

@@ -16,6 +16,8 @@
 
 namespace mrchem {
 
+class OrbitalVector;
+
 class ExchangeOperator final : public RankZeroTensorOperator {
 public:
  ExchangeOperator(mrcpp::PoissonOperator &P, OrbitalVector &Phi, double xFac = 1.0)

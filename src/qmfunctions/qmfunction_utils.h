@@ -4,21 +4,11 @@
 
 namespace mrchem {
 
-namespace SPIN { enum type { Paired, Alpha, Beta }; }
-namespace NUMBER { enum type { Total, Real, Imag }; }
-namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
-
+/* The following container classes are defined as derived classes rather than
+ * typedefs in order to be able to forward declare them. */
 
 class QMFunction;
-typedef std::vector<std::tuple<double,QMFunction> > QMFunctionVector;
-
-class Orbital;
-typedef std::vector<Orbital> OrbitalVector;
-typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
-
-class Density;
-typedef std::vector<Density> DensityVector;
-typedef std::vector<std::tuple<int, Density> > DensityChunk;
+class QMFunctionVector final : public std::vector<std::tuple<double, QMFunction> > { };
 
 namespace qmfunction {
     

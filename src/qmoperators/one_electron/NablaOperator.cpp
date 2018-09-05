@@ -3,6 +3,8 @@
 #include "MRCPP/Timer"
 
 #include "NablaOperator.h"
+#include "Orbital.h"
+#include "orbital_utils.h"
 
 using mrcpp::DerivativeOperator;
 using mrcpp::FunctionTree;

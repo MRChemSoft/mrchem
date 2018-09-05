@@ -1,12 +1,8 @@
-#include <csignal>
-#include <iostream>
-#include <cstdlib>
-#include "Nucleus.h"
-#include "math_utils.h"
 #include "chem_utils.h"
+#include "Nucleus.h"
+#include "utils/math_utils.h"
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief computes the repulsion self energy of a set of nuclei
  * 
@@ -31,5 +27,4 @@ double compute_nuclear_repulsion(const Nuclei &nucs) {
     return E_nuc;
 }
 
-    
 } //namespace mrchem

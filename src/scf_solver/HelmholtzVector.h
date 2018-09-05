@@ -1,7 +1,6 @@
 #pragma once
 
-#include "qmoperators.h"
-#include "qmfunction_utils.h"
+#include "mrchem.h"
 
 /** @class HelmholtzVector
  *
@@ -13,6 +12,9 @@
  */
 
 namespace mrchem {
+
+class Orbital;
+class OrbitalVector;
 
 class HelmholtzVector final {
 public:

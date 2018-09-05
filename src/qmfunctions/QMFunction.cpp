@@ -26,21 +26,21 @@ void QMFunction::alloc(int type) {
 
 void QMFunction::clear(int type) {
     if (type == NUMBER::Real or type == NUMBER::Total) {
-        this->re = 0;
+        this->re = nullptr;
     }
     if (type == NUMBER::Imag or type == NUMBER::Total) {
-        this->im = 0;
+        this->im = nullptr;
     }
 }
 
 void QMFunction::free(int type) {
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (this->hasReal()) delete this->re;
-        this->re = 0;
+        this->re = nullptr;
     }
     if (type == NUMBER::Imag or type == NUMBER::Total) {
         if (this->hasImag()) delete this->im;
-        this->im = 0;
+        this->im = nullptr;
     }
 }
 

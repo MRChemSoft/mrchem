@@ -3,14 +3,11 @@
 #include "MRCPP/Gaussians"
 
 #include "parallel.h"
-#include "utils/math_utils.h"
-#include "utils/RRMaximizer.h"
 
 #include "Density.h"
-#include "Orbital.h"
-#include "qmfunction_utils.h"
-#include "orbital_utils.h"
 #include "density_utils.h"
+#include "Orbital.h"
+#include "orbital_utils.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;

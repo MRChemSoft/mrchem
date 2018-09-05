@@ -6,6 +6,7 @@
 #include "FockOperator.h"
 #include "Accelerator.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

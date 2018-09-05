@@ -1,7 +1,5 @@
 #pragma once
 
-#include "qmfunction_utils.h"
-
 /** @file sad.h
  *
  * @brief Module for generating initial guess as superposition of atomic densities
@@ -11,6 +9,8 @@
  */
 
 namespace mrchem {
+
+class OrbitalVector;
 class Molecule;
 
 namespace initial_guess {

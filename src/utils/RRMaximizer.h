@@ -1,6 +1,6 @@
-#include "utils/NonlinearMaximizer.h"
+#pragma once
 
-#include "qmfunction_utils.h"
+#include "NonlinearMaximizer.h"
 
 /** subclass which defines the particular Gradient and Hessian
  * and other specific functions for a maximization of
@@ -11,6 +11,8 @@
  */
 
 namespace mrchem {
+
+class OrbitalVector;
 
 class RRMaximizer final : public NonlinearMaximizer {
 public:

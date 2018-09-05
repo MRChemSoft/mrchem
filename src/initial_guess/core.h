@@ -1,7 +1,5 @@
 #pragma once
 
-#include "qmfunction_utils.h"
-
 /** @file core.h
  *
  * @brief Module for generating initial guess of hydrogen functions
@@ -11,6 +9,8 @@
  */
 
 namespace mrchem {
+
+class OrbitalVector;
 class Molecule;
 class Nuclei;
 

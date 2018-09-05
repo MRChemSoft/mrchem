@@ -1,5 +1,6 @@
+#pragma once
 
-#include "qmfunction_utils.h"
+#include "orbital_utils.h"
 
 namespace mrchem {
 

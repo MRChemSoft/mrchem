@@ -1,15 +1,17 @@
 #pragma once
 
-#include "qmfunction_utils.h"
+#include "mrchem.h"
 
 namespace mrchem {
 
 class QMFunction {
 public:
-    QMFunction(mrcpp::FunctionTree<3> *r = 0, mrcpp::FunctionTree<3> *i = 0) : re(r), im(i) { }
+    QMFunction(mrcpp::FunctionTree<3> *r = nullptr,
+               mrcpp::FunctionTree<3> *i = nullptr)
+        : re(r), im(i) { }
     QMFunction(const QMFunction &func) : re(func.re), im(func.im) { }
     QMFunction &operator=(const QMFunction &func);
-    virtual ~QMFunction() { }
+    virtual ~QMFunction() = default;
 
     void alloc(int type = NUMBER::Total);
     void clear(int type = NUMBER::Total);
@@ -17,8 +19,8 @@ public:
 
     int getNNodes(int type = NUMBER::Total) const;
 
-    bool hasReal() const { return (this->re == 0) ? false : true; }
-    bool hasImag() const { return (this->im == 0) ? false : true; }
+    bool hasReal() const { return (this->re == nullptr) ? false : true; }
+    bool hasImag() const { return (this->im == nullptr) ? false : true; }
 
     mrcpp::FunctionTree<3> &real() { return *this->re; }
     mrcpp::FunctionTree<3> &imag() { return *this->im; }

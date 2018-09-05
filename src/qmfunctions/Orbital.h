@@ -1,7 +1,6 @@
 #pragma once
 
 #include "QMFunction.h"
-#include "orbital_utils.h" //LUCA Is this kosher?
 
 /** @class Orbital
  *
@@ -22,6 +21,8 @@
  */
 
 namespace mrchem {
+
+class OrbitalVector;
 
 /* POD struct for orbital meta data. Used for simple MPI communication. */
 struct OrbitalMeta {

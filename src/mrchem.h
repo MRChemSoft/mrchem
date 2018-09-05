@@ -37,6 +37,10 @@ namespace MATHCONST {
     const double sqrt_pi =    1.7724538509055160273;
 }
 
+namespace SPIN { enum type { Paired, Alpha, Beta }; }
+namespace NUMBER { enum type { Total, Real, Imag }; }
+namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
+
 typedef std::complex<double> ComplexDouble;
 typedef std::function<double (const double *r)> DoubleFunction;
 typedef std::function<ComplexDouble (const double *r)> ComplexFunction;

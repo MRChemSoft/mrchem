@@ -1,13 +1,8 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "parallel.h"
-#include "utils/math_utils.h"
-#include "utils/RRMaximizer.h"
-
 #include "qmfunction_utils.h"
-#include "Orbital.h"
-#include "OrbitalIterator.h"
+#include "QMFunction.h"
 
 using mrcpp::Timer;
 using mrcpp::Printer;

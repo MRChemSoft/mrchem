@@ -1,7 +1,6 @@
 #pragma once
 
 #include "QMFunction.h"
-#include "density_utils.h"
 
 /** @class Density
  *

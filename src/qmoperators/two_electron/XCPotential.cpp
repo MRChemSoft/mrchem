@@ -3,7 +3,9 @@
 
 #include "XCPotential.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 #include "Density.h"
+#include "density_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;

@@ -36,6 +36,8 @@ namespace mrchem {
 // Convenience typedef
 typedef std::vector<QMOperator *> QMOperatorVector;
 
+class Orbital;
+class OrbitalVector;
 class Nucleus;
 class Nuclei;
  

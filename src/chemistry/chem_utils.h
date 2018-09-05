@@ -2,10 +2,9 @@
 
 #include "mrchem.h"
 
-class Molecule;
-class Nuclei;
-
 namespace mrchem {
+
+class Nuclei;
 
 double compute_nuclear_repulsion(const Nuclei &nucs);
 

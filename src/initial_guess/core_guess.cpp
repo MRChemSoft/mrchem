@@ -8,6 +8,7 @@
 
 #include "Molecule.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 #include "initial_guess/core.h"
 
 Getkw mrchem::Input;

@@ -1,9 +1,11 @@
 #include "MRCPP/Printer"
 
-#include "utils/RRMaximizer.h"
-#include "utils/math_utils.h"
+#include "RRMaximizer.h"
+#include "math_utils.h"
 
 #include "PositionOperator.h"
+#include "Orbital.h"
+#include "orbital_utils.h"
 
 namespace mrchem {
 

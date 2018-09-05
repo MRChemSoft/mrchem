@@ -6,6 +6,7 @@
 #include "ElectricFieldOperator.h"
 #include "Molecule.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 
 using namespace mrchem;
 using namespace orbital;

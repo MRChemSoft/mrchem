@@ -13,6 +13,8 @@
 
 #include "Molecule.h"
 #include "OrbitalIterator.h"
+#include "Orbital.h"
+#include "orbital_utils.h"
 
 #include "NuclearOperator.h"
 #include "KineticOperator.h"

@@ -4,9 +4,12 @@
 
 namespace mrchem {
 
+/* The following container classes are defined as derived classes rather than
+ * typedefs in order to be able to forward declare them. */
+
 class Orbital;
-typedef std::vector<Orbital> OrbitalVector;
-typedef std::vector<std::tuple<int, Orbital> > OrbitalChunk;
+class OrbitalChunk final : public std::vector<std::tuple<int, Orbital> > { };
+class OrbitalVector final : public std::vector<Orbital> { };
 
 namespace orbital {
 

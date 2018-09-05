@@ -1,6 +1,7 @@
 #pragma once
 
 #include "QMOperator.h"
+#include "orbital_utils.h"
 
 namespace mrchem {
 
