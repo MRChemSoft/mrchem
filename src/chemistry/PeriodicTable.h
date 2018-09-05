@@ -12,9 +12,9 @@
 #include <string>
 #include <map>
 
-namespace mrchem {
+#include "chemistry.h"
 
-class Element;
+namespace mrchem {
 
 class PeriodicTable final {
 public:

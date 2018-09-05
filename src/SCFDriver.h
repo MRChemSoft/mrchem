@@ -1,5 +1,9 @@
 #pragma once
 
+#include "chemistry.h"
+#include "qmfunctions.h"
+#include "qmoperators.h"
+
 class Getkw;
 
 namespace mrdft {
@@ -8,8 +12,6 @@ class XCFunctional;
 
 namespace mrchem {
 
-class Nuclei;
-class Molecule;
 class OrbitalOptimizer;
 class EnergyOptimizer;
 class GroundStateSolver;
@@ -21,7 +23,6 @@ class H_E_dip;
 class H_B_dip;
 class H_M_pso;
 
-class QMOperator;
 class FockOperator;
 class CoulombOperator;
 class KineticOperator;
@@ -30,10 +31,6 @@ class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
 class MagneticFieldOperator;
-
-class RankZeroTensorOperator;
-template<int I> class RankOneTensorOperator;
-template<int I, int J> class RankTwoTensorOperator;
 
 class ResponseCalculation final {
 public:

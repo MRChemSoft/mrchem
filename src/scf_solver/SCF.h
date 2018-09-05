@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "mrchem.h"
+#include "qmfunctions.h"
 
 /** @class SCF
  *
@@ -17,7 +17,6 @@
 
 namespace mrchem {
 
-class OrbitalVector;
 class HelmholtzVector;
 class Accelerator;
 class FockOperator;

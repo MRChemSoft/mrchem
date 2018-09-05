@@ -1,17 +1,8 @@
 #pragma once
 
-#include "mrchem.h"
+#include "qmfunctions.h"
 
 namespace mrchem {
-
-/* The following container classes are defined as derived classes rather than
- * typedefs in order to be able to forward declare them. */
-
-class Orbital;
-class OrbitalVector;
-class Density;
-class DensityChunk final : public std::vector<std::tuple<int, Density> > { };
-class DensityVector final : public std::vector<Density> { };
 
 namespace density {
 

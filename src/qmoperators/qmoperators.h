@@ -42,7 +42,7 @@
 
 namespace mrchem {
 
-class QMOperator; 
+class QMOperator;
 class RankZeroTensorOperator;
 template<int I> class RankOneTensorOperator;
 template<int I, int J> class RankTwoTensorOperator;

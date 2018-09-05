@@ -13,7 +13,7 @@ using namespace orbital;
 
 namespace electric_field_operator {
 
-typedef std::tuple<int, int, int> QuantumNumbers;
+using QuantumNumbers = std::tuple<int, int, int>;
     
 TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
     const double prec = 1.0e-4;

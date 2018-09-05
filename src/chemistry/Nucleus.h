@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <iostream>
 
 #include "PeriodicTable.h"
 #include "Element.h"

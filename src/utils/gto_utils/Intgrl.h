@@ -8,8 +8,9 @@
 #include <string>
 #include <iostream>
 
+#include "chemistry.h"
+
 namespace mrchem {
-class Nucleus;
 
 namespace gto_utils {
 class AOBasis;

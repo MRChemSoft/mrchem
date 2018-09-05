@@ -3,7 +3,7 @@
 #include <deque>
 #include <vector>
 
-#include "mrchem.h"
+#include "qmfunctions.h"
 
 /** @class Acccelerator
  *
@@ -24,9 +24,6 @@
  */
 
 namespace mrchem {
-
-class Orbital;
-class OrbitalVector;
 
 class Accelerator {
 public:

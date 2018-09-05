@@ -2,6 +2,9 @@
 
 #include <string>
 
+#include "qmfunctions.h"
+#include "chemistry.h"
+
 /** @file gto.h
  *
  * @brief Module for generating initial guess of GTO molecular orbitals
@@ -12,10 +15,6 @@
  */
 
 namespace mrchem {
-
-class OrbitalVector;
-class Molecule;
-class Nucleus;
 
 namespace gto_utils {
 class OrbitalExp;

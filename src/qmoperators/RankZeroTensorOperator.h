@@ -1,6 +1,8 @@
 #pragma once
 
 #include "QMOperator.h"
+#include "qmfunctions.h"
+#include "chemistry.h"
 
 namespace mrchem {
 
@@ -34,13 +36,8 @@ namespace mrchem {
  */
 
 // Convenience typedef
-typedef std::vector<QMOperator *> QMOperatorVector;
+using QMOperatorVector = std::vector<QMOperator *>;
 
-class Orbital;
-class OrbitalVector;
-class Nucleus;
-class Nuclei;
- 
 class RankZeroTensorOperator {
 public:
     RankZeroTensorOperator() { }

@@ -4,6 +4,7 @@
 
 #include "ExchangePotential.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 #include "parallel.h"
 
 using mrcpp::Printer;

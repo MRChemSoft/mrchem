@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mrchem.h"
+#include "qmfunctions.h"
 
 namespace mrchem {
 

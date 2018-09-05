@@ -2,18 +2,13 @@
 
 #include "MRCPP/Parallel"
 
-#include "mrchem.h"
+#include "qmfunctions.h"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
 namespace mrchem {
-
-class Density;
-class Orbital;
-class OrbitalChunk;
-class OrbitalVector;
 
 namespace omp {
 extern int n_threads;

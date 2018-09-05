@@ -19,6 +19,9 @@
 #include "Molecule.h"
 #include "HydrogenFunction.h"
 
+#include "orbital_utils.h"
+#include "density_utils.h"
+
 #include "HelmholtzVector.h"
 #include "OrbitalOptimizer.h"
 #include "EnergyOptimizer.h"

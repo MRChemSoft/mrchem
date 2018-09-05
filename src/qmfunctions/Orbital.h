@@ -22,8 +22,6 @@
 
 namespace mrchem {
 
-class OrbitalVector;
-
 /* POD struct for orbital meta data. Used for simple MPI communication. */
 struct OrbitalMeta {
     int rank_id;

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "mrchem.h"
+#include "chemistry.h"
 
 namespace mrchem {
-
-class Nuclei;
 
 double compute_nuclear_repulsion(const Nuclei &nucs);
 

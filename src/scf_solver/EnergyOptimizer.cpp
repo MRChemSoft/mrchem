@@ -6,6 +6,7 @@
 #include "EnergyOptimizer.h"
 #include "HelmholtzVector.h"
 #include "Orbital.h"
+#include "orbital_utils.h"
 
 #include "FockOperator.h"
 #include "NuclearOperator.h"

@@ -26,8 +26,6 @@
 
 namespace mrchem {
 
-class OrbitalVector;
-
 class XCPotential final : public QMPotential {
 public:
     XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi = nullptr);

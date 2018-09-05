@@ -23,8 +23,6 @@
 
 namespace mrchem {
 
-class OrbitalVector;
-
 class CoulombPotential final : public QMPotential {
 public:
     CoulombPotential(mrcpp::PoissonOperator *P, OrbitalVector *Phi = nullptr);
