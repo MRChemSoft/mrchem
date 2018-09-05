@@ -12,7 +12,8 @@ class QMFunctionVector final : public std::vector<std::tuple<double, QMFunction>
 
 namespace qmfunction {
     
-ComplexDouble dot(QMFunction &bra, double bra_conj, QMFunction &ket, double ket_conj);
+ComplexDouble dot(QMFunction &bra, double bra_conj,
+                  QMFunction &ket, double ket_conj);
  
 void multiply(QMFunction &inp_a, double conj_a,
               QMFunction &inp_b, double conj_b,

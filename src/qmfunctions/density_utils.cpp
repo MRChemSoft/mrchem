@@ -84,7 +84,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {
-    rho.allocReal();
+    rho.alloc(NUMBER::Real);
     rho.setSpin(spin);
     mrcpp::project(prec, rho.real(), dens_exp);
 }

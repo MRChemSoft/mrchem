@@ -5,7 +5,6 @@
 #include "Density.h"
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief Default constructor
  *
@@ -24,7 +23,7 @@ Density::Density()
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Density::Density(int spin, int rank)
-        : QMFunction(0, 0),
+        : QMFunction(nullptr, nullptr),
           meta({rank, spin, 0, 0, false, 1.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
 }
@@ -296,23 +295,6 @@ std::ostream& Density::print(std::ostream &o) const {
     o << std::setw(15) << this->error();
     mrcpp::Printer::setPrecision(oldprec);
     return o;
-}
-
-void Density::allocReal() {
-    if (re == 0) {
-        this->setReal(new mrcpp::FunctionTree<3>(*MRA));
-    }
-    else {
-        MSG_FATAL("Real part of Density already allocated");
-    }
-}
-void Density::allocImag() {
-    if (im == 0) {
-        this->setImag(new mrcpp::FunctionTree<3>(*MRA));
-    }
-    else {
-        MSG_FATAL("Imaginary part of Density already allocated");
-    }
 }
 
 } //namespace mrchem
