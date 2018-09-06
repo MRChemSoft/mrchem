@@ -74,7 +74,7 @@ jobs:
   serial-py3:
     <<: *ubuntu-1804
     environment:
-      - PYTHON_VER: "3"
+      - PYTHON_VER: '3'
     steps:
       - checkout
       - *setup
@@ -85,7 +85,8 @@ jobs:
   omp-py3:
     <<: *ubuntu-1804
     environment:
-      - PYTHON_VER: "3"
+      - PYTHON_VER: '3'
+      - OMP_NUM_THREADS: '2'
     steps:
       - checkout
       - *setup
