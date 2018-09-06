@@ -5,9 +5,9 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "Getkw.h"
-#include "Section.h"
-#include "Keyword.h"
+#include "getkw/Getkw.hpp"
+#include "getkw/Section.hpp"
+#include "getkw/Keyword.hpp"
 
 #include "initial_guess/core.h"
 #include "initial_guess/gto.h"
@@ -147,7 +147,7 @@ SCFDriver::SCFDriver(Getkw &input) {
         ext_magnetic_field[1] = tmp[1];
         ext_magnetic_field[2] = tmp[2];
     }
-    
+
     file_start_orbitals = input.get<string>("Files.start_orbitals");
     file_final_orbitals = input.get<string>("Files.final_orbitals");
     file_basis_set = input.get<string>("Files.basis_set");
@@ -425,7 +425,7 @@ mrcpp::DerivativeOperator<3>* SCFDriver::useDerivative(string derivative_name) {
     if (derivative_name == "ABGV_55") return ABGV_55;
     MSG_FATAL("No such derivative operator");
 }
-    
+
 void SCFDriver::clear() {
     for (int k = 0; k < molecule->getNNuclei(); k++) {
         if (h_M[k] != 0) delete h_M[k];
@@ -928,6 +928,6 @@ mrdft::XCFunctional* SCFDriver::setupFunctional(int order) {
     setupInitialGrid(*fun, *molecule);
     return fun;
 }
-    
+
 } //namespace mrchem
 

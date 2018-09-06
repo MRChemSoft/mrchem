@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "chemistry.h"
 #include "qmfunctions.h"
 #include "qmoperators.h"
@@ -92,10 +94,10 @@ protected:
     std::vector<double> gauge;
 
     // Derivative operators
-    string diff_kin;
-    string diff_orb;
-    string diff_pso;
-    string diff_dft;
+    std::string diff_kin;
+    std::string diff_orb;
+    std::string diff_pso;
+    std::string diff_dft;
 
     // Run parameters
     bool calc_scf_energy;
@@ -112,8 +114,8 @@ protected:
 
     bool pol_velocity;
     bool optrot_velocity;
-    string nmr_perturbation;
-    string optrot_perturbation;
+    std::string nmr_perturbation;
+    std::string optrot_perturbation;
     std::vector<double> pol_frequency;
     std::vector<double> optrot_frequency;
     std::vector<int> nmr_nucleus_k;
@@ -175,7 +177,7 @@ protected:
     bool ext_magnetic;
     Eigen::Vector3d ext_electric_field;
     Eigen::Vector3d ext_magnetic_field;
-    
+
     // File input
     std::string file_start_orbitals;
     std::string file_final_orbitals;
@@ -268,7 +270,7 @@ protected:
 
     void extendRotationMatrix(const OrbitalVector &orbs, ComplexMatrix &O);
 
-    mrcpp::DerivativeOperator<3>* useDerivative(string derivative_name);
+    mrcpp::DerivativeOperator<3>* useDerivative(std::string derivative_name);
 };
 
 } //namespace mrchem

@@ -1,5 +1,6 @@
 language: cpp
 sudo: false
+dist: trusty
 
 notifications:
   slack:
@@ -8,72 +9,78 @@ notifications:
 matrix:
   include:
     - os: linux
-      addons:
+      addons: &1
         apt:
           packages:
-            - cmake3
-            - cmake3-data
-            - g++-4.8
-            - libboost-math-dev
-      env:
-        - BUILD_TYPE='release'
-        - CXX_COMPILER='g++-4.8'
-        - PYTHON_VER='2.7'
-        - EIGEN_VER='3.3.4'
-    - os: linux
-      addons:
-        apt:
-          packages:
-            - cmake3
-            - cmake3-data
-            - g++-4.8
-            - libboost-math-dev
-      env:
-        - BUILD_TYPE='release'
-        - CXX_COMPILER='g++-4.8'
-        - OPENMP='--omp'
-        - PYTHON_VER='2.7'
-        - EIGEN_VER='3.3.4'
-    - os: linux
-      addons:
-        apt:
-          packages:
-            - cmake3
-            - cmake3-data
-            - g++-4.8
-            - libboost-math-dev
+            - g++
+            - gcc
+            - libboost-all-dev
             - lcov
       env:
+        - BUILD_TYPE='release'
+        - CXX_COMPILER='g++'
+        - C_COMPILER='gcc'
+        - PYTHON_VER='2.7'
+    - os: linux
+      addons: *1
+      env:
+        - BUILD_TYPE='release'
+        - CXX_COMPILER='g++'
+        - C_COMPILER='gcc'
+        - OPENMP='--omp'
+        - PYTHON_VER='2.7'
+    - os: linux
+      addons: *1
+      env:
         - BUILD_TYPE='debug'
-        - CXX_COMPILER='g++-4.8'
+        - CXX_COMPILER='g++'
+        - C_COMPILER='gcc'
         - COVERAGE='--coverage'
         - PYTHON_VER='2.7'
-        - EIGEN_VER='3.3.4'
 
+env:
+  global:
+    - LC_ALL="en_US.UTF-8"
+    - LANG="en_US.UTF-8"
+    - LANGUAGE="en_US.UTF-8"
+    - PYTHONIOENCODING=UTF-8
+    - OMP_NUM_THREADS=2
+    - CMAKE_VERSION="3.6.3"
+
+cache:
+  timeout: 1000
+  pip: true
+  directories:
+    - $HOME/Deps/cmake/$CMAKE_VERSION
+    - $HOME/Deps/eigen
+
+before_install:
+  # Dependencies are downloaded in $HOME/Downloads and installed in $HOME/Deps
+  - mkdir -p $HOME/Downloads $HOME/Deps
+
+install:
+  - ./.ci/cmake.sh
+  - export PATH=$HOME/Deps/cmake/$CMAKE_VERSION/bin${PATH:+:$PATH}
+  - ./.ci/eigen.sh
 
 before_script:
-  - |
-    if [[ ! -d "$HOME/Deps/eigen" ]]; then
-      mkdir -p $HOME/Downloads/eigen
-      cd $HOME/Downloads
-      curl -Ls http://bitbucket.org/eigen/eigen/get/${EIGEN_VER}.tar.gz | tar -xz -C eigen --strip-components=1
-      cd eigen
-      cmake -H. -Bbuild_eigen -DCMAKE_INSTALL_PREFIX=$HOME/Deps/eigen &> /dev/null
-      cmake --build build_eigen -- install &> /dev/null
-      cd ${TRAVIS_BUILD_DIR}
-      rm -rf $HOME/Downloads/eigen
-    fi
-  - python --version
-  - cmake --version
-  - ${CXX_COMPILER} --version
+  - test -n $CC && unset CC
+  - test -n $CXX && unset CXX
+  - test -n $FC && unset FC
 
 script:
-  - export OMP_NUM_THREADS=2
-  - export EIGEN3_ROOT=$HOME/Deps/eigen
-  - export Eigen3_DIR=$HOME/Deps/eigen
-  - ./setup --enable-tests --type=${BUILD_TYPE} --cxx=${CXX_COMPILER} ${COVERAGE} ${OPENMP}
+  - ./.ci/report_versions.sh
+  - |
+    python ./setup \
+           --enable-tests \
+           --type=${BUILD_TYPE} \
+           --prefix=$HOME/Software/MRChem \
+           --cxx=${CXX_COMPILER} \
+           ${COVERAGE} \
+           ${OPENMP} \
+           --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
+  - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
-  - cmake --build . -- VERBOSE=1 -j2
   - ctest --output-on-failure --verbose
 
 after_success:
@@ -88,4 +95,3 @@ after_success:
       lcov --list coverage.info
       bash <(curl -s https://codecov.io/bash) -X gcov || echo "Codecov did not collect coverage reports"
     fi
-

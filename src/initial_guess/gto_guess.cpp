@@ -1,6 +1,6 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "Getkw.h"
+#include "getkw/Getkw.hpp"
 
 #include "mrenv.h"
 #include "mrchem.h"
@@ -46,11 +46,11 @@ int main(int argc, char **argv) {
     int mol_charge = Input.get<int>("Molecule.charge");
     int mol_multiplicity = Input.get<int>("Molecule.multiplicity");
     std::vector<std::string> mol_coords = Input.getData("Molecule.coords");
-    std::string scf_guess = Input.get<string>("SCF.initial_guess");
-    std::string orb_file = Input.get<string>("Files.start_orbitals");
-    std::string bas_file = Input.get<string>("Files.basis_set");
-    std::string moa_file = Input.get<string>("Files.mo_mat_a");
-    std::string mob_file = Input.get<string>("Files.mo_mat_b");
+    std::string scf_guess = Input.get<std::string>("SCF.initial_guess");
+    std::string orb_file = Input.get<std::string>("Files.start_orbitals");
+    std::string bas_file = Input.get<std::string>("Files.basis_set");
+    std::string moa_file = Input.get<std::string>("Files.mo_mat_a");
+    std::string mob_file = Input.get<std::string>("Files.mo_mat_b");
 
     if (scf_guess != "GTO") MSG_FATAL("Invalid initial guess");
 

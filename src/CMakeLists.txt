@@ -33,8 +33,10 @@ target_include_directories(mrchem PRIVATE
     ${CMAKE_SOURCE_DIR}/src/utils
     )
 target_link_libraries(mrchem
-    mrcpp
-    xcfun
+    PUBLIC
+      Eigen3::Eigen
+      mrcpp
+      xcfun
     )
 install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
 
