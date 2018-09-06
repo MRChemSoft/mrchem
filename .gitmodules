@@ -1,10 +1,9 @@
-[submodule "external/libgetkw"]
-	path = external/libgetkw
-	url = https://github.com/juselius/libgetkw.git
 [submodule "external/xcfun"]
 	path = external/xcfun
 	url = https://github.com/dftlibs/xcfun.git
-
 [submodule "external/mrcpp"]
 	path = external/mrcpp
 	url = https://github.com/MRChemSoft/mrcpp.git
+[submodule "external/libgetkw"]
+	path = external/libgetkw
+	url = https://github.com/dev-cafe/libgetkw.git
