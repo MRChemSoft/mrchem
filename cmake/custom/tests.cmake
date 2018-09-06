@@ -2,31 +2,20 @@
 #
 # autocmake.yml configuration::
 #
-#   docopt: "--enable-tests Enable tests [default: False]."
-#   define: "'-DENABLE_TESTS={0}'.format(arguments['--enable-tests'])"
+#   docopt:
+#     - "--enable-tests Enable integration tests for mrchem.x [default: False]."
+#     - "--enable-unit-tests Enable unit tests for libmrchem.a [default: False]."
+#   define:
+#     - "'-DENABLE_TESTS={0}'.format(arguments['--enable-tests'])"
+#     - "'-DENABLE_UNIT_TESTS={0}'.format(arguments['--enable-unit-tests'])"
 
 option(ENABLE_TESTS "Enable test suite" ON)
+option(ENABLE_UNIT_TESTS "Enable test suite" ON)
 
-macro(add_catch_test _name _labels)
-  # _labels is not a list, it's a string... Transform it into a list
-  set(labels)
-  string(REPLACE ";" " " _labels "${_labels}")
-  foreach(_label "${_labels}")
-    list(APPEND labels ${_label})
-  endforeach()
-  unset(_labels)
-
-  add_test(NAME ${_name}
-           COMMAND ${PROJECT_BINARY_DIR}/tests/mrchem-tests [${_name}] --success --out ${PROJECT_BINARY_DIR}/tests/${_name}.log --durations yes
-           WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-  if(labels)
-    set_tests_properties(${_name} PROPERTIES LABELS "${labels}")
-  endif()
-endmacro()
+include(testing_macros)
 
 if(ENABLE_TESTS)
-    enable_testing()
-    include(CTest)
-    add_subdirectory(tests)
+  enable_testing()
+  include(CTest)
+  add_subdirectory(tests) # This must come last!!
 endif()

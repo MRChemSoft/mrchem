@@ -1,4 +1,4 @@
-link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+link_directories(${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
 # Install sources in lib
 target_sources(mrchem PRIVATE
@@ -13,11 +13,11 @@ target_sources(mrchem PRIVATE
 
 # Install core guess executable in bin
 add_executable(core-guess core_guess.cpp)
-add_dependencies(core-guess external-modules)
+#add_dependencies(core-guess external-modules)
 target_include_directories(core-guess PRIVATE
     ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/chemistry
@@ -41,11 +41,11 @@ install(TARGETS core-guess
 
 # Install SAD guess executable in bin
 add_executable(sad-guess sad_guess.cpp)
-add_dependencies(sad-guess external-modules)
+#add_dependencies(sad-guess external-modules)
 target_include_directories(sad-guess PRIVATE
     ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/chemistry
@@ -70,11 +70,11 @@ install(TARGETS sad-guess
 
 # Install GTO guess executable in bin
 add_executable(gto-guess gto_guess.cpp)
-add_dependencies(gto-guess external-modules)
+#add_dependencies(gto-guess external-modules)
 target_include_directories(gto-guess PRIVATE
     ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/chemistry

@@ -1,15 +1,15 @@
-link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+link_directories(${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.cpp)
     add_executable(mrchem-pilot mrchem.cpp)
-    add_dependencies(mrchem-pilot
-        mrchem
-        submodule-mrcpp
-        )
+    #add_dependencies(mrchem-pilot
+    #    mrchem
+    #    submodule-mrcpp
+    #    )
     target_include_directories(mrchem-pilot PRIVATE
         ${CMAKE_BINARY_DIR}
-        ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-        ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
+        ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+        ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/chemistry
         ${CMAKE_SOURCE_DIR}/src/properties

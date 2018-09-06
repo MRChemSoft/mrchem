@@ -1,14 +1,14 @@
-link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/lib)
-link_directories(${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
+link_directories(${STAGED_INSTALL_PREFIX}/lib)
+link_directories(${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR})
 
 add_library(mrchem STATIC
     SCFDriver.cpp
     parallel.cpp
     mrenv.cpp
     )
-add_dependencies(mrchem
-    external-modules
-    )
+  #add_dependencies(mrchem
+  #    external-modules
+  #    )
 add_subdirectory(chemistry)
 add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
@@ -19,8 +19,8 @@ add_subdirectory(initial_guess)
 add_subdirectory(utils)
 target_include_directories(mrchem PRIVATE
     ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/chemistry
     ${CMAKE_SOURCE_DIR}/src/initial_guess
@@ -44,13 +44,13 @@ install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
 add_executable(mrchem.x
     mrchem.cpp
     )
-add_dependencies(mrchem.x
-    mrchem
-    )
+  #add_dependencies(mrchem.x
+  #    mrchem
+  #    )
 target_include_directories(mrchem.x PRIVATE
     ${CMAKE_BINARY_DIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
-    ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
+    ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/MRCPP
     ${CMAKE_SOURCE_DIR}/src/analyticfunctions
     ${CMAKE_SOURCE_DIR}/src/chemistry
     ${CMAKE_SOURCE_DIR}/src/initial_guess
@@ -75,4 +75,3 @@ option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 set (MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mrchem.in ${CMAKE_CURRENT_BINARY_DIR}/mrchem)
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mrchem DESTINATION ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR})
-
