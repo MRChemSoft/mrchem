@@ -4,6 +4,11 @@ configure_file(
   @ONLY
   )
 
+set_property(DIRECTORY PROPERTY EP_BASE ${CMAKE_BINARY_DIR}/subprojects)
+
+set(STAGED_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/stage)
+message(STATUS "${PROJECT_NAME} staged install: ${STAGED_INSTALL_PREFIX}")
+
 add_subdirectory(external)
 
 include(ExternalProject)
@@ -15,7 +20,7 @@ ExternalProject_Add(MRChem_core
   SOURCE_DIR
     ${MRChem_SOURCE_DIR}/mrchem
   CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+    -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     -DCMAKE_CXX_STANDARD=11
     -DCMAKE_CXX_EXTENSIONS=OFF
@@ -36,8 +41,6 @@ ExternalProject_Add(MRChem_core
     1
   TEST_BEFORE_INSTALL
     1
-  INSTALL_COMMAND
-    DESTDIR=${MRChem_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
   )
 
 add_subdirectory(pilot)

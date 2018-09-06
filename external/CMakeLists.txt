@@ -1,5 +1,3 @@
-set(STAGED_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/stage${CMAKE_INSTALL_PREFIX})
-
 add_custom_target(git-submodule-init
     COMMAND git submodule init
     COMMAND git submodule update
@@ -20,7 +18,7 @@ else()
     SOURCE_DIR
       ${CMAKE_CURRENT_SOURCE_DIR}/mrcpp
     CMAKE_ARGS
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+      -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
       -DENABLE_OPENMP=${ENABLE_OPENMP}
@@ -32,8 +30,6 @@ else()
       -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     TEST_BEFORE_INSTALL
       1
-    INSTALL_COMMAND
-      DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
     )
   set(MRCPP_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/MRCPP CACHE PATH "Path to internally built MRCPPConfig.cmake" FORCE)
   # This is very annoying, because it updates the submodule unexpectedly
@@ -54,15 +50,13 @@ else()
     SOURCE_DIR
       ${CMAKE_CURRENT_SOURCE_DIR}/libgetkw
     CMAKE_ARGS
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+      -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
     CMAKE_CACHE_ARGS
       -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     TEST_BEFORE_INSTALL
       1
-    INSTALL_COMMAND
-      DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
     )
   set(getkw_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/getkw CACHE PATH "Path to internally built getkwConfig.cmake" FORCE)
   # This is very annoying, because it updates the submodule unexpectedly
@@ -86,7 +80,7 @@ else()
       SOURCE_DIR
         ${CMAKE_CURRENT_SOURCE_DIR}/xcfun
       CMAKE_ARGS
-        -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+        -DCMAKE_INSTALL_PREFIX=${STAGED_INSTALL_PREFIX}
         -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
         -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
         -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
@@ -98,8 +92,6 @@ else()
         -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
       TEST_BEFORE_INSTALL
         1
-      INSTALL_COMMAND
-        DESTDIR=${CMAKE_BINARY_DIR}/stage ${CMAKE_MAKE_PROGRAM} install
       )
   set(XCFun_DIR ${STAGED_INSTALL_PREFIX}/share/cmake/XCFun CACHE PATH "Path to internally built XCFunConfig.cmake" FORCE)
   # This is very annoying, because it updates the submodule unexpectedly
@@ -110,7 +102,7 @@ install(
   DIRECTORY
     ${STAGED_INSTALL_PREFIX}/
   DESTINATION
-    ${CMAKE_INSTALL_PREFIX}
+    .
   USE_SOURCE_PERMISSIONS
   PATTERN
     "*.pyc" EXCLUDE
