@@ -18,6 +18,7 @@ ExternalProject_Add(submodule-mrcpp
                 -DENABLE_TESTS=FALSE
                 -DENABLE_EXAMPLES=FALSE
                 -DSTATIC_LIBRARY_ONLY=TRUE
+                -DEigen3_DIR=${Eigen3_DIR}
     CMAKE_CACHE_ARGS
                 -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
     INSTALL_COMMAND
