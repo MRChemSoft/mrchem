@@ -2,7 +2,7 @@
 # Copyright (c) 2015-2018 by Radovan Bast, Roberto Di Remigio, Jonas Juselius, and contributors.
 
 # set minimum cmake version
-cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.6 FATAL_ERROR)
 
 # project name
 project(MRChem LANGUAGES CXX)
@@ -65,7 +65,6 @@ include(autocmake_omp)
 include(autocmake_version)
 include(autocmake_code_coverage)
 include(eigen)
-include(catch)
 include(sad_basis)
 include(python)
 include(git)

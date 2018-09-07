@@ -1,4 +1,4 @@
-#!@PYTHON_EXECUTABLE@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:filetype=python:
 #
@@ -6,108 +6,138 @@
 # University of Tromsø, 2008
 #
 
-ON=1
-OFF=0
+ON = 1
+OFF = 0
 
-executable="@MRCHEM_EXECUTABLE@"
-debug=@MRCHEM_DRIVER_DEBUG@
-printlevel=0
-dryrun=False
-version="@PROGRAM_VERSION@"
-
-import sys, re, optparse, os, string, subprocess, tempfile, math
+import math
+import optparse
+import os
+import re
+import string
+import subprocess
+import sys
+import tempfile
 from copy import deepcopy
 
-sys.path.append("@CMAKE_INSTALL_PREFIX@/share/libgetkw/")
+# FIXME This will pick up modules when installed
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
+# FIXME For use from within the build tree
+sys.path.append("@STAGED_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
+sys.path.append('@CMAKE_SOURCE_DIR@/src/chemistry')
 
-from periodictable import PeriodicTable as PT
-import getkw
+import getkw  # isort:skip
+from periodictable import PeriodicTable as PT  # isort:skip
+
 
 def main():
-    global topsect, debug, executable, printlevel, dryrun
+    # FIXME Is there a way to avoid global variables?
+    global topsect
 
-    if debug == ON:
-        debug = True
-    else:
-        debug = False
+    # Parse command line
+    executable, dryrun, printlevel, debug, inpfil = parse_cmdline()
 
-    valid_keywords = setup_keywords()
-    printlevel = int(valid_keywords.getkw('printlevel')[0])
-    inpfil = parse_cmdline(valid_keywords)
+    # The input file is assumed to be relative to the current working directory
+    # Resolve the path, so we can call this script with the input
+    # in any subdirectory
+    # FIXME Using Python 3 and pathlib would make this more robust!
+    # root_dir is thus the current working directory
+    root_dir = os.getcwd()
+    # Now inpfil is the absolute path
+    inpfil = os.path.join(root_dir, inpfil)
+    input_dir = os.path.abspath(os.path.join(inpfil, os.pardir))
+
+    # If no input file was passed, assume it's called mrchem.inp
+    # and it's located right here.
+    if inpfil is None:
+        inpfil = os.path.join(root_dir, 'mrchem.inp')
+        input_dir = root_dir
+
+    valid_keywords = setup_keywords(input_dir)
+    valid_keywords.setkw('printlevel', printlevel)
 
     if printlevel > 1:
-        print "Starting " + sys.argv[0]
+        print("Starting " + sys.argv[0])
 
-    if inpfil is None:
-        inpfil = "mrchem.inp"
-
-    input=getkw.GetkwParser()
-    inkw=input.parseFile(inpfil)
+    input = getkw.GetkwParser()
+    inkw = input.parseFile(inpfil)
     inkw.sanitize(valid_keywords)
-    topsect=inkw.get_topsect()
+    topsect = inkw.get_topsect()
     inkw.run_callbacks(valid_keywords)
 
-    if not os.path.exists('initial_guess'):
-        os.mkdir('initial_guess')
-    if not os.path.exists('orbitals'):
-        os.mkdir('orbitals')
-
     if dryrun:
-        xfile='@' + inpfil
-        fd=open(xfile,'w')
-        print >> fd, inkw.top
-        fd.close()
+        xfile = '@' + inpfil
+        with open(xfile, 'w') as fd:
+            fd.write(str(inkw.top))
     else:
         # Write processed input file and run MRChem
-        with tempfile.TemporaryFile(mode='w+r') as fd:
+        with tempfile.TemporaryFile(mode='w+') as fd:
             fd.write(str(inkw.top))
             fd.seek(0)
             p = subprocess.Popen(executable, stdin=fd)
             sts = os.waitpid(p.pid, 0)[1]
-            fd.close()
 
-def parse_cmdline(valid_keywords):
-    global debug, executable, printlevel, dryrun
-    usage="usage: %prog [options] [config] inpfile"
-    cmdln=optparse.OptionParser(usage=usage,
-            version="%prog {0}".format(version))
-    cmdln.add_option('-D','--dryrun', action='store_true', dest='dryrun',
-            default=False, help='Only process input')
-    cmdln.add_option('-d','--debug', action='store_true', dest='debug',
-            default=False, help='debug')
-    cmdln.add_option('-p','--print', action='store', dest='printlevel',
-            help='print level')
-    cmdln.add_option('-x','--executable', action='store', dest='executable',
-            help='set executable name')
-    (opts, args)=cmdln.parse_args()
 
-    if opts.executable:
-        executable = opts.executable
+def parse_cmdline():
+    usage = "usage: %prog [options] [config] inpfile"
+    version = "@PROGRAM_VERSION@"
+    cmdln = optparse.OptionParser(
+        usage=usage, version="%prog {0}".format(version))
+    cmdln.add_option(
+        '-D',
+        '--dryrun',
+        action='store_true',
+        dest='dryrun',
+        default=False,
+        help='Only process input')
+    cmdln.add_option(
+        '-d',
+        '--debug',
+        action='store_true',
+        dest='debug',
+        default='@MRCHEM_DRIVER_DEBUG@',
+        help='debug')
+    cmdln.add_option(
+        '-p',
+        '--print',
+        action='store',
+        dest='printlevel',
+        type='int',
+        default=0,
+        help='print level')
+    cmdln.add_option(
+        '-x',
+        '--executable',
+        action='store',
+        dest='executable',
+        type='string',
+        default='@MRCHEM_EXECUTABLE@',
+        help='set executable name')
 
-    if opts.dryrun:
-        dryrun=opts.dryrun
+    opts, args = cmdln.parse_args()
 
-    if opts.printlevel:
-        printlevel=int(opts.printlevel)
-        valid_keywords.setkw('printlevel', printlevel)
+    executable = opts.executable
+    dryrun = opts.dryrun
+    printlevel = int(opts.printlevel)
 
-    if opts.debug == True:
-        debug=opts.debug
+    debug = opts.debug
+    if debug:
         printlevel = 1
 
     if (len(args) == 0):
-        inpfil=None
+        inpfil = None
     elif (len(args) == 1):
-        inpfil=args[0]
+        inpfil = args[0]
     else:
         cmdln.error('incorrect number of files')
         sys.exit(0)
-    return inpfil
 
-def setup_keywords():
-    top=getkw.Section('toplevel', callback=verify_top)
+    return executable, dryrun, printlevel, debug, inpfil
+
+
+def setup_keywords(input_dir):
+    top = getkw.Section('toplevel', callback=verify_top)
     top.set_status(True)
+    # yapf: disable
     top.add_kw('rel_prec',              'DBL', -1.0)
     top.add_kw('nuc_prec',              'DBL', -1.0)
     top.add_kw('abs_prec',              'DBL', -1.0)
@@ -115,8 +145,10 @@ def setup_keywords():
     top.add_kw('energy_unit',           'STR', 'au')
     top.add_kw('printlevel',            'INT', 0)
     top.add_kw('teletype',              'BOOL', False)
+    # yapf: enable
 
-    mra=getkw.Section('MRA', callback = verify_mra)
+    mra = getkw.Section('MRA', callback=verify_mra)
+    # yapf: disable
     mra.add_kw('order',                 'INT', -1)
     mra.add_kw('basis_type',            'STR', 'Interpolating')
     mra.add_kw('min_scale',             'INT', 0)
@@ -126,28 +158,36 @@ def setup_keywords():
     mra.add_kw('center_of_mass',        'BOOL', False)
     mra.add_kw('center_of_charge',      'BOOL', False)
     mra.add_kw('gauge_origin',          'DBL_ARRAY', [0.0, 0.0, 0.0])
+    # yapf: enable
     top.add_sect(mra)
 
-    derivatives=getkw.Section('Derivatives')
+    derivatives = getkw.Section('Derivatives')
+    # yapf: disable
     derivatives.add_kw('kinetic',       'STR', 'ABGV_55')
     derivatives.add_kw('h_orb',         'STR', 'ABGV_00')
     derivatives.add_kw('h_pso',         'STR', 'ABGV_00')
     derivatives.add_kw('dft',           'STR', 'ABGV_00')
+    # yapf: enable
     top.add_sect(derivatives)
 
-    molecule=getkw.Section('Molecule', callback = verify_molecule)
+    molecule = getkw.Section('Molecule', callback=verify_molecule)
+    # yapf: disable
     molecule.add_kw('charge',           'INT', 0)
     molecule.add_kw('multiplicity',     'INT', 1)
     molecule.add_kw('angstrom',         'BOOL', False)
     molecule.add_kw('coords',           'DATA')
+    # yapf: enable
     top.add_sect(molecule)
 
-    wavefunction=getkw.Section('WaveFunction')
+    wavefunction = getkw.Section('WaveFunction')
+    # yapf: disable
     wavefunction.add_kw('restricted',   'BOOL', True)
     wavefunction.add_kw('method',       'STR', 'HF')
+    # yapf: enable
     top.add_sect(wavefunction)
 
-    dft=getkw.Section('DFT', callback = verify_dft)
+    dft = getkw.Section('DFT', callback=verify_dft)
+    # yapf: disable
     dft.add_kw('spin',                  'BOOL', False)
     dft.add_kw('orbital_free',          'BOOL', False)
     dft.add_kw('use_gamma',             'BOOL', False)
@@ -155,9 +195,11 @@ def setup_keywords():
     dft.add_kw('density_cutoff',        'DBL', 0.0)
     dft.add_kw('functionals',           'DATA')
     dft.add_kw('func_coefs',            'DBL_ARRAY')
+    # yapf: enable
     top.add_sect(dft)
 
-    properties=getkw.Section('Properties')
+    properties = getkw.Section('Properties')
+    # yapf: disable
     properties.add_kw('scf_energy',             'BOOL', False)
     properties.add_kw('dipole_moment',          'BOOL', False)
     properties.add_kw('quadrupole_moment',      'BOOL', False)
@@ -169,43 +211,57 @@ def setup_keywords():
     properties.add_kw('nmr_shielding',          'BOOL', False)
     properties.add_kw('spin_spin_coupling',     'BOOL', False)
     properties.add_kw('hyperfine_coupling',     'BOOL', False)
+    # yapf: enable
     top.add_sect(properties)
 
-    external_field=getkw.Section('ExternalField', callback=verify_ext_field)
+    external_field = getkw.Section('ExternalField', callback=verify_ext_field)
+    # yapf: disable
     external_field.add_kw('electric_run',       'BOOL', False)
     external_field.add_kw('electric_field',     'DBL_ARRAY')
     external_field.add_kw('magnetic_run',       'BOOL', False)
     external_field.add_kw('magnetic_field',     'DBL_ARRAY')
+    # yapf: enable
     top.add_sect(external_field)
 
-    polarizability=getkw.Section('Polarizability', callback=verify_pol)
+    polarizability = getkw.Section('Polarizability', callback=verify_pol)
+    # yapf: disable
     polarizability.add_kw('velocity',           'BOOL', False)
     polarizability.add_kw('frequency',          'DBL_ARRAY')
     polarizability.add_kw('wavelength',         'DBL_ARRAY')
+    # yapf: enable
     top.add_sect(polarizability)
 
-    optical_rotation=getkw.Section('OpticalRotation', callback=verify_optrot)
+    optical_rotation = getkw.Section('OpticalRotation', callback=verify_optrot)
+    # yapf: disable
     optical_rotation.add_kw('perturbation',     'STR', 'E')
     optical_rotation.add_kw('velocity',         'BOOL', False)
     optical_rotation.add_kw('frequency',        'DBL_ARRAY')
     optical_rotation.add_kw('wavelength',       'DBL_ARRAY')
+    # yapf: enable
     top.add_sect(optical_rotation)
 
-    nmr=getkw.Section('NMRShielding', callback=verify_nmr)
+    nmr = getkw.Section('NMRShielding', callback=verify_nmr)
+    # yapf: disable
     nmr.add_kw('perturbation',          'STR', 'B')
     nmr.add_kw('nucleus_k',             'INT_ARRAY')
+    # yapf: enable
     top.add_sect(nmr)
 
-    sscc=getkw.Section('SpinSpinCoupling', callback=verify_sscc)
+    sscc = getkw.Section('SpinSpinCoupling', callback=verify_sscc)
+    # yapf: disable
     sscc.add_kw('nucleus_k',            'INT_ARRAY')
     sscc.add_kw('nucleus_l',            'INT_ARRAY')
+    # yapf: enable
     top.add_sect(sscc)
 
-    hfcc=getkw.Section('HyperfineCoupling', callback=verify_hfcc)
+    hfcc = getkw.Section('HyperfineCoupling', callback=verify_hfcc)
+    # yapf: disable
     hfcc.add_kw('nucleus_k',            'INT_ARRAY')
+    # yapf: enable
     top.add_sect(hfcc)
 
-    scf=getkw.Section('SCF', callback=verify_scf)
+    scf = getkw.Section('SCF', callback=verify_scf)
+    # yapf: disable
     scf.add_kw('run',                   'BOOL', True)
     scf.add_kw('max_iter',              'INT', -1)
     scf.add_kw('kain',                  'INT', 0)
@@ -214,55 +270,76 @@ def setup_keywords():
     scf.add_kw('orbital_thrs',          'DBL', -1.0)
     scf.add_kw('property_thrs',         'DBL', -1.0)
     scf.add_kw('lambda_thrs',           'DBL', -1.0)
-    scf.add_kw('orbital_prec',          'DBL_ARRAY', [-1.0,-1.0])
+    scf.add_kw('orbital_prec',          'DBL_ARRAY', [-1.0, -1.0])
     scf.add_kw('initial_guess',         'STR', 'none')
     scf.add_kw('write_orbitals',        'BOOL', False)
+    # yapf: enable
     top.add_sect(scf)
 
-    kinetic_free=getkw.Section('KineticFree', callback=verify_kinetic_free)
+    kinetic_free = getkw.Section('KineticFree', callback=verify_kinetic_free)
+    # yapf: disable
     kinetic_free.add_kw('run',                   'BOOL', False)
     kinetic_free.add_kw('max_iter',              'INT', -1)
     kinetic_free.add_kw('canonical',             'BOOL', True)
     kinetic_free.add_kw('orbital_thrs',          'DBL', -1.0)
     kinetic_free.add_kw('property_thrs',         'DBL', -1.0)
+    # yapf: enable
     top.add_sect(kinetic_free)
 
-    response=getkw.Section('Response', callback=verify_response)
+    response = getkw.Section('Response', callback=verify_response)
+    # yapf: disable
     response.add_kw('run',              'BOOL', True)
     response.add_kw('max_iter',         'INT', -1)
     response.add_kw('kain',             'INT', 0)
     response.add_kw('canonical',        'BOOL', True)
     response.add_kw('orbital_thrs',     'DBL', 1.0)
     response.add_kw('property_thrs',    'DBL', 1.0)
-    response.add_kw('directions',       'INT_ARRAY', [1,1,1])
-    response.add_kw('orbital_prec',     'DBL_ARRAY', [1.0e-4,-1.0])
+    response.add_kw('directions',       'INT_ARRAY', [1, 1, 1])
+    response.add_kw('orbital_prec',     'DBL_ARRAY', [1.0e-4, -1.0])
     response.add_kw('initial_guess',    'STR', 'none')
     response.add_kw('write_orbitals',   'BOOL', False)
+    # yapf: enable
     top.add_sect(response)
 
-    initial=getkw.Section('LSDalton')
+    initial = getkw.Section('LSDalton')
+    # yapf: disable
     initial.add_kw('run',               'BOOL', False)
     initial.add_kw('basis',             'STR', '3-21G')
     initial.add_kw('method',            'STR', 'HF')
+    # yapf: enable
     top.add_sect(initial)
 
-    files=getkw.Section('Files')
-    files.add_kw('start_orbitals',      'STR', 'orbitals/phi')
-    files.add_kw('final_orbitals',      'STR', 'orbitals/phi')
-    files.add_kw('start_x_orbs',        'STR', 'orbitals/phi_x')
-    files.add_kw('final_x_orbs',        'STR', 'orbitals/phi_x')
-    files.add_kw('start_y_orbs',        'STR', 'orbitals/phi_y')
-    files.add_kw('final_y_orbs',        'STR', 'orbtials/phi_y')
-    files.add_kw('basis_set',           'STR', 'initial_guess/mrchem.bas')
-    files.add_kw('dens_mat_a',          'STR', 'initial_guess/mrchem.densa')
-    files.add_kw('dens_mat_b',          'STR', 'initial_guess/mrchem.densb')
-    files.add_kw('fock_mat',            'STR', 'initial_guess/mrchem.fock')
-    files.add_kw('energy_vec',          'STR', 'initial_guess/mrchem.en')
-    files.add_kw('mo_mat_a',            'STR', 'initial_guess/mrchem.moa')
-    files.add_kw('mo_mat_b',            'STR', 'initial_guess/mrchem.mob')
+    files = getkw.Section('Files')
+    # Set up directory for orbitals, subdirectory of input_dir
+    orbs_dir = os.path.join(input_dir, 'orbitals')
+    if not os.path.exists(orbs_dir):
+        os.mkdir(orbs_dir)
+    # yapf: disable
+    files.add_kw('start_orbitals',      'STR', os.path.join(orbs_dir, 'phi'))
+    files.add_kw('final_orbitals',      'STR', os.path.join(orbs_dir, 'phi'))
+    files.add_kw('start_x_orbs',        'STR', os.path.join(orbs_dir, 'phi_x'))
+    files.add_kw('final_x_orbs',        'STR', os.path.join(orbs_dir, 'phi_x'))
+    files.add_kw('start_y_orbs',        'STR', os.path.join(orbs_dir, 'phi_y'))
+    files.add_kw('final_y_orbs',        'STR', os.path.join(orbs_dir, 'phi_y'))
+    # yapf: enable
+
+    # Set up directory for initial guess, subdirectory of input_dir
+    init_guess_dir = os.path.join(input_dir, 'initial_guess')
+    if not os.path.exists(init_guess_dir):
+        os.mkdir(init_guess_dir)
+    # yapf: disable
+    files.add_kw('basis_set',           'STR', os.path.join(init_guess_dir, 'mrchem.bas'))
+    files.add_kw('dens_mat_a',          'STR', os.path.join(init_guess_dir, 'mrchem.densa'))
+    files.add_kw('dens_mat_b',          'STR', os.path.join(init_guess_dir, 'mrchem.densb'))
+    files.add_kw('fock_mat',            'STR', os.path.join(init_guess_dir, 'mrchem.fock'))
+    files.add_kw('energy_vec',          'STR', os.path.join(init_guess_dir, 'mrchem.en'))
+    files.add_kw('mo_mat_a',            'STR', os.path.join(init_guess_dir, 'mrchem.moa'))
+    files.add_kw('mo_mat_b',            'STR', os.path.join(init_guess_dir, 'mrchem.mob'))
+    # yapf: enable
     top.add_sect(files)
 
-    pilot=getkw.Section('Pilot')
+    pilot = getkw.Section('Pilot')
+    # yapf: disable
     pilot.add_kw('run_projection',      'BOOL', False)
     pilot.add_kw('run_addition',        'BOOL', False)
     pilot.add_kw('run_multiplication',  'BOOL', False)
@@ -270,9 +347,11 @@ def setup_keywords():
     pilot.add_kw('run_derivative',      'BOOL', False)
     pilot.add_kw('run_scf',             'BOOL', False)
     pilot.add_kw('run_molecule',        'BOOL', False)
+    # yapf: enable
     top.add_sect(pilot)
 
     return top
+
 
 def verify_top(top):
     if not top.get('rel_prec').is_set():
@@ -282,51 +361,57 @@ def verify_top(top):
                 coords = mol.get('coords').get()
                 est_au = estimate_energy(coords)
                 if top['energy_unit'][0] == 'eV':
-                    top['est_norm'][0] = 27.2*est_au
+                    top['est_norm'][0] = 27.2 * est_au
                 elif top['energy_unit'][0] == 'kcal':
-                    top['est_norm'][0] = 627.5*est_au
+                    top['est_norm'][0] = 627.5 * est_au
                 elif top['energy_unit'][0] == 'kJ':
-                    top['est_norm'][0] = 2625.5*est_au
+                    top['est_norm'][0] = 2625.5 * est_au
                 else:
                     top['est_norm'][0] = est_au
-                print "\nPrecision is set by energy estimate Z^(5/2)"
-        top['rel_prec'][0] = 10*top['abs_prec'][0] / top['est_norm'][0]
-        print "   est_norm  ", top['est_norm'][0]
-        print "   abs_prec  ", top['abs_prec'][0]
-        print "   rel_prec  ", top['rel_prec'][0]
+                print("\nPrecision is set by energy estimate Z^(5/2)")
+        top['rel_prec'][0] = 10 * top['abs_prec'][0] / top['est_norm'][0]
+        print("   est_norm  ", top['est_norm'][0])
+        print("   abs_prec  ", top['abs_prec'][0])
+        print("   rel_prec  ", top['rel_prec'][0])
 
     if not top.get('nuc_prec').is_set():
         top['nuc_prec'][0] = top['rel_prec'][0]
 
+
 def verify_mra(mra):
-    basis_type=mra.get('basis_type')
-    wlet=basis_type.get()
+    basis_type = mra.get('basis_type')
+    wlet = basis_type.get()
     if re.match('legen.*', wlet, re.I):
         basis_type.set("L")
     elif re.match('inter.*', wlet, re.I):
         basis_type.set("I")
     else:
-        print "Invalid basis type: ", basis_type
+        print("Invalid basis type: ", basis_type)
         sys.exit(1)
     if not mra.get('order').is_set():
-        mra.get('order')[0] = int(math.ceil(-1.5*math.log10(topsect['rel_prec'][0])));
+        mra.get('order')[0] = int(
+            math.ceil(-1.5 * math.log10(topsect['rel_prec'][0])))
     if not mra.get('gauge_origin').is_set():
         mra.get('center_of_mass')[0] = True
+
 
 def verify_molecule(mol):
     AA = 1.0
     if mol.get('angstrom').get():
         AA = 1.889725989
     coords = mol.get('coords').get()
-    i = 0;
+    i = 0
     for line in coords[:]:
         sp = line.split()
         elm = sp[0].lower()
-        x_a, y_a, z_a = map(float, sp[1:])
-        x_b, y_b, z_b = AA*x_a, AA*y_a, AA*z_a
-        coords[i] = "%s       % 10.10f    % 10.10f    % 10.10f" % (elm.title(), x_b, y_b, z_b)
-        i = i+1
+        x_a, y_a, z_a = list(map(float, sp[1:]))
+        x_b, y_b, z_b = AA * x_a, AA * y_a, AA * z_a
+        coords[i] = "%s       % 10.10f    % 10.10f    % 10.10f" % (elm.title(),
+                                                                   x_b, y_b,
+                                                                   z_b)
+        i = i + 1
     mol.get('angstrom').set(False)
+
 
 def verify_response(rsp):
     if not rsp.get('canonical').is_set():
@@ -339,64 +424,71 @@ def verify_response(rsp):
     if rsp['property_thrs'][0] < 0:
         rsp['property_thrs'][0] = 1.0
 
+
 def verify_ext_field(ext_field):
     if ext_field.get('electric_field').is_set():
         elf = ext_field['electric_field'].get()
         if (len(elf) != 3):
-            print "invalid length of electric field vector:", len(elf)
+            print("invalid length of electric field vector:", len(elf))
             exit()
         val = math.sqrt(elf[0]**2 + elf[1]**2 + elf[2]**2)
         if val > 10.0:
-            print "magnitude of el. field is greater than 10.0:", val
+            print("magnitude of el. field is greater than 10.0:", val)
             exit()
 
     if ext_field.get('magnetic_field').is_set():
         maf = ext_field['magnetic_field'].get()
         if (len(maff) != 3):
-            print "invalid length of magnetic field vector:", len(maf)
+            print("invalid length of magnetic field vector:", len(maf))
             exit()
         val = math.sqrt(maf[0]**2 + maf[1]**2 + maf[2]**2)
         if val > 10.0:
-            print "magnitude of mag. field is greater than 10.0:", val
+            print("magnitude of mag. field is greater than 10.0:", val)
             exit()
+
 
 def verify_pol(pol):
     if pol.get('wavelength').is_set():
         for wlength in pol['wavelength'].get():
-            omega = 45.5640/wlength
-            pol['frequency'].get().append(omega);
+            omega = 45.5640 / wlength
+            pol['frequency'].get().append(omega)
     if len(pol['frequency'].get()) == 0:
-        pol['frequency'].get().append(0.0);
+        pol['frequency'].get().append(0.0)
+
 
 def verify_optrot(optrot):
     pert = optrot['perturbation'].get()
     if pert != 'B' and pert != 'E':
-        print "invalid optical rotation perturbation:", pert
+        print("invalid optical rotation perturbation:", pert)
         exit()
     if optrot.get('wavelength').is_set():
         for wlength in optrot['wavelength'].get():
-            omega = 45.5640/wlength
-            optrot['frequency'].get().append(omega);
+            omega = 45.5640 / wlength
+            optrot['frequency'].get().append(omega)
     if len(optrot['frequency'].get()) == 0:
-        optrot['frequency'].get().append(0.0);
+        optrot['frequency'].get().append(0.0)
+
 
 def verify_nmr(nmr):
     pert = nmr['perturbation'].get()
     if pert != 'B' and pert != 'M':
-        print "invalid NMR shielding perturbation:", pert
+        print("invalid NMR shielding perturbation:", pert)
         exit()
     if not nmr.get('nucleus_k').is_set():
-        nmr['nucleus_k'].get().append(-1);
+        nmr['nucleus_k'].get().append(-1)
+
 
 def verify_sscc(sscc):
     if not sscc.get('nucleus_k').is_set():
-        sscc['nucleus_k'].get().append(-1);
+        sscc['nucleus_k'].get().append(-1)
     if not sscc.get('nucleus_l').is_set():
-        sscc['nucleus_l'].get().append(-1);
+        sscc['nucleus_l'].get().append(-1)
+
 
 def verify_hfcc(hfcc):
     if not hfcc.get('nucleus_k').is_set():
-        hfcc['nucleus_k'].get().append(-1);
+        hfcc['nucleus_k'].get().append(-1)
+
 
 def verify_dft(dft):
     if not dft['spin'].is_set():
@@ -419,19 +511,24 @@ def verify_dft(dft):
         dft['functionals'][n] = func
         n += 1
 
+
 def verify_scf(scf):
     if scf['orbital_prec'][1] < 0:
         scf['orbital_prec'][1] = topsect['rel_prec'][0]
     if scf['orbital_prec'][0] < 0:
         scf['orbital_prec'][0] = scf['orbital_prec'][1]
     if not scf['orbital_thrs'].is_set() and not scf['property_thrs'].is_set():
-        scf['property_thrs'][0] = topsect['rel_prec'][0]/10
+        scf['property_thrs'][0] = topsect['rel_prec'][0] / 10
         scf['orbital_thrs'][0] = math.sqrt(scf['property_thrs'][0])
 
+
 def verify_kinetic_free(kinetic_free):
-    if not kinetic_free['orbital_thrs'].is_set() and not kinetic_free['property_thrs'].is_set():
-        kinetic_free['property_thrs'][0] = topsect['rel_prec'][0]/10
-        kinetic_free['orbital_thrs'][0] = math.sqrt(kinetic_free['property_thrs'][0])
+    if not kinetic_free['orbital_thrs'].is_set(
+    ) and not kinetic_free['property_thrs'].is_set():
+        kinetic_free['property_thrs'][0] = topsect['rel_prec'][0] / 10
+        kinetic_free['orbital_thrs'][0] = math.sqrt(
+            kinetic_free['property_thrs'][0])
+
 
 # Estimate total energy of a moleucule as the sum of the nuclear charges
 # to the power Z^(5/2). This is to get an order of magnitude estimate that
@@ -448,4 +545,3 @@ def estimate_energy(coords):
 
 if __name__ == '__main__':
     main()
-

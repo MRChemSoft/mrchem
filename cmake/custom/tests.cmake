@@ -14,7 +14,7 @@ option(ENABLE_UNIT_TESTS "Enable test suite" ON)
 
 include(testing_macros)
 
-if(ENABLE_TESTS)
+if(ENABLE_UNIT_TESTS OR ENABLE_TESTS)
   enable_testing()
   include(CTest)
   add_subdirectory(tests) # This must come last!!

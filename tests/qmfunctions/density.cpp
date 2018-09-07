@@ -1,8 +1,8 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "Orbital.h"
-#include "orbital_utils.h"
+#include "qmfunctions/Orbital.h"
+#include "qmfunctions/orbital_utils.h"
 #include "Density.h"
 #include "density_utils.h"
 #include "HydrogenFunction.h"

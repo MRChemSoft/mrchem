@@ -1,5 +1,5 @@
 name: MRChem
-min_cmake_version: 3.3
+min_cmake_version: 3.6
 setup_script: setup
 default_build_type: release
 language:
@@ -26,7 +26,6 @@ modules:
 - libs:
   - source:
     - 'custom/eigen.cmake'
-    - 'custom/catch.cmake'
 - custom:
   - source:
     - 'custom/sad_basis.cmake'

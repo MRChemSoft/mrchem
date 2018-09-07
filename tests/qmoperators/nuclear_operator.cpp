@@ -7,7 +7,7 @@
 #include "HydrogenFunction.h"
 #include "NuclearOperator.h"
 #include "Orbital.h"
-#include "orbital_utils.h"
+#include "qmfunctions/orbital_utils.h"
 
 using namespace mrchem;
 using namespace orbital;

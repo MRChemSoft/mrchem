@@ -68,9 +68,9 @@ SCFDriver::SCFDriver(Getkw &input) {
     center_of_mass = input.get<bool>("MRA.center_of_mass");
     center_of_charge = input.get<bool>("MRA.center_of_charge");
 
-    diff_kin = input.get<string>("Derivatives.kinetic");
-    diff_orb = input.get<string>("Derivatives.h_orb");
-    diff_pso = input.get<string>("Derivatives.h_pso");
+    diff_kin = input.get<std::string>("Derivatives.kinetic");
+    diff_orb = input.get<std::string>("Derivatives.h_orb");
+    diff_pso = input.get<std::string>("Derivatives.h_pso");
 
     calc_scf_energy = input.get<bool>("Properties.scf_energy");
     calc_dipole_moment = input.get<bool>("Properties.dipole_moment");
@@ -84,7 +84,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     calc_optical_rotation = input.get<bool>("Properties.optical_rotation");
     calc_geometry_derivatives = input.get<bool>("Properties.geometry_derivatives");
 
-    nmr_perturbation = input.get<string>("NMRShielding.perturbation");
+    nmr_perturbation = input.get<std::string>("NMRShielding.perturbation");
     nmr_nucleus_k = input.getIntVec("NMRShielding.nucleus_k");
     hfcc_nucleus_k = input.getIntVec("HyperfineCoupling.nucleus_k");
     sscc_nucleus_k = input.getIntVec("SpinSpinCoupling.nucleus_k");
@@ -93,14 +93,14 @@ SCFDriver::SCFDriver(Getkw &input) {
     pol_frequency = input.getDblVec("Polarizability.frequency");
     optrot_velocity = input.get<bool>("OpticalRotation.velocity");
     optrot_frequency = input.getDblVec("OpticalRotation.frequency");
-    optrot_perturbation = input.get<string>("OpticalRotation.perturbation");
+    optrot_perturbation = input.get<std::string>("OpticalRotation.perturbation");
 
     mol_charge = input.get<int>("Molecule.charge");
     mol_multiplicity = input.get<int>("Molecule.multiplicity");
     mol_coords = input.getData("Molecule.coords");
 
     wf_restricted = input.get<bool>("WaveFunction.restricted");
-    wf_method = input.get<string>("WaveFunction.method");
+    wf_method = input.get<std::string>("WaveFunction.method");
 
     if (wf_method == "DFT") {
         dft_spin         = input.get<bool>("DFT.spin");
@@ -112,7 +112,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     }
 
     scf_run = input.get<bool>("SCF.run");
-    scf_start = input.get<string>("SCF.initial_guess");
+    scf_start = input.get<std::string>("SCF.initial_guess");
     scf_kain = input.get<int>("SCF.kain");
     scf_max_iter = input.get<int>("SCF.max_iter");
     scf_rotation = input.get<int>("SCF.rotation");
@@ -130,7 +130,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     kin_free_prop_thrs = input.get<double>("KineticFree.property_thrs");
 
     rsp_run = input.get<bool>("Response.run");
-    rsp_start = input.get<string>("Response.initial_guess");
+    rsp_start = input.get<std::string>("Response.initial_guess");
     rsp_kain = input.get<int>("Response.kain");
     rsp_max_iter = input.get<int>("Response.max_iter");
     rsp_canonical = input.get<bool>("Response.canonical");
@@ -154,16 +154,16 @@ SCFDriver::SCFDriver(Getkw &input) {
         ext_magnetic_field[1] = tmp[1];
         ext_magnetic_field[2] = tmp[2];
     }
-
-    file_start_orbitals = input.get<string>("Files.start_orbitals");
-    file_final_orbitals = input.get<string>("Files.final_orbitals");
-    file_basis_set = input.get<string>("Files.basis_set");
-    file_dens_mat_a = input.get<string>("Files.dens_mat_a");
-    file_dens_mat_b = input.get<string>("Files.dens_mat_b");
-    file_fock_mat = input.get<string>("Files.fock_mat");
-    file_energy_vec = input.get<string>("Files.energy_vec");
-    file_mo_mat_a = input.get<string>("Files.mo_mat_a");
-    file_mo_mat_b = input.get<string>("Files.mo_mat_b");
+    
+    file_start_orbitals = input.get<std::string>("Files.start_orbitals");
+    file_final_orbitals = input.get<std::string>("Files.final_orbitals");
+    file_basis_set = input.get<std::string>("Files.basis_set");
+    file_dens_mat_a = input.get<std::string>("Files.dens_mat_a");
+    file_dens_mat_b = input.get<std::string>("Files.dens_mat_b");
+    file_fock_mat = input.get<std::string>("Files.fock_mat");
+    file_energy_vec = input.get<std::string>("Files.energy_vec");
+    file_mo_mat_a = input.get<std::string>("Files.mo_mat_a");
+    file_mo_mat_b = input.get<std::string>("Files.mo_mat_b");
 
     r_O[0] = 0.0;
     r_O[1] = 0.0;
@@ -433,7 +433,7 @@ mrcpp::DerivativeOperator<3>* SCFDriver::useDerivative(string derivative_name) {
     if (derivative_name == "ABGV_55") return ABGV_55;
     MSG_FATAL("No such derivative operator");
 }
-
+    
 void SCFDriver::clear() {
     for (int k = 0; k < molecule->getNNuclei(); k++) {
         if (h_M[k] != 0) delete h_M[k];
@@ -972,7 +972,7 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
     Printer::printFooter(0, timer, 2);
 }
 
-/** @brief helper routine to set up the correct parameters in the functional before using it
+    /** @brief helper routine to set up the correct parameters in the functional before using it
      *
      * param[in] order the requested order of the derivative (order=1 for SCF)
      *
@@ -989,6 +989,6 @@ mrdft::XCFunctional* SCFDriver::setupFunctional(int order) {
     setupInitialGrid(*fun, *molecule);
     return fun;
 }
-
+    
 } //namespace mrchem
 
