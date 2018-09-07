@@ -9,8 +9,10 @@ variables:
     working_directory: ~/mrchem
   submodules: &submodules
     run:
-      - git submodule sync --recursive
-      - git submodule update --recursive --init
+      name: Clone submodules
+      command: |
+        git submodule sync --recursive
+        git submodule update --recursive --init
   setup: &setup
     run:
       name: Set Python dependencies
