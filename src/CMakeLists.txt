@@ -73,6 +73,17 @@ install(TARGETS mrchem.x RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 
 option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
-set(MRCHEM_EXECUTABLE $<TARGET_FILE:mrchem.x>)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mrchem.in ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/mrchem @ONLY)
+set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
+# configure into CMakeFiles directory, because it must be in a different directory
+# since file(COPY) does rename files
+configure_file(mrchem.in ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/mrchem @ONLY)
+# now copy the temporary into the final destination, setting the permissions
+file(
+  COPY ${CMAKE_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/mrchem
+  DESTINATION ${CMAKE_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
+  FILE_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+  )
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/mrchem DESTINATION ${CMAKE_INSTALL_BINDIR})

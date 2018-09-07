@@ -73,6 +73,7 @@ script:
   - |
     python ./setup \
            --enable-tests \
+           --enable-unit-tests \
            --type=${BUILD_TYPE} \
            --prefix=$HOME/Software/MRChem \
            --cxx=${CXX_COMPILER} \

@@ -52,8 +52,8 @@ public:
         o << "                                                            " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
         o << "                                                            " << std::endl;
-        o << " Electronic energy            " << std::setw(29) << en.E_el   << std::endl;
-        o << " Nuclear energy               " << std::setw(29) << en.E_nuc  << std::endl;
+        o << " Electronic energy:           " << std::setw(29) << en.E_el   << std::endl;
+        o << " Nuclear energy:              " << std::setw(29) << en.E_nuc  << std::endl;
         o << "                                                            " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
         o << "                                                            " << std::endl;
