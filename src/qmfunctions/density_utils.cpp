@@ -47,17 +47,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  ****************************************/
 
 void density::compute(double prec, Density &rho, Orbital phi, int spin) {
-    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
-    if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
-    if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
-    if (phi.spin() == SPIN::Paired) occ_p = (double) phi.occ();
 
-    double occ(0.0);
-    if (spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;
-    if (spin == DENSITY::Alpha) occ = occ_a + 0.5*occ_p;
-    if (spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
-    if (spin == DENSITY::Spin)  occ = occ_a - occ_b;
-
+    double occ = compute_occupation(phi.spin(), phi.occ(), spin);
+    
     if (std::abs(occ) < mrcpp::MachineZero) {
         rho.real().setZero();
         return;
@@ -82,16 +74,8 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
 }
 
 void density::compute(double prec, Density &rho, Orbital phi, Orbital xi, int spin) {
-    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
-    if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
-    if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
-    if (phi.spin() == SPIN::Paired) occ_p = (double) phi.occ();
-    
-    double occ(0.0);
-    if (spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;
-    if (spin == DENSITY::Alpha) occ = occ_a + 0.5*occ_p;
-    if (spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
-    if (spin == DENSITY::Spin)  occ = occ_a - occ_b;
+
+    double occ = compute_occupation(phi.spin(), phi.occ(), spin);
 
     if (std::abs(occ) < mrcpp::MachineZero) {
         rho.real().setZero();
@@ -186,4 +170,19 @@ void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, i
     mrcpp::project(prec, rho.real(), dens_exp);
 }
 
+double density::compute_occupation(int orb_spin, int orb_occ, int dens_spin) {
+    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
+    if (orb_spin == SPIN::Alpha)  occ_a = (double) orb_occ;
+    if (orb_spin == SPIN::Beta)   occ_b = (double) orb_occ;
+    if (orb_spin == SPIN::Paired) occ_p = (double) orb_occ;
+    
+    double occ(0.0);
+    if (dens_spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;
+    if (dens_spin == DENSITY::Alpha) occ = occ_a + 0.5*occ_p;
+    if (dens_spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
+    if (dens_spin == DENSITY::Spin)  occ = occ_a - occ_b;
+
+    return occ;
+}
+    
 } //namespace mrchem
