@@ -35,6 +35,16 @@ target_link_libraries(core-guess
     mrcpp
     getkw
     )
+
+set_target_properties(core-guess
+  PROPERTIES
+    MACOSX_RPATH ON
+    SKIP_BUILD_RPATH OFF
+    BUILD_WITH_INSTALL_RPATH OFF
+    INSTALL_RPATH "${MRChem_RPATH}"
+    INSTALL_RPATH_USE_LINK_PATH ON
+  )
+
 install(TARGETS core-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
@@ -64,6 +74,16 @@ target_link_libraries(sad-guess
     mrcpp
     getkw
     )
+
+set_target_properties(sad-guess
+  PROPERTIES
+    MACOSX_RPATH ON
+    SKIP_BUILD_RPATH OFF
+    BUILD_WITH_INSTALL_RPATH OFF
+    INSTALL_RPATH "${MRChem_RPATH}"
+    INSTALL_RPATH_USE_LINK_PATH ON
+  )
+
 install(TARGETS sad-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
@@ -92,6 +112,16 @@ target_link_libraries(gto-guess
     mrcpp
     getkw
     )
+
+set_target_properties(gto-guess
+  PROPERTIES
+    MACOSX_RPATH ON
+    SKIP_BUILD_RPATH OFF
+    BUILD_WITH_INSTALL_RPATH OFF
+    INSTALL_RPATH "${MRChem_RPATH}"
+    INSTALL_RPATH_USE_LINK_PATH ON
+  )
+
 install(TARGETS gto-guess
 	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
@@ -112,4 +142,3 @@ install(
   DESTINATION
     ${PYTHON_SITE_INSTALL_DIR}
   )
-

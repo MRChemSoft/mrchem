@@ -80,7 +80,7 @@ script:
            ${COVERAGE} \
            ${OPENMP} \
            --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
-  - cmake --build build --target install -- VERBOSE=1
+  - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
   - ctest --output-on-failure --verbose
 
