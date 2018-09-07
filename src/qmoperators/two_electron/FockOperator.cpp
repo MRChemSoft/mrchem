@@ -50,6 +50,9 @@ FockOperator::FockOperator(KineticOperator  *t,
  * 
  */
 void FockOperator::build() {
+    this->T = RankZeroTensorOperator();
+    if (this->kin  != nullptr) this->T += *this->kin;
+
     this->V = RankZeroTensorOperator();
     if (this->nuc  != nullptr) this->V += *this->nuc;
     if (this->coul != nullptr) this->V += *this->coul;

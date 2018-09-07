@@ -31,7 +31,7 @@ public:
                  XCOperator             *xc = nullptr,
                  ElectricFieldOperator *ext = nullptr);
 
-    KineticOperator        &kinetic()       { return *this->kin; }
+    RankZeroTensorOperator &kinetic()       { return this->T; }
     RankZeroTensorOperator &potential()     { return this->V; }
     RankZeroTensorOperator &perturbation()  { return this->H_1; }
 
@@ -58,6 +58,7 @@ public:
     SCFEnergy trace(OrbitalVector &Phi, const ComplexMatrix &F);
 
 protected:
+    RankZeroTensorOperator T;     ///< Total kinetic energy operator
     RankZeroTensorOperator V;     ///< Total potential energy operator
     RankZeroTensorOperator H_1;   ///< Perturbation operators
 

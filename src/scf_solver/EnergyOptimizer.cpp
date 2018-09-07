@@ -281,6 +281,7 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &
     {   // Computing potential matrix excluding nuclear part
         Timer timer;
         FockOperator fock_n(0, 0, j_n, k_n, xc_n);
+        fock_n.build();
         F_n = fock_n(Phi_np1, Phi_n);
         timer.stop();
         double t = timer.getWallTime();
@@ -306,9 +307,9 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &
     {   // Computing potential matrix excluding nuclear part
         Timer timer;
         FockOperator fock_np1(0, 0, j_np1, k_np1, xc_np1);
+        fock_np1.build();
         ComplexMatrix F_1 = fock_np1(Phi_n, Phi_n);
         ComplexMatrix F_2 = fock_np1(Phi_n, dPhi_n);
-        fock_np1.clear();
 
         F_np1 = F_1 + F_2 + F_2.transpose();
         //ComplexMatrix F_3 = f_np1(*this->dPhi_n, *this->phi_n);
@@ -318,6 +319,9 @@ ComplexMatrix EnergyOptimizer::calcFockMatrixUpdate(double prec, OrbitalVector &
         double t = timer.getWallTime();
         Printer::printDouble(0, "Fock matrix n+1", t, 5);
     }
+    if (j_np1 != 0)   j_np1->clear();
+    if (k_np1 != 0)   k_np1->clear();
+    if (xc_np1 != 0) xc_np1->clear();
 
     // Re-computing non-orthogonal phi_np1
     orbital::free(Phi_np1);

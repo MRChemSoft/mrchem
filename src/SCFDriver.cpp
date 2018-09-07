@@ -473,23 +473,28 @@ void SCFDriver::setup_np1() {
     phi_np1 = new OrbitalVector;
     *phi_np1 = orbital::param_copy(*phi);
 
-    if (wf_method == "Core") {
-    } else if (wf_method == "Hartree") {
+    fock_np1 = new FockOperator(T, V);
+    // For Hartree, HF and DFT we need the coulomb part
+    if (wf_method == "Hartree" or wf_method == "HF" or wf_method == "DFT") {
         J_np1 = new CoulombOperator(P, phi_np1);
-    } else if (wf_method == "HF") {
-        J_np1 = new CoulombOperator(P, phi_np1);
-        K_np1 = new ExchangeOperator(*P, *phi_np1);
-    } else if (wf_method == "DFT") {
-        J_np1 = new CoulombOperator(P, phi_np1);
-        XC_np1 = new XCOperator(xcfun, phi_np1);
-        if (dft_x_fac > mrcpp::MachineZero) {
-            K_np1 = new ExchangeOperator(*P, *phi_np1);
-        }
-    } else {
-        MSG_ERROR("Invalid method");
+        fock_np1->setCoulombOperator(J_np1);
     }
-
-    fock_np1 = new FockOperator(0, V, J_np1, K_np1, XC_np1);
+    // For HF we need the full HF exchange
+    if (wf_method == "HF") {
+        K_np1 = new ExchangeOperator(*P, *phi);
+        fock_np1->setExchangeOperator(K_np1);
+    }
+    //For hybrid DFT we need a partial HF exchange
+    if (wf_method == "DFT" and (dft_x_fac > mrcpp::MachineZero)) {
+        K_np1 = new ExchangeOperator(*P, *phi_np1, dft_x_fac);
+        fock_np1->setExchangeOperator(K_np1);
+    }
+    //For DFT we need the XC operator
+    if (wf_method == "DFT") {
+        xcfun = setupFunctional(1);
+        XC_np1 = new XCOperator(xcfun, phi_np1);
+        fock_np1->setXCOperator(XC_np1);
+    }
     fock_np1->build();
 }
 
