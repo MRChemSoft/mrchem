@@ -81,6 +81,45 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     mrcpp::clear(sum_vec, true);
 }
 
+void density::compute(double prec, Density &rho, Orbital phi, Orbital xi, int spin) {
+    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
+    if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
+    if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
+    if (phi.spin() == SPIN::Paired) occ_p = (double) phi.occ();
+    
+    double occ(0.0);
+    if (spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;
+    if (spin == DENSITY::Alpha) occ = occ_a + 0.5*occ_p;
+    if (spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
+    if (spin == DENSITY::Spin)  occ = occ_a - occ_b;
+
+    if (std::abs(occ) < mrcpp::MachineZero) {
+        rho.real().setZero();
+        return;
+    }
+
+    FunctionTreeVector<3> sum_vec;
+    if (phi.hasReal() and xi.hasReal()) {
+        FunctionTree<3> *phir_xir = new FunctionTree<3>(*MRA);
+        //        mrcpp::copy_grid(*phir_xir, phi.real()); LUCA should this be here? Should there be a build_grid?
+        mrcpp::multiply(prec, *phir_xir, 2.0, phi.real(), xi.real());
+        sum_vec.push_back(std::make_tuple(occ, phir_xir));
+    }
+    if (phi.hasImag() and xi.hasImag()) {
+        FunctionTree<3> *phii_xii = new FunctionTree<3>(*MRA);
+        //        mrcpp::copy_grid(*phii_xii, phi.imag()); LUCA should this be here? Should there be a build_grid?
+        mrcpp::multiply(prec, *phii_xii, 2.0, phi.imag(), xi.imag());
+        sum_vec.push_back(std::make_tuple(occ, phii_xii));
+    }
+    mrcpp::build_grid(rho.real(), sum_vec);
+    mrcpp::add(-1.0, rho.real(), sum_vec, 0);
+    mrcpp::clear(sum_vec, true);
+}
+
+void density::compute(double prec, Density &rho, Orbital phi, Orbital xi, Orbital yi, int spin) {
+    MSG_FATAL("NOT IMPLEMENTED ABORT");
+}
+
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
     double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
@@ -107,6 +146,38 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
 
     mpi::reduce_density(rho, mpi::comm_orb);
     mpi::broadcast_density(rho, mpi::comm_orb);
+}
+
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, int spin) {
+    double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
+    double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
+    if (Phi.size() != Phi_x.size()) MSG_ERROR("Size mismatch");
+    
+    FunctionTreeVector<3> dens_vec;
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) {
+            Density *rho_i = new Density(); //LUCA: Is it the right creator here (it was Density(*MRA);
+            rho_i->allocReal();
+            mrcpp::copy_grid(rho_i->real(), rho.real());
+            density::compute(mult_prec, *rho_i, Phi[i], Phi_x[i], spin);
+            dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
+        }
+    }
+
+    if (add_prec > 0.0) {
+        mrcpp::add(add_prec, rho.real(), dens_vec);
+    } else if (dens_vec.size() > 0) {
+        mrcpp::build_grid(rho.real(), dens_vec);
+        mrcpp::add(-1.0, rho.real(), dens_vec, 0);
+    }
+    mrcpp::clear(dens_vec, true);
+
+    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::broadcast_density(rho, mpi::comm_orb);
+}
+
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, OrbitalVector &Phy_y, int spin) {
+    MSG_FATAL("NOT IMPLEMENTED ABORT");
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {
