@@ -63,11 +63,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
-            Density *rho_i = new Density();
-            rho_i->setReal(new mrcpp::FunctionTree<3>(*MRA));
-            mrcpp::copy_grid(rho_i->real(), rho.real());
-            density::compute(mult_prec, *rho_i, Phi[i], spin);
-            dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
+            Density rho_i;
+            rho_i.alloc(NUMBER::Real);
+            mrcpp::copy_grid(rho_i.real(), rho.real());
+            density::compute(mult_prec, rho_i, Phi[i], spin);
+            dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
+            rho_i.clear(); // release FunctionTree pointers to dens_vec
         }
     }
 

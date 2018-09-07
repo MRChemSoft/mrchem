@@ -30,7 +30,11 @@ CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
           density(), //LUCA: check constructor
           orbitals(Phi),
           poisson(P) {
-    density.setReal(new FunctionTree<3>(*MRA));
+    density.alloc(NUMBER::Real);
+}
+
+CoulombPotential::~CoulombPotential() {
+    this->density.free();
 }
 
 /** @brief prepare operator for application
