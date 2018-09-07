@@ -14,8 +14,9 @@ matrix:
           packages:
             - g++
             - gcc
-            - libboost-all-dev
             - lcov
+            - libboost-all-dev
+            - python-pyparsing
       env:
         - BUILD_TYPE='release'
         - CXX_COMPILER='g++'
@@ -80,9 +81,9 @@ script:
            ${COVERAGE} \
            ${OPENMP} \
            --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
-  - cmake --build build --target install -- VERBOSE=1 -j2
+  - cmake --build build --target install -- VERBOSE=1
   - cd build
-  - ctest --output-on-failure --verbose
+  - travis_wait 20 ctest --output-on-failure --verbose
 
 after_success:
   - |

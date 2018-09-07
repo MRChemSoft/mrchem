@@ -1,0 +1,7 @@
+Pygments
+pyparsing
+breathe
+recommonmark
+sphinx
+sphinx-rtd-theme
+sphinxcontrib-bibtex

@@ -77,7 +77,7 @@ variables:
       shell: /bin/bash
       command: |
         cd build
-        ctest --output-on-failure --verbose
+        pipenv run ctest --output-on-failure --verbose
 
 jobs:
   serial-py3:

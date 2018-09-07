@@ -1,0 +1,25 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+Pygments = "*"
+pyparsing = "*"
+breathe = "*"
+recommonmark = "*"
+Sphinx = "*"
+sphinx_rtd_theme = "*"
+sphinxcontrib-bibtex = "*"
+
+
+[dev-packages]
+
+
+
+[requires]
+
+python_version = "3.6"
