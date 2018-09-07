@@ -7,6 +7,10 @@ variables:
         name: tsubame
         user: merzbow
     working_directory: ~/mrchem
+  submodules: &submodules
+    run:
+      - git submodule sync --recursive
+      - git submodule update --recursive --init
   setup: &setup
     run:
       name: Set Python dependencies
@@ -80,6 +84,7 @@ jobs:
       - PYTHON_VER: '3'
     steps:
       - checkout
+      - *submodules
       - *setup
       - *report
       - *configure-serial
@@ -92,6 +97,7 @@ jobs:
       - OMP_NUM_THREADS: '2'
     steps:
       - checkout
+      - *submodules
       - *setup
       - *report
       - *configure-omp
