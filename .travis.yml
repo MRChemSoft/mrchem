@@ -83,7 +83,12 @@ script:
            --cmake-options="-DEigen3_DIR=${HOME}/Deps/eigen/share/eigen3/cmake -DCMAKE_C_COMPILER=${C_COMPILER}"
   - cmake --build build --target install -- VERBOSE=1
   - cd build
-  - travis_wait 20 ctest --output-on-failure --verbose
+  - |
+    if [[ "${COVERAGE}" = "--coverage" ]]; then
+      ctest --output-on-failure --verbose -LE "integration"
+    else
+      ctest --output-on-failure --verbose
+    fi
 
 after_success:
   - |

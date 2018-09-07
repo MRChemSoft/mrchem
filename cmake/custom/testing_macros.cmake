@@ -23,7 +23,7 @@ macro(add_integration_test)
 
   set_tests_properties(${_integration_test_NAME}
     PROPERTIES
-      LABELS "${_integration_test_LABELS}"
+      LABELS "${_integration_test_LABELS};integration"
     )
 
   if(_integration_test_COST)
@@ -73,7 +73,7 @@ macro(add_Catch_test)
 
   set_tests_properties(${_Catch_test_NAME}
     PROPERTIES
-      LABELS "${_Catch_test_LABELS}"
+      LABELS "${_Catch_test_LABELS};unit"
     )
 
   if(_Catch_test_COST)
