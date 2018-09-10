@@ -13,7 +13,10 @@ target_sources(mrchem PRIVATE
 
 # Install core guess executable in bin
 add_executable(core-guess core_guess.cpp)
-#add_dependencies(core-guess external-modules)
+add_dependencies(core-guess
+  mrcpp_external
+  getkw_external
+  )
 target_include_directories(core-guess PRIVATE
     ${CMAKE_BINARY_DIR}
     ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
@@ -51,7 +54,10 @@ install(TARGETS core-guess
 
 # Install SAD guess executable in bin
 add_executable(sad-guess sad_guess.cpp)
-#add_dependencies(sad-guess external-modules)
+add_dependencies(sad-guess
+  mrcpp_external
+  getkw_external
+  )
 target_include_directories(sad-guess PRIVATE
     ${CMAKE_BINARY_DIR}
     ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
@@ -90,7 +96,10 @@ install(TARGETS sad-guess
 
 # Install GTO guess executable in bin
 add_executable(gto-guess gto_guess.cpp)
-#add_dependencies(gto-guess external-modules)
+add_dependencies(gto-guess
+  mrcpp_external
+  getkw_external
+  )
 target_include_directories(gto-guess PRIVATE
     ${CMAKE_BINARY_DIR}
     ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}

@@ -14,9 +14,10 @@ add_library(mrchem STATIC
     parallel.cpp
     mrenv.cpp
     )
-  #add_dependencies(mrchem
-  #    external-modules
-  #    )
+add_dependencies(mrchem
+  mrcpp_external
+  xcfun_external
+  )
 
 target_include_directories(mrchem PUBLIC
     ${CMAKE_BINARY_DIR}
@@ -54,9 +55,11 @@ install(TARGETS mrchem ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/mrchem)
 add_executable(mrchem.x
     mrchem.cpp
     )
-  #add_dependencies(mrchem.x
-  #    mrchem
-  #    )
+add_dependencies(mrchem.x
+  mrcpp_external
+  xcfun_external
+  getkw_external
+  )
 target_include_directories(mrchem.x PRIVATE
     ${CMAKE_BINARY_DIR}
     ${STAGED_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}
