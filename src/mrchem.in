@@ -124,7 +124,8 @@ def parse_cmdline():
         printlevel = 1
 
     if (len(args) == 0):
-        inpfil = None
+        cmdln.error('Not input file passed!')
+        sys.exit(0)
     elif (len(args) == 1):
         inpfil = args[0]
     else:
