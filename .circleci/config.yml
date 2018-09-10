@@ -111,6 +111,7 @@ jobs:
       - PYTHON_VER: "3"
     steps:
       - checkout
+      - *submodules
       - *setup
       - *report
       - *configure-mpi
