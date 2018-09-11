@@ -34,7 +34,7 @@ def main():
     global topsect
 
     # Parse command line
-    executable, dryrun, printlevel, debug, inpfil = parse_cmdline()
+    executable, dryrun, printlevel, inpfil = parse_cmdline()
 
     # The input file is assumed to be relative to the current working directory
     # Resolve the path, so we can call this script with the input
@@ -90,13 +90,6 @@ def parse_cmdline():
         default=False,
         help='Only process input')
     cmdln.add_option(
-        '-d',
-        '--debug',
-        action='store_true',
-        dest='debug',
-        default='@MRCHEM_DRIVER_DEBUG@',
-        help='debug')
-    cmdln.add_option(
         '-p',
         '--print',
         action='store',
@@ -119,10 +112,6 @@ def parse_cmdline():
     dryrun = opts.dryrun
     printlevel = int(opts.printlevel)
 
-    debug = opts.debug
-    if debug:
-        printlevel = 1
-
     if (len(args) == 0):
         cmdln.error('Not input file passed!')
         sys.exit(0)
@@ -132,7 +121,7 @@ def parse_cmdline():
         cmdln.error('incorrect number of files')
         sys.exit(0)
 
-    return executable, dryrun, printlevel, debug, inpfil
+    return executable, dryrun, printlevel, inpfil
 
 
 def setup_keywords(input_dir):

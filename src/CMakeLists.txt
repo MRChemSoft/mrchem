@@ -94,7 +94,6 @@ set_target_properties(mrchem.x
 install(TARGETS mrchem.x RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 
-option (MRCHEM_DRIVER_DEBUG "Debug the driver (extmod)" OFF)
 set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
 # configure into CMakeFiles directory, because it must be in a different directory
 # since file(COPY) does rename files
