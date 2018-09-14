@@ -24,10 +24,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * application.
  */
 HelmholtzVector::HelmholtzVector(double build, double thrs)
-        : threshold(thrs),
-          build_prec(build),
-          apply_prec(-1.0) {
-}
+        : threshold(thrs)
+        , build_prec(build)
+        , apply_prec(-1.0) {}
 
 /** @brief Prepare operators for application
  *
@@ -48,12 +47,12 @@ void HelmholtzVector::setup(double prec, const DoubleVector &energies) {
     if (mpi::orb_size > 1) this->clear();
     for (int i = 0; i < energies.size(); i++) {
         double energy = energies(i);
-        if (energy > 0.0 ) energy = -0.5;
+        if (energy > 0.0) energy = -0.5;
         int idx = initHelmholtzOperator(energy, i);
         this->oper_idx.push_back(idx);
         if (mpi::orb_size == 1) {
             double mu = (*this)[i].getMu();
-            this->lambda.push_back(-0.5*mu*mu);
+            this->lambda.push_back(-0.5 * mu * mu);
         } else {
             this->lambda.push_back(energy);
         }
@@ -76,21 +75,21 @@ void HelmholtzVector::setup(double prec, const DoubleVector &energies) {
  */
 int HelmholtzVector::initHelmholtzOperator(double energy, int i) {
     if (energy > 0.0) MSG_ERROR("Complex Helmholtz not available");
-    double mu = std::sqrt(-2.0*energy);
+    double mu = std::sqrt(-2.0 * energy);
     if (mpi::orb_size == 1) {
         for (int j = 0; j < this->operators.size(); j++) {
             double mu_j = this->operators[j]->getMu();
             double muDiff = mu - mu_j;
-            double relDiff = muDiff/mu;
+            double relDiff = muDiff / mu;
             if (std::abs(relDiff) < this->threshold and false) {
-                double l = -0.5*mu_j*mu_j;
+                double l = -0.5 * mu_j * mu_j;
                 Printer::printDouble(0, "Re-using operator with lambda", l, 5);
                 return j;
             }
         }
     }
     mrcpp::HelmholtzOperator *oper = 0;
-    if( i%mpi::orb_size == mpi::orb_rank) {
+    if (i % mpi::orb_size == mpi::orb_rank) {
         Printer::printDouble(0, "Creating operator with lambda", energy, 5);
         oper = new mrcpp::HelmholtzOperator(*MRA, mu, this->build_prec);
     }
@@ -149,7 +148,7 @@ void HelmholtzVector::clearUnused() {
 }
 
 /** @brief Return the operator corresponding to the i-th orbital */
-mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) {
+mrcpp::HelmholtzOperator &HelmholtzVector::operator[](int i) {
     int idx = this->oper_idx[i];
     if (idx < 0 or idx >= operators.size()) MSG_ERROR("Invalid operator index");
     mrcpp::HelmholtzOperator *oper = this->operators[idx];
@@ -158,7 +157,7 @@ mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) {
 }
 
 /** @brief Return the operator corresponding to the i-th orbital */
-const mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) const {
+const mrcpp::HelmholtzOperator &HelmholtzVector::operator[](int i) const {
     int idx = this->oper_idx[i];
     if (idx < 0 or idx >= operators.size()) MSG_ERROR("Invalid operator index");
     const mrcpp::HelmholtzOperator *oper = this->operators[idx];
@@ -170,9 +169,7 @@ const mrcpp::HelmholtzOperator& HelmholtzVector::operator[](int i) const {
 DoubleVector HelmholtzVector::getLambdaVector() const {
     int nLambda = this->lambda.size();
     DoubleVector L = DoubleVector::Zero(nLambda);
-    for (int i = 0; i < nLambda; i++) {
-        L(i) = this->lambda[i];
-    }
+    for (int i = 0; i < nLambda; i++) { L(i) = this->lambda[i]; }
     return L;
 }
 
@@ -188,11 +185,9 @@ int HelmholtzVector::printTreeSizes() const {
     int totTrees = 0;
     int nOperators = this->operators.size();
     for (int i = 0; i < nOperators; i++) {
-        if(this->operators[i] != 0){
+        if (this->operators[i] != 0) {
             int nTrees = this->operators[i]->size();
-            for (int j = 0; j < nTrees; j++) {
-                totNodes += this->operators[i]->getComponent(j).getNNodes();
-            }
+            for (int j = 0; j < nTrees; j++) { totNodes += this->operators[i]->getComponent(j).getNNodes(); }
             totTrees += nTrees;
         }
     }
@@ -271,4 +266,4 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
     return out;
 }
 
-} //namespace mrchem
+} // namespace mrchem

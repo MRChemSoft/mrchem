@@ -27,7 +27,7 @@ public:
     bool optimize();
 
 protected:
-    Accelerator *kain;  ///< KAIN accelerator(pointer to external object)
+    Accelerator *kain; ///< KAIN accelerator(pointer to external object)
 };
 
-} //namespace mrchem
+} // namespace mrchem

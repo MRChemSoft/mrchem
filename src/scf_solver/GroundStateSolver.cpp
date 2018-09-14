@@ -23,11 +23,10 @@ namespace mrchem {
  * so the SCF solver needs to be "setup()" before "optimize()".
  */
 GroundStateSolver::GroundStateSolver(HelmholtzVector &h)
-        : SCF(h),
-          fMat_n(0),
-          fOper_n(0),
-          orbitals_n(0) {
-}
+        : SCF(h)
+        , fMat_n(0)
+        , fOper_n(0)
+        , orbitals_n(0) {}
 
 /** @brief Computes the Helmholtz argument for the all orbitals.
  *
@@ -54,14 +53,12 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     int oldprec = Printer::setPrecision(5);
 
     RankZeroTensorOperator &V = fock.potential();
-    
-    double coef = -1.0/(2.0*MATHCONST::pi);
+
+    double coef = -1.0 / (2.0 * MATHCONST::pi);
     Timer timer_1;
     OrbitalVector part_1 = orbital::param_copy(Phi);
     for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) {
-            part_1[i] = V(Phi[i]);
-        }
+        if (mpi::my_orb(Phi[i])) { part_1[i] = V(Phi[i]); }
     }
     timer_1.stop();
     Printer::printDouble(0, "Potential part", timer_1.getWallTime(), 5);
@@ -162,17 +159,17 @@ void GroundStateSolver::printProperty() const {
 
     Printer::printHeader(0, "                    Energy                 Update      Done ");
     printUpdate(" Orbital    ", phi_1, phi_1 - phi_0);
-    printUpdate(" Kinetic    ",   T_1,   T_1 -   T_0);
-    printUpdate(" N-E        ",   V_1,   V_1 -   V_0);
-    printUpdate(" Coulomb    ",   J_1,   J_1 -   J_0);
-    printUpdate(" Exchange   ",   K_1,   K_1 -   K_0);
-    printUpdate(" X-C        ",  XC_1,  XC_1 -  XC_0);
+    printUpdate(" Kinetic    ", T_1, T_1 - T_0);
+    printUpdate(" N-E        ", V_1, V_1 - V_0);
+    printUpdate(" Coulomb    ", J_1, J_1 - J_0);
+    printUpdate(" Exchange   ", K_1, K_1 - K_0);
+    printUpdate(" X-C        ", XC_1, XC_1 - XC_0);
     Printer::printSeparator(0, '-');
-    printUpdate(" Electronic ",  E_1,  E_1 -  E_0);
-    printUpdate(" Nuclear    ",  N_1,  N_1 -  N_0);
+    printUpdate(" Electronic ", E_1, E_1 - E_0);
+    printUpdate(" Nuclear    ", N_1, N_1 - N_0);
     Printer::printSeparator(0, '-');
-    printUpdate(" Total      ",  E_1 + N_1, (E_1+N_1) - (E_0+N_0));
+    printUpdate(" Total      ", E_1 + N_1, (E_1 + N_1) - (E_0 + N_0));
     Printer::printSeparator(0, '=');
 }
 
-} //namespace mrchem
+} // namespace mrchem

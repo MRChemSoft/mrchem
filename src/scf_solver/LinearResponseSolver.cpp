@@ -25,23 +25,20 @@ namespace mrchem {
  * initialized at this stage, so the SCF solver needs to be "setup()" before
  * "optimize()".
  */
-LinearResponseSolver::LinearResponseSolver(HelmholtzVector &h,
-                                           Accelerator *k_x,
-                                           Accelerator *k_y)
-        : SCF(h),
-          dynamic(false),
-          frequency(0.0),
-          fOper_0(nullptr),
-          fOper_1(nullptr),
-          fMat_0(nullptr),
-          fMat_x(nullptr),
-          fMat_y(nullptr),
-          orbitals_0(nullptr),
-          orbitals_x(nullptr),
-          orbitals_y(nullptr),
-          kain_x(k_x),
-          kain_y(k_y) {
-}
+LinearResponseSolver::LinearResponseSolver(HelmholtzVector &h, Accelerator *k_x, Accelerator *k_y)
+        : SCF(h)
+        , dynamic(false)
+        , frequency(0.0)
+        , fOper_0(nullptr)
+        , fOper_1(nullptr)
+        , fMat_0(nullptr)
+        , fMat_x(nullptr)
+        , fMat_y(nullptr)
+        , orbitals_0(nullptr)
+        , orbitals_x(nullptr)
+        , orbitals_y(nullptr)
+        , kain_x(k_x)
+        , kain_y(k_y) {}
 
 /** @brief Prepare the unperturbed parts of the response solver for optimization
  *
@@ -56,10 +53,7 @@ LinearResponseSolver::LinearResponseSolver(HelmholtzVector &h,
  * iteration). SCF solver will NOT take ownership of the input, so these objects
  * must be taken care of externally (do not delete until SCF goes out of scope).
  */
-void LinearResponseSolver::setupUnperturbed(double prec,
-                                            FockOperator *fock,
-                                            OrbitalVector *Phi,
-                                            ComplexMatrix *F) {
+void LinearResponseSolver::setupUnperturbed(double prec, FockOperator *fock, OrbitalVector *Phi, ComplexMatrix *F) {
     this->fOper_0 = fock;
     this->orbitals_0 = Phi;
     this->fMat_0 = F;
@@ -113,10 +107,7 @@ void LinearResponseSolver::setup(FockOperator *fock, OrbitalVector *X) {
  * SCF solver will NOT take ownership of the input, so these objects must be taken
  * care of externally (do not delete until SCF goes out of scope).
  */
-void LinearResponseSolver::setup(double omega,
-                                 FockOperator *fock,
-                                 OrbitalVector *X,
-                                 OrbitalVector *Y) {
+void LinearResponseSolver::setup(double omega, FockOperator *fock, OrbitalVector *X, OrbitalVector *Y) {
     NOT_IMPLEMENTED_ABORT;
 }
 
@@ -186,7 +177,7 @@ bool LinearResponseSolver::optimize() {
 
     int nIter = 0;
     bool converged = false;
-    while(nIter++ < this->maxIter or this->maxIter < 0) {
+    while (nIter++ < this->maxIter or this->maxIter < 0) {
         // Initialize SCF cycle
         Timer timer;
         printCycleHeader(nIter);
@@ -198,7 +189,7 @@ bool LinearResponseSolver::optimize() {
         // Iterate X orbitals
         if (X_n != nullptr) {
             // Compute argument: psi_i = V_0*x_i - sum_j [L-F]_ij*x_j + (1 - rho_0)phi_i
-            OrbitalVector Psi_n = setupHelmholtzArguments(*X_n, L-F_x, false);
+            OrbitalVector Psi_n = setupHelmholtzArguments(*X_n, L - F_x, false);
 
             // Apply Helmholtz operators
             OrbitalVector X_np1 = H(Psi_n);
@@ -296,13 +287,13 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
     for (int i = 0; i < Phi_1.size(); i++) {
         OrbitalVector arg_parts;
         timer_1.start();
-        if (Phi_1[i].norm() > 0.1*this->orbThrs) {
+        if (Phi_1[i].norm() > 0.1 * this->orbThrs) {
             Orbital part_1 = V_0(Phi_1[i]);
             arg_parts.push_back(part_1);
         }
         timer_1.stop();
         timer_2.start();
-        if (M.row(i).norm() > 0.1*this->orbThrs) {
+        if (M.row(i).norm() > 0.1 * this->orbThrs) {
             ComplexVector c = M.row(i);
             Orbital part_2 = orbital::linear_combination(c, Phi_1);
             arg_parts.push_back(part_2);
@@ -319,7 +310,7 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
         timer_3.stop();
         arg_parts.push_back(part_3);
 
-        ComplexVector c = ComplexVector::Constant(arg_parts.size(), -1.0/(2.0*MATHCONST::pi));
+        ComplexVector c = ComplexVector::Constant(arg_parts.size(), -1.0 / (2.0 * MATHCONST::pi));
         out[i] = orbital::linear_combination(c, arg_parts, -1.0);
         orbital::free(arg_parts);
     }
@@ -354,8 +345,8 @@ void LinearResponseSolver::printProperty() const {
     if (iter > 1) prop_0 = this->property[iter - 2];
     if (iter > 0) prop_1 = this->property[iter - 1];
     Printer::printHeader(0, "                    Value                  Update      Done ");
-    printUpdate(" Property   ",  prop_1,  prop_1 -  prop_0);
+    printUpdate(" Property   ", prop_1, prop_1 - prop_0);
     Printer::printSeparator(0, '=');
 }
 
-}  //namespace mrchem
+} // namespace mrchem

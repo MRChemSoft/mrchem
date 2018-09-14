@@ -52,7 +52,7 @@ void KAIN::setupLinearSystem() {
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
-                    orbA(i,j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
+                    orbA(i, j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
                     dfPhi_jm.free();
                 }
                 orbB(i) += orbital::dot(dPhi_im, fPhi_m).real();
@@ -82,10 +82,10 @@ void KAIN::setupLinearSystem() {
             for (int j = 0; j < nHistory; j++) {
                 const ComplexMatrix &fX_j = this->dFock[j];
                 ComplexMatrix dfX_jm = fX_j - fX_m;
-                ComplexMatrix prod = dX_im.transpose()*dfX_jm;
-                fockA(i,j) -= prod.trace();
+                ComplexMatrix prod = dX_im.transpose() * dfX_jm;
+                fockA(i, j) -= prod.trace();
             }
-            ComplexMatrix prod = dX_im.transpose()*fX_m;
+            ComplexMatrix prod = dX_im.transpose() * fX_m;
             fockB(i) += prod.trace();
         }
         A_matrices.push_back(fockA.real());
@@ -106,11 +106,7 @@ void KAIN::setupLinearSystem() {
  *
  * \f$ \delta x^n = f(x^n) + \sum_{j=1}^m c_j[(x^j-x^n)+(f(x^j)-f(x^n))]\f$
  */
-void KAIN::expandSolution(double prec,
-                          OrbitalVector &Phi,
-                          OrbitalVector &dPhi,
-                          ComplexMatrix *F,
-                          ComplexMatrix *dF) {
+void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatrix *F, ComplexMatrix *dF) {
     Timer timer;
     int nHistory = this->orbitals.size() - 1;
     int nOrbitals = this->orbitals[nHistory].size();
@@ -187,12 +183,12 @@ void KAIN::expandSolution(double prec,
         for (int j = 0; j < nHistory; j++) {
             const ComplexMatrix &X_j = this->fock[j];
             const ComplexMatrix &fX_j = this->dFock[j];
-            ComplexMatrix tmpX = ComplexMatrix::Zero(nOrbitals,nOrbitals);
+            ComplexMatrix tmpX = ComplexMatrix::Zero(nOrbitals, nOrbitals);
             tmpX += X_j;
             tmpX -= X_m;
             tmpX += fX_j;
             tmpX -= fX_m;
-            tmpX *= this->c[m-1](j);
+            tmpX *= this->c[m - 1](j);
             fockStep += tmpX;
         }
         *F = X_m;
@@ -203,4 +199,4 @@ void KAIN::expandSolution(double prec,
     Printer::printDouble(0, "Expand solution", t, 5);
 }
 
-} //namespace mrchem
+} // namespace mrchem

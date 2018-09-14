@@ -19,14 +19,13 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * must be taken care of externally (do not delete until SCF goes out of scope).
  */
 SCF::SCF(HelmholtzVector &h)
-        : maxIter(-1),
-          rotation(0),
-          canonical(true),
-          orbThrs(-1.0),
-          propThrs(-1.0),
-          orbPrec{-1.0, -1.0, -1.0},
-          helmholtz(&h) {
-}
+        : maxIter(-1)
+        , rotation(0)
+        , canonical(true)
+        , orbThrs(-1.0)
+        , propThrs(-1.0)
+        , orbPrec{-1.0, -1.0, -1.0}
+        , helmholtz(&h) {}
 
 /** @brief Set convergence thresholds
  *
@@ -61,8 +60,8 @@ void SCF::setOrbitalPrec(double init, double final) {
  * and returns the current prec.
  */
 double SCF::adjustPrecision(double error) {
-    if (this->orbPrec[0] > 0.0 ) this->orbPrec[0] *= 0.5;
-    this->orbPrec[0] = std::min(10.0*error*error, this->orbPrec[0]);
+    if (this->orbPrec[0] > 0.0) this->orbPrec[0] *= 0.5;
+    this->orbPrec[0] = std::min(10.0 * error * error, this->orbPrec[0]);
     this->orbPrec[0] = std::max(this->orbPrec[0], this->orbPrec[2]);
 
     Printer::printSeparator(0, '=');
@@ -104,7 +103,7 @@ bool SCF::needLocalization(int nIter) const {
         loc = true;
     } else if (this->rotation == 0) {
         loc = false;
-    } else if (nIter%this->rotation == 0) {
+    } else if (nIter % this->rotation == 0) {
         loc = true;
     }
     return loc;
@@ -125,7 +124,7 @@ bool SCF::needDiagonalization(int nIter) const {
         diag = true;
     } else if (this->rotation == 0) {
         diag = false;
-    } else if (nIter%this->rotation == 0) {
+    } else if (nIter % this->rotation == 0) {
         diag = true;
     }
     return diag;
@@ -141,15 +140,11 @@ bool SCF::needDiagonalization(int nIter) const {
  */
 double SCF::getUpdate(const std::vector<double> &vec, int i, bool absPrec) const {
     if (i < 1 or i > vec.size()) MSG_ERROR("Invalid argument");
-    double E_i = vec[i-1];
+    double E_i = vec[i - 1];
     double E_im1 = 0.0;
-    if (i > 1) {
-        E_im1 = vec[i-2];
-    }
+    if (i > 1) { E_im1 = vec[i - 2]; }
     double E_diff = E_i - E_im1;
-    if (not absPrec and std::abs(E_i) > mrcpp::MachineZero) {
-        E_diff *= 1.0/E_i;
-    }
+    if (not absPrec and std::abs(E_i) > mrcpp::MachineZero) { E_diff *= 1.0 / E_i; }
     return E_diff;
 }
 
@@ -164,10 +159,8 @@ double SCF::getUpdate(const std::vector<double> &vec, int i, bool absPrec) const
 void SCF::printUpdate(const std::string &name, double P, double dP) const {
     int oldPrec = Printer::setPrecision(15);
     double p = 1.0;
-    if (std::abs(P) > mrcpp::MachineZero) {
-        p = P;
-    }
-    bool done = (std::abs(dP/p) < this->propThrs) or this->propThrs < 0.0;
+    if (std::abs(P) > mrcpp::MachineZero) { p = P; }
+    bool done = (std::abs(dP / p) < this->propThrs) or this->propThrs < 0.0;
     printout(0, name);
     printout(0, std::setw(24) << P);
     Printer::setPrecision(5);
@@ -222,12 +215,12 @@ void SCF::printConvergence(bool converged) const {
     int iter = this->orbError.size();
     int oldPrec = Printer::getPrecision();
     Printer::printHeader(0, "Convergence rate");
-    println(0,"Iter    OrbError       Property                   Update  ");
+    println(0, "Iter    OrbError       Property                   Update  ");
     Printer::printSeparator(0, '-');
     for (int i = 0; i < iter; i++) {
         double prop_i = this->property[i];
-        double propDiff = getUpdate(this->property, i+1, true);
-        printout(0, std::setw(3) << i+1);
+        double propDiff = getUpdate(this->property, i + 1, true);
+        printout(0, std::setw(3) << i + 1);
         Printer::setPrecision(5);
         printout(0, std::setw(15) << this->orbError[i]);
         Printer::setPrecision(15);
@@ -239,9 +232,9 @@ void SCF::printConvergence(bool converged) const {
     Printer::setPrecision(oldPrec);
     Printer::printSeparator(0, '-');
     if (converged) {
-        println(0,"                      SCF converged!!!                      ");
+        println(0, "                      SCF converged!!!                      ");
     } else {
-        println(0,"                   SCF did NOT converge!!!                  ");
+        println(0, "                   SCF did NOT converge!!!                  ");
     }
     Printer::printSeparator(0, '=', 2);
 }
@@ -272,4 +265,4 @@ void SCF::printCycleFooter(double t) const {
     Printer::setPrecision(oldPrec);
 }
 
-} //namespace mrchem
+} // namespace mrchem

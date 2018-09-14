@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
@@ -35,17 +35,17 @@ public:
     void setMaxIterations(int m_iter) { this->maxIter = m_iter; }
 
 protected:
-    int maxIter;        ///< Maximum number of iterations
-    int rotation;       ///< Number of iterations between localization/diagonalization
-    bool canonical;     ///< Use localized or canonical orbitals
-    double orbThrs;     ///< Convergence threshold for norm of orbital update
-    double propThrs;    ///< Convergence threshold for property
-    double orbPrec[3];  ///< Dynamic precision: [current_prec, start_prec, end_prec]
+    int maxIter;       ///< Maximum number of iterations
+    int rotation;      ///< Number of iterations between localization/diagonalization
+    bool canonical;    ///< Use localized or canonical orbitals
+    double orbThrs;    ///< Convergence threshold for norm of orbital update
+    double propThrs;   ///< Convergence threshold for property
+    double orbPrec[3]; ///< Dynamic precision: [current_prec, start_prec, end_prec]
 
-    std::vector<double> orbError;   ///< Convergence orbital error
-    std::vector<double> property;   ///< Convergence property error
+    std::vector<double> orbError; ///< Convergence orbital error
+    std::vector<double> property; ///< Convergence property error
 
-    HelmholtzVector *helmholtz;     ///< Pointer to external object
+    HelmholtzVector *helmholtz; ///< Pointer to external object
 
     bool checkConvergence(double err_o, double err_p) const;
     bool needLocalization(int nIter) const;
@@ -63,4 +63,4 @@ protected:
     void printCycleFooter(double t) const;
 };
 
-} //namespace mrchem
+} // namespace mrchem

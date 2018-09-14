@@ -22,17 +22,20 @@ class EnergyOptimizer final : public GroundStateSolver {
 public:
     EnergyOptimizer(HelmholtzVector &h);
 
-    void setup(FockOperator &fock, OrbitalVector &phi, ComplexMatrix &F,
-               FockOperator &fock_np1, OrbitalVector &phi_np1);
+    void setup(FockOperator &fock,
+               OrbitalVector &phi,
+               ComplexMatrix &F,
+               FockOperator &fock_np1,
+               OrbitalVector &phi_np1);
     void clear();
 
     bool optimize();
 
 protected:
-    FockOperator *fOper_np1;        ///< Next iteration Fock operator (pointer to external object)
-    OrbitalVector *orbitals_np1;    ///< Next iteration orbitals (pointer to external object)
+    FockOperator *fOper_np1;     ///< Next iteration Fock operator (pointer to external object)
+    OrbitalVector *orbitals_np1; ///< Next iteration orbitals (pointer to external object)
 
     ComplexMatrix calcFockMatrixUpdate(double prec, OrbitalVector &dPhi_n);
 };
 
-} //namespace mrchem
+} // namespace mrchem

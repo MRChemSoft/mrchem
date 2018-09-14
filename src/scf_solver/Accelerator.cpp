@@ -20,9 +20,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * @param sep: solve separate eqations for each orbital
  */
 Accelerator::Accelerator(int max, int min, bool sep)
-        : minHistory(min),
-          maxHistory(max),
-          sepOrbitals(sep) {
+        : minHistory(min)
+        , maxHistory(max)
+        , sepOrbitals(sep) {
     if (this->minHistory < 0) this->minHistory = 0;
     if (this->maxHistory < this->minHistory) MSG_ERROR("Invalid argument");
 }
@@ -41,12 +41,8 @@ void Accelerator::clear() {
         orbital::free(this->dOrbitals[0]);
         this->dOrbitals.pop_front();
     }
-    while (this->fock.size() > 0) {
-        this->fock.pop_front();
-    }
-    while (this->dFock.size() > 0) {
-        this->dFock.pop_front();
-    }
+    while (this->fock.size() > 0) { this->fock.pop_front(); }
+    while (this->dFock.size() > 0) { this->dFock.pop_front(); }
     clearLinearSystem();
 }
 
@@ -79,9 +75,7 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
         nOrbs += 1;
         nFock += 1;
     }
-    if (nOrbs <= 0) {
-        return;
-    }
+    if (nOrbs <= 0) { return; }
     for (int i = 0; i < nOrbs; i++) {
         OrbitalVector &Phi = this->orbitals[i];
         OrbitalVector tmp = orbital::linear_combination(U, Phi);
@@ -96,8 +90,8 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
     for (int i = 0; i < nFock; i++) {
         ComplexMatrix &F = this->fock[i];
         ComplexMatrix &dF = this->dFock[i];
-        F = U*F*U.transpose();
-        dF = U*dF*U.transpose();
+        F = U * F * U.transpose();
+        dF = U * dF * U.transpose();
     }
 
     timer.stop();
@@ -119,23 +113,14 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
  * input, the matrices are included in the subspace. If the length
  * of the history exceed maxHistory the oldest orbitals are discarded.
  */
-void Accelerator::push_back(OrbitalVector &Phi,
-                            OrbitalVector &dPhi,
-                            ComplexMatrix *F,
-                            ComplexMatrix *dF) {
+void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatrix *F, ComplexMatrix *dF) {
     Timer timer;
     int nHistory = this->orbitals.size();
     bool historyIsFull = false;
-    if (nHistory >= this->maxHistory) {
-        historyIsFull = true;
-    }
+    if (nHistory >= this->maxHistory) { historyIsFull = true; }
     if (F != 0) {
-        if (dF == 0) {
-            MSG_ERROR("Need to give both F and dF");
-        }
-        if (this->fock.size() != nHistory) {
-            MSG_ERROR("Size mismatch orbitals vs matrices");
-        }
+        if (dF == 0) { MSG_ERROR("Need to give both F and dF"); }
+        if (this->fock.size() != nHistory) { MSG_ERROR("Size mismatch orbitals vs matrices"); }
     }
 
     if (this->orbitals.size() > this->maxHistory - 1) {
@@ -146,12 +131,8 @@ void Accelerator::push_back(OrbitalVector &Phi,
         orbital::free(this->dOrbitals[0]);
         this->dOrbitals.pop_front();
     }
-    if (this->fock.size() > this->maxHistory - 1) {
-        this->fock.pop_front();
-    }
-    if (this->dFock.size() > this->maxHistory - 1) {
-        this->dFock.pop_front();
-    }
+    if (this->fock.size() > this->maxHistory - 1) { this->fock.pop_front(); }
+    if (this->dFock.size() > this->maxHistory - 1) { this->dFock.pop_front(); }
     if (not verifyOverlap(Phi)) {
         println(0, " Clearing accelerator");
         this->clear();
@@ -190,7 +171,7 @@ bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
                 if (not mpi::my_orb(last_i)) MSG_FATAL("MPI rank mismatch");
                 double sqNorm = phi_i.squaredNorm();
                 ComplexDouble overlap = orbital::dot(phi_i, last_i);
-                if (std::abs(overlap) < 0.5*sqNorm) {
+                if (std::abs(overlap) < 0.5 * sqNorm) {
                     Printer::printDouble(0, "Overlap not verified ", std::abs(overlap));
                     out(i) = 1;
                 }
@@ -270,9 +251,7 @@ void Accelerator::solveLinearSystem() {
 void Accelerator::copyOrbitals(OrbitalVector &Phi, int nHistory) {
     Timer timer;
     int totHistory = this->orbitals.size();
-    if (nHistory >= totHistory or nHistory < 0) {
-        MSG_FATAL("Requested orbitals unavailable");
-    }
+    if (nHistory >= totHistory or nHistory < 0) { MSG_FATAL("Requested orbitals unavailable"); }
     int n = totHistory - 1 - nHistory;
     Phi = orbital::deep_copy(this->orbitals[n]);
 
@@ -291,9 +270,7 @@ void Accelerator::copyOrbitals(OrbitalVector &Phi, int nHistory) {
 void Accelerator::copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
     Timer timer;
     int totHistory = this->dOrbitals.size();
-    if (nHistory >= totHistory or nHistory < 0) {
-        MSG_FATAL("Requested orbitals unavailable");
-    }
+    if (nHistory >= totHistory or nHistory < 0) { MSG_FATAL("Requested orbitals unavailable"); }
     int n = totHistory - 1 - nHistory;
     dPhi = orbital::deep_copy(this->dOrbitals[n]);
 
@@ -355,8 +332,7 @@ void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
  * If orbitals are not separated these are added up to one final A matrix and
  * b vector, otherwise all individual entries are kept.
  */
-void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices,
-                                   std::vector<DoubleVector> &b_vectors) {
+void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices, std::vector<DoubleVector> &b_vectors) {
     int nOrbs = b_vectors.size();
     int nHist = b_vectors[0].size();
 
@@ -368,7 +344,7 @@ void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices,
             this->b.push_back(tmpB);
         }
     } else {
-        DoubleMatrix tmpA(nHist,nHist);
+        DoubleMatrix tmpA(nHist, nHist);
         DoubleVector tmpB(nHist);
         tmpA.setZero();
         tmpB.setZero();
@@ -388,20 +364,16 @@ int Accelerator::printTreeSizes() const {
     int nHistory = this->orbitals.size();
     for (int i = 0; i < nHistory; i++) {
         int nOrbitals = this->orbitals[i].size();
-        for (int j = 0; j < nOrbitals; j++) {
-            totNodes += this->orbitals[i][j].getNNodes();
-        }
+        for (int j = 0; j < nOrbitals; j++) { totNodes += this->orbitals[i][j].getNNodes(); }
         totTrees += nOrbitals;
     }
     for (int i = 0; i < nHistory; i++) {
         int nOrbitals = this->dOrbitals[i].size();
-        for (int j = 0; j < nOrbitals; j++) {
-            totNodes += this->dOrbitals[i][j].getNNodes();
-        }
+        for (int j = 0; j < nOrbitals; j++) { totNodes += this->dOrbitals[i][j].getNNodes(); }
         totTrees += nOrbitals;
     }
     println(0, " Accelerator       " << std::setw(15) << totTrees << std::setw(25) << totNodes);
     return totNodes;
 }
 
-} //namespace mrchem
+} // namespace mrchem

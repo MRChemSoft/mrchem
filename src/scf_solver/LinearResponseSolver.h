@@ -39,12 +39,10 @@ protected:
     Accelerator *kain_x;
     Accelerator *kain_y;
 
-    OrbitalVector setupHelmholtzArguments(OrbitalVector &dPhi,
-                                          const ComplexMatrix &M,
-                                          bool adjoint);
+    OrbitalVector setupHelmholtzArguments(OrbitalVector &dPhi, const ComplexMatrix &M, bool adjoint);
 
     void printProperty() const;
     double calcProperty();
 };
 
-} //namespace mrchem
+} // namespace mrchem
