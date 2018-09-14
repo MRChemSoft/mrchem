@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+TEXT="MRChem, a numerical real-space code for molecular electronic structure"
+AUTHORS="Stig Rune Jensen, Jonas Juselius, Luca Frediani, and contributors."
+
+python .githooks/license_maintainer.py "$TEXT" "$AUTHORS"

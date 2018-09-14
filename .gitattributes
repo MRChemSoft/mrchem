@@ -1,0 +1,14 @@
+*.tar.gz binary
+*.npy binary
+*.zip binary
+*.png diff=exif
+
+config.h.in licensefile=.githooks/LICENSE-C++
+
+src/*/*.h licensefile=.githooks/LICENSE-C++
+src/*/*.cpp licensefile=.githooks/LICENSE-C++
+
+src/mrchem.in licensefile=.githooks/LICENSE-Python
+
+tests/*/*.h licensefile=.githooks/LICENSE-C++
+tests/*/*.cpp licensefile=.githooks/LICENSE-C++

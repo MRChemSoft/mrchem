@@ -14,3 +14,12 @@ The code is being developed at the Hylleraas Centre for Quantum Molecular
 Sciences at UiT - The Arctic University of Norway.
 
 ## Documentation: http://mrchem.readthedocs.io
+
+### Git hooks
+
+You can install Git hooks to keep in check formatting and licensing headers:
+
+```
+cd .git/hooks
+cp --symbolic-link ../../.githooks/* .
+```
