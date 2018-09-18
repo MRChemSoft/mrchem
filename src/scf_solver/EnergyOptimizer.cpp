@@ -9,9 +9,9 @@
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/one_electron/NuclearOperator.h"
-#include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
+#include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
 using mrcpp::Printer;

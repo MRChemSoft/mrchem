@@ -4,9 +4,9 @@
 #include "parallel.h"
 
 #include "GroundStateSolver.h"
-#include "qmoperators/two_electron/FockOperator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmoperators/two_electron/FockOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

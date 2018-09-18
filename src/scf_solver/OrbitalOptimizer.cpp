@@ -3,12 +3,12 @@
 
 #include "parallel.h"
 
-#include "OrbitalOptimizer.h"
-#include "HelmholtzVector.h"
-#include "qmoperators/two_electron/FockOperator.h"
 #include "Accelerator.h"
+#include "HelmholtzVector.h"
+#include "OrbitalOptimizer.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmoperators/two_electron/FockOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
