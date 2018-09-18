@@ -19,7 +19,7 @@ namespace mrchem {
  * as second template, RankTwoTensorOperator takes RankOneTensorOperator as second
  * template, etc. (first argument is the dimension of the current rank). Note that
  * RankZeroTensorOperator is NOT derived from this class, but is a more general
- * operator expansion (see also @file qmoperators.h).
+ * operator expansion (see also @file qmoperator_fwd.h).
  *
  */
 

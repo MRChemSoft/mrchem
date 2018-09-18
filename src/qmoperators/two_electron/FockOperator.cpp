@@ -12,7 +12,7 @@
 #include "XCOperator.h"
 #include "properties/SCFEnergy.h"
 #include "utils/math_utils.h"
-#include "chemistry/chem_utils.h"
+#include "chemistry/chemistry_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

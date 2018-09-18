@@ -1,12 +1,6 @@
 #pragma once
 
-#include "mrchem.h"
-
 namespace mrchem {
-
-namespace SPIN { enum type { Paired, Alpha, Beta }; }
-namespace NUMBER { enum type { Total, Real, Imag }; }
-namespace DENSITY { enum type { Total, Spin, Alpha, Beta }; }
 
 class QMFunction;
 using QMFunctionVector = std::vector<std::tuple<double, QMFunction>>;

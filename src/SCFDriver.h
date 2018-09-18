@@ -2,8 +2,8 @@
 
 #include <string>
 
-#include "qmfunctions/qmfunctions.h"
-#include "qmoperators/qmoperators.h"
+#include "qmfunctions/qmfunction_fwd.h"
+#include "qmoperators/qmoperator_fwd.h"
 
 class Getkw;
 

@@ -6,7 +6,8 @@
 #include <mpi.h>
 #endif
 
-#include "qmfunctions/qmfunctions.h"
+#include "mrchem.h"
+#include "qmfunctions/qmfunction_fwd.h"
 
 namespace mrchem {
 

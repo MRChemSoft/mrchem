@@ -1,7 +1,5 @@
 #pragma once
 
-#include "mrchem.h"
-
 /* NOTES ON OPERATORS:
  *
  * The QMOperator is a fundamental quantum mechanical operator \hat{q} that can

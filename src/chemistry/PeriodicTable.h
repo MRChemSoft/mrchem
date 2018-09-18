@@ -12,7 +12,7 @@
 #include <string>
 #include <map>
 
-#include "chemistry.h"
+#include "chemistry_fwd.h"
 
 namespace mrchem {
 

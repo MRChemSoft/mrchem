@@ -14,6 +14,7 @@
 
 #include "Nucleus.h"
 #include "properties/SCFEnergy.h"
+#include "properties/properties_fwd.h"
 
 /** @class Molecule
  *
@@ -25,16 +26,6 @@
  */
 
 namespace mrchem {
-
-class DipoleMoment;
-class QuadrupoleMoment;
-class GeometryDerivatives;
-class Magnetizability;
-class NMRShielding;
-class HyperFineCoupling;
-class SpinSpinCoupling;
-class Polarizability;
-class OpticalRotation;
 
 class Molecule final {
 public:

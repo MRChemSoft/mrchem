@@ -3,7 +3,7 @@
 #include <deque>
 #include <vector>
 
-#include "qmfunctions/qmfunctions.h"
+#include "qmfunctions/qmfunction_fwd.h"
 
 /** @class Acccelerator
  *

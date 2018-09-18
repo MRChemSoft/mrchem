@@ -1,8 +1,8 @@
 #pragma once
 
 #include "qmoperators/QMOperator.h"
-#include "qmfunctions/qmfunctions.h"
-#include "chemistry/chemistry.h"
+#include "qmfunctions/qmfunction_fwd.h"
+#include "chemistry/chemistry_fwd.h"
 
 namespace mrchem {
 

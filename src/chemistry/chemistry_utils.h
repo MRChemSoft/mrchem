@@ -1,6 +1,6 @@
 #pragma once
 
-#include "chemistry.h"
+#include "chemistry_fwd.h"
 
 namespace mrchem {
 
