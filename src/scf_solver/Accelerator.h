@@ -3,6 +3,8 @@
 #include <deque>
 #include <vector>
 
+#include "mrchem.h"
+
 #include "qmfunctions/qmfunction_fwd.h"
 
 /** @class Acccelerator
