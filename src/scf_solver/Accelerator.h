@@ -34,7 +34,13 @@ public:
     void setMaxHistory(int max) { this->maxHistory = max; }
     void setMinHistory(int min) { this->minHistory = min; }
 
-    void accelerate(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatrix *F = 0, ComplexMatrix *dF = 0);
+    // clang-format off
+    void accelerate(double prec,
+                    OrbitalVector &Phi,
+                    OrbitalVector &dPhi,
+                    ComplexMatrix *F = nullptr,
+                    ComplexMatrix *dF = nullptr);
+    // clang-format on
 
     void copyOrbitals(OrbitalVector &Phi, int nHistory = 0);
     void copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory = 0);
@@ -62,11 +68,19 @@ protected:
 
     bool verifyOverlap(OrbitalVector &phi);
 
-    void push_back(OrbitalVector &phi, OrbitalVector &dPhi, ComplexMatrix *F = 0, ComplexMatrix *dF = 0);
+    // clang-format off
+    void push_back(OrbitalVector &phi,
+                   OrbitalVector &dPhi,
+                   ComplexMatrix *F = nullptr,
+                   ComplexMatrix *dF = nullptr);
+    // clang-format on
 
     void solveLinearSystem();
     void clearLinearSystem();
-    void sortLinearSystem(std::vector<DoubleMatrix> &A_mat, std::vector<DoubleVector> &b_vec);
+    // clang-format off
+    void sortLinearSystem(std::vector<DoubleMatrix> &A_mat,
+                          std::vector<DoubleVector> &b_vec);
+    // clang-format on
 
     virtual void setupLinearSystem() = 0;
     virtual void expandSolution(double prec,

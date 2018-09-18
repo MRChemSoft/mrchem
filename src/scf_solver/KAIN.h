@@ -24,7 +24,13 @@ public:
 
 protected:
     void setupLinearSystem();
-    void expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatrix *F, ComplexMatrix *dF);
+    // clang-format off
+    void expandSolution(double prec,
+                        OrbitalVector &Phi,
+                        OrbitalVector &dPhi,
+                        ComplexMatrix *F,
+                        ComplexMatrix *dF);
+    // clang-format on
 };
 
 } // namespace mrchem

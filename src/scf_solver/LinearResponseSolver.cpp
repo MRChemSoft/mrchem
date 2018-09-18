@@ -53,7 +53,12 @@ LinearResponseSolver::LinearResponseSolver(HelmholtzVector &h, Accelerator *k_x,
  * iteration). SCF solver will NOT take ownership of the input, so these objects
  * must be taken care of externally (do not delete until SCF goes out of scope).
  */
-void LinearResponseSolver::setupUnperturbed(double prec, FockOperator *fock, OrbitalVector *Phi, ComplexMatrix *F) {
+// clang-format off
+void LinearResponseSolver::setupUnperturbed(double prec,
+                                            FockOperator *fock,
+                                            OrbitalVector *Phi,
+                                            ComplexMatrix *F) {
+    // clang-format on
     this->fOper_0 = fock;
     this->orbitals_0 = Phi;
     this->fMat_0 = F;
@@ -107,7 +112,12 @@ void LinearResponseSolver::setup(FockOperator *fock, OrbitalVector *X) {
  * SCF solver will NOT take ownership of the input, so these objects must be taken
  * care of externally (do not delete until SCF goes out of scope).
  */
-void LinearResponseSolver::setup(double omega, FockOperator *fock, OrbitalVector *X, OrbitalVector *Y) {
+// clang-format off
+void LinearResponseSolver::setup(double omega,
+                                 FockOperator *fock,
+                                 OrbitalVector *X,
+                                 OrbitalVector *Y) {
+    // clang-format on
     NOT_IMPLEMENTED_ABORT;
 }
 

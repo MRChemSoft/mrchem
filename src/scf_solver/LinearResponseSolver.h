@@ -10,7 +10,7 @@ namespace mrchem {
 
 class LinearResponseSolver final : public SCF {
 public:
-    LinearResponseSolver(HelmholtzVector &h, Accelerator *k_x = 0, Accelerator *k_y = 0);
+    LinearResponseSolver(HelmholtzVector &h, Accelerator *k_x = nullptr, Accelerator *k_y = nullptr);
 
     void setupUnperturbed(double prec, FockOperator *fock, OrbitalVector *Phi, ComplexMatrix *F);
     void clearUnperturbed();
@@ -39,7 +39,11 @@ protected:
     Accelerator *kain_x;
     Accelerator *kain_y;
 
-    OrbitalVector setupHelmholtzArguments(OrbitalVector &dPhi, const ComplexMatrix &M, bool adjoint);
+    // clang-format off
+    OrbitalVector setupHelmholtzArguments(OrbitalVector &dPhi,
+                                          const ComplexMatrix &M,
+                                          bool adjoint);
+    // clang-format on
 
     void printProperty() const;
     double calcProperty();

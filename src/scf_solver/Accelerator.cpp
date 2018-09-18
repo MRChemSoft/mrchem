@@ -113,7 +113,12 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
  * input, the matrices are included in the subspace. If the length
  * of the history exceed maxHistory the oldest orbitals are discarded.
  */
-void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatrix *F, ComplexMatrix *dF) {
+// clang-format off
+void Accelerator::push_back(OrbitalVector &Phi,
+                            OrbitalVector &dPhi,
+                            ComplexMatrix *F,
+                            ComplexMatrix *dF) {
+    // clang-format on
     Timer timer;
     int nHistory = this->orbitals.size();
     bool historyIsFull = false;
@@ -332,7 +337,10 @@ void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
  * If orbitals are not separated these are added up to one final A matrix and
  * b vector, otherwise all individual entries are kept.
  */
-void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices, std::vector<DoubleVector> &b_vectors) {
+// clang-format off
+void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices,
+                                   std::vector<DoubleVector> &b_vectors) {
+    // clang-format on
     int nOrbs = b_vectors.size();
     int nHist = b_vectors[0].size();
 

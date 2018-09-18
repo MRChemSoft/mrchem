@@ -39,7 +39,11 @@ OrbitalOptimizer::OrbitalOptimizer(HelmholtzVector &h, Accelerator *k)
  * SCF solver will NOT take ownership of the input, so these objects must be taken
  * care of externally (do not delete until SCF goes out of scope).
  */
-void OrbitalOptimizer::setup(FockOperator &fock, OrbitalVector &Phi, ComplexMatrix &F) {
+// clang-format off
+void OrbitalOptimizer::setup(FockOperator &fock,
+                             OrbitalVector &Phi,
+                             ComplexMatrix &F) {
+    // clang-format on
     this->fMat_n = &F;
     this->fOper_n = &fock;
     this->orbitals_n = &Phi;
