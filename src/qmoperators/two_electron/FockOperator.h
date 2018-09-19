@@ -54,8 +54,14 @@ public:
     void build();
     void setup(double prec);
     void clear();
-    
+
     SCFEnergy trace(OrbitalVector &Phi, const ComplexMatrix &F);
+
+    ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
+    ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
+
+    using RankZeroTensorOperator::operator();
+    using RankZeroTensorOperator::dagger;
 
 protected:
     RankZeroTensorOperator T;     ///< Total kinetic energy operator

@@ -4,6 +4,7 @@
 #include "KineticOperator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "parallel.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -20,6 +21,9 @@ namespace mrchem {
  * of symmetry and getting away with only first-derivative operators.
  */
 ComplexDouble KineticOperator::operator()(Orbital bra, Orbital ket) {
+    // Currently not adopted for MPI
+    if (mpi::orb_size > 0) return RankZeroTensorOperator::operator()(bra, ket);
+
     RankZeroTensorOperator &p_x = this->p[0];
     RankZeroTensorOperator &p_y = this->p[1];
     RankZeroTensorOperator &p_z = this->p[2];
@@ -66,6 +70,9 @@ ComplexDouble KineticOperator::dagger(Orbital bra, Orbital ket) {
  * of symmetry and getting away with only first-derivative operators.
  */
 ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+    // Currently not adopted for MPI
+    if (mpi::orb_size > 0) return RankZeroTensorOperator::operator()(bra, ket);
+
     Timer timer;
     Printer::printHeader(1, "Compute Kinetic Matrix Elements");
 

@@ -162,4 +162,32 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
                      E_nex, E_ext);
 }
 
+ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
+    Timer t_tot;
+    Printer::printHeader(0, "Calculating Fock matrix");
+
+    KineticOperator *t = this->getKineticOperator();
+    RankZeroTensorOperator v = this->potential();
+
+    Timer t_kin;
+    ComplexMatrix T = ComplexMatrix::Zero(bra.size(), ket.size());
+    if (t != nullptr) T += (*t)(bra, ket);
+    t_kin.stop();
+    Printer::printDouble(0, "Kinetic part", t_kin.getWallTime());
+
+    Timer t_pot;
+    ComplexMatrix V = ComplexMatrix::Zero(bra.size(), ket.size());
+    if (v.size() > 0) V += v(bra, ket);
+    t_pot.stop();
+    Printer::printDouble(0, "Potential part", t_pot.getWallTime());
+
+    t_tot.stop();
+    Printer::printFooter(0, t_tot, 2);
+    return T + V;
+}
+
+ComplexMatrix FockOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
+    NOT_IMPLEMENTED_ABORT;
+}
+
 } //namespace mrchem

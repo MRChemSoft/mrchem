@@ -70,6 +70,8 @@ public:
     RankZeroTensorOperator(const RankZeroTensorOperator &O) { *this = O; }
     virtual ~RankZeroTensorOperator() { }
 
+    int size() const { return this->oper_exp.size(); }
+
     void setup(double prec);
     void clear();
 
