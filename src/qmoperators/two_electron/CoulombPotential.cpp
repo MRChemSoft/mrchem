@@ -103,20 +103,22 @@ void CoulombPotential::setupPotential(double prec) {
     int nPoints = rho.real().getTDim()*rho.real().getKp1_d();
     int inpNodes = rho.getNNodes();
 
+    // Adjust precision by system size
+    double abs_prec = prec/rho.real().integrate();
+
     Timer timer;
     V.alloc(NUMBER::Real);
-    mrcpp::apply(prec, V.real(), P, rho.real());
+    mrcpp::apply(abs_prec, V.real(), P, rho.real());
     timer.stop();
     int n = V.getNNodes();
     double t = timer.getWallTime();
     Printer::printTree(0, "Coulomb potential", n, t);
 
     // Prepare density grid for next iteration
-    double abs_prec = prec/rho.real().integrate();
     rho.real().crop(abs_prec, 1.0, false);
     mrcpp::refine_grid(rho.real(), abs_prec);
 
-    int newNodes = rho.real().getNNodes() - inpNodes; //LUCA also imag part here
+    int newNodes = rho.getNNodes() - inpNodes;
 
     println(0, " Coulomb grid size   " << std::setw(21) << inpNodes << std::setw(17) << nPoints*inpNodes);
     println(0, " Coulomb grid change " << std::setw(21) << newNodes << std::setw(17) << nPoints*newNodes);
