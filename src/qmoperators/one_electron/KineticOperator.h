@@ -28,9 +28,6 @@ public:
         t = 0.5*(p_x*p_x + p_y*p_y + p_z*p_z);
     }
 
-    ComplexDouble operator()(Orbital bra, Orbital ket);
-    ComplexDouble dagger(Orbital bra, Orbital ket);
-
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
