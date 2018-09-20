@@ -25,13 +25,6 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-# -*- coding: utf-8 -*-
-# vim:filetype=python:
-#
-# Written by Jonas Juselius <jonas.juselius@chem.uit.no>
-# University of Tromsø, 2008
-#
-
 ON = 1
 OFF = 0
 
