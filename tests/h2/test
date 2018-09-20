@@ -11,18 +11,19 @@ from runtest_config import configure  # isort:skip
 assert version_info.major == 2
 
 f = [
-    get_filter(string='Sum orbital energy:', rel_tolerance=1.0e-9),
-    get_filter(string='Kinetic energy:', rel_tolerance=1.0e-9),
-    get_filter(string='E-N energy:', rel_tolerance=1.0e-9),
-    get_filter(string='Coulomb energy:', rel_tolerance=1.0e-9),
-    get_filter(string='Exchange energy:', rel_tolerance=1.0e-9),
-    get_filter(string='X-C energy:', rel_tolerance=1.0e-9),
-    get_filter(string='Electronic energy', rel_tolerance=1.0e-9),
-    get_filter(string='Nuclear energy', rel_tolerance=1.0e-9),
-    get_filter(
-        from_string='Total energy       (au)',
-        to_string='Exiting MRChem',
-        rel_tolerance=1.0e-9)
+    get_filter(string='Sum orbital energy:',           rel_tolerance=1.0e-4),
+    get_filter(string='Kinetic energy:',               rel_tolerance=1.0e-4),
+    get_filter(string='E-N energy:',                   rel_tolerance=1.0e-4),
+    get_filter(string='Coulomb energy:',               rel_tolerance=1.0e-4),
+    get_filter(string='Exchange energy:',              rel_tolerance=1.0e-4),
+    get_filter(string='X-C energy:',                   rel_tolerance=1.0e-4),
+    get_filter(string='Electronic energy:',            rel_tolerance=1.0e-4),
+    get_filter(string='Nuclear energy:',               rel_tolerance=1.0e-4),
+    get_filter(string='Total energy       (au)',       rel_tolerance=1.0e-4),
+    get_filter(string='                   (kJ/mol)',   rel_tolerance=1.0e-4),
+    get_filter(string='                   (kcal/mol)', rel_tolerance=1.0e-4),
+    get_filter(string='                   (eV)',       rel_tolerance=1.0e-4),
+    get_filter(string='(Debye)',                       abs_tolerance=1.0e-3),
 ]
 
 options = cli()

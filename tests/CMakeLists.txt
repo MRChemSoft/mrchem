@@ -18,9 +18,6 @@ target_link_libraries(mrchem-tests
   )
 
 # Integration tests
-add_subdirectory(he)
-# These are commented out because they take waaaay too long...
-#add_subdirectory(li)
-#add_subdirectory(h2)
-#add_subdirectory(h2o)
-#add_subdirectory(c6h6)
+add_subdirectory(li)
+add_subdirectory(h2)
+add_subdirectory(h2o)

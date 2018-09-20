@@ -1,6 +1,6 @@
 # vim:syntax=sh:
 
-rel_prec = 1.0e-4                 # Overall relative precision
+rel_prec = 1.0e-3                 # Overall relative precision
 printlevel = 0
 
 MRA {
@@ -25,12 +25,18 @@ WaveFunction {
 
 Properties {
   scf_energy = true               # Compute ground state energy
+  dipole_moment = true            # Compute ground state energy
 }
 
 SCF {
-  orbital_thrs = 1.0e-3           # Convergence threshold in orbital residual
-  property_thrs = 1.0e-6          # Convergence threshold in total energy
-  initial_guess = GTO             # Type of initial guess: none, mw, gto
   kain = 3                        # Length of KAIN iterative history
+  orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
+  initial_guess = SAD_DZ          # Type of initial guess: none, mw, gto
+  max_iter = 5
 }
 
+KineticFree {
+  run = true
+  max_iter = 5
+  property_thrs = 1.0e-3          # Convergence threshold in total energy
+}

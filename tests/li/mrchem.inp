@@ -1,9 +1,9 @@
 # vim:syntax=sh:
 
-abs_prec = 1.0e-3                 # Final precision in energy
+rel_prec = 1.0e-3                 # Final precision in energy
 
 MRA {
-  min_scale = -5                  # Root scale defines world size 2^{-n}
+  min_scale = -4                  # Root scale defines world size 2^{-n}
   corner = [ -1, -1, -1 ]         # Translation of corner root box [x,y,z]
   boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
 }
@@ -16,8 +16,16 @@ $end
 }
 
 WaveFunction {
-  method = HF                     # Wave function method (HF or DFT)
+  method = DFT                    # Wave function method (HF or DFT)
   restricted = false
+}
+
+DFT {
+  exact_exchange = 0.25
+$functionals
+PBEX    0.75
+PBEC    1.00
+$end
 }
 
 Properties {
@@ -26,6 +34,7 @@ Properties {
 
 SCF {
   kain = 3                        # Length of KAIN iterative history
-  rotation = 5                    # Number of iterations between diag/loc
+  max_iter = 5
+  orbital_thrs = 2.0e-2
   initial_guess = GTO             # Type of initial guess (none, gto, mw)
 }
