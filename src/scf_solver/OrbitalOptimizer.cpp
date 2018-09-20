@@ -178,13 +178,6 @@ bool OrbitalOptimizer::optimize() {
     if (this->kain != 0) this->kain->clear();
     fock.clear();
 
-    if (this->canonical) {
-        orbital::diagonalize(orb_prec / 10, Phi_n, F);
-    } else {
-        ComplexMatrix U = orbital::localize(orb_prec / 10, Phi_n);
-        F = U * F * U.adjoint();
-    }
-
     printConvergence(converged);
     return converged;
 }

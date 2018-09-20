@@ -665,6 +665,13 @@ bool SCFDriver::runGroundState() {
         fock->clear();
     }
 
+    if (scf_canonical) {
+        orbital::diagonalize(rel_prec / 10, *phi, F);
+    } else {
+        ComplexMatrix U = orbital::localize(rel_prec / 10, *phi);
+        F = U * F * U.adjoint();
+    }
+
     // Optimize energy
     if (kin_free_run) {
         setup_np1();
