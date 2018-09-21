@@ -194,6 +194,7 @@ bool OrbitalIterator::next(int max_recv) {
             this->sent_counter = 0;
             this->received_counter = 0;
             this->iter++;
+            if(this->iter%2 == 0)break;//must always exit after odd iterations in order to finish duties outside
         }
     }
     return true;
