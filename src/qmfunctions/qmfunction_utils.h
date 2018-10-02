@@ -35,6 +35,14 @@ namespace qmfunction {
 ComplexDouble dot(QMFunction &bra, double bra_conj,
                   QMFunction &ket, double ket_conj);
  
+void multiply_real(QMFunction &inp_a, double conj_a,
+                               QMFunction &inp_b, double conj_b,
+                               QMFunction &out, double prec);
+ 
+void multiply_imag(QMFunction &inp_a, double conj_a,
+                               QMFunction &inp_b, double conj_b,
+                               QMFunction &out, double prec);
+ 
 void multiply(QMFunction &inp_a, double conj_a,
               QMFunction &inp_b, double conj_b,
               QMFunction &out,   double prec);
