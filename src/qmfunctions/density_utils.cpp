@@ -48,8 +48,13 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * Density related standalone functions *
  ****************************************/
 
+void compute(double prec, Density &rho, Orbital phi, double occ);
+void compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type);
+
+
 void density::compute(double prec, Density &rho, Orbital phi, double occ) {
 
+    std::cout  << "OCC " << occ << std::endl;
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
