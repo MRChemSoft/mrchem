@@ -29,6 +29,8 @@
 
 #include "parallel.h"
 
+#include "QMFunction.h"
+#include "qmfunction_utils.h"
 #include "Density.h"
 #include "density_utils.h"
 #include "Orbital.h"
@@ -46,14 +48,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * Density related standalone functions *
  ****************************************/
 
-void density::compute(double prec, Density &rho, Orbital phi, int spin) {
-
-    double occ = compute_occupation(phi.spin(), phi.occ(), spin);
-    
-    if (std::abs(occ) < mrcpp::MachineZero) {
-        rho.real().setZero();
-        return;
-    }
+void density::compute(double prec, Density &rho, Orbital phi, double occ) {
 
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
@@ -73,35 +68,22 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     mrcpp::clear(sum_vec, true);
 }
 
-void density::compute(double prec, Density &rho, Orbital phi, Orbital xi, int spin) {
+void density::compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type) {
 
-    double occ = compute_occupation(phi.spin(), phi.occ(), spin);
-
-    if (std::abs(occ) < mrcpp::MachineZero) {
-        rho.real().setZero();
-        return;
+    double ket_conj(1.0), bra_conj(1.0);
+    if (ket.conjugate()) ket_conj = -1.0;
+    if (bra.conjugate()) bra_conj = -1.0;
+    
+    if (type == NUMBER::Total) {
+        qmfunction::multiply(ket, ket_conj, bra, -1.0 * bra_conj, rho, prec);
+        rho.real().rescale(coeff);
+        rho.imag().rescale(coeff);
+    } else if (type == NUMBER::Real) {
+        qmfunction::multiply_real(ket, ket_conj, bra, -1.0 * bra_conj, rho, prec);
+        rho.real().rescale(coeff);
+    } else {
+        MSG_FATAL("No such case");
     }
-
-    FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal() and xi.hasReal()) {
-        FunctionTree<3> *phir_xir = new FunctionTree<3>(*MRA);
-        //        mrcpp::copy_grid(*phir_xir, phi.real()); LUCA should this be here? Should there be a build_grid?
-        mrcpp::multiply(prec, *phir_xir, 2.0, phi.real(), xi.real());
-        sum_vec.push_back(std::make_tuple(occ, phir_xir));
-    }
-    if (phi.hasImag() and xi.hasImag()) {
-        FunctionTree<3> *phii_xii = new FunctionTree<3>(*MRA);
-        //        mrcpp::copy_grid(*phii_xii, phi.imag()); LUCA should this be here? Should there be a build_grid?
-        mrcpp::multiply(prec, *phii_xii, 2.0, phi.imag(), xi.imag());
-        sum_vec.push_back(std::make_tuple(occ, phii_xii));
-    }
-    mrcpp::build_grid(rho.real(), sum_vec);
-    mrcpp::add(-1.0, rho.real(), sum_vec, 0);
-    mrcpp::clear(sum_vec, true);
-}
-
-void density::compute(double prec, Density &rho, Orbital phi, Orbital xi, Orbital yi, int spin) {
-    MSG_FATAL("NOT IMPLEMENTED ABORT");
 }
 
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
@@ -111,10 +93,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
+            double occ = compute_occupation(Phi[i].spin(), Phi[i].occ(), spin);
+            if (std::abs(occ) < mrcpp::MachineZero) continue;
             Density rho_i;
             rho_i.alloc(NUMBER::Real);
             mrcpp::copy_grid(rho_i.real(), rho.real());
-            density::compute(mult_prec, rho_i, Phi[i], spin);
+            density::compute(mult_prec, rho_i, Phi[i], occ);
             dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
             rho_i.clear(); // release FunctionTree pointers to dens_vec
         }
@@ -132,6 +116,8 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
+
+//LUCA Is the MPI distribution of Phi identical to Phi_x and Phi_y??? Now I 
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, int spin) {
     double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
     double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
@@ -140,10 +126,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
     FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
-            Density *rho_i = new Density(); //LUCA: Is it the right creator here (it was Density(*MRA);
+            double occ = compute_occupation(Phi[i].spin(), Phi[i].occ(), spin);
+            if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
+            Density *rho_i = new Density(); 
             rho_i->alloc(NUMBER::Real);
             mrcpp::copy_grid(rho_i->real(), rho.real());
-            density::compute(mult_prec, *rho_i, Phi[i], Phi_x[i], spin);
+            density::compute(mult_prec, *rho_i, Phi[i], Phi_x[i], 2.0 * occ, NUMBER::Real);
             dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
         }
     }
@@ -160,8 +148,56 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, OrbitalVector &Phy_y, int spin) {
-    MSG_FATAL("NOT IMPLEMENTED ABORT");
+//LUCA Is the MPI distribution of Phi identical to Phi_x and Phi_y??? Now I 
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, OrbitalVector &Phi_y, int spin) {
+    double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
+    double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
+    if (Phi.size() != Phi_x.size()) MSG_ERROR("Size mismatch");
+    
+    FunctionTreeVector<3> dens_real;
+    FunctionTreeVector<3> dens_imag;
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mpi::my_orb(Phi[i])) {
+            //if(mpi::my_orb(Phi_x[i])) ....
+            double occ = compute_occupation(Phi[i].spin(), Phi[i].occ(), spin);
+            if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
+            Density *rho_x = new Density(); 
+            Density *rho_y = new Density(); 
+            rho_x->alloc(NUMBER::Real);
+            rho_y->alloc(NUMBER::Real);
+            rho_x->alloc(NUMBER::Imag);
+            rho_y->alloc(NUMBER::Imag);
+            mrcpp::copy_grid(rho_x->real(), rho.real());
+            mrcpp::copy_grid(rho_y->real(), rho.real());
+            mrcpp::copy_grid(rho_x->imag(), rho.imag());
+            mrcpp::copy_grid(rho_y->imag(), rho.imag());
+            density::compute(mult_prec, *rho_x, Phi_x[i], Phi[i], occ, NUMBER::Total);
+            density::compute(mult_prec, *rho_y, Phi[i], Phi_y[i], occ, NUMBER::Total);
+            dens_real.push_back(std::make_tuple(1.0, &(rho_x->real())));
+            dens_real.push_back(std::make_tuple(1.0, &(rho_y->real())));
+            dens_imag.push_back(std::make_tuple(1.0, &(rho_x->imag())));
+            dens_imag.push_back(std::make_tuple(1.0, &(rho_y->imag())));
+        }
+    }
+
+    if (add_prec > 0.0) {
+        mrcpp::add(add_prec, rho.real(), dens_real);
+        mrcpp::add(add_prec, rho.imag(), dens_imag);
+    } else {
+        if (dens_real.size() > 0) {
+            mrcpp::build_grid(rho.real(), dens_real);
+            mrcpp::add(-1.0,  rho.real(), dens_real, 0);
+        }
+        if (dens_imag.size() > 0) {
+            mrcpp::build_grid(rho.imag(), dens_imag);
+            mrcpp::add(-1.0,  rho.imag(), dens_imag, 0);
+        }
+    }
+    mrcpp::clear(dens_real, true);
+    mrcpp::clear(dens_imag, true);
+
+    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {
