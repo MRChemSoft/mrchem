@@ -50,11 +50,10 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 void compute(double prec, Density &rho, Orbital phi, double occ);
 void compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type);
-
+double compute_occupation(int orb_spin, int orb_occ, int dens_spin);
 
 void density::compute(double prec, Density &rho, Orbital phi, double occ) {
 
-    std::cout  << "OCC " << occ << std::endl;
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
