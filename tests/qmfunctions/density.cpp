@@ -44,18 +44,6 @@ TEST_CASE("Density", "[density]") {
         Density rho;
         rho.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
-        SECTION("single orbital") {
-            HydrogenFunction h(1,0,0);
-            Orbital phi(SPIN::Alpha);
-            phi.alloc(NUMBER::Real);
-            mrcpp::project(prec, phi.real(), h);
-            mrcpp::build_grid(rho.real(), phi.real());
-            density::compute(-1.0, rho, phi, DENSITY::Total);
-            REQUIRE( rho.real().integrate() == Approx(1.0) );
-
-            phi.free();
-        }
-        
         SECTION("orbital vector") {
             HydrogenFunction h_1(2,1,0);
             HydrogenFunction h_2(2,1,1);
@@ -88,28 +76,6 @@ TEST_CASE("Density", "[density]") {
         rho_a.setReal(new mrcpp::FunctionTree<3>(*MRA));
         rho_b.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
-        SECTION("single orbital") {
-            HydrogenFunction h(1,0,0);
-            Orbital phi(SPIN::Alpha);
-            phi.alloc(NUMBER::Real);
-            mrcpp::project(prec, phi.real(), h);
-
-            mrcpp::build_grid(rho_t.real(), phi.real());
-            mrcpp::build_grid(rho_s.real(), phi.real());
-            mrcpp::build_grid(rho_a.real(), phi.real());
-            mrcpp::build_grid(rho_b.real(), phi.real());
-            density::compute(-1.0, rho_t, phi, DENSITY::Total);
-            density::compute(-1.0, rho_s, phi, DENSITY::Spin);
-            density::compute(-1.0, rho_a, phi, DENSITY::Alpha);
-            density::compute(-1.0, rho_b, phi, DENSITY::Beta);
-
-            REQUIRE( rho_t.real().integrate() == Approx(1.0) );
-            REQUIRE( rho_s.real().integrate() == Approx(1.0) );
-            REQUIRE( rho_a.real().integrate() == Approx(1.0) );
-            REQUIRE( rho_b.real().integrate() == Approx(0.0) );
-
-            phi.free();
-        }
         SECTION("orbital vector") {
             HydrogenFunction s1(1,0,0);
             HydrogenFunction s2(2,0,0);

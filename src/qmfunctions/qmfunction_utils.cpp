@@ -49,90 +49,98 @@ ComplexDouble qmfunction::dot(QMFunction &bra, double bra_conj, QMFunction &ket,
     return ComplexDouble(real_part, imag_part);
 }
 
+void qmfunction::multiply_real(QMFunction &inp_a, double conj_a,
+                               QMFunction &inp_b, double conj_b,
+                               QMFunction &out, double prec) {
+    FunctionTreeVector<3> vec;
+    if (inp_a.hasReal() and inp_b.hasReal()) {
+        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
+        double coef = 1.0;
+        if (prec < 0.0) {
+            // Union grid
+            mrcpp::build_grid(*tree, inp_a.real());
+            mrcpp::build_grid(*tree, inp_b.real());
+            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), 0);
+        } else {
+            // Adaptive grid
+            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real());
+        }
+        vec.push_back(std::make_tuple(1.0, tree));
+    }
+    if (inp_a.hasImag() and inp_b.hasImag()) {
+        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
+        double coef = -1.0*conj_a*conj_b;
+        if (prec < 0.0) {
+            mrcpp::build_grid(*tree, inp_a.imag());
+            mrcpp::build_grid(*tree, inp_b.imag());
+            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), 0);
+        } else {
+            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag());
+        }
+        vec.push_back(std::make_tuple(1.0, tree));
+    }
+    if (vec.size() == 1) {
+        out.setReal(&mrcpp::get_func(vec, 0));
+        mrcpp::clear(vec, false);
+    }
+    if (vec.size() == 2) {
+        out.alloc(NUMBER::Real);
+        mrcpp::build_grid(out.real(), vec);
+        mrcpp::add(prec, out.real(), vec, 0);
+        mrcpp::clear(vec, true);
+    }
+}
+
+void qmfunction::multiply_imag(QMFunction &inp_a, double conj_a,
+                               QMFunction &inp_b, double conj_b,
+                               QMFunction &out, double prec) {
+    FunctionTreeVector<3> vec;
+    if (inp_a.hasReal() and inp_b.hasImag()) {
+        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
+        double coef = conj_b;
+        if (prec < 0.0) {
+            // Union grid
+            mrcpp::build_grid(*tree, inp_a.real());
+            mrcpp::build_grid(*tree, inp_b.imag());
+            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), 0);
+        } else {
+            // Adaptive grid
+            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag());
+        }
+        vec.push_back(std::make_tuple(1.0, tree));
+    }
+    if (inp_a.hasImag() and inp_b.hasReal()) {
+        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
+        double coef = conj_a;
+        if (prec < 0.0) {
+            // Union grid
+            mrcpp::build_grid(*tree, inp_a.imag());
+            mrcpp::build_grid(*tree, inp_b.real());
+            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), 0);
+        } else {
+            // Adaptive grid
+            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real());
+        }
+        vec.push_back(std::make_tuple(1.0, tree));
+    }
+    if (vec.size() == 1) {
+        out.setImag(&mrcpp::get_func(vec, 0));
+        mrcpp::clear(vec, false);
+    }
+    if (vec.size() == 2) {
+        out.alloc(NUMBER::Imag);
+        mrcpp::build_grid(out.imag(), vec);
+        mrcpp::add(prec, out.imag(), vec, 0);
+        mrcpp::clear(vec, true);
+    }
+}    
+
 void qmfunction::multiply(QMFunction &inp_a, double conj_a,
                           QMFunction &inp_b, double conj_b,
                           QMFunction &out, double prec) {
-    { // Real part
-        FunctionTreeVector<3> vec;
-        if (inp_a.hasReal() and inp_b.hasReal()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = 1.0;
-            if (prec < 0.0) {
-                // Union grid
-                mrcpp::build_grid(*tree, inp_a.real());
-                mrcpp::build_grid(*tree, inp_b.real());
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), 0);
-            } else {
-                // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (inp_a.hasImag() and inp_b.hasImag()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = -1.0*conj_a*conj_b;
-            if (prec < 0.0) {
-                mrcpp::build_grid(*tree, inp_a.imag());
-                mrcpp::build_grid(*tree, inp_b.imag());
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), 0);
-            } else {
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (vec.size() == 1) {
-            out.setReal(&mrcpp::get_func(vec, 0));
-            mrcpp::clear(vec, false);
-        }
-        if (vec.size() == 2) {
-            out.alloc(NUMBER::Real);
-            mrcpp::build_grid(out.real(), vec);
-            mrcpp::add(prec, out.real(), vec, 0);
-            mrcpp::clear(vec, true);
-        }
-    }
+    multiply_real(inp_a, conj_a, inp_b, conj_b, out, prec);
+    multiply_imag(inp_a, conj_a, inp_b, conj_b, out, prec);
     
-    { // Imaginary part
-        FunctionTreeVector<3> vec;
-        if (inp_a.hasReal() and inp_b.hasImag()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = conj_b;
-            if (prec < 0.0) {
-                // Union grid
-                mrcpp::build_grid(*tree, inp_a.real());
-                mrcpp::build_grid(*tree, inp_b.imag());
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), 0);
-            } else {
-                // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (inp_a.hasImag() and inp_b.hasReal()) {
-            FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-            double coef = conj_a;
-            if (prec < 0.0) {
-                // Union grid
-                mrcpp::build_grid(*tree, inp_a.imag());
-                mrcpp::build_grid(*tree, inp_b.real());
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), 0);
-            } else {
-                // Adaptive grid
-                mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real());
-            }
-            vec.push_back(std::make_tuple(1.0, tree));
-        }
-        if (vec.size() == 1) {
-            out.setImag(&mrcpp::get_func(vec, 0));
-            mrcpp::clear(vec, false);
-        }
-        if (vec.size() == 2) {
-            out.alloc(NUMBER::Imag);
-            mrcpp::build_grid(out.imag(), vec);
-            mrcpp::add(prec, out.imag(), vec, 0);
-            mrcpp::clear(vec, true);
-        }
-    }    
 }
 
 void qmfunction::linear_combination(const ComplexVector &c,
