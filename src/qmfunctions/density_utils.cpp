@@ -52,7 +52,7 @@ void compute(double prec, Density &rho, Orbital phi, double occ);
 void compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type);
 double compute_occupation(int orb_spin, int orb_occ, int dens_spin);
 
-void density::compute(double prec, Density &rho, Orbital phi, double occ) {
+void compute(double prec, Density &rho, Orbital phi, double occ) {
 
     FunctionTreeVector<3> sum_vec;
     if (phi.hasReal()) {
@@ -72,7 +72,7 @@ void density::compute(double prec, Density &rho, Orbital phi, double occ) {
     mrcpp::clear(sum_vec, true);
 }
 
-void density::compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type) {
+void compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type) {
 
     double ket_conj(1.0), bra_conj(1.0);
     if (ket.conjugate()) ket_conj = -1.0;
@@ -102,7 +102,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
             Density rho_i;
             rho_i.alloc(NUMBER::Real);
             mrcpp::copy_grid(rho_i.real(), rho.real());
-            density::compute(mult_prec, rho_i, Phi[i], occ);
+            compute(mult_prec, rho_i, Phi[i], occ);
             dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
             rho_i.clear(); // release FunctionTree pointers to dens_vec
         }
@@ -135,7 +135,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
             Density *rho_i = new Density(); 
             rho_i->alloc(NUMBER::Real);
             mrcpp::copy_grid(rho_i->real(), rho.real());
-            density::compute(mult_prec, *rho_i, Phi[i], Phi_x[i], 2.0 * occ, NUMBER::Real);
+            compute(mult_prec, *rho_i, Phi[i], Phi_x[i], 2.0 * occ, NUMBER::Real);
             dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
         }
     }
@@ -175,8 +175,8 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
             mrcpp::copy_grid(rho_y->real(), rho.real());
             mrcpp::copy_grid(rho_x->imag(), rho.imag());
             mrcpp::copy_grid(rho_y->imag(), rho.imag());
-            density::compute(mult_prec, *rho_x, Phi_x[i], Phi[i], occ, NUMBER::Total);
-            density::compute(mult_prec, *rho_y, Phi[i], Phi_y[i], occ, NUMBER::Total);
+            compute(mult_prec, *rho_x, Phi_x[i], Phi[i], occ, NUMBER::Total);
+            compute(mult_prec, *rho_y, Phi[i], Phi_y[i], occ, NUMBER::Total);
             dens_real.push_back(std::make_tuple(1.0, &(rho_x->real())));
             dens_real.push_back(std::make_tuple(1.0, &(rho_y->real())));
             dens_imag.push_back(std::make_tuple(1.0, &(rho_x->imag())));
@@ -210,7 +210,7 @@ void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, i
     mrcpp::project(prec, rho.real(), dens_exp);
 }
 
-double density::compute_occupation(int orb_spin, int orb_occ, int dens_spin) {
+double compute_occupation(int orb_spin, int orb_occ, int dens_spin) {
     double occ_a(0.0), occ_b(0.0), occ_p(0.0);
     if (orb_spin == SPIN::Alpha)  occ_a = (double) orb_occ;
     if (orb_spin == SPIN::Beta)   occ_b = (double) orb_occ;
