@@ -30,6 +30,7 @@
 #include "RankZeroTensorOperator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -165,14 +166,15 @@ void RankZeroTensorOperator::clear() {
 Orbital RankZeroTensorOperator::operator()(Orbital inp) {
     if (not mpi::my_orb(inp)) return inp.paramCopy();
 
-    OrbitalVector orb_vec;
+    QMFunctionVector func_vec;
     ComplexVector coef_vec = getCoefVector();
     for (int n = 0; n < this->oper_exp.size(); n++) {
         Orbital out_n = applyOperTerm(n, inp);
-        orb_vec.push_back(out_n);
+        func_vec.push_back(out_n);
     }
-    Orbital out = orbital::linear_combination(coef_vec, orb_vec);
-    orbital::free(orb_vec);
+    Orbital out = inp.paramCopy();
+    qmfunction::linear_combination(out, coef_vec, func_vec, -1.0);
+    qmfunction::free(func_vec);
     return out;
 }
 

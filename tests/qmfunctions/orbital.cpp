@@ -28,6 +28,7 @@
 #include "mrchem.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 using namespace mrchem;
 
@@ -225,14 +226,16 @@ TEST_CASE("Orbital", "[orbital]") {
         mrcpp::project(prec, phi.imag(), g);
 
         SECTION("scalar conjugate") {
-            Orbital psi = orbital::add(std::conj(c), phi, c, phi);
+            Orbital psi = phi.paramCopy();
+            qmfunction::add(psi, std::conj(c), phi, c, phi, -1.0);
             REQUIRE( psi.real().integrate() == Approx(phi.real().integrate()) );
             REQUIRE( psi.imag().integrate() == Approx(phi.imag().integrate()) );
             psi.free();
         }
 
         SECTION("orbital conjugate") {
-            Orbital psi = orbital::add(c, phi, c, phi.dagger());
+            Orbital psi = phi.paramCopy();
+            qmfunction::add(psi, c, phi, c, phi.dagger(), -1.0);
             REQUIRE( psi.real().integrate() == Approx(phi.real().integrate()) );
             REQUIRE( psi.imag().integrate() == Approx(phi.real().integrate()) );
             psi.free();
@@ -246,7 +249,8 @@ TEST_CASE("Orbital", "[orbital]") {
         mrcpp::project(prec, phi.real(), f);
         mrcpp::project(prec, phi.imag(), g);
 
-        Orbital psi = orbital::multiply(phi.dagger(), phi);
+        Orbital psi = phi.paramCopy();
+        qmfunction::multiply(psi, phi.dagger(), phi, -1.0);
         double f_norm = phi.real().getSquareNorm();
         double g_norm = phi.imag().getSquareNorm();
         REQUIRE( psi.real().integrate() == Approx(f_norm + g_norm) );

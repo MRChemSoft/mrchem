@@ -28,14 +28,12 @@
 #include "qmfunction_fwd.h"
 
 namespace mrchem {
-
 namespace density {
 
-void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
 void compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, int spin);
-void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, OrbitalVector &Phi_y, int spin);
- 
-} //namespace density
+void compute(double prec, Density &rho, OrbitalVector &Phi, int spin);
+void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin);
+void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin);
 
+} //namespace density
 } //namespace mrchem

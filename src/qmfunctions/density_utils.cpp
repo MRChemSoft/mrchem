@@ -48,155 +48,181 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * Density related standalone functions *
  ****************************************/
 
-void compute(double prec, Density &rho, Orbital phi, double occ);
-void compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type);
-double compute_occupation(int orb_spin, int orb_occ, int dens_spin);
+namespace density {
+void compute(double prec, Density &rho, Orbital phi, int spin);
+double compute_occupation(Orbital &phi, int dens_spin);
+}
 
-void density::compute(double prec, Density &rho, Orbital phi, double occ) {
+/** @brief Compute density as the square of an orbital
+ *
+ * This routine is similar to qmfunction::multiply_real(), but it uses
+ * mrcpp::square(phi) instead of mrcpp::multiply(phi, phi), which makes it
+ * slightly faster.
+ *
+ */
+void density::compute(double prec, Density &rho, Orbital phi, int spin) {
+    double occ = density::compute_occupation(phi, spin);
+    bool phi_contributes = (std::abs(occ) > mrcpp::MachineZero);
 
     FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal()) {
+    if (phi.hasReal() and phi_contributes) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*real_2, phi.real());
         mrcpp::square(prec, *real_2, phi.real());
         sum_vec.push_back(std::make_tuple(occ, real_2));
     }
-    if (phi.hasImag()) {
+    if (phi.hasImag() and phi_contributes) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*imag_2, phi.imag());
         mrcpp::square(prec, *imag_2, phi.imag());
         sum_vec.push_back(std::make_tuple(occ, imag_2));
     }
-    mrcpp::build_grid(rho.real(), sum_vec);
-    mrcpp::add(-1.0, rho.real(), sum_vec, 0);
-    mrcpp::clear(sum_vec, true);
-}
 
-void density::compute(double prec, Density &rho, Orbital ket, Orbital bra, double coeff, int type) {
-
-    double ket_conj(1.0), bra_conj(1.0);
-    if (ket.conjugate()) ket_conj = -1.0;
-    if (bra.conjugate()) bra_conj = -1.0;
-    
-    if (type == NUMBER::Total) {
-        qmfunction::multiply(ket, ket_conj, bra, -1.0 * bra_conj, rho, prec);
-        rho.real().rescale(coeff);
-        rho.imag().rescale(coeff);
-    } else if (type == NUMBER::Real) {
-        qmfunction::multiply_real(ket, ket_conj, bra, -1.0 * bra_conj, rho, prec);
-        rho.real().rescale(coeff);
-    } else {
-        MSG_FATAL("No such case");
+    if (sum_vec.size() > 0) {
+        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+        mrcpp::build_grid(rho.real(), sum_vec);
+        mrcpp::add(-1.0, rho.real(), sum_vec, 0);
+        mrcpp::clear(sum_vec, true);
+    } else if (rho.hasReal()) {
+        rho.real().setZero();
+    }
+    if (rho.hasImag()) {
+        rho.imag().setZero();
     }
 }
 
+/** @brief Compute density as the sum of squared orbitals
+ *
+ * MPI: Each rank first computes its own local density, which is then reduced
+ *      to rank = 0 and broadcasted to all ranks.
+ *
+ */
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
-    double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
-    double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
+    int N_el = orbital::get_electron_number(Phi);
+    double mult_prec = prec;     // prec for rho_i = |phi_i|^2
+    double add_prec = prec/N_el; // prec for rho = sum_i rho_i
 
     FunctionTreeVector<3> dens_vec;
-    for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) {
-            double occ = compute_occupation(Phi[i].spin(), Phi[i].occ(), spin);
-            if (std::abs(occ) < mrcpp::MachineZero) continue;
+    for (auto &phi_i : Phi) {
+        if (mpi::my_orb(phi_i)) {
             Density rho_i;
-            rho_i.alloc(NUMBER::Real);
-            mrcpp::copy_grid(rho_i.real(), rho.real());
-            density::compute(mult_prec, rho_i, Phi[i], occ);
-            dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
-            rho_i.clear(); // release FunctionTree pointers to dens_vec
+            density::compute(mult_prec, rho_i, phi_i, spin);
+            if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
+            if (rho_i.hasImag()) MSG_ERROR("Density should be real");
         }
     }
 
-    if (add_prec > 0.0) {
+    if (dens_vec.size() > 0) {
+        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
         mrcpp::add(add_prec, rho.real(), dens_vec);
-    } else if (dens_vec.size() > 0) {
-        mrcpp::build_grid(rho.real(), dens_vec);
-        mrcpp::add(-1.0, rho.real(), dens_vec, 0);
+    } else if (rho.hasReal()) {
+        rho.real().setZero();
     }
+    if (rho.hasImag()) {
+        rho.imag().setZero();
+    }
+
     mrcpp::clear(dens_vec, true);
 
     mpi::reduce_density(rho, mpi::comm_orb);
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
+/** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><x_i|
+ *
+ * Exploits the fact that the resulting density must be real.
+ *
+ * MPI: Each rank first computes its own local density, which is then reduced
+ *      to rank = 0 and broadcasted to all ranks. The rank distribution of Phi
+ *      and X must be the same.
+ *
+ */
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin) {
+    int N_el = orbital::get_electron_number(Phi);
+    double mult_prec = prec;     // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
+    double add_prec = prec/N_el; // prec for rho = sum_i rho_i
+    if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
 
-//LUCA Is the MPI distribution of Phi identical to Phi_x and Phi_y??? Now I 
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, int spin) {
-    double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
-    double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
-    if (Phi.size() != Phi_x.size()) MSG_ERROR("Size mismatch");
-    
     FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
-            double occ = compute_occupation(Phi[i].spin(), Phi[i].occ(), spin);
+            if (not mpi::my_orb(X[i])) MSG_FATAL("Inconsistent MPI distribution");
+
+            double occ = density::compute_occupation(Phi[i], spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
-            Density *rho_i = new Density(); 
-            rho_i->alloc(NUMBER::Real);
-            mrcpp::copy_grid(rho_i->real(), rho.real());
-            density::compute(mult_prec, *rho_i, Phi[i], Phi_x[i], 2.0 * occ, NUMBER::Real);
-            dens_vec.push_back(std::make_tuple(1.0, &(rho_i->real())));
+
+            Density rho_i;
+            qmfunction::multiply_real(rho_i, Phi[i], X[i], mult_prec);
+            if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(2.0*occ, &(rho_i.real())));
         }
     }
 
-    if (add_prec > 0.0) {
+    if (dens_vec.size() > 0) {
+        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
         mrcpp::add(add_prec, rho.real(), dens_vec);
-    } else if (dens_vec.size() > 0) {
-        mrcpp::build_grid(rho.real(), dens_vec);
-        mrcpp::add(-1.0, rho.real(), dens_vec, 0);
+    } else if (rho.hasReal()) {
+        rho.real().setZero();
     }
+    if (rho.hasImag()) {
+        rho.imag().setZero();
+    }
+
     mrcpp::clear(dens_vec, true);
 
     mpi::reduce_density(rho, mpi::comm_orb);
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
-//LUCA Is the MPI distribution of Phi identical to Phi_x and Phi_y??? Now I 
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &Phi_x, OrbitalVector &Phi_y, int spin) {
-    double mult_prec = prec;            // prec for \rho_i = |\phi_i|^2
-    double add_prec = prec/Phi.size();  // prec for \sum_i \rho_i
-    if (Phi.size() != Phi_x.size()) MSG_ERROR("Size mismatch");
-    
+/** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><y_i|
+ *
+ * MPI: Each rank first computes its own local density, which is then reduced
+ *      to rank = 0 and broadcasted to all ranks. The rank distribution of Phi
+ *      and X/Y must be the same.
+ *
+ */
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin) {
+    int N_el = orbital::get_electron_number(Phi);
+    double mult_prec = prec;     // prec for rho_i = |x_i><phi_i| + |phi_i><y_i|
+    double add_prec = prec/N_el; // prec for rho = sum_i rho_i
+    if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
+    if (Phi.size() != Y.size()) MSG_ERROR("Size mismatch");
+
     FunctionTreeVector<3> dens_real;
     FunctionTreeVector<3> dens_imag;
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
-            //if(mpi::my_orb(Phi_x[i])) ....
-            double occ = compute_occupation(Phi[i].spin(), Phi[i].occ(), spin);
+            if (not mpi::my_orb(X[i])) MSG_FATAL("Inconsistent MPI distribution");
+            if (not mpi::my_orb(Y[i])) MSG_FATAL("Inconsistent MPI distribution");
+
+            double occ = density::compute_occupation(Phi[i], spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
-            Density *rho_x = new Density(); 
-            Density *rho_y = new Density(); 
-            rho_x->alloc(NUMBER::Real);
-            rho_y->alloc(NUMBER::Real);
-            rho_x->alloc(NUMBER::Imag);
-            rho_y->alloc(NUMBER::Imag);
-            mrcpp::copy_grid(rho_x->real(), rho.real());
-            mrcpp::copy_grid(rho_y->real(), rho.real());
-            mrcpp::copy_grid(rho_x->imag(), rho.imag());
-            mrcpp::copy_grid(rho_y->imag(), rho.imag());
-            density::compute(mult_prec, *rho_x, Phi_x[i], Phi[i], occ, NUMBER::Total);
-            density::compute(mult_prec, *rho_y, Phi[i], Phi_y[i], occ, NUMBER::Total);
-            dens_real.push_back(std::make_tuple(1.0, &(rho_x->real())));
-            dens_real.push_back(std::make_tuple(1.0, &(rho_y->real())));
-            dens_imag.push_back(std::make_tuple(1.0, &(rho_x->imag())));
-            dens_imag.push_back(std::make_tuple(1.0, &(rho_y->imag())));
+
+            Density rho_x;
+            Density rho_y;
+            qmfunction::multiply(rho_x, X[i], Phi[i].dagger(), mult_prec);
+            qmfunction::multiply(rho_y, Phi[i], Y[i].dagger(), mult_prec);
+
+            if (rho_x.hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_x.real())));
+            if (rho_y.hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_y.real())));
+            if (rho_x.hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_x.imag())));
+            if (rho_y.hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_y.imag())));
         }
     }
 
-    if (add_prec > 0.0) {
-        mrcpp::add(add_prec, rho.real(), dens_real);
-        mrcpp::add(add_prec, rho.imag(), dens_imag);
-    } else {
-        if (dens_real.size() > 0) {
-            mrcpp::build_grid(rho.real(), dens_real);
-            mrcpp::add(-1.0,  rho.real(), dens_real, 0);
-        }
-        if (dens_imag.size() > 0) {
-            mrcpp::build_grid(rho.imag(), dens_imag);
-            mrcpp::add(-1.0,  rho.imag(), dens_imag, 0);
-        }
+    if (dens_real.size() > 0) {
+        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+        mrcpp::add(add_prec,  rho.real(), dens_real);
+    } else if (rho.hasReal()) {
+        rho.real().setZero();
     }
+
+    if (dens_imag.size() > 0) {
+        if (not rho.hasImag()) rho.alloc(NUMBER::Imag);
+        mrcpp::add(add_prec,  rho.imag(), dens_imag);
+    } else if (rho.hasImag()) {
+        rho.imag().setZero();
+    }
+
     mrcpp::clear(dens_real, true);
     mrcpp::clear(dens_imag, true);
 
@@ -206,15 +232,14 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {
     rho.alloc(NUMBER::Real);
-    rho.setSpin(spin);
     mrcpp::project(prec, rho.real(), dens_exp);
 }
 
-double density::compute_occupation(int orb_spin, int orb_occ, int dens_spin) {
+double density::compute_occupation(Orbital &phi, int dens_spin) {
     double occ_a(0.0), occ_b(0.0), occ_p(0.0);
-    if (orb_spin == SPIN::Alpha)  occ_a = (double) orb_occ;
-    if (orb_spin == SPIN::Beta)   occ_b = (double) orb_occ;
-    if (orb_spin == SPIN::Paired) occ_p = (double) orb_occ;
+    if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
+    if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
+    if (phi.spin() == SPIN::Paired) occ_p = (double) phi.occ();
     
     double occ(0.0);
     if (dens_spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;

@@ -31,6 +31,7 @@
 #include "KAIN.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -68,12 +69,14 @@ void KAIN::setupLinearSystem() {
             for (int i = 0; i < nHistory; i++) {
                 Orbital &phi_i = this->orbitals[i][n];
                 if (not mpi::my_orb(phi_i)) MSG_FATAL("MPI rank mismatch: phi_i");
-                Orbital dPhi_im = orbital::add(1.0, phi_i, -1.0, phi_m);
+                Orbital dPhi_im = phi_m.paramCopy();
+                qmfunction::add(dPhi_im, 1.0, phi_i, -1.0, phi_m, -1.0);
 
                 for (int j = 0; j < nHistory; j++) {
                     Orbital &fPhi_j = this->dOrbitals[j][n];
                     if (not mpi::my_orb(fPhi_j)) MSG_FATAL("MPI rank mismatch: fPhi_j");
-                    Orbital dfPhi_jm = orbital::add(1.0, fPhi_j, -1.0, fPhi_m);
+                    Orbital dfPhi_jm = fPhi_m.paramCopy();
+                    qmfunction::add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, -1.0);
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
@@ -146,7 +149,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
         if (this->sepOrbitals) m = n;
         if (mpi::my_orb(Phi[n])) {
             std::vector<ComplexDouble> totCoefs;
-            OrbitalVector totOrbs;
+            QMFunctionVector totOrbs;
 
             Orbital &phi_m = this->orbitals[nHistory][n];
             Orbital &fPhi_m = this->dOrbitals[nHistory][n];
@@ -158,7 +161,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             // (but not the orbitals themselves).
             for (int j = 0; j < nHistory; j++) {
                 ComplexVector partCoefs(4);
-                OrbitalVector partOrbs;
+                QMFunctionVector partOrbs;
 
                 partCoefs(0) = 1.0;
                 Orbital &phi_j = this->orbitals[j][n];
@@ -176,7 +179,8 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
                 partCoefs(3) = -1.0;
                 partOrbs.push_back(fPhi_m);
 
-                Orbital partStep = orbital::linear_combination(partCoefs, partOrbs, prec);
+                Orbital partStep = phi_m.paramCopy();
+                qmfunction::linear_combination(partStep, partCoefs, partOrbs, prec);
 
                 ComplexDouble c_j = this->c[m](j);
                 totCoefs.push_back(c_j);
@@ -187,12 +191,13 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             ComplexVector coefsVec(totCoefs.size());
             for (int i = 0; i < totCoefs.size(); i++) coefsVec(i) = totCoefs[i];
 
-            dPhi[n] = orbital::linear_combination(coefsVec, totOrbs, prec);
+            dPhi[n] = Phi[n].paramCopy();
+            qmfunction::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
 
             // First entry is the last orbital update and should not be deallocated,
             // all other entries are locally allocated partSteps that must be deleted
             totOrbs[0].clear();
-            orbital::free(totOrbs);
+            qmfunction::free(totOrbs);
         }
     }
 

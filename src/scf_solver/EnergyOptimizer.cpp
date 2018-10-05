@@ -178,7 +178,7 @@ bool EnergyOptimizer::optimize() {
 
         // Rotate orbitals
         ComplexMatrix U = orbital::calc_lowdin_matrix(Phi_np1);
-        Phi_n = orbital::linear_combination(U, Phi_np1, orb_prec);
+        Phi_n = orbital::rotate(U, Phi_np1, orb_prec);
         F_n = U * F_np1 * U.adjoint();
         orbital::free(Phi_np1);
         orbital::set_errors(Phi_n, errors);

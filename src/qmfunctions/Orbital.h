@@ -48,13 +48,10 @@
 namespace mrchem {
 
 /* POD struct for orbital meta data. Used for simple MPI communication. */
-struct OrbitalMeta {
+struct OrbitalData {
     int rank_id;
     int spin;
     int occ;
-    int nChunksReal;
-    int nChunksImag;
-    bool conjugate;
     double error;
 };
 
@@ -69,25 +66,18 @@ public:
     Orbital deepCopy();
     Orbital dagger() const;
 
-    void setError(double error) { this->meta.error = error; }
-    void setRankId(int rank) { this->meta.rank_id = rank; }
-    void setSpin(int spin) { this->meta.spin = spin; }
-    void setOcc(int occ) { this->meta.occ = occ; }
+    void setOcc(int occ) { this->orb_data.occ = occ; }
+    void setSpin(int spin) { this->orb_data.spin = spin; }
+    void setRankId(int rank) { this->orb_data.rank_id = rank; }
+    void setError(double error) { this->orb_data.error = error; }
 
-    OrbitalMeta &getMetaData();
-    int occ() const { return this->meta.occ; }
-    int spin() const { return this->meta.spin; }
-    int rankID() const { return this->meta.rank_id; }
-    bool conjugate() const { return this->meta.conjugate; }
-    double error() const { return this->meta.error; }
-    double norm() const;
-    double squaredNorm() const;
+    int occ() const { return this->orb_data.occ; }
+    int spin() const { return this->orb_data.spin; }
+    int rankID() const { return this->orb_data.rank_id; }
+    double error() const { return this->orb_data.error; }
+    OrbitalData &getOrbitalData() { return this->orb_data; }
 
-    void add(ComplexDouble c, Orbital inp, double prec = -1.0);
-    void multiply(Orbital inp, double prec = -1.0);
-    void rescale(ComplexDouble c);
-
-    void normalize() { rescale(1.0/this->norm()); }
+    void normalize() { this->rescale(1.0/this->norm()); }
     void orthogonalize(Orbital inp);
     void orthogonalize(OrbitalVector inp_vec);
 
@@ -98,7 +88,7 @@ public:
     friend std::ostream& operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
 
 protected:
-    OrbitalMeta meta;
+    OrbitalData orb_data;
 
     std::ostream& print(std::ostream &o) const;
 };

@@ -48,20 +48,15 @@ namespace mrchem {
 
 /** @brief Compute <bra|ket> = int bra^\dag(r) * ket(r) dr.
  *
- *  Complicated by the fact that both bra and ket can be interpreted
- *  as complex conjugate versions of themselves. Notice that the <bra|
- *  position is already complex conjugated.
+ *  Notice that the <bra| position is already complex conjugated.
+ *  Alpha spin is orthogonal to beta spin, but paired orbitals are
+ *  not necessarily orthogonal to alpha/beta orbitals.
  *
  */
 ComplexDouble orbital::dot(Orbital bra, Orbital ket) {
     if ((bra.spin() == SPIN::Alpha) and (ket.spin() == SPIN::Beta)) return 0.0;
     if ((bra.spin() == SPIN::Beta) and (ket.spin() == SPIN::Alpha)) return 0.0;
-
-    double bra_conj(1.0), ket_conj(1.0);
-    if (bra.conjugate()) bra_conj = -1.0;
-    if (ket.conjugate()) ket_conj = -1.0;
-
-    return qmfunction::dot(bra, bra_conj, ket, ket_conj);
+    return qmfunction::dot(bra, ket);
 }
 
 /** @brief Compute the diagonal dot products <bra_i|ket_i>
@@ -132,21 +127,6 @@ int orbital::compare_spin(const Orbital &orb_a, const Orbital &orb_b) {
     return comp;
 }
 
-/** @brief out = a*inp_a + b*inp_b
-  * Complicated by the fact that both inputs can be interpreted as complex
-  * conjugate versions of themselves. */
-Orbital orbital::add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, double prec) {
-    ComplexVector coefs(2);
-    coefs(0) = a;
-    coefs(1) = b;
-
-    OrbitalVector orbs;
-    orbs.push_back(inp_a);
-    orbs.push_back(inp_b);
-
-    return linear_combination(coefs, orbs, prec);
-}
-
 /** @brief out_i = a*(inp_a)_i + b*(inp_b)_i
  *
  *  Component-wise addition of orbitals.
@@ -157,92 +137,36 @@ OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &inp_a,
                            double prec) {
     if (inp_a.size() != inp_b.size()) MSG_ERROR("Size mismatch");
 
-    OrbitalVector out;
+    OrbitalVector out = orbital::param_copy(inp_a);
     for (int i = 0; i < inp_a.size(); i++) {
         if (inp_a[i].rankID() != inp_b[i].rankID()) MSG_FATAL("MPI rank mismatch");
-        Orbital out_i = add(a, inp_a[i], b, inp_b[i]);
-        out.push_back(out_i);
+        qmfunction::add(out[i], a, inp_a[i], b, inp_b[i], prec);
     }
-    return out;
-}
-
-/** @brief out = inp_a * inp_b
-  *
-  * Complicated by the fact that both inputs can be interpreted
-  * as complex conjugate versions of themselves.
-  *
-  */
-Orbital orbital::multiply(Orbital inp_a, Orbital inp_b, double prec) {
-
-    int occ = compare_occ(inp_a, inp_b);
-    int spin = compare_spin(inp_a, inp_b);
-    Orbital out(spin, occ);
-
-    double conj_a(1.0), conj_b(1.0);
-    if (inp_a.conjugate()) conj_a = -1.0;
-    if (inp_b.conjugate()) conj_b = -1.0;
-    
-    qmfunction::multiply(inp_a, conj_a, inp_b, conj_b, out, prec);
-    return out;
-}
-
-/** @brief out = c_0*inp_0 + c_1*inp_1 + ...
-  *
-  * Complicated by the fact that both inputs can be interpreted as complex
-  * conjugate versions of themselves.
-  *
-  */
-Orbital orbital::linear_combination(const ComplexVector &c, OrbitalVector &inp, double prec) {
-    if (c.size() != inp.size()) MSG_ERROR("Size mismatch");
-    double thrs = mrcpp::MachineZero;
-
-    Orbital out;
-    QMFunctionVector tmp_orb;
-    ComplexVector tmp_coef(c.size());
-    // set output spin from first contributing input
-    for (int i = 0; i < inp.size(); i++) {
-        if (std::abs(c[i]) < thrs) continue;
-        out = inp[i].paramCopy();
-        break;
-    }
-    // all contributing input spins must be equal
-    for (int i = 0; i < inp.size(); i++) {
-        if (std::abs(c[i]) < thrs) continue;
-        if (out.spin() != inp[i].spin()) {
-            // empty orbitals with wrong spin can occur
-            if (inp[i].hasReal()) MSG_FATAL("Mixing spins");
-            if (inp[i].hasImag()) MSG_FATAL("Mixing spins");
-        }
-        double sign = (inp[i].conjugate()) ? -1.0 : 1.0;
-        tmp_orb.push_back(std::make_tuple(sign, inp[i]));
-        tmp_coef[tmp_orb.size()-1] = c[i];
-    }
-    qmfunction::linear_combination(tmp_coef, tmp_orb, out, prec);
     return out;
 }
 
 /** @brief Orbital transformation out_vec = U*inp_vec
  *
- * The transformation matrix is not necessarily square.
+ * MPI: Rank distribution of output vector is the same as input vector
  *
  */
-OrbitalVector orbital::linear_combination(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
+OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
     // Get all out orbitals belonging to this MPI
-    //LUCA: if one does the following, then the matrix must be square...
     OrbitalVector out = orbital::param_copy(inp);
     OrbitalIterator iter(inp);
     while (iter.next()) {
         for (int i = 0; i < out.size(); i++) {
             if (not mpi::my_orb(out[i])) continue;
-            OrbitalVector orb_vec;
             ComplexVector coef_vec(iter.get_size());
+            QMFunctionVector func_vec;
             for (int j = 0; j < iter.get_size(); j++) {
                 int idx_j = iter.idx(j);
                 Orbital &recv_j = iter.orbital(j);
                 coef_vec[j] = U(i, idx_j);
-                orb_vec.push_back(recv_j);
+                func_vec.push_back(recv_j);
             }
-            Orbital tmp_i = linear_combination(coef_vec, orb_vec, prec);
+            Orbital tmp_i = out[i].paramCopy();
+            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
             out[i].add(1.0, tmp_i, prec); // In place addition
             tmp_i.free();
         }
@@ -541,7 +465,7 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
     }
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
+    OrbitalVector Psi = orbital::rotate(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -584,7 +508,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
     Timer rot_t;
-    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
+    OrbitalVector Psi = orbital::rotate(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     rot_t.stop();
@@ -604,7 +528,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
  */
 ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    OrbitalVector Psi = orbital::linear_combination(U, Phi, prec);
+    OrbitalVector Psi = orbital::rotate(U, Phi, prec);
     orbital::free(Phi);
     Phi = Psi;
     return U;

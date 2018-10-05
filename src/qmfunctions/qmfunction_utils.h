@@ -29,29 +29,15 @@
 #include "qmfunction_fwd.h"
 
 namespace mrchem {
-
 namespace qmfunction {
     
-ComplexDouble dot(QMFunction &bra, double bra_conj,
-                  QMFunction &ket, double ket_conj);
- 
-void multiply_real(QMFunction &inp_a, double conj_a,
-                               QMFunction &inp_b, double conj_b,
-                               QMFunction &out, double prec);
- 
-void multiply_imag(QMFunction &inp_a, double conj_a,
-                               QMFunction &inp_b, double conj_b,
-                               QMFunction &out, double prec);
- 
-void multiply(QMFunction &inp_a, double conj_a,
-              QMFunction &inp_b, double conj_b,
-              QMFunction &out,   double prec);
+ComplexDouble dot(QMFunction bra, QMFunction ket);
+void add(QMFunction &out, ComplexDouble a, QMFunction inp_a, ComplexDouble b, QMFunction inp_b, double prec);
+void multiply(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec);
+void multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec);
+void multiply_imag(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec);
+void linear_combination(QMFunction &out, const ComplexVector &c, QMFunctionVector &inp, double prec);
+void free(QMFunctionVector &vec);
 
-void linear_combination(const ComplexVector &c,
-                        QMFunctionVector &inp,
-                        QMFunction &out,
-                        double prec);
- 
 } //namespace qmfunction
-
 } //namespace mrchem

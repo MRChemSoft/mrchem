@@ -40,6 +40,7 @@
 #include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
@@ -126,6 +127,10 @@ OrbitalVector initial_guess::core::setup(double prec,
     t2.stop();
     Printer::printDouble(0, "Diagonalize Fock matrix", t2.getWallTime(), 5);
 
+    // Need to convert to QMFunctions for linear_combination
+    QMFunctionVector funcs;
+    for (auto &phi_i : Phi) funcs.push_back(phi_i);
+
     // Rotate orbitals and fill electrons by Aufbau
     Timer t3;
     OrbitalVector Psi;
@@ -135,9 +140,8 @@ OrbitalVector initial_guess::core::setup(double prec,
         int Np = Nd/2;                  //paired orbitals
         for (int i = 0; i < Np; i++) {
             ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::linear_combination(v_i, Phi, prec);
-            psi_i.setOcc(2);
-            psi_i.setSpin(SPIN::Paired);
+            Orbital psi_i(SPIN::Paired);
+            qmfunction::linear_combination(psi_i, v_i, funcs, prec);
             Psi.push_back(psi_i);
         }
     } else {
@@ -147,18 +151,16 @@ OrbitalVector initial_guess::core::setup(double prec,
         OrbitalVector Psi_a;
         for (int i = 0; i < Na; i++) {
             ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::linear_combination(v_i, Phi, prec);
-            psi_i.setOcc(1);
-            psi_i.setSpin(SPIN::Alpha);
+            Orbital psi_i(SPIN::Alpha);
+            qmfunction::linear_combination(psi_i, v_i, funcs, prec);
             Psi_a.push_back(psi_i);
         }
 
         OrbitalVector Psi_b;
         for (int i = 0; i < Nb; i++) {
             ComplexVector v_i = U.row(i);
-            Orbital psi_i = orbital::linear_combination(v_i, Phi, prec);
-            psi_i.setOcc(1);
-            psi_i.setSpin(SPIN::Beta);
+            Orbital psi_i(SPIN::Beta);
+            qmfunction::linear_combination(psi_i, v_i, funcs, prec);
             Psi_b.push_back(psi_i);
         }
 

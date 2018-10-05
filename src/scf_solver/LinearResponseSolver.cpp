@@ -318,37 +318,34 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
     RankZeroTensorOperator &V_0 = this->fOper_0->potential();
     RankZeroTensorOperator V_1 = this->fOper_1->potential() + this->fOper_1->perturbation();
 
-    OrbitalVector out = orbital::param_copy(Phi_1);
-    for (int i = 0; i < Phi_1.size(); i++) {
-        OrbitalVector arg_parts;
-        timer_1.start();
-        if (Phi_1[i].norm() > 0.1 * this->orbThrs) {
-            Orbital part_1 = V_0(Phi_1[i]);
-            arg_parts.push_back(part_1);
-        }
-        timer_1.stop();
-        timer_2.start();
-        if (M.row(i).norm() > 0.1 * this->orbThrs) {
-            ComplexVector c = M.row(i);
-            Orbital part_2 = orbital::linear_combination(c, Phi_1);
-            arg_parts.push_back(part_2);
-        }
-        timer_2.stop();
-        timer_3.start();
-        Orbital part_3;
-        if (adjoint) {
-            part_3 = V_1.dagger(Phi_0[i]);
-        } else {
-            part_3 = V_1(Phi_0[i]);
-        }
-        part_3.orthogonalize(Phi_0);
-        timer_3.stop();
-        arg_parts.push_back(part_3);
+    timer_1.start();
+    OrbitalVector part_1 = V_0(Phi_1);
+    timer_1.stop();
 
-        ComplexVector c = ComplexVector::Constant(arg_parts.size(), -1.0 / (2.0 * MATHCONST::pi));
-        out[i] = orbital::linear_combination(c, arg_parts, -1.0);
-        orbital::free(arg_parts);
+    timer_2.start();
+    OrbitalVector part_2 = orbital::rotate(M, Phi_1);
+    timer_2.stop();
+
+    timer_3.start();
+    OrbitalVector part_3;
+    if (adjoint) {
+        part_3 = V_1.dagger(Phi_0);
+    } else {
+        part_3 = V_1(Phi_0);
     }
+    for (int i = 0; i < part_3.size(); i++) {
+        part_3[i].orthogonalize(Phi_0);
+    }
+    timer_3.stop();
+
+    double coef = -1.0 / (2.0 * MATHCONST::pi);
+    OrbitalVector part_12 = orbital::add(coef, part_1, coef, part_2, -1.0);
+    orbital::free(part_1);
+    orbital::free(part_2);
+
+    OrbitalVector out = orbital::add(1.0, part_12, coef, part_3, -1.0);
+    orbital::free(part_12);
+    orbital::free(part_3);
 
     Printer::printDouble(0, "            V_0 phi_1", timer_1.getWallTime(), 5);
     Printer::printDouble(0, "            F_0 phi_1", timer_2.getWallTime(), 5);

@@ -30,12 +30,17 @@
 
 namespace mrchem {
 
+/* POD struct for function meta data. Used for simple MPI communication. */
+struct FunctionData {
+    int nChunksReal;
+    int nChunksImag;
+    bool conjugate;
+};
+
 class QMFunction {
 public:
-    QMFunction(mrcpp::FunctionTree<3> *r = nullptr,
-               mrcpp::FunctionTree<3> *i = nullptr)
-        : re(r), im(i) { }
-    QMFunction(const QMFunction &func) : re(func.re), im(func.im) { }
+    QMFunction(mrcpp::FunctionTree<3> *r = nullptr, mrcpp::FunctionTree<3> *i = nullptr);
+    QMFunction(const QMFunction &func);
     QMFunction &operator=(const QMFunction &func);
     virtual ~QMFunction() = default;
 
@@ -44,6 +49,15 @@ public:
     void free(int type = NUMBER::Total);
 
     int getNNodes(int type = NUMBER::Total) const;
+    bool conjugate() const { return this->func_data.conjugate; }
+    FunctionData &getFunctionData();
+
+    double norm() const;
+    double squaredNorm() const;
+
+    void add(ComplexDouble c, QMFunction inp, double prec = -1.0);
+    void multiply(QMFunction inp, double prec = -1.0);
+    void rescale(ComplexDouble c);
 
     bool hasReal() const { return (this->re == nullptr) ? false : true; }
     bool hasImag() const { return (this->im == nullptr) ? false : true; }
@@ -58,6 +72,7 @@ public:
     void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
 
 protected:
+    FunctionData func_data;
     mrcpp::FunctionTree<3> *re;     ///< Real part of function
     mrcpp::FunctionTree<3> *im;     ///< Imaginary part of function
 };

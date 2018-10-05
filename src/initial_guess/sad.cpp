@@ -40,6 +40,7 @@
 #include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
@@ -187,15 +188,16 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
     while (iter.next()) {
         for (int i = 0; i < Psi.size(); i++) {
             if (not mpi::my_orb(Psi[i])) continue;
-            OrbitalVector orb_vec;
+            QMFunctionVector func_vec;
             ComplexVector coef_vec(iter.get_size());
             for (int j = 0; j < iter.get_size(); j++) {
                 int idx_j = iter.idx(j);
                 Orbital &recv_j = iter.orbital(j);
                 coef_vec[j] = U(i, idx_j);
-                orb_vec.push_back(recv_j);
+                func_vec.push_back(recv_j);
             }
-            Orbital tmp_i = orbital::linear_combination(coef_vec, orb_vec, prec);
+            Orbital tmp_i = Psi[i].paramCopy();
+            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
             Psi[i].add(1.0, tmp_i, prec); // In place addition
             tmp_i.free();
         }

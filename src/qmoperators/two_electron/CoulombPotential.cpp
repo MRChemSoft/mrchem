@@ -77,10 +77,10 @@ void CoulombPotential::setupDensity(double prec) {
     Density &rho = this->density;
 
     Timer timer;
-    density::compute(-1.0, rho, Phi, DENSITY::Total);
+    density::compute(prec, rho, Phi, DENSITY::Total);
     timer.stop();
     double t = timer.getWallTime();
-    int n = rho.real().getNNodes(); //LUCA this should be implemented also for the IMAG part
+    int n = rho.getNNodes();
     Printer::printTree(0, "Coulomb density", n, t);
 }
 
@@ -100,9 +100,6 @@ void CoulombPotential::setupPotential(double prec) {
     QMPotential &V = *this;
     Density &rho = this->density;
 
-    int nPoints = rho.real().getTDim()*rho.real().getKp1_d();
-    int inpNodes = rho.getNNodes();
-
     // Adjust precision by system size
     double abs_prec = prec/rho.real().integrate();
 
@@ -113,15 +110,6 @@ void CoulombPotential::setupPotential(double prec) {
     int n = V.getNNodes();
     double t = timer.getWallTime();
     Printer::printTree(0, "Coulomb potential", n, t);
-
-    // Prepare density grid for next iteration
-    rho.real().crop(abs_prec, 1.0, false);
-    mrcpp::refine_grid(rho.real(), abs_prec);
-
-    int newNodes = rho.getNNodes() - inpNodes;
-
-    println(0, " Coulomb grid size   " << std::setw(21) << inpNodes << std::setw(17) << nPoints*inpNodes);
-    println(0, " Coulomb grid change " << std::setw(21) << newNodes << std::setw(17) << nPoints*newNodes);
 }
 
 } //namespace mrchem

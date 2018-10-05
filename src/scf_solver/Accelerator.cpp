@@ -103,12 +103,12 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
     if (nOrbs <= 0) { return; }
     for (int i = 0; i < nOrbs; i++) {
         OrbitalVector &Phi = this->orbitals[i];
-        OrbitalVector tmp = orbital::linear_combination(U, Phi);
+        OrbitalVector tmp = orbital::rotate(U, Phi);
         orbital::free(Phi);
         Phi = tmp;
 
         OrbitalVector &dPhi = this->dOrbitals[i];
-        OrbitalVector dTmp = orbital::linear_combination(U, dPhi);
+        OrbitalVector dTmp = orbital::rotate(U, dPhi);
         orbital::free(dPhi);
         dPhi = dTmp;
     }

@@ -171,11 +171,13 @@ void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 //send an orbital with MPI
 void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI
-    OrbitalMeta &orbinfo = orb.getMetaData();
-    MPI_Send(&orbinfo, sizeof(OrbitalMeta), MPI_BYTE, dst, 0, mpi::comm_orb);
+    OrbitalData &orbinfo = orb.getOrbitalData();
+    FunctionData &funcinfo = orb.getFunctionData();
+    MPI_Send(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, mpi::comm_orb);
+    MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, mpi::comm_orb);
 
-    if (orb.hasReal()) mrcpp::send_tree(orb.real(), dst, tag, mpi::comm_orb, orbinfo.nChunksReal);
-    if (orb.hasImag()) mrcpp::send_tree(orb.imag(), dst, tag+10000, mpi::comm_orb, orbinfo.nChunksImag);
+    if (orb.hasReal()) mrcpp::send_tree(orb.real(), dst, tag, mpi::comm_orb, funcinfo.nChunksReal);
+    if (orb.hasImag()) mrcpp::send_tree(orb.imag(), dst, tag+10000, mpi::comm_orb, funcinfo.nChunksImag);
 #endif
 }
 
@@ -184,11 +186,13 @@ void mpi::isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request) {
 #ifdef HAVE_MPI
     NEEDS_TESTING;
 
-    OrbitalMeta &orbinfo = orb.getMetaData();
-    MPI_Isend(&orbinfo, sizeof(OrbitalMeta), MPI_BYTE, dst, 0, mpi::comm_orb, &request);
+    OrbitalData &orbinfo = orb.getOrbitalData();
+    FunctionData &funcinfo = orb.getFunctionData();
+    MPI_Isend(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, mpi::comm_orb, &request);
+    MPI_Isend(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, mpi::comm_orb, &request);
 
-    if (orb.hasReal()) mrcpp::isend_tree(orb.real(), dst, tag, mpi::comm_orb,  &request, orbinfo.nChunksReal);
-    if (orb.hasImag()) mrcpp::isend_tree(orb.imag(), dst, tag+10000, mpi::comm_orb, &request, orbinfo.nChunksImag);
+    if (orb.hasReal()) mrcpp::isend_tree(orb.real(), dst, tag, mpi::comm_orb,  &request, funcinfo.nChunksReal);
+    if (orb.hasImag()) mrcpp::isend_tree(orb.imag(), dst, tag+10000, mpi::comm_orb, &request, funcinfo.nChunksImag);
 
 #endif
 }
@@ -198,21 +202,23 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #ifdef HAVE_MPI
     MPI_Status status;
 
-    OrbitalMeta &orbinfo = orb.getMetaData();
-    MPI_Recv(&orbinfo, sizeof(OrbitalMeta), MPI_BYTE, src, 0, mpi::comm_orb, &status);
+    OrbitalData &orbinfo = orb.getOrbitalData();
+    FunctionData &funcinfo = orb.getFunctionData();
+    MPI_Recv(&orbinfo, sizeof(OrbitalData), MPI_BYTE, src, 0, mpi::comm_orb, &status);
+    MPI_Recv(&funcinfo, sizeof(FunctionData), MPI_BYTE, src, 0, mpi::comm_orb, &status);
 
-    if (orbinfo.nChunksReal > 0) {
+    if (funcinfo.nChunksReal > 0) {
         // We must have a tree defined for receiving nodes. Define one:
         if (orb.hasReal()) MSG_FATAL("Orbital not empty");
         orb.alloc(NUMBER::Real);
-        mrcpp::recv_tree(orb.real(), src, tag, mpi::comm_orb, orbinfo.nChunksReal);
+        mrcpp::recv_tree(orb.real(), src, tag, mpi::comm_orb, funcinfo.nChunksReal);
     }
 
-    if (orbinfo.nChunksImag > 0) {
+    if (funcinfo.nChunksImag > 0) {
         // We must have a tree defined for receiving nodes. Define one:
         if (orb.hasImag()) MSG_FATAL("Orbital not empty");
         orb.alloc(NUMBER::Imag);
-        mrcpp::recv_tree(orb.imag(), src, tag+10000, mpi::comm_orb, orbinfo.nChunksImag);
+        mrcpp::recv_tree(orb.imag(), src, tag+10000, mpi::comm_orb, funcinfo.nChunksImag);
     }
 #endif
 }

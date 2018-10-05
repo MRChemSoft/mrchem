@@ -26,12 +26,26 @@
 #include "MRCPP/Printer"
 
 #include "QMFunction.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
+QMFunction::QMFunction(mrcpp::FunctionTree<3> *r, mrcpp::FunctionTree<3> *i)
+    : func_data({0, 0, false})
+    , re(r)
+    , im(i) {
+}
+
+QMFunction::QMFunction(const QMFunction &func)
+    : func_data(func.func_data)
+    , re(func.re)
+    , im(func.im) {
+}
+
 QMFunction& QMFunction::operator=(const QMFunction &func) {
     if (this != &func) {
+        this->func_data = func.func_data;
         this->re = func.re;
         this->im = func.im;
     }
@@ -69,6 +83,18 @@ void QMFunction::free(int type) {
     }
 }
 
+/** @brief Returns the orbital meta data
+ *
+ * Tree sizes (nChunks) are flushed before return.
+ */
+FunctionData& QMFunction::getFunctionData() {
+    this->func_data.nChunksReal = 0;
+    this->func_data.nChunksImag = 0;
+    if (this->hasReal()) this->func_data.nChunksReal = real().getNChunksUsed();
+    if (this->hasImag()) this->func_data.nChunksImag = imag().getNChunksUsed();
+    return this->func_data;
+}
+
 int QMFunction::getNNodes(int type) const {
     int nNodes = 0;
     if (type == NUMBER::Real or type == NUMBER::Total) {
@@ -79,5 +105,78 @@ int QMFunction::getNNodes(int type) const {
     }
     return nNodes;
 }
+
+/** @brief Returns the norm of the orbital */
+double QMFunction::norm() const {
+    double norm = squaredNorm();
+    if (norm > 0.0) norm = std::sqrt(norm);
+    return norm;
+}
+
+/** @brief Returns the squared norm of the orbital */
+double QMFunction::squaredNorm() const {
+    double sq_r = -1.0;
+    double sq_i = -1.0;
+    if (this->hasReal()) sq_r = this->real().getSquareNorm();
+    if (this->hasImag()) sq_i = this->imag().getSquareNorm();
+
+    double sq_norm = 0.0;
+    if (sq_r < 0.0 and sq_i < 0.0) {
+        sq_norm = -1.0;
+    } else {
+        if (sq_r >= 0.0) sq_norm += sq_r;
+        if (sq_i >= 0.0) sq_norm += sq_i;
+    }
+    return sq_norm;
+}
+
+/** @brief In place addition */
+void QMFunction::add(ComplexDouble c, QMFunction inp, double prec) {
+    QMFunction tmp(*this);
+    this->clear();
+    qmfunction::add(*this, 1.0, tmp, c, inp, prec);
+    tmp.free();
+}
+
+/** @brief In place multiply */
+void QMFunction::multiply(QMFunction inp, double prec) {
+    QMFunction tmp(*this);
+    this->clear();
+    qmfunction::multiply(*this, tmp, inp, prec);
+    tmp.free();
+}
+
+/** @brief In place multiply with scalar */
+void QMFunction::rescale(ComplexDouble c) {
+    double thrs = mrcpp::MachineZero;
+    bool cHasReal = (std::abs(c.real()) > thrs);
+    bool cHasImag = (std::abs(c.imag()) > thrs);
+
+    if (cHasReal and cHasImag) {
+        QMFunction tmp(*this);
+        this->clear();
+        qmfunction::add(*this, c, tmp, 0.0, tmp, -1.0);
+        tmp.free();
+    }
+    if (cHasReal and not cHasImag) {
+        if (this->hasReal()) this->real().rescale(c.real());
+        if (this->hasImag()) this->imag().rescale(c.real());
+    }
+    if (not cHasReal and not cHasImag) {
+        if (this->hasReal()) this->real().setZero();
+        if (this->hasImag()) this->imag().setZero();
+    }
+    if (not cHasReal and cHasImag) {
+        double conj = (this->conjugate()) ? -1.0 : 1.0;
+        mrcpp::FunctionTree<3> *tmp_re = this->re;
+        mrcpp::FunctionTree<3> *tmp_im = this->im;
+        if (tmp_re != 0) tmp_re->rescale(c.imag());
+        if (tmp_im != 0) tmp_im->rescale(-1.0*conj*c.imag());
+        this->clear();
+        this->setReal(tmp_im);
+        this->setImag(tmp_re);
+    }
+}
+
 
 } //namespace mrchem

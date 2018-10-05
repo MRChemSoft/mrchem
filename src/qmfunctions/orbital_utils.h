@@ -29,7 +29,6 @@
 #include "qmfunction_fwd.h"
 
 namespace mrchem {
-
 namespace orbital {
 
 ComplexDouble dot(Orbital bra, Orbital ket);
@@ -39,12 +38,8 @@ bool compare(const Orbital &orb_a, const Orbital &orb_b);
 int compare_occ(const Orbital &orb_a, const Orbital &orb_b);
 int compare_spin(const Orbital &orb_a, const Orbital &orb_b);
 
-Orbital add(ComplexDouble a, Orbital inp_a, ComplexDouble b, Orbital inp_b, double prec = -1.0);
 OrbitalVector add(ComplexDouble a, OrbitalVector &inp_a, ComplexDouble b, OrbitalVector &inp_b, double prec = -1.0);
-
-Orbital multiply(Orbital inp_a, Orbital inp_b, double prec = -1.0);
-Orbital linear_combination(const ComplexVector &c, OrbitalVector &inp, double prec = -1.0);
-OrbitalVector linear_combination(const ComplexMatrix &U, OrbitalVector &inp, double prec = -1.0);
+OrbitalVector rotate(const ComplexMatrix &U, OrbitalVector &inp, double prec = -1.0);
 
 OrbitalVector deep_copy(OrbitalVector &inp);
 OrbitalVector param_copy(const OrbitalVector &inp);
@@ -91,5 +86,4 @@ DoubleVector get_squared_norms(const OrbitalVector &vec);
 void print(const OrbitalVector &vec);
 
 } //namespace orbital
-
 } //namespace mrchem

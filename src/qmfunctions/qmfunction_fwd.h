@@ -28,7 +28,7 @@
 namespace mrchem {
 
 class QMFunction;
-using QMFunctionVector = std::vector<std::tuple<double, QMFunction>>;
+using QMFunctionVector = std::vector<QMFunction>;
 
 class Orbital;
 using OrbitalChunk = std::vector<std::tuple<int, Orbital>>;

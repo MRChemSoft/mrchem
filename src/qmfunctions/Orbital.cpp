@@ -29,6 +29,7 @@
 
 #include "Orbital.h"
 #include "orbital_utils.h"
+#include "qmfunction_utils.h"
 
 namespace mrchem {
 
@@ -37,8 +38,8 @@ namespace mrchem {
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital()
-        : QMFunction(0, 0),
-          meta({-1, 0, 0, 0, 0, false, 1.0}) {
+        : QMFunction(nullptr, nullptr)
+        , orb_data({-1, 0, 0, 1.0}) {
 }
 
 /** @brief Constructor
@@ -50,13 +51,13 @@ Orbital::Orbital()
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital(int spin, int occ, int rank)
-        : QMFunction(0, 0),
-          meta({rank, spin, occ, 0, 0, false, 1.0}) {
+        : QMFunction(nullptr, nullptr)
+        , orb_data({rank, spin, occ, 1.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
-        if (this->spin() == SPIN::Paired) this->meta.occ = 2;
-        if (this->spin() == SPIN::Alpha) this->meta.occ = 1;
-        if (this->spin() == SPIN::Beta) this->meta.occ = 1;
+        if (this->spin() == SPIN::Paired) this->orb_data.occ = 2;
+        if (this->spin() == SPIN::Alpha) this->orb_data.occ = 1;
+        if (this->spin() == SPIN::Beta) this->orb_data.occ = 1;
     }
 }
 
@@ -68,8 +69,8 @@ Orbital::Orbital(int spin, int occ, int rank)
  * NO transfer of ownership.
  */
 Orbital::Orbital(const Orbital &orb)
-        : QMFunction(orb),
-          meta(orb.meta) {
+        : QMFunction(orb)
+        , orb_data(orb.orb_data) {
 }
 
 /** @brief Assignment operator
@@ -81,9 +82,10 @@ Orbital::Orbital(const Orbital &orb)
  */
 Orbital& Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
+        this->orb_data = orb.orb_data;
+        this->func_data = orb.func_data;
         this->re = orb.re;
         this->im = orb.im;
-        this->meta = orb.meta;
     }
     return *this;
 }
@@ -127,76 +129,8 @@ Orbital Orbital::deepCopy() {
  */
 Orbital Orbital::dagger() const {
     Orbital out(*this); // Shallow copy
-    out.meta.conjugate = not this->meta.conjugate;
+    out.func_data.conjugate = not this->func_data.conjugate;
     return out;         // Return shallow copy
-}
-
-/** @brief Returns the orbital meta data
- *
- * Tree sizes (nChunks) are flushed before return.
- */
-OrbitalMeta& Orbital::getMetaData() {
-    this->meta.nChunksReal = 0;
-    this->meta.nChunksImag = 0;
-    if (this->hasReal()) this->meta.nChunksReal = real().getNChunksUsed();
-    if (this->hasImag()) this->meta.nChunksImag = imag().getNChunksUsed();
-    return this->meta;
-}
-
-/** @brief Returns the norm of the orbital */
-double Orbital::norm() const {
-    double norm = this->squaredNorm();
-    if (norm > 0.0) norm = sqrt(norm);
-    return norm;
-}
-
-/** @brief Returns the squared norm of the orbital */
-double Orbital::squaredNorm() const {
-    double sq_r = -1.0;
-    double sq_i = -1.0;
-    if (this->hasReal()) sq_r = this->real().getSquareNorm();
-    if (this->hasImag()) sq_i = this->imag().getSquareNorm();
-
-    double sq_norm = 0.0;
-    if (sq_r < 0.0 and sq_i < 0.0) {
-        sq_norm = -1.0;
-    } else {
-        if (sq_r >= 0.0) sq_norm += sq_r;
-        if (sq_i >= 0.0) sq_norm += sq_i;
-    }
-    return sq_norm;
-}
-
-/** @brief In place multiply with scalar */
-void Orbital::rescale(ComplexDouble c) {
-    double thrs = mrcpp::MachineZero;
-    bool cHasReal = (std::abs(c.real()) > thrs);
-    bool cHasImag = (std::abs(c.imag()) > thrs);
-
-    if (cHasReal and cHasImag) {
-        Orbital tmp = orbital::add(c, *this, 0.0, *this);
-        this->free();
-        *this = tmp;
-    }
-    if (cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().rescale(c.real());
-        if (this->hasImag()) this->imag().rescale(c.real());
-    }
-    if (not cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().setZero();
-        if (this->hasImag()) this->imag().setZero();
-    }
-    if (not cHasReal and cHasImag) {
-        double conj = 1.0;
-        if (this->conjugate()) conj = -1.0;
-        mrcpp::FunctionTree<3> *tmp_re = this->re;
-        mrcpp::FunctionTree<3> *tmp_im = this->im;
-        if (tmp_re != 0) tmp_re->rescale(c.imag());
-        if (tmp_im != 0) tmp_im->rescale(-1.0*conj*c.imag());
-        this->clear();
-        this->setReal(tmp_im);
-        this->setImag(tmp_re);
-    }
 }
 
 /** @brief In place orthogonalize against inp */
@@ -215,21 +149,6 @@ void Orbital::orthogonalize(OrbitalVector inp_vec) {
     }
 }
 
-/** @brief In place addition */
-void Orbital::add(ComplexDouble c, Orbital inp, double prec) {
-    // The following sets the spin/occupancy only locally, e.i. the
-    // original orbital is NOT changed. The effect of this is to
-    // disable spin/occupancy sanity checks in the following addition.
-    // Since this is an in-place operation, we assume that the spin
-    // and occupancy of the result is already defined and that it
-    // should not change.
-    inp.setSpin(this->spin());
-    inp.setOcc(this->occ());
-    Orbital tmp = orbital::add(1.0, *this, c, inp, prec);
-    this->free();
-    *this = tmp;
-}
-
 /** @brief Write orbital to disk
  *
  * @param file: file name prefix
@@ -244,12 +163,14 @@ void Orbital::saveOrbital(const std::string &file) {
     metafile << file << ".meta";
 
     //this flushes tree sizes
-    OrbitalMeta &my_meta = getMetaData();
+    FunctionData &func_data = getFunctionData();
+    OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
     f.open(metafile.str(), std::ios::out | std::ios::binary);
     if (not f.is_open()) MSG_ERROR("Unable to open file");
-    f.write((char *) &my_meta, sizeof(OrbitalMeta));
+    f.write((char *) &func_data, sizeof(FunctionData));
+    f.write((char *) &orb_data, sizeof(OrbitalData));
     f.close();
 
     //writing real part
@@ -284,15 +205,17 @@ void Orbital::loadOrbital(const std::string &file) {
     fmeta << file << ".meta";
 
     //this flushes tree sizes
-    OrbitalMeta &my_meta = getMetaData();
+    FunctionData &func_data = getFunctionData();
+    OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
     f.open(fmeta.str(), std::ios::in | std::ios::binary);
-    if (f.is_open()) f.read((char *) &my_meta, sizeof(OrbitalMeta));
+    if (f.is_open()) f.read((char *) &func_data, sizeof(FunctionData));
+    if (f.is_open()) f.read((char *) &orb_data, sizeof(OrbitalData));
     f.close();
 
     //reading real part
-    if (meta.nChunksReal > 0) {
+    if (func_data.nChunksReal > 0) {
         std::stringstream fname;
         fname << file << "_re";
         alloc(NUMBER::Real);
@@ -300,7 +223,7 @@ void Orbital::loadOrbital(const std::string &file) {
     }
 
     //reading imaginary part
-    if (meta.nChunksImag > 0) {
+    if (func_data.nChunksImag > 0) {
         std::stringstream fname;
         fname << file << "_im";
         alloc(NUMBER::Imag);

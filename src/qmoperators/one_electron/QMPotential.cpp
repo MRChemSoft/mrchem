@@ -23,9 +23,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * beyond this initial refinement.
  */
 QMPotential::QMPotential(int adap)
-        : QMFunction(0, 0),
-          QMOperator(),
-          adap_build(adap) {
+        : QMFunction(nullptr, nullptr)
+        , QMOperator()
+        , adap_build(adap) {
 }
 
 /** @brief destructor
