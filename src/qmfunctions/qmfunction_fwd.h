@@ -25,6 +25,22 @@
 
 #pragma once
 
+/** Notes on vectors:
+ * The OrbitalVector (std::vector<Orbital>) is conceptually different from the
+ * QMFunctionVector (std::vector<QMFunction>). The former should be a collection
+ * of orbitals defining a proper Slater determinant, while the latter is any
+ * arbitrary collection of functions (could also be orbitals) used e.g. when
+ * adding several orbitals into one. The difference is important when MPI is
+ * considered, as OrbitalVectors are distributed while QMFunctionVectors are
+ * not. This is reflected in the functionality that is available for the
+ * different vectors, where OrbitalVectors should always be treated as a whole,
+ * e.g. in an orbital rotation Psi = orbital::rotate(U, Phi), where U is a
+ * unitary matrix. This operation is MPI safe and all necessary communication
+ * happen automatically under the hood. This is opposed to the similar linear
+ * combination qmfunction::linear_combination(func_out, coefs_vec, func_vec)
+ * where no MPI is considered.
+ */
+
 namespace mrchem {
 
 class QMFunction;
@@ -35,7 +51,5 @@ using OrbitalChunk = std::vector<std::tuple<int, Orbital>>;
 using OrbitalVector = std::vector<Orbital>;
 
 class Density;
-using DensityChunk = std::vector<std::tuple<int, Density>>;
-using DensityVector = std::vector<Density>;
 
 } //namespace mrchem
