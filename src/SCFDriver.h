@@ -38,8 +38,8 @@ class MagneticFieldOperator;
 
 class ResponseCalculation final {
 public:
-    ResponseCalculation(RankOneTensorOperator<3> *h, double w, bool im, int d)
-        : pert(h), freq(w), imag(im), dir(d) { }
+ ResponseCalculation(RankOneTensorOperator<3> *h, double w, bool im, int d, const std::string &n)
+     : pert(h), freq(w), imag(im), dir(d), name(n) { }
 
     bool isDynamic() const { if (std::abs(this->freq) > mrcpp::MachineZero) return true; return false; }
     bool isImaginary() const { return this->imag; }
@@ -48,12 +48,13 @@ public:
     double freq;
     bool imag;
     int dir;
+    std::string name;
 };
 
 class ResponseCalculations final {
 public:
-    void push_back(RankOneTensorOperator<3> *h, double w, bool im, int d) {
-        ResponseCalculation rsp_calc(h, w, im, d);
+    void push_back(RankOneTensorOperator<3> *h, double w, bool im, int d, const std::string &n) {
+        ResponseCalculation rsp_calc(h, w, im, d, n);
         bool unique = true;
         for (int i = 0; i < this->calculations.size(); i++) {
             const ResponseCalculation &i_calc = calculations[i];
@@ -75,7 +76,7 @@ protected:
     std::vector<ResponseCalculation> calculations;
 };
 
-class SCFDriver final {
+ class SCFDriver final {
 public:
     SCFDriver(Getkw &input);
     ~SCFDriver() { }

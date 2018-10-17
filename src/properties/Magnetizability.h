@@ -99,6 +99,7 @@ public:
 protected:
     DoubleMatrix diamagnetic;
     DoubleMatrix paramagnetic;
+    static const std::string name;
 };
 
 } //namespace mrchem
