@@ -25,12 +25,12 @@
 
 #include "catch.hpp"
 
-#include "mrchem.h"
-#include "qmfunctions/Orbital.h"
-#include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/Density.h"
-#include "qmfunctions/density_utils.h"
 #include "analyticfunctions/HydrogenFunction.h"
+#include "mrchem.h"
+#include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
+#include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
 
 using namespace mrchem;
 
@@ -41,13 +41,13 @@ TEST_CASE("Density", "[density]") {
     const double thrs = 1.0e-12;
 
     SECTION("calc density") {
-        Density rho;
+        Density rho(false);
         rho.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
         SECTION("orbital vector") {
-            HydrogenFunction h_1(2,1,0);
-            HydrogenFunction h_2(2,1,1);
-            HydrogenFunction h_3(2,1,2);
+            HydrogenFunction h_1(2, 1, 0);
+            HydrogenFunction h_2(2, 1, 1);
+            HydrogenFunction h_3(2, 1, 2);
 
             OrbitalVector Phi;
             Phi.push_back(SPIN::Alpha);
@@ -61,27 +61,27 @@ TEST_CASE("Density", "[density]") {
             mrcpp::project(prec, Phi[2].imag(), h_3);
 
             density::compute(prec, rho, Phi, DENSITY::Total);
-            REQUIRE( rho.real().integrate() == Approx(4.0) );
+            REQUIRE(rho.real().integrate() == Approx(4.0));
             orbital::free(Phi);
         }
     }
 
     SECTION("calc spin density") {
-        Density rho_t;
-        Density rho_s;
-        Density rho_a;
-        Density rho_b;
+        Density rho_t(false);
+        Density rho_s(false);
+        Density rho_a(false);
+        Density rho_b(false);
         rho_t.setReal(new mrcpp::FunctionTree<3>(*MRA));
         rho_s.setReal(new mrcpp::FunctionTree<3>(*MRA));
         rho_a.setReal(new mrcpp::FunctionTree<3>(*MRA));
         rho_b.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
         SECTION("orbital vector") {
-            HydrogenFunction s1(1,0,0);
-            HydrogenFunction s2(2,0,0);
-            HydrogenFunction px(2,1,0);
-            HydrogenFunction py(2,1,1);
-            HydrogenFunction pz(2,1,2);
+            HydrogenFunction s1(1, 0, 0);
+            HydrogenFunction s2(2, 0, 0);
+            HydrogenFunction px(2, 1, 0);
+            HydrogenFunction py(2, 1, 1);
+            HydrogenFunction pz(2, 1, 2);
 
             OrbitalVector Phi;
             Phi.push_back(SPIN::Alpha);
@@ -113,14 +113,14 @@ TEST_CASE("Density", "[density]") {
             density::compute(prec, rho_a, Phi, DENSITY::Alpha);
             density::compute(prec, rho_b, Phi, DENSITY::Beta);
 
-            REQUIRE( rho_t.real().integrate() == Approx(7.0) );
-            REQUIRE( rho_s.real().integrate() == Approx(3.0) );
-            REQUIRE( rho_a.real().integrate() == Approx(5.0) );
-            REQUIRE( rho_b.real().integrate() == Approx(2.0) );
+            REQUIRE(rho_t.real().integrate() == Approx(7.0));
+            REQUIRE(rho_s.real().integrate() == Approx(3.0));
+            REQUIRE(rho_a.real().integrate() == Approx(5.0));
+            REQUIRE(rho_b.real().integrate() == Approx(2.0));
 
             orbital::free(Phi);
         }
     }
 }
 
-} //namespace orbital_tests
+} // namespace density_tests

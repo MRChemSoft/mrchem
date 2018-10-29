@@ -26,8 +26,7 @@ extern int orb_rank;
 extern int orb_size;
 extern int share_rank;
 extern int share_size;
-extern int MPI_sh_group_rank;
-extern int MPI_sh_group_size;
+extern int sh_group_rank;
 
 extern MPI_Comm comm_orb;
 extern MPI_Comm comm_share;
@@ -43,7 +42,7 @@ void free_foreign(OrbitalVector &Phi);
 OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 
 void send_orbital(Orbital &orb, int dst, int tag);
-void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request& request);
+void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request &request);
 void recv_orbital(Orbital &orb, int src, int tag);
 
 void reduce_density(Density &rho, MPI_Comm comm);

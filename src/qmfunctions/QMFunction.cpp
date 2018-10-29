@@ -23,53 +23,61 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "MRCPP/Parallel"
 #include "MRCPP/Printer"
 
 #include "QMFunction.h"
+#include "parallel.h"
 #include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-QMFunction::QMFunction(mrcpp::FunctionTree<3> *r, mrcpp::FunctionTree<3> *i)
-    : func_data({0, 0, false})
-    , re(r)
-    , im(i) {
+QMFunction::QMFunction(bool share, mrcpp::FunctionTree<3> *r, mrcpp::FunctionTree<3> *i)
+        : func_data({0, 0, false})
+        , shared_mem(nullptr)
+        , re(r)
+        , im(i) {
+    if (share) {
+        int sh_mem_size = 10000; //in MB. Virtual memory, does not cost anything if not used
+        this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, sh_mem_size);
+    }
 }
 
 QMFunction::QMFunction(const QMFunction &func)
-    : func_data(func.func_data)
-    , re(func.re)
-    , im(func.im) {
-}
+        : func_data(func.func_data)
+        , shared_mem(func.shared_mem)
+        , re(func.re)
+        , im(func.im) {}
 
-QMFunction& QMFunction::operator=(const QMFunction &func) {
+QMFunction &QMFunction::operator=(const QMFunction &func) {
     if (this != &func) {
         this->func_data = func.func_data;
+        this->shared_mem = func.shared_mem;
         this->re = func.re;
         this->im = func.im;
     }
     return *this;
 }
 
+QMFunction::~QMFunction() {
+    if (this->shared_mem != nullptr) delete this->shared_mem;
+}
+
 void QMFunction::alloc(int type) {
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (this->hasReal()) MSG_FATAL("Function not empty");
-        this->re = new mrcpp::FunctionTree<3>(*MRA);
+        this->re = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
     }
     if (type == NUMBER::Imag or type == NUMBER::Total) {
         if (this->hasImag()) MSG_FATAL("Function not empty");
-        this->im = new mrcpp::FunctionTree<3>(*MRA);
+        this->im = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
     }
 }
 
 void QMFunction::clear(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        this->re = nullptr;
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        this->im = nullptr;
-    }
+    if (type == NUMBER::Real or type == NUMBER::Total) this->re = nullptr;
+    if (type == NUMBER::Imag or type == NUMBER::Total) this->im = nullptr;
 }
 
 void QMFunction::free(int type) {
@@ -87,7 +95,7 @@ void QMFunction::free(int type) {
  *
  * Tree sizes (nChunks) are flushed before return.
  */
-FunctionData& QMFunction::getFunctionData() {
+FunctionData &QMFunction::getFunctionData() {
     this->func_data.nChunksReal = 0;
     this->func_data.nChunksImag = 0;
     if (this->hasReal()) this->func_data.nChunksReal = real().getNChunksUsed();
@@ -171,12 +179,11 @@ void QMFunction::rescale(ComplexDouble c) {
         mrcpp::FunctionTree<3> *tmp_re = this->re;
         mrcpp::FunctionTree<3> *tmp_im = this->im;
         if (tmp_re != 0) tmp_re->rescale(c.imag());
-        if (tmp_im != 0) tmp_im->rescale(-1.0*conj*c.imag());
+        if (tmp_im != 0) tmp_im->rescale(-1.0 * conj * c.imag());
         this->clear();
         this->setReal(tmp_im);
         this->setImag(tmp_re);
     }
 }
-
 
 } //namespace mrchem

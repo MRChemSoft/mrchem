@@ -39,10 +39,10 @@ struct FunctionData {
 
 class QMFunction {
 public:
-    QMFunction(mrcpp::FunctionTree<3> *r = nullptr, mrcpp::FunctionTree<3> *i = nullptr);
+    QMFunction(bool share, mrcpp::FunctionTree<3> *r = nullptr, mrcpp::FunctionTree<3> *i = nullptr);
     QMFunction(const QMFunction &func);
     QMFunction &operator=(const QMFunction &func);
-    virtual ~QMFunction() = default;
+    virtual ~QMFunction();
 
     void alloc(int type = NUMBER::Total);
     void clear(int type = NUMBER::Total);
@@ -59,6 +59,7 @@ public:
     void multiply(QMFunction inp, double prec = -1.0);
     void rescale(ComplexDouble c);
 
+    bool isShared() const { return (this->shared_mem == nullptr) ? false : true; }
     bool hasReal() const { return (this->re == nullptr) ? false : true; }
     bool hasImag() const { return (this->im == nullptr) ? false : true; }
 
@@ -73,8 +74,9 @@ public:
 
 protected:
     FunctionData func_data;
-    mrcpp::FunctionTree<3> *re;     ///< Real part of function
-    mrcpp::FunctionTree<3> *im;     ///< Imaginary part of function
+    mrcpp::SharedMemory *shared_mem;
+    mrcpp::FunctionTree<3> *re; ///< Real part of function
+    mrcpp::FunctionTree<3> *im; ///< Imaginary part of function
 };
 
 } // namespace mrchem

@@ -23,23 +23,23 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "MRCPP/Gaussians"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "MRCPP/Gaussians"
 
 #include "parallel.h"
 
-#include "QMFunction.h"
-#include "qmfunction_utils.h"
 #include "Density.h"
-#include "density_utils.h"
 #include "Orbital.h"
+#include "QMFunction.h"
+#include "density_utils.h"
 #include "orbital_utils.h"
+#include "qmfunction_utils.h"
 
-using mrcpp::Timer;
-using mrcpp::Printer;
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -51,7 +51,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 namespace density {
 void compute(double prec, Density &rho, Orbital phi, int spin);
 double compute_occupation(Orbital &phi, int dens_spin);
-}
+} // namespace density
 
 /** @brief Compute density as the square of an orbital
  *
@@ -86,9 +86,7 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
     } else if (rho.hasReal()) {
         rho.real().setZero();
     }
-    if (rho.hasImag()) {
-        rho.imag().setZero();
-    }
+    if (rho.hasImag()) rho.imag().setZero();
 }
 
 /** @brief Compute density as the sum of squared orbitals
@@ -99,32 +97,41 @@ void density::compute(double prec, Density &rho, Orbital phi, int spin) {
  */
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     int N_el = orbital::get_electron_number(Phi);
-    double mult_prec = prec;     // prec for rho_i = |phi_i|^2
-    double add_prec = prec/N_el; // prec for rho = sum_i rho_i
+    double mult_prec = prec;       // prec for rho_i = |phi_i|^2
+    double add_prec = prec / N_el; // prec for rho = sum_i rho_i
 
     FunctionTreeVector<3> dens_vec;
     for (auto &phi_i : Phi) {
         if (mpi::my_orb(phi_i)) {
-            Density rho_i;
+            Density rho_i(false);
             density::compute(mult_prec, rho_i, phi_i, spin);
             if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
             if (rho_i.hasImag()) MSG_ERROR("Density should be real");
         }
     }
 
-    if (dens_vec.size() > 0) {
-        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-        mrcpp::add(add_prec, rho.real(), dens_vec);
-    } else if (rho.hasReal()) {
-        rho.real().setZero();
-    }
-    if (rho.hasImag()) {
-        rho.imag().setZero();
+    Density rho_tmp(false), *rho_ptr = nullptr;
+    if (mpi::share_rank == 0) {
+        rho_ptr = &rho;
+    } else {
+        // we need to distiguish between rho used to store final rho and
+        // rho that stores the single mpi contributions.
+        // note that this will work also for non-shared rho
+        rho_tmp.alloc(NUMBER::Real);
+        rho_ptr = &rho_tmp; //use a separate temporary storage
     }
 
+    if (dens_vec.size() > 0) {
+        if (not rho_ptr->hasReal()) rho_ptr->alloc(NUMBER::Real);
+        mrcpp::add(add_prec, rho_ptr->real(), dens_vec);
+    } else if (rho_ptr->hasReal()) {
+        rho_ptr->real().setZero();
+    }
+    if (rho_ptr->hasImag()) rho_ptr->imag().setZero();
     mrcpp::clear(dens_vec, true);
 
-    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::reduce_density(*rho_ptr, mpi::comm_orb);
+    rho_tmp.free();
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
@@ -139,9 +146,11 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
  */
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, int spin) {
     int N_el = orbital::get_electron_number(Phi);
-    double mult_prec = prec;     // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
-    double add_prec = prec/N_el; // prec for rho = sum_i rho_i
+    double mult_prec = prec;       // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
+    double add_prec = prec / N_el; // prec for rho = sum_i rho_i
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
+
+    if (rho.isShared()) NOT_IMPLEMENTED_ABORT;
 
     FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
@@ -151,9 +160,9 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
             double occ = density::compute_occupation(Phi[i], spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
 
-            Density rho_i;
+            Density rho_i(false);
             qmfunction::multiply_real(rho_i, Phi[i], X[i], mult_prec);
-            if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(2.0*occ, &(rho_i.real())));
+            if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(2.0 * occ, &(rho_i.real())));
         }
     }
 
@@ -163,9 +172,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
     } else if (rho.hasReal()) {
         rho.real().setZero();
     }
-    if (rho.hasImag()) {
-        rho.imag().setZero();
-    }
+    if (rho.hasImag()) rho.imag().setZero();
 
     mrcpp::clear(dens_vec, true);
 
@@ -182,10 +189,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
  */
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin) {
     int N_el = orbital::get_electron_number(Phi);
-    double mult_prec = prec;     // prec for rho_i = |x_i><phi_i| + |phi_i><y_i|
-    double add_prec = prec/N_el; // prec for rho = sum_i rho_i
+    double mult_prec = prec;       // prec for rho_i = |x_i><phi_i| + |phi_i><y_i|
+    double add_prec = prec / N_el; // prec for rho = sum_i rho_i
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
     if (Phi.size() != Y.size()) MSG_ERROR("Size mismatch");
+
+    if (rho.isShared()) NOT_IMPLEMENTED_ABORT;
 
     FunctionTreeVector<3> dens_real;
     FunctionTreeVector<3> dens_imag;
@@ -197,8 +206,8 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
             double occ = density::compute_occupation(Phi[i], spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
 
-            Density rho_x;
-            Density rho_y;
+            Density rho_x(false);
+            Density rho_y(false);
             qmfunction::multiply(rho_x, X[i], Phi[i].dagger(), mult_prec);
             qmfunction::multiply(rho_y, Phi[i], Y[i].dagger(), mult_prec);
 
@@ -211,14 +220,14 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 
     if (dens_real.size() > 0) {
         if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-        mrcpp::add(add_prec,  rho.real(), dens_real);
+        mrcpp::add(add_prec, rho.real(), dens_real);
     } else if (rho.hasReal()) {
         rho.real().setZero();
     }
 
     if (dens_imag.size() > 0) {
         if (not rho.hasImag()) rho.alloc(NUMBER::Imag);
-        mrcpp::add(add_prec,  rho.imag(), dens_imag);
+        mrcpp::add(add_prec, rho.imag(), dens_imag);
     } else if (rho.hasImag()) {
         rho.imag().setZero();
     }
@@ -237,17 +246,17 @@ void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, i
 
 double density::compute_occupation(Orbital &phi, int dens_spin) {
     double occ_a(0.0), occ_b(0.0), occ_p(0.0);
-    if (phi.spin() == SPIN::Alpha)  occ_a = (double) phi.occ();
-    if (phi.spin() == SPIN::Beta)   occ_b = (double) phi.occ();
-    if (phi.spin() == SPIN::Paired) occ_p = (double) phi.occ();
-    
+    if (phi.spin() == SPIN::Alpha) occ_a = (double)phi.occ();
+    if (phi.spin() == SPIN::Beta) occ_b = (double)phi.occ();
+    if (phi.spin() == SPIN::Paired) occ_p = (double)phi.occ();
+
     double occ(0.0);
     if (dens_spin == DENSITY::Total) occ = occ_a + occ_b + occ_p;
-    if (dens_spin == DENSITY::Alpha) occ = occ_a + 0.5*occ_p;
-    if (dens_spin == DENSITY::Beta)  occ = occ_b + 0.5*occ_p;
-    if (dens_spin == DENSITY::Spin)  occ = occ_a - occ_b;
+    if (dens_spin == DENSITY::Alpha) occ = occ_a + 0.5 * occ_p;
+    if (dens_spin == DENSITY::Beta) occ = occ_b + 0.5 * occ_p;
+    if (dens_spin == DENSITY::Spin) occ = occ_a - occ_b;
 
     return occ;
 }
-    
+
 } //namespace mrchem

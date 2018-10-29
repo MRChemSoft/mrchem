@@ -3,9 +3,10 @@
 #include "MRCPP/Timer"
 
 #include "CoulombPotential.h"
+#include "parallel.h"
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::PoissonOperator;
@@ -26,10 +27,10 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * QMPotential is uninitialized at this point and will be computed at setup.
  */
 CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
-        : QMPotential(1),
-          density(), //LUCA: check constructor
-          orbitals(Phi),
-          poisson(P) {
+        : QMPotential(1)
+        , density(true)
+        , orbitals(Phi)
+        , poisson(P) {
     density.alloc(NUMBER::Real);
 }
 
@@ -60,7 +61,16 @@ void CoulombPotential::setup(double prec) {
 void CoulombPotential::clear() {
     QMFunction::free(); // delete FunctionTree pointers
     clearApplyPrec();   // apply_prec = -1
-    mrcpp::clear_grid(this->density.real()); // clear MW coefs but keep the grid
+
+    Density &rho = this->density;
+    if (rho.hasReal()) mrcpp::clear_grid(rho.real()); // clear MW coefs but keep the grid
+    if (rho.hasImag()) mrcpp::clear_grid(rho.imag()); // clear MW coefs but keep the grid
+
+    if (rho.isShared()) {
+        int tag = 99;
+        if (rho.hasReal()) mrcpp::share_tree(rho.real(), 0, tag, mpi::comm_share);
+        if (rho.hasImag()) mrcpp::share_tree(rho.imag(), 0, 2 * tag, mpi::comm_share);
+    }
 }
 
 /** @brief compute electron density
@@ -101,7 +111,7 @@ void CoulombPotential::setupPotential(double prec) {
     Density &rho = this->density;
 
     // Adjust precision by system size
-    double abs_prec = prec/rho.real().integrate();
+    double abs_prec = prec / rho.real().integrate();
 
     Timer timer;
     V.alloc(NUMBER::Real);

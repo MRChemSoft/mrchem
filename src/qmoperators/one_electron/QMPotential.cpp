@@ -4,8 +4,8 @@
 #include "QMPotential.h"
 #include "qmfunctions/Orbital.h"
 
-using mrcpp::FunctionTreeVector;
 using mrcpp::FunctionTree;
+using mrcpp::FunctionTreeVector;
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -23,10 +23,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * beyond this initial refinement.
  */
 QMPotential::QMPotential(int adap)
-        : QMFunction(nullptr, nullptr)
+        : QMFunction(false, nullptr, nullptr)
         , QMOperator()
-        , adap_build(adap) {
-}
+        , adap_build(adap) {}
 
 /** @brief destructor
  *
@@ -95,7 +94,7 @@ Orbital QMPotential::dagger(Orbital inp) {
  * Computes the real part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
+FunctionTree<3> *QMPotential::calcRealPart(Orbital &phi, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
@@ -141,7 +140,7 @@ FunctionTree<3>* QMPotential::calcRealPart(Orbital &phi, bool dagger) {
  * Computes the imaginary part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3>* QMPotential::calcImagPart(Orbital &phi, bool dagger) {
+FunctionTree<3> *QMPotential::calcImagPart(Orbital &phi, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 

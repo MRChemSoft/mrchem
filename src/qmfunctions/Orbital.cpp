@@ -38,9 +38,8 @@ namespace mrchem {
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital()
-        : QMFunction(nullptr, nullptr)
-        , orb_data({-1, 0, 0, 1.0}) {
-}
+        : QMFunction(false, nullptr, nullptr)
+        , orb_data({-1, 0, 0, 1.0}) {}
 
 /** @brief Constructor
  *
@@ -51,7 +50,7 @@ Orbital::Orbital()
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital(int spin, int occ, int rank)
-        : QMFunction(nullptr, nullptr)
+        : QMFunction(false, nullptr, nullptr)
         , orb_data({rank, spin, occ, 1.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
@@ -70,8 +69,7 @@ Orbital::Orbital(int spin, int occ, int rank)
  */
 Orbital::Orbital(const Orbital &orb)
         : QMFunction(orb)
-        , orb_data(orb.orb_data) {
-}
+        , orb_data(orb.orb_data) {}
 
 /** @brief Assignment operator
  *
@@ -80,7 +78,7 @@ Orbital::Orbital(const Orbital &orb)
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
-Orbital& Orbital::operator=(const Orbital &orb) {
+Orbital &Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
         this->orb_data = orb.orb_data;
         this->func_data = orb.func_data;
@@ -117,7 +115,7 @@ Orbital Orbital::deepCopy() {
         mrcpp::copy_grid(out.imag(), this->imag());
         mrcpp::copy_func(out.imag(), this->imag());
     }
-    return out;         // Return shallow copy
+    return out; // Return shallow copy
 }
 
 /** @brief Complex conjugation
@@ -130,23 +128,19 @@ Orbital Orbital::deepCopy() {
 Orbital Orbital::dagger() const {
     Orbital out(*this); // Shallow copy
     out.func_data.conjugate = not this->func_data.conjugate;
-    return out;         // Return shallow copy
+    return out; // Return shallow copy
 }
 
 /** @brief In place orthogonalize against inp */
 void Orbital::orthogonalize(Orbital inp) {
     ComplexDouble overlap = orbital::dot(inp, *this);
     double sq_norm = inp.squaredNorm();
-    if (std::abs(overlap) > mrcpp::MachineZero) {
-        this->add(-1.0*(overlap/sq_norm), inp);
-    }
+    if (std::abs(overlap) > mrcpp::MachineZero) this->add(-1.0 * (overlap / sq_norm), inp);
 }
 
 /** @brief In place orthogonalize against all orbitals in inp vector */
 void Orbital::orthogonalize(OrbitalVector inp_vec) {
-    for (int i = 0; i < inp_vec.size(); i++) {
-        this->orthogonalize(inp_vec[i]);
-    }
+    for (int i = 0; i < inp_vec.size(); i++) this->orthogonalize(inp_vec[i]);
 }
 
 /** @brief Write orbital to disk
@@ -169,8 +163,8 @@ void Orbital::saveOrbital(const std::string &file) {
     std::fstream f;
     f.open(metafile.str(), std::ios::out | std::ios::binary);
     if (not f.is_open()) MSG_ERROR("Unable to open file");
-    f.write((char *) &func_data, sizeof(FunctionData));
-    f.write((char *) &orb_data, sizeof(OrbitalData));
+    f.write((char *)&func_data, sizeof(FunctionData));
+    f.write((char *)&orb_data, sizeof(OrbitalData));
     f.close();
 
     //writing real part
@@ -210,8 +204,8 @@ void Orbital::loadOrbital(const std::string &file) {
 
     std::fstream f;
     f.open(fmeta.str(), std::ios::in | std::ios::binary);
-    if (f.is_open()) f.read((char *) &func_data, sizeof(FunctionData));
-    if (f.is_open()) f.read((char *) &orb_data, sizeof(OrbitalData));
+    if (f.is_open()) f.read((char *)&func_data, sizeof(FunctionData));
+    if (f.is_open()) f.read((char *)&orb_data, sizeof(OrbitalData));
     f.close();
 
     //reading real part
@@ -241,12 +235,12 @@ char Orbital::printSpin() const {
 }
 
 /** @brief Pretty output of orbital meta data */
-std::ostream& Orbital::print(std::ostream &o) const {
+std::ostream &Orbital::print(std::ostream &o) const {
     int oldprec = mrcpp::Printer::setPrecision(12);
-    o << std::setw(6)  << this->rankID();
+    o << std::setw(6) << this->rankID();
     o << std::setw(25) << this->norm();
-    o << std::setw(5)  << this->printSpin();
-    o << std::setw(4)  << this->occ();
+    o << std::setw(5) << this->printSpin();
+    o << std::setw(4) << this->occ();
     mrcpp::Printer::setPrecision(5);
     o << std::setw(15) << this->error();
     mrcpp::Printer::setPrecision(oldprec);
@@ -254,4 +248,3 @@ std::ostream& Orbital::print(std::ostream &o) const {
 }
 
 } //namespace mrchem
-

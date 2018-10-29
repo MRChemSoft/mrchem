@@ -67,7 +67,7 @@ void XCPotential::setupDensity() {
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
         FunctionTree<3> &tmp_a = this->functional->getDensity(mrdft::DensityType::Alpha);
-        Density rho_a;
+        Density rho_a(false);
         rho_a.setReal(&tmp_a);
         density::compute(-1.0, rho_a, Phi, DENSITY::Alpha);
         time_a.stop();
@@ -75,7 +75,7 @@ void XCPotential::setupDensity() {
 
         Timer time_b;
         FunctionTree<3> &tmp_b = this->functional->getDensity(mrdft::DensityType::Beta);
-        Density rho_b;
+        Density rho_b(false);
         rho_b.setReal(&tmp_b);
         density::compute(-1.0, rho_b, Phi, DENSITY::Beta);
         time_b.stop();
@@ -91,7 +91,7 @@ void XCPotential::setupDensity() {
     } else {
         Timer time_t;
         FunctionTree<3> &tmp_t = this->functional->getDensity(mrdft::DensityType::Total);
-        Density rho_t;
+        Density rho_t(false);
         rho_t.setReal(&tmp_t);
         density::compute(-1.0, rho_t, Phi, DENSITY::Total);
         time_t.stop();
