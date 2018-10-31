@@ -154,6 +154,17 @@ def setup_keywords(input_dir):
     top.add_kw('teletype',              'BOOL', False)
     # yapf: enable
 
+    mpi = getkw.Section('MPI')
+    # yapf: disable
+    mpi.add_kw('numerically_exact',      'BOOL', False)
+    mpi.add_kw('share_nuclear_potential','BOOL', False)
+    mpi.add_kw('share_coulomb_density',  'BOOL', False)
+    mpi.add_kw('share_coulomb_potential','BOOL', False)
+    mpi.add_kw('share_xc_density',       'BOOL', False)
+    mpi.add_kw('share_xc_potential',     'BOOL', False)
+    # yapf: enable
+    top.add_sect(mpi)
+
     mra = getkw.Section('MRA', callback=verify_mra)
     # yapf: disable
     mra.add_kw('order',                 'INT', -1)

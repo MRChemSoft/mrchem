@@ -19,6 +19,13 @@ int n_threads = omp_get_max_threads();
 
 namespace mpi {
 
+bool numerically_exact = false;
+bool share_nuc_pot = false;
+bool share_coul_dens = false;
+bool share_coul_pot = false;
+bool share_xc_dens = false;
+bool share_xc_pot = false;
+
 int orb_rank = 0;
 int orb_size = 1;
 int share_rank = 0;
@@ -86,6 +93,14 @@ void mpi::barrier(MPI_Comm comm) {
 /*********************************
  * Orbital related MPI functions *
  *********************************/
+
+bool mpi::grand_master() {
+    return (mpi::orb_rank == 0) ? true : false;
+}
+
+bool mpi::share_master() {
+    return (mpi::share_rank == 0) ? true : false;
+}
 
 /** @brief Test if orbital belongs to this MPI rank (or is common)*/
 bool mpi::my_orb(const Orbital &orb) {
@@ -216,8 +231,41 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #endif
 }
 
+//send a density with MPI
+void mpi::send_density(Density &rho, int dst, int tag, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    FunctionData &funcinfo = rho.getFunctionData();
+    MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, comm);
+
+    if (rho.hasReal()) mrcpp::send_tree(rho.real(), dst, tag, comm, funcinfo.nChunksReal);
+    if (rho.hasImag()) mrcpp::send_tree(rho.imag(), dst, tag + 10000, comm, funcinfo.nChunksImag);
+#endif
+}
+
+//receive a denstity with MPI
+void mpi::recv_density(Density &rho, int src, int tag, MPI_Comm comm) {
+#ifdef HAVE_MPI
+    MPI_Status status;
+
+    FunctionData &funcinfo = rho.getFunctionData();
+    MPI_Recv(&funcinfo, sizeof(FunctionData), MPI_BYTE, src, 0, comm, &status);
+
+    if (funcinfo.nChunksReal > 0) {
+        // We must have a tree defined for receiving nodes. Define one:
+        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+        mrcpp::recv_tree(rho.real(), src, tag, comm, funcinfo.nChunksReal);
+    }
+
+    if (funcinfo.nChunksImag > 0) {
+        // We must have a tree defined for receiving nodes. Define one:
+        if (not rho.hasImag()) rho.alloc(NUMBER::Imag);
+        mrcpp::recv_tree(rho.imag(), src, tag + 10000, comm, funcinfo.nChunksImag);
+    }
+#endif
+}
+
 /** @brief Add all mpi densities in rank zero density */
-void mpi::reduce_density(Density &rho, MPI_Comm comm) {
+void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
 #ifdef HAVE_MPI
     int comm_size, comm_rank;
     MPI_Comm_rank(comm, &comm_rank);
@@ -225,24 +273,19 @@ void mpi::reduce_density(Density &rho, MPI_Comm comm) {
 
     if (comm_size == 1) return;
 
-    if (not rho.hasReal()) NOT_IMPLEMENTED_ABORT;
-    if (rho.hasImag()) NOT_IMPLEMENTED_ABORT;
-
     Timer timer;
     if (comm_rank == 0) {
-        Density *rho_i = new Density(false);
-        rho_i->alloc(NUMBER::Real);
         for (int src = 1; src < comm_size; src++) {
+            Density rho_i(false);
             int tag = 3333 + src;
-            mrcpp::recv_tree(rho_i->real(), src, tag, comm); // overwrite old rho_i
-            mrcpp::refine_grid(rho.real(), rho_i->real());   // merge grids
-            rho.real().add(1.0, rho_i->real());              // add in place using rho.real grid
+            mpi::recv_density(rho_i, src, tag, comm);
+            rho.add(1.0, rho_i, prec); // add in place using rho.real grid
+            rho_i.free();
         }
-        delete rho_i;
     } else {
         int tag = 3333 + comm_rank;
-        mrcpp::send_tree(rho.real(), 0, tag, comm);
-        rho.real().clear();
+        mpi::send_density(rho, 0, tag, comm);
+        rho.free();
     }
     MPI_Barrier(comm);
     timer.stop();
@@ -273,13 +316,11 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
         if (comm_rank == 0) {
             for (int dst = 1; dst < comm_size; dst++) {
                 int tag = 4444 + dst;
-                if (rho.hasReal()) mrcpp::send_tree(rho.real(), dst, tag, comm);
-                if (rho.hasImag()) mrcpp::send_tree(rho.imag(), dst, 2 * tag, comm);
+                mpi::send_density(rho, dst, tag, comm);
             }
         } else {
             int tag = 4444 + comm_rank;
-            if (rho.hasReal()) mrcpp::recv_tree(rho.real(), 0, tag, comm);
-            if (rho.hasImag()) mrcpp::recv_tree(rho.imag(), 0, 2 * tag, comm);
+            mpi::recv_density(rho, 0, tag, comm);
         }
     }
     MPI_Barrier(comm);

@@ -40,6 +40,7 @@ namespace mrchem {
  */
 Density& Density::operator=(const Density &dens) {
     if (this != &dens) {
+        if (dens.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
         this->func_data = dens.func_data;
         this->re = dens.re;
         this->im = dens.im;

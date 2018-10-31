@@ -22,8 +22,8 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * potential grid. The argument sets how many extra refinement levels is allowed
  * beyond this initial refinement.
  */
-QMPotential::QMPotential(int adap)
-        : QMFunction(false, nullptr, nullptr)
+QMPotential::QMPotential(int adap, bool shared)
+        : QMFunction(shared, nullptr, nullptr)
         , QMOperator()
         , adap_build(adap) {}
 

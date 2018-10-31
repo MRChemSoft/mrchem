@@ -36,6 +36,13 @@ void initialize(int argc, char **argv) {
     }
     Printer::setPrecision(15);
 
+    mpi::numerically_exact = Input.get<bool>("MPI.numerically_exact");
+    mpi::share_nuc_pot = Input.get<bool>("MPI.share_nuclear_potential");
+    mpi::share_coul_dens = Input.get<bool>("MPI.share_coulomb_density");
+    mpi::share_coul_pot = Input.get<bool>("MPI.share_coulomb_potential");
+    mpi::share_xc_dens = Input.get<bool>("MPI.share_xc_density");
+    mpi::share_xc_pot = Input.get<bool>("MPI.share_xc_potential");
+
     // Initialize world box
     int min_scale = Input.get<int>("MRA.min_scale");
     int max_scale = Input.get<int>("MRA.max_scale");

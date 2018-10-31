@@ -14,7 +14,6 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief constructor
  *
@@ -27,11 +26,10 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * QMPotential is uninitialized at this point and will be computed at setup.
  */
 CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
-        : QMPotential(1)
-        , density(true)
+        : QMPotential(1, mpi::share_coul_pot)
+        , density(mpi::share_coul_dens)
         , orbitals(Phi)
         , poisson(P) {
-    density.alloc(NUMBER::Real);
 }
 
 CoulombPotential::~CoulombPotential() {
@@ -59,18 +57,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    QMFunction::free(); // delete FunctionTree pointers
-    clearApplyPrec();   // apply_prec = -1
-
-    Density &rho = this->density;
-    if (rho.hasReal()) mrcpp::clear_grid(rho.real()); // clear MW coefs but keep the grid
-    if (rho.hasImag()) mrcpp::clear_grid(rho.imag()); // clear MW coefs but keep the grid
-
-    if (rho.isShared()) {
-        int tag = 99;
-        if (rho.hasReal()) mrcpp::share_tree(rho.real(), 0, tag, mpi::comm_share);
-        if (rho.hasImag()) mrcpp::share_tree(rho.imag(), 0, 2 * tag, mpi::comm_share);
-    }
+    QMFunction::free();   // delete FunctionTree pointers
+    this->density.free(); // delete FunctionTree pointers
+    clearApplyPrec();     // apply_prec = -1
 }
 
 /** @brief compute electron density
@@ -115,7 +104,13 @@ void CoulombPotential::setupPotential(double prec) {
 
     Timer timer;
     V.alloc(NUMBER::Real);
-    mrcpp::apply(abs_prec, V.real(), P, rho.real());
+    if (V.isShared()) {
+        int tag = 22445;
+        if (mpi::share_master()) mrcpp::apply(abs_prec, V.real(), P, rho.real());
+        mrcpp::share_tree(V.real(), 0, tag, mpi::comm_share);
+    } else {
+        mrcpp::apply(abs_prec, V.real(), P, rho.real());
+    }
     timer.stop();
     int n = V.getNNodes();
     double t = timer.getWallTime();

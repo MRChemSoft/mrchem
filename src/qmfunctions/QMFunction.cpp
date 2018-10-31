@@ -38,7 +38,7 @@ QMFunction::QMFunction(bool share, mrcpp::FunctionTree<3> *r, mrcpp::FunctionTre
         , shared_mem(nullptr)
         , re(r)
         , im(i) {
-    if (share) {
+    if (share and mpi::share_size > 1) {
         int sh_mem_size = 10000; //in MB. Virtual memory, does not cost anything if not used
         this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, sh_mem_size);
     }
@@ -46,14 +46,16 @@ QMFunction::QMFunction(bool share, mrcpp::FunctionTree<3> *r, mrcpp::FunctionTre
 
 QMFunction::QMFunction(const QMFunction &func)
         : func_data(func.func_data)
-        , shared_mem(func.shared_mem)
+        , shared_mem(nullptr)
         , re(func.re)
-        , im(func.im) {}
+        , im(func.im) {
+    if (func.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
+}
 
 QMFunction &QMFunction::operator=(const QMFunction &func) {
     if (this != &func) {
+        if (func.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
         this->func_data = func.func_data;
-        this->shared_mem = func.shared_mem;
         this->re = func.re;
         this->im = func.im;
     }
@@ -81,6 +83,7 @@ void QMFunction::clear(int type) {
 }
 
 void QMFunction::free(int type) {
+    mpi::barrier(mpi::comm_sh_group);
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (this->hasReal()) delete this->re;
         this->re = nullptr;
@@ -89,6 +92,11 @@ void QMFunction::free(int type) {
         if (this->hasImag()) delete this->im;
         this->im = nullptr;
     }
+}
+
+void QMFunction::crop(double prec) {
+    if (hasReal()) this->real().crop(prec, 1.0, false);
+    if (hasImag()) this->imag().crop(prec, 1.0, false);
 }
 
 /** @brief Returns the orbital meta data

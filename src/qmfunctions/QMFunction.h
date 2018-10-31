@@ -58,6 +58,7 @@ public:
     void add(ComplexDouble c, QMFunction inp, double prec = -1.0);
     void multiply(QMFunction inp, double prec = -1.0);
     void rescale(ComplexDouble c);
+    void crop(double prec);
 
     bool isShared() const { return (this->shared_mem == nullptr) ? false : true; }
     bool hasReal() const { return (this->re == nullptr) ? false : true; }

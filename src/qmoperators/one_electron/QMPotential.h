@@ -19,7 +19,9 @@ namespace mrchem {
 
 class QMPotential : public QMFunction, public QMOperator {
 public:
-    QMPotential(int adap);
+    QMPotential(int adap, bool shared = false);
+    QMPotential(const QMPotential &pot) = delete;
+    QMPotential &operator=(const QMPotential &pot) = delete;
     virtual ~QMPotential();
 
 protected:

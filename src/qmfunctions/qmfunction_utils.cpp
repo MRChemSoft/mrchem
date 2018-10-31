@@ -63,7 +63,7 @@ ComplexDouble qmfunction::dot(QMFunction bra, QMFunction ket) {
  *
  */
 void qmfunction::free(QMFunctionVector &vec) {
-    for (int i = 0; i < vec.size(); i++) vec[i].free();
+    for (auto &func_i : vec) func_i.free();
     vec.clear();
 }
 

@@ -336,11 +336,12 @@ void XCFunctional::clear() {
     mrcpp::clear(grad_b, true);
     mrcpp::clear(grad_t, true);
     mrcpp::clear(gamma, true);
+    clearGrid();
 
     // Clear MW coefs but keep the grid
-    if (rho_a != nullptr) mrcpp::clear_grid(*rho_a);
-    if (rho_b != nullptr) mrcpp::clear_grid(*rho_b);
-    if (rho_t != nullptr) mrcpp::clear_grid(*rho_t);
+    //if (rho_a != nullptr) mrcpp::clear_grid(*rho_a);
+    //if (rho_b != nullptr) mrcpp::clear_grid(*rho_b);
+    //if (rho_t != nullptr) mrcpp::clear_grid(*rho_t);
 }
 
 /** @brief Allocate input arrays for xcfun

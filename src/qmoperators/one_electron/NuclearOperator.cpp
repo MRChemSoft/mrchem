@@ -3,6 +3,7 @@
 #include "utils/math_utils.h"
 
 #include "NuclearOperator.h"
+#include "parallel.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -10,7 +11,7 @@ using mrcpp::Timer;
 namespace mrchem {
 
 NuclearPotential::NuclearPotential(const Nuclei &nucs, double prec)
-        : QMPotential(1) {
+        : QMPotential(1, mpi::share_nuc_pot) {
     int oldprec = Printer::setPrecision(5);
     Printer::printHeader(0, "Setting up nuclear potential");
     println(0, " Nr  Element         Charge        Precision     Smoothing ");
@@ -41,16 +42,26 @@ void NuclearPotential::setup(double prec) {
     if (isSetup(prec)) return;
     setApplyPrec(prec);
 
-    if (hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (hasImag()) MSG_ERROR("Potential not properly cleared");
+    QMPotential &V = *this;
+
+    if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
+    if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
 
     Timer timer;
-    alloc(NUMBER::Real);
-    mrcpp::build_grid(this->real(), this->func);
-    mrcpp::project(this->apply_prec, this->real(), this->func);
+    V.alloc(NUMBER::Real);
+    if (V.isShared()) {
+        int tag = 8827;
+        if (mpi::share_master()) {
+            mrcpp::build_grid(V.real(), this->func);
+            mrcpp::project(this->apply_prec, V.real(), this->func);
+        }
+        mrcpp::share_tree(V.real(), 0, tag, mpi::comm_share);
+    } else {
+        mrcpp::build_grid(V.real(), this->func);
+        mrcpp::project(this->apply_prec, V.real(), this->func);
+    }
     timer.stop();
-
-    int n = getNNodes();
+    int n = V.getNNodes();
     double t = timer.getWallTime();
     Printer::printTree(0, "Nuclear potential", n, t);
 }

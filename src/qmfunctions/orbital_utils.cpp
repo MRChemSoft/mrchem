@@ -152,6 +152,7 @@ OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &inp_a,
  */
 OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double prec) {
     // Get all out orbitals belonging to this MPI
+    double inter_prec = (mpi::numerically_exact) ? -1.0 : prec;
     OrbitalVector out = orbital::param_copy(inp);
     OrbitalIterator iter(inp);
     while (iter.next()) {
@@ -166,11 +167,18 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double
                 func_vec.push_back(recv_j);
             }
             Orbital tmp_i = out[i].paramCopy();
-            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
-            out[i].add(1.0, tmp_i, prec); // In place addition
+            qmfunction::linear_combination(tmp_i, coef_vec, func_vec, inter_prec);
+            out[i].add(1.0, tmp_i, inter_prec); // In place addition
             tmp_i.free();
         }
     }
+
+    if (mpi::numerically_exact) {
+        for (auto &out_i : out) {
+            if (mpi::my_orb(out_i)) out_i.crop(prec);
+        }
+    }
+
     return out;
 }
 

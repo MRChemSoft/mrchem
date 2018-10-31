@@ -992,7 +992,7 @@ mrdft::XCFunctional *SCFDriver::setupFunctional(int order) {
     fun->setUseGamma(dft_use_gamma);
     fun->setDensityCutoff(dft_cutoff);
     fun->evalSetup(order);
-    setupInitialGrid(*fun, *molecule);
+    //setupInitialGrid(*fun, *molecule);
     return fun;
 }
 

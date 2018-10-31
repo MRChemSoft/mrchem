@@ -100,39 +100,35 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     double mult_prec = prec;       // prec for rho_i = |phi_i|^2
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
 
-    FunctionTreeVector<3> dens_vec;
+    if (rho.hasReal() or rho.hasImag()) MSG_FATAL("Density should be empty");
+
+    // For numerically identical results in MPI we must first add
+    // up orbital contributions onto their union grid, and THEN
+    // crop the resulting density tree to the desired precision
+    double inter_prec = (mpi::numerically_exact) ? -1.0 : add_prec;
+
+    Density rho_tmp(false);
+    rho_tmp.alloc(NUMBER::Real);
+    rho_tmp.real().setZero();
     for (auto &phi_i : Phi) {
         if (mpi::my_orb(phi_i)) {
             Density rho_i(false);
             density::compute(mult_prec, rho_i, phi_i, spin);
-            if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(1.0, &(rho_i.real())));
-            if (rho_i.hasImag()) MSG_ERROR("Density should be real");
+            rho_tmp.add(1.0, rho_i, inter_prec);
+            rho_i.free();
         }
     }
 
-    Density rho_tmp(false), *rho_ptr = nullptr;
-    if (mpi::share_rank == 0) {
-        rho_ptr = &rho;
-    } else {
-        // we need to distiguish between rho used to store final rho and
-        // rho that stores the single mpi contributions.
-        // note that this will work also for non-shared rho
-        rho_tmp.alloc(NUMBER::Real);
-        rho_ptr = &rho_tmp; //use a separate temporary storage
+    rho.alloc(NUMBER::Real);
+    mpi::reduce_density(inter_prec, rho_tmp, mpi::comm_orb);
+    if (mpi::grand_master()) {
+        if (mpi::numerically_exact) rho_tmp.crop(add_prec);
+        mrcpp::copy_grid(rho.real(), rho_tmp.real());
+        mrcpp::copy_func(rho.real(), rho_tmp.real());
     }
-
-    if (dens_vec.size() > 0) {
-        if (not rho_ptr->hasReal()) rho_ptr->alloc(NUMBER::Real);
-        mrcpp::add(add_prec, rho_ptr->real(), dens_vec);
-    } else if (rho_ptr->hasReal()) {
-        rho_ptr->real().setZero();
-    }
-    if (rho_ptr->hasImag()) rho_ptr->imag().setZero();
-    mrcpp::clear(dens_vec, true);
-
-    mpi::reduce_density(*rho_ptr, mpi::comm_orb);
     rho_tmp.free();
     mpi::broadcast_density(rho, mpi::comm_orb);
+    mpi::barrier(mpi::comm_share);
 }
 
 /** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><x_i|
@@ -176,7 +172,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 
     mrcpp::clear(dens_vec, true);
 
-    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::reduce_density(add_prec, rho, mpi::comm_orb);
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
@@ -235,7 +231,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
     mrcpp::clear(dens_real, true);
     mrcpp::clear(dens_imag, true);
 
-    mpi::reduce_density(rho, mpi::comm_orb);
+    mpi::reduce_density(add_prec, rho, mpi::comm_orb);
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 

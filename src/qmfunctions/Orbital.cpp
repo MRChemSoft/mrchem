@@ -80,6 +80,7 @@ Orbital::Orbital(const Orbital &orb)
  */
 Orbital &Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
+        if (orb.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
         this->orb_data = orb.orb_data;
         this->func_data = orb.func_data;
         this->re = orb.re;
