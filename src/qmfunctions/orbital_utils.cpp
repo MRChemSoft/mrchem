@@ -175,7 +175,7 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &inp, double
 
     if (mpi::numerically_exact) {
         for (auto &out_i : out) {
-            if (mpi::my_orb(out_i)) out_i.crop(prec);
+            if (mpi::my_orb(out_i) and prec > 0.0) out_i.crop(prec);
         }
     }
 

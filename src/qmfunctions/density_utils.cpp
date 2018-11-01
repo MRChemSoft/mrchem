@@ -122,13 +122,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     rho.alloc(NUMBER::Real);
     mpi::reduce_density(inter_prec, rho_tmp, mpi::comm_orb);
     if (mpi::grand_master()) {
-        if (mpi::numerically_exact) rho_tmp.crop(add_prec);
+        if (mpi::numerically_exact and add_prec > 0.0) rho_tmp.crop(add_prec);
         mrcpp::copy_grid(rho.real(), rho_tmp.real());
         mrcpp::copy_func(rho.real(), rho_tmp.real());
     }
     rho_tmp.free();
     mpi::broadcast_density(rho, mpi::comm_orb);
-    mpi::barrier(mpi::comm_share);
 }
 
 /** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><x_i|

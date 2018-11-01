@@ -285,7 +285,6 @@ void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
     } else {
         int tag = 3333 + comm_rank;
         mpi::send_density(rho, 0, tag, comm);
-        rho.free();
     }
     MPI_Barrier(comm);
     timer.stop();

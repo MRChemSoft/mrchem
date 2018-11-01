@@ -83,7 +83,6 @@ void QMFunction::clear(int type) {
 }
 
 void QMFunction::free(int type) {
-    mpi::barrier(mpi::comm_sh_group);
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (this->hasReal()) delete this->re;
         this->re = nullptr;
