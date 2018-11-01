@@ -120,13 +120,17 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     }
 
     rho.alloc(NUMBER::Real);
+
+    // Add up contributions into the MPI grand master
     mpi::reduce_density(inter_prec, rho_tmp, mpi::comm_orb);
     if (mpi::grand_master()) {
+        // MPI grand master copies the function into shared memory
         if (mpi::numerically_exact and add_prec > 0.0) rho_tmp.crop(add_prec);
         mrcpp::copy_grid(rho.real(), rho_tmp.real());
         mrcpp::copy_func(rho.real(), rho_tmp.real());
     }
     rho_tmp.free();
+    // MPI grand master distributes the full density
     mpi::broadcast_density(rho, mpi::comm_orb);
 }
 

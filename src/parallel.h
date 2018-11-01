@@ -45,11 +45,10 @@ void free_foreign(OrbitalVector &Phi);
 OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 
 void send_orbital(Orbital &orb, int dst, int tag);
-void isend_orbital(Orbital &orb, int dst, int tag, MPI_Request &request);
 void recv_orbital(Orbital &orb, int src, int tag);
 
-void send_density(Density &rho, int dst, int tag, MPI_Comm comm);
-void recv_density(Density &rho, int src, int tag, MPI_Comm comm);
+void send_function(QMFunction &func, int dst, int tag, MPI_Comm comm);
+void recv_function(QMFunction &func, int src, int tag, MPI_Comm comm);
 
 void reduce_density(double prec, Density &rho, MPI_Comm comm);
 void broadcast_density(Density &rho, MPI_Comm comm);

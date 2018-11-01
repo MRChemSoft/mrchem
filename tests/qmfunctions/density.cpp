@@ -42,7 +42,6 @@ TEST_CASE("Density", "[density]") {
 
     SECTION("calc density") {
         Density rho(false);
-        rho.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
         SECTION("orbital vector") {
             HydrogenFunction h_1(2, 1, 0);
@@ -71,10 +70,6 @@ TEST_CASE("Density", "[density]") {
         Density rho_s(false);
         Density rho_a(false);
         Density rho_b(false);
-        rho_t.setReal(new mrcpp::FunctionTree<3>(*MRA));
-        rho_s.setReal(new mrcpp::FunctionTree<3>(*MRA));
-        rho_a.setReal(new mrcpp::FunctionTree<3>(*MRA));
-        rho_b.setReal(new mrcpp::FunctionTree<3>(*MRA));
 
         SECTION("orbital vector") {
             HydrogenFunction s1(1, 0, 0);

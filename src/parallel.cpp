@@ -176,90 +176,56 @@ void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 #endif
 }
 
-//send an orbital with MPI
+//send an orbital with MPI, includes orbital meta data
 void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI
+    mpi::send_function(orb, dst, tag, mpi::comm_orb);
+
     OrbitalData &orbinfo = orb.getOrbitalData();
-    FunctionData &funcinfo = orb.getFunctionData();
     MPI_Send(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, mpi::comm_orb);
-    MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, mpi::comm_orb);
-
-    if (orb.hasReal()) mrcpp::send_tree(orb.real(), dst, tag, mpi::comm_orb, funcinfo.nChunksReal);
-    if (orb.hasImag()) mrcpp::send_tree(orb.imag(), dst, tag + 10000, mpi::comm_orb, funcinfo.nChunksImag);
 #endif
 }
 
-//send an orbital with MPI
-void mpi::isend_orbital(Orbital &orb, int dst, int tag, MPI_Request &request) {
-#ifdef HAVE_MPI
-    NEEDS_TESTING;
-
-    OrbitalData &orbinfo = orb.getOrbitalData();
-    FunctionData &funcinfo = orb.getFunctionData();
-    MPI_Isend(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, mpi::comm_orb, &request);
-    MPI_Isend(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, mpi::comm_orb, &request);
-
-    if (orb.hasReal()) mrcpp::isend_tree(orb.real(), dst, tag, mpi::comm_orb, &request, funcinfo.nChunksReal);
-    if (orb.hasImag()) mrcpp::isend_tree(orb.imag(), dst, tag + 10000, mpi::comm_orb, &request, funcinfo.nChunksImag);
-
-#endif
-}
-
-//receive an orbital with MPI
+//receive an orbital with MPI, includes orbital meta data
 void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #ifdef HAVE_MPI
+    mpi::recv_function(orb, src, tag, mpi::comm_orb);
+
     MPI_Status status;
-
     OrbitalData &orbinfo = orb.getOrbitalData();
-    FunctionData &funcinfo = orb.getFunctionData();
     MPI_Recv(&orbinfo, sizeof(OrbitalData), MPI_BYTE, src, 0, mpi::comm_orb, &status);
-    MPI_Recv(&funcinfo, sizeof(FunctionData), MPI_BYTE, src, 0, mpi::comm_orb, &status);
-
-    if (funcinfo.nChunksReal > 0) {
-        // We must have a tree defined for receiving nodes. Define one:
-        if (orb.hasReal()) MSG_FATAL("Orbital not empty");
-        orb.alloc(NUMBER::Real);
-        mrcpp::recv_tree(orb.real(), src, tag, mpi::comm_orb, funcinfo.nChunksReal);
-    }
-
-    if (funcinfo.nChunksImag > 0) {
-        // We must have a tree defined for receiving nodes. Define one:
-        if (orb.hasImag()) MSG_FATAL("Orbital not empty");
-        orb.alloc(NUMBER::Imag);
-        mrcpp::recv_tree(orb.imag(), src, tag + 10000, mpi::comm_orb, funcinfo.nChunksImag);
-    }
 #endif
 }
 
 //send a density with MPI
-void mpi::send_density(Density &rho, int dst, int tag, MPI_Comm comm) {
+void mpi::send_function(QMFunction &func, int dst, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
-    FunctionData &funcinfo = rho.getFunctionData();
+    FunctionData &funcinfo = func.getFunctionData();
     MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, comm);
 
-    if (rho.hasReal()) mrcpp::send_tree(rho.real(), dst, tag, comm, funcinfo.nChunksReal);
-    if (rho.hasImag()) mrcpp::send_tree(rho.imag(), dst, tag + 10000, comm, funcinfo.nChunksImag);
+    if (func.hasReal()) mrcpp::send_tree(func.real(), dst, tag, comm, funcinfo.nChunksReal);
+    if (func.hasImag()) mrcpp::send_tree(func.imag(), dst, tag + 10000, comm, funcinfo.nChunksImag);
 #endif
 }
 
 //receive a denstity with MPI
-void mpi::recv_density(Density &rho, int src, int tag, MPI_Comm comm) {
+void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     MPI_Status status;
 
-    FunctionData &funcinfo = rho.getFunctionData();
+    FunctionData &funcinfo = func.getFunctionData();
     MPI_Recv(&funcinfo, sizeof(FunctionData), MPI_BYTE, src, 0, comm, &status);
 
     if (funcinfo.nChunksReal > 0) {
         // We must have a tree defined for receiving nodes. Define one:
-        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-        mrcpp::recv_tree(rho.real(), src, tag, comm, funcinfo.nChunksReal);
+        if (not func.hasReal()) func.alloc(NUMBER::Real);
+        mrcpp::recv_tree(func.real(), src, tag, comm, funcinfo.nChunksReal);
     }
 
     if (funcinfo.nChunksImag > 0) {
         // We must have a tree defined for receiving nodes. Define one:
-        if (not rho.hasImag()) rho.alloc(NUMBER::Imag);
-        mrcpp::recv_tree(rho.imag(), src, tag + 10000, comm, funcinfo.nChunksImag);
+        if (not func.hasImag()) func.alloc(NUMBER::Imag);
+        mrcpp::recv_tree(func.imag(), src, tag + 10000, comm, funcinfo.nChunksImag);
     }
 #endif
 }
@@ -278,13 +244,13 @@ void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
         for (int src = 1; src < comm_size; src++) {
             Density rho_i(false);
             int tag = 3333 + src;
-            mpi::recv_density(rho_i, src, tag, comm);
+            mpi::recv_function(rho_i, src, tag, comm);
             rho.add(1.0, rho_i, prec); // add in place using rho.real grid
             rho_i.free();
         }
     } else {
         int tag = 3333 + comm_rank;
-        mpi::send_density(rho, 0, tag, comm);
+        mpi::send_function(rho, 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();
@@ -315,11 +281,11 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
         if (comm_rank == 0) {
             for (int dst = 1; dst < comm_size; dst++) {
                 int tag = 4444 + dst;
-                mpi::send_density(rho, dst, tag, comm);
+                mpi::send_function(rho, dst, tag, comm);
             }
         } else {
             int tag = 4444 + comm_rank;
-            mpi::recv_density(rho, 0, tag, comm);
+            mpi::recv_function(rho, 0, tag, comm);
         }
     }
     MPI_Barrier(comm);

@@ -30,20 +30,20 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "parallel.h"
-#include "utils/math_utils.h"
-#include "sad.h"
-#include "gto.h"
 #include "core.h"
+#include "gto.h"
+#include "parallel.h"
+#include "sad.h"
+#include "utils/math_utils.h"
 
 #include "chemistry/Molecule.h"
-#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
-#include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
@@ -62,17 +62,14 @@ void project_atomic_densities(double prec, const Molecule &mol, mrcpp::FunctionT
 } //namespace sad
 } //namespace initial_guess
 
-OrbitalVector initial_guess::sad::setup(double prec,
-                                        const Molecule &mol,
-                                        bool restricted,
-                                        int zeta) {
+OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool restricted, int zeta) {
     // Figure out number of occupied orbitals
-    int mult = mol.getMultiplicity();   //multiplicity
-    int Ne = mol.getNElectrons();       //total electrons
-    int Nd = Ne - (mult - 1);           //doubly occupied electrons
-    if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
-    int Na = Nd/2 + (mult - 1);         //alpha orbitals
-    int Nb = Nd/2;                      //beta orbitals
+    int mult = mol.getMultiplicity(); //multiplicity
+    int Ne = mol.getNElectrons();     //total electrons
+    int Nd = Ne - (mult - 1);         //doubly occupied electrons
+    if (Nd % 2 != 0) MSG_FATAL("Invalid multiplicity");
+    int Na = Nd / 2 + (mult - 1); //alpha orbitals
+    int Nb = Nd / 2;              //beta orbitals
 
     // Make Fock operator contributions
     mrcpp::PoissonOperator P(*MRA, prec);
@@ -87,25 +84,33 @@ OrbitalVector initial_guess::sad::setup(double prec,
     XCOperator XC(&xcfun);
     RankZeroTensorOperator F = T + V + J + XC;
 
-    // Compute SAD density
-    mrcpp::FunctionTreeVector<3> rho_atomic;
-    initial_guess::sad::project_atomic_densities(prec, mol, rho_atomic);
-
     // Compute Coulomb density
-    mrcpp::FunctionTree<3> &rho_j = J.getDensity().real();
-    mrcpp::add(prec, rho_j, rho_atomic);
-    mrcpp::clear(rho_atomic, true);
+    Density &rho_j = J.getDensity();
+    rho_j.alloc(NUMBER::Real);
+
+    // MPI grand master computes SAD density
+    if (mpi::grand_master()) {
+        // Compute atomic densities
+        mrcpp::FunctionTreeVector<3> rho_atomic;
+        initial_guess::sad::project_atomic_densities(prec, mol, rho_atomic);
+
+        // Add atomic densities
+        mrcpp::add(prec, rho_j.real(), rho_atomic);
+        mrcpp::clear(rho_atomic, true);
+    }
+    // MPI grand master distributes the full density
+    mpi::broadcast_density(rho_j, mpi::comm_orb);
 
     // Compute XC density
     if (restricted) {
         mrcpp::FunctionTree<3> &rho_xc = XC.getDensity(DENSITY::Total);
-        mrcpp::copy_grid(rho_xc, rho_j);
-        mrcpp::copy_func(rho_xc, rho_j);
+        mrcpp::copy_grid(rho_xc, rho_j.real());
+        mrcpp::copy_func(rho_xc, rho_j.real());
     } else {
         mrcpp::FunctionTree<3> &rho_a = XC.getDensity(DENSITY::Alpha);
         mrcpp::FunctionTree<3> &rho_b = XC.getDensity(DENSITY::Beta);
-        mrcpp::add(prec, rho_a, 1.0, rho_j, -1.0*Nb/Ne, rho_j);
-        mrcpp::add(prec, rho_b, 1.0, rho_j, -1.0*Na/Ne, rho_j);
+        mrcpp::add(prec, rho_a, 1.0, rho_j.real(), -1.0 * Nb / Ne, rho_j.real());
+        mrcpp::add(prec, rho_b, 1.0, rho_j.real(), -1.0 * Na / Ne, rho_j.real());
 
         // Extend to union grid
         int nNodes = 1;
@@ -131,12 +136,12 @@ OrbitalVector initial_guess::sad::setup(double prec,
     OrbitalVector Psi;
     if (restricted) {
         if (mult != 1) MSG_FATAL("Restricted open-shell not available");
-        int Np = Nd/2;                      //paired orbitals
+        int Np = Nd / 2; //paired orbitals
         ComplexMatrix U = initial_guess::sad::diagonalize_fock(F, Phi, SPIN::Paired);
         Psi = initial_guess::sad::rotate_orbitals(prec, U, Phi, Np, SPIN::Paired);
     } else {
-        int Na = Nd/2 + (mult - 1);         //alpha orbitals
-        int Nb = Nd/2;                      //beta orbitals
+        int Na = Nd / 2 + (mult - 1); //alpha orbitals
+        int Nb = Nd / 2;              //beta orbitals
 
         ComplexMatrix U_a = initial_guess::sad::diagonalize_fock(F, Phi, SPIN::Alpha);
         OrbitalVector Psi_a = initial_guess::sad::rotate_orbitals(prec, U_a, Phi, Na, SPIN::Alpha);
@@ -154,14 +159,12 @@ OrbitalVector initial_guess::sad::setup(double prec,
     return Psi;
 }
 
-ComplexMatrix initial_guess::sad::diagonalize_fock(RankZeroTensorOperator &F,
-                                                   OrbitalVector &Phi,
-                                                   int spin) {
+ComplexMatrix initial_guess::sad::diagonalize_fock(RankZeroTensorOperator &F, OrbitalVector &Phi, int spin) {
     Timer t1;
     for (int i = 0; i < Phi.size(); i++) Phi[i].setSpin(spin);
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
     ComplexMatrix f_tilde = F(Phi, Phi);
-    ComplexMatrix f = S_m12.adjoint()*f_tilde*S_m12;
+    ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
     t1.stop();
     Printer::printDouble(0, "Compute Fock matrix", t1.getWallTime(), 5);
 
@@ -175,11 +178,7 @@ ComplexMatrix initial_guess::sad::diagonalize_fock(RankZeroTensorOperator &F,
     return U;
 }
 
-OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
-                                                  ComplexMatrix &U,
-                                                  OrbitalVector &Phi,
-                                                  int N,
-                                                  int spin) {
+OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
     Timer t;
     int occ = 0;
     if (spin == SPIN::Paired) occ = 2;
@@ -188,7 +187,7 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec,
 
     OrbitalVector Psi;
     for (int i = 0; i < N; i++) {
-        Orbital psi_i(spin, occ, i%mpi::orb_size);
+        Orbital psi_i(spin, occ, i % mpi::orb_size);
         Psi.push_back(psi_i);
     }
 
@@ -228,7 +227,7 @@ void initial_guess::sad::project_atomic_densities(double prec,
     int oldprec = Printer::setPrecision(15);
     const Nuclei &nucs = mol.getNuclei();
     for (int k = 0; k < nucs.size(); k++) {
-        const std::string& sym = nucs[k].getElement().getSymbol();
+        const std::string &sym = nucs[k].getElement().getSymbol();
 
         std::stringstream bas;
         std::stringstream dens;
@@ -247,6 +246,5 @@ void initial_guess::sad::project_atomic_densities(double prec,
     timer.stop();
     Printer::printFooter(0, timer, 2);
 }
-
 
 } //namespace mrchem
