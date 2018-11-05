@@ -49,7 +49,7 @@ public:
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
-    
+
     double e_i;
     double e_o;
     std::vector<mrcpp::Coord<3>> pos;
