@@ -245,7 +245,8 @@ void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
             Density rho_i(false);
             int tag = 3333 + src;
             mpi::recv_function(rho_i, src, tag, comm);
-            rho.add(1.0, rho_i, prec); // add in place using rho.real grid
+            rho.add(1.0, rho_i); // add in place using union grid
+            rho.crop(prec);
             rho_i.free();
         }
     } else {

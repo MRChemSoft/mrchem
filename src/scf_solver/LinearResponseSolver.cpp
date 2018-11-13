@@ -333,9 +333,7 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
     } else {
         part_3 = V_1(Phi_0);
     }
-    for (int i = 0; i < part_3.size(); i++) {
-        part_3[i].orthogonalize(Phi_0);
-    }
+    orbital::orthogonalize(part_3, Phi_0);
     timer_3.stop();
 
     double coef = -1.0 / (2.0 * MATHCONST::pi);

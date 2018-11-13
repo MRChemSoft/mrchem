@@ -55,8 +55,7 @@ public:
     double norm() const;
     double squaredNorm() const;
 
-    void add(ComplexDouble c, QMFunction inp, double prec = -1.0);
-    void multiply(QMFunction inp, double prec = -1.0);
+    void add(ComplexDouble c, QMFunction inp);
     void rescale(ComplexDouble c);
     void crop(double prec);
 

@@ -132,18 +132,6 @@ Orbital Orbital::dagger() const {
     return out; // Return shallow copy
 }
 
-/** @brief In place orthogonalize against inp */
-void Orbital::orthogonalize(Orbital inp) {
-    ComplexDouble overlap = orbital::dot(inp, *this);
-    double sq_norm = inp.squaredNorm();
-    if (std::abs(overlap) > mrcpp::MachineZero) this->add(-1.0 * (overlap / sq_norm), inp);
-}
-
-/** @brief In place orthogonalize against all orbitals in inp vector */
-void Orbital::orthogonalize(OrbitalVector inp_vec) {
-    for (int i = 0; i < inp_vec.size(); i++) this->orthogonalize(inp_vec[i]);
-}
-
 /** @brief Write orbital to disk
  *
  * @param file: file name prefix

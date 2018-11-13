@@ -94,6 +94,7 @@ void QMFunction::free(int type) {
 }
 
 void QMFunction::crop(double prec) {
+    if (prec < 0.0) return;
     if (hasReal()) this->real().crop(prec, 1.0, false);
     if (hasImag()) this->imag().crop(prec, 1.0, false);
 }
@@ -145,51 +146,93 @@ double QMFunction::squaredNorm() const {
     return sq_norm;
 }
 
-/** @brief In place addition */
-void QMFunction::add(ComplexDouble c, QMFunction inp, double prec) {
-    QMFunction tmp(*this);
-    this->clear();
-    qmfunction::add(*this, 1.0, tmp, c, inp, prec);
-    tmp.free();
-}
-
-/** @brief In place multiply */
-void QMFunction::multiply(QMFunction inp, double prec) {
-    QMFunction tmp(*this);
-    this->clear();
-    qmfunction::multiply(*this, tmp, inp, prec);
-    tmp.free();
-}
-
-/** @brief In place multiply with scalar */
-void QMFunction::rescale(ComplexDouble c) {
+/** @brief In place addition.
+ *
+ * Output is extended to union grid.
+ *
+ * MPI: The necessary alloc() routines must be called by
+ *      ALL MPI processes if *this function is shared.
+ */
+void QMFunction::add(ComplexDouble c, QMFunction inp) {
     double thrs = mrcpp::MachineZero;
     bool cHasReal = (std::abs(c.real()) > thrs);
     bool cHasImag = (std::abs(c.imag()) > thrs);
 
+    QMFunction &out = *this;
+    if (cHasReal) {
+        if (inp.hasReal()) {
+            if (not out.hasReal()) MSG_FATAL("Real part not allocated");
+            while (mrcpp::refine_grid(out.real(), inp.real())) {}
+            out.real().add(c.real(), inp.real());
+        }
+        if (inp.hasImag()) {
+            double conj = (inp.conjugate()) ? -1.0 : 1.0;
+            if (not out.hasImag()) MSG_FATAL("Imaginary part not allocated");
+            while (mrcpp::refine_grid(out.imag(), inp.imag())) {}
+            out.imag().add(conj * c.real(), inp.imag());
+        }
+    }
+    if (cHasImag) {
+        if (inp.hasReal()) {
+            if (not out.hasImag()) MSG_FATAL("Imaginary part not allocated");
+            while (mrcpp::refine_grid(out.imag(), inp.real())) {}
+            out.imag().add(c.imag(), inp.real());
+        }
+        if (inp.hasImag()) {
+            double conj = (inp.conjugate()) ? -1.0 : 1.0;
+            if (not out.hasReal()) MSG_FATAL("Real part not allocated");
+            while (mrcpp::refine_grid(out.real(), inp.imag())) {}
+            out.real().add(-1.0 * conj * c.imag(), inp.imag());
+        }
+    }
+}
+
+/** @brief In place multiply with scalar.
+ *
+ * MPI: Cannot be called with a complex argument
+ *      if *this function is shared memory.
+ */
+void QMFunction::rescale(ComplexDouble c) {
+    double thrs = mrcpp::MachineZero;
+    bool cHasReal = (std::abs(c.real()) > thrs);
+    bool cHasImag = (std::abs(c.imag()) > thrs);
     if (cHasReal and cHasImag) {
-        QMFunction tmp(*this);
-        this->clear();
-        qmfunction::add(*this, c, tmp, 0.0, tmp, -1.0);
+        if (not this->hasReal()) MSG_FATAL("Real part not allocated");
+        if (not this->hasImag()) MSG_FATAL("Imaginary part not allocated");
+
+        // Extend to union grid
+        while (mrcpp::refine_grid(this->real(), this->imag())) {}
+        while (mrcpp::refine_grid(this->imag(), this->real())) {}
+
+        // Create deep copy
+        QMFunction tmp(false);
+        tmp.alloc();
+        mrcpp::copy_grid(tmp.real(), this->real());
+        mrcpp::copy_func(tmp.real(), this->real());
+        mrcpp::copy_grid(tmp.imag(), this->imag());
+        mrcpp::copy_func(tmp.imag(), this->imag());
+        mrcpp::clear_grid(this->real());
+        mrcpp::clear_grid(this->imag());
+        mrcpp::add(-1.0, this->real(), c.real(), tmp.real(), -c.imag(), tmp.imag());
+        mrcpp::add(-1.0, this->imag(), c.real(), tmp.imag(), c.imag(), tmp.real());
         tmp.free();
     }
     if (cHasReal and not cHasImag) {
         if (this->hasReal()) this->real().rescale(c.real());
         if (this->hasImag()) this->imag().rescale(c.real());
     }
-    if (not cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().setZero();
-        if (this->hasImag()) this->imag().setZero();
-    }
     if (not cHasReal and cHasImag) {
         double conj = (this->conjugate()) ? -1.0 : 1.0;
         mrcpp::FunctionTree<3> *tmp_re = this->re;
         mrcpp::FunctionTree<3> *tmp_im = this->im;
-        if (tmp_re != 0) tmp_re->rescale(c.imag());
-        if (tmp_im != 0) tmp_im->rescale(-1.0 * conj * c.imag());
-        this->clear();
+        if (tmp_re != nullptr) tmp_re->rescale(c.imag());
+        if (tmp_im != nullptr) tmp_im->rescale(-1.0 * conj * c.imag());
         this->setReal(tmp_im);
         this->setImag(tmp_re);
+    }
+    if (not cHasReal and not cHasImag) {
+        if (this->hasReal()) this->real().setZero();
+        if (this->hasImag()) this->imag().setZero();
     }
 }
 

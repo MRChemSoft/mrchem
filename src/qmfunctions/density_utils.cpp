@@ -114,7 +114,8 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
         if (mpi::my_orb(phi_i)) {
             Density rho_i(false);
             density::compute(mult_prec, rho_i, phi_i, spin);
-            rho_tmp.add(1.0, rho_i, inter_prec);
+            rho_tmp.add(1.0, rho_i);
+            rho_tmp.crop(inter_prec);
             rho_i.free();
         }
     }
@@ -125,7 +126,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     mpi::reduce_density(inter_prec, rho_tmp, mpi::comm_orb);
     if (mpi::grand_master()) {
         // MPI grand master copies the function into shared memory
-        if (mpi::numerically_exact and add_prec > 0.0) rho_tmp.crop(add_prec);
+        if (mpi::numerically_exact) rho_tmp.crop(add_prec);
         mrcpp::copy_grid(rho.real(), rho_tmp.real());
         mrcpp::copy_func(rho.real(), rho_tmp.real());
     }

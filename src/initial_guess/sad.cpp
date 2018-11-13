@@ -205,7 +205,16 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U,
             }
             Orbital tmp_i = Psi[i].paramCopy();
             qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
-            Psi[i].add(1.0, tmp_i, prec); // In place addition
+            if (tmp_i.hasReal() and not Psi[i].hasReal()) {
+                Psi[i].alloc(NUMBER::Real);
+                Psi[i].real().setZero();
+            }
+            if (tmp_i.hasImag() and not Psi[i].hasImag()) {
+                Psi[i].alloc(NUMBER::Imag);
+                Psi[i].imag().setZero();
+            }
+            Psi[i].add(1.0, tmp_i); // In place addition
+            Psi[i].crop(prec);
             tmp_i.free();
         }
     }
