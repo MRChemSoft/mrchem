@@ -166,14 +166,6 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double
             }
             Orbital tmp_i = out[i].paramCopy();
             qmfunction::linear_combination(tmp_i, coef_vec, func_vec, inter_prec);
-            if (tmp_i.hasReal() and not out[i].hasReal()) {
-                out[i].alloc(NUMBER::Real);
-                out[i].real().setZero();
-            }
-            if (tmp_i.hasImag() and not out[i].hasImag()) {
-                out[i].alloc(NUMBER::Imag);
-                out[i].imag().setZero();
-            }
             out[i].add(1.0, tmp_i); // In place addition
             out[i].crop(inter_prec);
             tmp_i.free();

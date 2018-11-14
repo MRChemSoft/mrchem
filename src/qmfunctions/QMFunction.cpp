@@ -161,26 +161,42 @@ void QMFunction::add(ComplexDouble c, QMFunction inp) {
     QMFunction &out = *this;
     if (cHasReal) {
         if (inp.hasReal()) {
-            if (not out.hasReal()) MSG_FATAL("Real part not allocated");
+            if (not out.hasReal()) {
+                if (out.isShared()) MSG_FATAL("Shared function not allocated");
+                out.alloc(NUMBER::Real);
+                out.real().setZero();
+            }
             while (mrcpp::refine_grid(out.real(), inp.real())) {}
             out.real().add(c.real(), inp.real());
         }
         if (inp.hasImag()) {
+            if (not out.hasImag()) {
+                if (out.isShared()) MSG_FATAL("Shared function not allocated");
+                out.alloc(NUMBER::Imag);
+                out.imag().setZero();
+            }
             double conj = (inp.conjugate()) ? -1.0 : 1.0;
-            if (not out.hasImag()) MSG_FATAL("Imaginary part not allocated");
             while (mrcpp::refine_grid(out.imag(), inp.imag())) {}
             out.imag().add(conj * c.real(), inp.imag());
         }
     }
     if (cHasImag) {
         if (inp.hasReal()) {
-            if (not out.hasImag()) MSG_FATAL("Imaginary part not allocated");
+            if (not out.hasImag()) {
+                if (out.isShared()) MSG_FATAL("Shared function not allocated");
+                out.alloc(NUMBER::Imag);
+                out.imag().setZero();
+            }
             while (mrcpp::refine_grid(out.imag(), inp.real())) {}
             out.imag().add(c.imag(), inp.real());
         }
         if (inp.hasImag()) {
+            if (not out.hasReal()) {
+                if (out.isShared()) MSG_FATAL("Shared function not allocated");
+                out.alloc(NUMBER::Real);
+                out.real().setZero();
+            }
             double conj = (inp.conjugate()) ? -1.0 : 1.0;
-            if (not out.hasReal()) MSG_FATAL("Real part not allocated");
             while (mrcpp::refine_grid(out.real(), inp.imag())) {}
             out.real().add(-1.0 * conj * c.imag(), inp.imag());
         }

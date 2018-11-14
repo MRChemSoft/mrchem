@@ -2,11 +2,11 @@
 #include "MRCPP/Timer"
 
 #include "XCPotential.h"
+#include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
-#include "parallel.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;
@@ -87,12 +87,8 @@ void XCPotential::setupDensity(double prec) {
         Printer::printTree(0, "XC beta density", func_b.getNNodes(), time_b.getWallTime());
 
         // Extend to union grid
-        int nNodes = 1;
-        while (nNodes > 0) {
-            int nAlpha = mrcpp::refine_grid(func_a, func_b);
-            int nBeta = mrcpp::refine_grid(func_b, func_a);
-            nNodes = nAlpha + nBeta;
-        }
+        while (mrcpp::refine_grid(func_a, func_b)) {}
+        while (mrcpp::refine_grid(func_b, func_a)) {}
     } else {
         Timer time_t;
         Density rho_t(false);
