@@ -25,6 +25,7 @@ bool share_coul_dens = false;
 bool share_coul_pot = false;
 bool share_xc_dens = false;
 bool share_xc_pot = false;
+int shared_memory_size = 0;
 
 int orb_rank = 0;
 int orb_size = 1;

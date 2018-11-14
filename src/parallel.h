@@ -22,6 +22,7 @@ extern bool share_coul_dens;
 extern bool share_coul_pot;
 extern bool share_xc_dens;
 extern bool share_xc_pot;
+extern int shared_memory_size;
 
 extern int orb_rank;
 extern int orb_size;

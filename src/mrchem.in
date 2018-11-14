@@ -162,6 +162,7 @@ def setup_keywords(input_dir):
     mpi.add_kw('share_coulomb_potential','BOOL', False)
     mpi.add_kw('share_xc_density',       'BOOL', False)
     mpi.add_kw('share_xc_potential',     'BOOL', False)
+    mpi.add_kw('shared_memory_size',     'INT', 10000)
     # yapf: enable
     top.add_sect(mpi)
 

@@ -39,8 +39,8 @@ QMFunction::QMFunction(bool share, mrcpp::FunctionTree<3> *r, mrcpp::FunctionTre
         , re(r)
         , im(i) {
     if (share and mpi::share_size > 1) {
-        int sh_mem_size = 10000; //in MB. Virtual memory, does not cost anything if not used
-        this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, sh_mem_size);
+        // Memory size in MB defined in input. Virtual memory, does not cost anything if not used.
+        this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, mpi::shared_memory_size);
     }
 }
 
