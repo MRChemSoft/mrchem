@@ -66,6 +66,12 @@ QMFunction::~QMFunction() {
     if (this->shared_mem != nullptr) delete this->shared_mem;
 }
 
+void QMFunction::set(int type, mrcpp::FunctionTree<3> *func) {
+    if (this->isShared()) MSG_FATAL("Cannot set pointers in shared functions");
+    if (type == NUMBER::Real or type == NUMBER::Total) this->re = func;
+    if (type == NUMBER::Imag or type == NUMBER::Total) this->im = func;
+}
+
 void QMFunction::alloc(int type) {
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (this->hasReal()) MSG_FATAL("Function not empty");
@@ -75,11 +81,6 @@ void QMFunction::alloc(int type) {
         if (this->hasImag()) MSG_FATAL("Function not empty");
         this->im = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
     }
-}
-
-void QMFunction::clear(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) this->re = nullptr;
-    if (type == NUMBER::Imag or type == NUMBER::Total) this->im = nullptr;
 }
 
 void QMFunction::free(int type) {
@@ -222,7 +223,7 @@ void QMFunction::rescale(ComplexDouble c) {
 
         // Create deep copy
         QMFunction tmp(false);
-        tmp.alloc();
+        tmp.alloc(NUMBER::Total);
         mrcpp::copy_grid(tmp.real(), this->real());
         mrcpp::copy_func(tmp.real(), this->real());
         mrcpp::copy_grid(tmp.imag(), this->imag());
@@ -243,8 +244,8 @@ void QMFunction::rescale(ComplexDouble c) {
         mrcpp::FunctionTree<3> *tmp_im = this->im;
         if (tmp_re != nullptr) tmp_re->rescale(c.imag());
         if (tmp_im != nullptr) tmp_im->rescale(-1.0 * conj * c.imag());
-        this->setReal(tmp_im);
-        this->setImag(tmp_re);
+        this->set(NUMBER::Real, tmp_im);
+        this->set(NUMBER::Imag, tmp_re);
     }
     if (not cHasReal and not cHasImag) {
         if (this->hasReal()) this->real().setZero();

@@ -150,7 +150,6 @@ Orbital ExchangePotential::calcExchange(Orbital phi_p) {
 
             coef_vec(i) = spin_fac / phi_i.squaredNorm();
             func_vec.push_back(phi_iip);
-            phi_iip.clear();
         }
     }
 
@@ -211,7 +210,7 @@ void ExchangePotential::setupInternal(double prec) {
 
             if (not iter.get_step(0) and not mpi::my_orb(phi_i))
                 mpi::send_function(Ex[idx], phi_i.rankID(), idx, mpi::comm_orb);
-            if (not mpi::my_orb(Ex[idx])) Ex[idx].clear();
+            if (not mpi::my_orb(Ex[idx])) Ex[idx].free();
         } else {
             if (iter.get_sent_size()) { //must receive exchange computed by other
                 //get exchange from where we sent orbital to

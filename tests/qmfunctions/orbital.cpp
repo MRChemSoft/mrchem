@@ -34,12 +34,12 @@ using namespace mrchem;
 
 namespace orbital_tests {
 
-auto f = [] (const mrcpp::Coord<3> &r) -> double {
+auto f = [](const mrcpp::Coord<3> &r) -> double {
     double R = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
     return std::exp(-1.0 * R * R);
 };
 
-auto g = [] (const mrcpp::Coord<3> &r) -> double {
+auto g = [](const mrcpp::Coord<3> &r) -> double {
     double R = std::sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
     return std::exp(-2.0 * R * R);
 };
@@ -83,7 +83,6 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.norm() == phi_1.norm());
             REQUIRE(phi_2.hasReal() == phi_1.hasReal());
             REQUIRE(phi_2.hasImag() == phi_1.hasImag());
-            phi_2.clear();
         }
 
         SECTION("default constructor plus assignment") {
@@ -94,7 +93,6 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.norm() == phi_1.norm());
             REQUIRE(phi_2.hasReal() == phi_1.hasReal());
             REQUIRE(phi_2.hasImag() == phi_1.hasImag());
-            phi_2.clear();
         }
 
         SECTION("default constructor plus deep copy") {
@@ -115,7 +113,6 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.norm() == phi_1.norm());
             REQUIRE(phi_2.hasReal() == phi_1.hasReal());
             REQUIRE(phi_2.hasImag() == phi_1.hasImag());
-            phi_2.clear();
         }
 
         SECTION("parameter copy") {
@@ -126,7 +123,6 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.norm() < 1.0);
             REQUIRE(not phi_2.hasReal());
             REQUIRE(not phi_2.hasImag());
-            phi_2.clear();
         }
 
         phi_1.free();
@@ -134,7 +130,7 @@ TEST_CASE("Orbital", "[orbital]") {
 
     SECTION("normalize") {
         Orbital phi(SPIN::Paired);
-        phi.alloc();
+        phi.alloc(NUMBER::Total);
         REQUIRE(phi.norm() == Approx(-1.0));
 
         mrcpp::project<3>(prec, phi.real(), f);
@@ -149,7 +145,7 @@ TEST_CASE("Orbital", "[orbital]") {
 
     SECTION("rescale") {
         Orbital phi(SPIN::Paired);
-        phi.alloc();
+        phi.alloc(NUMBER::Total);
 
         mrcpp::project<3>(prec, phi.real(), f);
         mrcpp::project<3>(prec, phi.imag(), g);
@@ -221,7 +217,7 @@ TEST_CASE("Orbital", "[orbital]") {
     SECTION("add") {
         ComplexDouble c(0.5, 0.5);
         Orbital phi(SPIN::Paired);
-        phi.alloc();
+        phi.alloc(NUMBER::Total);
         mrcpp::project<3>(prec, phi.real(), f);
         mrcpp::project<3>(prec, phi.imag(), g);
 
@@ -245,7 +241,7 @@ TEST_CASE("Orbital", "[orbital]") {
 
     SECTION("multiply") {
         Orbital phi(SPIN::Paired);
-        phi.alloc();
+        phi.alloc(NUMBER::Total);
         mrcpp::project<3>(prec, phi.real(), f);
         mrcpp::project<3>(prec, phi.imag(), g);
 

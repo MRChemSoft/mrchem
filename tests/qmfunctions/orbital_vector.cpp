@@ -34,37 +34,35 @@ using namespace orbital;
 
 namespace orbital_vector_tests {
 
-auto f1 = [] (const mrcpp::Coord<3> &r) -> double {
-    double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-    return exp(-1.0*R*R);
+auto f1 = [](const mrcpp::Coord<3> &r) -> double {
+    double R = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    return exp(-1.0 * R * R);
 };
 
-auto f2 = [] (const mrcpp::Coord<3> &r) -> double {
-    double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-    return exp(-2.0*R*R);
+auto f2 = [](const mrcpp::Coord<3> &r) -> double {
+    double R = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    return exp(-2.0 * R * R);
 };
 
-auto f3 = [] (const mrcpp::Coord<3> &r) -> double {
-    double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-    return exp(-3.0*R*R);
+auto f3 = [](const mrcpp::Coord<3> &r) -> double {
+    double R = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    return exp(-3.0 * R * R);
 };
 
-
-auto f4 = [] (const mrcpp::Coord<3> &r) -> double {
-    double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-    return exp(-4.0*R*R);
+auto f4 = [](const mrcpp::Coord<3> &r) -> double {
+    double R = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    return exp(-4.0 * R * R);
 };
 
-auto f5 = [] (const mrcpp::Coord<3> &r) -> double {
-    double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-    return exp(-5.0*R*R);
+auto f5 = [](const mrcpp::Coord<3> &r) -> double {
+    double R = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    return exp(-5.0 * R * R);
 };
 
-auto f6 = [] (const mrcpp::Coord<3> &r) -> double {
-    double R = sqrt(r[0]*r[0] + r[1]*r[1] + r[2]*r[2]);
-    return exp(-6.0*R*R);
+auto f6 = [](const mrcpp::Coord<3> &r) -> double {
+    double R = sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+    return exp(-6.0 * R * R);
 };
-
 
 TEST_CASE("OrbitalVector", "[orbital_vector]") {
     const double prec = 1.0e-3;
@@ -80,18 +78,18 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         Phi.push_back(phi_a);
         Phi.push_back(phi_b);
 
-        REQUIRE( Phi.size() == 4 );
-        REQUIRE( get_electron_number(Phi, SPIN::Paired) == 5 );
-        REQUIRE( get_electron_number(Phi, SPIN::Alpha) == 2 );
-        REQUIRE( get_electron_number(Phi, SPIN::Beta) == 3 );
-        REQUIRE( size_empty(Phi) == 0 );
-        REQUIRE( size_paired(Phi) == 1 );
-        REQUIRE( size_alpha(Phi) == 1 );
-        REQUIRE( size_beta(Phi) == 2 );
-        REQUIRE( get_multiplicity(Phi) == 2 );
+        REQUIRE(Phi.size() == 4);
+        REQUIRE(get_electron_number(Phi, SPIN::Paired) == 5);
+        REQUIRE(get_electron_number(Phi, SPIN::Alpha) == 2);
+        REQUIRE(get_electron_number(Phi, SPIN::Beta) == 3);
+        REQUIRE(size_empty(Phi) == 0);
+        REQUIRE(size_paired(Phi) == 1);
+        REQUIRE(size_alpha(Phi) == 1);
+        REQUIRE(size_beta(Phi) == 2);
+        REQUIRE(get_multiplicity(Phi) == 2);
 
         Phi.clear();
-        REQUIRE( Phi.size() == 0 );
+        REQUIRE(Phi.size() == 0);
     }
 
     SECTION("alloc") {
@@ -118,7 +116,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             Phi.push_back(phi_a.deepCopy());
             free(Phi);
         }
-        REQUIRE( Phi.size() == 0 );
+        REQUIRE(Phi.size() == 0);
     }
 
     SECTION("adjoin/disjoin vectors") {
@@ -133,25 +131,25 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         OrbitalVector Phi_a = disjoin(Phi, SPIN::Alpha);
         OrbitalVector Phi_b = disjoin(Phi, SPIN::Beta);
 
-        REQUIRE( Phi.size() == 0 );
-        REQUIRE( Phi_p.size() == 2 );
-        REQUIRE( Phi_a.size() == 1 );
-        REQUIRE( Phi_b.size() == 2 );
+        REQUIRE(Phi.size() == 0);
+        REQUIRE(Phi_p.size() == 2);
+        REQUIRE(Phi_a.size() == 1);
+        REQUIRE(Phi_b.size() == 2);
 
         Phi = adjoin(Phi, Phi_p);
         Phi = adjoin(Phi, Phi_a);
         Phi = adjoin(Phi, Phi_b);
 
-        REQUIRE( Phi.size() == 5 );
-        REQUIRE( Phi_p.size() == 0 );
-        REQUIRE( Phi_a.size() == 0 );
-        REQUIRE( Phi_b.size() == 0 );
+        REQUIRE(Phi.size() == 5);
+        REQUIRE(Phi_p.size() == 0);
+        REQUIRE(Phi_a.size() == 0);
+        REQUIRE(Phi_b.size() == 0);
 
-        REQUIRE( Phi[0].spin() == SPIN::Paired );
-        REQUIRE( Phi[1].spin() == SPIN::Paired );
-        REQUIRE( Phi[2].spin() == SPIN::Alpha );
-        REQUIRE( Phi[3].spin() == SPIN::Beta );
-        REQUIRE( Phi[4].spin() == SPIN::Beta );
+        REQUIRE(Phi[0].spin() == SPIN::Paired);
+        REQUIRE(Phi[1].spin() == SPIN::Paired);
+        REQUIRE(Phi[2].spin() == SPIN::Alpha);
+        REQUIRE(Phi[3].spin() == SPIN::Beta);
+        REQUIRE(Phi[4].spin() == SPIN::Beta);
     }
 
     SECTION("copy vectors") {
@@ -167,54 +165,54 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
 
         SECTION("copy constructor") {
             OrbitalVector Psi(Phi);
-            REQUIRE( get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired) );
-            REQUIRE( get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha) );
-            REQUIRE( get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta) );
-            REQUIRE( Psi[0].norm() == Approx(1.0) );
-            REQUIRE( Psi[1].norm() == Approx(1.0) );
+            REQUIRE(get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired));
+            REQUIRE(get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha));
+            REQUIRE(get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta));
+            REQUIRE(Psi[0].norm() == Approx(1.0));
+            REQUIRE(Psi[1].norm() == Approx(1.0));
             Psi.clear();
         }
 
         SECTION("default constructor plus assignment") {
             OrbitalVector Psi;
             Psi = Phi;
-            REQUIRE( get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired) );
-            REQUIRE( get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha) );
-            REQUIRE( get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta) );
-            REQUIRE( Psi[0].norm() == Approx(1.0) );
-            REQUIRE( Psi[1].norm() == Approx(1.0) );
+            REQUIRE(get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired));
+            REQUIRE(get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha));
+            REQUIRE(get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta));
+            REQUIRE(Psi[0].norm() == Approx(1.0));
+            REQUIRE(Psi[1].norm() == Approx(1.0));
             Psi.clear();
         }
 
         SECTION("default constructor plus deep copy") {
             OrbitalVector Psi;
             Psi = deep_copy(Phi);
-            REQUIRE( get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired) );
-            REQUIRE( get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha) );
-            REQUIRE( get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta) );
-            REQUIRE( Psi[0].norm() == Approx(1.0) );
-            REQUIRE( Psi[1].norm() == Approx(1.0) );
+            REQUIRE(get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired));
+            REQUIRE(get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha));
+            REQUIRE(get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta));
+            REQUIRE(Psi[0].norm() == Approx(1.0));
+            REQUIRE(Psi[1].norm() == Approx(1.0));
             free(Psi);
         }
 
         SECTION("assigment constructor") {
             OrbitalVector Psi = Phi;
-            REQUIRE( get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired) );
-            REQUIRE( get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha) );
-            REQUIRE( get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta) );
-            REQUIRE( Psi[0].norm() == Approx(1.0) );
-            REQUIRE( Psi[1].norm() == Approx(1.0) );
+            REQUIRE(get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired));
+            REQUIRE(get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha));
+            REQUIRE(get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta));
+            REQUIRE(Psi[0].norm() == Approx(1.0));
+            REQUIRE(Psi[1].norm() == Approx(1.0));
             Psi.clear();
         }
 
         SECTION("parameter copy") {
             OrbitalVector Psi;
             Psi = param_copy(Phi);
-            REQUIRE( get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired) );
-            REQUIRE( get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha) );
-            REQUIRE( get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta) );
-            REQUIRE( Psi[0].norm() < 0.0);
-            REQUIRE( Psi[1].norm() < 0.0);
+            REQUIRE(get_electron_number(Psi, SPIN::Paired) == get_electron_number(Phi, SPIN::Paired));
+            REQUIRE(get_electron_number(Psi, SPIN::Alpha) == get_electron_number(Phi, SPIN::Alpha));
+            REQUIRE(get_electron_number(Psi, SPIN::Beta) == get_electron_number(Phi, SPIN::Beta));
+            REQUIRE(Psi[0].norm() < 0.0);
+            REQUIRE(Psi[1].norm() < 0.0);
             Psi.clear();
         }
 
@@ -226,21 +224,21 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         Phi.push_back(SPIN::Paired);
         Phi.push_back(SPIN::Alpha);
 
-        REQUIRE( Phi[0].norm() == Approx(-1.0) );
-        REQUIRE( Phi[1].norm() == Approx(-1.0) );
+        REQUIRE(Phi[0].norm() == Approx(-1.0));
+        REQUIRE(Phi[1].norm() == Approx(-1.0));
 
         Phi[0].alloc(NUMBER::Real);
         Phi[1].alloc(NUMBER::Imag);
         mrcpp::project<3>(prec, Phi[0].real(), f1);
         mrcpp::project<3>(prec, Phi[1].imag(), f2);
 
-        REQUIRE( Phi[0].norm() > 0.0 );
-        REQUIRE( Phi[1].norm() > 0.0 );
+        REQUIRE(Phi[0].norm() > 0.0);
+        REQUIRE(Phi[1].norm() > 0.0);
 
         normalize(Phi);
 
-        REQUIRE( Phi[0].norm() == Approx(1.0) );
-        REQUIRE( Phi[1].norm() == Approx(1.0) );
+        REQUIRE(Phi[0].norm() == Approx(1.0));
+        REQUIRE(Phi[1].norm() == Approx(1.0));
 
         free(Phi);
     }
@@ -271,8 +269,8 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             for (int i = 0; i < nOrbs; i++) {
                 for (int j = 0; j < nOrbs; j++) {
                     ComplexDouble S_ij = orbital::dot(Phi[i], Phi[j]);
-                    if (i == j ) REQUIRE( std::abs(S_ij) == Approx(1.0) );
-                    if (i != j ) REQUIRE( std::abs(S_ij) < thrs );
+                    if (i == j) REQUIRE(std::abs(S_ij) == Approx(1.0));
+                    if (i != j) REQUIRE(std::abs(S_ij) < thrs);
                 }
             }
         }
@@ -291,7 +289,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             for (int i = 0; i < Psi.size(); i++) {
                 for (int j = 0; j < Phi.size(); j++) {
                     ComplexDouble S_ij = orbital::dot(Psi[i], Phi[j]);
-                    REQUIRE( std::abs(S_ij) < thrs );
+                    REQUIRE(std::abs(S_ij) < thrs);
                 }
             }
             free(Psi);
@@ -322,8 +320,8 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         double b1 = Phi_b[1].real().integrate();
 
         OrbitalVector Phi_c = add(1.0, Phi_a, -1.0, Phi_b);
-        REQUIRE( Phi_c[0].real().integrate() == Approx(a0 - b0) );
-        REQUIRE( Phi_c[1].real().integrate() == Approx(a1 - b1) );
+        REQUIRE(Phi_c[0].real().integrate() == Approx(a0 - b0));
+        REQUIRE(Phi_c[1].real().integrate() == Approx(a1 - b1));
 
         free(Phi_a);
         free(Phi_b);
@@ -334,8 +332,8 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         OrbitalVector Phi;
         Phi.push_back(SPIN::Paired);
         Phi.push_back(SPIN::Paired);
-        Phi[0].alloc();
-        Phi[1].alloc();
+        Phi[0].alloc(NUMBER::Total);
+        Phi[1].alloc(NUMBER::Total);
         mrcpp::project<3>(prec, Phi[0].real(), f1);
         mrcpp::project<3>(prec, Phi[0].imag(), f2);
         mrcpp::project<3>(prec, Phi[1].real(), f3);
@@ -347,18 +345,18 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         double theta = 0.5;
         int nOrbs = Phi.size();
         ComplexMatrix U(nOrbs, nOrbs);
-        U(0,0) =  cos(theta);
-        U(0,1) = -sin(theta);
-        U(1,0) =  sin(theta);
-        U(1,1) =  cos(theta);
+        U(0, 0) = cos(theta);
+        U(0, 1) = -sin(theta);
+        U(1, 0) = sin(theta);
+        U(1, 1) = cos(theta);
 
         SECTION("unitary transformation") {
             OrbitalVector Psi = rotate(U, Phi, prec);
             for (int i = 0; i < nOrbs; i++) {
                 for (int j = 0; j < nOrbs; j++) {
                     ComplexDouble S_ij = orbital::dot(Psi[i], Psi[j]);
-                    if (i == j ) REQUIRE( std::abs(S_ij) == Approx(1.0) );
-                    if (i != j ) REQUIRE( std::abs(S_ij) < thrs );
+                    if (i == j) REQUIRE(std::abs(S_ij) == Approx(1.0));
+                    if (i != j) REQUIRE(std::abs(S_ij) < thrs);
                 }
             }
             free(Psi);

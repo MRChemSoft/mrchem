@@ -30,7 +30,7 @@ XCPotential::XCPotential(mrdft::XCFunctional *F, OrbitalVector *Phi)
         , energy(0.0) {}
 
 /** @brief Prepare the operator for application
- * 
+ *
  * @param[in] prec Apply precision
  *
  * Sequence of steps required to compute the XC potentials:
@@ -173,9 +173,9 @@ Orbital XCPotential::apply(Orbital phi) {
     if (this->hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
     FunctionTree<3> &V = getPotential(phi.spin());
-    this->setReal(&V);
+    this->set(NUMBER::Real, &V);
     Orbital Vphi = QMPotential::apply(phi);
-    this->setReal(0);
+    this->set(NUMBER::Real, nullptr);
 
     return Vphi;
 }

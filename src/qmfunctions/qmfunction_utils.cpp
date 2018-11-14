@@ -26,13 +26,13 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "qmfunction_utils.h"
 #include "QMFunction.h"
+#include "qmfunction_utils.h"
 
-using mrcpp::Timer;
-using mrcpp::Printer;
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
+using mrcpp::Printer;
+using mrcpp::Timer;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -52,8 +52,8 @@ ComplexDouble qmfunction::dot(QMFunction bra, QMFunction ket) {
     double bra_conj = (bra.conjugate()) ? -1.0 : 1.0;
     double ket_conj = (ket.conjugate()) ? -1.0 : 1.0;
 
-    double real_part = rr + bra_conj*ket_conj*ii;
-    double imag_part = ket_conj*ri - bra_conj*ir;
+    double real_part = rr + bra_conj * ket_conj * ii;
+    double imag_part = ket_conj * ri - bra_conj * ir;
     return ComplexDouble(real_part, imag_part);
 }
 
@@ -72,7 +72,12 @@ void qmfunction::free(QMFunctionVector &vec) {
  * Recast into linear_combination.
  *
  */
-void qmfunction::add(QMFunction &out, ComplexDouble a, QMFunction inp_a, ComplexDouble b, QMFunction inp_b, double prec) {
+void qmfunction::add(QMFunction &out,
+                     ComplexDouble a,
+                     QMFunction inp_a,
+                     ComplexDouble b,
+                     QMFunction inp_b,
+                     double prec) {
     ComplexVector coefs(2);
     coefs(0) = a;
     coefs(1) = b;
@@ -109,11 +114,11 @@ void qmfunction::linear_combination(QMFunction &out, const ComplexVector &c, QMF
         bool cHasReal = (std::abs(c[i].real()) > thrs);
         bool cHasImag = (std::abs(c[i].imag()) > thrs);
 
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(      c[i].real(), &inp[i].real()));
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-sign*c[i].imag(), &inp[i].imag()));
+        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(c[i].real(), &inp[i].real()));
+        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-sign * c[i].imag(), &inp[i].imag()));
 
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(      c[i].imag(), &inp[i].real()));
-        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple( sign*c[i].real(), &inp[i].imag()));
+        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(c[i].imag(), &inp[i].real()));
+        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple(sign * c[i].real(), &inp[i].imag()));
     }
 
     if (rvec.size() > 0) {
@@ -162,7 +167,7 @@ void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp
     }
     if (inp_a.hasImag() and inp_b.hasImag()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        double coef = -1.0*conj_a*conj_b;
+        double coef = -1.0 * conj_a * conj_b;
         if (prec < 0.0) {
             mrcpp::build_grid(*tree, inp_a.imag());
             mrcpp::build_grid(*tree, inp_b.imag());
@@ -173,7 +178,7 @@ void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp
         vec.push_back(std::make_tuple(1.0, tree));
     }
     if (vec.size() == 1) {
-        out.setReal(&mrcpp::get_func(vec, 0));
+        out.set(NUMBER::Real, &mrcpp::get_func(vec, 0));
         mrcpp::clear(vec, false);
     }
     if (vec.size() == 2) {
@@ -223,7 +228,7 @@ void qmfunction::multiply_imag(QMFunction &out, QMFunction inp_a, QMFunction inp
         vec.push_back(std::make_tuple(1.0, tree));
     }
     if (vec.size() == 1) {
-        out.setImag(&mrcpp::get_func(vec, 0));
+        out.set(NUMBER::Imag, &mrcpp::get_func(vec, 0));
         mrcpp::clear(vec, false);
     }
     if (vec.size() == 2) {

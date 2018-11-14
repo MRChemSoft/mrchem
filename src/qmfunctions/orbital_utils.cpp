@@ -291,7 +291,7 @@ OrbitalVector orbital::load_orbitals(const std::string &file, int n_orbs) {
         if (phi_i.hasReal() or phi_i.hasImag()) {
             phi_i.setRankId(i % mpi::orb_size);
             Phi.push_back(phi_i);
-            if (i % mpi::orb_size != mpi::orb_rank) phi_i.clear(true);
+            if (i % mpi::orb_size != mpi::orb_rank) phi_i.free();
         } else {
             break;
         }

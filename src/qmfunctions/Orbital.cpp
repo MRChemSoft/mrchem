@@ -104,8 +104,8 @@ Orbital Orbital::paramCopy() const {
  * in place.
  */
 Orbital Orbital::deepCopy() {
-    Orbital out(*this); // Shallow copy (should copy all meta data)
-    out.clear();        // Remove *re and *im pointers
+    Orbital out(*this);              // Shallow copy (should copy all meta data)
+    out.set(NUMBER::Total, nullptr); // Clear *re and *im pointers
     if (this->hasReal()) {
         out.alloc(NUMBER::Real);
         mrcpp::copy_grid(out.real(), this->real());

@@ -38,7 +38,7 @@ namespace mrchem {
  * Shallow copy: meta data is copied along with the *re and *im pointers,
  * NO transfer of ownership.
  */
-Density& Density::operator=(const Density &dens) {
+Density &Density::operator=(const Density &dens) {
     if (this != &dens) {
         if (dens.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
         this->func_data = dens.func_data;
@@ -55,8 +55,8 @@ Density& Density::operator=(const Density &dens) {
  * in place.
  */
 Density Density::deepCopy() {
-    Density out(*this); // Shallow copy (should copy all meta data)
-    out.clear();        // Remove *re and *im pointers
+    Density out(*this);              // Shallow copy (should copy all meta data)
+    out.set(NUMBER::Total, nullptr); // Clear *re and *im pointers
     if (this->hasReal()) {
         out.alloc(NUMBER::Real);
         mrcpp::copy_grid(out.real(), this->real());
@@ -67,7 +67,7 @@ Density Density::deepCopy() {
         mrcpp::copy_grid(out.imag(), this->imag());
         mrcpp::copy_func(out.imag(), this->imag());
     }
-    return out;         // Return shallow copy
+    return out; // Return shallow copy
 }
 
 /** @brief Write density to disk
@@ -89,7 +89,7 @@ void Density::saveDensity(const std::string &file) {
     std::fstream f;
     f.open(metafile.str(), std::ios::out | std::ios::binary);
     if (not f.is_open()) MSG_ERROR("Unable to open file");
-    f.write((char *) &func_data, sizeof(FunctionData));
+    f.write((char *)&func_data, sizeof(FunctionData));
     f.close();
 
     //writing real part
@@ -128,7 +128,7 @@ void Density::loadDensity(const std::string &file) {
 
     std::fstream f;
     f.open(fmeta.str(), std::ios::in | std::ios::binary);
-    if (f.is_open()) f.read((char *) &func_data, sizeof(FunctionData));
+    if (f.is_open()) f.read((char *)&func_data, sizeof(FunctionData));
     f.close();
 
     //reading real part
@@ -149,4 +149,3 @@ void Density::loadDensity(const std::string &file) {
 }
 
 } //namespace mrchem
-

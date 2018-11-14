@@ -50,8 +50,8 @@ Orbital QMPotential::apply(Orbital inp) {
     Orbital out = inp.paramCopy();
     FunctionTree<3> *re = calcRealPart(inp, false);
     FunctionTree<3> *im = calcImagPart(inp, false);
-    out.setReal(re);
-    out.setImag(im);
+    out.set(NUMBER::Real, re);
+    out.set(NUMBER::Imag, im);
     timer.stop();
 
     int n = out.getNNodes();
@@ -75,8 +75,8 @@ Orbital QMPotential::dagger(Orbital inp) {
     Orbital out = inp.paramCopy();
     FunctionTree<3> *re = calcRealPart(inp, true);
     FunctionTree<3> *im = calcImagPart(inp, true);
-    out.setReal(re);
-    out.setImag(im);
+    out.set(NUMBER::Real, re);
+    out.set(NUMBER::Imag, im);
     timer.stop();
 
     int n = out.getNNodes();

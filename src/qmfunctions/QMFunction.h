@@ -44,8 +44,8 @@ public:
     QMFunction &operator=(const QMFunction &func);
     virtual ~QMFunction();
 
-    void alloc(int type = NUMBER::Total);
-    void clear(int type = NUMBER::Total);
+    void set(int type, mrcpp::FunctionTree<3> *func);
+    void alloc(int type);
     void free(int type = NUMBER::Total);
 
     int getNNodes(int type = NUMBER::Total) const;
@@ -68,9 +68,6 @@ public:
 
     const mrcpp::FunctionTree<3> &real() const { return *this->re; }
     const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
-
-    void setReal(mrcpp::FunctionTree<3> *real) { this->re = real; }
-    void setImag(mrcpp::FunctionTree<3> *imag) { this->im = imag; }
 
 protected:
     FunctionData func_data;

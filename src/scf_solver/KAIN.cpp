@@ -145,7 +145,6 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
 
     int m = 0;
     for (int n = 0; n < nOrbitals; n++) {
-        dPhi[n].clear();
         if (this->sepOrbitals) m = n;
         if (mpi::my_orb(Phi[n])) {
             std::vector<ComplexDouble> totCoefs;
@@ -196,7 +195,8 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
 
             // First entry is the last orbital update and should not be deallocated,
             // all other entries are locally allocated partSteps that must be deleted
-            totOrbs[0].clear();
+            totOrbs[0].set(NUMBER::Real, nullptr);
+            totOrbs[0].set(NUMBER::Imag, nullptr);
             qmfunction::free(totOrbs);
         }
     }
