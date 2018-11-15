@@ -231,6 +231,16 @@ void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #endif
 }
 
+/** Update a shared function after it has been changed by one of the MPI ranks. */
+void mpi::share_function(QMFunction &func, int src, int tag) {
+#ifdef HAVE_MPI
+    if (func.isShared()) {
+        if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, mpi::comm_share);
+        if (func.hasImag()) mrcpp::share_tree(func.imag(), src, 2 * tag, mpi::comm_share);
+    }
+#endif
+}
+
 /** @brief Add all mpi densities in rank zero density */
 void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
 #ifdef HAVE_MPI
@@ -269,26 +279,14 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
     if (comm_size == 1) return;
 
     Timer timer;
-    //Careful: the parenthesis around (comm == comm_sh_group) are necessary!!
-    if (rho.isShared() and not(comm == comm_sh_group)) {
-        //send to submasters and submaster share with their workers
-        if (share_rank == 0) {
-            //comm_sh_group is the submaster group (one per compute node)
-            broadcast_density(rho, comm_sh_group);
+    if (comm_rank == 0) {
+        for (int dst = 1; dst < comm_size; dst++) {
+            int tag = 4334 + dst;
+            mpi::send_function(rho, dst, tag, comm);
         }
-        int tag = 3141;
-        if (rho.hasReal()) mrcpp::share_tree(rho.real(), 0, tag, comm_share);
-        if (rho.hasImag()) mrcpp::share_tree(rho.imag(), 0, tag + 1, comm_share);
     } else {
-        if (comm_rank == 0) {
-            for (int dst = 1; dst < comm_size; dst++) {
-                int tag = 4444 + dst;
-                mpi::send_function(rho, dst, tag, comm);
-            }
-        } else {
-            int tag = 4444 + comm_rank;
-            mpi::recv_function(rho, 0, tag, comm);
-        }
+        int tag = 4334 + comm_rank;
+        mpi::recv_function(rho, 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();

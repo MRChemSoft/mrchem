@@ -50,6 +50,7 @@ void recv_orbital(Orbital &orb, int src, int tag);
 
 void send_function(QMFunction &func, int dst, int tag, MPI_Comm comm);
 void recv_function(QMFunction &func, int src, int tag, MPI_Comm comm);
+void share_function(QMFunction &func, int src, int tag);
 
 void reduce_density(double prec, Density &rho, MPI_Comm comm);
 void broadcast_density(Density &rho, MPI_Comm comm);

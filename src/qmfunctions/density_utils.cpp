@@ -106,31 +106,42 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     // For numerically identical results in MPI we must first add
     // up orbital contributions onto their union grid, and THEN
     // crop the resulting density tree to the desired precision
-    double inter_prec = (mpi::numerically_exact) ? -1.0 : add_prec;
+    double part_prec = (mpi::numerically_exact) ? -1.0 : add_prec;
 
-    Density rho_tmp(false);
-    rho_tmp.alloc(NUMBER::Real);
-    rho_tmp.real().setZero();
+    // Compute local density from own orbitals
+    Density rho_loc(false);
+    rho_loc.alloc(NUMBER::Real);
+    rho_loc.real().setZero();
     for (auto &phi_i : Phi) {
         if (mpi::my_orb(phi_i)) {
             Density rho_i = density::compute(mult_prec, phi_i, spin);
-            rho_tmp.add(1.0, rho_i);
-            rho_tmp.crop(inter_prec);
+            rho_loc.add(1.0, rho_i);
+            rho_loc.crop(part_prec);
             rho_i.free();
         }
     }
 
-    // Add up contributions into the MPI grand master
-    mpi::reduce_density(inter_prec, rho_tmp, mpi::comm_orb);
+    // Add up shared contributions into the grand master
+    mpi::reduce_density(part_prec, rho_loc, mpi::comm_orb);
     if (mpi::grand_master()) {
-        // MPI grand master copies the function into shared memory
-        if (mpi::numerically_exact) rho_tmp.crop(add_prec);
-        mrcpp::copy_grid(rho.real(), rho_tmp.real());
-        mrcpp::copy_func(rho.real(), rho_tmp.real());
+        // If numerically exact the grid is huge at this point
+        if (mpi::numerically_exact) rho_loc.crop(add_prec);
+        // MPI grand master copies the function into final memory
+        mrcpp::copy_grid(rho.real(), rho_loc.real());
+        mrcpp::copy_func(rho.real(), rho_loc.real());
     }
-    rho_tmp.free();
-    // MPI grand master distributes the full density
-    mpi::broadcast_density(rho, mpi::comm_orb);
+    rho_loc.free();
+
+    if (rho.isShared()) {
+        int tag = 3141;
+        // MPI grand master distributes to shared masters
+        mpi::broadcast_density(rho, mpi::comm_sh_group);
+        // MPI share masters distributes to their sharing ranks
+        mpi::share_function(rho, 0, tag);
+    } else {
+        // MPI grand master distributes to all ranks
+        mpi::broadcast_density(rho, mpi::comm_orb);
+    }
 }
 
 /** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><x_i|
