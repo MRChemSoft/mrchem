@@ -49,7 +49,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  ****************************************/
 
 namespace density {
-void compute(double prec, Density &rho, Orbital phi, int spin);
+Density compute(double prec, Orbital phi, int spin);
 double compute_occupation(Orbital &phi, int dens_spin);
 } // namespace density
 
@@ -60,33 +60,34 @@ double compute_occupation(Orbital &phi, int dens_spin);
  * slightly faster.
  *
  */
-void density::compute(double prec, Density &rho, Orbital phi, int spin) {
+Density density::compute(double prec, Orbital phi, int spin) {
     double occ = density::compute_occupation(phi, spin);
-    bool phi_contributes = (std::abs(occ) > mrcpp::MachineZero);
+    if (std::abs(occ) < mrcpp::MachineZero) return Density(false);
 
     FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal() and phi_contributes) {
+    if (phi.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*real_2, phi.real());
         mrcpp::square(prec, *real_2, phi.real());
         sum_vec.push_back(std::make_tuple(occ, real_2));
     }
-    if (phi.hasImag() and phi_contributes) {
+    if (phi.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
         mrcpp::copy_grid(*imag_2, phi.imag());
         mrcpp::square(prec, *imag_2, phi.imag());
         sum_vec.push_back(std::make_tuple(occ, imag_2));
     }
 
+    Density rho(false);
+    rho.alloc(NUMBER::Real);
     if (sum_vec.size() > 0) {
-        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
         mrcpp::build_grid(rho.real(), sum_vec);
         mrcpp::add(-1.0, rho.real(), sum_vec, 0);
         mrcpp::clear(sum_vec, true);
-    } else if (rho.hasReal()) {
+    } else {
         rho.real().setZero();
     }
-    if (rho.hasImag()) rho.imag().setZero();
+    return rho;
 }
 
 /** @brief Compute density as the sum of squared orbitals
@@ -100,7 +101,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     double mult_prec = prec;       // prec for rho_i = |phi_i|^2
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
 
-    if (rho.hasReal() or rho.hasImag()) MSG_FATAL("Density should be empty");
+    if (not rho.hasReal()) MSG_FATAL("Density not allocated");
 
     // For numerically identical results in MPI we must first add
     // up orbital contributions onto their union grid, and THEN
@@ -112,15 +113,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     rho_tmp.real().setZero();
     for (auto &phi_i : Phi) {
         if (mpi::my_orb(phi_i)) {
-            Density rho_i(false);
-            density::compute(mult_prec, rho_i, phi_i, spin);
+            Density rho_i = density::compute(mult_prec, phi_i, spin);
             rho_tmp.add(1.0, rho_i);
             rho_tmp.crop(inter_prec);
             rho_i.free();
         }
     }
-
-    rho.alloc(NUMBER::Real);
 
     // Add up contributions into the MPI grand master
     mpi::reduce_density(inter_prec, rho_tmp, mpi::comm_orb);

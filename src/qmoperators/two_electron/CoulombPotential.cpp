@@ -29,8 +29,7 @@ CoulombPotential::CoulombPotential(PoissonOperator *P, OrbitalVector *Phi)
         : QMPotential(1, mpi::share_coul_pot)
         , density(mpi::share_coul_dens)
         , orbitals(Phi)
-        , poisson(P) {
-}
+        , poisson(P) {}
 
 CoulombPotential::~CoulombPotential() {
     this->density.free();
@@ -76,6 +75,7 @@ void CoulombPotential::setupDensity(double prec) {
     Density &rho = this->density;
 
     Timer timer;
+    rho.alloc(NUMBER::Real);
     density::compute(prec, rho, Phi, DENSITY::Total);
     timer.stop();
     double t = timer.getWallTime();

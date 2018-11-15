@@ -977,10 +977,10 @@ void SCFDriver::setupInitialGrid(mrdft::XCFunctional &func, const Molecule &mol)
 }
 
 /** @brief helper routine to set up the correct parameters in the functional before using it
-     *
-     * param[in] order the requested order of the derivative (order=1 for SCF)
-     *
-     */
+ *
+ * param[in] order the requested order of the derivative (order=1 for SCF)
+ *
+ */
 
 mrdft::XCFunctional *SCFDriver::setupFunctional(int order) {
     mrdft::XCFunctional *fun = new mrdft::XCFunctional(*MRA, dft_spin);

@@ -59,6 +59,7 @@ TEST_CASE("Density", "[density]") {
             mrcpp::project(prec, Phi[1].real(), h_2);
             mrcpp::project(prec, Phi[2].imag(), h_3);
 
+            rho.alloc(NUMBER::Real);
             density::compute(prec, rho, Phi, DENSITY::Total);
             REQUIRE(rho.real().integrate() == Approx(4.0));
             orbital::free(Phi);
@@ -102,6 +103,11 @@ TEST_CASE("Density", "[density]") {
             mrcpp::project(prec, Phi[4].imag(), pz);
             mrcpp::project(prec, Phi[5].real(), s1);
             mrcpp::project(prec, Phi[6].real(), s2);
+
+            rho_t.alloc(NUMBER::Real);
+            rho_s.alloc(NUMBER::Real);
+            rho_a.alloc(NUMBER::Real);
+            rho_b.alloc(NUMBER::Real);
 
             density::compute(prec, rho_t, Phi, DENSITY::Total);
             density::compute(prec, rho_s, Phi, DENSITY::Spin);

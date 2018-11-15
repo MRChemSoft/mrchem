@@ -67,22 +67,20 @@ void XCPotential::setupDensity(double prec) {
     OrbitalVector &Phi = *this->orbitals;
     if (this->functional->isSpinSeparated()) {
         Timer time_a;
-        Density rho_a(false);
-        density::compute(prec, rho_a, Phi, DENSITY::Alpha);
         FunctionTree<3> &func_a = this->functional->getDensity(mrdft::DensityType::Alpha);
-        mrcpp::copy_grid(func_a, rho_a.real());
-        mrcpp::copy_func(func_a, rho_a.real());
-        rho_a.free();
+        Density rho_a(false);
+        rho_a.set(NUMBER::Real, &func_a);
+        density::compute(prec, rho_a, Phi, DENSITY::Alpha);
+        rho_a.set(NUMBER::Real, nullptr);
         time_a.stop();
         Printer::printTree(0, "XC alpha density", func_a.getNNodes(), time_a.getWallTime());
 
         Timer time_b;
-        Density rho_b(false);
-        density::compute(prec, rho_b, Phi, DENSITY::Beta);
         FunctionTree<3> &func_b = this->functional->getDensity(mrdft::DensityType::Beta);
-        mrcpp::copy_grid(func_b, rho_b.real());
-        mrcpp::copy_func(func_b, rho_b.real());
-        rho_b.free();
+        Density rho_b(false);
+        rho_b.set(NUMBER::Real, &func_b);
+        density::compute(prec, rho_b, Phi, DENSITY::Beta);
+        rho_b.set(NUMBER::Real, nullptr);
         time_b.stop();
         Printer::printTree(0, "XC beta density", func_b.getNNodes(), time_b.getWallTime());
 
@@ -91,12 +89,11 @@ void XCPotential::setupDensity(double prec) {
         while (mrcpp::refine_grid(func_b, func_a)) {}
     } else {
         Timer time_t;
-        Density rho_t(false);
-        density::compute(prec, rho_t, Phi, DENSITY::Total);
         FunctionTree<3> &func_t = this->functional->getDensity(mrdft::DensityType::Total);
-        mrcpp::copy_grid(func_t, rho_t.real());
-        mrcpp::copy_func(func_t, rho_t.real());
-        rho_t.free();
+        Density rho_t(false);
+        rho_t.set(NUMBER::Real, &func_t);
+        density::compute(prec, rho_t, Phi, DENSITY::Total);
+        rho_t.set(NUMBER::Real, nullptr);
         time_t.stop();
         Printer::printTree(0, "XC total density", func_t.getNNodes(), time_t.getWallTime());
     }
