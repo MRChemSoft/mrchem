@@ -73,7 +73,7 @@ OrbitalVector initial_guess::gto::setup(double prec,
     int Np = Nd/2;                      //paired orbitals
 
     // Project GTO expansion
-    return initial_guess::gto::project_mo(prec, bas_file, mo_file, SPIN::Paired, 2, Np);
+    return initial_guess::gto::project_mo(prec, bas_file, mo_file, SPIN::Paired, Np);
 }
 
 /** @brief Produce an initial guess of orbitals
@@ -107,8 +107,8 @@ OrbitalVector initial_guess::gto::setup(double prec,
     int Nb = Nd/2;                      //beta orbitals
 
     // Project orbitals
-    OrbitalVector Phi_a = initial_guess::gto::project_mo(prec, bas_file, moa_file, SPIN::Alpha, 1, Na);
-    OrbitalVector Phi_b = initial_guess::gto::project_mo(prec, bas_file, mob_file, SPIN::Beta, 1, Nb);
+    OrbitalVector Phi_a = initial_guess::gto::project_mo(prec, bas_file, moa_file, SPIN::Alpha, Na);
+    OrbitalVector Phi_b = initial_guess::gto::project_mo(prec, bas_file, mob_file, SPIN::Beta, Nb);
 
     // Collect orbitals into one vector
     return orbital::adjoin(Phi_a, Phi_b);
@@ -132,7 +132,6 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
                                              const std::string &bas_file,
                                              const std::string &mo_file,
                                              int spin,
-                                             int occ,
                                              int N) {
     Printer::printHeader(0, "Setting up Gaussian-type MOs");
     println(0, "    n  Spin  Occ                           SquareNorm");
@@ -149,18 +148,19 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
     if (MO.cols() < N) MSG_FATAL("Size mismatch");
 
     OrbitalVector Phi;
+    for (int i = 0; i < N; i++) Phi.push_back(spin);
+    mpi::distribute(Phi);
+
     for (int i = 0; i < N; i++) {
-        Orbital phi_i(spin, occ, i%mpi::orb_size);
-        if (mpi::my_orb(phi_i)) {
-            phi_i.alloc(NUMBER::Real);
+        if (mpi::my_orb(Phi[i])) {
+            Phi[i].alloc(NUMBER::Real);
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
-            mrcpp::project(prec, phi_i.real(), mo_i);
+            mrcpp::project(prec, Phi[i].real(), mo_i);
         }
         printout(0, std::setw(5)  << i);
-        printout(0, std::setw(5)  << phi_i.printSpin());
-        printout(0, std::setw(5)  << phi_i.occ());
-        printout(0, std::setw(44) << phi_i.norm() << std::endl);
-        Phi.push_back(phi_i);
+        printout(0, std::setw(5)  << Phi[i].printSpin());
+        printout(0, std::setw(5)  << Phi[i].occ());
+        printout(0, std::setw(44) << Phi[i].norm() << std::endl);
     }
     mpi::barrier(mpi::comm_orb);
     timer.stop();
@@ -185,7 +185,6 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
 OrbitalVector initial_guess::gto::project_ao(double prec,
                                              const std::string &bas_file,
                                              int spin,
-                                             int occ,
                                              int N) {
     Printer::printHeader(0, "Setting up Gaussian-type AOs");
     println(0, "    n  Spin  Occ                           SquareNorm");
@@ -199,7 +198,7 @@ OrbitalVector initial_guess::gto::project_ao(double prec,
 
     OrbitalVector Phi;
     for (int i = 0; i < N; i++) {
-        Orbital phi_i(spin, occ);
+        Orbital phi_i(spin);
         phi_i.alloc(NUMBER::Real);
         GaussExp<3> ao_i = gto_exp.getAO(i);
         mrcpp::project(prec, phi_i.real(), ao_i);

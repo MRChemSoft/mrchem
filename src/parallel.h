@@ -42,6 +42,7 @@ bool grand_master();
 bool share_master();
 bool my_orb(const Orbital &orb);
 bool my_unique_orb(const Orbital &orb);
+void distribute(OrbitalVector &Phi);
 void free_foreign(OrbitalVector &Phi);
 OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 

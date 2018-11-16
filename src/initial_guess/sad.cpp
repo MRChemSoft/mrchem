@@ -180,16 +180,9 @@ ComplexMatrix initial_guess::sad::diagonalize_fock(RankZeroTensorOperator &F, Or
 
 OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
     Timer t;
-    int occ = 0;
-    if (spin == SPIN::Paired) occ = 2;
-    if (spin == SPIN::Alpha) occ = 1;
-    if (spin == SPIN::Beta) occ = 1;
-
     OrbitalVector Psi;
-    for (int i = 0; i < N; i++) {
-        Orbital psi_i(spin, occ, i % mpi::orb_size);
-        Psi.push_back(psi_i);
-    }
+    for (int i = 0; i < N; i++) Psi.push_back(spin);
+    mpi::distribute(Psi);
 
     OrbitalIterator iter(Phi);
     while (iter.next()) {

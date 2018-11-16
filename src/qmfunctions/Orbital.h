@@ -68,7 +68,7 @@ public:
 
     void setOcc(int occ) { this->orb_data.occ = occ; }
     void setSpin(int spin) { this->orb_data.spin = spin; }
-    void setRankId(int rank) { this->orb_data.rank_id = rank; }
+    void setRankID(int rank) { this->orb_data.rank_id = rank; }
     void setError(double error) { this->orb_data.error = error; }
 
     int occ() const { return this->orb_data.occ; }

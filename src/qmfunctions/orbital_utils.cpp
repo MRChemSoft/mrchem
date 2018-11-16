@@ -287,11 +287,11 @@ OrbitalVector orbital::load_orbitals(const std::string &file, int n_orbs) {
         std::stringstream orbname;
         orbname << file << "_" << i;
         phi_i.loadOrbital(orbname.str());
-        phi_i.setRankId(mpi::orb_rank);
+        phi_i.setRankID(mpi::orb_rank);
         if (phi_i.hasReal() or phi_i.hasImag()) {
-            phi_i.setRankId(i % mpi::orb_size);
+            phi_i.setRankID(i % mpi::orb_size);
             Phi.push_back(phi_i);
-            if (i % mpi::orb_size != mpi::orb_rank) phi_i.free();
+            if (not mpi::my_orb(phi_i)) phi_i.free();
         } else {
             break;
         }

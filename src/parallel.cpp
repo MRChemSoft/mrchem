@@ -25,7 +25,7 @@ bool share_coul_dens = false;
 bool share_coul_pot = false;
 bool share_xc_dens = false;
 bool share_xc_pot = false;
-int shared_memory_size = 0;
+int shared_memory_size = 1000;
 
 int orb_rank = 0;
 int orb_size = 1;
@@ -111,6 +111,14 @@ bool mpi::my_orb(const Orbital &orb) {
 /** @brief Test if orbital belongs to this MPI rank */
 bool mpi::my_unique_orb(const Orbital &orb) {
     return (orb.rankID() == mpi::orb_rank) ? true : false;
+}
+
+/** @brief Distribute orbitals in vector round robin. Orbitals should be empty.*/
+void mpi::distribute(OrbitalVector &Phi) {
+    for (int i = 0; i < Phi.size(); i++) {
+        if (Phi[i].hasReal() or Phi[i].hasImag()) MSG_FATAL("Orbital not empty");
+        Phi[i].setRankID(i % mpi::orb_size);
+    }
 }
 
 /** @brief Clear all orbitals not belonging to this MPI rank */
