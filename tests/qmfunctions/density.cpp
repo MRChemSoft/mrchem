@@ -27,6 +27,7 @@
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "mrchem.h"
+#include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
@@ -41,86 +42,80 @@ TEST_CASE("Density", "[density]") {
     const double thrs = 1.0e-12;
 
     SECTION("calc density") {
-        Density rho(false);
+        OrbitalVector Phi;
+        for (int i = 0; i < 5; i++) Phi.push_back(SPIN::Alpha);
+        for (int i = 0; i < 2; i++) Phi.push_back(SPIN::Beta);
+        mpi::distribute(Phi);
 
-        SECTION("orbital vector") {
-            HydrogenFunction h_1(2, 1, 0);
-            HydrogenFunction h_2(2, 1, 1);
-            HydrogenFunction h_3(2, 1, 2);
+        HydrogenFunction s1(1, 0, 0);
+        HydrogenFunction s2(2, 0, 0);
+        HydrogenFunction px(2, 1, 0);
+        HydrogenFunction py(2, 1, 1);
+        HydrogenFunction pz(2, 1, 2);
 
-            OrbitalVector Phi;
-            Phi.push_back(SPIN::Alpha);
-            Phi.push_back(SPIN::Paired);
-            Phi.push_back(SPIN::Alpha);
+        if (mpi::my_orb(Phi[0])) {
             Phi[0].alloc(NUMBER::Real);
-            Phi[1].alloc(NUMBER::Real);
-            Phi[2].alloc(NUMBER::Imag);
-            mrcpp::project(prec, Phi[0].real(), h_1);
-            mrcpp::project(prec, Phi[1].real(), h_2);
-            mrcpp::project(prec, Phi[2].imag(), h_3);
-
-            rho.alloc(NUMBER::Real);
-            density::compute(prec, rho, Phi, DENSITY::Total);
-            REQUIRE(rho.real().integrate() == Approx(4.0));
-            orbital::free(Phi);
-        }
-    }
-
-    SECTION("calc spin density") {
-        Density rho_t(false);
-        Density rho_s(false);
-        Density rho_a(false);
-        Density rho_b(false);
-
-        SECTION("orbital vector") {
-            HydrogenFunction s1(1, 0, 0);
-            HydrogenFunction s2(2, 0, 0);
-            HydrogenFunction px(2, 1, 0);
-            HydrogenFunction py(2, 1, 1);
-            HydrogenFunction pz(2, 1, 2);
-
-            OrbitalVector Phi;
-            Phi.push_back(SPIN::Alpha);
-            Phi.push_back(SPIN::Alpha);
-            Phi.push_back(SPIN::Alpha);
-            Phi.push_back(SPIN::Alpha);
-            Phi.push_back(SPIN::Alpha);
-            Phi.push_back(SPIN::Beta);
-            Phi.push_back(SPIN::Beta);
-
-            Phi[0].alloc(NUMBER::Real);
-            Phi[1].alloc(NUMBER::Real);
-            Phi[2].alloc(NUMBER::Imag);
-            Phi[3].alloc(NUMBER::Imag);
-            Phi[4].alloc(NUMBER::Imag);
-            Phi[5].alloc(NUMBER::Real);
-            Phi[6].alloc(NUMBER::Real);
-
             mrcpp::project(prec, Phi[0].real(), s1);
+        }
+        if (mpi::my_orb(Phi[1])) {
+            Phi[1].alloc(NUMBER::Real);
             mrcpp::project(prec, Phi[1].real(), s2);
+        }
+        if (mpi::my_orb(Phi[2])) {
+            Phi[2].alloc(NUMBER::Imag);
             mrcpp::project(prec, Phi[2].imag(), px);
+        }
+        if (mpi::my_orb(Phi[3])) {
+            Phi[3].alloc(NUMBER::Imag);
             mrcpp::project(prec, Phi[3].imag(), py);
+        }
+        if (mpi::my_orb(Phi[4])) {
+            Phi[4].alloc(NUMBER::Imag);
             mrcpp::project(prec, Phi[4].imag(), pz);
+        }
+        if (mpi::my_orb(Phi[5])) {
+            Phi[5].alloc(NUMBER::Real);
             mrcpp::project(prec, Phi[5].real(), s1);
+        }
+        if (mpi::my_orb(Phi[6])) {
+            Phi[6].alloc(NUMBER::Real);
             mrcpp::project(prec, Phi[6].real(), s2);
+        }
+
+        SECTION("non-shared memory total/spin density") {
+            Density rho_t(false);
+            Density rho_s(false);
 
             rho_t.alloc(NUMBER::Real);
             rho_s.alloc(NUMBER::Real);
-            rho_a.alloc(NUMBER::Real);
-            rho_b.alloc(NUMBER::Real);
 
             density::compute(prec, rho_t, Phi, DENSITY::Total);
             density::compute(prec, rho_s, Phi, DENSITY::Spin);
-            density::compute(prec, rho_a, Phi, DENSITY::Alpha);
-            density::compute(prec, rho_b, Phi, DENSITY::Beta);
 
             REQUIRE(rho_t.real().integrate() == Approx(7.0));
             REQUIRE(rho_s.real().integrate() == Approx(3.0));
+
+            rho_t.free();
+            rho_s.free();
+        }
+
+        SECTION("shared memory alpha/beta density") {
+            Density rho_a(true);
+            Density rho_b(true);
+
+            rho_a.alloc(NUMBER::Real);
+            rho_b.alloc(NUMBER::Real);
+
+            density::compute(prec, rho_a, Phi, DENSITY::Alpha);
+            density::compute(prec, rho_b, Phi, DENSITY::Beta);
+
             REQUIRE(rho_a.real().integrate() == Approx(5.0));
             REQUIRE(rho_b.real().integrate() == Approx(2.0));
 
-            orbital::free(Phi);
+            rho_a.free();
+            rho_b.free();
         }
+        orbital::free(Phi);
     }
 }
 
