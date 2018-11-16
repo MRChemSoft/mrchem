@@ -54,6 +54,7 @@ public:
 
     double norm() const;
     double squaredNorm() const;
+    ComplexDouble integrate() const;
 
     void add(ComplexDouble c, QMFunction inp);
     void rescale(ComplexDouble c);

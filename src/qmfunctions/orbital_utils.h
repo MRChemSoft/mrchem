@@ -85,6 +85,7 @@ IntVector get_occupancies(const OrbitalVector &Phi);
 DoubleVector get_errors(const OrbitalVector &Phi);
 DoubleVector get_norms(const OrbitalVector &Phi);
 DoubleVector get_squared_norms(const OrbitalVector &Phi);
+ComplexVector get_integrals(const OrbitalVector &Phi);
 
 void print(const OrbitalVector &Phi);
 

@@ -123,6 +123,14 @@ int QMFunction::getNNodes(int type) const {
     return nNodes;
 }
 
+ComplexDouble QMFunction::integrate() const {
+    double int_r = 0.0;
+    double int_i = 0.0;
+    if (this->hasReal()) int_r = this->real().integrate();
+    if (this->hasImag()) int_i = this->imag().integrate();
+    return ComplexDouble(int_r, int_i);
+}
+
 /** @brief Returns the norm of the orbital */
 double QMFunction::norm() const {
     double norm = squaredNorm();

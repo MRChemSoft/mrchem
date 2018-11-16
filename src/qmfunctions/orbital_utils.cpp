@@ -733,6 +733,17 @@ DoubleVector orbital::get_norms(const OrbitalVector &Phi) {
     return norms;
 }
 
+/** @brief Returns a vector containing the orbital integrals */
+ComplexVector orbital::get_integrals(const OrbitalVector &Phi) {
+    int nOrbs = Phi.size();
+    ComplexVector ints = DoubleVector::Zero(nOrbs);
+    for (int i = 0; i < nOrbs; i++) {
+        if (mpi::my_orb(Phi[i])) ints(i) = Phi[i].integrate();
+    }
+    mpi::allreduce_vector(ints, mpi::comm_orb);
+    return ints;
+}
+
 void orbital::print(const OrbitalVector &Phi) {
     Printer::setScientific();
     printout(0, "============================================================\n");
