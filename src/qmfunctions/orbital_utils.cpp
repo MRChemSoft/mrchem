@@ -718,6 +718,7 @@ DoubleVector orbital::get_squared_norms(const OrbitalVector &Phi) {
     for (int i = 0; i < nOrbs; i++) {
         if (mpi::my_orb(Phi[i])) norms(i) = Phi[i].squaredNorm();
     }
+    mpi::allreduce_vector(norms, mpi::comm_orb);
     return norms;
 }
 
@@ -728,6 +729,7 @@ DoubleVector orbital::get_norms(const OrbitalVector &Phi) {
     for (int i = 0; i < nOrbs; i++) {
         if (mpi::my_orb(Phi[i])) norms(i) = Phi[i].norm();
     }
+    mpi::allreduce_vector(norms, mpi::comm_orb);
     return norms;
 }
 
