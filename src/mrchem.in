@@ -198,7 +198,7 @@ def setup_keywords(input_dir):
     # yapf: enable
     top.add_sect(molecule)
 
-    wavefunction = getkw.Section('WaveFunction')
+    wavefunction = getkw.Section('WaveFunction', callback=verify_wf)
     # yapf: disable
     wavefunction.add_kw('restricted',   'BOOL', True)
     wavefunction.add_kw('method',       'STR', 'HF')
@@ -508,6 +508,39 @@ def verify_hfcc(hfcc):
     if not hfcc.get('nucleus_k').is_set():
         hfcc['nucleus_k'].get().append(-1)
 
+def verify_wf(wf):
+    valid_methods = {
+        'Core',
+        'Hartree',
+        'HF',
+        'DFT'
+    }
+    default_functionals = {
+        #functional:exact_exchange
+        'LDA':0.00,
+        'PBE':0.00,
+        'PBE0':0.25,
+        'BLYP':0.0,
+        'B3LYP':0.20,
+        'BP86':0.0,
+        'PW91':0.0
+    }
+    method = wf['method'][0]
+    if method in default_functionals:
+        dft = topsect.fetch_sect('DFT')
+        exx = default_functionals[method]
+        if dft['functionals'].is_set():
+            print('Cannot overwrite default functional: ' + method)
+            exit()
+        if dft['exact_exchange'].is_set():
+            print('Cannot overwrite default exact exchange: ' + str(exx))
+            exit()
+        wf['method'][0] = 'DFT'
+        dft['functionals'].get().append(method + ' 1.00')
+        dft['exact_exchange'][0] = exx
+    elif not (method in valid_methods):
+        print('Invalid WaveFunction method: ' + method)
+        exit()
 
 def verify_dft(dft):
     if not dft['spin'].is_set():
