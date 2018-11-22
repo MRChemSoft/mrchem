@@ -28,6 +28,7 @@ public:
 protected:
   void clear();
 
+//start with a cavity initialized with a geometry and a standard gaussian rho with A*exp(-B*r^2) with A = (B/pi)^(3/2) include the orbitals later
 
 private:
 
