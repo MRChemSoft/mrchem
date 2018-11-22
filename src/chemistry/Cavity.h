@@ -41,13 +41,14 @@ public:
   double evalf(const std::array<double, 3> &r) const {return evalf(r.data());};
 
 protected:
-  std::vector<std::array<double, 3>> pos;
-  std::vector<double> R;
-  double d;
-  double e_i = 1;
-  double e_o = 2;
-  bool b = false;
-  bool is_linear = false;
-};
+    double e_i = 1;
+    double e_o = 2;
+    bool is_eps = false;
+    bool is_linear = false;
+    std::vector<mrcpp::Coord<3>> pos;
+    std::vector<double> R;
+    double d;
+    double dcoeff;
+
 
 } // namespace mrchem

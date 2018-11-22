@@ -1,28 +1,39 @@
 #include "chemistry/Cavity.h"
-#include "FunctionTree.h"
-#include <vector>
-#include <array>
+#include "qmoperators/one_electron/QMPotential.h"
+
+
 using namespace mrcpp;
 
 namespace mrchem{
 
-class ReactionPotential{
+
+//start with a cavity initialized with a geometry and a standard gaussian rho with A*exp(-B*r^2) with A = (B/pi)^(3/2) include the orbitals later
+
+class ReactionPotential final : public QMPotential{
 public:
-  ReactionPotential(const FunctionTree<3> &rho_tree, FunctionTree<3> cavity_tree, FunctionTree<3> epsilon_tree); //initialize in default
-  void rho_eff();
-  void gamma();
-  
+  ReactionPotential(Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D);
+  ~ReactionPotential();
+
+
 protected:
-  FunctionTree<3> rho_tree, cavity_tree, epsilon_tree, rho_eff_tree, gamma_tree;
-  bool is_lin = false;
-  
-  
+  Cavity *Cavity;  
 
-
+  mrcpp::PoissonOperator *poisson;
+  mrcpp::ABGVOperator<3> *derivative;
+  
+  mrcpp::FunctionTree<3> *Cavity_tree;
+  mrcpp::FunctionTree<3> *inv_eps_tree;
+  mrcpp::FunctionTree<3> *rho_eff_tree;
+  mrcpp::FunctionTree<3> *gamma_tree;
+  mrcpp::FunctionTree<3> *V_n_tree;
+  mrcpp::FunctionTreeVector<3> *d_Cavity;
+  
+  void setup(double prec);
+  
+  void setup_eps(double prec);
+  void calc_rho_eff(double prec);
+  void calc_gamma(double prec);
 };
-
-
-
 
 
 
