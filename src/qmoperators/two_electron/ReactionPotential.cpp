@@ -62,9 +62,6 @@ void ReactionPotential::setRhoEff(QMFunction const &inv_eps_func,
     qmfunction::add(tmp1, 1.0, ones, -1.0, cavity_func, -1.0);
     qmfunction::multiply(tmp2, tmp1, inv_eps_func, this->apply_prec);
     qmfunction::multiply(rho_eff_func, rho_tot, tmp2, this->apply_prec);
-    ones.free(NUMBER::Real);
-    tmp1.free(NUMBER::Real);
-    tmp2.free(NUMBER::Real);
 }
 
 void ReactionPotential::setGamma(QMFunction const &inv_eps_func,
@@ -85,8 +82,6 @@ void ReactionPotential::setGamma(QMFunction const &inv_eps_func,
     qmfunction::multiply(gamma_func, temp_func2, inv_eps_func, this->apply_prec);
 
     gamma_func.rescale(1.0 / (4.0 * MATHCONST::pi));
-    temp_func1.free(NUMBER::Real);
-    temp_func2.free(NUMBER::Real);
     mrcpp::clear(d_V, true);
 }
 
@@ -123,34 +118,19 @@ void ReactionPotential::setup(double prec) {
     if (not temp.hasReal()) {
         QMFunction tmp_numerator;
         QMFunction tmp_poisson;
-        QMFunction V_r_0;
         mrcpp::FunctionTreeVector<3> dV_0 = mrcpp::gradient(*derivative, V_0_func.real());
         tmp_numerator.alloc(NUMBER::Real);
         tmp_poisson.alloc(NUMBER::Real);
-        V_r_0.alloc(NUMBER::Real);
+        temp.alloc(NUMBER::Real);
 
         mrcpp::dot(this->apply_prec, tmp_numerator.real(), dV_0, d_cavity);
         qmfunction::multiply(gamma_func, tmp_numerator, inv_eps_func, this->apply_prec);
         gamma_func.rescale(1.0 / (4.0 * MATHCONST::pi));
         qmfunction::add(tmp_poisson, 1.0, gamma_func, 1.0, rho_eff_func, -1.0);
-        mrcpp::apply(this->apply_prec, V_r_0.real(), *poisson, tmp_poisson.real());
-        temp = V_r_0;
+        mrcpp::apply(this->apply_prec, temp.real(), *poisson, tmp_poisson.real());
 
-        tmp_numerator.free(NUMBER::Real);
-        tmp_poisson.free(NUMBER::Real);
-        V_r_0.free(NUMBER::Real);
+
         mrcpp::clear(dV_0, true);
-
-        /*for (double z = -5.00; z < 5; z += 0.01) {
-            std::cout << z
-            << '\t' << gamma_func.real().evalf({0.0, 0.0, z})
-            << '\t' << inv_eps_func.real().evalf({0.0, 0.0, z})
-            //<< '\t' << tmp_numerator.real().evalf({0.0, 0.0, z})
-            << '\t' << mrcpp::get_func(d_cavity, 0).evalf({0.0, 0.0, z})
-            << '\t' << mrcpp::get_func(d_cavity, 1).evalf({0.0, 0.0, z})
-            << '\t' << mrcpp::get_func(d_cavity, 2).evalf({0.0, 0.0, z})
-            << std::endl;
-        }*/
     }
 
     auto error = 1.00;
@@ -179,18 +159,7 @@ void ReactionPotential::setup(double prec) {
         if (error >= 100000.00) break;
     }
 
-    /*V_0_func.alloc(NUMBER::Real);
-    mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
-
-    qmfunction::add(*this, 1.0, V_func, -1.0, V_0_func, -1.0);*/
-
     mrcpp::clear(d_cavity, true);
-    gamma_func.free(NUMBER::Real);
-    cavity_func.free(NUMBER::Real);
-    inv_eps_func.free(NUMBER::Real);
-    rho_eff_func.free(NUMBER::Real);
-    V_0_func.free(NUMBER::Real);
-    V_func.free(NUMBER::Real);
 }
 
 double &ReactionPotential::getTotalEnergy() {
@@ -206,6 +175,7 @@ double &ReactionPotential::getElectronicEnergy() {
     electronicEnergy = temp_prod_func.integrate().real();
     return electronicEnergy;
 }
+
 
 double &ReactionPotential::getNuclearEnergy() {
     QMFunction temp_prod_func;
