@@ -50,5 +50,5 @@ protected:
     double d;
     double dcoeff;
 
-
+};
 } // namespace mrchem
