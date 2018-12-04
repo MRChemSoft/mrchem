@@ -39,6 +39,8 @@ public:
     double evalf(const mrcpp::Coord<3> &r) const override;
     void eval_epsilon(bool argument, bool implement);
 
+    double dcoeff;
+
 protected:
     double e_i = 1;
     double e_o = 2;
@@ -47,7 +49,6 @@ protected:
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
     double d;
-    double dcoeff;
 
 };
 } // namespace mrchem

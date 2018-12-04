@@ -9,14 +9,14 @@ namespace mrchem{
 
 //start with a cavity initialized with a geometry and a standard gaussian rho with A*exp(-B*r^2) with A = (B/pi)^(3/2) include the orbitals later
 
-class ReactionPotential final : public QMPotential{
+class ReactionPotential : public QMPotential{
 public:
-  ReactionPotential(Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D);
+  ReactionPotential(mrchem::Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D);
   ~ReactionPotential();
 
 
 protected:
-  Cavity *Cavity;  
+  mrchem::Cavity *cavity;  
 
   mrcpp::PoissonOperator *poisson;
   mrcpp::ABGVOperator<3> *derivative;
@@ -29,10 +29,10 @@ protected:
   mrcpp::FunctionTreeVector<3> *d_Cavity;
   
   void setup(double prec);
-  
+ /* 
   void setup_eps(double prec);
   void calc_rho_eff(double prec);
-  void calc_gamma(double prec);
+  void calc_gamma(double prec);*/
 };
 
 

@@ -2,7 +2,7 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Gaussians"
 
-#include "Cavity.h"
+#include "chemistry/Cavity.h"
 #include "ReactionPotential.h"
 
 using mrcpp::FunctionTree;
@@ -12,13 +12,14 @@ using mrcpp::ABGVOperator;
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-ReactionPotential::ReactionPotential(Cavity *cav,  PoissonOperator *P, ABGVOperator<3> *D)
-  	: Cavity(cav),
-	  poisson(P),
-	  derivative(D) {}
+ReactionPotential::ReactionPotential(mrchem::Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D){
+    this->poisson = P;
+    this->derivative = D;
+    this->cavity = cav;
+}
 
 //  ~ReactionPotential();
-
+/*
 void ReactionPotential::setup_eps(double prec){
   Cavity.eval_epsilon(false, Cavity.is_linear);
   mrcpp::project(prec, Cavity_tree, Cavity.evalf);
@@ -80,12 +81,12 @@ void ReactionPotential::calc_gamma(double prec){
   FunctionTree<3> *rho_eff_tree;
   FunctionTree<3> *gamma_tree;
   FunctionTree<3> *V_n_tree;
-  FunctionTreeVector<3> *d_Cavity;
+  FunctionTreeVector<3> *d_Cavity;*/
 
-  void setup(double prec);
+  void setup(double prec){}
 
-  void calc_rho_eff(double prec);
-  void calc_gamma(double prec);
+/*  void calc_rho_eff(double prec);
+  void calc_gamma(double prec);*/
 
 
 
