@@ -32,13 +32,12 @@ using namespace mrcpp;
 namespace mrchem {
 
 
-class Cavity : public mrcpp::RepresentableFunction<3> {
+class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
-  Cavity(std::vector<std::array<double, 3>> coord, std::vector<double> R, double slope);
-  Cavity(std::vector<std::array<double, 3>> coord, std::vector<double> R, double slope, double e_i, double e_o);
-  void eval_epsilon(bool argument, bool implement);
-  double evalf(const double *r) const override;
-  double evalf(const std::array<double, 3> &r) const {return evalf(r.data());};
+    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope, double e_i, double e_o);
+    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
+    double evalf(const mrcpp::Coord<3> &r) const override;
+    void eval_epsilon(bool argument, bool implement);
 
 protected:
     double e_i = 1;
