@@ -13,7 +13,8 @@ using mrcpp::ABGVOperator;
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-ReactionPotential::ReactionPotential(mrchem::Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D){
+ReactionPotential::ReactionPotential(Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D) 
+    : QMPotential(1, false) {
     this->poisson = P;
     this->derivative = D;
     this->cavity = cav;

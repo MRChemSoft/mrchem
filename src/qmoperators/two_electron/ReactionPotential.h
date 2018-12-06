@@ -11,7 +11,7 @@ namespace mrchem{
 
 class ReactionPotential : public QMPotential{
 public:
-  ReactionPotential(mrchem::Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D);
+  ReactionPotential(Cavity *cav,  mrcpp::PoissonOperator *P, mrcpp::ABGVOperator<3> *D);
   ~ReactionPotential();
 
 
