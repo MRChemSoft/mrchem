@@ -2,8 +2,9 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Gaussians"
 
-#include "chemistry/Cavity.h"
 #include "ReactionPotential.h"
+#include "chemistry/Cavity.h"
+
 
 using mrcpp::FunctionTree;
 using mrcpp::PoissonOperator;

@@ -23,6 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#pragma once
+
 #include "MRCPP/MWFunctions"
 #include <array>
 #include <vector>
