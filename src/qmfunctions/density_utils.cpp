@@ -66,28 +66,30 @@ Density density::compute(double prec, Orbital phi, int spin) {
     double occ = density::compute_occupation(phi, spin);
     if (std::abs(occ) < mrcpp::MachineZero) return Density(false);
 
+    ComplexFunction &phi_func = phi.function();
+
     FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal()) {
+    if (phi_func.hasReal()) {
         FunctionTree<3> *real_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*real_2, phi.real());
-        mrcpp::square(prec, *real_2, phi.real());
+        mrcpp::copy_grid(*real_2, phi_func.real());
+        mrcpp::square(prec, *real_2, phi_func.real());
         sum_vec.push_back(std::make_tuple(occ, real_2));
     }
-    if (phi.hasImag()) {
+    if (phi_func.hasImag()) {
         FunctionTree<3> *imag_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*imag_2, phi.imag());
-        mrcpp::square(prec, *imag_2, phi.imag());
+        mrcpp::copy_grid(*imag_2, phi_func.imag());
+        mrcpp::square(prec, *imag_2, phi_func.imag());
         sum_vec.push_back(std::make_tuple(occ, imag_2));
     }
 
     Density rho(false);
-    rho.alloc(NUMBER::Real);
+    rho.function().alloc(NUMBER::Real);
     if (sum_vec.size() > 0) {
-        mrcpp::build_grid(rho.real(), sum_vec);
-        mrcpp::add(-1.0, rho.real(), sum_vec, 0);
+        mrcpp::build_grid(rho.function().real(), sum_vec);
+        mrcpp::add(-1.0, rho.function().real(), sum_vec, 0);
         mrcpp::clear(sum_vec, true);
     } else {
-        rho.real().setZero();
+        rho.function().real().setZero();
     }
     return rho;
 }
@@ -103,7 +105,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
     double mult_prec = prec;       // prec for rho_i = |phi_i|^2
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
 
-    if (not rho.hasReal()) MSG_FATAL("Density not allocated");
+    if (not rho.function().hasReal()) rho.function().alloc(NUMBER::Real);
 
     // For numerically identical results in MPI we must first add
     // up orbital contributions onto their union grid, and THEN
@@ -112,14 +114,13 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
 
     // Compute local density from own orbitals
     Density rho_loc(false);
-    rho_loc.alloc(NUMBER::Real);
-    rho_loc.real().setZero();
+    rho_loc.function().alloc(NUMBER::Real);
+    rho_loc.function().real().setZero();
     for (auto &phi_i : Phi) {
         if (mpi::my_orb(phi_i)) {
             Density rho_i = density::compute(mult_prec, phi_i, spin);
             rho_loc.add(1.0, rho_i);
             rho_loc.crop(part_prec);
-            rho_i.free();
         }
     }
 
@@ -129,17 +130,17 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, int spin) {
         // If numerically exact the grid is huge at this point
         if (mpi::numerically_exact) rho_loc.crop(add_prec);
         // MPI grand master copies the function into final memory
-        mrcpp::copy_grid(rho.real(), rho_loc.real());
-        mrcpp::copy_func(rho.real(), rho_loc.real());
+        mrcpp::copy_grid(rho.function().real(), rho_loc.function().real());
+        mrcpp::copy_func(rho.function().real(), rho_loc.function().real());
     }
-    rho_loc.free();
+    rho_loc.release();
 
-    if (rho.isShared()) {
+    if (rho.function().isShared()) {
         int tag = 3141;
         // MPI grand master distributes to shared masters
         mpi::broadcast_density(rho, mpi::comm_sh_group);
         // MPI share masters distributes to their sharing ranks
-        mpi::share_function(rho, 0, tag);
+        mpi::share_function(rho.function(), 0, tag, mpi::comm_share);
     } else {
         // MPI grand master distributes to all ranks
         mpi::broadcast_density(rho, mpi::comm_orb);
@@ -176,7 +177,7 @@ void density::compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVe
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
 
-    if (rho.isShared()) NOT_IMPLEMENTED_ABORT;
+    if (rho.function().isShared()) NOT_IMPLEMENTED_ABORT;
 
     FunctionTreeVector<3> dens_vec;
     for (int i = 0; i < Phi.size(); i++) {
@@ -188,17 +189,18 @@ void density::compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVe
 
             Density rho_i(false);
             qmfunction::multiply_real(rho_i, Phi[i], X[i], mult_prec);
-            if (rho_i.hasReal()) dens_vec.push_back(std::make_tuple(2.0 * occ, &(rho_i.real())));
+            if (rho_i.function().hasReal()) dens_vec.push_back(std::make_tuple(2.0 * occ, &(rho_i.function().real())));
         }
     }
 
+    ComplexFunction &rho_func = rho.function();
     if (dens_vec.size() > 0) {
-        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-        mrcpp::add(add_prec, rho.real(), dens_vec);
-    } else if (rho.hasReal()) {
-        rho.real().setZero();
+        if (not rho_func.hasReal()) rho_func.alloc(NUMBER::Real);
+        mrcpp::add(add_prec, rho_func.real(), dens_vec);
+    } else if (rho_func.hasReal()) {
+        rho_func.real().setZero();
     }
-    if (rho.hasImag()) rho.imag().setZero();
+    if (rho_func.hasImag()) rho_func.imag().setZero();
 
     mrcpp::clear(dens_vec, true);
 
@@ -213,7 +215,8 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
     if (Phi.size() != Y.size()) MSG_ERROR("Size mismatch");
 
-    if (rho.isShared()) NOT_IMPLEMENTED_ABORT;
+    ComplexFunction &rho_func = rho.function();
+    if (rho_func.isShared()) NOT_IMPLEMENTED_ABORT;
 
     FunctionTreeVector<3> dens_real;
     FunctionTreeVector<3> dens_imag;
@@ -230,25 +233,25 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
             qmfunction::multiply(rho_x, X[i], Phi[i].dagger(), mult_prec);
             qmfunction::multiply(rho_y, Phi[i], Y[i].dagger(), mult_prec);
 
-            if (rho_x.hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_x.real())));
-            if (rho_y.hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_y.real())));
-            if (rho_x.hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_x.imag())));
-            if (rho_y.hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_y.imag())));
+            if (rho_x.function().hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_x.function().real())));
+            if (rho_y.function().hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_y.function().real())));
+            if (rho_x.function().hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_x.function().imag())));
+            if (rho_y.function().hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_y.function().imag())));
         }
     }
 
     if (dens_real.size() > 0) {
-        if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-        mrcpp::add(add_prec, rho.real(), dens_real);
-    } else if (rho.hasReal()) {
-        rho.real().setZero();
+        if (not rho_func.hasReal()) rho_func.alloc(NUMBER::Real);
+        mrcpp::add(add_prec, rho_func.real(), dens_real);
+    } else if (rho_func.hasReal()) {
+        rho_func.real().setZero();
     }
 
     if (dens_imag.size() > 0) {
-        if (not rho.hasImag()) rho.alloc(NUMBER::Imag);
-        mrcpp::add(add_prec, rho.imag(), dens_imag);
-    } else if (rho.hasImag()) {
-        rho.imag().setZero();
+        if (not rho_func.hasImag()) rho_func.alloc(NUMBER::Imag);
+        mrcpp::add(add_prec, rho_func.imag(), dens_imag);
+    } else if (rho_func.hasImag()) {
+        rho_func.imag().setZero();
     }
 
     mrcpp::clear(dens_real, true);
@@ -259,8 +262,9 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {
-    rho.alloc(NUMBER::Real);
-    mrcpp::project(prec, rho.real(), dens_exp);
+    ComplexFunction &rho_func = rho.function();
+    if (not rho_func.hasReal()) rho_func.alloc(NUMBER::Real);
+    mrcpp::project(prec, rho_func.real(), dens_exp);
 }
 
 double density::compute_occupation(Orbital &phi, int dens_spin) {

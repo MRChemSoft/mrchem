@@ -9,15 +9,15 @@
  *
  */
 
-#include "getkw/Getkw.hpp"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
+#include "getkw/Getkw.hpp"
 
-#include "mrenv.h"
 #include "mrchem.h"
+#include "mrenv.h"
 #include "parallel.h"
 
-#include "SCFDriver.h"
+//#include "SCFDriver.h"
 
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
@@ -31,10 +31,10 @@ int main(int argc, char **argv) {
 
     Timer timer;
 
-    SCFDriver driver(Input);
-    driver.setup();
-    driver.run();
-    driver.clear();
+    //SCFDriver driver(Input);
+    //driver.setup();
+    //driver.run();
+    //driver.clear();
 
     timer.stop();
     double wt = timer.getWallTime();
@@ -43,4 +43,3 @@ int main(int argc, char **argv) {
     mpi::finalize();
     return 0;
 }
-

@@ -59,7 +59,7 @@ void ExchangePotential::clear() {
  */
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
-    orbital::rotate_in_place(U, this->exchange, this->apply_prec);
+    this->exchange = orbital::rotate(U, this->exchange, this->apply_prec);
 
     // NOTE: The following MPI point is currently NOT implemented!
     //

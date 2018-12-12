@@ -23,7 +23,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * beyond this initial refinement.
  */
 QMPotential::QMPotential(int adap, bool shared)
-        : QMFunction(shared, nullptr, nullptr)
+        : QMFunction(shared)
         , QMOperator()
         , adap_build(adap) {}
 
@@ -94,28 +94,28 @@ Orbital QMPotential::dagger(Orbital inp) {
  * Computes the real part of the output orbital. The initial output grid is a
  * copy of the input orbital grid but NOT a copy of the potential grid.
  */
-FunctionTree<3> *QMPotential::calcRealPart(Orbital &phi, bool dagger) {
+void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
     QMPotential &V = *this;
     FunctionTreeVector<3> vec;
 
-    if (V.hasReal() and phi.hasReal()) {
+    Orbital out_re = out.paramCopy();
+    if (V.hasReal() and inp.hasReal()) {
         double coef = 1.0;
-        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*tree, phi.real());
-        mrcpp::multiply(prec, *tree, coef, V.real(), phi.real(), adap);
-        vec.push_back(std::make_tuple(1.0, tree));
+        out_re.alloc(NUMBER::Real);
+        mrcpp::copy_grid(out_re.real(), phi.real());
+        mrcpp::multiply(prec, out_re.real(), coef, V.real(), phi.real(), adap);
     }
+    Orbital out_im = out.paramCopy();
     if (V.hasImag() and phi.hasImag()) {
         double coef = -1.0;
         if (dagger) coef *= -1.0;
         if (phi.conjugate()) coef *= -1.0;
-        FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*tree, phi.imag());
-        mrcpp::multiply(prec, *tree, coef, V.imag(), phi.imag(), adap);
-        vec.push_back(std::make_tuple(1.0, tree));
+        out_im.alloc(NUMBER::Real);
+        mrcpp::copy_grid(out_im.imag(), phi.imag());
+        mrcpp::multiply(prec, out_im.imag(), coef, V.imag(), phi.imag(), adap);
     }
 
     FunctionTree<3> *out = 0;

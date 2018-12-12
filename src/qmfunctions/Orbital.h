@@ -57,13 +57,12 @@ struct OrbitalData {
 
 class Orbital final : public QMFunction {
 public:
-    Orbital();
-    Orbital(int spin, int occ = -1, int rank = -1);
+    explicit Orbital();
+    explicit Orbital(int spin, int occ = -1, int rank = -1);
 
     Orbital(const Orbital &orb);
     Orbital &operator=(const Orbital &orb);
     Orbital paramCopy() const;
-    Orbital deepCopy();
     Orbital dagger() const;
 
     void setOcc(int occ) { this->orb_data.occ = occ; }
@@ -83,7 +82,7 @@ public:
     char printSpin() const;
     friend std::ostream &operator<<(std::ostream &o, Orbital orb) { return orb.print(o); }
 
-protected:
+private:
     OrbitalData orb_data;
 
     std::ostream &print(std::ostream &o) const;

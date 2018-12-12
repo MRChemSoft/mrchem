@@ -3,6 +3,7 @@
 #include "MRCPP/trees/FunctionNode.h"
 
 #include "parallel.h"
+#include "qmfunctions/ComplexFunction.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 
@@ -115,16 +116,13 @@ bool mpi::my_unique_orb(const Orbital &orb) {
 
 /** @brief Distribute orbitals in vector round robin. Orbitals should be empty.*/
 void mpi::distribute(OrbitalVector &Phi) {
-    for (int i = 0; i < Phi.size(); i++) {
-        if (Phi[i].hasReal() or Phi[i].hasImag()) MSG_FATAL("Orbital not empty");
-        Phi[i].setRankID(i % mpi::orb_size);
-    }
+    for (int i = 0; i < Phi.size(); i++) Phi[i].setRankID(i % mpi::orb_size);
 }
 
-/** @brief Clear all orbitals not belonging to this MPI rank */
+/** @brief Free all function pointers not belonging to this MPI rank */
 void mpi::free_foreign(OrbitalVector &Phi) {
     for (int i = 0; i < Phi.size(); i++) {
-        if (not mpi::my_orb(Phi[i])) Phi[i].free();
+        if (not mpi::my_orb(Phi[i])) Phi[i].freeFunctions();
     }
 }
 
@@ -188,7 +186,7 @@ void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 //send an orbital with MPI, includes orbital meta data
 void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI
-    mpi::send_function(orb, dst, tag, mpi::comm_orb);
+    mpi::send_function(orb.function(), dst, tag, mpi::comm_orb);
 
     OrbitalData &orbinfo = orb.getOrbitalData();
     MPI_Send(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, mpi::comm_orb);
@@ -198,7 +196,7 @@ void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 //receive an orbital with MPI, includes orbital meta data
 void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #ifdef HAVE_MPI
-    mpi::recv_function(orb, src, tag, mpi::comm_orb);
+    mpi::recv_function(orb.function(), src, tag, mpi::comm_orb);
 
     MPI_Status status;
     OrbitalData &orbinfo = orb.getOrbitalData();
@@ -207,44 +205,44 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 }
 
 //send a density with MPI
-void mpi::send_function(QMFunction &func, int dst, int tag, MPI_Comm comm) {
+void mpi::send_function(ComplexFunction &func, int dst, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     FunctionData &funcinfo = func.getFunctionData();
     MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, comm);
 
-    if (func.hasReal()) mrcpp::send_tree(func.real(), dst, tag, comm, funcinfo.nChunksReal);
-    if (func.hasImag()) mrcpp::send_tree(func.imag(), dst, tag + 10000, comm, funcinfo.nChunksImag);
+    if (func.hasReal()) mrcpp::send_tree(func.real(), dst, tag, comm, funcinfo.real_size);
+    if (func.hasImag()) mrcpp::send_tree(func.imag(), dst, tag + 10000, comm, funcinfo.imag_size);
 #endif
 }
 
 //receive a denstity with MPI
-void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
+void mpi::recv_function(ComplexFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     MPI_Status status;
 
     FunctionData &funcinfo = func.getFunctionData();
     MPI_Recv(&funcinfo, sizeof(FunctionData), MPI_BYTE, src, 0, comm, &status);
 
-    if (funcinfo.nChunksReal > 0) {
+    if (funcinfo.real_size > 0) {
         // We must have a tree defined for receiving nodes. Define one:
         if (not func.hasReal()) func.alloc(NUMBER::Real);
-        mrcpp::recv_tree(func.real(), src, tag, comm, funcinfo.nChunksReal);
+        mrcpp::recv_tree(func.real(), src, tag, comm, funcinfo.real_size);
     }
 
-    if (funcinfo.nChunksImag > 0) {
+    if (funcinfo.imag_size > 0) {
         // We must have a tree defined for receiving nodes. Define one:
         if (not func.hasImag()) func.alloc(NUMBER::Imag);
-        mrcpp::recv_tree(func.imag(), src, tag + 10000, comm, funcinfo.nChunksImag);
+        mrcpp::recv_tree(func.imag(), src, tag + 10000, comm, funcinfo.imag_size);
     }
 #endif
 }
 
 /** Update a shared function after it has been changed by one of the MPI ranks. */
-void mpi::share_function(QMFunction &func, int src, int tag) {
+void mpi::share_function(ComplexFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     if (func.isShared()) {
-        if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, mpi::comm_share);
-        if (func.hasImag()) mrcpp::share_tree(func.imag(), src, 2 * tag, mpi::comm_share);
+        if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, comm);
+        if (func.hasImag()) mrcpp::share_tree(func.imag(), src, 2 * tag, comm);
     }
 #endif
 }
@@ -263,14 +261,13 @@ void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
         for (int src = 1; src < comm_size; src++) {
             Density rho_i(false);
             int tag = 3333 + src;
-            mpi::recv_function(rho_i, src, tag, comm);
+            mpi::recv_function(rho_i.function(), src, tag, comm);
             rho.add(1.0, rho_i); // add in place using union grid
             rho.crop(prec);
-            rho_i.free();
         }
     } else {
         int tag = 3333 + comm_rank;
-        mpi::send_function(rho, 0, tag, comm);
+        mpi::send_function(rho.function(), 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();
@@ -290,11 +287,11 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
     if (comm_rank == 0) {
         for (int dst = 1; dst < comm_size; dst++) {
             int tag = 4334 + dst;
-            mpi::send_function(rho, dst, tag, comm);
+            mpi::send_function(rho.function(), dst, tag, comm);
         }
     } else {
         int tag = 4334 + comm_rank;
-        mpi::recv_function(rho, 0, tag, comm);
+        mpi::recv_function(rho.function(), 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();

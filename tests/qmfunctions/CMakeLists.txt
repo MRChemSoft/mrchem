@@ -1,8 +1,14 @@
 target_sources(mrchem-tests
   PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/qmfunction.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/density.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/orbital.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/orbital_vector.cpp
+  )
+
+add_Catch_test(
+  NAME qmfunction
+  LABELS "qmfunction"
   )
 
 add_Catch_test(

@@ -23,6 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <vector>
+
 #pragma once
 
 /** Notes on vectors:
@@ -42,6 +44,8 @@
  */
 
 namespace mrchem {
+
+class ComplexFunction;
 
 class QMFunction;
 using QMFunctionVector = std::vector<QMFunction>;

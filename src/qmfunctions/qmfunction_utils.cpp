@@ -26,6 +26,8 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
+#include "parallel.h"
+
 #include "QMFunction.h"
 #include "qmfunction_utils.h"
 
@@ -43,11 +45,13 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  *
  */
 ComplexDouble qmfunction::dot(QMFunction bra, QMFunction ket) {
+    ComplexFunction &bra_func = bra.function();
+    ComplexFunction &ket_func = ket.function();
     double rr(0.0), ri(0.0), ir(0.0), ii(0.0);
-    if (bra.hasReal() and ket.hasReal()) rr = mrcpp::dot(bra.real(), ket.real());
-    if (bra.hasReal() and ket.hasImag()) ri = mrcpp::dot(bra.real(), ket.imag());
-    if (bra.hasImag() and ket.hasReal()) ir = mrcpp::dot(bra.imag(), ket.real());
-    if (bra.hasImag() and ket.hasImag()) ii = mrcpp::dot(bra.imag(), ket.imag());
+    if (bra_func.hasReal() and ket_func.hasReal()) rr = mrcpp::dot(bra_func.real(), ket_func.real());
+    if (bra_func.hasReal() and ket_func.hasImag()) ri = mrcpp::dot(bra_func.real(), ket_func.imag());
+    if (bra_func.hasImag() and ket_func.hasReal()) ir = mrcpp::dot(bra_func.imag(), ket_func.real());
+    if (bra_func.hasImag() and ket_func.hasImag()) ii = mrcpp::dot(bra_func.imag(), ket_func.imag());
 
     double bra_conj = (bra.conjugate()) ? -1.0 : 1.0;
     double ket_conj = (ket.conjugate()) ? -1.0 : 1.0;
@@ -57,14 +61,63 @@ ComplexDouble qmfunction::dot(QMFunction bra, QMFunction ket) {
     return ComplexDouble(real_part, imag_part);
 }
 
-/** @brief Frees each function in the vector
+/** @brief Deep copy
  *
- * Leaves an empty vector. QMFunctions are freed.
- *
+ * Returns a new function which is a full blueprint copy of the input function.
+ * This is achieved by building a new grid for the real and imaginary parts and
+ * copying.
  */
-void qmfunction::free(QMFunctionVector &vec) {
-    for (auto &func_i : vec) func_i.free();
-    vec.clear();
+void qmfunction::deep_copy(QMFunction &out, QMFunction &inp) {
+    ComplexFunction &inp_func = inp.function();
+    ComplexFunction &out_func = out.function();
+
+    bool need_to_copy = not(out_func.isShared()) or mpi::share_master();
+    if (inp_func.hasReal()) {
+        out_func.alloc(NUMBER::Real);
+        if (need_to_copy) {
+            mrcpp::copy_grid(out_func.real(), inp_func.real());
+            mrcpp::copy_func(out_func.real(), inp_func.real());
+        }
+    }
+    if (inp_func.hasImag()) {
+        out_func.alloc(NUMBER::Imag);
+        if (need_to_copy) {
+            mrcpp::copy_grid(out_func.imag(), inp_func.imag());
+            mrcpp::copy_func(out_func.imag(), inp_func.imag());
+            if (out.conjugate()) out_func.imag().rescale(-1.0);
+        }
+    }
+    mpi::share_function(out_func, 0, 1324, mpi::comm_share);
+}
+
+void qmfunction::project(QMFunction &out, std::function<double(const mrcpp::Coord<3> &r)> f, int type, double prec) {
+    ComplexFunction &out_func = out.function();
+    bool need_to_project = not(out_func.isShared()) or mpi::share_master();
+    if (type == NUMBER::Real or type == NUMBER::Total) {
+        if (not out_func.hasReal()) out_func.alloc(NUMBER::Real);
+        if (need_to_project) mrcpp::project<3>(prec, out_func.real(), f);
+    }
+    if (type == NUMBER::Imag or type == NUMBER::Total) {
+        if (not out_func.hasImag()) out_func.alloc(NUMBER::Imag);
+        if (need_to_project) mrcpp::project<3>(prec, out_func.imag(), f);
+    }
+    mpi::share_function(out_func, 0, 123123, mpi::comm_share);
+}
+
+void qmfunction::project(QMFunction &out, mrcpp::RepresentableFunction<3> &f, int type, double prec) {
+    ComplexFunction &out_func = out.function();
+    bool need_to_project = not(out_func.isShared()) or mpi::share_master();
+    if (type == NUMBER::Real or type == NUMBER::Total) {
+        if (not out_func.hasReal()) out_func.alloc(NUMBER::Real);
+        if (need_to_project) mrcpp::build_grid(out_func.real(), f);
+        if (need_to_project) mrcpp::project<3>(prec, out_func.real(), f);
+    }
+    if (type == NUMBER::Imag or type == NUMBER::Total) {
+        if (not out_func.hasImag()) out_func.alloc(NUMBER::Imag);
+        if (need_to_project) mrcpp::build_grid(out_func.imag(), f);
+        if (need_to_project) mrcpp::project<3>(prec, out_func.imag(), f);
+    }
+    mpi::share_function(out_func, 0, 132231, mpi::comm_share);
 }
 
 /** @brief out = a*inp_a + b*inp_b
@@ -101,142 +154,198 @@ void qmfunction::multiply(QMFunction &out, QMFunction inp_a, QMFunction inp_b, d
  *
  */
 void qmfunction::linear_combination(QMFunction &out, const ComplexVector &c, QMFunctionVector &inp, double prec) {
-    if (out.hasReal()) MSG_ERROR("Output not empty");
-    if (out.hasImag()) MSG_ERROR("Output not empty");
-
     FunctionTreeVector<3> rvec;
     FunctionTreeVector<3> ivec;
 
     double thrs = mrcpp::MachineZero;
     for (int i = 0; i < inp.size(); i++) {
+        ComplexFunction &func_i = inp[i].function();
         double sign = (inp[i].conjugate()) ? -1.0 : 1.0;
 
         bool cHasReal = (std::abs(c[i].real()) > thrs);
         bool cHasImag = (std::abs(c[i].imag()) > thrs);
 
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(c[i].real(), &inp[i].real()));
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-sign * c[i].imag(), &inp[i].imag()));
+        if (cHasReal and func_i.hasReal()) rvec.push_back(std::make_tuple(c[i].real(), &func_i.real()));
+        if (cHasImag and func_i.hasImag()) rvec.push_back(std::make_tuple(-sign * c[i].imag(), &func_i.imag()));
 
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(c[i].imag(), &inp[i].real()));
-        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple(sign * c[i].real(), &inp[i].imag()));
+        if (cHasImag and func_i.hasReal()) ivec.push_back(std::make_tuple(c[i].imag(), &func_i.real()));
+        if (cHasReal and func_i.hasImag()) ivec.push_back(std::make_tuple(sign * c[i].real(), &func_i.imag()));
     }
 
-    if (rvec.size() > 0) {
-        out.alloc(NUMBER::Real);
-        if (prec < 0.0) {
-            mrcpp::build_grid(out.real(), rvec);
-            mrcpp::add(prec, out.real(), rvec, 0);
-        } else {
-            mrcpp::add(prec, out.real(), rvec);
+    ComplexFunction &out_func = out.function();
+    if (rvec.size() > 0 and not out_func.hasReal()) out_func.alloc(NUMBER::Real);
+    if (ivec.size() > 0 and not out_func.hasImag()) out_func.alloc(NUMBER::Imag);
+
+    bool need_to_add = not(out_func.isShared()) or mpi::share_master();
+    if (need_to_add) {
+        if (rvec.size() > 0) {
+            if (prec < 0.0) {
+                mrcpp::build_grid(out_func.real(), rvec);
+                mrcpp::add(prec, out_func.real(), rvec, 0);
+            } else {
+                mrcpp::add(prec, out_func.real(), rvec);
+            }
+        } else if (out_func.hasReal()) {
+            out_func.real().setZero();
+        }
+        if (ivec.size() > 0) {
+            if (prec < 0.0) {
+                mrcpp::build_grid(out_func.imag(), ivec);
+                mrcpp::add(prec, out_func.imag(), ivec, 0);
+            } else {
+                mrcpp::add(prec, out_func.imag(), ivec);
+            }
+        } else if (out_func.hasImag()) {
+            out_func.imag().setZero();
         }
     }
-    if (ivec.size() > 0) {
-        out.alloc(NUMBER::Imag);
-        if (prec < 0.0) {
-            mrcpp::build_grid(out.imag(), ivec);
-            mrcpp::add(prec, out.imag(), ivec, 0);
-        } else {
-            mrcpp::add(prec, out.imag(), ivec);
-        }
-    }
+    mpi::share_function(out_func, 0, 9911, mpi::comm_share);
 }
 
 /** @brief out = Re(inp_a * inp_b)
  *
  */
 void qmfunction::multiply_real(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec) {
-    if (out.hasReal()) MSG_ERROR("Output not empty");
-
     double conj_a = (inp_a.conjugate()) ? -1.0 : 1.0;
     double conj_b = (inp_b.conjugate()) ? -1.0 : 1.0;
 
+    ComplexFunction &func_a = inp_a.function();
+    ComplexFunction &func_b = inp_b.function();
+    ComplexFunction &func_out = out.function();
+
+    bool need_to_multiply = not(func_out.isShared()) or mpi::share_master();
+
     FunctionTreeVector<3> vec;
-    if (inp_a.hasReal() and inp_b.hasReal()) {
+    if (func_a.hasReal() and func_b.hasReal()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        double coef = 1.0;
-        if (prec < 0.0) {
-            // Union grid
-            mrcpp::build_grid(*tree, inp_a.real());
-            mrcpp::build_grid(*tree, inp_b.real());
-            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real(), 0);
-        } else {
-            // Adaptive grid
-            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.real());
+        if (need_to_multiply) {
+            double coef = 1.0;
+            if (prec < 0.0) {
+                // Union grid
+                mrcpp::build_grid(*tree, func_a.real());
+                mrcpp::build_grid(*tree, func_b.real());
+                mrcpp::multiply(prec, *tree, coef, func_a.real(), func_b.real(), 0);
+            } else {
+                // Adaptive grid
+                mrcpp::multiply(prec, *tree, coef, func_a.real(), func_b.real());
+            }
         }
         vec.push_back(std::make_tuple(1.0, tree));
     }
-    if (inp_a.hasImag() and inp_b.hasImag()) {
+    if (func_a.hasImag() and func_b.hasImag()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        double coef = -1.0 * conj_a * conj_b;
-        if (prec < 0.0) {
-            mrcpp::build_grid(*tree, inp_a.imag());
-            mrcpp::build_grid(*tree, inp_b.imag());
-            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag(), 0);
-        } else {
-            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.imag());
+        if (need_to_multiply) {
+            double coef = -1.0 * conj_a * conj_b;
+            if (prec < 0.0) {
+                // Union grid
+                mrcpp::build_grid(*tree, func_a.imag());
+                mrcpp::build_grid(*tree, func_b.imag());
+                mrcpp::multiply(prec, *tree, coef, func_a.imag(), func_b.imag(), 0);
+            } else {
+                // Adaptive grid
+                mrcpp::multiply(prec, *tree, coef, func_a.imag(), func_b.imag());
+            }
         }
         vec.push_back(std::make_tuple(1.0, tree));
     }
-    if (vec.size() == 1) {
-        out.set(NUMBER::Real, &mrcpp::get_func(vec, 0));
-        mrcpp::clear(vec, false);
+
+    if (vec.size() > 0) {
+        if (func_out.hasReal()) {
+            if (need_to_multiply) func_out.real().clear();
+        } else {
+            // All sharing procs must allocate
+            func_out.alloc(NUMBER::Real);
+        }
     }
-    if (vec.size() == 2) {
-        out.alloc(NUMBER::Real);
-        mrcpp::build_grid(out.real(), vec);
-        mrcpp::add(prec, out.real(), vec, 0);
-        mrcpp::clear(vec, true);
+
+    if (need_to_multiply) {
+        if (vec.size() == 1) {
+            mrcpp::FunctionTree<3> &func_0 = mrcpp::get_func(vec, 0);
+            mrcpp::copy_grid(func_out.real(), func_0);
+            mrcpp::copy_func(func_out.real(), func_0);
+            mrcpp::clear(vec, true);
+        } else if (vec.size() == 2) {
+            mrcpp::build_grid(func_out.real(), vec);
+            mrcpp::add(prec, func_out.real(), vec, 0);
+            mrcpp::clear(vec, true);
+        } else if (func_out.hasReal()) {
+            func_out.real().setZero();
+        }
     }
+    mpi::share_function(func_out, 0, 9191, mpi::comm_share);
 }
 
 /** @brief out = Im(inp_a * inp_b)
  *
  */
 void qmfunction::multiply_imag(QMFunction &out, QMFunction inp_a, QMFunction inp_b, double prec) {
-    if (out.hasImag()) MSG_ERROR("Output not empty");
-
     double conj_a = (inp_a.conjugate()) ? -1.0 : 1.0;
     double conj_b = (inp_b.conjugate()) ? -1.0 : 1.0;
 
+    ComplexFunction &func_a = inp_a.function();
+    ComplexFunction &func_b = inp_b.function();
+    ComplexFunction &func_out = out.function();
+
+    bool need_to_multiply = not(func_out.isShared()) or mpi::share_master();
+
     FunctionTreeVector<3> vec;
-    if (inp_a.hasReal() and inp_b.hasImag()) {
+    if (func_a.hasReal() and func_b.hasImag()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        double coef = conj_b;
-        if (prec < 0.0) {
-            // Union grid
-            mrcpp::build_grid(*tree, inp_a.real());
-            mrcpp::build_grid(*tree, inp_b.imag());
-            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag(), 0);
-        } else {
-            // Adaptive grid
-            mrcpp::multiply(prec, *tree, coef, inp_a.real(), inp_b.imag());
+        if (need_to_multiply) {
+            double coef = conj_b;
+            if (prec < 0.0) {
+                // Union grid
+                mrcpp::build_grid(*tree, func_a.real());
+                mrcpp::build_grid(*tree, func_b.imag());
+                mrcpp::multiply(prec, *tree, coef, func_a.real(), func_b.imag(), 0);
+            } else {
+                // Adaptive grid
+                mrcpp::multiply(prec, *tree, coef, func_a.real(), func_b.imag());
+            }
         }
         vec.push_back(std::make_tuple(1.0, tree));
     }
-    if (inp_a.hasImag() and inp_b.hasReal()) {
+    if (func_a.hasImag() and func_b.hasReal()) {
         FunctionTree<3> *tree = new FunctionTree<3>(*MRA);
-        double coef = conj_a;
-        if (prec < 0.0) {
-            // Union grid
-            mrcpp::build_grid(*tree, inp_a.imag());
-            mrcpp::build_grid(*tree, inp_b.real());
-            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real(), 0);
-        } else {
-            // Adaptive grid
-            mrcpp::multiply(prec, *tree, coef, inp_a.imag(), inp_b.real());
+        if (need_to_multiply) {
+            double coef = conj_a;
+            if (prec < 0.0) {
+                // Union grid
+                mrcpp::build_grid(*tree, func_a.imag());
+                mrcpp::build_grid(*tree, func_b.real());
+                mrcpp::multiply(prec, *tree, coef, func_a.imag(), func_b.real(), 0);
+            } else {
+                // Adaptive grid
+                mrcpp::multiply(prec, *tree, coef, func_a.imag(), func_b.real());
+            }
         }
         vec.push_back(std::make_tuple(1.0, tree));
     }
-    if (vec.size() == 1) {
-        out.set(NUMBER::Imag, &mrcpp::get_func(vec, 0));
-        mrcpp::clear(vec, false);
+
+    if (vec.size() > 0) {
+        if (func_out.hasImag()) {
+            if (need_to_multiply) func_out.imag().clear();
+        } else {
+            // All sharing procs must allocate
+            func_out.alloc(NUMBER::Imag);
+        }
     }
-    if (vec.size() == 2) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::build_grid(out.imag(), vec);
-        mrcpp::add(prec, out.imag(), vec, 0);
-        mrcpp::clear(vec, true);
+
+    if (need_to_multiply) {
+        if (vec.size() == 1) {
+            mrcpp::FunctionTree<3> &func_0 = mrcpp::get_func(vec, 0);
+            mrcpp::copy_grid(func_out.imag(), func_0);
+            mrcpp::copy_func(func_out.imag(), func_0);
+            mrcpp::clear(vec, true);
+        } else if (vec.size() == 2) {
+            mrcpp::build_grid(func_out.imag(), vec);
+            mrcpp::add(prec, func_out.imag(), vec, 0);
+            mrcpp::clear(vec, true);
+        } else if (func_out.hasImag()) {
+            func_out.imag().setZero();
+        }
     }
+    mpi::share_function(func_out, 0, 9292, mpi::comm_share);
 }
 
 } //namespace mrchem

@@ -138,7 +138,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[my_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::send_function(phi_i, other_rank, tag, mpi::comm_orb);
+                    mpi::send_orbital(phi_i, other_rank, tag);
                     this->sent_orbital_index.push_back(orb_ix);
                     this->sent_orbital_mpirank.push_back(other_rank);
                     this->sent_counter++; //total to other_rank
@@ -149,7 +149,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[other_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::recv_function(phi_i, other_rank, tag, mpi::comm_orb);
+                    mpi::recv_orbital(phi_i, other_rank, tag);
                     this->received_orbital_index.push_back(orb_ix);
                     this->received_orbitals.push_back(phi_i);
                     this->rcv_step.push_back(step);
@@ -162,7 +162,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[other_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::recv_function(phi_i, other_rank, tag, mpi::comm_orb);
+                    mpi::recv_orbital(phi_i, other_rank, tag);
                     this->received_orbital_index.push_back(orb_ix);
                     this->received_orbitals.push_back(phi_i);
                     this->rcv_step.push_back(step);
@@ -174,7 +174,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[my_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::send_function(phi_i, other_rank, tag, mpi::comm_orb);
+                    mpi::send_orbital(phi_i, other_rank, tag);
                     this->sent_orbital_index.push_back(orb_ix);
                     this->sent_orbital_mpirank.push_back(other_rank);
                     this->sent_counter++; //total to other_rank

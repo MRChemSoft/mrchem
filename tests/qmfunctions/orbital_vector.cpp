@@ -29,6 +29,7 @@
 #include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 using namespace mrchem;
 using namespace orbital;
@@ -70,14 +71,11 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
     const double thrs = 1.0e-12;
 
     SECTION("push_back") {
-        Orbital phi_a(SPIN::Alpha);
-        Orbital phi_b(SPIN::Beta);
-
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(phi_b);
-        Phi.push_back(phi_a);
-        Phi.push_back(phi_b);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Beta));
+        Phi.push_back(Orbital(SPIN::Alpha));
+        Phi.push_back(Orbital(SPIN::Beta));
 
         REQUIRE(Phi.size() == 4);
         REQUIRE(get_electron_number(Phi, SPIN::Paired) == 5);
@@ -93,40 +91,13 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         REQUIRE(Phi.size() == 0);
     }
 
-    SECTION("alloc") {
-        Orbital phi_a(SPIN::Alpha);
-        Orbital phi_b(SPIN::Beta);
-
-        phi_a.alloc(NUMBER::Real);
-        phi_b.alloc(NUMBER::Real);
-        phi_a.real().setZero();
-        phi_b.real().setZero();
-
-        OrbitalVector Phi;
-        SECTION("clear") {
-            Phi.push_back(phi_a);
-            Phi.push_back(phi_b);
-            Phi.push_back(phi_a);
-            Phi.clear();
-            phi_a.free();
-            phi_b.free();
-        }
-        SECTION("free") {
-            Phi.push_back(phi_a);
-            Phi.push_back(phi_b);
-            Phi.push_back(phi_a.deepCopy());
-            free(Phi);
-        }
-        REQUIRE(Phi.size() == 0);
-    }
-
     SECTION("adjoin/disjoin vectors") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Alpha);
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Beta);
-        Phi.push_back(SPIN::Beta);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Alpha));
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Beta));
+        Phi.push_back(Orbital(SPIN::Beta));
         mpi::distribute(Phi);
 
         OrbitalVector Phi_p = disjoin(Phi, SPIN::Paired);
@@ -156,14 +127,12 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
 
     SECTION("copy vectors") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Alpha);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Alpha));
         mpi::distribute(Phi);
 
-        if (mpi::my_orb(Phi[0])) Phi[0].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[1])) Phi[1].alloc(NUMBER::Imag);
-        if (mpi::my_orb(Phi[0])) mrcpp::project<3>(prec, Phi[0].real(), f1);
-        if (mpi::my_orb(Phi[1])) mrcpp::project<3>(prec, Phi[1].imag(), f2);
+        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
+        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], f2, NUMBER::Imag, prec);
         normalize(Phi);
 
         SECTION("copy constructor") {
@@ -175,7 +144,6 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             DoubleVector norms = get_norms(Psi);
             REQUIRE(norms[0] == Approx(1.0));
             REQUIRE(norms[1] == Approx(1.0));
-            Psi.clear();
         }
 
         SECTION("default constructor plus assignment") {
@@ -188,7 +156,6 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             DoubleVector norms = get_norms(Psi);
             REQUIRE(norms[0] == Approx(1.0));
             REQUIRE(norms[1] == Approx(1.0));
-            Psi.clear();
         }
 
         SECTION("default constructor plus deep copy") {
@@ -201,7 +168,6 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             DoubleVector norms = get_norms(Psi);
             REQUIRE(norms[0] == Approx(1.0));
             REQUIRE(norms[1] == Approx(1.0));
-            free(Psi);
         }
 
         SECTION("assigment constructor") {
@@ -213,7 +179,6 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             DoubleVector norms = get_norms(Psi);
             REQUIRE(norms[0] == Approx(1.0));
             REQUIRE(norms[1] == Approx(1.0));
-            Psi.clear();
         }
 
         SECTION("parameter copy") {
@@ -226,26 +191,20 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             DoubleVector norms = get_norms(Psi);
             REQUIRE(norms[0] < 0.0);
             REQUIRE(norms[1] < 0.0);
-            Psi.clear();
         }
-
-        free(Phi);
     }
-
     SECTION("normalization") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Alpha);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Alpha));
         mpi::distribute(Phi);
 
         DoubleVector norms1 = get_norms(Phi);
         REQUIRE(norms1[0] == Approx(-1.0));
         REQUIRE(norms1[1] == Approx(-1.0));
 
-        if (mpi::my_orb(Phi[0])) Phi[0].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[1])) Phi[1].alloc(NUMBER::Imag);
-        if (mpi::my_orb(Phi[0])) mrcpp::project<3>(prec, Phi[0].real(), f1);
-        if (mpi::my_orb(Phi[1])) mrcpp::project<3>(prec, Phi[1].imag(), f2);
+        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
+        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], f2, NUMBER::Real, prec);
 
         DoubleVector norms2 = get_norms(Phi);
         REQUIRE(norms2[0] > 0.0);
@@ -256,27 +215,20 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         DoubleVector norms3 = get_norms(Phi);
         REQUIRE(norms3[0] == Approx(1.0));
         REQUIRE(norms3[1] == Approx(1.0));
-
-        free(Phi);
     }
 
     SECTION("orthogonalization") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Beta);
-        Phi.push_back(SPIN::Alpha);
-        Phi.push_back(SPIN::Alpha);
-        Phi.push_back(SPIN::Beta);
+        Phi.push_back(Orbital(SPIN::Beta));
+        Phi.push_back(Orbital(SPIN::Alpha));
+        Phi.push_back(Orbital(SPIN::Alpha));
+        Phi.push_back(Orbital(SPIN::Beta));
         mpi::distribute(Phi);
 
-        if (mpi::my_orb(Phi[0])) Phi[0].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[1])) Phi[1].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[2])) Phi[2].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[3])) Phi[3].alloc(NUMBER::Real);
-
-        if (mpi::my_orb(Phi[0])) mrcpp::project<3>(prec, Phi[0].real(), f1);
-        if (mpi::my_orb(Phi[1])) mrcpp::project<3>(prec, Phi[1].real(), f2);
-        if (mpi::my_orb(Phi[2])) mrcpp::project<3>(prec, Phi[2].real(), f3);
-        if (mpi::my_orb(Phi[3])) mrcpp::project<3>(prec, Phi[3].real(), f4);
+        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
+        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], f2, NUMBER::Real, prec);
+        if (mpi::my_orb(Phi[2])) qmfunction::project(Phi[2], f3, NUMBER::Real, prec);
+        if (mpi::my_orb(Phi[3])) qmfunction::project(Phi[3], f4, NUMBER::Real, prec);
 
         orthogonalize(Phi);
 
@@ -293,14 +245,12 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
 
         SECTION("vector orthogonalize") {
             OrbitalVector Psi;
-            Psi.push_back(SPIN::Alpha);
-            Psi.push_back(SPIN::Beta);
+            Psi.push_back(Orbital(SPIN::Alpha));
+            Psi.push_back(Orbital(SPIN::Beta));
             mpi::distribute(Psi);
 
-            if (mpi::my_orb(Psi[0])) Psi[0].alloc(NUMBER::Real);
-            if (mpi::my_orb(Psi[1])) Psi[1].alloc(NUMBER::Real);
-            if (mpi::my_orb(Psi[0])) mrcpp::project<3>(prec, Psi[0].real(), f5);
-            if (mpi::my_orb(Psi[1])) mrcpp::project<3>(prec, Psi[1].real(), f6);
+            if (mpi::my_orb(Psi[0])) qmfunction::project(Psi[0], f5, NUMBER::Real, prec);
+            if (mpi::my_orb(Psi[1])) qmfunction::project(Psi[1], f6, NUMBER::Real, prec);
 
             orthogonalize(Psi, Phi);
 
@@ -310,64 +260,23 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
                     REQUIRE(std::abs(S(i, j)) < thrs);
                 }
             }
-            free(Psi);
         }
-        free(Phi);
-    }
-
-    SECTION("addition") {
-        OrbitalVector Phi_a;
-        Phi_a.push_back(SPIN::Paired);
-        Phi_a.push_back(SPIN::Paired);
-        mpi::distribute(Phi_a);
-
-        if (mpi::my_orb(Phi_a[0])) Phi_a[0].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi_a[1])) Phi_a[1].alloc(NUMBER::Imag);
-        if (mpi::my_orb(Phi_a[0])) mrcpp::project<3>(prec, Phi_a[0].real(), f1);
-        if (mpi::my_orb(Phi_a[1])) mrcpp::project<3>(prec, Phi_a[1].imag(), f2);
-
-        OrbitalVector Phi_b;
-        Phi_b.push_back(SPIN::Paired);
-        Phi_b.push_back(SPIN::Paired);
-        mpi::distribute(Phi_b);
-
-        if (mpi::my_orb(Phi_b[0])) Phi_b[0].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi_b[1])) Phi_b[1].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi_b[0])) mrcpp::project<3>(prec, Phi_b[0].real(), f3);
-        if (mpi::my_orb(Phi_b[1])) mrcpp::project<3>(prec, Phi_b[1].real(), f4);
-
-        OrbitalVector Phi_c = add(1.0, Phi_a, -1.0, Phi_b);
-
-        ComplexVector int_a = get_integrals(Phi_a);
-        ComplexVector int_b = get_integrals(Phi_b);
-        ComplexVector int_c = get_integrals(Phi_c);
-
-        REQUIRE(int_c(0).real() == Approx(int_a[0].real() - int_b[0].real()));
-        REQUIRE(int_c(0).imag() == Approx(int_a[0].imag() - int_b[0].imag()));
-        REQUIRE(int_c(1).real() == Approx(int_a[1].real() - int_b[1].real()));
-        REQUIRE(int_c(1).imag() == Approx(int_a[1].imag() - int_b[1].imag()));
-
-        free(Phi_a);
-        free(Phi_b);
-        free(Phi_c);
     }
 
     SECTION("orbital transformations") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Paired);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Paired));
         mpi::distribute(Phi);
 
         if (mpi::my_orb(Phi[0])) {
-            Phi[0].alloc(NUMBER::Total);
-            mrcpp::project<3>(prec, Phi[0].real(), f1);
-            mrcpp::project<3>(prec, Phi[0].imag(), f2);
+            qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
+            qmfunction::project(Phi[0], f2, NUMBER::Imag, prec);
         }
 
         if (mpi::my_orb(Phi[1])) {
-            Phi[1].alloc(NUMBER::Total);
-            mrcpp::project<3>(prec, Phi[1].real(), f3);
-            mrcpp::project<3>(prec, Phi[1].imag(), f4);
+            qmfunction::project(Phi[1], f3, NUMBER::Real, prec);
+            qmfunction::project(Phi[1], f4, NUMBER::Imag, prec);
         }
 
         orthogonalize(Phi);
@@ -389,10 +298,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
                     if (i != j) REQUIRE(std::abs(S(i, j)) < thrs);
                 }
             }
-            free(Psi);
         }
-
-        free(Phi);
     }
 }
 

@@ -48,12 +48,11 @@ namespace mrchem {
 
 class Density final : public QMFunction {
 public:
-    Density(bool share)
-            : QMFunction(share, nullptr, nullptr) {}
+    explicit Density(bool share)
+            : QMFunction(share) {}
     Density(const Density &dens)
             : QMFunction(dens) {}
     Density &operator=(const Density &dens);
-    Density deepCopy();
 
     void saveDensity(const std::string &file);
     void loadDensity(const std::string &file);

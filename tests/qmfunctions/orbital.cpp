@@ -48,41 +48,17 @@ TEST_CASE("Orbital", "[orbital]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-12;
 
-    SECTION("alloc") {
+    SECTION("copy orbital") {
         Orbital phi_1(SPIN::Paired);
-        REQUIRE(not phi_1.hasReal());
-        REQUIRE(not phi_1.hasImag());
-
-        phi_1.alloc(NUMBER::Real);
-        REQUIRE(phi_1.hasReal());
-        REQUIRE(not phi_1.hasImag());
-
-        phi_1.alloc(NUMBER::Imag);
-        REQUIRE(phi_1.hasReal());
-        REQUIRE(phi_1.hasImag());
-
-        phi_1.free(NUMBER::Real);
-        REQUIRE(not phi_1.hasReal());
-        REQUIRE(phi_1.hasImag());
-
-        phi_1.free(NUMBER::Imag);
-
-        REQUIRE(not phi_1.hasReal());
-        REQUIRE(not phi_1.hasImag());
-    }
-
-    SECTION("copy") {
-        Orbital phi_1(SPIN::Paired);
-        phi_1.alloc(NUMBER::Real);
-        mrcpp::project<3>(prec, phi_1.real(), f);
+        qmfunction::project(phi_1, f, NUMBER::Real, prec);
 
         SECTION("copy constructor") {
             Orbital phi_2(phi_1);
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(phi_2.hasReal() == phi_1.hasReal());
-            REQUIRE(phi_2.hasImag() == phi_1.hasImag());
+            REQUIRE(&phi_2.function().real() == &phi_1.function().real());
+            REQUIRE(&phi_2.function().imag() == &phi_1.function().imag());
         }
 
         SECTION("default constructor plus assignment") {
@@ -91,19 +67,8 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(phi_2.hasReal() == phi_1.hasReal());
-            REQUIRE(phi_2.hasImag() == phi_1.hasImag());
-        }
-
-        SECTION("default constructor plus deep copy") {
-            Orbital phi_2;
-            phi_2 = phi_1.deepCopy();
-            REQUIRE(phi_2.occ() == phi_1.occ());
-            REQUIRE(phi_2.spin() == phi_1.spin());
-            REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(phi_2.hasReal() == phi_1.hasReal());
-            REQUIRE(phi_2.hasImag() == phi_1.hasImag());
-            phi_2.free();
+            REQUIRE(&phi_2.function().real() == &phi_1.function().real());
+            REQUIRE(&phi_2.function().imag() == &phi_1.function().imag());
         }
 
         SECTION("assigment constructor") {
@@ -111,149 +76,83 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(phi_2.hasReal() == phi_1.hasReal());
-            REQUIRE(phi_2.hasImag() == phi_1.hasImag());
+            REQUIRE(&phi_2.function().real() == &phi_1.function().real());
+            REQUIRE(&phi_2.function().imag() == &phi_1.function().imag());
+        }
+
+        SECTION("deep copy") {
+            Orbital phi_2(SPIN::Alpha);
+            qmfunction::deep_copy(phi_2, phi_1);
+            REQUIRE(phi_2.occ() != phi_1.occ());
+            REQUIRE(phi_2.spin() != phi_1.spin());
+            REQUIRE(phi_2.norm() == phi_1.norm());
+            REQUIRE(&phi_2.function().real() != &phi_1.function().real());
+            REQUIRE(not(phi_2.function().hasImag()));
         }
 
         SECTION("parameter copy") {
-            Orbital phi_2;
-            phi_2 = phi_1.paramCopy();
+            Orbital phi_2 = phi_1.paramCopy();
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() < 1.0);
-            REQUIRE(not phi_2.hasReal());
-            REQUIRE(not phi_2.hasImag());
+            REQUIRE(not(phi_2.function().hasReal()));
+            REQUIRE(not(phi_2.function().hasImag()));
         }
-
-        phi_1.free();
     }
 
     SECTION("normalize") {
         Orbital phi(SPIN::Paired);
-        phi.alloc(NUMBER::Total);
         REQUIRE(phi.norm() == Approx(-1.0));
 
-        mrcpp::project<3>(prec, phi.real(), f);
-        mrcpp::project<3>(prec, phi.imag(), g);
+        qmfunction::project(phi, f, NUMBER::Real, prec);
+        qmfunction::project(phi, g, NUMBER::Imag, prec);
         REQUIRE(phi.norm() > 1.0);
 
         orbital::normalize(phi);
         REQUIRE(phi.norm() == Approx(1.0));
-
-        phi.free();
-    }
-
-    SECTION("rescale") {
-        Orbital phi(SPIN::Paired);
-        phi.alloc(NUMBER::Total);
-
-        mrcpp::project<3>(prec, phi.real(), f);
-        mrcpp::project<3>(prec, phi.imag(), g);
-
-        const double ref_norm = phi.norm();
-        const double f_int = phi.real().integrate();
-        const double g_int = phi.imag().integrate();
-        SECTION("imaginary unit") {
-            ComplexDouble i(0.0, 1.0);
-            phi.rescale(i);
-            REQUIRE(phi.norm() == Approx(ref_norm));
-            REQUIRE(phi.real().integrate() == Approx(-g_int));
-            REQUIRE(phi.imag().integrate() == Approx(f_int));
-        }
-        SECTION("unitary rotation") {
-            double a = sin(0.5);
-            double b = cos(0.5);
-            ComplexDouble i(a, b);
-            phi.rescale(i);
-            REQUIRE(phi.norm() == Approx(ref_norm));
-            REQUIRE(phi.real().integrate() == Approx(a * f_int - b * g_int));
-            REQUIRE(phi.imag().integrate() == Approx(b * f_int + a * g_int));
-        }
-
-        phi.free();
     }
 
     SECTION("orthogonalize") {
         Orbital phi_1(SPIN::Alpha);
-        phi_1.alloc(NUMBER::Real);
-        mrcpp::project<3>(prec, phi_1.real(), f);
+        qmfunction::project(phi_1, f, NUMBER::Real, prec);
 
-        SECTION("different spin") {
+        WHEN("orbitals have different spins") {
             Orbital phi_2(SPIN::Beta);
-            phi_2.alloc(NUMBER::Imag);
-            mrcpp::project<3>(prec, phi_2.imag(), g);
+            qmfunction::project(phi_2, g, NUMBER::Imag, prec);
 
-            ComplexDouble S = orbital::dot(phi_1, phi_2);
-            REQUIRE(std::abs(S.real()) < thrs);
-            REQUIRE(std::abs(S.imag()) < thrs);
-
-            phi_2.free();
+            THEN("their overlap is zero") {
+                ComplexDouble S = orbital::dot(phi_1, phi_2);
+                REQUIRE(std::abs(S.real()) < thrs);
+                REQUIRE(std::abs(S.imag()) < thrs);
+            }
         }
 
-        SECTION("same spin") {
+        WHEN("orbitals have the same spin") {
             Orbital phi_2(SPIN::Alpha);
-            phi_2.alloc(NUMBER::Imag);
-            mrcpp::project<3>(prec, phi_2.imag(), g);
+            qmfunction::project(phi_2, g, NUMBER::Imag, prec);
 
-            ComplexDouble S1 = orbital::dot(phi_1, phi_2);
-            REQUIRE(std::abs(S1.real()) < thrs);
-            REQUIRE(std::abs(S1.imag()) > thrs);
+            THEN("their overlap is non-zero") {
+                ComplexDouble S1 = orbital::dot(phi_1, phi_2);
+                REQUIRE(std::abs(S1.real()) < thrs);
+                REQUIRE(std::abs(S1.imag()) > thrs);
 
-            ComplexDouble S2 = orbital::dot(phi_1, phi_2.dagger());
-            REQUIRE(S2.real() == Approx(S1.real()));
-            REQUIRE(S2.imag() == Approx(-S1.imag()));
+                AND_THEN("<phi_1|phi_2^dag> = <phi_1|phi_2>*") {
+                    ComplexDouble S2 = orbital::dot(phi_1, phi_2.dagger());
+                    REQUIRE(S2.real() == Approx(S1.real()));
+                    REQUIRE(S2.imag() == Approx(-S1.imag()));
+                }
+            }
 
-            orbital::orthogonalize(phi_2, phi_1);
+            AND_THEN("they are orthogonalized") {
+                orbital::orthogonalize(phi_2, phi_1);
 
-            ComplexDouble S3 = orbital::dot(phi_1, phi_2);
-            REQUIRE(std::abs(S3.real()) < thrs);
-            REQUIRE(std::abs(S3.imag()) < thrs);
-
-            phi_2.free();
+                THEN("their overlap is zero") {
+                    ComplexDouble S3 = orbital::dot(phi_1, phi_2);
+                    REQUIRE(std::abs(S3.real()) < thrs);
+                    REQUIRE(std::abs(S3.imag()) < thrs);
+                }
+            }
         }
-        phi_1.free();
-    }
-
-    SECTION("add") {
-        ComplexDouble c(0.5, 0.5);
-        Orbital phi(SPIN::Paired);
-        phi.alloc(NUMBER::Total);
-        mrcpp::project<3>(prec, phi.real(), f);
-        mrcpp::project<3>(prec, phi.imag(), g);
-
-        SECTION("scalar conjugate") {
-            Orbital psi = phi.paramCopy();
-            qmfunction::add(psi, std::conj(c), phi, c, phi, -1.0);
-            REQUIRE(psi.real().integrate() == Approx(phi.real().integrate()));
-            REQUIRE(psi.imag().integrate() == Approx(phi.imag().integrate()));
-            psi.free();
-        }
-
-        SECTION("orbital conjugate") {
-            Orbital psi = phi.paramCopy();
-            qmfunction::add(psi, c, phi, c, phi.dagger(), -1.0);
-            REQUIRE(psi.real().integrate() == Approx(phi.real().integrate()));
-            REQUIRE(psi.imag().integrate() == Approx(phi.real().integrate()));
-            psi.free();
-        }
-        phi.free();
-    }
-
-    SECTION("multiply") {
-        Orbital phi(SPIN::Paired);
-        phi.alloc(NUMBER::Total);
-        mrcpp::project<3>(prec, phi.real(), f);
-        mrcpp::project<3>(prec, phi.imag(), g);
-
-        Orbital psi = phi.paramCopy();
-        qmfunction::multiply(psi, phi.dagger(), phi, -1.0);
-        double f_norm = phi.real().getSquareNorm();
-        double g_norm = phi.imag().getSquareNorm();
-        REQUIRE(psi.real().integrate() == Approx(f_norm + g_norm));
-        REQUIRE(psi.imag().integrate() < thrs);
-
-        phi.free();
-        psi.free();
     }
 }
 

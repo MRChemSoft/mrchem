@@ -38,7 +38,7 @@ namespace mrchem {
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital()
-        : QMFunction(false, nullptr, nullptr)
+        : QMFunction(false)
         , orb_data({-1, 0, 0, 1.0}) {}
 
 /** @brief Constructor
@@ -50,7 +50,7 @@ Orbital::Orbital()
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
 Orbital::Orbital(int spin, int occ, int rank)
-        : QMFunction(false, nullptr, nullptr)
+        : QMFunction(false)
         , orb_data({rank, spin, occ, 1.0}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
@@ -80,11 +80,8 @@ Orbital::Orbital(const Orbital &orb)
  */
 Orbital &Orbital::operator=(const Orbital &orb) {
     if (this != &orb) {
-        if (orb.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
+        QMFunction::operator=(orb);
         this->orb_data = orb.orb_data;
-        this->func_data = orb.func_data;
-        this->re = orb.re;
-        this->im = orb.im;
     }
     return *this;
 }
@@ -97,28 +94,6 @@ Orbital Orbital::paramCopy() const {
     return Orbital(this->spin(), this->occ(), this->rankID());
 }
 
-/** @brief Deep copy
- *
- * Returns a new orbital which is a full blueprint copy of *this orbital. This is
- * achieved by building a new grid for the real and imaginary parts and adding
- * in place.
- */
-Orbital Orbital::deepCopy() {
-    Orbital out(*this);              // Shallow copy (should copy all meta data)
-    out.set(NUMBER::Total, nullptr); // Clear *re and *im pointers
-    if (this->hasReal()) {
-        out.alloc(NUMBER::Real);
-        mrcpp::copy_grid(out.real(), this->real());
-        mrcpp::copy_func(out.real(), this->real());
-    }
-    if (this->hasImag()) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::copy_grid(out.imag(), this->imag());
-        mrcpp::copy_func(out.imag(), this->imag());
-    }
-    return out; // Return shallow copy
-}
-
 /** @brief Complex conjugation
  *
  * Returns a new orbital which is a shallow copy of *this orbital, with a flipped
@@ -128,7 +103,7 @@ Orbital Orbital::deepCopy() {
  */
 Orbital Orbital::dagger() const {
     Orbital out(*this); // Shallow copy
-    out.func_data.conjugate = not this->func_data.conjugate;
+    out.conj = not this->conjugate();
     return out; // Return shallow copy
 }
 
@@ -141,12 +116,14 @@ Orbital Orbital::dagger() const {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::saveOrbital(const std::string &file) {
+    ComplexFunction &func = *this->func_ptr.get();
+
     //writing meta data
     std::stringstream metafile;
     metafile << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
+    FunctionData &func_data = func.getFunctionData();
     OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
@@ -157,17 +134,17 @@ void Orbital::saveOrbital(const std::string &file) {
     f.close();
 
     //writing real part
-    if (hasReal()) {
+    if (func.hasReal()) {
         std::stringstream fname;
         fname << file << "_re";
-        this->real().saveTree(fname.str());
+        func.real().saveTree(fname.str());
     }
 
     //writing imaginary part
-    if (hasImag()) {
+    if (func.hasImag()) {
         std::stringstream fname;
         fname << file << "_im";
-        this->imag().saveTree(fname.str());
+        func.imag().saveTree(fname.str());
     }
 }
 
@@ -180,15 +157,16 @@ void Orbital::saveOrbital(const std::string &file) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::loadOrbital(const std::string &file) {
-    if (hasReal()) MSG_ERROR("Orbital not empty");
-    if (hasImag()) MSG_ERROR("Orbital not empty");
+    ComplexFunction &func = *this->func_ptr.get();
+    if (func.hasReal()) MSG_ERROR("Orbital not empty");
+    if (func.hasImag()) MSG_ERROR("Orbital not empty");
 
     //reading meta data
     std::stringstream fmeta;
     fmeta << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
+    FunctionData &func_data = func.getFunctionData();
     OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
@@ -198,19 +176,19 @@ void Orbital::loadOrbital(const std::string &file) {
     f.close();
 
     //reading real part
-    if (func_data.nChunksReal > 0) {
+    if (func_data.real_size > 0) {
         std::stringstream fname;
         fname << file << "_re";
-        alloc(NUMBER::Real);
-        this->real().loadTree(fname.str());
+        func.alloc(NUMBER::Real);
+        func.real().loadTree(fname.str());
     }
 
     //reading imaginary part
-    if (func_data.nChunksImag > 0) {
+    if (func_data.imag_size > 0) {
         std::stringstream fname;
         fname << file << "_im";
-        alloc(NUMBER::Imag);
-        this->imag().loadTree(fname.str());
+        func.alloc(NUMBER::Imag);
+        func.imag().loadTree(fname.str());
     }
 }
 

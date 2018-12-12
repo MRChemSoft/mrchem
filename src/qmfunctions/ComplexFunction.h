@@ -25,41 +25,46 @@
 
 #pragma once
 
-#include <memory>
-
-#include "ComplexFunction.h"
-#include "qmfunction_fwd.h"
+#include "mrchem.h"
+#include "parallel.h"
 
 namespace mrchem {
 
-class QMFunction {
+struct FunctionData {
+    int real_size;
+    int imag_size;
+    bool is_shared;
+};
+
+class ComplexFunction final {
 public:
-    explicit QMFunction(bool share = false);
-    QMFunction(const QMFunction &func);
-    QMFunction &operator=(const QMFunction &func);
-    QMFunction dagger();
-    virtual ~QMFunction() = default;
+    explicit ComplexFunction(bool share);
+    ~ComplexFunction();
 
-    void release() { this->func_ptr.reset(); }
-    void freeFunctions() { function().free(NUMBER::Total); }
-    void clearFunctions();
+    void alloc(int type);
+    void free(int type);
 
-    bool conjugate() const { return this->conj; }
-    ComplexFunction &function() { return *this->func_ptr.get(); }
-    const ComplexFunction &function() const { return *this->func_ptr.get(); }
+    bool isShared() const { return this->func_data.is_shared; }
+    bool hasReal() const { return (this->re == nullptr) ? false : true; }
+    bool hasImag() const { return (this->im == nullptr) ? false : true; }
 
-    double norm() const;
-    double squaredNorm() const;
-    ComplexDouble integrate() const;
+    int getNNodes(int type) const;
+    FunctionData &getFunctionData();
 
-    void crop(double prec);
-    void rescale(double c);
-    void rescale(ComplexDouble c);
-    void add(ComplexDouble c, QMFunction inp);
+    void setReal(mrcpp::FunctionTree<3> *tree);
+    void setImag(mrcpp::FunctionTree<3> *tree);
 
-protected:
-    bool conj;
-    std::shared_ptr<ComplexFunction> func_ptr;
+    mrcpp::FunctionTree<3> &real() { return *this->re; }
+    mrcpp::FunctionTree<3> &imag() { return *this->im; }
+
+    const mrcpp::FunctionTree<3> &real() const { return *this->re; }
+    const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
+
+private:
+    FunctionData func_data;
+    mrcpp::SharedMemory *shared_mem;
+    mrcpp::FunctionTree<3> *re; ///< Real part of function
+    mrcpp::FunctionTree<3> *im; ///< Imaginary part of function
 };
 
 } // namespace mrchem

@@ -33,101 +33,55 @@
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-QMFunction::QMFunction(bool share, mrcpp::FunctionTree<3> *r, mrcpp::FunctionTree<3> *i)
-        : func_data({0, 0, false})
-        , shared_mem(nullptr)
-        , re(r)
-        , im(i) {
-    if (share and mpi::share_size > 1) {
-        // Memory size in MB defined in input. Virtual memory, does not cost anything if not used.
-        this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, mpi::shared_memory_size);
-    }
-}
+QMFunction::QMFunction(bool share)
+        : conj(false)
+        , func_ptr(std::make_shared<ComplexFunction>(share)) {}
 
 QMFunction::QMFunction(const QMFunction &func)
-        : func_data(func.func_data)
-        , shared_mem(nullptr)
-        , re(func.re)
-        , im(func.im) {
-    if (func.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
-}
+        : conj(func.conj)
+        , func_ptr(func.func_ptr) {}
 
 QMFunction &QMFunction::operator=(const QMFunction &func) {
     if (this != &func) {
-        if (func.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
-        this->func_data = func.func_data;
-        this->re = func.re;
-        this->im = func.im;
+        this->conj = func.conj;
+        this->func_ptr = func.func_ptr;
     }
     return *this;
 }
 
-QMFunction::~QMFunction() {
-    if (this->shared_mem != nullptr) delete this->shared_mem;
+QMFunction QMFunction::dagger() {
+    QMFunction out(*this);
+    out.conj = not this->conj;
+    return out;
 }
 
-void QMFunction::set(int type, mrcpp::FunctionTree<3> *func) {
-    if (this->isShared()) MSG_FATAL("Cannot set pointers in shared functions");
-    if (type == NUMBER::Real or type == NUMBER::Total) this->re = func;
-    if (type == NUMBER::Imag or type == NUMBER::Total) this->im = func;
-}
-
-void QMFunction::alloc(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) MSG_FATAL("Function not empty");
-        this->re = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
+void QMFunction::clearFunctions() {
+    ComplexFunction &func = this->function();
+    bool need_to_clear = not(func.isShared()) or mpi::share_master();
+    if (need_to_clear) {
+        if (func.hasReal()) func.real().clear();
+        if (func.hasImag()) func.imag().clear();
     }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (this->hasImag()) MSG_FATAL("Function not empty");
-        this->im = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
-    }
-}
-
-void QMFunction::free(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) delete this->re;
-        this->re = nullptr;
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (this->hasImag()) delete this->im;
-        this->im = nullptr;
-    }
+    mpi::share_function(func, 0, 6354, mpi::comm_share);
 }
 
 void QMFunction::crop(double prec) {
     if (prec < 0.0) return;
-    if (hasReal()) this->real().crop(prec, 1.0, false);
-    if (hasImag()) this->imag().crop(prec, 1.0, false);
-}
-
-/** @brief Returns the orbital meta data
- *
- * Tree sizes (nChunks) are flushed before return.
- */
-FunctionData &QMFunction::getFunctionData() {
-    this->func_data.nChunksReal = 0;
-    this->func_data.nChunksImag = 0;
-    if (this->hasReal()) this->func_data.nChunksReal = real().getNChunksUsed();
-    if (this->hasImag()) this->func_data.nChunksImag = imag().getNChunksUsed();
-    return this->func_data;
-}
-
-int QMFunction::getNNodes(int type) const {
-    int nNodes = 0;
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) nNodes += this->real().getNNodes();
+    ComplexFunction &func = this->function();
+    bool need_to_crop = not(func.isShared()) or mpi::share_master();
+    if (need_to_crop) {
+        if (func.hasReal()) func.real().crop(prec, 1.0, false);
+        if (func.hasImag()) func.imag().crop(prec, 1.0, false);
     }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (this->hasImag()) nNodes += this->imag().getNNodes();
-    }
-    return nNodes;
+    mpi::share_function(func, 0, 7744, mpi::comm_share);
 }
 
 ComplexDouble QMFunction::integrate() const {
+    const ComplexFunction &func = this->function();
     double int_r = 0.0;
     double int_i = 0.0;
-    if (this->hasReal()) int_r = this->real().integrate();
-    if (this->hasImag()) int_i = this->imag().integrate();
+    if (func.hasReal()) int_r = func.real().integrate();
+    if (func.hasImag()) int_i = func.imag().integrate();
     return ComplexDouble(int_r, int_i);
 }
 
@@ -140,10 +94,11 @@ double QMFunction::norm() const {
 
 /** @brief Returns the squared norm of the orbital */
 double QMFunction::squaredNorm() const {
+    const ComplexFunction &func = this->function();
     double sq_r = -1.0;
     double sq_i = -1.0;
-    if (this->hasReal()) sq_r = this->real().getSquareNorm();
-    if (this->hasImag()) sq_i = this->imag().getSquareNorm();
+    if (func.hasReal()) sq_r = func.real().getSquareNorm();
+    if (func.hasImag()) sq_i = func.imag().getSquareNorm();
 
     double sq_norm = 0.0;
     if (sq_r < 0.0 and sq_i < 0.0) {
@@ -159,106 +114,70 @@ double QMFunction::squaredNorm() const {
  *
  * Output is extended to union grid.
  *
- * MPI: The necessary alloc() routines must be called by
- *      ALL MPI processes if *this function is shared.
  */
 void QMFunction::add(ComplexDouble c, QMFunction inp) {
+    ComplexFunction &out_func = this->function();
+    ComplexFunction &inp_func = inp.function();
     double thrs = mrcpp::MachineZero;
     bool cHasReal = (std::abs(c.real()) > thrs);
     bool cHasImag = (std::abs(c.imag()) > thrs);
+    bool outNeedsReal = (cHasReal and inp_func.hasReal()) or (cHasImag and inp_func.hasImag());
+    bool outNeedsImag = (cHasReal and inp_func.hasImag()) or (cHasImag and inp_func.hasReal());
 
-    QMFunction &out = *this;
-    if (cHasReal) {
-        if (inp.hasReal()) {
-            if (not out.hasReal()) {
-                if (out.isShared()) MSG_FATAL("Shared function not allocated");
-                out.alloc(NUMBER::Real);
-                out.real().setZero();
-            }
-            while (mrcpp::refine_grid(out.real(), inp.real())) {}
-            out.real().add(c.real(), inp.real());
+    bool clearReal(false), clearImag(false);
+    if (outNeedsReal and not(out_func.hasReal())) {
+        out_func.alloc(NUMBER::Real);
+        clearReal = true;
+    }
+
+    if (outNeedsImag and not(out_func.hasImag())) {
+        out_func.alloc(NUMBER::Imag);
+        clearImag = true;
+    }
+
+    bool need_to_add = not(out_func.isShared()) or mpi::share_master();
+    if (need_to_add) {
+        if (clearReal) out_func.real().setZero();
+        if (clearImag) out_func.imag().setZero();
+        if (cHasReal and inp_func.hasReal()) {
+            while (mrcpp::refine_grid(out_func.real(), inp_func.real())) {}
+            out_func.real().add(c.real(), inp_func.real());
         }
-        if (inp.hasImag()) {
-            if (not out.hasImag()) {
-                if (out.isShared()) MSG_FATAL("Shared function not allocated");
-                out.alloc(NUMBER::Imag);
-                out.imag().setZero();
-            }
+        if (cHasReal and inp_func.hasImag()) {
             double conj = (inp.conjugate()) ? -1.0 : 1.0;
-            while (mrcpp::refine_grid(out.imag(), inp.imag())) {}
-            out.imag().add(conj * c.real(), inp.imag());
+            while (mrcpp::refine_grid(out_func.imag(), inp_func.imag())) {}
+            out_func.imag().add(conj * c.real(), inp_func.imag());
+        }
+        if (cHasImag and inp_func.hasReal()) {
+            while (mrcpp::refine_grid(out_func.imag(), inp_func.real())) {}
+            out_func.imag().add(c.imag(), inp_func.real());
+        }
+        if (cHasImag and inp_func.hasImag()) {
+            double conj = (inp.conjugate()) ? -1.0 : 1.0;
+            while (mrcpp::refine_grid(out_func.real(), inp_func.imag())) {}
+            out_func.real().add(-1.0 * conj * c.imag(), inp_func.imag());
         }
     }
-    if (cHasImag) {
-        if (inp.hasReal()) {
-            if (not out.hasImag()) {
-                if (out.isShared()) MSG_FATAL("Shared function not allocated");
-                out.alloc(NUMBER::Imag);
-                out.imag().setZero();
-            }
-            while (mrcpp::refine_grid(out.imag(), inp.real())) {}
-            out.imag().add(c.imag(), inp.real());
-        }
-        if (inp.hasImag()) {
-            if (not out.hasReal()) {
-                if (out.isShared()) MSG_FATAL("Shared function not allocated");
-                out.alloc(NUMBER::Real);
-                out.real().setZero();
-            }
-            double conj = (inp.conjugate()) ? -1.0 : 1.0;
-            while (mrcpp::refine_grid(out.real(), inp.imag())) {}
-            out.real().add(-1.0 * conj * c.imag(), inp.imag());
-        }
-    }
+    mpi::share_function(out_func, 0, 9911, mpi::comm_share);
 }
 
-/** @brief In place multiply with scalar.
- *
- * MPI: Cannot be called with a complex argument
- *      if *this function is shared memory.
- */
+/** @brief In place multiply with real scalar. Fully in-place.*/
+void QMFunction::rescale(double c) {
+    ComplexFunction &out_func = this->function();
+    bool need_to_rescale = not(out_func.isShared()) or mpi::share_master();
+    if (need_to_rescale) {
+        if (out_func.hasReal()) out_func.real().rescale(c);
+        if (out_func.hasImag()) out_func.imag().rescale(c);
+    }
+    mpi::share_function(out_func, 0, 5543, mpi::comm_share);
+}
+
+/** @brief In place multiply with complex scalar. Involves a deep copy.*/
 void QMFunction::rescale(ComplexDouble c) {
-    double thrs = mrcpp::MachineZero;
-    bool cHasReal = (std::abs(c.real()) > thrs);
-    bool cHasImag = (std::abs(c.imag()) > thrs);
-    if (cHasReal and cHasImag) {
-        if (not this->hasReal()) MSG_FATAL("Real part not allocated");
-        if (not this->hasImag()) MSG_FATAL("Imaginary part not allocated");
-
-        // Extend to union grid
-        while (mrcpp::refine_grid(this->real(), this->imag())) {}
-        while (mrcpp::refine_grid(this->imag(), this->real())) {}
-
-        // Create deep copy
-        QMFunction tmp(false);
-        tmp.alloc(NUMBER::Total);
-        mrcpp::copy_grid(tmp.real(), this->real());
-        mrcpp::copy_func(tmp.real(), this->real());
-        mrcpp::copy_grid(tmp.imag(), this->imag());
-        mrcpp::copy_func(tmp.imag(), this->imag());
-        mrcpp::clear_grid(this->real());
-        mrcpp::clear_grid(this->imag());
-        mrcpp::add(-1.0, this->real(), c.real(), tmp.real(), -c.imag(), tmp.imag());
-        mrcpp::add(-1.0, this->imag(), c.real(), tmp.imag(), c.imag(), tmp.real());
-        tmp.free();
-    }
-    if (cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().rescale(c.real());
-        if (this->hasImag()) this->imag().rescale(c.real());
-    }
-    if (not cHasReal and cHasImag) {
-        double conj = (this->conjugate()) ? -1.0 : 1.0;
-        mrcpp::FunctionTree<3> *tmp_re = this->re;
-        mrcpp::FunctionTree<3> *tmp_im = this->im;
-        if (tmp_re != nullptr) tmp_re->rescale(c.imag());
-        if (tmp_im != nullptr) tmp_im->rescale(-1.0 * conj * c.imag());
-        this->set(NUMBER::Real, tmp_im);
-        this->set(NUMBER::Imag, tmp_re);
-    }
-    if (not cHasReal and not cHasImag) {
-        if (this->hasReal()) this->real().setZero();
-        if (this->hasImag()) this->imag().setZero();
-    }
+    QMFunction tmp(this->function().isShared());
+    qmfunction::deep_copy(tmp, *this);
+    this->freeFunctions();
+    this->add(c, tmp);
 }
 
 } //namespace mrchem

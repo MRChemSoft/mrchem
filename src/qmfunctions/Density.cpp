@@ -39,35 +39,8 @@ namespace mrchem {
  * NO transfer of ownership.
  */
 Density &Density::operator=(const Density &dens) {
-    if (this != &dens) {
-        if (dens.isShared()) MSG_FATAL("Cannot shallow copy shared trees");
-        this->func_data = dens.func_data;
-        this->re = dens.re;
-        this->im = dens.im;
-    }
+    if (this != &dens) QMFunction::operator=(dens);
     return *this;
-}
-
-/** @brief Deep copy
- *
- * Returns a new density which is a full blueprint copy of *this density. This is
- * achieved by building a new grid for the real and imaginary parts and adding
- * in place.
- */
-Density Density::deepCopy() {
-    Density out(*this);              // Shallow copy (should copy all meta data)
-    out.set(NUMBER::Total, nullptr); // Clear *re and *im pointers
-    if (this->hasReal()) {
-        out.alloc(NUMBER::Real);
-        mrcpp::copy_grid(out.real(), this->real());
-        mrcpp::copy_func(out.real(), this->real());
-    }
-    if (this->hasImag()) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::copy_grid(out.imag(), this->imag());
-        mrcpp::copy_func(out.imag(), this->imag());
-    }
-    return out; // Return shallow copy
 }
 
 /** @brief Write density to disk
@@ -79,12 +52,14 @@ Density Density::deepCopy() {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Density::saveDensity(const std::string &file) {
+    ComplexFunction &func = *this->func_ptr.get();
+
     //writing meta data
     std::stringstream metafile;
     metafile << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
+    FunctionData &func_data = func.getFunctionData();
 
     std::fstream f;
     f.open(metafile.str(), std::ios::out | std::ios::binary);
@@ -93,17 +68,17 @@ void Density::saveDensity(const std::string &file) {
     f.close();
 
     //writing real part
-    if (hasReal()) {
+    if (func.hasReal()) {
         std::stringstream fname;
         fname << file << "_re";
-        this->real().saveTree(fname.str());
+        func.real().saveTree(fname.str());
     }
 
     //writing imaginary part
-    if (hasImag()) {
+    if (func.hasImag()) {
         std::stringstream fname;
         fname << file << "_im";
-        this->imag().saveTree(fname.str());
+        func.imag().saveTree(fname.str());
     }
 }
 
@@ -116,15 +91,16 @@ void Density::saveDensity(const std::string &file) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Density::loadDensity(const std::string &file) {
-    if (hasReal()) MSG_ERROR("Density not empty");
-    if (hasImag()) MSG_ERROR("Density not empty");
+    ComplexFunction &func = *this->func_ptr.get();
+    if (func.hasReal()) MSG_ERROR("Density not empty");
+    if (func.hasImag()) MSG_ERROR("Density not empty");
 
     //reading meta data
     std::stringstream fmeta;
     fmeta << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
+    FunctionData &func_data = func.getFunctionData();
 
     std::fstream f;
     f.open(fmeta.str(), std::ios::in | std::ios::binary);
@@ -132,19 +108,19 @@ void Density::loadDensity(const std::string &file) {
     f.close();
 
     //reading real part
-    if (func_data.nChunksReal > 0) {
+    if (func_data.real_size > 0) {
         std::stringstream fname;
         fname << file << "_re";
-        alloc(NUMBER::Real);
-        this->real().loadTree(fname.str());
+        func.alloc(NUMBER::Real);
+        func.real().loadTree(fname.str());
     }
 
     //reading imaginary part
-    if (func_data.nChunksImag > 0) {
+    if (func_data.imag_size > 0) {
         std::stringstream fname;
         fname << file << "_im";
-        alloc(NUMBER::Imag);
-        this->imag().loadTree(fname.str());
+        func.alloc(NUMBER::Imag);
+        func.imag().loadTree(fname.str());
     }
 }
 

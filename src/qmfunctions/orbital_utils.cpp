@@ -77,11 +77,11 @@ ComplexVector orbital::dot(OrbitalVector &Bra, OrbitalVector &Ket) {
             int tag = 8765 + i;
             int src = Bra[i].rankID();
             int dst = Ket[i].rankID();
-            if (mpi::my_orb(Bra[i])) mpi::send_function(Bra[i], dst, tag, mpi::comm_orb);
-            if (mpi::my_orb(Ket[i])) mpi::recv_function(Bra[i], src, tag, mpi::comm_orb);
+            if (mpi::my_orb(Bra[i])) mpi::send_function(Bra[i].function(), dst, tag, mpi::comm_orb);
+            if (mpi::my_orb(Ket[i])) mpi::recv_function(Bra[i].function(), src, tag, mpi::comm_orb);
         }
         result[i] = orbital::dot(Bra[i], Ket[i]);
-        if (not mpi::my_orb(Bra[i])) Bra[i].free();
+        if (not mpi::my_orb(Bra[i])) Bra[i].freeFunctions();
     }
     mpi::allreduce_vector(result, mpi::comm_orb);
     return result;
@@ -168,7 +168,6 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double
             qmfunction::linear_combination(tmp_i, coef_vec, func_vec, inter_prec);
             out[i].add(1.0, tmp_i); // In place addition
             out[i].crop(inter_prec);
-            tmp_i.free();
         }
     }
 
@@ -189,7 +188,8 @@ OrbitalVector orbital::rotate(const ComplexMatrix &U, OrbitalVector &Phi, double
 OrbitalVector orbital::deep_copy(OrbitalVector &Phi) {
     OrbitalVector out;
     for (int i = 0; i < Phi.size(); i++) {
-        Orbital out_i = Phi[i].deepCopy();
+        Orbital out_i = Phi[i].paramCopy();
+        if (mpi::my_orb(out_i)) qmfunction::deep_copy(out_i, Phi[i]);
         out.push_back(out_i);
     }
     return out;
@@ -299,10 +299,10 @@ OrbitalVector orbital::load_orbitals(const std::string &file, const std::string 
         orbname << file << "_" << suffix << i;
         phi_i.loadOrbital(orbname.str());
         phi_i.setRankID(mpi::orb_rank);
-        if (phi_i.hasReal() or phi_i.hasImag()) {
+        if (phi_i.function().hasReal() or phi_i.function().hasImag()) {
             phi_i.setRankID(i % mpi::orb_size);
             Phi.push_back(phi_i);
-            if (not mpi::my_orb(phi_i)) phi_i.free();
+            if (not mpi::my_orb(phi_i)) phi_i.freeFunctions();
         } else {
             break;
         }
@@ -315,16 +315,6 @@ OrbitalVector orbital::load_orbitals(const std::string &file, const std::string 
     mpi::allreduce_vector(errors, mpi::comm_orb);
     orbital::set_errors(Phi, errors);
     return Phi;
-}
-
-/** @brief Frees each orbital in the vector
- *
- * Leaves an empty vector. Orbitals are freed.
- *
- */
-void orbital::free(OrbitalVector &Phi) {
-    for (auto &phi_i : Phi) phi_i.free();
-    Phi.clear();
 }
 
 /** @brief Normalize single orbital. Private function. */
@@ -358,11 +348,11 @@ void orbital::orthogonalize(OrbitalVector &Phi) {
                 if (mpi::my_orb(Phi[i])) orbital::orthogonalize(Phi[i], Phi[j]);
             } else {
                 if (mpi::my_orb(Phi[i])) {
-                    mpi::recv_function(Phi[j], src, tag, mpi::comm_orb);
+                    mpi::recv_function(Phi[j].function(), src, tag, mpi::comm_orb);
                     orbital::orthogonalize(Phi[i], Phi[j]);
-                    Phi[j].free();
+                    Phi[j].freeFunctions();
                 }
-                if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j], dst, tag, mpi::comm_orb);
+                if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j].function(), dst, tag, mpi::comm_orb);
             }
         }
     }
@@ -485,22 +475,9 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi){
     if(nP > 0) U.block(0,     0,     nP, nP) = localize(prec, Phi, SPIN::Paired);
     if(nA > 0) U.block(nP,    nP,    nA, nA) = localize(prec, Phi, SPIN::Alpha);
     if(nB > 0) U.block(nP+nA, nP+nA, nB, nB) = localize(prec, Phi, SPIN::Beta);
+    timer.stop();
+    Printer::printFooter(0, timer, 2);
     return U;
-}
-
-/** @brief In place rotation of a vector of orbitals.
-
-@param in prec prcision
-@param in U rotation matrix
-@param in/out Oribtial vector
-
-The rotated orbitals are stored in a temporary vector, which is later copied to the original one.
-
- */
-void orbital::rotate_in_place(const ComplexMatrix & U, OrbitalVector & Phi, double prec) {
-    OrbitalVector temp = orbital::rotate(U, Phi, prec);
-    orbital::free(Phi);
-    Phi = temp;
 }
 
 /** @brief Localize a set of orbitals with the same spin
@@ -514,7 +491,7 @@ The localization matrix is returned for further processing.
 ComplexMatrix orbital::localize(double prec, OrbitalVector & Phi, int spin) {
     OrbitalVector Phi_s = orbital::disjoin(Phi, spin);
     ComplexMatrix U = calc_localization_matrix(prec, Phi_s);
-    rotate_in_place(U, Phi_s, prec);
+    Phi_s = rotate(U, Phi_s, prec);
     orbital::append(Phi, Phi_s);
     return U;
 }
@@ -531,6 +508,7 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector & Phi, int spin) {
  */
 ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi) {
     ComplexMatrix U;
+    /*
     int n_it = 0;
     if (Phi.size() > 1) {
         Timer rmat;
@@ -557,6 +535,13 @@ ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi)
         orth_t.stop();
         Printer::printDouble(0, "Computing Lowdin matrix", orth_t.getWallTime(), 5);
     }
+
+    Timer rot_t;
+    Phi = orbital::rotate(U, Phi, prec);
+    rot_t.stop();
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
+
+    */
     return U;
 }
 
@@ -591,8 +576,11 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
     diag_t.stop();
     Printer::printDouble(0, "Diagonalizing matrix", diag_t.getWallTime(), 5);
 
-    orbital::rotate_in_place(U, Phi, prec);
-    
+    Timer rot_t;
+    Phi = orbital::rotate(U, Phi, prec);
+    rot_t.stop();
+    Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
+
     timer.stop();
     Printer::printFooter(0, timer, 2);
     return U;
@@ -607,7 +595,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
  */
 ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi) {
     ComplexMatrix U = orbital::calc_lowdin_matrix(Phi);
-    orbital::rotate_in_place(U, Phi, prec);
+    Phi = orbital::rotate(U, Phi, prec);
     return U;
 }
 
