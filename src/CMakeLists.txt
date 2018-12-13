@@ -22,7 +22,7 @@ target_include_directories(mrchem
   )
 
 list(APPEND _public_headers
-  #SCFDriver.h
+  SCFDriver.h
   mrchem.h
   mrenv.h
   parallel.h
@@ -39,7 +39,7 @@ add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 add_subdirectory(mrdft)
-#add_subdirectory(scf_solver)
+add_subdirectory(scf_solver)
 add_subdirectory(utils)
 
 target_link_libraries(mrchem
@@ -80,7 +80,7 @@ add_executable(mrchem.x mrchem.cpp)
 
 target_sources(mrchem.x
   PRIVATE
-  #  SCFDriver.cpp
+    SCFDriver.cpp
   PUBLIC
     $<BUILD_INTERFACE:$<JOIN:${CMAKE_CURRENT_LIST_DIR}/,${_public_headers}>>
   )
@@ -140,7 +140,7 @@ install(
   )
 
 # <<< Build initial guess executables >>>
-#add_subdirectory(initial_guess)
+add_subdirectory(initial_guess)
 
 set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
 # configure into CMakeFiles directory, because it must be in a different directory

@@ -58,16 +58,10 @@ Accelerator::Accelerator(int max, int min, bool sep)
  * ready for use in the next optimization.
  */
 void Accelerator::clear() {
-    while (this->orbitals.size() > 0) {
-        orbital::free(this->orbitals[0]);
-        this->orbitals.pop_front();
-    }
-    while (this->dOrbitals.size() > 0) {
-        orbital::free(this->dOrbitals[0]);
-        this->dOrbitals.pop_front();
-    }
-    while (this->fock.size() > 0) { this->fock.pop_front(); }
-    while (this->dFock.size() > 0) { this->dFock.pop_front(); }
+    while (this->orbitals.size() > 0) this->orbitals.pop_front();
+    while (this->dOrbitals.size() > 0) this->dOrbitals.pop_front();
+    while (this->fock.size() > 0) this->fock.pop_front();
+    while (this->dFock.size() > 0) this->dFock.pop_front();
     clearLinearSystem();
 }
 
@@ -149,16 +143,11 @@ void Accelerator::push_back(OrbitalVector &Phi,
         if (this->fock.size() != nHistory) { MSG_ERROR("Size mismatch orbitals vs matrices"); }
     }
 
-    if (this->orbitals.size() > this->maxHistory - 1) {
-        orbital::free(this->orbitals[0]);
-        this->orbitals.pop_front();
-    }
-    if (this->dOrbitals.size() > this->maxHistory - 1) {
-        orbital::free(this->dOrbitals[0]);
-        this->dOrbitals.pop_front();
-    }
-    if (this->fock.size() > this->maxHistory - 1) { this->fock.pop_front(); }
-    if (this->dFock.size() > this->maxHistory - 1) { this->dFock.pop_front(); }
+    if (this->orbitals.size() > this->maxHistory - 1) this->orbitals.pop_front();
+    if (this->dOrbitals.size() > this->maxHistory - 1) this->dOrbitals.pop_front();
+    if (this->fock.size() > this->maxHistory - 1) this->fock.pop_front();
+    if (this->dFock.size() > this->maxHistory - 1) this->dFock.pop_front();
+
     if (not verifyOverlap(Phi)) {
         println(0, " Clearing accelerator");
         this->clear();
@@ -390,16 +379,13 @@ void Accelerator::sortLinearSystem(std::vector<DoubleMatrix> &A_matrices,
 int Accelerator::printTreeSizes() const {
     int totNodes = 0;
     int totTrees = 0;
-    int nHistory = this->orbitals.size();
-    for (int i = 0; i < nHistory; i++) {
-        int nOrbitals = this->orbitals[i].size();
-        for (int j = 0; j < nOrbitals; j++) { totNodes += this->orbitals[i][j].getNNodes(); }
-        totTrees += nOrbitals;
+    for (int i = 0; i < this->orbitals.size(); i++) {
+        totTrees += this->orbitals[i].size();
+        totNodes += orbital::get_n_nodes(this->orbitals[i]);
     }
-    for (int i = 0; i < nHistory; i++) {
-        int nOrbitals = this->dOrbitals[i].size();
-        for (int j = 0; j < nOrbitals; j++) { totNodes += this->dOrbitals[i][j].getNNodes(); }
-        totTrees += nOrbitals;
+    for (int i = 0; i < this->dOrbitals.size(); i++) {
+        totTrees += this->dOrbitals[i].size();
+        totNodes += orbital::get_n_nodes(this->dOrbitals[i]);
     }
     println(0, " Accelerator       " << std::setw(15) << totTrees << std::setw(25) << totNodes);
     return totNodes;

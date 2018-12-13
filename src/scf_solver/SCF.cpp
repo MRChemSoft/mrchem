@@ -212,7 +212,7 @@ void SCF::printOrbitals(const DoubleVector &epsilon, const OrbitalVector &Phi, i
         printout(0, std::setw(3) << i);
         printout(0, " " << std::setw(13) << epsilon(i));
         printout(0, " " << std::setw(13) << Phi[i].error());
-        printout(0, " " << std::setw(10) << Phi[i].getNNodes());
+        printout(0, " " << std::setw(10) << Phi[i].function().getNNodes(NUMBER::Total));
         printout(0, std::setw(5) << Phi[i].printSpin());
         printout(0, std::setw(5) << Phi[i].occ());
         printout(0, std::setw(5) << converged << std::endl);

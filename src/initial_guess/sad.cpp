@@ -86,7 +86,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
 
     // Compute Coulomb density
     Density &rho_j = J.getDensity();
-    rho_j.alloc(NUMBER::Real);
+    rho_j.function().alloc(NUMBER::Real);
 
     // MPI grand master computes SAD density
     if (mpi::grand_master()) {
@@ -95,7 +95,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
         initial_guess::sad::project_atomic_densities(prec, mol, rho_atomic);
 
         // Add atomic densities
-        mrcpp::add(prec, rho_j.real(), rho_atomic);
+        mrcpp::add(prec, rho_j.function().real(), rho_atomic);
         mrcpp::clear(rho_atomic, true);
     }
     // MPI grand master distributes the full density
@@ -104,13 +104,13 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
     // Compute XC density
     if (restricted) {
         mrcpp::FunctionTree<3> &rho_xc = XC.getDensity(DENSITY::Total);
-        mrcpp::copy_grid(rho_xc, rho_j.real());
-        mrcpp::copy_func(rho_xc, rho_j.real());
+        mrcpp::copy_grid(rho_xc, rho_j.function().real());
+        mrcpp::copy_func(rho_xc, rho_j.function().real());
     } else {
         mrcpp::FunctionTree<3> &rho_a = XC.getDensity(DENSITY::Alpha);
         mrcpp::FunctionTree<3> &rho_b = XC.getDensity(DENSITY::Beta);
-        mrcpp::add(prec, rho_a, 1.0, rho_j.real(), -1.0 * Nb / Ne, rho_j.real());
-        mrcpp::add(prec, rho_b, 1.0, rho_j.real(), -1.0 * Na / Ne, rho_j.real());
+        mrcpp::add(prec, rho_a, 1.0, rho_j.function().real(), -1.0 * Nb / Ne, rho_j.function().real());
+        mrcpp::add(prec, rho_b, 1.0, rho_j.function().real(), -1.0 * Na / Ne, rho_j.function().real());
 
         // Extend to union grid
         int nNodes = 1;
@@ -151,7 +151,6 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
 
         Psi = orbital::adjoin(Psi_a, Psi_b);
     }
-    orbital::free(Phi);
     F.clear();
     t_diag.stop();
     Printer::printFooter(0, t_diag, 2);
@@ -181,7 +180,7 @@ ComplexMatrix initial_guess::sad::diagonalize_fock(RankZeroTensorOperator &F, Or
 OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
     Timer t;
     OrbitalVector Psi;
-    for (int i = 0; i < N; i++) Psi.push_back(spin);
+    for (int i = 0; i < N; i++) Psi.push_back(Orbital(spin));
     mpi::distribute(Psi);
 
     OrbitalIterator iter(Phi);
@@ -200,7 +199,6 @@ OrbitalVector initial_guess::sad::rotate_orbitals(double prec, ComplexMatrix &U,
             qmfunction::linear_combination(tmp_i, coef_vec, func_vec, prec);
             Psi[i].add(1.0, tmp_i); // In place addition
             Psi[i].crop(prec);
-            tmp_i.free();
         }
     }
     t.stop();

@@ -154,7 +154,7 @@ bool EnergyOptimizer::optimize() {
 
         // Apply Helmholtz operators
         Phi_np1 = H(Psi_n);
-        orbital::free(Psi_n);
+        Psi_n.clear();
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
@@ -171,15 +171,14 @@ bool EnergyOptimizer::optimize() {
         // Compute Fock matrix
         ComplexMatrix F_np1 = F_n + calcFockMatrixUpdate(orb_prec, dPhi_n);
         H.clear();
-        orbital::free(Phi_n);
-        orbital::free(dPhi_n);
+        dPhi_n.clear();
         fock.clear();
 
         // Rotate orbitals
         ComplexMatrix U = orbital::calc_lowdin_matrix(Phi_np1);
         Phi_n = orbital::rotate(U, Phi_np1, orb_prec);
+        Phi_np1.clear();
         F_n = U * F_np1 * U.adjoint();
-        orbital::free(Phi_np1);
         orbital::set_errors(Phi_n, errors);
 
         timer.stop();
@@ -350,7 +349,6 @@ ComplexMatrix dV_n = ComplexMatrix::Zero(Ni,Nj);
     if (xc_np1 != 0) xc_np1->clear();
 
     // Re-computing non-orthogonal phi_np1
-    orbital::free(Phi_np1);
     Phi_np1 = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
 
     ComplexMatrix L = this->helmholtz->getLambdaMatrix();

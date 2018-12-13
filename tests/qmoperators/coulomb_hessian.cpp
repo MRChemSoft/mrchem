@@ -34,12 +34,10 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
-#include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/CoulombOperator.h"
 
 using namespace mrchem;
 using namespace orbital;
-using namespace std;
 
 namespace coulomb_hessian {
 

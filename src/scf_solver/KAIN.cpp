@@ -81,10 +81,8 @@ void KAIN::setupLinearSystem() {
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
                     orbA(i, j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
-                    dfPhi_jm.free();
                 }
                 orbB(i) += orbital::dot(dPhi_im, fPhi_m).real();
-                dPhi_im.free();
             }
         }
         A_matrices.push_back(orbA);
@@ -192,12 +190,6 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
 
             dPhi[n] = Phi[n].paramCopy();
             qmfunction::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
-
-            // First entry is the last orbital update and should not be deallocated,
-            // all other entries are locally allocated partSteps that must be deleted
-            totOrbs[0].set(NUMBER::Real, nullptr);
-            totOrbs[0].set(NUMBER::Imag, nullptr);
-            qmfunction::free(totOrbs);
         }
     }
 

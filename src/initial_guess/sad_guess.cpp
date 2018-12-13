@@ -27,8 +27,8 @@
 #include "MRCPP/Timer"
 #include "getkw/Getkw.hpp"
 
-#include "mrenv.h"
 #include "mrchem.h"
+#include "mrenv.h"
 #include "parallel.h"
 #include "sad.h"
 
@@ -57,6 +57,7 @@ using namespace mrchem;
  * orbitals/phi_1_re.tree: MW representation of real part
  */
 
+// clang-format off
 int main(int argc, char **argv) {
     mpi::initialize(argc, argv);
     mrenv::initialize(argc, argv);
@@ -85,7 +86,6 @@ int main(int argc, char **argv) {
     // Setting up orbitals
     OrbitalVector Phi = initial_guess::sad::setup(prec, mol, wf_restricted, ig_zeta);
     orbital::save_orbitals(Phi, orb_file);
-    orbital::free(Phi);
 
     timer.stop();
     mrenv::finalize(timer.getWallTime());
@@ -93,3 +93,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+// clang-format on

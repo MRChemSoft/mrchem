@@ -34,7 +34,6 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
-#include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
 using namespace mrchem;
@@ -145,11 +144,9 @@ TEST_CASE("XCHessian", "[xc_hessian]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        std::cout << v << std::endl;
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E_P(i,j)).epsilon(thrs));
-                //  if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(v(i, j).real()).epsilon(thrs));
                 REQUIRE(v(i, j).imag() < thrs);
             }
         }

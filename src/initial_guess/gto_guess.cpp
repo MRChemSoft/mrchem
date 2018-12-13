@@ -27,14 +27,14 @@
 #include "MRCPP/Timer"
 #include "getkw/Getkw.hpp"
 
-#include "mrenv.h"
 #include "mrchem.h"
+#include "mrenv.h"
 #include "parallel.h"
 
 #include "chemistry/Molecule.h"
+#include "gto.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "gto.h"
 
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
@@ -91,7 +91,6 @@ int main(int argc, char **argv) {
         Phi = initial_guess::gto::setup(prec, mol, bas_file, moa_file, mob_file);
     }
     orbital::save_orbitals(Phi, orb_file);
-    orbital::free(Phi);
 
     timer.stop();
     mrenv::finalize(timer.getWallTime());
@@ -99,4 +98,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-

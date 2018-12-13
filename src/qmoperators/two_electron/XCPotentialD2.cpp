@@ -29,10 +29,15 @@ XCPotentialD2::XCPotentialD2(mrdft::XCFunctional *F, OrbitalVector *Phi, Orbital
         , orbitals_y(Y)
         , pertDensity_t(nullptr)
         , pertDensity_a(nullptr)
-        , pertDensity_b(nullptr) {}
+        , pertDensity_b(nullptr) {
+
+}
 
 XCPotentialD2::~XCPotentialD2() {
     mrcpp::clear(this->potentials, true);
+    if (this->pertDensity_t != nullptr) MSG_FATAL("Operator not properly cleared");
+    if (this->pertDensity_a != nullptr) MSG_FATAL("Operator not properly cleared");
+    if (this->pertDensity_b != nullptr) MSG_FATAL("Operator not properly cleared");
 }
 
 /** @brief Prepare the operator for application
@@ -58,9 +63,12 @@ void XCPotentialD2::setup(double prec) {
 /** @brief Clears all data in the XCPotentialD2 object */
 void XCPotentialD2::clear() {
     this->energy = 0.0;
-    if (this->pertDensity_t != nullptr) this->pertDensity_t;
-    if (this->pertDensity_a != nullptr) this->pertDensity_a;
-    if (this->pertDensity_b != nullptr) this->pertDensity_b;
+    if (this->pertDensity_t != nullptr) delete this->pertDensity_t;
+    if (this->pertDensity_a != nullptr) delete this->pertDensity_a;
+    if (this->pertDensity_b != nullptr) delete this->pertDensity_b;
+    this->pertDensity_t = nullptr;
+    this->pertDensity_a = nullptr;
+    this->pertDensity_b = nullptr;
     clearApplyPrec();
 }
 
@@ -73,8 +81,10 @@ void XCPotentialD2::setupPerturbedDensity(double prec) {
     OrbitalVector &Y = *this->orbitals_y;
 
     if (this->functional->isSpinSeparated()) {
-        Density dRho_a = *this->pertDensity_a;
-        Density dRho_b = *this->pertDensity_b;
+        this->pertDensity_a = new Density(false);
+        this->pertDensity_b = new Density(false);
+        Density &dRho_a = *this->pertDensity_a;
+        Density &dRho_b = *this->pertDensity_b;
         Timer time_a;
         density::compute(prec, dRho_a, Phi, X, Y, DENSITY::Alpha);
         time_a.stop();
@@ -89,7 +99,8 @@ void XCPotentialD2::setupPerturbedDensity(double prec) {
         while (mrcpp::refine_grid(dRho_a.function().real(), dRho_b.function().real())) {}
         while (mrcpp::refine_grid(dRho_b.function().real(), dRho_a.function().real())) {}
     } else {
-        Density dRho_t = *this->pertDensity_t;
+        this->pertDensity_t = new Density(false);
+        Density &dRho_t = *this->pertDensity_t;
         Timer time_t;
         density::compute(prec, dRho_t, Phi, X, Y, DENSITY::Total);
         time_t.stop();

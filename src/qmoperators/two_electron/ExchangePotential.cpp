@@ -88,7 +88,7 @@ Orbital ExchangePotential::apply(Orbital inp) {
     } else {
         println(1, "Precomputed exchange");
         Orbital out = this->exchange[i].paramCopy();
-        qmfunction::deep_copy(out, inp);
+        qmfunction::deep_copy(out, this->exchange[i]);
         return out;
     }
 }

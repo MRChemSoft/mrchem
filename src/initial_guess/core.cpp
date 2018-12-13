@@ -42,8 +42,8 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
-#include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NuclearOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -57,22 +57,23 @@ namespace core {
  *  First index energy level (n)
  *  Second index angular momentum (l)
  */
+// clang-format off
 int PT[29][2] = {
-   /*s*/
-   {1,0},                  /*p*/
-   {2,0},                  {2,1},
-   {3,0},            /*d*/ {3,1},
-   {4,0},            {3,2},{4,1},
-   {5,0},      /*f*/ {4,2},{5,1},
-   {6,0},      {4,3},{5,2},{6,1},
-   {7,0},/*g*/ {5,3},{6,2},{7,1},
-   {8,0},{5,4},{6,3},{7,2},{8,1},
-   {9,0},{6,4},{7,3},{8,2},{9,1}
+     /*s*/
+    {1, 0},                      /*p*/
+    {2, 0},                     {2, 1},
+    {3, 0},               /*d*/ {3, 1},
+    {4, 0},              {3, 2},{4, 1},
+    {5, 0},        /*f*/ {4, 2},{5, 1},
+    {6, 0},       {4, 3},{5, 2},{6, 1},
+    {7, 0}, /*g*/ {5, 3},{6, 2},{7, 1},
+    {8, 0},{5, 4},{6, 3},{7, 2},{8, 1},
+    {9, 0},{6, 4},{7, 3},{8, 2},{9, 1}
 };
+// clang-format on
 
 } //namespace core
 } //namespace initial_guess
-
 
 /** @brief Produce an initial guess of orbitals
  *
@@ -86,14 +87,11 @@ int PT[29][2] = {
  * and fills the resulting orbitals by the Aufbau principle.
  *
  */
-OrbitalVector initial_guess::core::setup(double prec,
-                                         const Molecule &mol,
-                                         bool restricted,
-                                         int zeta) {
-    int mult = mol.getMultiplicity();   //multiplicity
-    int Ne = mol.getNElectrons();       //total electrons
-    int Nd = Ne - (mult - 1);           //doubly occupied
-    if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
+OrbitalVector initial_guess::core::setup(double prec, const Molecule &mol, bool restricted, int zeta) {
+    int mult = mol.getMultiplicity(); //multiplicity
+    int Ne = mol.getNElectrons();     //total electrons
+    int Nd = Ne - (mult - 1);         //doubly occupied
+    if (Nd % 2 != 0) MSG_FATAL("Invalid multiplicity");
 
     // Make Fock operator contributions
     mrcpp::ABGVOperator<3> D(*MRA, 0.5, 0.5);
@@ -112,7 +110,7 @@ OrbitalVector initial_guess::core::setup(double prec,
     V.setup(prec);
     ComplexMatrix t = T(Phi, Phi);
     ComplexMatrix v = V(Phi, Phi);
-    ComplexMatrix F = S_m12.transpose()*(t + v)*S_m12;
+    ComplexMatrix F = S_m12.transpose() * (t + v) * S_m12;
     V.clear();
     T.clear();
     t1.stop();
@@ -137,7 +135,7 @@ OrbitalVector initial_guess::core::setup(double prec,
     if (restricted) {
         if (mult != 1) MSG_FATAL("Restricted open-shell not available");
 
-        int Np = Nd/2;                  //paired orbitals
+        int Np = Nd / 2; //paired orbitals
         for (int i = 0; i < Np; i++) {
             ComplexVector v_i = U.row(i);
             Orbital psi_i(SPIN::Paired);
@@ -145,8 +143,8 @@ OrbitalVector initial_guess::core::setup(double prec,
             Psi.push_back(psi_i);
         }
     } else {
-        int Na = Nd/2 + (mult - 1);     //alpha orbitals
-        int Nb = Nd/2;                  //beta orbitals
+        int Na = Nd / 2 + (mult - 1); //alpha orbitals
+        int Nb = Nd / 2;              //beta orbitals
 
         OrbitalVector Psi_a;
         for (int i = 0; i < Na; i++) {
@@ -166,7 +164,6 @@ OrbitalVector initial_guess::core::setup(double prec,
 
         Psi = orbital::adjoin(Psi_a, Psi_b);
     }
-    orbital::free(Phi);
     t3.stop();
     Printer::printDouble(0, "Rotate orbitals", t3.getWallTime(), 5);
 
@@ -198,10 +195,7 @@ OrbitalVector initial_guess::core::setup(double prec,
  * QZ: 1s2s2p3s3p4s3d4p5s4d5p (5s + 12p + 10d)
  *
  */
-OrbitalVector initial_guess::core::project_ao(double prec,
-                                              const Nuclei &nucs,
-                                              int spin,
-                                              int zeta) {
+OrbitalVector initial_guess::core::project_ao(double prec, const Nuclei &nucs, int spin, int zeta) {
     Printer::printHeader(0, "Projecting Hydrogen AOs");
     println(0, "    N    Atom   Label                     SquareNorm");
     Printer::printSeparator(0, '-');
@@ -213,7 +207,7 @@ OrbitalVector initial_guess::core::project_ao(double prec,
 
     for (int i = 0; i < nucs.size(); i++) {
         const Nucleus &nuc = nucs[i];
-        int minAO = std::ceil(nuc.getElement().getZ()/2.0);
+        int minAO = std::ceil(nuc.getElement().getZ() / 2.0);
         double Z = nuc.getCharge();
         const mrcpp::Coord<3> &R = nuc.getCoord();
 
@@ -224,7 +218,7 @@ OrbitalVector initial_guess::core::project_ao(double prec,
         while (true) {
             int n = initial_guess::core::PT[nShell][0];
             int l = initial_guess::core::PT[nShell][1];
-            int M = 2*l + 1;
+            int M = 2 * l + 1;
 
             if (minAOReached and l == 0) zetaReached++;
             if (zetaReached >= zeta) break;
@@ -232,14 +226,13 @@ OrbitalVector initial_guess::core::project_ao(double prec,
             for (int m = 0; m < M; m++) {
                 HydrogenFunction h_func(n, l, m, Z, R);
 
-                Phi.push_back(spin);
-                Phi.back().setRankID(Phi.size()%mpi::orb_size);
-                Phi.back().alloc(NUMBER::Real);
-                if (mpi::my_orb(Phi.back())) mrcpp::project(prec, Phi.back().real(), h_func);
+                Phi.push_back(Orbital(spin));
+                Phi.back().setRankID(Phi.size() % mpi::orb_size);
+                if (mpi::my_orb(Phi.back())) qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
 
-                printout(0, std::setw(5)  << Phi.size());
-                printout(0, std::setw(6)  << nuc.getElement().getSymbol() << i+1);
-                printout(0, std::setw(6)  << n << label[l]);
+                printout(0, std::setw(5) << Phi.size());
+                printout(0, std::setw(6) << nuc.getElement().getSymbol() << i + 1);
+                printout(0, std::setw(6) << n << label[l]);
                 printout(0, std::setw(40) << Phi.back().squaredNorm());
                 printout(0, std::endl);
 

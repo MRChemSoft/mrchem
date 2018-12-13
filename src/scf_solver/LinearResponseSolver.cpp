@@ -228,7 +228,7 @@ bool LinearResponseSolver::optimize() {
 
             // Apply Helmholtz operators
             OrbitalVector X_np1 = H(Psi_n);
-            orbital::free(Psi_n);
+            Psi_n.clear();
 
             // Orthogonalize: X_np1 = (1 - rho_0)X_np1
             orbital::orthogonalize(X_np1, Phi);
@@ -239,14 +239,10 @@ bool LinearResponseSolver::optimize() {
 
             // Compute KAIN update:
             if (this->kain_x != nullptr) {
-                orbital::free(X_np1);
+                X_np1.clear();
                 this->kain_x->accelerate(orb_prec, *X_n, dX_n);
                 X_np1 = orbital::add(1.0, *X_n, 1.0, dX_n);
             }
-
-            // Free orbitals
-            orbital::free(*X_n);
-            orbital::free(dX_n);
 
             // Prepare for next iteration
             *X_n = X_np1;
@@ -338,12 +334,12 @@ OrbitalVector LinearResponseSolver::setupHelmholtzArguments(OrbitalVector &Phi_1
 
     double coef = -1.0 / (2.0 * MATHCONST::pi);
     OrbitalVector part_12 = orbital::add(coef, part_1, coef, part_2, -1.0);
-    orbital::free(part_1);
-    orbital::free(part_2);
+    part_1.clear();
+    part_2.clear();
 
     OrbitalVector out = orbital::add(1.0, part_12, coef, part_3, -1.0);
-    orbital::free(part_12);
-    orbital::free(part_3);
+    part_12.clear();
+    part_3.clear();
 
     Printer::printDouble(0, "            V_0 phi_1", timer_1.getWallTime(), 5);
     Printer::printDouble(0, "            F_0 phi_1", timer_2.getWallTime(), 5);

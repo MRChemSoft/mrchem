@@ -155,7 +155,7 @@ bool OrbitalOptimizer::optimize() {
 
         // Apply Helmholtz operators
         OrbitalVector Phi_np1 = H(Psi_n);
-        orbital::free(Psi_n);
+        Psi_n.clear();
         H.clear();
 
         ComplexMatrix U = orbital::orthonormalize(orb_prec, Phi_np1);
@@ -163,7 +163,7 @@ bool OrbitalOptimizer::optimize() {
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
-        orbital::free(Phi_np1);
+        Phi_np1.clear();
 
         // Employ KAIN accelerator
         if (this->kain != 0) this->kain->accelerate(orb_prec, Phi_n, dPhi_n);
@@ -178,10 +178,8 @@ bool OrbitalOptimizer::optimize() {
         converged = checkConvergence(err_o, err_p);
 
         // Update orbitals
-        Phi_np1 = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
-        orbital::free(Phi_n);
-        orbital::free(dPhi_n);
-        Phi_n = Phi_np1;
+        Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
+        dPhi_n.clear();
 
         orbital::orthonormalize(orb_prec, Phi_n);
         orbital::set_errors(Phi_n, errors);

@@ -446,7 +446,6 @@ void SCFDriver::clear() {
     if (V != 0) delete V;
     if (T != 0) delete T;
 
-    if (phi != 0) orbital::free(*phi);
     if (phi != 0) delete phi;
     if (molecule != 0) delete molecule;
 
@@ -589,12 +588,10 @@ void SCFDriver::setupPerturbedOrbitals(const ResponseCalculation &rsp_calc) {
 void SCFDriver::clearPerturbedOrbitals(bool dynamic) {
     if (not dynamic) phi_y = 0;
     if (phi_x != 0) {
-        orbital::free(*phi_x);
         delete phi_x;
         phi_x = 0;
     }
     if (phi_y != 0) {
-        orbital::free(*phi_y);
         delete phi_y;
         phi_y = 0;
     }

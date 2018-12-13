@@ -186,12 +186,17 @@ void density::compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVe
 
     // Compute local density from own orbitals
     Density rho_loc(false);
+    rho_loc.function().alloc(NUMBER::Real);
+    rho_loc.function().real().setZero();
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
             if (not mpi::my_orb(X[i])) MSG_FATAL("Inconsistent MPI distribution");
 
             double occ = density::compute_occupation(Phi[i], spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; //next orbital if this one is not occupied!
+
+            orbital::print(Phi);
+            orbital::print(X);
 
             Density rho_i(false);
             qmfunction::multiply_real(rho_i, Phi[i], X[i], mult_prec);
@@ -239,6 +244,8 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
 
     // Compute local density from own orbitals
     Density rho_loc(false);
+    rho_loc.function().alloc(NUMBER::Real);
+    rho_loc.function().real().setZero();
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
             if (not mpi::my_orb(X[i])) MSG_FATAL("Inconsistent MPI distribution");

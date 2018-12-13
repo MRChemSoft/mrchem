@@ -508,7 +508,6 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector & Phi, int spin) {
  */
 ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi) {
     ComplexMatrix U;
-    /*
     int n_it = 0;
     if (Phi.size() > 1) {
         Timer rmat;
@@ -540,8 +539,6 @@ ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi)
     Phi = orbital::rotate(U, Phi, prec);
     rot_t.stop();
     Printer::printDouble(0, "Rotating orbitals", rot_t.getWallTime(), 5);
-
-    */
     return U;
 }
 
@@ -684,6 +681,13 @@ int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
     return nElectrons;
 }
 
+/** @brief Returns the total number of nodes in the vector */
+int orbital::get_n_nodes(const OrbitalVector &Phi) {
+    int nNodes = 0;
+    for (auto &phi_i : Phi) nNodes += phi_i.function().getNNodes(NUMBER::Total);
+    return nNodes;
+}
+
 /** @brief Returns a vector containing the orbital errors */
 DoubleVector orbital::get_errors(const OrbitalVector &Phi) {
     int nOrbs = Phi.size();
@@ -788,12 +792,11 @@ bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
     return true; // sane orbital set
 }
 /** @brief Returns the start index of a given orbital type (p/a/b) 
-
-    Returns a negative number if the type of orbitals is not present.
-    The ordering of orbitals in a given OrbitalVector is fixed and
-    this can be used to determine the end index as well.
-
-*/
+ *
+ *  Returns a negative number if the type of orbitals is not present.
+ *  The ordering of orbitals in a given OrbitalVector is fixed and
+ *  this can be used to determine the end index as well.
+ */
 int orbital::start_index(const OrbitalVector &Phi, int spin) {
     int nOrbs = Phi.size();
     for (int i = 0; i < nOrbs; i++) {

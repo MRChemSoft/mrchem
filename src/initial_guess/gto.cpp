@@ -23,8 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/MWFunctions"
 #include "MRCPP/Gaussians"
+#include "MRCPP/MWFunctions"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
@@ -32,12 +32,13 @@
 #include "utils/math_utils.h"
 
 #include "gto.h"
-#include "utils/gto_utils/OrbitalExp.h"
 #include "utils/gto_utils/Intgrl.h"
+#include "utils/gto_utils/OrbitalExp.h"
 
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 using mrcpp::GaussExp;
 using mrcpp::Printer;
@@ -66,11 +67,11 @@ OrbitalVector initial_guess::gto::setup(double prec,
                                         const std::string &bas_file,
                                         const std::string &mo_file) {
     // Figure out number of occupied orbitals
-    int mult = mol.getMultiplicity();   //multiplicity
-    int Ne = mol.getNElectrons();       //total electrons
-    int Nd = Ne - (mult - 1);           //doubly occupied electrons
-    if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
-    int Np = Nd/2;                      //paired orbitals
+    int mult = mol.getMultiplicity(); //multiplicity
+    int Ne = mol.getNElectrons();     //total electrons
+    int Nd = Ne - (mult - 1);         //doubly occupied electrons
+    if (Nd % 2 != 0) MSG_FATAL("Invalid multiplicity");
+    int Np = Nd / 2; //paired orbitals
 
     // Project GTO expansion
     return initial_guess::gto::project_mo(prec, bas_file, mo_file, SPIN::Paired, Np);
@@ -99,12 +100,12 @@ OrbitalVector initial_guess::gto::setup(double prec,
                                         const std::string &moa_file,
                                         const std::string &mob_file) {
     // Figure out number of occupied orbitals
-    int mult = mol.getMultiplicity();   //multiplicity
-    int Ne = mol.getNElectrons();       //total electrons
-    int Nd = Ne - (mult - 1);           //paired electrons
-    if (Nd%2 != 0) MSG_FATAL("Invalid multiplicity");
-    int Na = Nd/2 + (mult - 1);         //alpha orbitals
-    int Nb = Nd/2;                      //beta orbitals
+    int mult = mol.getMultiplicity(); //multiplicity
+    int Ne = mol.getNElectrons();     //total electrons
+    int Nd = Ne - (mult - 1);         //paired electrons
+    if (Nd % 2 != 0) MSG_FATAL("Invalid multiplicity");
+    int Na = Nd / 2 + (mult - 1); //alpha orbitals
+    int Nb = Nd / 2;              //beta orbitals
 
     // Project orbitals
     OrbitalVector Phi_a = initial_guess::gto::project_mo(prec, bas_file, moa_file, SPIN::Alpha, Na);
@@ -148,18 +149,18 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
     if (MO.cols() < N) MSG_FATAL("Size mismatch");
 
     OrbitalVector Phi;
-    for (int i = 0; i < N; i++) Phi.push_back(spin);
+    for (int i = 0; i < N; i++) Phi.push_back(Orbital(spin));
     mpi::distribute(Phi);
 
     for (int i = 0; i < N; i++) {
         if (mpi::my_orb(Phi[i])) {
-            Phi[i].alloc(NUMBER::Real);
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
-            mrcpp::project(prec, Phi[i].real(), mo_i);
+            Phi[i].function().alloc(NUMBER::Real);
+            mrcpp::project(prec, Phi[i].function().real(), mo_i);
         }
-        printout(0, std::setw(5)  << i);
-        printout(0, std::setw(5)  << Phi[i].printSpin());
-        printout(0, std::setw(5)  << Phi[i].occ());
+        printout(0, std::setw(5) << i);
+        printout(0, std::setw(5) << Phi[i].printSpin());
+        printout(0, std::setw(5) << Phi[i].occ());
         printout(0, std::setw(44) << Phi[i].norm() << std::endl);
     }
     mpi::barrier(mpi::comm_orb);
@@ -182,10 +183,7 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
  * All orbitals get the same spin parameter.
  *
  */
-OrbitalVector initial_guess::gto::project_ao(double prec,
-                                             const std::string &bas_file,
-                                             int spin,
-                                             int N) {
+OrbitalVector initial_guess::gto::project_ao(double prec, const std::string &bas_file, int spin, int N) {
     Printer::printHeader(0, "Setting up Gaussian-type AOs");
     println(0, "    n  Spin  Occ                           SquareNorm");
     Printer::printSeparator(0, '-');
@@ -199,12 +197,11 @@ OrbitalVector initial_guess::gto::project_ao(double prec,
     OrbitalVector Phi;
     for (int i = 0; i < N; i++) {
         Orbital phi_i(spin);
-        phi_i.alloc(NUMBER::Real);
         GaussExp<3> ao_i = gto_exp.getAO(i);
-        mrcpp::project(prec, phi_i.real(), ao_i);
-        printout(0, std::setw(5)  << i);
-        printout(0, std::setw(5)  << phi_i.printSpin());
-        printout(0, std::setw(5)  << phi_i.occ());
+        qmfunction::project(phi_i, ao_i, NUMBER::Real, prec);
+        printout(0, std::setw(5) << i);
+        printout(0, std::setw(5) << phi_i.printSpin());
+        printout(0, std::setw(5) << phi_i.occ());
         printout(0, std::setw(44) << phi_i.norm() << std::endl);
         Phi.push_back(phi_i);
     }
@@ -230,9 +227,9 @@ OrbitalVector initial_guess::gto::project_ao(double prec,
  *
  */
 mrcpp::FunctionTree<3> *initial_guess::gto::project_density(double prec,
-                                             const Nucleus &nuc,
-                                             const std::string &bas_file,
-                                             const std::string &dens_file) {
+                                                            const Nucleus &nuc,
+                                                            const std::string &bas_file,
+                                                            const std::string &dens_file) {
     // Setup AO basis
     gto_utils::Intgrl intgrl(bas_file);
     intgrl.getNucleus(0).setCoord(nuc.getCoord());
@@ -248,7 +245,6 @@ mrcpp::FunctionTree<3> *initial_guess::gto::project_density(double prec,
 }
 
 } //namespace mrchem
-
 
 //void OrbitalVector::readVirtuals(const string &bf, const string &mo, int n_occ) {
 //    Timer timer;
@@ -271,4 +267,3 @@ mrcpp::FunctionTree<3> *initial_guess::gto::project_density(double prec,
 //    println(0, timer.elapsed() << " =================\n");
 //    Printer::setPrecision(oldPrec);
 //}
-

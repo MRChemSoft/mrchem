@@ -27,14 +27,14 @@
 #include "MRCPP/Timer"
 #include "getkw/Getkw.hpp"
 
-#include "mrenv.h"
 #include "mrchem.h"
+#include "mrenv.h"
 #include "parallel.h"
 
 #include "chemistry/Molecule.h"
+#include "core.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "core.h"
 
 Getkw mrchem::Input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
@@ -61,6 +61,7 @@ using namespace mrchem;
  * orbitals/phi_1_re.tree: MW representation of real part
  */
 
+// clang-format off
 int main(int argc, char **argv) {
     mpi::initialize(argc, argv);
     mrenv::initialize(argc, argv);
@@ -89,7 +90,6 @@ int main(int argc, char **argv) {
     // Setting up orbitals
     OrbitalVector Phi = initial_guess::core::setup(prec, mol, wf_restricted, ig_zeta);
     orbital::save_orbitals(Phi, orb_file);
-    orbital::free(Phi);
 
     timer.stop();
     mrenv::finalize(timer.getWallTime());
@@ -97,4 +97,4 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
+// clang-format on
