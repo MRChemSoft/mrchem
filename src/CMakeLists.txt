@@ -34,11 +34,11 @@ add_dependencies(mrchem
   xcfun_external
   )
 
-#add_subdirectory(chemistry)
+add_subdirectory(chemistry)
 add_subdirectory(analyticfunctions)
 add_subdirectory(qmfunctions)
-#add_subdirectory(qmoperators)
-#add_subdirectory(mrdft)
+add_subdirectory(qmoperators)
+add_subdirectory(mrdft)
 #add_subdirectory(scf_solver)
 add_subdirectory(utils)
 

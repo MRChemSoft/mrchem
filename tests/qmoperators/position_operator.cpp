@@ -31,6 +31,7 @@
 #include "analyticfunctions/HarmonicOscillatorFunction.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/PositionOperator.h"
 
 using namespace mrchem;
@@ -44,15 +45,13 @@ TEST_CASE("PositionOperator", "[position_operator]") {
 
     int nFuncs = 3;
     OrbitalVector Phi;
-    for (int n = 0; n < nFuncs; n++) Phi.push_back(SPIN::Paired);
+    for (int n = 0; n < nFuncs; n++) Phi.push_back(Orbital(SPIN::Paired));
     mpi::distribute(Phi);
 
     for (int n = 0; n < nFuncs; n++) {
         int nu[3] = {n, 0, 0};
         HarmonicOscillatorFunction f(nu);
-
-        if (mpi::my_orb(Phi[n])) Phi[n].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[n])) mrcpp::project(prec, Phi[n].real(), f);
+        if (mpi::my_orb(Phi[n])) qmfunction::project(Phi[n], f, NUMBER::Real, prec);
     }
 
     // reference values for harmonic oscillator eigenfunctions
@@ -74,7 +73,6 @@ TEST_CASE("PositionOperator", "[position_operator]") {
                 REQUIRE(std::abs(X(i, j).real() - ref(i, j)) < thrs);
             }
         }
-        free(xPhi);
     }
     SECTION("expectation matrix") {
         ComplexMatrix X = r[0](Phi, Phi);
@@ -85,7 +83,6 @@ TEST_CASE("PositionOperator", "[position_operator]") {
         }
     }
     r.clear();
-    free(Phi);
 }
 
 } //namespace position_operator

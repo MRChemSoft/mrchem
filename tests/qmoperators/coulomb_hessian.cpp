@@ -33,11 +33,13 @@
 #include "analyticfunctions/HydrogenFunction.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/CoulombOperator.h"
 
 using namespace mrchem;
 using namespace orbital;
+using namespace std;
 
 namespace coulomb_hessian {
 
@@ -53,19 +55,18 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
     ns.push_back(1);
     ls.push_back(0);
     ms.push_back(0);
-    Phi.push_back(SPIN::Paired);
+    Phi.push_back(Orbital(SPIN::Paired));
 
     ns.push_back(2);
     ls.push_back(0);
     ms.push_back(0);
-    Phi.push_back(SPIN::Paired);
+    Phi.push_back(Orbital(SPIN::Paired));
 
     mpi::distribute(Phi);
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mpi::my_orb(Phi[i])) Phi[i].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[i])) mrcpp::project(prec, Phi[i].real(), f);
+        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     std::vector<int> ns_x;
@@ -76,19 +77,18 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
     ns_x.push_back(2);
     ls_x.push_back(0);
     ms_x.push_back(0);
-    Phi_x.push_back(SPIN::Paired);
+    Phi_x.push_back(Orbital(SPIN::Paired));
 
     ns_x.push_back(2);
     ls_x.push_back(1);
     ms_x.push_back(1);
-    Phi_x.push_back(SPIN::Paired);
+    Phi_x.push_back(Orbital(SPIN::Paired));
 
     mpi::distribute(Phi_x);
 
     for (int i = 0; i < Phi_x.size(); i++) {
         HydrogenFunction f(ns_x[i], ls_x[i], ms_x[i]);
-        if (mpi::my_orb(Phi_x[i])) Phi_x[i].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi_x[i])) mrcpp::project(prec, Phi_x[i].real(), f);
+        if (mpi::my_orb(Phi_x[i])) qmfunction::project(Phi_x[i], f, NUMBER::Real, prec);
     }
 
     int i = 0;
@@ -99,8 +99,8 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
     E_P(1,0) = 0.0873913761675;
     E_P(1,1) = 0.0341665770117;
 
-    mrcpp::PoissonOperator* P = new mrcpp::PoissonOperator(*MRA, prec);
-    CoulombOperator V(P, &Phi, &Phi_x, &Phi_x);
+    mrcpp::PoissonOperator P(*MRA, prec);
+    CoulombOperator V(&P, &Phi, &Phi_x, &Phi_x);
 
     V.setup(prec);
     SECTION("apply") {
@@ -113,7 +113,6 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
             REQUIRE(V_00.real() < thrs);
             REQUIRE(V_00.imag() < thrs);
         }
-        Vphi_0.free();
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
@@ -127,7 +126,6 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
                 REQUIRE(V_ii.imag() < thrs);
             }
         }
-        free(VPhi);
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
@@ -141,7 +139,6 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        std::cout << v << std::endl;
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Approx(E_P(i,j)).epsilon(thrs));
@@ -150,7 +147,6 @@ TEST_CASE("CoulombHessian", "[coulomb_hessian]") {
         }
     }
     V.clear();
-    free(Phi);
 }
 
 } // namespace nuclear_potential

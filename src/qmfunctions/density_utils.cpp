@@ -177,9 +177,15 @@ void density::compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVe
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
 
-    if (rho.function().isShared()) NOT_IMPLEMENTED_ABORT;
+    if (not rho.function().hasReal()) rho.function().alloc(NUMBER::Real);
 
-    FunctionTreeVector<3> dens_vec;
+    // For numerically identical results in MPI we must first add
+    // up orbital contributions onto their union grid, and THEN
+    // crop the resulting density tree to the desired precision
+    double part_prec = (mpi::numerically_exact) ? -1.0 : add_prec;
+
+    // Compute local density from own orbitals
+    Density rho_loc(false);
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
             if (not mpi::my_orb(X[i])) MSG_FATAL("Inconsistent MPI distribution");
@@ -189,23 +195,32 @@ void density::compute_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVe
 
             Density rho_i(false);
             qmfunction::multiply_real(rho_i, Phi[i], X[i], mult_prec);
-            if (rho_i.function().hasReal()) dens_vec.push_back(std::make_tuple(2.0 * occ, &(rho_i.function().real())));
+            rho_loc.add(2.0*occ, rho_i);
+            rho_loc.crop(part_prec);
         }
     }
 
-    ComplexFunction &rho_func = rho.function();
-    if (dens_vec.size() > 0) {
-        if (not rho_func.hasReal()) rho_func.alloc(NUMBER::Real);
-        mrcpp::add(add_prec, rho_func.real(), dens_vec);
-    } else if (rho_func.hasReal()) {
-        rho_func.real().setZero();
+    // Add up shared contributions into the grand master
+    mpi::reduce_density(part_prec, rho_loc, mpi::comm_orb);
+    if (mpi::grand_master()) {
+        // If numerically exact the grid is huge at this point
+        if (mpi::numerically_exact) rho_loc.crop(add_prec);
+        // MPI grand master copies the function into final memory
+        mrcpp::copy_grid(rho.function().real(), rho_loc.function().real());
+        mrcpp::copy_func(rho.function().real(), rho_loc.function().real());
     }
-    if (rho_func.hasImag()) rho_func.imag().setZero();
+    rho_loc.release();
 
-    mrcpp::clear(dens_vec, true);
-
-    mpi::reduce_density(add_prec, rho, mpi::comm_orb);
-    mpi::broadcast_density(rho, mpi::comm_orb);
+    if (rho.function().isShared()) {
+        int tag = 3141;
+        // MPI grand master distributes to shared masters
+        mpi::broadcast_density(rho, mpi::comm_sh_group);
+        // MPI share masters distributes to their sharing ranks
+        mpi::share_function(rho.function(), 0, tag, mpi::comm_share);
+    } else {
+        // MPI grand master distributes to all ranks
+        mpi::broadcast_density(rho, mpi::comm_orb);
+    }
 }
 
 void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, int spin) {
@@ -215,11 +230,15 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
     if (Phi.size() != Y.size()) MSG_ERROR("Size mismatch");
 
-    ComplexFunction &rho_func = rho.function();
-    if (rho_func.isShared()) NOT_IMPLEMENTED_ABORT;
+    if (not rho.function().hasReal()) rho.function().alloc(NUMBER::Real);
 
-    FunctionTreeVector<3> dens_real;
-    FunctionTreeVector<3> dens_imag;
+    // For numerically identical results in MPI we must first add
+    // up orbital contributions onto their union grid, and THEN
+    // crop the resulting density tree to the desired precision
+    double part_prec = (mpi::numerically_exact) ? -1.0 : add_prec;
+
+    // Compute local density from own orbitals
+    Density rho_loc(false);
     for (int i = 0; i < Phi.size(); i++) {
         if (mpi::my_orb(Phi[i])) {
             if (not mpi::my_orb(X[i])) MSG_FATAL("Inconsistent MPI distribution");
@@ -233,32 +252,33 @@ void density::compute_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalV
             qmfunction::multiply(rho_x, X[i], Phi[i].dagger(), mult_prec);
             qmfunction::multiply(rho_y, Phi[i], Y[i].dagger(), mult_prec);
 
-            if (rho_x.function().hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_x.function().real())));
-            if (rho_y.function().hasReal()) dens_real.push_back(std::make_tuple(occ, &(rho_y.function().real())));
-            if (rho_x.function().hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_x.function().imag())));
-            if (rho_y.function().hasImag()) dens_imag.push_back(std::make_tuple(occ, &(rho_y.function().imag())));
+            rho_loc.add(occ, rho_x);
+            rho_loc.add(occ, rho_y);
+            rho_loc.crop(part_prec);
         }
     }
 
-    if (dens_real.size() > 0) {
-        if (not rho_func.hasReal()) rho_func.alloc(NUMBER::Real);
-        mrcpp::add(add_prec, rho_func.real(), dens_real);
-    } else if (rho_func.hasReal()) {
-        rho_func.real().setZero();
+    // Add up shared contributions into the grand master
+    mpi::reduce_density(part_prec, rho_loc, mpi::comm_orb);
+    if (mpi::grand_master()) {
+        // If numerically exact the grid is huge at this point
+        if (mpi::numerically_exact) rho_loc.crop(add_prec);
+        // MPI grand master copies the function into final memory
+        mrcpp::copy_grid(rho.function().real(), rho_loc.function().real());
+        mrcpp::copy_func(rho.function().real(), rho_loc.function().real());
     }
+    rho_loc.release();
 
-    if (dens_imag.size() > 0) {
-        if (not rho_func.hasImag()) rho_func.alloc(NUMBER::Imag);
-        mrcpp::add(add_prec, rho_func.imag(), dens_imag);
-    } else if (rho_func.hasImag()) {
-        rho_func.imag().setZero();
+    if (rho.function().isShared()) {
+        int tag = 3141;
+        // MPI grand master distributes to shared masters
+        mpi::broadcast_density(rho, mpi::comm_sh_group);
+        // MPI share masters distributes to their sharing ranks
+        mpi::share_function(rho.function(), 0, tag, mpi::comm_share);
+    } else {
+        // MPI grand master distributes to all ranks
+        mpi::broadcast_density(rho, mpi::comm_orb);
     }
-
-    mrcpp::clear(dens_real, true);
-    mrcpp::clear(dens_imag, true);
-
-    mpi::reduce_density(add_prec, rho, mpi::comm_orb);
-    mpi::broadcast_density(rho, mpi::comm_orb);
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp, int spin) {

@@ -28,11 +28,10 @@ void CoulombPotentialD1::setupDensity(double prec) {
     Density &rho = this->density;
 
     Timer timer;
-    rho.alloc(NUMBER::Real);
     density::compute(prec, rho, Phi, DENSITY::Total);
     timer.stop();
     double t = timer.getWallTime();
-    int n = rho.getNNodes();
+    int n = rho.function().getNNodes(NUMBER::Total);
     Printer::printTree(0, "Coulomb density", n, t);
 }
 

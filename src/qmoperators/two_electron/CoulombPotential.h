@@ -1,7 +1,7 @@
 #pragma once
 
-#include "qmoperators/one_electron/QMPotential.h"
 #include "qmfunctions/Density.h"
+#include "qmoperators/one_electron/QMPotential.h"
 
 /** @class CoulombPotential
  *
@@ -26,7 +26,7 @@ namespace mrchem {
 class CoulombPotential : public QMPotential {
 public:
     CoulombPotential(mrcpp::PoissonOperator *P);
-    ~CoulombPotential();
+    virtual ~CoulombPotential() = default;
     
     friend class CoulombOperator;
 

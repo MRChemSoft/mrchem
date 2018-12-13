@@ -33,9 +33,6 @@ XCPotentialD2::XCPotentialD2(mrdft::XCFunctional *F, OrbitalVector *Phi, Orbital
 
 XCPotentialD2::~XCPotentialD2() {
     mrcpp::clear(this->potentials, true);
-    if (pertDensity_t != nullptr) delete pertDensity_t;
-    if (pertDensity_a != nullptr) delete pertDensity_a;
-    if (pertDensity_b != nullptr) delete pertDensity_b;
 }
 
 /** @brief Prepare the operator for application
@@ -61,6 +58,9 @@ void XCPotentialD2::setup(double prec) {
 /** @brief Clears all data in the XCPotentialD2 object */
 void XCPotentialD2::clear() {
     this->energy = 0.0;
+    if (this->pertDensity_t != nullptr) this->pertDensity_t;
+    if (this->pertDensity_a != nullptr) this->pertDensity_a;
+    if (this->pertDensity_b != nullptr) this->pertDensity_b;
     clearApplyPrec();
 }
 
@@ -71,31 +71,29 @@ void XCPotentialD2::setupPerturbedDensity(double prec) {
     OrbitalVector &Phi = *this->orbitals;
     OrbitalVector &X = *this->orbitals_x;
     OrbitalVector &Y = *this->orbitals_y;
+
     if (this->functional->isSpinSeparated()) {
+        Density dRho_a = *this->pertDensity_a;
+        Density dRho_b = *this->pertDensity_b;
         Timer time_a;
-        pertDensity_a = new Density(false); //LUCA  shall I deallocate these at the end?
-        pertDensity_a->alloc(NUMBER::Real);
-        density::compute(prec, *pertDensity_a, Phi, X, Y, DENSITY::Alpha);
+        density::compute(prec, dRho_a, Phi, X, Y, DENSITY::Alpha);
         time_a.stop();
-        Printer::printTree(0, "XC perturbed alpha density", pertDensity_a->getNNodes(), time_a.getWallTime());
+        Printer::printTree(0, "XC perturbed alpha density", dRho_a.function().getNNodes(NUMBER::Total), time_a.getWallTime());
 
         Timer time_b;
-        pertDensity_b = new Density(false);
-        pertDensity_b->alloc(NUMBER::Real);
-        density::compute(prec, *pertDensity_b, Phi, X, Y, DENSITY::Beta);
+        density::compute(prec, dRho_b, Phi, X, Y, DENSITY::Beta);
         time_b.stop();
-        Printer::printTree(0, "XC perturbed beta density", pertDensity_b->getNNodes(), time_b.getWallTime());
+        Printer::printTree(0, "XC perturbed beta density", dRho_b.function().getNNodes(NUMBER::Total), time_b.getWallTime());
 
         // Extend to union grid
-        while (mrcpp::refine_grid(pertDensity_a->real(), pertDensity_b->real())) {}
-        while (mrcpp::refine_grid(pertDensity_b->real(), pertDensity_a->real())) {}
+        while (mrcpp::refine_grid(dRho_a.function().real(), dRho_b.function().real())) {}
+        while (mrcpp::refine_grid(dRho_b.function().real(), dRho_a.function().real())) {}
     } else {
+        Density dRho_t = *this->pertDensity_t;
         Timer time_t;
-        pertDensity_t = new Density(false);
-        pertDensity_t->alloc(NUMBER::Real);
-        density::compute(prec, *pertDensity_t, Phi, X, Y, DENSITY::Total);
+        density::compute(prec, dRho_t, Phi, X, Y, DENSITY::Total);
         time_t.stop();
-        Printer::printTree(0, "XC perturbed total density", pertDensity_t->getNNodes(), time_t.getWallTime());
+        Printer::printTree(0, "XC perturbed total density", dRho_t.function().getNNodes(NUMBER::Total), time_t.getWallTime());
     }
 }
 
@@ -235,16 +233,16 @@ Orbital XCPotentialD2::apply(Orbital phi) {
     FunctionTree<3> *Vrho = new FunctionTree<3>(*MRA);
     mrcpp::FunctionTreeVector<3> components;
     if (not spinSeparated and totalDens) {
-        FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Total, pertDensity_t->real());
+        FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Total, *pertDensity_t);
         components.push_back(std::make_tuple(1.0, component));
     } else if (spinSeparated) {
         if (totalDens) NOT_IMPLEMENTED_ABORT;
         if (alphaDens) {
-            FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Alpha, pertDensity_a->real());
+            FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Alpha, *pertDensity_a);
             components.push_back(std::make_tuple(1.0, component));
         }
         if (betaDens) {
-            FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Beta, pertDensity_b->real());
+            FunctionTree<3> *component = buildComponent(phi.spin(), DENSITY::Beta, *pertDensity_b);
             components.push_back(std::make_tuple(1.0, component));
         }
     } else {
@@ -253,20 +251,21 @@ Orbital XCPotentialD2::apply(Orbital phi) {
 
     mrcpp::build_grid(*Vrho, components); //LUCA just using "add" results in loss of precision.
     mrcpp::add(-1.0, *Vrho, components);
-    this->set(NUMBER::Real, Vrho);
+    this->function().setReal(Vrho);
     Orbital Vrhophi = QMPotential::apply(phi);
-    this->set(NUMBER::Real, nullptr);
-    delete Vrho; //LUCA: enough to deallocate this FunctionTree?
+    this->function().setReal(nullptr);
+    delete Vrho;
     mrcpp::clear(components, true);
     return Vrhophi;
 }
 
-FunctionTree<3> *XCPotentialD2::buildComponent(int orbital_spin, int density_spin, FunctionTree<3> &pert_dens) {
+FunctionTree<3> *XCPotentialD2::buildComponent(int orbital_spin, int density_spin, Density &pert_dens) {
+    FunctionTree<3> &dRho = pert_dens.function().real();
     FunctionTree<3> *tmp = new FunctionTree<3>(*MRA);
     FunctionTree<3> &V = getPotential(orbital_spin, density_spin);
     mrcpp::build_grid(*tmp, V);
-    mrcpp::build_grid(*tmp, pert_dens);
-    mrcpp::multiply(-1.0, *tmp, 1.0, V, pert_dens);
+    mrcpp::build_grid(*tmp, dRho);
+    mrcpp::multiply(-1.0, *tmp, 1.0, V, dRho);
     return tmp;
 }
 

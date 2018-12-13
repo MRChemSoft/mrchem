@@ -31,8 +31,10 @@
 #include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
+#include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 
 using namespace mrchem;
@@ -58,7 +60,7 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
                 ns.push_back(n);
                 ls.push_back(l);
                 ms.push_back(m);
-                Phi.push_back(SPIN::Paired);
+                Phi.push_back(Orbital(SPIN::Paired));
             }
         }
     }
@@ -66,8 +68,7 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mpi::my_orb(Phi[i])) Phi[i].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[i])) mrcpp::project(prec, Phi[i].real(), f);
+        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     // reference values for hydrogen eigenfunctions
@@ -99,7 +100,6 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
             REQUIRE(V_00.real() < thrs);
             REQUIRE(V_00.imag() < thrs);
         }
-        Vphi_0.free();
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
@@ -113,7 +113,6 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
                 REQUIRE(V_ii.imag() < thrs);
             }
         }
-        free(VPhi);
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
@@ -133,7 +132,6 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
         }
     }
     V.clear();
-    free(Phi);
 }
 
 } // namespace nuclear_potential

@@ -29,10 +29,11 @@
 #include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
-#include "qmoperators/one_electron/ElectricFieldOperator.h"
-#include "chemistry/Molecule.h"
+#include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/one_electron/ElectricFieldOperator.h"
 
 using namespace mrchem;
 using namespace orbital;
@@ -54,14 +55,14 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
     qn.push_back(QuantumNumbers(2, 1, 2));
     int nFuncs = qn.size();
 
-    Eigen::MatrixXd ref(nFuncs,nFuncs);
+    Eigen::MatrixXd ref(nFuncs, nFuncs);
 
     //reference values for the electric field energy operator
-    ref << 0.9,        0.0,  0.74493554, 0.74493554, 0.74493554,
-           0.0,        0.9,  3.0,        3.0,        3.0,
-           0.74493554, 3.0,  0.9,        0.0,        0.0,
-           0.74493554, 3.0,  0.0,        0.9,        0.0,
-           0.74493554, 3.0,  0.0,        0.0,        0.9;
+    ref <<  0.90000000, 0.00000000, 0.74493554, 0.74493554, 0.74493554,
+            0.00000000, 0.90000000, 3.00000000, 3.00000000, 3.00000000,
+            0.74493554, 3.00000000, 0.90000000, 0.00000000, 0.00000000,
+            0.74493554, 3.00000000, 0.00000000, 0.90000000, 0.00000000,
+            0.74493554, 3.00000000, 0.00000000, 0.00000000, 0.90000000;
 
     // setting up the field
     Eigen::Vector3d field;
@@ -73,20 +74,19 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
     mrcpp::Coord<3> o{0.4, 0.3, 0.2};
 
     //setting up the orbitals
-    for (int i = 0; i < nFuncs; i++) Phi.push_back(SPIN::Paired);
+    for (int i = 0; i < nFuncs; i++) Phi.push_back(Orbital(SPIN::Paired));
     mpi::distribute(Phi);
 
     for (int i = 0; i < nFuncs; i++) {
         HydrogenFunction f(std::get<0>(qn[i]), std::get<1>(qn[i]), std::get<2>(qn[i]), 1.0, o);
-        if (mpi::my_orb(Phi[i])) Phi[i].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[i])) mrcpp::project(prec, Phi[i].real(), f);
+        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     SECTION("apply") {
         //update ref based on MPI
         for (int i = 0; i < nFuncs; i++) {
             for (int j = 0; j < nFuncs; j++) {
-                if (not mpi::my_orb(Phi[i]) or not mpi::my_orb(Phi[j])) ref(i,j) = 0.0;
+                if (not(mpi::my_orb(Phi[i])) or not(mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
             }
         }
 
@@ -96,19 +96,18 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
         ComplexDouble X_20 = orbital::dot(Phi[2], phi_x);
         ComplexDouble X_30 = orbital::dot(Phi[3], phi_x);
         ComplexDouble X_40 = orbital::dot(Phi[4], phi_x);
-        REQUIRE(X_00.real() == Approx(ref(0,0)).margin(thrs));
-        REQUIRE(X_10.real() == Approx(ref(0,1)).margin(thrs));
-        REQUIRE(X_20.real() == Approx(ref(0,2)).margin(thrs));
-        REQUIRE(X_30.real() == Approx(ref(0,3)).margin(thrs));
-        REQUIRE(X_40.real() == Approx(ref(0,4)).margin(thrs));
-        phi_x.free();
+        REQUIRE(X_00.real() == Approx(ref(0, 0)).margin(thrs));
+        REQUIRE(X_10.real() == Approx(ref(0, 1)).margin(thrs));
+        REQUIRE(X_20.real() == Approx(ref(0, 2)).margin(thrs));
+        REQUIRE(X_30.real() == Approx(ref(0, 3)).margin(thrs));
+        REQUIRE(X_40.real() == Approx(ref(0, 4)).margin(thrs));
     }
 
     SECTION("vector apply") {
         //update ref based on MPI
         for (int i = 0; i < nFuncs; i++) {
             for (int j = 0; j < nFuncs; j++) {
-                if (not mpi::my_orb(Phi[i]) or not mpi::my_orb(Phi[j])) ref(i,j) = 0.0;
+                if (not(mpi::my_orb(Phi[i])) or not(mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
             }
         }
 
@@ -116,15 +115,14 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j < xPhi.size(); j++) {
                 ComplexDouble X_ij = orbital::dot(Phi[i], xPhi[j]);
-                REQUIRE(std::abs(X_ij.real()) == Approx(ref(i,j)).margin(thrs));
+                REQUIRE(std::abs(X_ij.real()) == Approx(ref(i, j)).margin(thrs));
             }
         }
-        free(xPhi);
     }
     SECTION("expectation value") {
         ComplexDouble X_00 = EF(Phi[0], Phi[0]);
         if (mpi::my_orb(Phi[0])) {
-            REQUIRE(X_00.real() == Approx(ref(0,0)));
+            REQUIRE(X_00.real() == Approx(ref(0, 0)));
         } else {
             REQUIRE(X_00.real() == Approx(0.0).margin(thrs));
         }
@@ -133,12 +131,11 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
         ComplexMatrix X = EF(Phi, Phi);
         for (int i = 0; i < X.rows(); i++) {
             for (int j = 0; j < X.cols(); j++) {
-                REQUIRE(std::abs(X(i,j).real()) == Approx(ref(i,j)).margin(thrs));
+                REQUIRE(std::abs(X(i, j).real()) == Approx(ref(i, j)).margin(thrs));
             }
         }
     }
     EF.clear();
-    free(Phi);
 }
 
 TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
@@ -152,36 +149,30 @@ TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
     EF.setup(prec);
 
     // Setting up the molecule
-    std::vector<std::string> nuc_coor;
-    nuc_coor.push_back("H    1.0,    0.0,   0.0");
-    nuc_coor.push_back("Li  -1.0,    0.0,   0.0");
-    Molecule LiH(nuc_coor);
-
-    double *o = new double[3];
+    Nuclei nucs;
+    nucs.push_back("H", {1.0, 0.0, 0.0});
+    nucs.push_back("Li", {-1.0, 0.0, 0.0});
 
     OrbitalVector Phi;
-    Phi.push_back(SPIN::Paired);
-    Phi.push_back(SPIN::Paired);
+    Phi.push_back(Orbital(SPIN::Paired));
+    Phi.push_back(Orbital(SPIN::Paired));
     mpi::distribute(Phi);
 
     // Setting up the 1s orbital on H
     HydrogenFunction sh(1, 0, 0, 1.0, {1.0, 0.0, 0.0});
     Orbital &phi_h = Phi[0];
-    if (mpi::my_orb(phi_h)) phi_h.alloc(NUMBER::Real);
-    if (mpi::my_orb(phi_h)) mrcpp::project(prec, phi_h.real(), sh);
+    if (mpi::my_orb(phi_h)) qmfunction::project(phi_h, sh, NUMBER::Real, prec);
 
     // Setting up the 1s orbital on Li
     HydrogenFunction sli(1, 0, 0, 3.0, {-1.0, 0.0, 0.0});
     Orbital &phi_li = Phi[1];
-    if (mpi::my_orb(phi_li)) phi_li.alloc(NUMBER::Real);
-    if (mpi::my_orb(phi_li)) mrcpp::project(prec, phi_li.real(), sli);
+    if (mpi::my_orb(phi_li)) qmfunction::project(phi_li, sli, NUMBER::Real, prec);
 
     SECTION("energy in the external field") {
         double E_ext = EF.trace(Phi).real();
-        double E_nex = EF.trace(LiH.getNuclei()).real();
+        double E_nex = EF.trace(nucs).real();
         REQUIRE(E_ext < thrs);
         REQUIRE(E_nex == Approx(2.0));
-        free(Phi);
     }
     EF.clear();
 }

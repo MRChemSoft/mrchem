@@ -15,10 +15,9 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 QMNabla::QMNabla(int d, DerivativeOperator<3> &D)
-    : QMOperator(),
-      apply_dir(d),
-      derivative(&D) {
-}
+        : QMOperator()
+        , apply_dir(d)
+        , derivative(&D) {}
 
 Orbital QMNabla::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
@@ -31,19 +30,19 @@ Orbital QMNabla::apply(Orbital inp) {
 
     Timer timer;
     // Calc real part
-    if (inp.hasReal()) {
-        out.alloc(NUMBER::Real);
-        mrcpp::apply(out.real(), D, inp.real(), dir);
+    if (inp.function().hasReal()) {
+        out.function().alloc(NUMBER::Real);
+        mrcpp::apply(out.function().real(), D, inp.function().real(), dir);
     }
     // Calc imag part
-    if (inp.hasImag()) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::apply(out.imag(), D, inp.imag(), dir);
-        if (inp.conjugate()) out.real().rescale(-1.0);
+    if (inp.function().hasImag()) {
+        out.function().alloc(NUMBER::Imag);
+        mrcpp::apply(out.function().imag(), D, inp.function().imag(), dir);
+        if (inp.conjugate()) out.function().imag().rescale(-1.0);
     }
     timer.stop();
 
-    int n = out.getNNodes();
+    int n = out.function().getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QMNabla", n, t);
 

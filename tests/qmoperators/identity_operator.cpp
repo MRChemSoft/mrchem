@@ -30,6 +30,7 @@
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 
 using namespace mrchem;
@@ -53,32 +54,26 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
 
     SECTION("apply") {
         Orbital phi(SPIN::Paired);
-        phi.alloc(NUMBER::Total);
-        mrcpp::project<3>(prec, phi.real(), f);
-        mrcpp::project<3>(prec, phi.imag(), g);
+        qmfunction::project(phi, f, NUMBER::Real, prec);
+        qmfunction::project(phi, g, NUMBER::Imag, prec);
 
         IdentityOperator I;
         I.setup(prec);
-
         Orbital Iphi = I(phi);
-        REQUIRE(Iphi.real().integrate() == Approx(phi.real().integrate()));
-        REQUIRE(Iphi.imag().integrate() == Approx(phi.imag().integrate()));
-        Iphi.free();
-
         I.clear();
-        phi.free();
+
+        REQUIRE(Iphi.integrate().real() == Approx(phi.integrate().real()));
+        REQUIRE(Iphi.integrate().imag() == Approx(phi.integrate().imag()));
     }
 
     SECTION("vector apply") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Paired);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Paired));
         mpi::distribute(Phi);
 
-        if (mpi::my_orb(Phi[0])) Phi[0].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[1])) Phi[1].alloc(NUMBER::Imag);
-        if (mpi::my_orb(Phi[0])) mrcpp::project<3>(prec, Phi[0].real(), f);
-        if (mpi::my_orb(Phi[1])) mrcpp::project<3>(prec, Phi[1].imag(), g);
+        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f, NUMBER::Real, prec);
+        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], g, NUMBER::Imag, prec);
         normalize(Phi);
 
         IdentityOperator I;
@@ -91,7 +86,6 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
             REQUIRE(ints_a.real()(1) == Approx(ints_b.real()(1)));
             REQUIRE(ints_a.imag()(0) == Approx(ints_b.imag()(0)));
             REQUIRE(ints_a.imag()(1) == Approx(ints_b.imag()(1)));
-            free(IPhi);
         }
         SECTION("trace") {
             double nEl = get_electron_number(Phi);
@@ -100,50 +94,41 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
             REQUIRE(std::abs(tr.imag()) < thrs);
         }
         I.clear();
-        free(Phi);
     }
 
     SECTION("expectation value") {
         Orbital phi(SPIN::Paired);
-        phi.alloc(NUMBER::Total);
-        mrcpp::project<3>(prec, phi.real(), f);
-        mrcpp::project<3>(prec, phi.imag(), g);
+        qmfunction::project(phi, f, NUMBER::Real, prec);
+        qmfunction::project(phi, g, NUMBER::Imag, prec);
 
         IdentityOperator I;
         I.setup(prec);
-
         ComplexDouble S = I(phi, phi);
+        I.clear();
+
         REQUIRE(S.real() == Approx(phi.squaredNorm()));
         REQUIRE(S.imag() < thrs);
-
-        I.clear();
-        phi.free();
     }
 
     SECTION("expectation matrix") {
         OrbitalVector Phi;
-        Phi.push_back(SPIN::Paired);
-        Phi.push_back(SPIN::Paired);
+        Phi.push_back(Orbital(SPIN::Paired));
+        Phi.push_back(Orbital(SPIN::Paired));
         mpi::distribute(Phi);
 
-        if (mpi::my_orb(Phi[0])) Phi[0].alloc(NUMBER::Imag);
-        if (mpi::my_orb(Phi[1])) Phi[1].alloc(NUMBER::Imag);
-        if (mpi::my_orb(Phi[0])) mrcpp::project<3>(prec, Phi[0].imag(), f);
-        if (mpi::my_orb(Phi[1])) mrcpp::project<3>(prec, Phi[1].imag(), g);
+        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f, NUMBER::Imag, prec);
+        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], g, NUMBER::Imag, prec);
 
         IdentityOperator I;
         I.setup(prec);
-
         ComplexMatrix S = I(Phi, Phi);
-        DoubleMatrix sq_norms = orbital::get_squared_norms(Phi);
+        I.clear();
 
+        DoubleMatrix sq_norms = orbital::get_squared_norms(Phi);
         REQUIRE(std::abs(S(0, 0)) == Approx(sq_norms(0)));
         REQUIRE(std::abs(S(1, 1)) == Approx(sq_norms(1)));
         REQUIRE(S(0, 1).real() == Approx(S(1, 0).real()));
         REQUIRE(S(0, 1).imag() == Approx(-S(1, 0).imag()));
-
-        I.clear();
-        free(Phi);
     }
 }
 

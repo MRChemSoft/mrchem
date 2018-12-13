@@ -33,6 +33,7 @@
 #include "analyticfunctions/HydrogenFunction.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/CoulombOperator.h"
 
@@ -59,7 +60,7 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
                 ns.push_back(n);
                 ls.push_back(l);
                 ms.push_back(m);
-                Phi.push_back(SPIN::Paired);
+                Phi.push_back(Orbital(SPIN::Paired));
             }
         }
     }
@@ -67,8 +68,7 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mpi::my_orb(Phi[i])) Phi[i].alloc(NUMBER::Real);
-        if (mpi::my_orb(Phi[i])) mrcpp::project(prec, Phi[i].real(), f);
+        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     int i = 0;
@@ -82,8 +82,8 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
     E_P(3,3) = 1.8983578764;
     E_P(4,4) = 1.8983578764;
 
-    mrcpp::PoissonOperator* P = new mrcpp::PoissonOperator(*MRA, prec);
-    CoulombOperator V(P, &Phi);
+    mrcpp::PoissonOperator P(*MRA, prec);
+    CoulombOperator V(&P, &Phi);
 
     V.setup(prec);
     SECTION("apply") {
@@ -96,7 +96,6 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
             REQUIRE(V_00.real() < thrs);
             REQUIRE(V_00.imag() < thrs);
         }
-        Vphi_0.free();
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
@@ -110,7 +109,6 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
                 REQUIRE(V_ii.imag() < thrs);
             }
         }
-        free(VPhi);
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
@@ -132,7 +130,6 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
         }
     }
     V.clear();
-    free(Phi);
 }
 
 } // namespace nuclear_potential

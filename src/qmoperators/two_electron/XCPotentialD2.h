@@ -43,7 +43,7 @@ private:
 
     void setupPotential(double prec);
     mrcpp::FunctionTree<3> &getPotential(int orbitalSpin, int densitySpin);
-    mrcpp::FunctionTree<3> *buildComponent(int orbital_spin, int density_spin, mrcpp::FunctionTree<3> &pert_dens);
+    mrcpp::FunctionTree<3> *buildComponent(int orbital_spin, int density_spin, Density &pert_dens);
 
     Orbital apply(Orbital phi);
 

@@ -4,6 +4,7 @@
 
 #include "NuclearOperator.h"
 #include "parallel.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -17,18 +18,18 @@ NuclearPotential::NuclearPotential(const Nuclei &nucs, double prec)
     println(0, " Nr  Element         Charge        Precision     Smoothing ");
     Printer::printSeparator(0, '-');
 
-    double c = 0.00435*prec;
+    double c = 0.00435 * prec;
     for (int i = 0; i < nucs.size(); i++) {
         const Nucleus &nuc = nucs[i];
         double Z = nuc.getCharge();
         double Z_5 = pow(Z, 5.0);
-        double smooth = pow(c/Z_5, 1.0/3.0);
+        double smooth = pow(c / Z_5, 1.0 / 3.0);
         this->func.push_back(nuc, smooth);
 
         std::stringstream symbol;
         symbol << nuc.getElement().getSymbol();
         symbol << "  ";
-        printout(0, std::setw(3) << i+1 << "     ");
+        printout(0, std::setw(3) << i + 1 << "     ");
         printout(0, symbol.str()[0] << symbol.str()[1]);
         printout(0, std::setw(22) << Z);
         printout(0, std::setw(14) << prec);
@@ -44,30 +45,19 @@ void NuclearPotential::setup(double prec) {
 
     QMPotential &V = *this;
 
-    if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
+    if (V.function().hasReal()) MSG_ERROR("Potential not properly cleared");
+    if (V.function().hasImag()) MSG_ERROR("Potential not properly cleared");
 
     Timer timer;
-    V.alloc(NUMBER::Real);
-    if (V.isShared()) {
-        int tag = 8827;
-        if (mpi::share_master()) {
-            mrcpp::build_grid(V.real(), this->func);
-            mrcpp::project(this->apply_prec, V.real(), this->func);
-        }
-        mrcpp::share_tree(V.real(), 0, tag, mpi::comm_share);
-    } else {
-        mrcpp::build_grid(V.real(), this->func);
-        mrcpp::project(this->apply_prec, V.real(), this->func);
-    }
+    qmfunction::project(V, this->func, NUMBER::Real, this->apply_prec);
     timer.stop();
-    int n = V.getNNodes();
+    int n = V.function().getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(0, "Nuclear potential", n, t);
 }
 
 void NuclearPotential::clear() {
-    free();           // delete FunctionTree pointers
+    freeFunctions();  // delete FunctionTree pointers
     clearApplyPrec(); // apply_prec = -1
 }
 
@@ -77,18 +67,18 @@ void NuclearPotential::clear() {
  *
  * Note: this function is not suited to compute the nuclear self-energy
  *
- */    
+ */
 double NuclearOperator::trace(const Nuclei &nucs) {
-    MSG_WARN("This routine has never been tested!")
+    MSG_WARN("This routine has never been tested!");
     int nNucs = nucs.size();
     double E_nuc = 0.0;
     for (int i = 0; i < nNucs; i++) {
         const Nucleus &nuc_i = nucs[i];
         double Z_i = nuc_i.getCharge();
         const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
-        E_nuc += Z_i*this->r_m1.evalf(R_i);
+        E_nuc += Z_i * this->r_m1.evalf(R_i);
     }
     return E_nuc;
 }
-    
+
 } //namespace mrchem

@@ -37,13 +37,10 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         if (&bra == &ket) {
             OrbitalVector dKet = p_x(ket);
             T_x = orbital::calc_overlap_matrix(dKet);
-            orbital::free(dKet);
         } else {
             OrbitalVector dBra = p_x(bra);
             OrbitalVector dKet = p_x(ket);
             T_x = orbital::calc_overlap_matrix(dBra, dKet);
-            orbital::free(dBra);
-            orbital::free(dKet);
         }
         timer.stop();
         double t = timer.getWallTime();
@@ -54,13 +51,10 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         if (&bra == &ket) {
             OrbitalVector dKet = p_y(ket);
             T_y = orbital::calc_overlap_matrix(dKet);
-            orbital::free(dKet);
         } else {
             OrbitalVector dBra = p_y(bra);
             OrbitalVector dKet = p_y(ket);
             T_y = orbital::calc_overlap_matrix(dBra, dKet);
-            orbital::free(dBra);
-            orbital::free(dKet);
         }
         timer.stop();
         double t = timer.getWallTime();
@@ -71,13 +65,10 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
         if (&bra == &ket) {
             OrbitalVector dKet = p_z(ket);
             T_z = orbital::calc_overlap_matrix(dKet);
-            orbital::free(dKet);
         } else {
             OrbitalVector dBra = p_z(bra);
             OrbitalVector dKet = p_z(ket);
             T_z = orbital::calc_overlap_matrix(dBra, dKet);
-            orbital::free(dBra);
-            orbital::free(dKet);
         }
         timer.stop();
         double t = timer.getWallTime();
@@ -86,7 +77,7 @@ ComplexMatrix KineticOperator::operator()(OrbitalVector &bra, OrbitalVector &ket
     timer.stop();
     Printer::printFooter(1, timer, 2);
 
-    return 0.5*(T_x + T_y + T_z);
+    return 0.5 * (T_x + T_y + T_z);
 }
 
 /** @brief Expectation value (dagger version)

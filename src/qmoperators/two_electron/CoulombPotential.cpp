@@ -29,10 +29,6 @@ CoulombPotential::CoulombPotential(PoissonOperator *P)
         , density(mpi::share_coul_dens)
         , poisson(P) {}
 
-CoulombPotential::~CoulombPotential() {
-    this->density.free();
-}
-
 /** @brief prepare operator for application
  *
  * @param prec: apply precision
@@ -58,9 +54,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    QMFunction::free();   // delete FunctionTree pointers
-    this->density.free(); // delete FunctionTree pointers
-    clearApplyPrec();     // apply_prec = -1
+    QMFunction::freeFunctions();   // delete FunctionTree pointers
+    this->density.freeFunctions(); // delete FunctionTree pointers
+    clearApplyPrec();              // apply_prec = -1
 }
 
 /** @brief compute Coulomb potential
@@ -72,28 +68,25 @@ void CoulombPotential::clear() {
  */
 void CoulombPotential::setupPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
-    if (not hasDensity()) MSG_ERROR("Density not initialized");
-    if (hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (hasImag()) MSG_ERROR("Potential not properly cleared");
 
     PoissonOperator &P = *this->poisson;
-    QMPotential &V = *this;
-    Density &rho = this->density;
+    ComplexFunction &V = this->function();
+    ComplexFunction &rho = this->density.function();
+
+    if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
+    if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
 
     // Adjust precision by system size
-    double abs_prec = prec/rho.norm();
+    double abs_prec = prec / this->density.norm();
+    bool need_to_apply = not(V.isShared()) or mpi::share_master();
 
     Timer timer;
     V.alloc(NUMBER::Real);
-    if (V.isShared()) {
-        int tag = 22445;
-        if (mpi::share_master()) mrcpp::apply(abs_prec, V.real(), P, rho.real());
-        mrcpp::share_tree(V.real(), 0, tag, mpi::comm_share);
-    } else {
-        mrcpp::apply(abs_prec, V.real(), P, rho.real());
-    }
+    if (need_to_apply) mrcpp::apply(abs_prec, V.real(), P, rho.real());
+    mpi::share_function(V, 0, 22445, mpi::comm_share);
     timer.stop();
-    int n = V.getNNodes();
+
+    int n = V.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(0, "Coulomb potential", n, t);
 }

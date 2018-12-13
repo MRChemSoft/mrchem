@@ -3,6 +3,7 @@
 
 #include "SpinOperator.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -14,15 +15,16 @@ Orbital QMSpin::apply(Orbital inp) {
 
     ComplexDouble coef(0.0, 0.0);
     if (inp.spin() == SPIN::Paired) NOT_IMPLEMENTED_ABORT;
-    if (this->D == 0 and inp.spin() == SPIN::Alpha) coef = ( 0.5, 0.0);
-    if (this->D == 0 and inp.spin() == SPIN::Beta)  coef = ( 0.5, 0.0);
-    if (this->D == 1 and inp.spin() == SPIN::Alpha) coef = ( 0.0, 0.5);
-    if (this->D == 1 and inp.spin() == SPIN::Beta)  coef = ( 0.0,-0.5);
-    if (this->D == 2 and inp.spin() == SPIN::Alpha) coef = ( 0.5, 0.0);
-    if (this->D == 2 and inp.spin() == SPIN::Beta)  coef = (-0.5, 0.0);
+    if (this->D == 0 and inp.spin() == SPIN::Alpha) coef = ( 0.5,  0.0);
+    if (this->D == 0 and inp.spin() == SPIN::Beta)  coef = ( 0.5,  0.0);
+    if (this->D == 1 and inp.spin() == SPIN::Alpha) coef = ( 0.0,  0.5);
+    if (this->D == 1 and inp.spin() == SPIN::Beta)  coef = ( 0.0, -0.5);
+    if (this->D == 2 and inp.spin() == SPIN::Alpha) coef = ( 0.5,  0.0);
+    if (this->D == 2 and inp.spin() == SPIN::Beta)  coef = (-0.5,  0.0);
 
     Timer timer;
-    Orbital out = inp.deepCopy();
+    Orbital out = inp.paramCopy();
+    qmfunction::deep_copy(out, inp);
     out.rescale(coef);
 
     // Flip spin for s_x and s_y
@@ -32,7 +34,7 @@ Orbital QMSpin::apply(Orbital inp) {
     }
 
     timer.stop();
-    int n = out.getNNodes();
+    int n = out.function().getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied spin operator", n, t);
 

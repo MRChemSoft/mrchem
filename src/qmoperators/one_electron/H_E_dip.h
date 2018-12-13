@@ -22,14 +22,15 @@ namespace mrchem {
  */
 class H_E_dip final : public PositionOperator {
 public:
-    H_E_dip(const mrcpp::Coord<3> &o) : PositionOperator(o) {
+    H_E_dip(const mrcpp::Coord<3> &o)
+            : PositionOperator(o) {
         RankOneTensorOperator<3> &h = (*this);
         h[0] = -1.0 * (*this)[0];
         h[1] = -1.0 * (*this)[1];
         h[2] = -1.0 * (*this)[2];
     }
 
-/** @brief returns the nuclear contribution to the dipole moment
+    /** @brief returns the nuclear contribution to the dipole moment
  *
  * @param[in] the set of nuclei
  *
@@ -40,7 +41,7 @@ public:
         return result;
     }
 
-/** @brief returns the contribution to the dipole moment 
+    /** @brief returns the contribution to the dipole moment
  *
  * @param[in] the nucleus
  *
@@ -49,9 +50,9 @@ public:
         ComplexVector result = ComplexVector::Zero(3);
         double Z = nuc.getCharge();
         const mrcpp::Coord<3> &R = nuc.getCoord();
-        result(0) = Z*this->r_x.real().evalf(R);
-        result(1) = Z*this->r_y.real().evalf(R);
-        result(2) = Z*this->r_z.real().evalf(R);
+        result(0) = Z * this->r_x.function().real().evalf(R);
+        result(1) = Z * this->r_y.function().real().evalf(R);
+        result(2) = Z * this->r_z.function().real().evalf(R);
         return result;
     }
 

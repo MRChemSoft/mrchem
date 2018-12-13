@@ -3,6 +3,7 @@
 #include "IdentityOperator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -10,7 +11,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 /** Identity operator is a deep copy */
 Orbital QMIdentity::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-    return inp.deepCopy();
+    Orbital out = inp.paramCopy();
+    qmfunction::deep_copy(out, inp);
+    return out;
 }
 
 /** Identity operator is a deep copy */

@@ -34,6 +34,7 @@ public:
             , energy(0.0)
             , orbitals(Phi)
             , functional(F) {}
+    virtual ~XCPotential() = default;
 
     friend class XCOperator;
 

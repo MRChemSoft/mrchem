@@ -119,12 +119,13 @@ FunctionTree<3>& XCPotentialD1::getPotential(int spin) {
  * base-class before the base class function is called.
  */
 Orbital XCPotentialD1::apply(Orbital phi) {
-    if (this->hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
+    QMPotential &V = *this;
+    if (V.function().hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
-    FunctionTree<3> &V = getPotential(phi.spin());
-    this->set(NUMBER::Real, &V);
+    FunctionTree<3> &tree = getPotential(phi.spin());
+    V.function().setReal(&tree);
     Orbital Vphi = QMPotential::apply(phi); 
-    this->set(NUMBER::Real, nullptr);
+    V.function().setReal(nullptr);
 
     return Vphi;
 }
