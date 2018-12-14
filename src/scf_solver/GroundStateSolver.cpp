@@ -102,12 +102,12 @@ OrbitalVector GroundStateSolver::setupHelmholtzArguments(FockOperator &fock,
     Printer::printSeparator(0, '-');
     for (int i = 0; i < out.size(); i++) {
         if (mpi::my_orb(out[i])) {
-            int rNodes = out[i].function().getNNodes(NUMBER::Real);
-            int iNodes = out[i].function().getNNodes(NUMBER::Imag);
+            int rNodes = out[i].getNNodes(NUMBER::Real);
+            int iNodes = out[i].getNNodes(NUMBER::Imag);
             double rNorm = 0.0;
             double iNorm = 0.0;
-            if (out[i].function().hasReal()) rNorm = std::sqrt(out[i].function().real().getSquareNorm());
-            if (out[i].function().hasImag()) iNorm = std::sqrt(out[i].function().imag().getSquareNorm());
+            if (out[i].hasReal()) rNorm = std::sqrt(out[i].real().getSquareNorm());
+            if (out[i].hasImag()) iNorm = std::sqrt(out[i].imag().getSquareNorm());
 
             Printer::setPrecision(5);
             printout(0, std::setw(4) << i);

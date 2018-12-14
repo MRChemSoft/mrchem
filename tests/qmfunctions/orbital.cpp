@@ -57,8 +57,8 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(&phi_2.function().real() == &phi_1.function().real());
-            REQUIRE(&phi_2.function().imag() == &phi_1.function().imag());
+            REQUIRE(&phi_2.real() == &phi_1.real());
+            REQUIRE(&phi_2.imag() == &phi_1.imag());
         }
 
         SECTION("default constructor plus assignment") {
@@ -67,8 +67,8 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(&phi_2.function().real() == &phi_1.function().real());
-            REQUIRE(&phi_2.function().imag() == &phi_1.function().imag());
+            REQUIRE(&phi_2.real() == &phi_1.real());
+            REQUIRE(&phi_2.imag() == &phi_1.imag());
         }
 
         SECTION("assigment constructor") {
@@ -76,8 +76,8 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(&phi_2.function().real() == &phi_1.function().real());
-            REQUIRE(&phi_2.function().imag() == &phi_1.function().imag());
+            REQUIRE(&phi_2.real() == &phi_1.real());
+            REQUIRE(&phi_2.imag() == &phi_1.imag());
         }
 
         SECTION("deep copy") {
@@ -86,8 +86,8 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() != phi_1.occ());
             REQUIRE(phi_2.spin() != phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
-            REQUIRE(&phi_2.function().real() != &phi_1.function().real());
-            REQUIRE(not(phi_2.function().hasImag()));
+            REQUIRE(&phi_2.real() != &phi_1.real());
+            REQUIRE(not(phi_2.hasImag()));
         }
 
         SECTION("parameter copy") {
@@ -95,8 +95,8 @@ TEST_CASE("Orbital", "[orbital]") {
             REQUIRE(phi_2.occ() == phi_1.occ());
             REQUIRE(phi_2.spin() == phi_1.spin());
             REQUIRE(phi_2.norm() < 1.0);
-            REQUIRE(not(phi_2.function().hasReal()));
-            REQUIRE(not(phi_2.function().hasImag()));
+            REQUIRE(not(phi_2.hasReal()));
+            REQUIRE(not(phi_2.hasImag()));
         }
     }
 

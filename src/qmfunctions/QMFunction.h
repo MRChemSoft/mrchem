@@ -40,13 +40,27 @@ public:
     QMFunction dagger();
     virtual ~QMFunction() = default;
 
-    void release() { this->func_ptr.reset(); }
-    void freeFunctions() { function().free(NUMBER::Total); }
-    void clearFunctions();
+    void alloc(int type);
+    void free(int type);
 
+    bool isShared() const { return this->func_ptr->func_data.is_shared; }
+    bool hasReal() const { return (this->func_ptr->re == nullptr) ? false : true; }
+    bool hasImag() const { return (this->func_ptr->im == nullptr) ? false : true; }
+
+    int getNNodes(int type) const;
+    FunctionData &getFunctionData();
+
+    void setReal(mrcpp::FunctionTree<3> *tree);
+    void setImag(mrcpp::FunctionTree<3> *tree);
+
+    mrcpp::FunctionTree<3> &real() { return *this->func_ptr->re; }
+    mrcpp::FunctionTree<3> &imag() { return *this->func_ptr->im; }
+
+    const mrcpp::FunctionTree<3> &real() const { return *this->func_ptr->re; }
+    const mrcpp::FunctionTree<3> &imag() const { return *this->func_ptr->im; }
+
+    void release() { this->func_ptr.reset(); }
     bool conjugate() const { return this->conj; }
-    ComplexFunction &function() { return *this->func_ptr.get(); }
-    const ComplexFunction &function() const { return *this->func_ptr.get(); }
 
     double norm() const;
     double squaredNorm() const;

@@ -54,44 +54,44 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("copy constructor") {
             QMFunction func_2(func_1);
-            REQUIRE(not func_2.function().isShared());
+            REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() == &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() == &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
 
         SECTION("default constructor plus assignment") {
             QMFunction func_2;
             func_2 = func_1;
-            REQUIRE(not func_2.function().isShared());
+            REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() == &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() == &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
 
         SECTION("assigment constructor") {
             QMFunction func_2 = func_1;
-            REQUIRE(not func_2.function().isShared());
+            REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() == &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() == &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
 
         SECTION("deep copy to non-shared") {
             QMFunction func_2(false);
             qmfunction::deep_copy(func_2, func_1);
-            REQUIRE(not func_2.function().isShared());
+            REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() != &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() != &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
         SECTION("deep copy to shared") {
             QMFunction func_2(true);
             qmfunction::deep_copy(func_2, func_1);
-            REQUIRE(func_2.function().isShared());
+            REQUIRE(func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() != &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() != &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
     }
 
@@ -101,44 +101,44 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("copy constructor") {
             QMFunction func_2(func_1);
-            REQUIRE(func_2.function().isShared());
+            REQUIRE(func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() == &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() == &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
 
         SECTION("default constructor plus assignment") {
             QMFunction func_2;
             func_2 = func_1;
-            REQUIRE(func_2.function().isShared());
+            REQUIRE(func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() == &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() == &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
 
         SECTION("assigment constructor") {
             QMFunction func_2 = func_1;
-            REQUIRE(func_2.function().isShared());
+            REQUIRE(func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() == &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() == &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
 
         SECTION("deep copy to non-shared") {
             QMFunction func_2(false);
             qmfunction::deep_copy(func_2, func_1);
-            REQUIRE(not func_2.function().isShared());
+            REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() != &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() != &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
         SECTION("deep copy to shared") {
             QMFunction func_2(true);
             qmfunction::deep_copy(func_2, func_1);
-            REQUIRE(func_2.function().isShared());
+            REQUIRE(func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(&func_2.function().real() != &func_1.function().real());
-            REQUIRE(&func_2.function().imag() == &func_1.function().imag());
+            REQUIRE(&func_2.real() != &func_1.real());
+            REQUIRE(&func_2.imag() == &func_1.imag());
         }
     }
 
@@ -148,20 +148,20 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         qmfunction::project(func, g, NUMBER::Imag, prec);
 
         const double ref_norm = func.norm();
-        const double f_int = func.function().real().integrate();
-        const double g_int = func.function().imag().integrate();
+        const double f_int = func.real().integrate();
+        const double g_int = func.imag().integrate();
         SECTION("real scalar") {
             func.rescale(pi);
             REQUIRE(func.norm() == Approx(pi * ref_norm));
-            REQUIRE(func.function().real().integrate() == Approx(pi * f_int));
-            REQUIRE(func.function().imag().integrate() == Approx(pi * g_int));
+            REQUIRE(func.real().integrate() == Approx(pi * f_int));
+            REQUIRE(func.imag().integrate() == Approx(pi * g_int));
         }
         SECTION("imaginary unit") {
             ComplexDouble i(0.0, 1.0);
             func.rescale(i);
             REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.function().real().integrate() == Approx(-g_int));
-            REQUIRE(func.function().imag().integrate() == Approx(f_int));
+            REQUIRE(func.real().integrate() == Approx(-g_int));
+            REQUIRE(func.imag().integrate() == Approx(f_int));
         }
         SECTION("unitary rotation") {
             double re = std::sin(0.5);
@@ -169,8 +169,8 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             ComplexDouble c(re, im);
             func.rescale(c);
             REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.function().real().integrate() == Approx(re * f_int - im * g_int));
-            REQUIRE(func.function().imag().integrate() == Approx(im * f_int + re * g_int));
+            REQUIRE(func.real().integrate() == Approx(re * f_int - im * g_int));
+            REQUIRE(func.imag().integrate() == Approx(im * f_int + re * g_int));
         }
     }
 
@@ -180,22 +180,22 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         qmfunction::project(func, g, NUMBER::Imag, prec);
 
         const double ref_norm = func.norm();
-        const double f_int = func.function().real().integrate();
-        const double g_int = func.function().imag().integrate();
+        const double f_int = func.real().integrate();
+        const double g_int = func.imag().integrate();
 
         SECTION("real scalar") {
             func.rescale(pi);
             REQUIRE(func.norm() == Approx(pi * ref_norm));
-            REQUIRE(func.function().real().integrate() == Approx(pi * f_int));
-            REQUIRE(func.function().imag().integrate() == Approx(pi * g_int));
+            REQUIRE(func.real().integrate() == Approx(pi * f_int));
+            REQUIRE(func.imag().integrate() == Approx(pi * g_int));
         }
         SECTION("imaginary unit") {
             ComplexDouble i(0.0, 1.0);
             func.rescale(i);
             mpi::barrier(mpi::comm_share);
             REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.function().real().integrate() == Approx(-g_int));
-            REQUIRE(func.function().imag().integrate() == Approx(f_int));
+            REQUIRE(func.real().integrate() == Approx(-g_int));
+            REQUIRE(func.imag().integrate() == Approx(f_int));
         }
         SECTION("unitary rotation") {
             double re = std::sin(0.5);
@@ -203,8 +203,8 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             ComplexDouble c(re, im);
             func.rescale(c);
             REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.function().real().integrate() == Approx(re * f_int - im * g_int));
-            REQUIRE(func.function().imag().integrate() == Approx(im * f_int + re * g_int));
+            REQUIRE(func.real().integrate() == Approx(re * f_int - im * g_int));
+            REQUIRE(func.imag().integrate() == Approx(im * f_int + re * g_int));
         }
     }
 

@@ -29,9 +29,7 @@ XCPotentialD2::XCPotentialD2(mrdft::XCFunctional *F, OrbitalVector *Phi, Orbital
         , orbitals_y(Y)
         , pertDensity_t(nullptr)
         , pertDensity_a(nullptr)
-        , pertDensity_b(nullptr) {
-
-}
+        , pertDensity_b(nullptr) {}
 
 XCPotentialD2::~XCPotentialD2() {
     mrcpp::clear(this->potentials, true);
@@ -88,23 +86,23 @@ void XCPotentialD2::setupPerturbedDensity(double prec) {
         Timer time_a;
         density::compute(prec, dRho_a, Phi, X, Y, DENSITY::Alpha);
         time_a.stop();
-        Printer::printTree(0, "XC perturbed alpha density", dRho_a.function().getNNodes(NUMBER::Total), time_a.getWallTime());
+        Printer::printTree(0, "XC perturbed alpha density", dRho_a.getNNodes(NUMBER::Total), time_a.getWallTime());
 
         Timer time_b;
         density::compute(prec, dRho_b, Phi, X, Y, DENSITY::Beta);
         time_b.stop();
-        Printer::printTree(0, "XC perturbed beta density", dRho_b.function().getNNodes(NUMBER::Total), time_b.getWallTime());
+        Printer::printTree(0, "XC perturbed beta density", dRho_b.getNNodes(NUMBER::Total), time_b.getWallTime());
 
         // Extend to union grid
-        while (mrcpp::refine_grid(dRho_a.function().real(), dRho_b.function().real())) {}
-        while (mrcpp::refine_grid(dRho_b.function().real(), dRho_a.function().real())) {}
+        while (mrcpp::refine_grid(dRho_a.real(), dRho_b.real())) {}
+        while (mrcpp::refine_grid(dRho_b.real(), dRho_a.real())) {}
     } else {
         this->pertDensity_t = new Density(false);
         Density &dRho_t = *this->pertDensity_t;
         Timer time_t;
         density::compute(prec, dRho_t, Phi, X, Y, DENSITY::Total);
         time_t.stop();
-        Printer::printTree(0, "XC perturbed total density", dRho_t.function().getNNodes(NUMBER::Total), time_t.getWallTime());
+        Printer::printTree(0, "XC perturbed total density", dRho_t.getNNodes(NUMBER::Total), time_t.getWallTime());
     }
 }
 
@@ -262,16 +260,16 @@ Orbital XCPotentialD2::apply(Orbital phi) {
 
     mrcpp::build_grid(*Vrho, components); //LUCA just using "add" results in loss of precision.
     mrcpp::add(-1.0, *Vrho, components);
-    this->function().setReal(Vrho);
+    this->setReal(Vrho);
     Orbital Vrhophi = QMPotential::apply(phi);
-    this->function().setReal(nullptr);
+    this->setReal(nullptr);
     delete Vrho;
     mrcpp::clear(components, true);
     return Vrhophi;
 }
 
 FunctionTree<3> *XCPotentialD2::buildComponent(int orbital_spin, int density_spin, Density &pert_dens) {
-    FunctionTree<3> &dRho = pert_dens.function().real();
+    FunctionTree<3> &dRho = pert_dens.real();
     FunctionTree<3> *tmp = new FunctionTree<3>(*MRA);
     FunctionTree<3> &V = getPotential(orbital_spin, density_spin);
     mrcpp::build_grid(*tmp, V);

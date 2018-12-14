@@ -52,14 +52,12 @@ Density &Density::operator=(const Density &dens) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Density::saveDensity(const std::string &file) {
-    ComplexFunction &func = *this->func_ptr.get();
-
     //writing meta data
     std::stringstream metafile;
     metafile << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = func.getFunctionData();
+    FunctionData &func_data = getFunctionData();
 
     std::fstream f;
     f.open(metafile.str(), std::ios::out | std::ios::binary);
@@ -68,17 +66,17 @@ void Density::saveDensity(const std::string &file) {
     f.close();
 
     //writing real part
-    if (func.hasReal()) {
+    if (hasReal()) {
         std::stringstream fname;
         fname << file << "_re";
-        func.real().saveTree(fname.str());
+        real().saveTree(fname.str());
     }
 
     //writing imaginary part
-    if (func.hasImag()) {
+    if (hasImag()) {
         std::stringstream fname;
         fname << file << "_im";
-        func.imag().saveTree(fname.str());
+        imag().saveTree(fname.str());
     }
 }
 
@@ -91,16 +89,15 @@ void Density::saveDensity(const std::string &file) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Density::loadDensity(const std::string &file) {
-    ComplexFunction &func = *this->func_ptr.get();
-    if (func.hasReal()) MSG_ERROR("Density not empty");
-    if (func.hasImag()) MSG_ERROR("Density not empty");
+    if (hasReal()) MSG_ERROR("Density not empty");
+    if (hasImag()) MSG_ERROR("Density not empty");
 
     //reading meta data
     std::stringstream fmeta;
     fmeta << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = func.getFunctionData();
+    FunctionData &func_data = getFunctionData();
 
     std::fstream f;
     f.open(fmeta.str(), std::ios::in | std::ios::binary);
@@ -111,16 +108,16 @@ void Density::loadDensity(const std::string &file) {
     if (func_data.real_size > 0) {
         std::stringstream fname;
         fname << file << "_re";
-        func.alloc(NUMBER::Real);
-        func.real().loadTree(fname.str());
+        alloc(NUMBER::Real);
+        real().loadTree(fname.str());
     }
 
     //reading imaginary part
     if (func_data.imag_size > 0) {
         std::stringstream fname;
         fname << file << "_im";
-        func.alloc(NUMBER::Imag);
-        func.imag().loadTree(fname.str());
+        alloc(NUMBER::Imag);
+        imag().loadTree(fname.str());
     }
 }
 

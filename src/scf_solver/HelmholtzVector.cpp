@@ -231,14 +231,14 @@ Orbital HelmholtzVector::operator()(int i, Orbital inp) {
     mrcpp::HelmholtzOperator &H_i = (*this)[i];
 
     Orbital out = inp.paramCopy();
-    if (inp.function().hasReal()) {
-        out.function().alloc(NUMBER::Real);
-        mrcpp::apply(this->apply_prec, out.function().real(), H_i, inp.function().real());
+    if (inp.hasReal()) {
+        out.alloc(NUMBER::Real);
+        mrcpp::apply(this->apply_prec, out.real(), H_i, inp.real());
     }
-    if (inp.function().hasImag()) {
-        out.function().alloc(NUMBER::Imag);
-        mrcpp::apply(this->apply_prec, out.function().imag(), H_i, inp.function().imag());
-        if (inp.conjugate()) out.function().imag().rescale(-1.0);
+    if (inp.hasImag()) {
+        out.alloc(NUMBER::Imag);
+        mrcpp::apply(this->apply_prec, out.imag(), H_i, inp.imag());
+        if (inp.conjugate()) out.imag().rescale(-1.0);
     }
     return out;
 }
@@ -266,12 +266,12 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &inp) {
         Timer timer;
         out[i] = H(i, inp[i]);
 
-        int rNodes = out[i].function().getNNodes(NUMBER::Real);
-        int iNodes = out[i].function().getNNodes(NUMBER::Imag);
+        int rNodes = out[i].getNNodes(NUMBER::Real);
+        int iNodes = out[i].getNNodes(NUMBER::Imag);
         double rNorm = 0.0;
         double iNorm = 0.0;
-        if (out[i].function().hasReal()) rNorm = std::sqrt(out[i].function().real().getSquareNorm());
-        if (out[i].function().hasImag()) iNorm = std::sqrt(out[i].function().imag().getSquareNorm());
+        if (out[i].hasReal()) rNorm = std::sqrt(out[i].real().getSquareNorm());
+        if (out[i].hasImag()) iNorm = std::sqrt(out[i].imag().getSquareNorm());
 
         timer.stop();
         Printer::setPrecision(5);

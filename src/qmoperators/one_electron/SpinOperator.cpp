@@ -15,12 +15,12 @@ Orbital QMSpin::apply(Orbital inp) {
 
     ComplexDouble coef(0.0, 0.0);
     if (inp.spin() == SPIN::Paired) NOT_IMPLEMENTED_ABORT;
-    if (this->D == 0 and inp.spin() == SPIN::Alpha) coef = ( 0.5,  0.0);
-    if (this->D == 0 and inp.spin() == SPIN::Beta)  coef = ( 0.5,  0.0);
-    if (this->D == 1 and inp.spin() == SPIN::Alpha) coef = ( 0.0,  0.5);
-    if (this->D == 1 and inp.spin() == SPIN::Beta)  coef = ( 0.0, -0.5);
-    if (this->D == 2 and inp.spin() == SPIN::Alpha) coef = ( 0.5,  0.0);
-    if (this->D == 2 and inp.spin() == SPIN::Beta)  coef = (-0.5,  0.0);
+    if (this->D == 0 and inp.spin() == SPIN::Alpha) coef = (0.5, 0.0);
+    if (this->D == 0 and inp.spin() == SPIN::Beta) coef = (0.5, 0.0);
+    if (this->D == 1 and inp.spin() == SPIN::Alpha) coef = (0.0, 0.5);
+    if (this->D == 1 and inp.spin() == SPIN::Beta) coef = (0.0, -0.5);
+    if (this->D == 2 and inp.spin() == SPIN::Alpha) coef = (0.5, 0.0);
+    if (this->D == 2 and inp.spin() == SPIN::Beta) coef = (-0.5, 0.0);
 
     Timer timer;
     Orbital out = inp.paramCopy();
@@ -34,7 +34,7 @@ Orbital QMSpin::apply(Orbital inp) {
     }
 
     timer.stop();
-    int n = out.function().getNNodes(NUMBER::Total);
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied spin operator", n, t);
 

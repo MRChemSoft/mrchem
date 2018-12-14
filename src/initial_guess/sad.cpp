@@ -86,7 +86,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
 
     // Compute Coulomb density
     Density &rho_j = J.getDensity();
-    rho_j.function().alloc(NUMBER::Real);
+    rho_j.alloc(NUMBER::Real);
 
     // MPI grand master computes SAD density
     if (mpi::grand_master()) {
@@ -95,7 +95,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
         initial_guess::sad::project_atomic_densities(prec, mol, rho_atomic);
 
         // Add atomic densities
-        mrcpp::add(prec, rho_j.function().real(), rho_atomic);
+        mrcpp::add(prec, rho_j.real(), rho_atomic);
         mrcpp::clear(rho_atomic, true);
     }
     // MPI grand master distributes the full density
@@ -104,13 +104,13 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
     // Compute XC density
     if (restricted) {
         mrcpp::FunctionTree<3> &rho_xc = XC.getDensity(DENSITY::Total);
-        mrcpp::copy_grid(rho_xc, rho_j.function().real());
-        mrcpp::copy_func(rho_xc, rho_j.function().real());
+        mrcpp::copy_grid(rho_xc, rho_j.real());
+        mrcpp::copy_func(rho_xc, rho_j.real());
     } else {
         mrcpp::FunctionTree<3> &rho_a = XC.getDensity(DENSITY::Alpha);
         mrcpp::FunctionTree<3> &rho_b = XC.getDensity(DENSITY::Beta);
-        mrcpp::add(prec, rho_a, 1.0, rho_j.function().real(), -1.0 * Nb / Ne, rho_j.function().real());
-        mrcpp::add(prec, rho_b, 1.0, rho_j.function().real(), -1.0 * Na / Ne, rho_j.function().real());
+        mrcpp::add(prec, rho_a, 1.0, rho_j.real(), -1.0 * Nb / Ne, rho_j.real());
+        mrcpp::add(prec, rho_b, 1.0, rho_j.real(), -1.0 * Na / Ne, rho_j.real());
 
         // Extend to union grid
         int nNodes = 1;

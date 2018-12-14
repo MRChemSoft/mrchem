@@ -4,10 +4,10 @@
 #include "XCPotential.h"
 #include "XCPotentialD1.h"
 #include "parallel.h"
-#include "qmfunctions/Orbital.h"
 #include "qmfunctions/Density.h"
-#include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
 
 using mrcpp::FunctionTree;
 using mrcpp::Printer;
@@ -25,7 +25,7 @@ namespace mrchem {
  * xcfun when F.evalSetup is invoked.
  */
 XCPotentialD1::XCPotentialD1(mrdft::XCFunctional *F, OrbitalVector *Phi)
-    : XCPotential(F, Phi) {}
+        : XCPotential(F, Phi) {}
 
 /** @brief Prepare the operator for application
  * 
@@ -95,7 +95,7 @@ void XCPotentialD1::setupPotential(double prec) {
  *
  * @param[in] type Which spin potential to return (alpha, beta or total)
  */
-FunctionTree<3>& XCPotentialD1::getPotential(int spin) {
+FunctionTree<3> &XCPotentialD1::getPotential(int spin) {
     bool spinFunctional = this->functional->isSpinSeparated();
     int pot_idx = -1;
     if (spinFunctional and spin == SPIN::Alpha) {
@@ -120,12 +120,12 @@ FunctionTree<3>& XCPotentialD1::getPotential(int spin) {
  */
 Orbital XCPotentialD1::apply(Orbital phi) {
     QMPotential &V = *this;
-    if (V.function().hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
+    if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
     FunctionTree<3> &tree = getPotential(phi.spin());
-    V.function().setReal(&tree);
-    Orbital Vphi = QMPotential::apply(phi); 
-    V.function().setReal(nullptr);
+    V.setReal(&tree);
+    Orbital Vphi = QMPotential::apply(phi);
+    V.setReal(nullptr);
 
     return Vphi;
 }

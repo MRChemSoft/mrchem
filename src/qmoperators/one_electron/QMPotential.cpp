@@ -32,8 +32,8 @@ QMPotential::QMPotential(int adap, bool shared)
  * The potential components should be cleared already at this point using clear().
  */
 QMPotential::~QMPotential() {
-    if (this->function().hasReal()) MSG_ERROR("Potential not cleared");
-    if (this->function().hasImag()) MSG_ERROR("Potential not cleared");
+    if (hasReal()) MSG_ERROR("Potential not cleared");
+    if (hasImag()) MSG_ERROR("Potential not cleared");
 }
 
 /** @brief apply potential
@@ -52,7 +52,7 @@ Orbital QMPotential::apply(Orbital inp) {
     calcImagPart(out, inp, false);
     timer.stop();
 
-    int n = out.function().getNNodes(NUMBER::Total);
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QM potential", n, t);
 
@@ -75,7 +75,7 @@ Orbital QMPotential::dagger(Orbital inp) {
     calcImagPart(out, inp, true);
     timer.stop();
 
-    int n = out.function().getNNodes(NUMBER::Total);
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QM adjoint potential", n, t);
 
@@ -84,7 +84,7 @@ Orbital QMPotential::dagger(Orbital inp) {
 
 /** @brief compute real part of output
  *
- * @param phi: input orbital
+ * @param inp: input orbital
  * @param dagger: apply complex conjugate potential
  *
  * Computes the real part of the output orbital. The initial output grid is a
@@ -94,35 +94,33 @@ void QMPotential::calcRealPart(Orbital &out, Orbital &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
-    ComplexFunction &V = this->function();
-    ComplexFunction &phi = inp.function();
+    if (out.hasReal()) MSG_FATAL("Output not empty");
+    if (out.isShared()) MSG_FATAL("Cannot share this function");
 
-    if (out.function().hasReal()) MSG_FATAL("Output not empty");
-    if (out.function().isShared()) MSG_FATAL("Cannot share this function");
-
-    if (V.hasReal() and phi.hasReal()) {
+    QMFunction &V = *this;
+    if (V.hasReal() and inp.hasReal()) {
         double coef = 1.0;
         Orbital tmp = out.paramCopy();
-        tmp.function().alloc(NUMBER::Real);
-        mrcpp::copy_grid(tmp.function().real(), phi.real());
-        mrcpp::multiply(prec, tmp.function().real(), coef, V.real(), phi.real(), adap);
+        tmp.alloc(NUMBER::Real);
+        mrcpp::copy_grid(tmp.real(), inp.real());
+        mrcpp::multiply(prec, tmp.real(), coef, V.real(), inp.real(), adap);
         out.add(1.0, tmp);
     }
-    if (V.hasImag() and phi.hasImag()) {
+    if (V.hasImag() and inp.hasImag()) {
         double coef = -1.0;
         if (dagger) coef *= -1.0;
         if (inp.conjugate()) coef *= -1.0;
         Orbital tmp = out.paramCopy();
-        tmp.function().alloc(NUMBER::Real);
-        mrcpp::copy_grid(tmp.function().real(), phi.imag());
-        mrcpp::multiply(prec, tmp.function().real(), coef, V.imag(), phi.imag(), adap);
+        tmp.alloc(NUMBER::Real);
+        mrcpp::copy_grid(tmp.real(), inp.imag());
+        mrcpp::multiply(prec, tmp.real(), coef, V.imag(), inp.imag(), adap);
         out.add(1.0, tmp);
     }
 }
 
 /** @brief compute imaginary part of output
  *
- * @param phi: input orbital
+ * @param inp: input orbital
  * @param dagger: apply complex conjugate potential
  *
  * Computes the imaginary part of the output orbital. The initial output grid is a
@@ -132,28 +130,26 @@ void QMPotential::calcImagPart(Orbital &out, Orbital &inp, bool dagger) {
     int adap = this->adap_build;
     double prec = this->apply_prec;
 
-    ComplexFunction &V = this->function();
-    ComplexFunction &phi = inp.function();
+    if (out.hasImag()) MSG_FATAL("Output not empty");
+    if (out.isShared()) MSG_FATAL("Cannot share this function");
 
-    if (out.function().hasImag()) MSG_FATAL("Output not empty");
-    if (out.function().isShared()) MSG_FATAL("Cannot share this function");
-
-    if (V.hasReal() and phi.hasImag()) {
+    QMFunction &V = *this;
+    if (V.hasReal() and inp.hasImag()) {
         double coef = 1.0;
         if (inp.conjugate()) coef *= -1.0;
         Orbital tmp = out.paramCopy();
-        tmp.function().alloc(NUMBER::Imag);
-        mrcpp::copy_grid(tmp.function().imag(), phi.imag());
-        mrcpp::multiply(prec, tmp.function().imag(), coef, V.real(), phi.imag(), adap);
+        tmp.alloc(NUMBER::Imag);
+        mrcpp::copy_grid(tmp.imag(), inp.imag());
+        mrcpp::multiply(prec, tmp.imag(), coef, V.real(), inp.imag(), adap);
         out.add(1.0, tmp);
     }
-    if (V.hasImag() and phi.hasReal()) {
+    if (V.hasImag() and inp.hasReal()) {
         double coef = 1.0;
         if (dagger) coef *= -1.0;
         Orbital tmp = out.paramCopy();
-        tmp.function().alloc(NUMBER::Imag);
-        mrcpp::copy_grid(tmp.function().imag(), phi.real());
-        mrcpp::multiply(prec, tmp.function().imag(), coef, V.imag(), phi.real(), adap);
+        tmp.alloc(NUMBER::Imag);
+        mrcpp::copy_grid(tmp.imag(), inp.real());
+        mrcpp::multiply(prec, tmp.imag(), coef, V.imag(), inp.real(), adap);
         out.add(1.0, tmp);
     }
 }

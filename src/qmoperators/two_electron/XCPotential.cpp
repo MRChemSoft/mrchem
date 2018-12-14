@@ -1,6 +1,6 @@
+#include "XCPotential.h"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "XCPotential.h"
 #include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
@@ -27,18 +27,18 @@ void XCPotential::setupDensity(double prec) {
         Timer time_a;
         FunctionTree<3> &func_a = this->getDensity(DENSITY::Alpha);
         Density rho_a(false);
-        rho_a.function().setReal(&func_a);
+        rho_a.setReal(&func_a);
         density::compute(prec, rho_a, Phi, DENSITY::Alpha);
-        rho_a.function().setReal(nullptr);
+        rho_a.setReal(nullptr);
         time_a.stop();
         Printer::printTree(0, "XC alpha density", func_a.getNNodes(), time_a.getWallTime());
 
         Timer time_b;
         FunctionTree<3> &func_b = this->getDensity(DENSITY::Beta);
         Density rho_b(false);
-        rho_b.function().setReal(&func_b);
+        rho_b.setReal(&func_b);
         density::compute(prec, rho_b, Phi, DENSITY::Beta);
-        rho_b.function().setReal(nullptr);
+        rho_b.setReal(nullptr);
         time_b.stop();
         Printer::printTree(0, "XC beta density", func_b.getNNodes(), time_b.getWallTime());
 
@@ -49,9 +49,9 @@ void XCPotential::setupDensity(double prec) {
         Timer time_t;
         FunctionTree<3> &func_t = this->getDensity(DENSITY::Total);
         Density rho_t(false);
-        rho_t.function().setReal(&func_t);
+        rho_t.setReal(&func_t);
         density::compute(prec, rho_t, Phi, DENSITY::Total);
-        rho_t.function().setReal(nullptr);
+        rho_t.setReal(nullptr);
         time_t.stop();
         Printer::printTree(0, "XC total density", func_t.getNNodes(), time_t.getWallTime());
     }
@@ -60,7 +60,7 @@ void XCPotential::setupDensity(double prec) {
 mrcpp::FunctionTree<3> &XCPotential::getDensity(int spin) {
     if (spin == DENSITY::Total) return this->functional->getDensity(mrdft::DensityType::Total);
     if (spin == DENSITY::Alpha) return this->functional->getDensity(mrdft::DensityType::Alpha);
-    if (spin == DENSITY::Beta)  return this->functional->getDensity(mrdft::DensityType::Beta);
+    if (spin == DENSITY::Beta) return this->functional->getDensity(mrdft::DensityType::Beta);
     MSG_FATAL("Invalid density type");
 }
 

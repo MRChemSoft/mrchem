@@ -28,7 +28,6 @@
 #include "ComplexFunction.h"
 
 namespace mrchem {
-extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 ComplexFunction::ComplexFunction(bool share)
         : func_data({0, 0, share})
@@ -45,60 +44,4 @@ ComplexFunction::~ComplexFunction() {
     if (this->re != nullptr) delete this->re;
     if (this->im != nullptr) delete this->im;
 }
-
-void ComplexFunction::setReal(mrcpp::FunctionTree<3> *tree) {
-    if (isShared()) MSG_FATAL("Cannot set in shared function");
-    this->re = tree;
-}
-
-void ComplexFunction::setImag(mrcpp::FunctionTree<3> *tree) {
-    if (isShared()) MSG_FATAL("Cannot set in shared function");
-    this->im = tree;
-}
-
-void ComplexFunction::alloc(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (hasReal()) MSG_FATAL("Real part already allocated");
-        this->re = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (hasImag()) MSG_FATAL("Imaginary part already allocated");
-        this->im = new mrcpp::FunctionTree<3>(*MRA, this->shared_mem);
-    }
-}
-
-void ComplexFunction::free(int type) {
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (hasReal()) delete this->re;
-        this->re = nullptr;
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (hasImag()) delete this->im;
-        this->im = nullptr;
-    }
-}
-
-/** @brief Returns the orbital meta data
-     *
-     * Tree sizes (nChunks) are flushed before return.
-     */
-FunctionData &ComplexFunction::getFunctionData() {
-    this->func_data.real_size = 0;
-    this->func_data.imag_size = 0;
-    if (this->hasReal()) this->func_data.real_size = this->real().getNChunksUsed();
-    if (this->hasImag()) this->func_data.imag_size = this->imag().getNChunksUsed();
-    return this->func_data;
-}
-
-int ComplexFunction::getNNodes(int type) const {
-    int nNodes = 0;
-    if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) nNodes += this->real().getNNodes();
-    }
-    if (type == NUMBER::Imag or type == NUMBER::Total) {
-        if (this->hasImag()) nNodes += this->imag().getNNodes();
-    }
-    return nNodes;
-}
-
 } // namespace mrchem

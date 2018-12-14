@@ -77,11 +77,11 @@ ComplexVector orbital::dot(OrbitalVector &Bra, OrbitalVector &Ket) {
             int tag = 8765 + i;
             int src = Bra[i].rankID();
             int dst = Ket[i].rankID();
-            if (mpi::my_orb(Bra[i])) mpi::send_function(Bra[i].function(), dst, tag, mpi::comm_orb);
-            if (mpi::my_orb(Ket[i])) mpi::recv_function(Bra[i].function(), src, tag, mpi::comm_orb);
+            if (mpi::my_orb(Bra[i])) mpi::send_function(Bra[i], dst, tag, mpi::comm_orb);
+            if (mpi::my_orb(Ket[i])) mpi::recv_function(Bra[i], src, tag, mpi::comm_orb);
         }
         result[i] = orbital::dot(Bra[i], Ket[i]);
-        if (not mpi::my_orb(Bra[i])) Bra[i].freeFunctions();
+        if (not mpi::my_orb(Bra[i])) Bra[i].free(NUMBER::Total);
     }
     mpi::allreduce_vector(result, mpi::comm_orb);
     return result;
@@ -299,10 +299,10 @@ OrbitalVector orbital::load_orbitals(const std::string &file, const std::string 
         orbname << file << "_" << suffix << i;
         phi_i.loadOrbital(orbname.str());
         phi_i.setRankID(mpi::orb_rank);
-        if (phi_i.function().hasReal() or phi_i.function().hasImag()) {
+        if (phi_i.hasReal() or phi_i.hasImag()) {
             phi_i.setRankID(i % mpi::orb_size);
             Phi.push_back(phi_i);
-            if (not mpi::my_orb(phi_i)) phi_i.freeFunctions();
+            if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
         } else {
             break;
         }
@@ -348,11 +348,11 @@ void orbital::orthogonalize(OrbitalVector &Phi) {
                 if (mpi::my_orb(Phi[i])) orbital::orthogonalize(Phi[i], Phi[j]);
             } else {
                 if (mpi::my_orb(Phi[i])) {
-                    mpi::recv_function(Phi[j].function(), src, tag, mpi::comm_orb);
+                    mpi::recv_function(Phi[j], src, tag, mpi::comm_orb);
                     orbital::orthogonalize(Phi[i], Phi[j]);
-                    Phi[j].freeFunctions();
+                    Phi[j].free(NUMBER::Total);
                 }
-                if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j].function(), dst, tag, mpi::comm_orb);
+                if (mpi::my_orb(Phi[j])) mpi::send_function(Phi[j], dst, tag, mpi::comm_orb);
             }
         }
     }
@@ -460,10 +460,10 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
     return S_m12;
 }
 
-ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi){
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi) {
     Printer::printHeader(0, "Localizing orbitals");
     Timer timer;
-    if(not orbital_vector_is_sane(Phi)) {
+    if (not orbital_vector_is_sane(Phi)) {
         orbital::print(Phi);
         MSG_FATAL("Orbital vector is not sane");
     }
@@ -471,10 +471,10 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi){
     int nP = size_paired(Phi);
     int nA = size_alpha(Phi);
     int nB = size_beta(Phi);
-    ComplexMatrix U = ComplexMatrix::Identity(nO,nO);
-    if(nP > 0) U.block(0,     0,     nP, nP) = localize(prec, Phi, SPIN::Paired);
-    if(nA > 0) U.block(nP,    nP,    nA, nA) = localize(prec, Phi, SPIN::Alpha);
-    if(nB > 0) U.block(nP+nA, nP+nA, nB, nB) = localize(prec, Phi, SPIN::Beta);
+    ComplexMatrix U = ComplexMatrix::Identity(nO, nO);
+    if (nP > 0) U.block(0, 0, nP, nP) = localize(prec, Phi, SPIN::Paired);
+    if (nA > 0) U.block(nP, nP, nA, nA) = localize(prec, Phi, SPIN::Alpha);
+    if (nB > 0) U.block(nP + nA, nP + nA, nB, nB) = localize(prec, Phi, SPIN::Beta);
     timer.stop();
     Printer::printFooter(0, timer, 2);
     return U;
@@ -488,10 +488,10 @@ Localization is done for each set of spins separately (we don't want to mix spin
 The localization matrix is returned for further processing.
 
 */
-ComplexMatrix orbital::localize(double prec, OrbitalVector & Phi, int spin) {
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, int spin) {
     OrbitalVector Phi_s = orbital::disjoin(Phi, spin);
     ComplexMatrix U = calc_localization_matrix(prec, Phi_s);
-    Phi_s = rotate(U, Phi_s, prec);
+    Phi_s = orbital::rotate(U, Phi_s, prec);
     orbital::append(Phi, Phi_s);
     return U;
 }
@@ -684,7 +684,7 @@ int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
 /** @brief Returns the total number of nodes in the vector */
 int orbital::get_n_nodes(const OrbitalVector &Phi) {
     int nNodes = 0;
-    for (auto &phi_i : Phi) nNodes += phi_i.function().getNNodes(NUMBER::Total);
+    for (auto &phi_i : Phi) nNodes += phi_i.getNNodes(NUMBER::Total);
     return nNodes;
 }
 
@@ -784,7 +784,7 @@ bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
     int previous_spin = 0;
 
     if (nO != nP + nA + nB) return false; // not all orbitals are accounted for
-    
+
     for (int i = 0; i < nO; i++) {
         if (Phi[i].spin() < previous_spin) return false; // wrong orbital order
         previous_spin = Phi[i].spin();
@@ -804,7 +804,7 @@ int orbital::start_index(const OrbitalVector &Phi, int spin) {
     }
     return -1;
 }
-    
+
 void orbital::print(const OrbitalVector &Phi) {
     Printer::setScientific();
     printout(0, "============================================================\n");

@@ -30,19 +30,19 @@ Orbital QMNabla::apply(Orbital inp) {
 
     Timer timer;
     // Calc real part
-    if (inp.function().hasReal()) {
-        out.function().alloc(NUMBER::Real);
-        mrcpp::apply(out.function().real(), D, inp.function().real(), dir);
+    if (inp.hasReal()) {
+        out.alloc(NUMBER::Real);
+        mrcpp::apply(out.real(), D, inp.real(), dir);
     }
     // Calc imag part
-    if (inp.function().hasImag()) {
-        out.function().alloc(NUMBER::Imag);
-        mrcpp::apply(out.function().imag(), D, inp.function().imag(), dir);
-        if (inp.conjugate()) out.function().imag().rescale(-1.0);
+    if (inp.hasImag()) {
+        out.alloc(NUMBER::Imag);
+        mrcpp::apply(out.imag(), D, inp.imag(), dir);
+        if (inp.conjugate()) out.imag().rescale(-1.0);
     }
     timer.stop();
 
-    int n = out.function().getNNodes(NUMBER::Total);
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QMNabla", n, t);
 

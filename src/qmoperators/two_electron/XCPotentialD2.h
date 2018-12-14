@@ -38,8 +38,8 @@ private:
     Density *pertDensity_a;                  ///< alpha first-order perturbed electronic density
     Density *pertDensity_b;                  ///< beta  first-order perturbed electronic density
 
-    void setup(double prec) override;
-    void clear() override;
+    void setup(double prec);
+    void clear();
 
     void setupPotential(double prec);
     mrcpp::FunctionTree<3> &getPotential(int orbitalSpin, int densitySpin);

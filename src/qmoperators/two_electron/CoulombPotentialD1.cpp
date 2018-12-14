@@ -10,9 +10,8 @@ using mrcpp::Timer;
 namespace mrchem {
 
 CoulombPotentialD1::CoulombPotentialD1(mrcpp::PoissonOperator *P, OrbitalVector *Phi)
-        : CoulombPotential(P),
-          orbitals(Phi) {
-}
+        : CoulombPotential(P)
+        , orbitals(Phi) {}
 
 /** @brief compute electron density
  *
@@ -31,7 +30,7 @@ void CoulombPotentialD1::setupDensity(double prec) {
     density::compute(prec, rho, Phi, DENSITY::Total);
     timer.stop();
     double t = timer.getWallTime();
-    int n = rho.function().getNNodes(NUMBER::Total);
+    int n = rho.getNNodes(NUMBER::Total);
     Printer::printTree(0, "Coulomb density", n, t);
 }
 

@@ -30,20 +30,20 @@ Orbital QMMomentum::apply(Orbital inp) {
 
     Timer timer;
     // Calc real part
-    if (inp.function().hasImag()) {
-        out.function().alloc(NUMBER::Real);
-        mrcpp::apply(out.function().real(), D, inp.function().imag(), dir);
-        if (inp.conjugate()) out.function().real().rescale(-1.0);
+    if (inp.hasImag()) {
+        out.alloc(NUMBER::Real);
+        mrcpp::apply(out.real(), D, inp.imag(), dir);
+        if (inp.conjugate()) out.real().rescale(-1.0);
     }
     // Calc imag part
-    if (inp.function().hasReal()) {
-        out.function().alloc(NUMBER::Imag);
-        mrcpp::apply(out.function().imag(), D, inp.function().real(), dir);
-        out.function().imag().rescale(-1.0);
+    if (inp.hasReal()) {
+        out.alloc(NUMBER::Imag);
+        mrcpp::apply(out.imag(), D, inp.real(), dir);
+        out.imag().rescale(-1.0);
     }
     timer.stop();
 
-    int n = out.function().getNNodes(NUMBER::Total);
+    int n = out.getNNodes(NUMBER::Total);
     double t = timer.getWallTime();
     Printer::printTree(1, "Applied QMMomentum", n, t);
 

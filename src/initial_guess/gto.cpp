@@ -155,8 +155,8 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
     for (int i = 0; i < N; i++) {
         if (mpi::my_orb(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
-            Phi[i].function().alloc(NUMBER::Real);
-            mrcpp::project(prec, Phi[i].function().real(), mo_i);
+            Phi[i].alloc(NUMBER::Real);
+            mrcpp::project(prec, Phi[i].real(), mo_i);
         }
         printout(0, std::setw(5) << i);
         printout(0, std::setw(5) << Phi[i].printSpin());

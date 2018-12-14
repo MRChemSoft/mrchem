@@ -1,7 +1,7 @@
+#include "CoulombPotential.h"
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "CoulombPotential.h"
 #include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
@@ -54,9 +54,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    QMFunction::freeFunctions();   // delete FunctionTree pointers
-    this->density.freeFunctions(); // delete FunctionTree pointers
-    clearApplyPrec();              // apply_prec = -1
+    QMFunction::free(NUMBER::Total);   // delete FunctionTree pointers
+    this->density.free(NUMBER::Total); // delete FunctionTree pointers
+    clearApplyPrec();                  // apply_prec = -1
 }
 
 /** @brief compute Coulomb potential
@@ -70,14 +70,14 @@ void CoulombPotential::setupPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
-    ComplexFunction &V = this->function();
-    ComplexFunction &rho = this->density.function();
+    QMFunction &V = *this;
+    QMFunction &rho = this->density;
 
     if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
     if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
 
     // Adjust precision by system size
-    double abs_prec = prec / this->density.norm();
+    double abs_prec = prec / rho.norm();
     bool need_to_apply = not(V.isShared()) or mpi::share_master();
 
     Timer timer;

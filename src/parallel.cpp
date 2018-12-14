@@ -122,7 +122,7 @@ void mpi::distribute(OrbitalVector &Phi) {
 /** @brief Free all function pointers not belonging to this MPI rank */
 void mpi::free_foreign(OrbitalVector &Phi) {
     for (int i = 0; i < Phi.size(); i++) {
-        if (not mpi::my_orb(Phi[i])) Phi[i].freeFunctions();
+        if (not mpi::my_orb(Phi[i])) Phi[i].free(NUMBER::Total);
     }
 }
 
@@ -186,7 +186,7 @@ void mpi::allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm) {
 //send an orbital with MPI, includes orbital meta data
 void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 #ifdef HAVE_MPI
-    mpi::send_function(orb.function(), dst, tag, mpi::comm_orb);
+    mpi::send_function(orb, dst, tag, mpi::comm_orb);
 
     OrbitalData &orbinfo = orb.getOrbitalData();
     MPI_Send(&orbinfo, sizeof(OrbitalData), MPI_BYTE, dst, 0, mpi::comm_orb);
@@ -196,7 +196,7 @@ void mpi::send_orbital(Orbital &orb, int dst, int tag) {
 //receive an orbital with MPI, includes orbital meta data
 void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 #ifdef HAVE_MPI
-    mpi::recv_function(orb.function(), src, tag, mpi::comm_orb);
+    mpi::recv_function(orb, src, tag, mpi::comm_orb);
 
     MPI_Status status;
     OrbitalData &orbinfo = orb.getOrbitalData();
@@ -205,7 +205,7 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag) {
 }
 
 //send a density with MPI
-void mpi::send_function(ComplexFunction &func, int dst, int tag, MPI_Comm comm) {
+void mpi::send_function(QMFunction &func, int dst, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     FunctionData &funcinfo = func.getFunctionData();
     MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, comm);
@@ -216,7 +216,7 @@ void mpi::send_function(ComplexFunction &func, int dst, int tag, MPI_Comm comm) 
 }
 
 //receive a denstity with MPI
-void mpi::recv_function(ComplexFunction &func, int src, int tag, MPI_Comm comm) {
+void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     MPI_Status status;
 
@@ -238,7 +238,7 @@ void mpi::recv_function(ComplexFunction &func, int src, int tag, MPI_Comm comm) 
 }
 
 /** Update a shared function after it has been changed by one of the MPI ranks. */
-void mpi::share_function(ComplexFunction &func, int src, int tag, MPI_Comm comm) {
+void mpi::share_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
     if (func.isShared()) {
         if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, comm);
@@ -261,13 +261,13 @@ void mpi::reduce_density(double prec, Density &rho, MPI_Comm comm) {
         for (int src = 1; src < comm_size; src++) {
             Density rho_i(false);
             int tag = 3333 + src;
-            mpi::recv_function(rho_i.function(), src, tag, comm);
+            mpi::recv_function(rho_i, src, tag, comm);
             rho.add(1.0, rho_i); // add in place using union grid
             rho.crop(prec);
         }
     } else {
         int tag = 3333 + comm_rank;
-        mpi::send_function(rho.function(), 0, tag, comm);
+        mpi::send_function(rho, 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();
@@ -287,11 +287,11 @@ void mpi::broadcast_density(Density &rho, MPI_Comm comm) {
     if (comm_rank == 0) {
         for (int dst = 1; dst < comm_size; dst++) {
             int tag = 4334 + dst;
-            mpi::send_function(rho.function(), dst, tag, comm);
+            mpi::send_function(rho, dst, tag, comm);
         }
     } else {
         int tag = 4334 + comm_rank;
-        mpi::recv_function(rho.function(), 0, tag, comm);
+        mpi::recv_function(rho, 0, tag, comm);
     }
     MPI_Barrier(comm);
     timer.stop();

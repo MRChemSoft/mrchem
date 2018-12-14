@@ -50,9 +50,9 @@ public:
         ComplexVector result = ComplexVector::Zero(3);
         double Z = nuc.getCharge();
         const mrcpp::Coord<3> &R = nuc.getCoord();
-        result(0) = Z * this->r_x.function().real().evalf(R);
-        result(1) = Z * this->r_y.function().real().evalf(R);
-        result(2) = Z * this->r_z.function().real().evalf(R);
+        result(0) = Z * this->r_x.real().evalf(R);
+        result(1) = Z * this->r_y.real().evalf(R);
+        result(2) = Z * this->r_z.real().evalf(R);
         return result;
     }
 

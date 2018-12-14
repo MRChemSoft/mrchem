@@ -38,33 +38,37 @@ struct FunctionData {
 
 class ComplexFunction final {
 public:
-    explicit ComplexFunction(bool share);
-    ~ComplexFunction();
+    explicit ComplexFunction(bool share)
+            : func_data({0, 0, share})
+            , shared_mem(nullptr)
+            , re(nullptr)
+            , im(nullptr) {
+        if (this->func_data.is_shared and mpi::share_size > 1) {
+            // Memory size in MB defined in input. Virtual memory, does not cost anything if not used.
+            this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, mpi::shared_memory_size);
+        }
+    }
 
-    void alloc(int type);
-    void free(int type);
+    ~ComplexFunction() {
+        if (this->shared_mem != nullptr) delete this->shared_mem;
+        if (this->re != nullptr) delete this->re;
+        if (this->im != nullptr) delete this->im;
+    }
 
-    bool isShared() const { return this->func_data.is_shared; }
-    bool hasReal() const { return (this->re == nullptr) ? false : true; }
-    bool hasImag() const { return (this->im == nullptr) ? false : true; }
-
-    int getNNodes(int type) const;
-    FunctionData &getFunctionData();
-
-    void setReal(mrcpp::FunctionTree<3> *tree);
-    void setImag(mrcpp::FunctionTree<3> *tree);
-
-    mrcpp::FunctionTree<3> &real() { return *this->re; }
-    mrcpp::FunctionTree<3> &imag() { return *this->im; }
-
-    const mrcpp::FunctionTree<3> &real() const { return *this->re; }
-    const mrcpp::FunctionTree<3> &imag() const { return *this->im; }
+    friend class QMFunction;
 
 private:
     FunctionData func_data;
     mrcpp::SharedMemory *shared_mem;
     mrcpp::FunctionTree<3> *re; ///< Real part of function
     mrcpp::FunctionTree<3> *im; ///< Imaginary part of function
+
+    void flushFuncData() {
+        this->func_data.real_size = 0;
+        this->func_data.imag_size = 0;
+        if (this->re != nullptr) this->func_data.real_size = this->re->getNChunksUsed();
+        if (this->im != nullptr) this->func_data.imag_size = this->im->getNChunksUsed();
+    }
 };
 
 } // namespace mrchem

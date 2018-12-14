@@ -116,14 +116,12 @@ Orbital Orbital::dagger() const {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::saveOrbital(const std::string &file) {
-    ComplexFunction &func = *this->func_ptr.get();
-
     //writing meta data
     std::stringstream metafile;
     metafile << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = func.getFunctionData();
+    FunctionData &func_data = getFunctionData();
     OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
@@ -134,17 +132,17 @@ void Orbital::saveOrbital(const std::string &file) {
     f.close();
 
     //writing real part
-    if (func.hasReal()) {
+    if (hasReal()) {
         std::stringstream fname;
         fname << file << "_re";
-        func.real().saveTree(fname.str());
+        real().saveTree(fname.str());
     }
 
     //writing imaginary part
-    if (func.hasImag()) {
+    if (hasImag()) {
         std::stringstream fname;
         fname << file << "_im";
-        func.imag().saveTree(fname.str());
+        imag().saveTree(fname.str());
     }
 }
 
@@ -157,16 +155,15 @@ void Orbital::saveOrbital(const std::string &file) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::loadOrbital(const std::string &file) {
-    ComplexFunction &func = *this->func_ptr.get();
-    if (func.hasReal()) MSG_ERROR("Orbital not empty");
-    if (func.hasImag()) MSG_ERROR("Orbital not empty");
+    if (hasReal()) MSG_ERROR("Orbital not empty");
+    if (hasImag()) MSG_ERROR("Orbital not empty");
 
     //reading meta data
     std::stringstream fmeta;
     fmeta << file << ".meta";
 
     //this flushes tree sizes
-    FunctionData &func_data = func.getFunctionData();
+    FunctionData &func_data = getFunctionData();
     OrbitalData &orb_data = getOrbitalData();
 
     std::fstream f;
@@ -179,16 +176,16 @@ void Orbital::loadOrbital(const std::string &file) {
     if (func_data.real_size > 0) {
         std::stringstream fname;
         fname << file << "_re";
-        func.alloc(NUMBER::Real);
-        func.real().loadTree(fname.str());
+        alloc(NUMBER::Real);
+        real().loadTree(fname.str());
     }
 
     //reading imaginary part
     if (func_data.imag_size > 0) {
         std::stringstream fname;
         fname << file << "_im";
-        func.alloc(NUMBER::Imag);
-        func.imag().loadTree(fname.str());
+        alloc(NUMBER::Imag);
+        imag().loadTree(fname.str());
     }
 }
 
