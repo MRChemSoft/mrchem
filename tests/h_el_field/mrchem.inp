@@ -2,6 +2,15 @@
 
 abs_prec = 1.0e-4                 # Overall relative precision
 
+MPI {
+  numerically_exact = true
+  share_coulomb_density = true
+  share_coulomb_potential = true
+  share_nuclear_potential = true
+  share_xc_density = false
+  share_xc_potential = false
+}
+
 MRA {
   min_scale = -4                  # Root scale defines world size 2^{-n}
   corner = [ -1, -1, -1 ]         # Translation of corner root box [x,y,z]

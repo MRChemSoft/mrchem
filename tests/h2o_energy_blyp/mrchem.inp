@@ -2,6 +2,15 @@
 
 rel_prec = 1.0e-3                 # Overall relative precision
 
+MPI {
+  numerically_exact = true
+  share_coulomb_density = true
+  share_coulomb_potential = true
+  share_nuclear_potential = true
+  share_xc_density = false
+  share_xc_potential = false
+}
+
 MRA {
   order = 6                       # Polynomial order
   min_scale = -5                  # Root scale defines world size 2^{-n}
