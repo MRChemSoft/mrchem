@@ -12,7 +12,7 @@ namespace mrchem {
 
 //start with a cavity initialized with a geometry and a standard gaussian rho with A*exp(-B*r^2) with A = (B/pi)^(3/2) include the orbitals later
 
-class ReactionPotential : public QMPotential{
+class ReactionPotential final : public QMPotential{
 public:
 
   ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi);
@@ -21,7 +21,6 @@ public:
   double &get_tot_Energy();
   double &get_e_Energy();
   double &get_nuc_Energy();
-
 
   friend class ReactionOperator;
 
