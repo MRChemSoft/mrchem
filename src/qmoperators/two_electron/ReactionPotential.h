@@ -24,6 +24,7 @@ private:
   mrcpp::PoissonOperator *poisson;
   mrcpp::DerivativeOperator<3> *derivative;
 
+  QMFunction rho_func;
   QMFunction cavity_func;
   QMFunction inv_eps_func;
   QMFunction rho_eff_func;

@@ -24,6 +24,7 @@ ReactionPotential::ReactionPotential( mrcpp::PoissonOperator *P, mrcpp::Derivati
     , orbitals(Phi)
     , poisson(P)
     , derivative(D)
+    , rho_func(false)
     , cavity_func(false)
     , inv_eps_func(false)
     , rho_eff_func(false)
@@ -48,22 +49,23 @@ void ReactionPotential::setup_eps() {
 
 
 void ReactionPotential::calc_rho_eff() {
-  Density rho_N = chemistry::compute_nuclear_density(prec, this->nuclei, 1000);
+  Density rho_N = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
   Density rho_e(false);
   Density rho_tot(false);
   density::compute(this->apply_prec, rho_e, *orbitals, DENSITY::Total);
   qmfunction::add(rho_tot, 1.0, rho_e, 1.0, rho_N, -1.0);
 
+  this->rho_func = rho_tot;
 
   qmfunction::multiply(rho_eff_func, rho_tot, inv_eps_func, this->apply_prec);
 
 
 }
 
-void calc_gamma() {
+void ReactionPotential::calc_gamma() {
   auto d_V_n = mrcpp::gradient(*derivative, V_n_func.real());
   gamma_func.alloc(NUMBER::Real);
-  mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity)
+  mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity);
   gamma_func.rescale(1.0/(4.0*MATHCONST::pi));
 }
 
@@ -89,6 +91,13 @@ void ReactionPotential::setup(double prec) {
     error = diff_func.norm();
     V_n_func = V_np1_func;
   }
+  QMFunction V_0_func;
+  QMFunction V_eff_func;
+  V_eff_func.alloc(NUMBER::Real);
+  V_0_func.alloc(NUMBER::Real);
+  mrcpp::apply(prec, V_0_func.real(), *poisson, rho_func.real());
+  qmfunction::add(V_eff_func, 1.0, V_n_func, -1.0, V_0_func, -1.0);
+  //V_eff = V_n_func - V_0_func
 }
 /*
 void ReactionPotential::calc_d_Cavity(double prec){
