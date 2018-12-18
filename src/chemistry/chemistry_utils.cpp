@@ -76,7 +76,7 @@ Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, doub
         gauss.append(gauss_f);
     }
     Density rho(false);
-    density::compute(prec, rho, gauss, DENSITY::Total);
+    density::compute(prec, rho, gauss, NUMBER::Real);
     return rho;
 }
 } //namespace mrchem
