@@ -72,11 +72,11 @@ Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, doub
         const Nucleus &nuc_i = nucs[i];
         const double Z_i = nuc_i.getCharge();
         const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
-        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta * Z_i, R_i, {0, 0, 0});
+        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta*Z_i, R_i, {0, 0, 0});
         gauss.append(gauss_f);
     }
     Density rho(false);
-    density::compute(prec, rho, gauss, DENSITY::Total);
+    density::compute(prec, rho, gauss, NUMBER::Real);
     return rho;
 }
-} // namespace mrchem
+} //namespace mrchem
