@@ -22,11 +22,12 @@
  * For information on the complete list of contributors to MRChem, see:
  * <https://mrchem.readthedocs.io/>
  */
-
+#include "MRCPP/Gaussians"
 #include "chemistry_utils.h"
 #include "Nucleus.h"
 #include "utils/math_utils.h"
-
+#include "qmfunctions/Density.h"
+#include "qmfunctions/density_utils.h"
 namespace mrchem {
 
 /** @brief computes the repulsion self energy of a set of nuclei
@@ -52,6 +53,7 @@ double chemistry::compute_nuclear_repulsion(const Nuclei &nucs) {
     return E_nuc;
 }
 
+
 /** @brief Returns the sum of atomic charges*/
 double chemistry::get_total_charge(const Nuclei &nucs) {
     double charge = 0;
@@ -60,3 +62,22 @@ double chemistry::get_total_charge(const Nuclei &nucs) {
 }
 
 } // namespace mrchem
+
+Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, double alpha) {
+    auto beta = std::pow(alpha/MATHCONST::pi, 3.0/2.0);
+
+    int nNucs = nucs.size();
+    auto gauss = mrcpp::GaussExp<3>();
+
+    for (int i = 0; i < nNucs; i++) {
+        const Nucleus &nuc_i = nucs[i];
+        const double Z_i = nuc_i.getCharge();
+        const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
+        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta*Z_i, R_i, {0, 0, 0});
+        gauss.append(gauss_f);
+    }
+    Density rho(false);
+    density::compute(prec, rho, gauss, NUMBER::Real);
+    return rho;
+}
+} //namespace mrchem
