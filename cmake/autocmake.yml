@@ -1,9 +1,8 @@
 name: MRChem
+language: CXX
 min_cmake_version: 3.6
 setup_script: setup
 default_build_type: release
-language:
-  - CXX
 
 url_root: https://github.com/coderefinery/autocmake/raw/master/
 
@@ -13,8 +12,7 @@ modules:
     - '%(url_root)modules/cxx.cmake'
 - flags:
   - source:
-    - 'compiler_flags/GNU.CXX.cmake'
-    - 'compiler_flags/Intel.CXX.cmake'
+    - 'compiler_flags/CXXFlags.cmake'
 - plugins:
   - source:
     - '%(url_root)modules/default_build_paths.cmake'

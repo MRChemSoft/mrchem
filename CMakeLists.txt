@@ -56,8 +56,7 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/downloaded)
 
 # included cmake modules
 include(autocmake_cxx)
-include(GNU.CXX)
-include(Intel.CXX)
+include(CXXFlags)
 include(autocmake_default_build_paths)
 include(autocmake_safeguards)
 include(autocmake_mpi)
