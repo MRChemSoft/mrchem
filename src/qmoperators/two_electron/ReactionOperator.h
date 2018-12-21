@@ -29,7 +29,7 @@ public:
 
 
     ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroTensorOperator::trace(Phi); }
-
+    QMFunction &getPotential(){return this->potential->getPotential();}
 private:
     ReactionPotential *potential;
 };

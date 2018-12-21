@@ -1,3 +1,4 @@
+#pragma once
 #include "chemistry/Cavity.h"
 #include "qmoperators/one_electron/QMPotential.h"
 #include "chemistry/chemistry_fwd.h"
@@ -13,8 +14,17 @@ namespace mrchem {
 class ReactionPotential final : public QMPotential{
 public:
 
-  ReactionPotential( mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi);
-  ~ReactionPotential();
+  ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi);
+  ~ReactionPotential(){}
+  QMFunction &getPotential() {return this->V_eff_func;}
+  QMFunction &getgamma() {return this->gamma_func;}
+  void do_setup(double prec) {this->setup(prec);}
+
+  friend class ReactionOperator;
+
+protected:
+  void clear(){clearApplyPrec();}
+
 
 private:
 
@@ -31,6 +41,7 @@ private:
   QMFunction gamma_func;
   QMFunction V_n_func;
   mrcpp::FunctionTreeVector<3> d_cavity;
+  QMFunction V_eff_func;
 
   void setup(double prec);
 
