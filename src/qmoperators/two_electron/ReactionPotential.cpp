@@ -101,6 +101,12 @@ void ReactionPotential::setup(double prec) {
     qmfunction::add(diff_func, 1.0, V_n_func, -1.0, V_np1_func, -1.0);
     error = diff_func.norm();
     V_n_func = V_np1_func;
+    if(error >= this->apply_prec){
+      println(0, "R_charge:\t" << gamma_func.integrate());
+      gamma_func.free(NUMBER::Real);
+    }
+    println(0, "iter:\t" << i << "\nerror:\t" << error);
+    i++;
   }
   QMFunction V_0_func;
 
