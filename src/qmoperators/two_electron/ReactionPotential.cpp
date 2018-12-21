@@ -74,14 +74,14 @@ void ReactionPotential::setup(double prec) {
   setApplyPrec(prec);
   setup_eps();
   calc_rho_eff();
- 
+
   d_cavity = mrcpp::gradient(*derivative, cavity_func.real());
   V_n_func.alloc(NUMBER::Real);
   mrcpp::apply(prec, V_n_func.real(), *poisson, rho_eff_func.real());
 
   double error = 1;
   int i = 1;
-  while(error >= 100*this->apply_prec) {
+  while(error >= 10*this->apply_prec) {
     calc_gamma();
     QMFunction temp_func;
     qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
@@ -93,8 +93,8 @@ void ReactionPotential::setup(double prec) {
     qmfunction::add(diff_func, 1.0, V_n_func, -1.0, V_np1_func, -1.0);
     error = diff_func.norm();
     V_n_func = V_np1_func;
-    if(error >= this->apply_prec){
-      println(0, "R_charge:\t" << gamma_func.integrate());  
+    println(0, "\nR_char:\t" << gamma_func.integrate());
+    if(error > this->apply_prec){
       gamma_func.free(NUMBER::Real);
     }
     println(0, "iter:\t" << i << "\nerror:\t" << error);
@@ -105,12 +105,19 @@ void ReactionPotential::setup(double prec) {
 
   V_0_func.alloc(NUMBER::Real);
   mrcpp::apply(prec, V_0_func.real(), *poisson, rho_func.real());
-  qmfunction::add(V_eff_func, 1.0, V_n_func, -1.0, V_0_func, -1.0);
 
-  println(0, "R_charge:\t" << gamma_func.integrate());  
+  QMFunction temp_prod_func;
+  qmfunction::add(temp_prod_func, 1.0, V_n_func, -1.0, V_0_func, -1.0);
+
+  qmfunction::multiply(V_eff_func, rho_func, temp_prod_func, this->apply_prec);
+
+  println(0, -0.5/2.0);
+
+  println(0, "\ncharge:\t" << rho_func.integrate());
+  println(0, "R_char:\t" << gamma_func.integrate());
   println(0, "E_r:\t" << V_eff_func.integrate());
 
-  
+
 }
 /*
 void ReactionPotential::calc_d_Cavity(double prec){
