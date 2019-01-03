@@ -105,6 +105,7 @@ void ReactionPotential::setup(double prec) {
     println(0, "iter:\t" << i << "\nerror:\t" << error);
     i++;
   }
+
   QMFunction V_0_func;
 
   V_0_func.alloc(NUMBER::Real);
