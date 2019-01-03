@@ -28,6 +28,7 @@ public:
 protected:
     void clear();
 
+
 private:
     Cavity *cavity;
     Nuclei nuclei;
