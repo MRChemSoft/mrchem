@@ -54,7 +54,7 @@ void ReactionPotential::calc_rho_eff() {
   Density rho_e(false);
   Density rho_tot(false);
   density::compute(this->apply_prec, rho_e, *orbitals, DENSITY::Total);
-  qmfunction::add(rho_tot, 1.0, rho_e, 1.0, rho_N, -1.0);
+  qmfunction::add(rho_tot, -1.0, rho_e, 1.0, rho_N, -1.0);
 
   this->rho_func = rho_tot;
 
@@ -93,13 +93,13 @@ void ReactionPotential::setup(double prec) {
     qmfunction::add(diff_func, 1.0, V_n_func, -1.0, V_np1_func, -1.0);
     error = diff_func.norm();
     V_n_func = V_np1_func;
-    println(0, "\nR_char:\t" << gamma_func.integrate());
-    if(error > this->apply_prec){
-      gamma_func.free(NUMBER::Real);
+    if(error <= this->apply_prec){
+      println(0, "\nR_char:\t" << gamma_func.integrate());
     }
-    println(0, "iter:\t" << i << "\nerror:\t" << error);
+    gamma_func.free(NUMBER::Real);
     i++;
   }
+
   QMFunction V_0_func;
 
 
@@ -114,49 +114,19 @@ void ReactionPotential::setup(double prec) {
   println(0, -0.5/2.0);
 
   println(0, "\ncharge:\t" << rho_func.integrate());
-  println(0, "R_char:\t" << gamma_func.integrate());
   println(0, "E_r:\t" << V_eff_func.integrate());
-
-
-}
-/*
-void ReactionPotential::calc_d_Cavity(double prec){
-  ABGVOperator &D = *this->*derivative;
-
-  FunctionTree<3> dxC_tree(MRA);
-  FunctionTree<3> dyC_tree(MRA);
-  FunctionTree<3> dzC_tree(MRA);
-
-  mrcpp::apply(dxC_tree, D, Cavity_tree, 0);
-  mrcpp::apply(dyC_tree, D, Cavity_tree, 1);
-  mrcpp::apply(dzC_tree, D, Cavity_tree, 2);
-
-  d_cavity.pushback(std::make_tuple(1, &dxC_tree));
-  d_cavity.pushback(std::make_tuple(1, &dyC_tree));
-  d_cavity.pushback(std::make_tuple(1, &dzC_tree));
-
 }
 
-void ReactionPotential::calc_gamma(double prec){
-  mrcpp::FunctionTreeVector<3> d_V;
+double ReactionPotential::getEnergy(){
+ return 0.5*this->V_eff_func.integrate().real();
+}
 
-
+void ReactionPotential::clear() {
+  clearApplyPrec();
+  //QMFunction::free(NUMBER::Total);
 
 
 
 }
-
-
-  FunctionTree<3> *rho_eff_tree;
-  FunctionTree<3> *gamma_tree;
-  FunctionTree<3> *V_n_tree;
-  FunctionTreeVector<3> *d_Cavity;*/
-
-  void setup(double prec){}
-
-/*  void calc_rho_eff(double prec);
-  void calc_gamma(double prec);*/
-
-
 
 } //namespace mrchem

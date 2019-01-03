@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ReactionPotential.h"
-#include "ReactionPotentialD1.h"
-#include "ReactionPotentialD2.h"
+//#include "ReactionPotentialD1.h"
+//#include "ReactionPotentialD2.h"
 #include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class ReactionOperator
@@ -29,7 +29,8 @@ public:
 
 
     ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroTensorOperator::trace(Phi); }
-    QMFunction &getPotential(){return this->potential->getPotential();}
+    
+    double const &getEnergy(){return this->potential->getEnergy();}
 private:
     ReactionPotential *potential;
 };

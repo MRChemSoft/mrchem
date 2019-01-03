@@ -19,11 +19,11 @@ public:
   QMFunction &getPotential() {return this->V_eff_func;}
   QMFunction &getgamma() {return this->gamma_func;}
   void do_setup(double prec) {this->setup(prec);}
-
+  double getEnergy();
   friend class ReactionOperator;
 
 protected:
-  void clear(){clearApplyPrec();}
+  void clear();
 
 
 private:
