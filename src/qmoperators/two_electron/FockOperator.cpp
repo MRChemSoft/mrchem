@@ -63,7 +63,6 @@ void FockOperator::build() {
     if (this->xc != nullptr) this->V += *this->xc;
     if (this->ext != nullptr) this->V += *this->ext;
     if (this->reo != nullptr) this->V -= *this->reo;
->>>>>>> Add ReactionOperator to FockOperator
 
     RankZeroTensorOperator &F = (*this);
     F = this->kinetic() + this->potential();
