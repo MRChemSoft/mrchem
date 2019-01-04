@@ -34,6 +34,7 @@ class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
 class MagneticFieldOperator;
+class ReactionOperator;
 
 class ResponseCalculation final {
 public:

@@ -30,7 +30,10 @@ public:
 
     ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroTensorOperator::trace(Phi); }
     
-    double const &getEnergy(){return this->potential->getEnergy();}
+    double const &get_tot_Energy(){return this->potential->get_tot_Energy();}
+    double const &get_e_Energy(){return this->potential->get_e_Energy();}
+    double const &get_nuc_Energy(){return this->potential->get_nuc_Energy();}
+   
 private:
     ReactionPotential *potential;
 };

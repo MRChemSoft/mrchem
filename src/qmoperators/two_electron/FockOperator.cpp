@@ -39,16 +39,6 @@ FockOperator::FockOperator(KineticOperator *t,
                            NuclearOperator *v,
                            CoulombOperator *j,
                            ExchangeOperator *k,
-<<<<<<< HEAD
-                           XCOperator *xc,
-                           ElectricFieldOperator *ext)
-        : kin(t)
-        , nuc(v)
-        , coul(j)
-        , ex(k)
-        , xc(xc)
-        , ext(ext) {}
-=======
                            XCOperator       *xc,
                            ElectricFieldOperator *ext,
                            ReactionOperator *ro)
@@ -59,7 +49,6 @@ FockOperator::FockOperator(KineticOperator *t,
           xc(xc),
           ext(ext),
           reo(ro) {}
->>>>>>> Add ReactionOperator to FockOperator
 
 /** @brief build the Fock operator once all contributions are in place
  *
@@ -71,16 +60,10 @@ void FockOperator::build() {
     this->V = RankZeroTensorOperator();
     if (this->nuc != nullptr) this->V += *this->nuc;
     if (this->coul != nullptr) this->V += *this->coul;
-<<<<<<< HEAD
-    if (this->ex != nullptr) this->V -= *this->ex;
-    if (this->xc != nullptr) this->V += *this->xc;
-    if (this->ext != nullptr) this->V += *this->ext;
-=======
     if (this->ex   != nullptr) this->V -= *this->ex;
     if (this->xc   != nullptr) this->V += *this->xc;
     if (this->ext  != nullptr) this->V += *this->ext;
     if (this->reo  != nullptr) this->V += *this->reo;
->>>>>>> Add ReactionOperator to FockOperator
 
     RankZeroTensorOperator &F = (*this);
     F = this->kinetic() + this->potential();
@@ -150,8 +133,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     double E_xc2 = 0.0; // Trace of the XC operator
     double E_ext = 0.0; // External field contribution to the electronic energy
     double E_nex = 0.0; // External field contribution to the nuclear energy
-    double E_r   = 0.0; // Reaction Field energy due to solute-solvent interaction
-
+    double E_r_e = 0.0;
+    double E_r_n = 0.0;
     // Nuclear part
     if (this->nuc != nullptr) {
         Nuclei &nucs = this->nuc->getNuclei();
@@ -162,6 +145,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
         }
     }
 
+    if (this->reo  != nullptr) E_r_n = this->reo->get_nuc_Energy(); E_nuc += E_r_n;
+
     // Orbital energies
     for (int i = 0; i < Phi.size(); i++) {
         double occ = (double)Phi[i].occ();
@@ -169,36 +154,25 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     }
 
     // Electronic part
-<<<<<<< HEAD
-    if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
-    if (this->coul != nullptr) E_ee = this->coul->trace(Phi).real();
-    if (this->ex != nullptr) E_x = -this->ex->trace(Phi).real();
-    if (this->xc != nullptr) E_xc = this->xc->getEnergy();
-    if (this->xc != nullptr) E_xc2 = this->xc->trace(Phi).real();
-    if (this->ext != nullptr) E_ext = this->ext->trace(Phi).real();
-
-    double E_eex = E_ee + E_x;
-=======
     if (this->nuc  != nullptr) E_en  =  this->nuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee  =  this->coul->trace(Phi).real();
     if (this->ex   != nullptr) E_x   = -this->ex->trace(Phi).real();
     if (this->xc   != nullptr) E_xc  =  this->xc->getEnergy();
     if (this->xc   != nullptr) E_xc2 =  this->xc->trace(Phi).real();
     if (this->ext  != nullptr) E_ext =  this->ext->trace(Phi).real();
-    if (this->reo  != nullptr) E_r   =  this->reo->getEnergy();
+    if (this->reo  != nullptr) E_r_e =  this->reo->get_e_Energy();
 
     double E_eex    = E_ee  + E_x;
->>>>>>> Add ReactionOperator to FockOperator
     double E_orbxc2 = E_orb - E_xc2;
-    E_kin = E_orbxc2 - 2.0 * E_eex - E_en - E_ext;
-    E_el = E_orbxc2 - E_eex + E_xc;
+    E_kin = E_orbxc2 - 2.0*E_eex - E_en - E_ext;
+    E_el  = E_orbxc2 -     E_eex + E_xc + E_r_e;
 
-<<<<<<< HEAD
-    return SCFEnergy{E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x, E_nex, E_ext};
-=======
     return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x,
+<<<<<<< HEAD
                      E_nex, E_ext, E_r);
->>>>>>> Add ReactionOperator to FockOperator
+=======
+                     E_nex, E_ext, E_r_e, E_r_n);
+>>>>>>> add linear cavity and minor fixes
 }
 
 ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {

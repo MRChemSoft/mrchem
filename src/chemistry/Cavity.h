@@ -40,7 +40,7 @@ public:
     Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
     double evalf(const mrcpp::Coord<3> &r) const override;
     void eval_epsilon(bool argument, bool implement);
-
+    bool islinear() { return is_linear; }
     double dcoeff;
 
 protected:
@@ -51,6 +51,8 @@ protected:
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
     double d;
+    bool is_eps = false;
+    bool is_linear = false;
 
 };
 } // namespace mrchem

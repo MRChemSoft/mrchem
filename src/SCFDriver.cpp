@@ -36,6 +36,7 @@
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
 
 #include "properties/DipoleMoment.h"
 #include "properties/GeometryDerivatives.h"

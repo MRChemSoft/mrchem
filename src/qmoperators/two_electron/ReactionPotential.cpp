@@ -24,24 +24,26 @@ ReactionPotential::ReactionPotential( mrcpp::PoissonOperator *P, mrcpp::Derivati
     , orbitals(Phi)
     , poisson(P)
     , derivative(D)
-    , rho_func(false)
+    , rho_tot(false)
     , cavity_func(false)
     , inv_eps_func(false)
     , rho_eff_func(false)
     , gamma_func(false)
     , V_n_func(false)
-    , V_eff_func(false) {}
+    , V_eff_func(false)
+    , rho_el(false)
+    , rho_nuc(false) {}
 
 //  ~ReactionPotential();
 
 void ReactionPotential::setup_eps() {
 
-  cavity->eval_epsilon(false, cavity->is_linear);
+  cavity->eval_epsilon(false, cavity->islinear());
 
   qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
   cavity_func.rescale(cavity->dcoeff);
 
-  cavity->eval_epsilon(true, cavity->is_linear);
+  cavity->eval_epsilon(true, cavity->islinear());
 
   qmfunction::project(inv_eps_func, *cavity, NUMBER::Real, this->apply_prec);
 
@@ -50,13 +52,15 @@ void ReactionPotential::setup_eps() {
 
 
 void ReactionPotential::calc_rho_eff() {
-  Density rho_N = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
+  Density rho_n = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
   Density rho_e(false);
-  Density rho_tot(false);
+  Density rho(false);
   density::compute(this->apply_prec, rho_e, *orbitals, DENSITY::Total);
-  qmfunction::add(rho_tot, -1.0, rho_e, 1.0, rho_N, -1.0);
+  qmfunction::add(rho, -1.0, rho_e, 1.0, rho_n, -1.0);
 
-  this->rho_func = rho_tot;
+  this->rho_tot = rho;
+  this->rho_el  = rho_e;
+  this->rho_nuc = rho_n;
 
   qmfunction::multiply(rho_eff_func, rho_tot, inv_eps_func, this->apply_prec);
 
@@ -66,7 +70,20 @@ void ReactionPotential::calc_rho_eff() {
 void ReactionPotential::calc_gamma() {
   auto d_V_n = mrcpp::gradient(*derivative, V_n_func.real());
   gamma_func.alloc(NUMBER::Real);
-  mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity);
+
+  if(cavity->islinear() == true){
+
+    QMFunction temp_func;
+    temp_func.alloc(NUMBER::Real);
+    mrcpp::dot(this->apply_prec, temp_func.real(), d_V_n, d_cavity);
+    qmfunction::multiply(gamma_func, temp_func, inv_eps_func, this->apply_prec);
+
+  }else{
+
+    mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity);
+
+  }
+
   gamma_func.rescale(1.0/(4.0*MATHCONST::pi));
 }
 
@@ -93,37 +110,56 @@ void ReactionPotential::setup(double prec) {
     qmfunction::add(diff_func, 1.0, V_n_func, -1.0, V_np1_func, -1.0);
     error = diff_func.norm();
     V_n_func = V_np1_func;
-    if(error <= this->apply_prec){
-      println(0, "\nR_char:\t" << gamma_func.integrate());
+    if(error >= 10*this->apply_prec){
+      break;
     }
     gamma_func.free(NUMBER::Real);
-    i++;
   }
 
   QMFunction V_0_func;
 
 
   V_0_func.alloc(NUMBER::Real);
-  mrcpp::apply(prec, V_0_func.real(), *poisson, rho_func.real());
+  mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
-  QMFunction temp_prod_func;
-  qmfunction::add(temp_prod_func, 1.0, V_n_func, -1.0, V_0_func, -1.0);
+  qmfunction::add(V_eff_func, 1.0, V_n_func, -1.0, V_0_func, -1.0);
 
-  qmfunction::multiply(V_eff_func, rho_func, temp_prod_func, this->apply_prec);
-
-  println(0, -0.5/2.0);
-
-  println(0, "\ncharge:\t" << rho_func.integrate());
-  println(0, "E_r:\t" << V_eff_func.integrate());
 }
 
-double ReactionPotential::getEnergy(){
- return 0.5*this->V_eff_func.integrate().real();
+double ReactionPotential::get_tot_Energy(){
+  QMFunction temp_prod_func;
+  qmfunction::multiply(temp_prod_func, rho_tot, V_eff_func, this->apply_prec);
+  double E_r_tot = temp_prod_func.integrate().real()/2;
+  return E_r_tot;
+}
+
+
+double ReactionPotential::get_e_Energy(){
+  QMFunction temp_prod_func;
+  qmfunction::multiply(temp_prod_func, rho_el, V_eff_func, this->apply_prec);
+  double E_r_e = temp_prod_func.integrate().real()/2;
+  return E_r_e;
+}
+
+
+double ReactionPotential::get_nuc_Energy(){
+  QMFunction temp_prod_func;
+  qmfunction::multiply(temp_prod_func, rho_nuc, V_eff_func, this->apply_prec);
+  double E_r_nuc = temp_prod_func.integrate().real()/2;
+  return E_r_nuc;
 }
 
 void ReactionPotential::clear() {
   clearApplyPrec();
-  //QMFunction::free(NUMBER::Total);
+  QMFunction::free(NUMBER::Total);
+
+
+
+}
+
+} //namespace mrchem
+
+
 
 
 
