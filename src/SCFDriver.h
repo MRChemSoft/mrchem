@@ -228,6 +228,7 @@ protected:
     ExchangeOperator *K;
     XCOperator *XC;
     ElectricFieldOperator *Vext;
+    ReactionOperator  *Ro; 
     FockOperator *fock;
     ComplexMatrix F;
 
