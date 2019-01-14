@@ -251,6 +251,7 @@ protected:
     FockOperator *fock_np1;
     ComplexMatrix F_np1;
 
+
     // Perturbed quantities
     OrbitalVector *phi_x;
     OrbitalVector *phi_y;
