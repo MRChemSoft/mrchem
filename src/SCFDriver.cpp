@@ -187,6 +187,8 @@ SCFDriver::SCFDriver(Getkw &input) {
     file_mo_mat_b = input.get<std::string>("files.mo_mat_b");
 
 
+    cav = 0; //temporary spot
+
     r_O[0] = 0.0;
     r_O[1] = 0.0;
     r_O[2] = 0.0;
@@ -278,6 +280,9 @@ void SCFDriver::setup() {
     molecule->printGeometry();
     nuclei = &molecule->getNuclei();
 
+    //setting up cavity
+    cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o);
+    cav->eval_epsilon(false, cav_linear);
     // Setting up empty orbitals
     phi = new OrbitalVector;
 
