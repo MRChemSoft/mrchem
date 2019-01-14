@@ -20,6 +20,7 @@
 
 #include "SCFDriver.h"
 #include "chemistry/Molecule.h"
+#include "chemistry/Cavity.h"
 
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
@@ -138,6 +139,12 @@ SCFDriver::SCFDriver(Getkw &input) {
     rsp_directions = input.getIntVec("response.directions");
     rsp_orbital_prec = input.getDblVec("response.orbital_prec");
 
+    cav_coords = input.getData("solvent.cavity");
+    cav_sigma  = input.get<double>("solvent.sigma");
+    cav_linear = input.get<bool>("solvent.linear");
+    cav_eps_o  = input.get<double>("solvent.epsilon");
+    cav_eps_i  = 1.0;
+
     ext_electric = input.get<bool>("externalfield.electric_run");
     ext_magnetic = input.get<bool>("externalfield.magnetic_run");
     if (ext_electric) {
@@ -167,6 +174,8 @@ SCFDriver::SCFDriver(Getkw &input) {
     file_mo_mat_a = input.get<std::string>("files.mo_mat_a");
     file_mo_mat_b = input.get<std::string>("files.mo_mat_b");
 
+    cav = 0; //temporary spot
+
     r_O[0] = 0.0;
     r_O[1] = 0.0;
     r_O[2] = 0.0;
@@ -191,12 +200,14 @@ SCFDriver::SCFDriver(Getkw &input) {
     K = 0;
     XC = 0;
     Vext = 0;
+    Ro = 0;
     fock = 0;
 
     phi_np1 = 0;
     J_np1 = 0;
     K_np1 = 0;
     XC_np1 = 0;
+    Ro_np1 = 0;
     fock_np1 = 0;
 
     phi_x = 0;
@@ -255,6 +266,9 @@ void SCFDriver::setup() {
     molecule->printGeometry();
     nuclei = &molecule->getNuclei();
 
+    //setting up cavity
+    cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o);
+    cav->eval_epsilon(false, cav_linear);
     // Setting up empty orbitals
     phi = new OrbitalVector;
 
@@ -383,6 +397,11 @@ void SCFDriver::setup() {
     V = new NuclearOperator(*nuclei, nuc_prec);
     // All cases need kinetic energy and nuclear potential
     fock = new FockOperator(T, V);
+
+    //set up Reaction potential
+    Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
+    fock->setReactionOperator(Ro);
+
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "hartree" or wf_method == "hf" or wf_method == "dft") {
         J = new CoulombOperator(P, phi);
@@ -440,6 +459,7 @@ void SCFDriver::clear() {
     if (XC != 0) delete XC;
     if (K != 0) delete K;
     if (J != 0) delete J;
+    if (Ro != 0) delete Ro;
     if (V != 0) delete V;
     if (T != 0) delete T;
 
@@ -463,6 +483,11 @@ void SCFDriver::setup_np1() {
     *phi_np1 = orbital::param_copy(*phi);
 
     fock_np1 = new FockOperator(T, V);
+
+    //Set up n+1 ReactionOperator
+    Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1);
+    fock_np1->setReactionOperator(Ro_np1);
+
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "hartree" or wf_method == "hf" or wf_method == "dft") {
         J_np1 = new CoulombOperator(P, phi_np1);
@@ -491,6 +516,7 @@ void SCFDriver::clear_np1() {
     if (fock_np1 != 0) delete fock_np1;
     if (XC_np1 != 0) delete XC_np1;
     if (K_np1 != 0) delete K_np1;
+    if (Ro_np1 != 0) delete Ro_np1;
     if (J_np1 != 0) delete J_np1;
     if (phi_np1 != 0) delete phi_np1;
 }

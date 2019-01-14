@@ -15,6 +15,7 @@ namespace mrchem {
 
 class Nuclei;
 class Molecule;
+class Cavity;
 class OrbitalOptimizer;
 class EnergyOptimizer;
 class GroundStateSolver;
@@ -181,7 +182,15 @@ protected:
     double rsp_property_thrs;
     std::vector<int> rsp_directions;
     std::vector<double> rsp_orbital_prec;
-
+    
+    //Solvent effect input
+    std::vector<std::string> cav_coords;
+    double cav_sigma;
+    double cav_eps_o;
+    double cav_eps_i;
+    bool cav_linear;
+    Cavity *cav;
+   
     // External field input
     bool ext_electric;
     bool ext_magnetic;
@@ -236,8 +245,10 @@ protected:
     CoulombOperator *J_np1;
     ExchangeOperator *K_np1;
     XCOperator *XC_np1;
+    ReactionOperator *Ro_np1;
     FockOperator *fock_np1;
     ComplexMatrix F_np1;
+
 
     // Perturbed quantities
     OrbitalVector *phi_x;

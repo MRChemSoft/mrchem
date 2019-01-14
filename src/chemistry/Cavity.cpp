@@ -29,15 +29,10 @@
 
 #include "Cavity.h"
 #include "utils/math_utils.h"
+#include "MRCPP/Printer" //testing only, remove when done
 
 namespace mrchem {
 
-Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope) {
-  this->pos = coord;
-  this->R = R;
-  this->d = slope;
-  this->dcoeff = std::log(e_i/e_o);
-}
 
 
 Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope, double eps_i, double eps_o){
@@ -48,6 +43,17 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, doub
   this->e_o = eps_o;
   this->dcoeff = std::log(e_i/e_o);
 }
+
+
+Cavity::Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i, double eps_o){
+  this->R = R;
+  this->d = slope;
+  this->e_i = eps_i;
+  this->e_o = eps_o;
+  this->dcoeff = std::log(e_i/e_o);
+  readCoordinateString(coord_str);
+}
+
 
 void Cavity::eval_epsilon(bool argument, bool implement){
   this->is_eps = argument;
@@ -90,4 +96,24 @@ double Cavity::evalf(const double *r) const {
   }
 }
 
-} // namespace mrchem
+void Cavity::readCoordinateString(const std::vector<std::string> &coord_str){
+    int nAtoms = coord_str.size();
+    mrcpp::Coord<3> coord;
+    double Rad;
+    int atomnr;
+    for (int i = 0; i < nAtoms; i++){
+        std::stringstream ss;
+        ss.str(coord_str[i]);
+        ss >> atomnr;
+        ss >> coord[0];
+        ss >> coord[1];
+        ss >> coord[2];
+        ss >> Rad;
+        this->pos.push_back(coord);
+        this->R.push_back(Rad);
+    }
+}
+
+
+
+} //namespace mrchem

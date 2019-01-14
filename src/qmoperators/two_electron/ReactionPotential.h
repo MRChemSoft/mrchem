@@ -16,13 +16,12 @@ public:
 
   ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi);
   ~ReactionPotential() { }
-  QMFunction &getPotential() { return this->V_eff_func; }
   QMFunction &getgamma() { return this->gamma_func; }
   void do_setup(double prec) { this->setup(prec); }
 
-  double get_tot_Energy();
-  double get_e_Energy();
-  double get_nuc_Energy();
+  double &get_tot_Energy();
+  double &get_e_Energy();
+  double &get_nuc_Energy();
 
   friend class ReactionOperator;
 
@@ -45,7 +44,6 @@ private:
   QMFunction gamma_func;
   QMFunction V_n_func;
   mrcpp::FunctionTreeVector<3> d_cavity;
-  QMFunction V_eff_func;
   QMFunction rho_el;
   QMFunction rho_nuc;
 
@@ -55,6 +53,10 @@ private:
 
   void calc_rho_eff();
   void calc_gamma();
+
+  double e_Energy;
+  double nuc_Energy;
+  double tot_Energy;
 };
 
 
