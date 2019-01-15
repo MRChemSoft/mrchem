@@ -139,7 +139,6 @@ SCFDriver::SCFDriver(Getkw &input) {
     rsp_directions = input.getIntVec("response.directions");
     rsp_orbital_prec = input.getDblVec("response.orbital_prec");
 
-    cav_coords = input.getData("solvent.cavity");
     cav_sigma  = input.get<double>("solvent.sigma");
     cav_linear = input.get<bool>("solvent.linear");
     cav_eps_o  = input.get<double>("solvent.epsilon");
@@ -270,7 +269,7 @@ void SCFDriver::setup() {
     nuclei = &molecule->getNuclei();
 
     //setting up cavity
-    cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o);
+    cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
     cav->eval_epsilon(false, cav_linear);
     // Setting up empty orbitals
     phi = new OrbitalVector;
