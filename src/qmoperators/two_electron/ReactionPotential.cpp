@@ -125,8 +125,8 @@ void ReactionPotential::setup(double prec) {
   mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
   qmfunction::add(*this, 1.0, V_n_func, -1.0, V_0_func, -1.0);
-  /*
-  //testing
+
+  /*/testing
   println(0, "\nis it eps\t" << cavity->iseps());
 
   println(0, "\ncav coordinates\n")
@@ -136,16 +136,10 @@ void ReactionPotential::setup(double prec) {
   double tempz = cavity->getcoords()[0][2];
   println(0, tempx << ' ' << tempy << ' ' << tempz << "\n");
 
-  println(0, "atom number:\t" << 1);
-  double tempx = cavity->getcoords()[1][0];
-  double tempy = cavity->getcoords()[1][1];
-  double tempz = cavity->getcoords()[1][2];
-  println(0, tempx << ' ' << tempy << ' ' << tempz << "\n");
-
   println(0, "\ncav at (0.0, 0.0, 0.0)\t" << cavity->evalf({0.0, 0.0, 0.0})); //gabriel: debugging
   println(0, "\ncav at (0.0, 0.0, 10.0)\t" << cavity->evalf({0.0, 0.0, 10.0})); //gabriel: debugging
-  println(0, "\nE_r/2 should be:\t" << ((1.0 - 2.0)*pow(rho_el.integrate().real(), 2))/(4.0*2.0));
-  println(0, "\nE_r/2 is:\t" << get_tot_Energy());*/
+  println(0, "\nE_r should be:\t" << ((1.0 - 2.0)*pow(rho_el.integrate().real(), 2))/(4.0*1.0));
+  println(0, "\nE_r is:\t" << get_tot_Energy());*/
 
   V_n_func.free(NUMBER::Real);
   gamma_func.free(NUMBER::Real);
@@ -155,7 +149,7 @@ void ReactionPotential::setup(double prec) {
 double &ReactionPotential::get_tot_Energy(){
   QMFunction temp_prod_func;
   qmfunction::multiply(temp_prod_func, rho_tot, *this, this->apply_prec);
-  tot_Energy = temp_prod_func.integrate().real()/2;
+  tot_Energy = temp_prod_func.integrate().real();
   return tot_Energy;
 }
 
@@ -163,7 +157,7 @@ double &ReactionPotential::get_tot_Energy(){
 double &ReactionPotential::get_e_Energy(){
   QMFunction temp_prod_func;
   qmfunction::multiply(temp_prod_func, rho_el, *this, this->apply_prec);
-  e_Energy = temp_prod_func.integrate().real()/2;
+  e_Energy = temp_prod_func.integrate().real();
   return e_Energy;
 }
 
@@ -171,25 +165,14 @@ double &ReactionPotential::get_e_Energy(){
 double &ReactionPotential::get_nuc_Energy(){
   QMFunction temp_prod_func;
   qmfunction::multiply(temp_prod_func, rho_nuc, *this, this->apply_prec);
-  nuc_Energy = temp_prod_func.integrate().real()/2;
+  nuc_Energy = temp_prod_func.integrate().real();
   return nuc_Energy;
 }
 
 void ReactionPotential::clear() {
   clearApplyPrec();
 
-  QMFunction::free(NUMBER::Total);  
-
-
-
-}
-
-} //namespace mrchem
-
-
-
-
-
+  QMFunction::free(NUMBER::Total);
 }
 
 } //namespace mrchem

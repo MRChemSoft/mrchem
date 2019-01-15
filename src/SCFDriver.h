@@ -184,7 +184,6 @@ protected:
     std::vector<double> rsp_orbital_prec;
     
     //Solvent effect input
-    std::vector<std::string> cav_coords;
     double cav_sigma;
     double cav_eps_o;
     double cav_eps_i;

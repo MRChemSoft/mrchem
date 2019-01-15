@@ -29,6 +29,8 @@
 
 #include "Cavity.h"
 #include "utils/math_utils.h"
+#include "PeriodicTable.h"
+#include "Element.h"
 #include "MRCPP/Printer" //testing only, remove when done
 
 namespace mrchem {
@@ -79,18 +81,18 @@ double Cavity::evalf(const double *r) const {
   }
   C = 1 - C;
 
-  if(b == false){
-    return C;
+  if (is_eps == false){
+      return C;
 
-    if(is_eps == false){
-        return C;
+  }else if (is_eps == true) {
 
-    }else if(is_eps == true){
+      if (is_linear == true) {
+          return 1/(e_o + C*(e_i - e_o));
 
-    }else{
-      return (1/e_i)*std::exp(log(e_i/e_o)*(1 - C));
-
-    }
+      } else {
+          return (1/e_i)*std::exp(log(e_i/e_o)*(1 - C));
+      }
+  }
 
 
   }
@@ -100,15 +102,16 @@ void Cavity::readCoordinateString(const std::vector<std::string> &coord_str){
     int nAtoms = coord_str.size();
     mrcpp::Coord<3> coord;
     double Rad;
-    int atomnr;
+    std::string sym;
+    PeriodicTable P;
     for (int i = 0; i < nAtoms; i++){
         std::stringstream ss;
         ss.str(coord_str[i]);
-        ss >> atomnr;
+        ss >> sym;
         ss >> coord[0];
         ss >> coord[1];
         ss >> coord[2];
-        ss >> Rad;
+        Rad = P.getElement(sym.c_str()).getVdw();
         this->pos.push_back(coord);
         this->R.push_back(Rad);
     }
