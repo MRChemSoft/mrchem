@@ -169,11 +169,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     E_el  = E_orbxc2 -     E_eex + E_xc + E_r_e;
 
     return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x,
-<<<<<<< HEAD
-                     E_nex, E_ext, E_r);
-=======
                      E_nex, E_ext, E_r_e, E_r_n);
->>>>>>> add linear cavity and minor fixes
 }
 
 ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {

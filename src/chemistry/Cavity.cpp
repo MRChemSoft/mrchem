@@ -70,33 +70,31 @@ void Cavity::eval_epsilon(bool argument, bool implement){
 }
 
 
-double Cavity::evalf(const double *r) const {
-  double C = 1.0;
-  double s, O;
 
-  for(int i = 0; i < pos.size(); i++){
-    s = std::sqrt(std::pow(pos[i][0] - r[0], 2) + std::pow(pos[i][1] - r[1], 2) + std::pow(pos[i][2] - r[2], 2)) - R[i];
-    O = 0.5 * (1 + std::erf(s/d));
-    C *= 1 - (1 - O);
-  }
-  C = 1 - C;
+double Cavity::evalf(const mrcpp::Coord<3> &r) const {
+    double C = 1.0;
+    double s, O;
+    for(int i = 0; i < pos.size(); i++){
+        s = math_utils::calc_distance(pos[i], r) - R[i];
+        O = 0.5 * (1 + std::erf(s/d));
+        C *= 1 - (1 - O);
+    }
+    C = 1 - C;
 
-  if (is_eps == false){
-      return C;
+    if (is_eps == false){
+        return C;
 
-  }else if (is_eps == true) {
+    }else if (is_eps == true) {
 
-      if (is_linear == true) {
-          return 1/(e_o + C*(e_i - e_o));
+        if (is_linear == true) {
+            return 1/(e_o + C*(e_i - e_o));
 
-      } else {
-          return (1/e_i)*std::exp(log(e_i/e_o)*(1 - C));
-      }
-  }
-
-
-  }
+        } else {
+            return (1/e_i)*std::exp(log(e_i/e_o)*(1 - C));
+        }
+    }
 }
+
 
 void Cavity::readCoordinateString(const std::vector<std::string> &coord_str){
     int nAtoms = coord_str.size();

@@ -17,7 +17,7 @@ using mrcpp::ABGVOperator;
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
-ReactionPotential::ReactionPotential( mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi)
+ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi)
     : QMPotential(1, false)
     , cavity(C)
     , nuclei(nucs)
@@ -40,15 +40,18 @@ ReactionPotential::ReactionPotential( mrcpp::PoissonOperator *P, mrcpp::Derivati
 //  ~ReactionPotential();
 
 void ReactionPotential::setup_eps() {
-
+  cavity->change_radius(4.00);
   cavity->eval_epsilon(false, cavity->islinear());
 
   qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
+
   cavity_func.rescale(cavity->dcoeff);
 
   cavity->eval_epsilon(true, cavity->islinear());
 
   qmfunction::project(inv_eps_func, *cavity, NUMBER::Real, this->apply_prec);
+
+  std::cout << "cavity radius" << cavity->getRadius()[0] << std::endl;
 
 }
 
@@ -75,14 +78,14 @@ void ReactionPotential::calc_gamma() {
   gamma_func.alloc(NUMBER::Real);
 
   if(cavity->islinear() == true){
-
+    println(0, "\nrunning linear");
     QMFunction temp_func;
     temp_func.alloc(NUMBER::Real);
     mrcpp::dot(this->apply_prec, temp_func.real(), d_V_n, d_cavity);
     qmfunction::multiply(gamma_func, temp_func, inv_eps_func, this->apply_prec);
 
   }else{
-
+    println(0, "\nrunning exp.");
     mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity);
 
   }
@@ -99,9 +102,10 @@ void ReactionPotential::setup(double prec) {
   d_cavity = mrcpp::gradient(*derivative, cavity_func.real());
   V_n_func.alloc(NUMBER::Real);
   mrcpp::apply(prec, V_n_func.real(), *poisson, rho_eff_func.real());
-
   double error = 1;
-  while(error >= 10*this->apply_prec) {
+  int i = 1;
+  while(error >= this->apply_prec) {
+    gamma_func.free(NUMBER::Real);
     calc_gamma();
     QMFunction temp_func;
     qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
@@ -114,9 +118,14 @@ void ReactionPotential::setup(double prec) {
     error = diff_func.norm();
     V_n_func = V_np1_func;
 
-    if(error >= 10*this->apply_prec) break;
-    gamma_func.free(NUMBER::Real);
+  //testing
+    std::cout << "iterations: " << i << std::endl;
+    println(0,"\nint. gamma \t" << gamma_func.integrate());
+    i++;
+  //testing
   }
+
+
 
   QMFunction V_0_func;
 
@@ -126,20 +135,27 @@ void ReactionPotential::setup(double prec) {
 
   qmfunction::add(*this, 1.0, V_n_func, -1.0, V_0_func, -1.0);
 
-  /*/testing
-  println(0, "\nis it eps\t" << cavity->iseps());
+  //testing
 
-  println(0, "\ncav coordinates\n")
-  println(0, "atom number:\t" << 0);
-  double tempx = cavity->getcoords()[0][0];
-  double tempy = cavity->getcoords()[0][1];
-  double tempz = cavity->getcoords()[0][2];
-  println(0, tempx << ' ' << tempy << ' ' << tempz << "\n");
+  QMFunction test_func;
+  test_func.alloc(NUMBER::Real);
+  qmfunction::add(test_func, 1.0, rho_eff_func, -1.0, rho_tot, -1.0);
+  println(0, "\nint. rho_eff - rho\t" << test_func.integrate());
 
-  println(0, "\ncav at (0.0, 0.0, 0.0)\t" << cavity->evalf({0.0, 0.0, 0.0})); //gabriel: debugging
-  println(0, "\ncav at (0.0, 0.0, 10.0)\t" << cavity->evalf({0.0, 0.0, 10.0})); //gabriel: debugging
-  println(0, "\nE_r should be:\t" << ((1.0 - 2.0)*pow(rho_el.integrate().real(), 2))/(4.0*1.0));
-  println(0, "\nE_r is:\t" << get_tot_Energy());*/
+  for (double i = 0.1; i <= 10.00; i += 0.1) {
+    double test1 = V_n_func.real().evalf({0.0, 0.0, i});
+    double test2 = V_0_func.real().evalf({0.0, 0.0, i});
+    double test3 = gamma_func.real().evalf({0.0, 0.0, i});
+    double test4 = rho_eff_func.real().evalf({0.0, 0.0, i});
+    double test5 = rho_tot.real().evalf({0.0, 0.0, i});
+    double test6 = inv_eps_func.real().evalf({0.0, 0.0, i});
+    double test7 = cavity->evalf({0.0, 0.0, i});
+
+    std::cout << "func evalf at:\t" << i << "\t" << test1 << ' ' << test2 << ' ' << test3 << ' ' << test4 << ' ' << test5 << ' ' << test6 << " " << test7  << std::endl;
+
+  }
+
+  //testing
 
   V_n_func.free(NUMBER::Real);
   gamma_func.free(NUMBER::Real);

@@ -266,9 +266,6 @@ void SCFDriver::setup() {
     molecule->printGeometry();
     nuclei = &molecule->getNuclei();
 
-    //setting up cavity
-    cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
-    cav->eval_epsilon(false, cav_linear);
     // Setting up empty orbitals
     phi = new OrbitalVector;
 
@@ -399,9 +396,13 @@ void SCFDriver::setup() {
     fock = new FockOperator(T, V);
 
     //set up Reaction potential
-    Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
-    fock->setReactionOperator(Ro);
-
+    if (calc_solvent_effect){
+        //setting up cavity
+        cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
+        cav->eval_epsilon(false, cav_linear);
+        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
+        fock->setReactionOperator(Ro);
+    }
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "hartree" or wf_method == "hf" or wf_method == "dft") {
         J = new CoulombOperator(P, phi);
@@ -484,9 +485,11 @@ void SCFDriver::setup_np1() {
 
     fock_np1 = new FockOperator(T, V);
 
-    //Set up n+1 ReactionOperator
-    Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1);
-    fock_np1->setReactionOperator(Ro_np1);
+    if (calc_solvent_effect){
+        //Set up n+1 ReactionOperator
+        Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1);
+        fock_np1->setReactionOperator(Ro_np1);
+    }
 
     // For Hartree, HF and DFT we need the coulomb part
     if (wf_method == "hartree" or wf_method == "hf" or wf_method == "dft") {

@@ -39,12 +39,13 @@ namespace mrchem {
 class SCFEnergy final {
 public:
     SCFEnergy(double nuc = 0.0, double el = 0.0, double orb = 0.0,
-              double kin = 0.0, double en = 0.0, double ee = 0.0,
-              double xc = 0.0, double x = 0.0, double nex = 0.0,
-              double ext = 0.0, double re = 0.0, double rn = 0.0) :
+              double kin = 0.0, double en = 0.0, double ee  = 0.0,
+              double xc  = 0.0,  double x = 0.0, double nex = 0.0,
+              double ext = 0.0, double re = 0.0, double rn  = 0.0,
+              double rt  = 0.0 ) :
         E_nuc(nuc), E_el(el), E_orb(orb), E_kin(kin), E_en(en),
         E_ee(ee), E_x(x), E_xc(xc), E_nex(nex), E_ext(ext), E_r_e(re), 
-        E_r_n(rn){ }
+        E_r_n(rn), E_r_t(rt) { }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
     double getNuclearEnergy() const { return this->E_nuc; }
@@ -56,7 +57,7 @@ public:
     double getElectronElectronEnergy() const { return this->E_ee; }
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
-    double getReactionEnergy() const {return this->E_r_e + this->E_r_n; }
+    double getReactionEnergy() const {return this->E_r_t; }
 
     friend std::ostream& operator<<(std::ostream &o, const SCFEnergy &en) {
         auto E_au   = en.E_nuc + en.E_el;
@@ -78,7 +79,9 @@ public:
         o << " X-C energy:                  " << std::setw(29) << en.E_xc   << std::endl;
         o << " El. External field energy:   " << std::setw(29) << en.E_ext  << std::endl;
         o << " Nuc. External field energy:  " << std::setw(29) << en.E_nex  << std::endl;
-        o << " Reac. field energy:          " << std::setw(29) << en.E_r_e + en.E_r_n << std::endl;
+        o << " Reac. field energy:          " << std::setw(29) << en.E_r_t  << std::endl;
+        o << " Reac. field el. energy:      " << std::setw(29) << en.E_r_e  << std::endl;
+        o << " Reac. field nuc. energy:     " << std::setw(29) << en.E_r_n  << std::endl;
         o << "                                                            " << std::endl;
         o << "------------------------------------------------------------" << std::endl;
         o << "                                                            " << std::endl;
@@ -113,6 +116,7 @@ private:
     double E_ext;
     double E_r_e;
     double E_r_n;
+    double E_r_t;
 };
 // clang-format on
 

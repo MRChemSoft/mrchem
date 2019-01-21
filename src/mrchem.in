@@ -208,7 +208,7 @@ def setup_keywords(input_dir):
     solvent = getkw.Section('Solvent')
     # yapf: disable
     solvent.add_kw('epsilon',                 'DBL', 78.39)
-    solvent.add_kw('atom_based_cavity',       'BOOL', False)
+    solvent.add_kw('atom_based_cavity',       'BOOL', True)
     solvent.add_kw('sigma',                   'DBL', 0.4)
     solvent.add_kw('linear',                  'BOOL', False)
     # yapf: enable
@@ -263,6 +263,8 @@ def setup_keywords(input_dir):
     properties.add_kw('nmr_shielding',          'BOOL', False)
     properties.add_kw('spin_spin_coupling',     'BOOL', False)
     properties.add_kw('hyperfine_coupling',     'BOOL', False)
+    properties.add_kw('solvent_effect',         'BOOL', False)
+    
     # yapf: enable
     top.add_sect(properties)
 

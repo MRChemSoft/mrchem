@@ -122,6 +122,7 @@ protected:
     bool calc_nmr_shielding;
     bool calc_spin_spin_coupling;
     bool calc_hyperfine_coupling;
+    bool calc_solvent_effect;
     ResponseCalculations rsp_calculations;
 
     bool pol_velocity;
@@ -184,11 +185,13 @@ protected:
     std::vector<double> rsp_orbital_prec;
     
     //Solvent effect input
+    Cavity *cav;
+    std::vector<std::string> cav_coords;
     double cav_sigma;
     double cav_eps_o;
     double cav_eps_i;
     bool cav_linear;
-    Cavity *cav;
+    bool cav_abc;   
    
     // External field input
     bool ext_electric;

@@ -43,6 +43,8 @@ public:
     bool islinear() { return is_linear; }
     bool iseps() { return is_eps;}
     std::vector<mrcpp::Coord<3>> getcoords() { return pos;}
+    std::vector<double> getRadius() { return R;}
+    void change_radius(double r){ this->R[0] = r; }
     double dcoeff;
 
 protected:
