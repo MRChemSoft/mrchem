@@ -280,9 +280,6 @@ void SCFDriver::setup() {
     molecule->printGeometry();
     nuclei = &molecule->getNuclei();
 
-    //setting up cavity
-    cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
-    cav->eval_epsilon(false, cav_linear);
     // Setting up empty orbitals
     phi = new OrbitalVector;
 
