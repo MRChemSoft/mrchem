@@ -141,6 +141,7 @@ SCFDriver::SCFDriver(Getkw &input) {
 
     cav_sigma  = input.get<double>("solvent.sigma");
     cav_linear = input.get<bool>("solvent.linear");
+    cav_abc    = input.get<bool>("solvent.atom_based_cavity");
     cav_eps_o  = input.get<double>("solvent.epsilon");
     cav_eps_i  = 1.0;
     if (not cav_abc) cav_coords = input.getData("solvent.cavity");
@@ -268,9 +269,6 @@ void SCFDriver::setup() {
     molecule->printGeometry();
     nuclei = &molecule->getNuclei();
 
-    //setting up cavity
-    cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
-    cav->eval_epsilon(false, cav_linear);
     // Setting up empty orbitals
     phi = new OrbitalVector;
 

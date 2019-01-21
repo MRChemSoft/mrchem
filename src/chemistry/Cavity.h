@@ -47,7 +47,6 @@ public:
     std::vector<double> getRadius() { return R;}
     void change_radius(double r){ this->R[0] = r; }
 
-    double dcoeff;
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
