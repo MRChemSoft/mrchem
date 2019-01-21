@@ -1,0 +1,60 @@
+# vim:syntax=sh:
+
+rel_prec = 1.0e-4                 # Overall relative precision
+
+MPI {
+  numerically_exact = true
+  share_coulomb_density = true
+  share_coulomb_potential = true
+  share_nuclear_potential = true
+  share_xc_density = false
+  share_xc_potential = false
+}
+
+MRA {
+  min_scale = -5                  # Root scale defines world size 2^{-n}
+  corner = [ -1, -1, -1 ]         # Translation of corner root box [x,y,z]
+  boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
+  order = 7
+}
+
+Molecule {
+  multiplicity = 1 
+  charge = -1
+$coords
+H      0.0000  0.0000   0.0000
+$end
+}
+
+WaveFunction {
+  method = HF                  # Wave function method (HF or DFT)
+  restricted = false             # Unrestricted calculation
+}
+
+DFT {
+$functionals
+LDA
+$end
+}
+
+Properties {
+  scf_energy = true               # Compute ground state energy
+  solvent_effect = true
+}
+
+Solvent {
+  epsilon = 2.0000
+  atom_based_cavity = true
+  sigma = 0.4
+  linear = false
+}
+
+
+
+SCF {
+  run = true                     # Use initial guess, don't optimize
+  initial_guess = SAD_DZ             # Reading precomputed GTO MOs
+  kain = 5
+}
+
+
