@@ -204,7 +204,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     molecule = 0;
     nuclei = 0;
     phi = 0;
-    cav = 0; // temporary spot
+    cav = 0; //temporary spot
 
     T = 0;
     V = 0;
