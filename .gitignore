@@ -120,3 +120,4 @@ doc/html/
 doc/xml/
 
 .direnv/
+master_*/
