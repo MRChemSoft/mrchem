@@ -37,7 +37,7 @@ namespace mrchem {
 
 
 
-Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope, double eps_i, double eps_o){
+Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope, double eps_i , double eps_o ){
   this->pos = coord;
   this->R = R;
   this->d = slope;

@@ -43,7 +43,7 @@ public:
     ExchangeOperator       *getExchangeOperator() { return this->ex;   }
     XCOperator             *getXCOperator()       { return this->xc;   }
     ElectricFieldOperator  *getExtOperator()      { return this->ext;  }
-    ReactionOperator	   *getReactionOperator() { return this->reo;  }
+    ReactionOperator	     *getReactionOperator() { return this->reo;  }
 
     void setKineticOperator (KineticOperator        *t)  { this->kin = t;  }
     void setNuclearOperator (NuclearOperator        *v)  { this->nuc = v;  }
@@ -78,7 +78,7 @@ protected:
     ExchangeOperator       *ex;
     XCOperator             *xc;
     ElectricFieldOperator  *ext;  ///< Total external potential
-    ReactionOperator	   *reo;
+    ReactionOperator	     *reo;
 };
 
 } // namespace mrchem

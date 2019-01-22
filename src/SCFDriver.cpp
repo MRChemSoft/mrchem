@@ -176,7 +176,6 @@ SCFDriver::SCFDriver(Getkw &input) {
     file_mo_mat_b = input.get<std::string>("files.mo_mat_b");
 
 
-    cav = 0; //temporary spot
 
     r_O[0] = 0.0;
     r_O[1] = 0.0;
