@@ -121,5 +121,3 @@ doc/xml/
 
 .direnv/
 master_*/
-
-solvation_test/
