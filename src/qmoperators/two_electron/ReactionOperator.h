@@ -22,18 +22,18 @@ public:
         RankZeroTensorOperator &J = (*this);
         J = *this->potential;
     }
-    
+
     ~ReactionOperator() {
         if (this->potential != nullptr) delete this->potential;
     }
 
 
-    ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroTensorOperator::trace(Phi); }
-    
+    ComplexDouble trace(OrbitalVector &Phi) { return RankZeroTensorOperator::trace(Phi); }
+
     double &get_tot_Energy(){return this->potential->get_tot_Energy();}
     double &get_e_Energy(){return this->potential->get_e_Energy();}
     double &get_nuc_Energy(){return this->potential->get_nuc_Energy();}
-   
+
 private:
     ReactionPotential *potential;
 };

@@ -44,7 +44,7 @@ public:
               double ext = 0.0, double re = 0.0, double rn  = 0.0,
               double rt  = 0.0 ) :
         E_nuc(nuc), E_el(el), E_orb(orb), E_kin(kin), E_en(en),
-        E_ee(ee), E_x(x), E_xc(xc), E_nex(nex), E_ext(ext), E_r_e(re), 
+        E_ee(ee), E_x(x), E_xc(xc), E_nex(nex), E_ext(ext), E_r_e(re),
         E_r_n(rn), E_r_t(rt) { }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }

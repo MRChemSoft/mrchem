@@ -79,6 +79,7 @@ void ReactionPotential::calc_gamma() {
 
   if(cavity->islinear() == true){
     println(0, "\nrunning linear");
+
     QMFunction temp_func;
     temp_func.alloc(NUMBER::Real);
     mrcpp::dot(this->apply_prec, temp_func.real(), d_V_n, d_cavity);
@@ -86,6 +87,7 @@ void ReactionPotential::calc_gamma() {
 
   }else{
     println(0, "\nrunning exp.");
+
     mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity);
 
   }
@@ -135,7 +137,7 @@ void ReactionPotential::setup(double prec) {
 
   qmfunction::add(*this, 1.0, V_n_func, -1.0, V_0_func, -1.0);
 
-  //testing
+  /*//testing
 
   QMFunction test_func;
   test_func.alloc(NUMBER::Real);
@@ -155,7 +157,7 @@ void ReactionPotential::setup(double prec) {
 
   }
 
-  //testing
+  //testing*/
 
   V_n_func.free(NUMBER::Real);
   gamma_func.free(NUMBER::Real);

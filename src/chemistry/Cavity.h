@@ -39,7 +39,7 @@ public:
     Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope, double eps_i = 1.0, double eps_o = 2.0);
     Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i = 1.0, double eps_o = 2.0);
     double evalf(const mrcpp::Coord<3> &r) const override;
-    void eval_epsilon(bool argument, bool implement);
+    void eval_epsilon(bool iseps, bool islinear);
     bool islinear() { return is_linear; }
     bool iseps() { return is_eps;}
     std::vector<mrcpp::Coord<3>> getcoords() { return pos;}

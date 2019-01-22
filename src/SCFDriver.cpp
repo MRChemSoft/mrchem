@@ -174,7 +174,6 @@ SCFDriver::SCFDriver(Getkw &input) {
     file_mo_mat_a = input.get<std::string>("files.mo_mat_a");
     file_mo_mat_b = input.get<std::string>("files.mo_mat_b");
 
-    cav = 0; //temporary spot
 
     r_O[0] = 0.0;
     r_O[1] = 0.0;
@@ -193,6 +192,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     molecule = 0;
     nuclei = 0;
     phi = 0;
+    cav = 0; //temporary spot
 
     T = 0;
     V = 0;
@@ -400,7 +400,7 @@ void SCFDriver::setup() {
         //setting up cavity
         cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
         cav->eval_epsilon(false, cav_linear);
-        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
+        Ro  = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
         fock->setReactionOperator(Ro);
     }
     // For Hartree, HF and DFT we need the coulomb part

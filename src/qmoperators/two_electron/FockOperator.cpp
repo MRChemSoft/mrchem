@@ -63,7 +63,7 @@ void FockOperator::build() {
     if (this->ex   != nullptr) this->V -= *this->ex;
     if (this->xc   != nullptr) this->V += *this->xc;
     if (this->ext  != nullptr) this->V += *this->ext;
-    if (this->reo  != nullptr) this->V += *this->reo;
+    if (this->reo  != nullptr) this->V -= *this->reo;
 
 
     RankZeroTensorOperator &F = (*this);
@@ -136,6 +136,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     double E_nex = 0.0; // External field contribution to the nuclear energy
     double E_r_e = 0.0;
     double E_r_n = 0.0;
+    double E_r_t = 0.0;
     // Nuclear part
     if (this->nuc != nullptr) {
         Nuclei &nucs = this->nuc->getNuclei();
@@ -146,7 +147,11 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
         }
     }
 
-    if (this->reo  != nullptr) E_r_n = this->reo->get_nuc_Energy(); E_nuc += E_r_n;
+    if (this->reo  != nullptr) {
+      E_r_n = 0.5*this->reo->get_nuc_Energy();
+      E_r_t = 0.5*this->reo->get_tot_Energy();
+      E_nuc += E_r_n;
+    }
 
     // Orbital energies
     for (int i = 0; i < Phi.size(); i++) {
@@ -161,15 +166,15 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     if (this->xc   != nullptr) E_xc  =  this->xc->getEnergy();
     if (this->xc   != nullptr) E_xc2 =  this->xc->trace(Phi).real();
     if (this->ext  != nullptr) E_ext =  this->ext->trace(Phi).real();
-    if (this->reo  != nullptr) E_r_e =  this->reo->get_e_Energy();
+    if (this->reo  != nullptr) E_r_e =  0.5*this->reo->get_e_Energy();
 
     double E_eex    = E_ee  + E_x;
     double E_orbxc2 = E_orb - E_xc2;
     E_kin = E_orbxc2 - 2.0*E_eex - E_en - E_ext;
-    E_el  = E_orbxc2 -     E_eex + E_xc + E_r_e;
+    E_el  = E_orbxc2 -     E_eex + E_xc - E_r_e;
 
     return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x,
-                     E_nex, E_ext, E_r_e, E_r_n);
+                     E_nex, E_ext, E_r_e, E_r_n, E_r_t);
 }
 
 ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
