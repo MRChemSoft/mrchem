@@ -133,6 +133,6 @@ void Cavity::readCoordinateString(const std::vector<std::string> &coord_str) {
         }
         this->alpha.assign(R.size(), 1.0);
     }
-}
+  }
 
 } //namespace mrchem
