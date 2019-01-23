@@ -66,6 +66,7 @@ void ReactionPotential::grad_G(QMFunction &gamma_func, QMFunction &cavity_func, 
   qmfunction::add(grad_G_func, 1.0, temp_func, -1.0, rho_tot, -1.0);
 }
 
+
 void ReactionPotential::setup(double prec) {
   setApplyPrec(prec);
 
@@ -105,8 +106,6 @@ void ReactionPotential::setup(double prec) {
     println(0, "iter:\t" << i << "\nerror:\t" << error);
     i++;
   }
-
-
 
   QMFunction V_0_func;
 

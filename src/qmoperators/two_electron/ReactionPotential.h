@@ -22,6 +22,7 @@ public:
   double &get_e_Energy();
   double &get_nuc_Energy();
 
+
   friend class ReactionOperator;
 
 protected:
