@@ -16,12 +16,12 @@ public:
 
   ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi);
   ~ReactionPotential() { }
-  QMFunction &getgamma() { return this->gamma_func; }
   void do_setup(double prec) { this->setup(prec); }
 
   double &get_tot_Energy();
   double &get_e_Energy();
   double &get_nuc_Energy();
+
 
   friend class ReactionOperator;
 

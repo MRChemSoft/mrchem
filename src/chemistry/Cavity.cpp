@@ -47,12 +47,13 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, doub
 }
 
 
-Cavity::Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i , double eps_o ){
+Cavity::Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i , double eps_o, bool atom_based_cavity ){
   this->R = R;
   this->d = slope;
   this->e_i = eps_i;
   this->e_o = eps_o;
   this->dcoeff = std::log(e_i/e_o);
+  this->abc = atom_based_cavity;
   readCoordinateString(coord_str);
 }
 
@@ -86,7 +87,6 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
         val =  C;
 
     }else if (is_eps == true) {
-
         if (is_linear == true) {
             val = 1/(e_o + C*(e_i - e_o));
 
@@ -99,24 +99,36 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
 
 
 void Cavity::readCoordinateString(const std::vector<std::string> &coord_str){
-    int nAtoms = coord_str.size();
-    mrcpp::Coord<3> coord;
-    double Rad;
-    std::string sym;
+  int nAtoms = coord_str.size();
+  mrcpp::Coord<3> coord;
+  double Rad;
+  std::string sym;
+  if (this->abc){
     PeriodicTable P;
     for (int i = 0; i < nAtoms; i++){
-        std::stringstream ss;
-        ss.str(coord_str[i]);
-        ss >> sym;
-        ss >> coord[0];
-        ss >> coord[1];
-        ss >> coord[2];
-        Rad = P.getElement(sym.c_str()).getVdw();
-        this->pos.push_back(coord);
-        this->R.push_back(Rad);
+      std::stringstream ss;
+      ss.str(coord_str[i]);
+      ss >> sym;
+      ss >> coord[0];
+      ss >> coord[1];
+      ss >> coord[2];
+      Rad = P.getElement(sym.c_str()).getVdw();
+      this->pos.push_back(coord);
+      this->R.push_back(Rad);
     }
+  }else if (not this->abc){
+    for (int i = 0; i < nAtoms; i++){
+      std::stringstream ss;
+      ss.str(coord_str[i]);
+      ss >> sym;
+      ss >> coord[0];
+      ss >> coord[1];
+      ss >> coord[2];
+      ss >> Rad;
+      this->pos.push_back(coord);
+      this->R.push_back(Rad);
+    }
+  }
 }
-
-
 
 } //namespace mrchem

@@ -78,13 +78,16 @@ void FockOperator::build() {
  * it will compute the internal exchange if there is an ExchangeOperator.
  */
 void FockOperator::setup(double prec) {
+
     Timer timer;
     Printer::printHeader(0, "Setting up Fock operator");
     Printer::printDouble(0, "Precision", prec, 5);
     Printer::printSeparator(0, '-');
+
     this->kinetic().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
+
     if (this->ex != 0) this->ex->setupInternal(prec);
     timer.stop();
     Printer::printFooter(0, timer, 2);

@@ -40,9 +40,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::Derivativ
 //  ~ReactionPotential();
 
 void ReactionPotential::setup_eps() {
-  cavity->change_radius(4.00);
   cavity->eval_epsilon(false, cavity->islinear());
-
   qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
 
   cavity_func.rescale(cavity->dcoeff);
@@ -50,9 +48,6 @@ void ReactionPotential::setup_eps() {
   cavity->eval_epsilon(true, cavity->islinear());
 
   qmfunction::project(inv_eps_func, *cavity, NUMBER::Real, this->apply_prec);
-
-  std::cout << "cavity radius" << cavity->getRadius()[0] << std::endl;
-
 }
 
 
@@ -69,46 +64,45 @@ void ReactionPotential::calc_rho_eff() {
   this->rho_nuc = rho_n;
   this->rho_el.rescale(-1.0);
   qmfunction::multiply(rho_eff_func, rho_tot, inv_eps_func, this->apply_prec);
-
-
 }
 
+
 void ReactionPotential::calc_gamma() {
+    gamma_func.alloc(NUMBER::Real);
+
   auto d_V_n = mrcpp::gradient(*derivative, V_n_func.real());
-  gamma_func.alloc(NUMBER::Real);
 
   if(cavity->islinear() == true){
-    println(0, "\nrunning linear");
-
     QMFunction temp_func;
     temp_func.alloc(NUMBER::Real);
     mrcpp::dot(this->apply_prec, temp_func.real(), d_V_n, d_cavity);
     qmfunction::multiply(gamma_func, temp_func, inv_eps_func, this->apply_prec);
 
   }else{
-    println(0, "\nrunning exp.");
-
     mrcpp::dot(this->apply_prec, gamma_func.real(), d_V_n, d_cavity);
-
   }
-
   gamma_func.rescale(1.0/(4.0*MATHCONST::pi));
-
 }
+
 
 void ReactionPotential::setup(double prec) {
   setApplyPrec(prec);
   setup_eps();
+  //gamma_nm1.alloc(NUMBER::Real);
   calc_rho_eff();
-
   d_cavity = mrcpp::gradient(*derivative, cavity_func.real());
-  V_n_func.alloc(NUMBER::Real);
-  mrcpp::apply(prec, V_n_func.real(), *poisson, rho_eff_func.real());
+  if(V_n_func.norm() <= 0){
+    V_n_func.alloc(NUMBER::Real);
+    mrcpp::apply(prec, V_n_func.real(), *poisson, rho_eff_func.real());
+  }
+
   double error = 1;
   int i = 1;
   while(error >= this->apply_prec) {
     gamma_func.free(NUMBER::Real);
+
     calc_gamma();
+
     QMFunction temp_func;
     qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
     QMFunction V_np1_func;
@@ -119,49 +113,17 @@ void ReactionPotential::setup(double prec) {
     qmfunction::add(diff_func, 1.0, V_n_func, -1.0, V_np1_func, -1.0);
     error = diff_func.norm();
     V_n_func = V_np1_func;
-
-  //testing
-    std::cout << "iterations: " << i << std::endl;
-    println(0,"\nint. gamma \t" << gamma_func.integrate());
+    std::cout << error << ' ' << i << std::endl;
     i++;
-  //testing
   }
 
-
-
   QMFunction V_0_func;
-
 
   V_0_func.alloc(NUMBER::Real);
   mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
   qmfunction::add(*this, 1.0, V_n_func, -1.0, V_0_func, -1.0);
-
-  /*//testing
-
-  QMFunction test_func;
-  test_func.alloc(NUMBER::Real);
-  qmfunction::add(test_func, 1.0, rho_eff_func, -1.0, rho_tot, -1.0);
-  println(0, "\nint. rho_eff - rho\t" << test_func.integrate());
-
-  for (double i = 0.1; i <= 10.00; i += 0.1) {
-    double test1 = V_n_func.real().evalf({0.0, 0.0, i});
-    double test2 = V_0_func.real().evalf({0.0, 0.0, i});
-    double test3 = gamma_func.real().evalf({0.0, 0.0, i});
-    double test4 = rho_eff_func.real().evalf({0.0, 0.0, i});
-    double test5 = rho_tot.real().evalf({0.0, 0.0, i});
-    double test6 = inv_eps_func.real().evalf({0.0, 0.0, i});
-    double test7 = cavity->evalf({0.0, 0.0, i});
-
-    std::cout << "func evalf at:\t" << i << "\t" << test1 << ' ' << test2 << ' ' << test3 << ' ' << test4 << ' ' << test5 << ' ' << test6 << " " << test7  << std::endl;
-
-  }
-
-  //testing*/
-
-  V_n_func.free(NUMBER::Real);
   gamma_func.free(NUMBER::Real);
-
 }
 
 double &ReactionPotential::get_tot_Energy(){

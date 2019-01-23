@@ -37,7 +37,7 @@ namespace mrchem {
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
     Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope, double eps_i = 1.0, double eps_o = 2.0);
-    Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i = 1.0, double eps_o = 2.0);
+    Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i = 1.0, double eps_o = 2.0, bool atom_based_cavity = true);
     double evalf(const mrcpp::Coord<3> &r) const override;
     void eval_epsilon(bool iseps, bool islinear);
     bool islinear() { return is_linear; }
@@ -57,6 +57,7 @@ protected:
     double d;
     bool is_eps = false;
     bool is_linear = false;
+    bool abc = true;
 
 };
 } // namespace mrchem

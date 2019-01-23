@@ -144,6 +144,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     cav_linear = input.get<bool>("solvent.linear");
     cav_eps_o  = input.get<double>("solvent.epsilon");
     cav_eps_i  = 1.0;
+    if (not cav_abc) cav_coords = input.getData("Solvent.cavity");
 
     ext_electric = input.get<bool>("externalfield.electric_run");
     ext_magnetic = input.get<bool>("externalfield.magnetic_run");
@@ -398,7 +399,12 @@ void SCFDriver::setup() {
     //set up Reaction potential
     if (calc_solvent_effect){
         //setting up cavity
-        cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o);
+        if (cav_abc) {
+          cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
+        }else {
+          cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
+        }
+
         cav->eval_epsilon(false, cav_linear);
         Ro  = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
         fock->setReactionOperator(Ro);
@@ -480,6 +486,7 @@ void SCFDriver::clear() {
 
 /** Setup n+1 Fock operator for energy optimization */
 void SCFDriver::setup_np1() {
+
     phi_np1 = new OrbitalVector;
     *phi_np1 = orbital::param_copy(*phi);
 

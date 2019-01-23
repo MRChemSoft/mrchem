@@ -183,7 +183,7 @@ protected:
     double rsp_property_thrs;
     std::vector<int> rsp_directions;
     std::vector<double> rsp_orbital_prec;
-    
+
     //Solvent effect input
     Cavity *cav;
     std::vector<std::string> cav_coords;
@@ -191,8 +191,8 @@ protected:
     double cav_eps_o;
     double cav_eps_i;
     bool cav_linear;
-    bool cav_abc;   
-   
+    bool cav_abc;
+
     // External field input
     bool ext_electric;
     bool ext_magnetic;
@@ -239,7 +239,7 @@ protected:
     ExchangeOperator *K;
     XCOperator *XC;
     ElectricFieldOperator *Vext;
-    ReactionOperator  *Ro; 
+    ReactionOperator  *Ro;
     FockOperator *fock;
     ComplexMatrix F;
 
