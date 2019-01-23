@@ -1,6 +1,6 @@
 # vim:syntax=sh:
 
-rel_prec = 1.0e-4                 # Overall relative precision
+rel_prec = 1.0e-5                 # Overall relative precision
 
 MPI {
   numerically_exact = true
@@ -18,8 +18,7 @@ MRA {
 }
 
 Molecule {
-  angstrom = false
-  multiplicity = 1 
+  multiplicity = 1
   charge = 1
 $coords
 Li      0.0000  0.0000   0.0000
@@ -31,29 +30,13 @@ WaveFunction {
   restricted = true              # Unrestricted calculation
 }
 
-DFT {
-$functionals
-LDA
-$end
-}
 
 Properties {
   scf_energy = true               # Compute ground state energy
-  solvent_effect = true
 }
-
-Solvent {
-  epsilon = 2.0000
-  atom_based_cavity = true
-  sigma = 0.4
-  linear = false
-}
-
 
 
 SCF {
   run = true                     # Use initial guess, don't optimize
   initial_guess = SAD_DZ             # Reading precomputed GTO MOs
 }
-
-
