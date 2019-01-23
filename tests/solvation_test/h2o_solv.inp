@@ -29,12 +29,6 @@ WaveFunction {
   method = HF                     # Wave function method (HF or DFT)
 }
 
-DFT {
-$functionals
-LDA
-$end
-}
-
 Properties {
   scf_energy = true               # Compute ground state energy
   solvent_effect = true            # Compute electrostatic dipole moment
@@ -49,7 +43,7 @@ Solvent {
 }
 
 SCF {
-  run = false
-  initial_guess = SAD_DZ             # Type of initial guess: none, mw, gto
+  run = true                     # Use initial guess, don't optimize
+  initial_guess = MW             # Reading precomputed GTO MOs
+  write_orbitals = false
 }
-
