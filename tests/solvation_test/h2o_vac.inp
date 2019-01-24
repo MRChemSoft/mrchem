@@ -31,16 +31,8 @@ WaveFunction {
 
 Properties {
   scf_energy = true               # Compute ground state energy
-  solvent_effect = true            # Compute electrostatic dipole moment
 }
 
-
-Solvent {
-  epsilon = 78.304
-  atom_based_cavity = true
-  sigma = 0.5
-  linear = false
-}
 
 SCF {
   run = true                     # Use initial guess, don't optimize
