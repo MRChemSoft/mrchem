@@ -15,8 +15,8 @@ class ReactionPotential final : public QMPotential{
 public:
 
   ReactionPotential(mrcpp::PoissonOperator *P, mrcpp::DerivativeOperator<3> *D, Cavity *C, const Nuclei &nucs, OrbitalVector *Phi);
-  ~ReactionPotential() { }
-  void do_setup(double prec) { this->setup(prec); }
+  ~ReactionPotential()= default;
+  //void do_setup(double prec) { this->setup(prec); }
 
   double &get_tot_Energy();
   double &get_e_Energy();
@@ -38,25 +38,19 @@ private:
   mrcpp::DerivativeOperator<3> *derivative;
 
   QMFunction rho_tot;
-  QMFunction cavity_func;
-  QMFunction inv_eps_func;
-  QMFunction rho_eff_func;
-  QMFunction gamma_func;
-  QMFunction V_n_func;
-  mrcpp::FunctionTreeVector<3> d_cavity;
   QMFunction rho_el;
   QMFunction rho_nuc;
-
-  void setup(double prec);
-
-  void setup_eps();
-
-  void calc_rho_eff();
-  void calc_gamma();
+  QMFunction V_n_func;
 
   double e_Energy;
   double nuc_Energy;
   double tot_Energy;
+
+  QMFunction setup_eps(bool is_eps);
+  QMFunction calc_gamma(QMFunction inv_eps_func, mrcpp::FunctionTreeVector<3> d_cavity);
+  QMFunction calc_rho_eff(QMFunction inv_eps_func);
+  void setup(double prec);
+
 };
 
 
