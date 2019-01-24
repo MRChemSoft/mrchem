@@ -45,6 +45,7 @@ void ReactionPotential::calc_rho_eff(QMFunction const &inv_eps_func, QMFunction 
   rho_el.rescale(-1.0);
   qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
   qmfunction::multiply(rho_eff_func, rho_tot, inv_eps_func, this->apply_prec);
+  return rho_eff_func;
 }
 
 
@@ -57,6 +58,8 @@ void ReactionPotential::calc_gamma(QMFunction const &inv_eps_func, QMFunction &g
   qmfunction::multiply(gamma_func, temp_func, inv_eps_func, this->apply_prec);
 
   gamma_func.rescale(1.0/(4.0*MATHCONST::pi));
+
+  return gamma_func;
 }
 
 
@@ -106,7 +109,6 @@ void ReactionPotential::setup(double prec) {
     println(0, "iter:\t" << i << "\nerror:\t" << error);
     i++;
   }
-
   QMFunction V_0_func;
 
   V_0_func.alloc(NUMBER::Real);
@@ -114,7 +116,6 @@ void ReactionPotential::setup(double prec) {
 
   qmfunction::add(*this, 1.0, V_n_func, -1.0, V_0_func, -1.0);
 
-  gamma_func.free(NUMBER::Real);
   cavity_func.free(NUMBER::Real);
   inv_eps_func.free(NUMBER::Real);
   rho_eff_func.free(NUMBER::Real);
