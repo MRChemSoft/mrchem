@@ -472,6 +472,7 @@ void SCFDriver::clear() {
 
     if (phi != 0) delete phi;
     if (molecule != 0) delete molecule;
+    if (cav != 0) delete cav;
 
     if (ABGV_55 != 0) delete ABGV_55;
     if (ABGV_00 != 0) delete ABGV_00;

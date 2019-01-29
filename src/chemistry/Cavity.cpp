@@ -43,7 +43,6 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, doub
   this->d = slope;
   this->e_i = eps_i;
   this->e_o = eps_o;
-  this->dcoeff = std::log(e_i/e_o);
 }
 
 
@@ -52,24 +51,15 @@ Cavity::Cavity(const std::vector<std::string> &coord_str, double slope, double e
   this->d = slope;
   this->e_i = eps_i;
   this->e_o = eps_o;
-  this->dcoeff = std::log(e_i/e_o);
   this->abc = atom_based_cavity;
   readCoordinateString(coord_str);
 }
 
 
-void Cavity::eval_epsilon(bool iseps, bool islinear){
-  this->is_eps = iseps;
+void Cavity::eval_epsilon(bool isinv, bool islinear){
+  this->is_inv = isinv;
   this->is_linear = islinear;
-
-  if(is_linear == false){
-    this->dcoeff = std::log(e_i/e_o);
-
-  }else if(is_linear == true){
-    this->dcoeff = e_i - e_o;
-  }
 }
-
 
 
 double Cavity::evalf(const mrcpp::Coord<3> &r) const {
@@ -83,17 +73,20 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
     }
     C = 1 - C;
 
-    if (is_eps == false){
-        val =  C;
-
-    }else if (is_eps == true) {
-        if (is_linear == true) {
+    if (is_inv) {
+        if (is_linear) {
             val = 1/(e_o + C*(e_i - e_o));
-
         } else {
             val = (1/e_i)*std::exp(log(e_i/e_o)*(1 - C));
         }
+    } else {
+        if (is_linear) {
+            val = e_i*C + e_o*(1 - C);
+        } else {
+            val = e_i*std::exp(log(e_o/e_i)*(1 - C));
+        }
     }
+
     return val;
 }
 

@@ -39,23 +39,23 @@ public:
     Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope, double eps_i = 1.0, double eps_o = 2.0);
     Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i = 1.0, double eps_o = 2.0, bool atom_based_cavity = true);
     double evalf(const mrcpp::Coord<3> &r) const override;
-    void eval_epsilon(bool iseps, bool islinear);
+    void eval_epsilon(bool isinv, bool islinear);
+
     bool islinear() { return is_linear; }
-    bool iseps() { return is_eps;}
+    bool isinv() { return is_inv;}
     std::vector<mrcpp::Coord<3>> getcoords() { return pos;}
     std::vector<double> getRadius() { return R;}
     void change_radius(double r){ this->R[0] = r; }
-    double dcoeff;
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
-
+    
     double e_i;
     double e_o;
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
     double d;
-    bool is_eps = false;
+    bool is_inv = false;
     bool is_linear = false;
     bool abc = true;
 

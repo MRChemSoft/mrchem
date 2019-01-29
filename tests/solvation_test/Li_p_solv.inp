@@ -37,7 +37,7 @@ Properties {
 }
 
 Solvent {
-  epsilon = 2.0000
+  epsilon = 2
   atom_based_cavity = false
   $cavity
   1   0.0000   0.0000   0.0000   4.0000
