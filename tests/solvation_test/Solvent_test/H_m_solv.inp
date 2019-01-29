@@ -19,7 +19,7 @@ MRA {
 }
 
 Molecule {
-  multiplicity = 1 
+  multiplicity = 1
   charge = -1
 $coords
 H      0.0000  0.0000   0.0000
@@ -44,7 +44,10 @@ Properties {
 
 Solvent {
   epsilon = 2.0000
-  atom_based_cavity = true
+  atom_based_cavity = false
+  $cavity
+  1      0.0000  0.0000   0.0000   2
+  $end
   sigma = 0.4
   linear = false
 }
@@ -56,5 +59,3 @@ SCF {
   initial_guess = SAD_DZ             # Reading precomputed GTO MOs
   kain = 5
 }
-
-

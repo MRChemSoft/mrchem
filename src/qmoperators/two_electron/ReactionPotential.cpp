@@ -39,13 +39,13 @@ void ReactionPotential::calc_eps(bool is_inv, QMFunction &cavity_func) {
   qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
 }
 
+
 void ReactionPotential::calc_rho_eff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func) {
   rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
   density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
   rho_el.rescale(-1.0);
   qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
   qmfunction::multiply(rho_eff_func, rho_tot, inv_eps_func, this->apply_prec);
-  return rho_eff_func;
 }
 
 
@@ -58,8 +58,13 @@ void ReactionPotential::calc_gamma(QMFunction const &inv_eps_func, QMFunction &g
   qmfunction::multiply(gamma_func, temp_func, inv_eps_func, this->apply_prec);
 
   gamma_func.rescale(1.0/(4.0*MATHCONST::pi));
+}
 
-  return gamma_func;
+
+void ReactionPotential::grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func){
+  QMFunction temp_func;
+  qmfunction::multiply(temp_func, gamma_func, cavity_func, this->apply_prec);
+  qmfunction::add(grad_G_func, 1.0, temp_func, -1.0, rho_tot, -1.0);
 }
 
 
@@ -116,6 +121,7 @@ void ReactionPotential::setup(double prec) {
 
   qmfunction::add(*this, 1.0, V_n_func, -1.0, V_0_func, -1.0);
 
+  gamma_func.free(NUMBER::Real);
   cavity_func.free(NUMBER::Real);
   inv_eps_func.free(NUMBER::Real);
   rho_eff_func.free(NUMBER::Real);

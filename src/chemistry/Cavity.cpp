@@ -78,7 +78,6 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
     C = 1 - C;
 
     if (is_inv) {
-
         if (is_linear) {
             val = 1/(e_o + C*(e_i - e_o));
         } else {
