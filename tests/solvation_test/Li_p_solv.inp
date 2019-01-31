@@ -42,7 +42,7 @@ Solvent {
   $cavity
   1   0.0000   0.0000   0.0000   4.0000
   $end
-  sigma = 0.2
+  sigma = 0.5
   linear = false
 }
 
