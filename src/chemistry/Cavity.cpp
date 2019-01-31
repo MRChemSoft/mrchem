@@ -67,13 +67,18 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
     double s, O;
     double val;
     for(int i = 0; i < pos.size(); i++){
-        s = math_utils::calc_distance(pos[i], r) - R[i];
+      if (abc){
+        s = math_utils::calc_distance(pos[i], r) - R[i]*1.2; // scale vdwr by 1.2
+      } else {
+        s = math_utils::calc_distance(pos[i], r) - R[i]; // use the radius given
+      }
         O = 0.5 * (1 + std::erf(s/d));
         C *= 1 - (1 - O);
     }
     C = 1 - C;
 
     if (is_inv) {
+
         if (is_linear) {
             val = 1/(e_o + C*(e_i - e_o));
         } else {
