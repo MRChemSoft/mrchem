@@ -33,7 +33,6 @@ using namespace mrcpp;
 
 namespace mrchem {
 
-
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
     Cavity(std::vector<mrcpp::Coord<3>> &coords,
