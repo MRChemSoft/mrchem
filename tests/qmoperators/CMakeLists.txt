@@ -6,6 +6,7 @@ target_sources(mrchem-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/kinetic_operator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/nuclear_operator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/coulomb_operator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/reaction_operator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/coulomb_hessian.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/xc_operator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/xc_operator_blyp.cpp
@@ -47,6 +48,11 @@ add_Catch_test(
 add_Catch_test(
   NAME coulomb_hessian
   LABELS "coulomb_hessian"
+  )
+
+add_Catch_test(
+  NAME reaction_operator
+  LABELS "reaction_operator"
   )
 
 add_Catch_test(

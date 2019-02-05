@@ -1,6 +1,6 @@
 # vim:syntax=sh:
 
-rel_prec = 1.0e-4               # Overall relative precision
+rel_prec = 1.0e-3               # Overall relative precision
 
 MPI {
   numerically_exact = true
@@ -49,6 +49,8 @@ Solvent {
 
 
 SCF {
+  max_iter = 1
   run = true                     # Use initial guess, don't optimize
   initial_guess = SAD_DZ             # Reading precomputed GTO MOs
+  write_orbitals = true
 }

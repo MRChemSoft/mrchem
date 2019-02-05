@@ -33,19 +33,26 @@ using namespace mrcpp;
 
 namespace mrchem {
 
-
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
-    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope, double eps_i = 1.0, double eps_o = 2.0);
-    Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i = 1.0, double eps_o = 2.0, bool atom_based_cavity = true);
+    Cavity(std::vector<mrcpp::Coord<3>> &coords,
+           std::vector<double> &R,
+           double slope,
+           double eps_i = 1.0,
+           double eps_o = 2.0);
+    Cavity(const std::vector<std::string> &coord_str,
+           double slope,
+           double eps_i = 1.0,
+           double eps_o = 2.0,
+           bool atom_based_cavity = true);
     double evalf(const mrcpp::Coord<3> &r) const override;
     void eval_epsilon(bool isinv, bool islinear);
 
     bool islinear() { return is_linear; }
-    bool isinv() { return is_inv;}
-    std::vector<mrcpp::Coord<3>> getcoords() { return pos;}
-    std::vector<double> getRadius() { return R;}
-    void change_radius(double r){ this->R[0] = r; }
+    bool isinv() { return is_inv; }
+    std::vector<mrcpp::Coord<3>> getcoords() { return pos; }
+    std::vector<double> getRadius() { return R; }
+    void change_radius(double r) { this->R[0] = r; }
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
@@ -57,7 +64,6 @@ protected:
     double d;
     bool is_inv = false;
     bool is_linear = false;
-    bool abc = true;
-
+    bool abc;
 };
 } // namespace mrchem
