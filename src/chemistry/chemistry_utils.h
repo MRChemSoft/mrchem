@@ -26,7 +26,7 @@
 #pragma once
 
 #include "chemistry_fwd.h"
-#include  "qmfunctions/qmfunction_fwd.h"
+#include "qmfunctions/qmfunction_fwd.h"
 
 namespace mrchem {
 namespace chemistry {

@@ -5,7 +5,6 @@
 #include "ExchangeOperator.h"
 #include "FockOperator.h"
 #include "ReactionOperator.h"
-#include "qmoperators/one_electron/ElectricFieldOperator.h"
 #include "XCOperator.h"
 #include "chemistry/chemistry_utils.h"
 #include "properties/SCFEnergy.h"
@@ -17,7 +16,7 @@
 #include "utils/math_utils.h"
 
 using mrcpp::Printer;
-using  mrcpp::Timer;
+using mrcpp::Timer;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -39,16 +38,16 @@ FockOperator::FockOperator(KineticOperator *t,
                            NuclearOperator *v,
                            CoulombOperator *j,
                            ExchangeOperator *k,
-                           XCOperator       *xc,
+                           XCOperator *xc,
                            ElectricFieldOperator *ext,
                            ReactionOperator *ro)
-        : kin(t),
-          nuc(v),
-          coul(j),
-          ex(k),
-          xc(xc),
-          ext(ext),
-          reo(ro) {}
+        : kin(t)
+        , nuc(v)
+        , coul(j)
+        , ex(k)
+        , xc(xc)
+        , ext(ext)
+        , reo(ro) {}
 
 /** @brief build the Fock operator once all contributions are in place
  *
@@ -60,11 +59,10 @@ void FockOperator::build() {
     this->V = RankZeroTensorOperator();
     if (this->nuc != nullptr) this->V += *this->nuc;
     if (this->coul != nullptr) this->V += *this->coul;
-    if (this->ex   != nullptr) this->V -= *this->ex;
-    if (this->xc   != nullptr) this->V += *this->xc;
-    if (this->ext  != nullptr) this->V += *this->ext;
-    if (this->reo  != nullptr) this->V -= *this->reo;
-
+    if (this->ex != nullptr) this->V -= *this->ex;
+    if (this->xc != nullptr) this->V += *this->xc;
+    if (this->ext != nullptr) this->V += *this->ext;
+    if (this->reo != nullptr) this->V -= *this->reo;
 
     RankZeroTensorOperator &F = (*this);
     F = this->kinetic() + this->potential();
@@ -144,16 +142,16 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     if (this->nuc != nullptr) {
         Nuclei &nucs = this->nuc->getNuclei();
         E_nuc = chemistry::compute_nuclear_repulsion(nucs);
-        if (this->ext  != nullptr) {
+        if (this->ext != nullptr) {
             E_nex = this->ext->trace(nucs).real();
             E_nuc += E_nex;
         }
     }
 
-    if (this->reo  != nullptr) {
-      E_r_n = 0.5*this->reo->get_nuc_Energy();
-      E_r_t = 0.5*this->reo->get_tot_Energy();
-      E_nuc += E_r_n;
+    if (this->reo != nullptr) {
+        E_r_n = 0.5 * this->reo->get_nuc_Energy();
+        E_r_t = 0.5 * this->reo->get_tot_Energy();
+        E_nuc += E_r_n;
     }
 
     // Orbital energies
@@ -163,21 +161,20 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     }
 
     // Electronic part
-    if (this->nuc  != nullptr) E_en  =  this->nuc->trace(Phi).real();
-    if (this->coul != nullptr) E_ee  =  this->coul->trace(Phi).real();
-    if (this->ex   != nullptr) E_x   = -this->ex->trace(Phi).real();
-    if (this->xc   != nullptr) E_xc  =  this->xc->getEnergy();
-    if (this->xc   != nullptr) E_xc2 =  this->xc->trace(Phi).real();
-    if (this->ext  != nullptr) E_ext =  this->ext->trace(Phi).real();
-    if (this->reo  != nullptr) E_r_e =  0.5*this->reo->get_e_Energy();
+    if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
+    if (this->coul != nullptr) E_ee = this->coul->trace(Phi).real();
+    if (this->ex != nullptr) E_x = -this->ex->trace(Phi).real();
+    if (this->xc != nullptr) E_xc = this->xc->getEnergy();
+    if (this->xc != nullptr) E_xc2 = this->xc->trace(Phi).real();
+    if (this->ext != nullptr) E_ext = this->ext->trace(Phi).real();
+    if (this->reo != nullptr) E_r_e = 0.5 * this->reo->get_e_Energy();
 
-    double E_eex    = E_ee  + E_x;
+    double E_eex = E_ee + E_x;
     double E_orbxc2 = E_orb - E_xc2;
-    E_kin = E_orbxc2 - 2.0*E_eex - E_en - E_ext;
-    E_el  = E_orbxc2 -     E_eex + E_xc - E_r_e;
+    E_kin = E_orbxc2 - 2.0 * E_eex - E_en - E_ext;
+    E_el = E_orbxc2 - E_eex + E_xc - E_r_e;
 
-    return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x,
-                     E_nex, E_ext, E_r_e, E_r_n, E_r_t);
+    return SCFEnergy(E_nuc, E_el, E_orb, E_kin, E_en, E_ee, E_xc, E_x, E_nex, E_ext, E_r_e, E_r_n, E_r_t);
 }
 
 ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {

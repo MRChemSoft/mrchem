@@ -19,8 +19,8 @@
 #include "qmfunctions/Orbital.h"
 
 #include "SCFDriver.h"
-#include  "chemistry/Molecule.h"
 #include "chemistry/Cavity.h"
+#include "chemistry/Molecule.h"
 
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
@@ -36,8 +36,8 @@
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
-#include "qmoperators/two_electron/XCOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
+#include "qmoperators/two_electron/XCOperator.h"
 
 #include "properties/DipoleMoment.h"
 #include "properties/GeometryDerivatives.h"
@@ -176,7 +176,6 @@ SCFDriver::SCFDriver(Getkw &input) {
     file_mo_mat_b = input.get<std::string>("files.mo_mat_b");
 
 
-
     r_O[0] = 0.0;
     r_O[1] = 0.0;
     r_O[2] = 0.0;
@@ -194,7 +193,7 @@ SCFDriver::SCFDriver(Getkw &input) {
     molecule = 0;
     nuclei = 0;
     phi = 0;
-    cav = 0; //temporary spot
+    cav = 0; // temporary spot
 
     T = 0;
     V = 0;
@@ -397,17 +396,17 @@ void SCFDriver::setup() {
     // All cases need kinetic energy and nuclear potential
     fock = new FockOperator(T, V);
 
-    //set up Reaction potential
-    if (calc_solvent_effect){
-        //setting up cavity
+    // set up Reaction potential
+    if (calc_solvent_effect) {
+        // setting up cavity
         if (cav_abc) {
-          cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
-        }else {
-          cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
+            cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
+        } else {
+            cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
         }
 
         cav->eval_epsilon(false, cav_linear);
-        Ro  = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
+        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
         fock->setReactionOperator(Ro);
     }
     // For Hartree, HF and DFT we need the coulomb part
@@ -494,8 +493,8 @@ void SCFDriver::setup_np1() {
 
     fock_np1 = new FockOperator(T, V);
 
-    if (calc_solvent_effect){
-        //Set up n+1 ReactionOperator
+    if (calc_solvent_effect) {
+        // Set up n+1 ReactionOperator
         Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1);
         fock_np1->setReactionOperator(Ro_np1);
     }

@@ -41,7 +41,7 @@ private:
     Density rho_tot;
     Density rho_el;
     Density rho_nuc;
-    QMFunction V_n_func;
+    // QMFunction V_n_func;
 
     bool testing;
 
@@ -50,8 +50,12 @@ private:
     double tot_Energy;
 
     void calc_eps(bool is_inv, QMFunction &cavity_func);
-    void calc_rho_eff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func);
-    void calc_gamma(QMFunction const &inv_eps_func, QMFunction &gamma_func, mrcpp::FunctionTreeVector<3> &d_cavity);
+    void calc_rho_eff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, QMFunction &cavity_func);
+    void calc_gamma(QMFunction const &inv_eps_func,
+                    QMFunction &gamma_func,
+                    QMFunction &V_0_func,
+                    QMFunction &temp,
+                    mrcpp::FunctionTreeVector<3> &d_cavity);
     void grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func);
     void setup(double prec);
 };

@@ -39,7 +39,7 @@ public:
            std::vector<double> &R,
            double slope,
            double eps_i = 1.0,
-           double  eps_o = 2.0);
+           double eps_o = 2.0);
     Cavity(const std::vector<std::string> &coord_str,
            double slope,
            double eps_i = 1.0,
@@ -53,6 +53,7 @@ public:
     std::vector<mrcpp::Coord<3>> getcoords() { return pos; }
     std::vector<double> getRadius() { return R; }
     void change_radius(double r) { this->R[0] = r; }
+    void change_use(bool for_rho) { this->for_rho = for_rho; }
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
@@ -64,6 +65,7 @@ protected:
     double d;
     bool is_inv = false;
     bool is_linear = false;
+    bool for_rho = false;
     bool abc;
 };
 } // namespace mrchem
