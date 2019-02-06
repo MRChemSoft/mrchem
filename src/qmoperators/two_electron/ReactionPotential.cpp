@@ -152,7 +152,6 @@ void ReactionPotential::setup(double prec) {
         error = diff_func.norm();
 
         temp = V_np1_func;
-
         iter++;
         std::cout << "iter.:\t" << iter << "\n"
                   << "error:\t" << error << std::endl;

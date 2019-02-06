@@ -39,7 +39,7 @@ public:
            std::vector<double> &R,
            double slope,
            double eps_i = 1.0,
-           double  eps_o = 2.0);
+           double eps_o = 2.0);
     Cavity(const std::vector<std::string> &coord_str,
            double slope,
            double eps_i = 1.0,
@@ -65,6 +65,7 @@ protected:
     double d;
     bool is_inv = false;
     bool is_linear = false;
+    bool for_rho = false;
     bool abc;
 };
 } // namespace mrchem

@@ -16,7 +16,7 @@
 #include "utils/math_utils.h"
 
 using mrcpp::Printer;
-using  mrcpp::Timer;
+using mrcpp::Timer;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
@@ -63,7 +63,6 @@ void FockOperator::build() {
     if (this->xc != nullptr) this->V += *this->xc;
     if (this->ext != nullptr) this->V += *this->ext;
     if (this->reo != nullptr) this->V -= *this->reo;
-
 
     RankZeroTensorOperator &F = (*this);
     F = this->kinetic() + this->potential();

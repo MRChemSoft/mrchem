@@ -40,8 +40,6 @@ private:
     Density rho_el;
     Density rho_nuc;
 
-    bool testing;
-
     double electronicEnergy;
     double nuclearEnergy;
     double totalEnergy;

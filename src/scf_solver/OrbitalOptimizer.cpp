@@ -24,7 +24,7 @@
  */
 
 #include "MRCPP/Printer"
-#include  "MRCPP/Timer"
+#include "MRCPP/Timer"
 
 #include "parallel.h"
 
@@ -122,8 +122,8 @@ bool OrbitalOptimizer::optimize() {
     F_mat = F(Phi_n, Phi_n);
 
     int nIter = 0;
-        bool converged = false;
-        while (nIter++ < this->maxIter or this->maxIter < 0) {
+    bool converged = false;
+    while (nIter++ < this->maxIter or this->maxIter < 0) {
         // Initialize SCF cycle
         Timer timer;
         printCycleHeader(nIter);

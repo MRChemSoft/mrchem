@@ -32,9 +32,6 @@
 #include "MRCPP/Printer" //testing only, remove when done
 #include "PeriodicTable.h"
 #include "utils/math_utils.h"
-#include "PeriodicTable.h"
-#include "Element.h"
-#include "MRCPP/Printer" //testing only, remove when done
 
 namespace mrchem {
 
@@ -135,4 +132,4 @@ void Cavity::readCoordinateString(const std::vector<std::string> &coord_str) {
     }
   }
 
-} //namespace mrchem
+} // namespace mrchem

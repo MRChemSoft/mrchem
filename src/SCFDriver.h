@@ -22,7 +22,7 @@ class GroundStateSolver;
 class LinearResponseSolver;
 class KAIN;
 
-class  H_E_dip;
+class H_E_dip;
 class H_B_dip;
 class H_M_pso;
 
@@ -184,7 +184,7 @@ protected:
     std::vector<int> rsp_directions;
     std::vector<double> rsp_orbital_prec;
 
-    //Solvent effect input
+    // Solvent effect input
     Cavity *cav;
     std::vector<std::string> cav_coords;
     double cav_sigma;
@@ -239,7 +239,7 @@ protected:
     ExchangeOperator *K;
     XCOperator *XC;
     ElectricFieldOperator *Vext;
-    ReactionOperator  *Ro;
+    ReactionOperator *Ro;
     FockOperator *fock;
     ComplexMatrix F;
 
@@ -250,7 +250,6 @@ protected:
     ReactionOperator *Ro_np1;
     FockOperator *fock_np1;
     ComplexMatrix F_np1;
-
 
     // Perturbed quantities
     OrbitalVector *phi_x;
