@@ -22,7 +22,7 @@ class GroundStateSolver;
 class LinearResponseSolver;
 class KAIN;
 
-class H_E_dip;
+class  H_E_dip;
 class H_B_dip;
 class H_M_pso;
 

@@ -16,7 +16,7 @@
 #include "utils/math_utils.h"
 
 using mrcpp::Printer;
-using mrcpp::Timer;
+using  mrcpp::Timer;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
