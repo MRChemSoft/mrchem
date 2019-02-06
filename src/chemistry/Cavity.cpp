@@ -48,7 +48,7 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, doub
 
 Cavity::Cavity(const std::vector<std::string> &coord_str, double slope, double eps_i , double eps_o, bool atom_based_cavity ){
   this->R = R;
-  this->d = slope;
+  this->d =  slope;
   this->e_i = eps_i;
   this->e_o = eps_o;
   this->abc = atom_based_cavity;

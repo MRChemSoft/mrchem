@@ -21,7 +21,7 @@ class CoulombOperator;
 class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
-class ReactionOperator;
+class  ReactionOperator;
 
 class FockOperator final : public RankZeroTensorOperator {
 public:

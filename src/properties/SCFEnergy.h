@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "mrchem.h"
+#include  "mrchem.h"
 
 /** @class SCFEnergy
  *
