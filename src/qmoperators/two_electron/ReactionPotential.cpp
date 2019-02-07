@@ -176,7 +176,6 @@ double &ReactionPotential::getElectronicEnergy() {
     return electronicEnergy;
 }
 
-
 double &ReactionPotential::getNuclearEnergy() {
     QMFunction temp_prod_func;
     qmfunction::multiply(temp_prod_func, rho_nuc, *this, this->apply_prec);
