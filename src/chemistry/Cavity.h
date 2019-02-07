@@ -46,14 +46,14 @@ public:
            double eps_o = 2.0,
            bool atom_based_cavity = true);
     double evalf(const mrcpp::Coord<3> &r) const override;
-    void eval_epsilon(bool isinv, bool islinear);
+    void implementEpsilon(bool isinv, bool islinear);
 
-    bool islinear() { return is_linear; }
-    bool isinv() { return is_inv; }
-    std::vector<mrcpp::Coord<3>> getcoords() { return pos; }
+    bool isLinear() { return is_linear; }
+    bool isInverse() { return is_inv; }
+    std::vector<mrcpp::Coord<3>> getCoordinates() { return pos; }
     std::vector<double> getRadius() { return R; }
-    void change_radius(double r) { this->R[0] = r; }
-    void change_use(bool for_rho) { this->for_rho = for_rho; }
+    void changeRadius(double r) { this->R[0] = r; }
+    void changeUse(bool for_rho) { this->for_rho = for_rho; }
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);

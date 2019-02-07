@@ -34,9 +34,9 @@ public:
 
     ComplexDouble trace(OrbitalVector &Phi) { return RankZeroTensorOperator::trace(Phi); }
 
-    double &get_tot_Energy() { return this->potential->get_tot_Energy(); }
-    double &get_e_Energy() { return this->potential->get_e_Energy(); }
-    double &get_nuc_Energy() { return this->potential->get_nuc_Energy(); }
+    double &getTotalEnergy() { return this->potential->getTotalEnergy(); }
+    double &getElectronicEnergy() { return this->potential->getElectronicEnergy(); }
+    double &getNuclearEnergy() { return this->potential->getNuclearEnergy(); }
 
 private:
     ReactionPotential *potential;

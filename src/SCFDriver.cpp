@@ -405,7 +405,7 @@ void SCFDriver::setup() {
             cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
         }
 
-        cav->eval_epsilon(false, cav_linear);
+        cav->implementEpsilon(false, cav_linear);
         Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
         fock->setReactionOperator(Ro);
     }

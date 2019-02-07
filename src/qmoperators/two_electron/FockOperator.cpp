@@ -149,8 +149,8 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     }
 
     if (this->reo != nullptr) {
-        E_r_n = 0.5 * this->reo->get_nuc_Energy();
-        E_r_t = 0.5 * this->reo->get_tot_Energy();
+        E_r_n = 0.5 * this->reo->getNuclearEnergy();
+        E_r_t = 0.5 * this->reo->getTotalEnergy();
         E_nuc += E_r_n;
     }
 
@@ -167,7 +167,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const ComplexMatrix &F) {
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->xc != nullptr) E_xc2 = this->xc->trace(Phi).real();
     if (this->ext != nullptr) E_ext = this->ext->trace(Phi).real();
-    if (this->reo != nullptr) E_r_e = 0.5 * this->reo->get_e_Energy();
+    if (this->reo != nullptr) E_r_e = 0.5 * this->reo->getElectronicEnergy();
 
     double E_eex = E_ee + E_x;
     double E_orbxc2 = E_orb - E_xc2;

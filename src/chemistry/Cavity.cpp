@@ -56,7 +56,7 @@ Cavity::Cavity(const std::vector<std::string> &coord_str,
     readCoordinateString(coord_str);
 }
 
-void Cavity::eval_epsilon(bool isinv, bool islinear) {
+void Cavity::implementEpsilon(bool isinv, bool islinear) {
     this->is_inv = isinv;
     this->is_linear = islinear;
 }

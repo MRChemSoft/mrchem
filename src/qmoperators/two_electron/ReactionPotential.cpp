@@ -32,20 +32,18 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
         , rho_tot(false)
         , rho_el(false)
         , rho_nuc(false) {
-    this->e_Energy = 0.0;
-    this->nuc_Energy = 0.0;
-    this->tot_Energy = 0.0;
+    this->electronicEnergy = 0.0;
+    this->nuclearEnergy = 0.0;
+    this->totalEnergy = 0.0;
     this->testing = testing;
 }
 
-void ReactionPotential::calc_eps(bool is_inv, QMFunction &cavity_func) {
-    cavity->eval_epsilon(is_inv, cavity->islinear());
+void ReactionPotential::calcEpsilon(bool is_inv, QMFunction &cavity_func) {
+    cavity->implementEpsilon(is_inv, cavity->isLinear());
     qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
 }
 
-void ReactionPotential::calc_rho_eff(QMFunction const &inv_eps_func,
-                                     QMFunction &rho_eff_func,
-                                     QMFunction &cavity_func) {
+void ReactionPotential::calcRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, QMFunction &cavity_func) {
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
@@ -54,20 +52,20 @@ void ReactionPotential::calc_rho_eff(QMFunction const &inv_eps_func,
     QMFunction ones;
     ones.alloc(NUMBER::Real);
 
-    cavity->change_use(true);
-    calc_eps(false, ones);
-    cavity->change_use(false);
+    cavity->changeUse(true);
+    calcEpsilon(false, ones);
+    cavity->changeUse(false);
 
     qmfunction::multiply(rho_eff_func, rho_tot, ones, this->apply_prec);
 
     ones.free(NUMBER::Real);
 }
 
-void ReactionPotential::calc_gamma(QMFunction const &inv_eps_func,
-                                   QMFunction &gamma_func,
-                                   QMFunction &V_0_func,
-                                   QMFunction &temp,
-                                   mrcpp::FunctionTreeVector<3> &d_cavity) {
+void ReactionPotential::calcGamma(QMFunction const &inv_eps_func,
+                                  QMFunction &gamma_func,
+                                  QMFunction &V_0_func,
+                                  QMFunction &temp,
+                                  mrcpp::FunctionTreeVector<3> &d_cavity) {
     QMFunction temp_func1;
     QMFunction temp_func2;
     temp_func1.alloc(NUMBER::Real);
@@ -107,9 +105,9 @@ void ReactionPotential::setup(double prec) {
     QMFunction &temp = *this;
     mrcpp::FunctionTreeVector<3> d_cavity;
 
-    calc_eps(false, cavity_func);
-    calc_eps(true, inv_eps_func);
-    calc_rho_eff(inv_eps_func, rho_eff_func, cavity_func);
+    calcEpsilon(false, cavity_func);
+    calcEpsilon(true, inv_eps_func);
+    calcRhoEff(inv_eps_func, rho_eff_func, cavity_func);
     d_cavity = mrcpp::gradient(*derivative, cavity_func.real());
 
     V_0_func.alloc(NUMBER::Real);
@@ -129,7 +127,7 @@ void ReactionPotential::setup(double prec) {
         QMFunction V_np1_func;
         QMFunction diff_func;
 
-        calc_gamma(inv_eps_func, gamma_func, V_0_func, temp, d_cavity);
+        calcGamma(inv_eps_func, gamma_func, V_0_func, temp, d_cavity);
         V_np1_func.alloc(NUMBER::Real);
 
         qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
@@ -161,25 +159,25 @@ void ReactionPotential::setup(double prec) {
     V_func.free(NUMBER::Real);
 }
 
-double &ReactionPotential::get_tot_Energy() {
+double &ReactionPotential::getTotalEnergy() {
     QMFunction temp_prod_func;
     qmfunction::multiply(temp_prod_func, rho_tot, *this, this->apply_prec);
-    tot_Energy = temp_prod_func.integrate().real();
-    return tot_Energy;
+    totalEnergy = temp_prod_func.integrate().real();
+    return totalEnergy;
 }
 
-double &ReactionPotential::get_e_Energy() {
+double &ReactionPotential::getElectronicEnergy() {
     QMFunction temp_prod_func;
     qmfunction::multiply(temp_prod_func, rho_el, *this, this->apply_prec);
-    e_Energy = temp_prod_func.integrate().real();
-    return e_Energy;
+    electronicEnergy = temp_prod_func.integrate().real();
+    return electronicEnergy;
 }
 
-double &ReactionPotential::get_nuc_Energy() {
+double &ReactionPotential::getNuclearEnergy() {
     QMFunction temp_prod_func;
     qmfunction::multiply(temp_prod_func, rho_nuc, *this, this->apply_prec);
-    nuc_Energy = temp_prod_func.integrate().real();
-    return nuc_Energy;
+    nuclearEnergy = temp_prod_func.integrate().real();
+    return nuclearEnergy;
 }
 
 void ReactionPotential::clear() {

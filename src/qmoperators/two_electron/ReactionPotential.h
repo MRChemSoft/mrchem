@@ -22,9 +22,9 @@ public:
                       bool testing = false);
     ~ReactionPotential() = default;
 
-    double &get_tot_Energy();
-    double &get_e_Energy();
-    double &get_nuc_Energy();
+    double &getTotalEnergy();
+    double &getElectronicEnergy();
+    double &getNuclearEnergy();
 
     friend class ReactionOperator;
 
@@ -45,17 +45,17 @@ private:
 
     bool testing;
 
-    double e_Energy;
-    double nuc_Energy;
-    double tot_Energy;
+    double electronicEnergy;
+    double nuclearEnergy;
+    double totalEnergy;
 
-    void calc_eps(bool is_inv, QMFunction &cavity_func);
-    void calc_rho_eff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, QMFunction &cavity_func);
-    void calc_gamma(QMFunction const &inv_eps_func,
-                    QMFunction &gamma_func,
-                    QMFunction &V_0_func,
-                    QMFunction &temp,
-                    mrcpp::FunctionTreeVector<3> &d_cavity);
+    void calcEpsilon(bool is_inv, QMFunction &cavity_func);
+    void calcRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, QMFunction &cavity_func);
+    void calcGamma(QMFunction const &inv_eps_func,
+                   QMFunction &gamma_func,
+                   QMFunction &V_0_func,
+                   QMFunction &temp,
+                   mrcpp::FunctionTreeVector<3> &d_cavity);
     void grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func);
     void setup(double prec);
 };
