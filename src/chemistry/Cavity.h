@@ -65,7 +65,6 @@ protected:
     double d;
     bool is_inv = false;
     bool is_linear = false;
-    bool for_rho = false;
     bool abc;
 };
 } // namespace mrchem

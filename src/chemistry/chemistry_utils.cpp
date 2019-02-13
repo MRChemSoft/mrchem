@@ -65,7 +65,6 @@ double chemistry::get_total_charge(const Nuclei &nucs) {
 
 Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, double alpha) {
     auto beta = std::pow(alpha / MATHCONST::pi, 3.0 / 2.0);
->>>>>>> ReactionPotential producing more believable output
     int nNucs = nucs.size();
     auto gauss = mrcpp::GaussExp<3>();
 
@@ -73,11 +72,11 @@ Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, doub
         const Nucleus &nuc_i = nucs[i];
         const double Z_i = nuc_i.getCharge();
         const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
-        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta*Z_i, R_i, {0, 0, 0});
+        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta * Z_i, R_i, {0, 0, 0});
         gauss.append(gauss_f);
     }
     Density rho(false);
     density::compute(prec, rho, gauss, DENSITY::Total);
     return rho;
 }
-} //namespace mrchem
+} // namespace mrchem
