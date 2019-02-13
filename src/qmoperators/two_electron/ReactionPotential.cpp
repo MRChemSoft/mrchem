@@ -1,6 +1,7 @@
 #include "MRCPP/Gaussians"
 #include "MRCPP/MWOperators"
 #include <cmath>
+#include <functional>
 
 #include "ReactionPotential.h"
 #include "chemistry/Cavity.h"
@@ -38,34 +39,39 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
     this->testing = testing;
 }
 
-void ReactionPotential::calcEpsilon(bool is_inv, QMFunction &cavity_func) {
+void ReactionPotential::setEpsilon(bool is_inv, QMFunction &cavity_func) {
     cavity->implementEpsilon(is_inv, cavity->isLinear());
     qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
+    cavity->implementEpsilon(false, cavity->isLinear());
 }
 
-void ReactionPotential::calcRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, QMFunction &cavity_func) {
+void ReactionPotential::setRhoEff(QMFunction const &inv_eps_func,
+                                  QMFunction &rho_eff_func,
+                                  const QMFunction &cavity_func) {
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
     qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
 
+    auto onesf = [](const mrcpp::Coord<3> &r) -> double { return 1.0; };
+
     QMFunction ones;
-    ones.alloc(NUMBER::Real);
-
-    cavity->changeUse(true);
-    calcEpsilon(false, ones);
-    cavity->changeUse(false);
-
-    qmfunction::multiply(rho_eff_func, rho_tot, ones, this->apply_prec);
-
+    QMFunction tmp1; // can still be made shorter, possibly
+    QMFunction tmp2;
+    qmfunction::project(ones, onesf, NUMBER::Real, this->apply_prec);
+    qmfunction::add(tmp1, 1.0, ones, -1.0, cavity_func, -1.0);
+    qmfunction::multiply(tmp2, tmp1, inv_eps_func, this->apply_prec);
+    qmfunction::multiply(rho_eff_func, rho_tot, tmp2, this->apply_prec);
     ones.free(NUMBER::Real);
+    tmp1.free(NUMBER::Real);
+    tmp2.free(NUMBER::Real);
 }
 
-void ReactionPotential::calcGamma(QMFunction const &inv_eps_func,
-                                  QMFunction &gamma_func,
-                                  QMFunction &V_0_func,
-                                  QMFunction &temp,
-                                  mrcpp::FunctionTreeVector<3> &d_cavity) {
+void ReactionPotential::setGamma(QMFunction const &inv_eps_func,
+                                 QMFunction &gamma_func,
+                                 QMFunction &V_0_func,
+                                 QMFunction &temp,
+                                 mrcpp::FunctionTreeVector<3> &d_cavity) {
     QMFunction temp_func1;
     QMFunction temp_func2;
     temp_func1.alloc(NUMBER::Real);
@@ -81,7 +87,7 @@ void ReactionPotential::calcGamma(QMFunction const &inv_eps_func,
     gamma_func.rescale(1.0 / (4.0 * MATHCONST::pi));
     temp_func1.free(NUMBER::Real);
     temp_func2.free(NUMBER::Real);
-    d_V.clear();
+    mrcpp::clear(d_V, true);
 }
 
 void ReactionPotential::grad_G(QMFunction &gamma_func,
@@ -105,15 +111,15 @@ void ReactionPotential::setup(double prec) {
     QMFunction &temp = *this;
     mrcpp::FunctionTreeVector<3> d_cavity;
 
-    calcEpsilon(false, cavity_func);
-    calcEpsilon(true, inv_eps_func);
-    calcRhoEff(inv_eps_func, rho_eff_func, cavity_func);
+    setEpsilon(false, cavity_func);
+    setEpsilon(true, inv_eps_func);
+    setRhoEff(inv_eps_func, rho_eff_func, cavity_func);
     d_cavity = mrcpp::gradient(*derivative, cavity_func.real());
 
     V_0_func.alloc(NUMBER::Real);
     mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
-    if (not(temp).hasReal()) {
+    if (not temp.hasReal()) { // supposed to work only in first iteration
         V_func.alloc(NUMBER::Real);
         mrcpp::apply(prec, V_func.real(), *poisson, rho_eff_func.real());
         qmfunction::add(temp, 1.0, V_func, -1.0, V_0_func, -1.0);
@@ -127,7 +133,7 @@ void ReactionPotential::setup(double prec) {
         QMFunction V_np1_func;
         QMFunction diff_func;
 
-        calcGamma(inv_eps_func, gamma_func, V_0_func, temp, d_cavity);
+        setGamma(inv_eps_func, gamma_func, V_0_func, temp, d_cavity);
         V_np1_func.alloc(NUMBER::Real);
 
         qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
@@ -150,7 +156,7 @@ void ReactionPotential::setup(double prec) {
 
         qmfunction::add(*this, 1.0, V_func, -1.0, V_0_func, -1.0);*/
 
-    d_cavity.clear();
+    mrcpp::clear(d_cavity, true);
     gamma_func.free(NUMBER::Real);
     cavity_func.free(NUMBER::Real);
     inv_eps_func.free(NUMBER::Real);

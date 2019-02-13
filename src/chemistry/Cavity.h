@@ -53,7 +53,6 @@ public:
     std::vector<mrcpp::Coord<3>> getCoordinates() { return pos; }
     std::vector<double> getRadius() { return R; }
     void changeRadius(double r) { this->R[0] = r; }
-    void changeUse(bool for_rho) { this->for_rho = for_rho; }
 
 protected:
     void readCoordinateString(const std::vector<std::string> &coord_str);
@@ -62,10 +61,10 @@ protected:
     double e_o;
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
+    std::vector<double> alpha;
     double d;
     bool is_inv = false;
     bool is_linear = false;
-    bool for_rho = false;
     bool abc;
 };
 } // namespace mrchem

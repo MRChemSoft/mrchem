@@ -41,7 +41,6 @@ private:
     Density rho_tot;
     Density rho_el;
     Density rho_nuc;
-    // QMFunction V_n_func;
 
     bool testing;
 
@@ -49,13 +48,13 @@ private:
     double nuclearEnergy;
     double totalEnergy;
 
-    void calcEpsilon(bool is_inv, QMFunction &cavity_func);
-    void calcRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, QMFunction &cavity_func);
-    void calcGamma(QMFunction const &inv_eps_func,
-                   QMFunction &gamma_func,
-                   QMFunction &V_0_func,
-                   QMFunction &temp,
-                   mrcpp::FunctionTreeVector<3> &d_cavity);
+    void setEpsilon(bool is_inv, QMFunction &cavity_func);
+    void setRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, const QMFunction &cavity_func);
+    void setGamma(QMFunction const &inv_eps_func,
+                  QMFunction &gamma_func,
+                  QMFunction &V_0_func,
+                  QMFunction &temp,
+                  mrcpp::FunctionTreeVector<3> &d_cavity);
     void grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func);
     void setup(double prec);
 };
