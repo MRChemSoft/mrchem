@@ -26,4 +26,5 @@ else()
     ${getkw_sources_SOURCE_DIR}
     ${getkw_sources_BINARY_DIR}
     )
+  set(getkw_PYMOD ${getkw_sources_BINARY_DIR}/Python/${PYTHON_SITE_INSTALL_DIR})
 endif()
