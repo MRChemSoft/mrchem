@@ -9,8 +9,8 @@ set(PYTHON_SITE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_getkw.cmake)
 file(
   COPY
-    ${getkw_sources_BINARY_DIR}/Python/${PYTHON_SITE_INSTALL_DIR}/getkw.py
-    ${getkw_sources_BINARY_DIR}/Python/${PYTHON_SITE_INSTALL_DIR}/pyparsing.py
+    ${getkw_PYMOD}/getkw.py
+    ${getkw_PYMOD}/pyparsing.py
   DESTINATION
     ${PROJECT_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}
   )
