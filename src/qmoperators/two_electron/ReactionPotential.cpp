@@ -41,7 +41,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
 
 void ReactionPotential::setEpsilon(bool is_inv, QMFunction &cavity_func) {
     cavity->implementEpsilon(is_inv, cavity->isLinear());
-    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec/100);
+    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec / 100);
     cavity->implementEpsilon(false, cavity->isLinear());
 }
 
@@ -120,8 +120,7 @@ void ReactionPotential::setup(double prec) {
 
     mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
-
-    if (not temp.hasReal()) { 
+    if (not temp.hasReal()) {
         QMFunction tmp_numerator;
         QMFunction tmp_poisson;
         QMFunction V_r_0;
@@ -180,10 +179,10 @@ void ReactionPotential::setup(double prec) {
         if (error >= 100000.00) break;
     }
 
-        /*V_0_func.alloc(NUMBER::Real);
-        mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
+    /*V_0_func.alloc(NUMBER::Real);
+    mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
-        qmfunction::add(*this, 1.0, V_func, -1.0, V_0_func, -1.0);*/
+    qmfunction::add(*this, 1.0, V_func, -1.0, V_0_func, -1.0);*/
 
     mrcpp::clear(d_cavity, true);
     gamma_func.free(NUMBER::Real);
