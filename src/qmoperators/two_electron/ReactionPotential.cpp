@@ -41,7 +41,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
 
 void ReactionPotential::setEpsilon(bool is_inv, QMFunction &cavity_func) {
     cavity->implementEpsilon(is_inv, cavity->isLinear());
-    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec / 100);
+    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec/100);
     cavity->implementEpsilon(false, cavity->isLinear());
 }
 
@@ -152,6 +152,7 @@ void ReactionPotential::setup(double prec) {
         error = diff_func.norm();
 
         temp = V_np1_func;
+
         iter++;
         std::cout << "iter.:\t" << iter << "\n"
                   << "error:\t" << error << std::endl;
