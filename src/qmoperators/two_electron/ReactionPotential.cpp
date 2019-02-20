@@ -41,7 +41,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
 
 void ReactionPotential::setEpsilon(bool is_inv, QMFunction &cavity_func) {
     cavity->implementEpsilon(is_inv, cavity->isLinear());
-    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec);
+    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec/100);
     cavity->implementEpsilon(false, cavity->isLinear());
 }
 
@@ -53,7 +53,7 @@ void ReactionPotential::setRhoEff(QMFunction const &inv_eps_func,
     rho_el.rescale(-1.0);
     qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
 
-    auto onesf = [](const mrcpp::Coord<3> &r) -> double { return 1.0; };
+    auto onesf = [](const mrcpp::Coord<3> &r) { return 1.0; };
 
     QMFunction ones;
     QMFunction tmp1; // can still be made shorter, possibly
@@ -117,12 +117,41 @@ void ReactionPotential::setup(double prec) {
     d_cavity = mrcpp::gradient(*derivative, cavity_func.real());
 
     V_0_func.alloc(NUMBER::Real);
+
     mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
-    if (not temp.hasReal()) { // supposed to work only in first iteration
-        V_func.alloc(NUMBER::Real);
-        mrcpp::apply(prec, V_func.real(), *poisson, rho_eff_func.real());
-        qmfunction::add(temp, 1.0, V_func, -1.0, V_0_func, -1.0);
+
+    if (not temp.hasReal()) { 
+        QMFunction tmp_numerator;
+        QMFunction tmp_poisson;
+        QMFunction V_r_0;
+        mrcpp::FunctionTreeVector<3> dV_0 = mrcpp::gradient(*derivative, V_0_func.real());
+        tmp_numerator.alloc(NUMBER::Real);
+        tmp_poisson.alloc(NUMBER::Real);
+        V_r_0.alloc(NUMBER::Real);
+
+        mrcpp::dot(this->apply_prec, tmp_numerator.real(), dV_0, d_cavity);
+        qmfunction::multiply(gamma_func, tmp_numerator, inv_eps_func, this->apply_prec);
+        gamma_func.rescale(1.0 / (4.0 * MATHCONST::pi));
+        qmfunction::add(tmp_poisson, 1.0, gamma_func, 1.0, rho_eff_func, -1.0);
+        mrcpp::apply(this->apply_prec, V_r_0.real(), *poisson, tmp_poisson.real());
+        temp = V_r_0;
+
+        tmp_numerator.free(NUMBER::Real);
+        tmp_poisson.free(NUMBER::Real);
+        V_r_0.free(NUMBER::Real);
+        mrcpp::clear(dV_0, true);
+
+        /*for (double z = -5.00; z < 5; z += 0.01) {
+            std::cout << z
+            << '\t' << gamma_func.real().evalf({0.0, 0.0, z})
+            << '\t' << inv_eps_func.real().evalf({0.0, 0.0, z})
+            //<< '\t' << tmp_numerator.real().evalf({0.0, 0.0, z})
+            << '\t' << mrcpp::get_func(d_cavity, 0).evalf({0.0, 0.0, z})
+            << '\t' << mrcpp::get_func(d_cavity, 1).evalf({0.0, 0.0, z})
+            << '\t' << mrcpp::get_func(d_cavity, 2).evalf({0.0, 0.0, z})
+            << std::endl;
+        }*/
     }
 
     auto error = 1.00;
@@ -143,6 +172,7 @@ void ReactionPotential::setup(double prec) {
         error = diff_func.norm();
 
         temp = V_np1_func;
+
         iter++;
         std::cout << "iter.:\t" << iter << "\n"
                   << "error:\t" << error << std::endl;
@@ -150,8 +180,7 @@ void ReactionPotential::setup(double prec) {
         if (error >= 100000.00) break;
     }
 
-    /*
-        V_0_func.alloc(NUMBER::Real);
+        /*V_0_func.alloc(NUMBER::Real);
         mrcpp::apply(prec, V_0_func.real(), *poisson, rho_tot.real());
 
         qmfunction::add(*this, 1.0, V_func, -1.0, V_0_func, -1.0);*/
@@ -191,7 +220,7 @@ void ReactionPotential::clear() {
     rho_tot.free(NUMBER::Real);
     rho_el.free(NUMBER::Real);
     rho_nuc.free(NUMBER::Real);
-    QMFunction::free(NUMBER::Total);
+    // QMFunction::free(NUMBER::Total);
 }
 
 } // namespace mrchem
