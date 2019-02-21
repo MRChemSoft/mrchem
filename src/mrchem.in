@@ -205,7 +205,7 @@ def setup_keywords(input_dir):
     # yapf: enable
     top.add_sect(mra)
 
-    solvent = getkw.Section('Solvent')
+    solvent = getkw.Section('solvent')
     # yapf: disable
     solvent.add_kw('epsilon',                 'DBL', 78.39)
     solvent.add_kw('atom_based_cavity',       'BOOL', True)
@@ -215,7 +215,7 @@ def setup_keywords(input_dir):
     # yapf: enable
     top.add_sect(solvent)
 
-    derivatives = getkw.Section('Derivatives')
+    derivatives = getkw.Section('derivatives')
     # yapf: disable
     derivatives.add_kw('kinetic',       'STR', 'abgv_55')
     derivatives.add_kw('h_orb',         'STR', 'abgv_00')

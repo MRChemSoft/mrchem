@@ -64,52 +64,44 @@ SCFDriver::SCFDriver(Getkw &input) {
     rel_prec = input.get<double>("rel_prec");
     nuc_prec = input.get<double>("nuc_prec");
 
-    gauge = input.getDblVec("MRA.gauge_origin");
-    center_of_mass = input.get<bool>("MRA.center_of_mass");
-    center_of_charge = input.get<bool>("MRA.center_of_charge");
+    gauge = input.getDblVec("mra.gauge_origin");
+    center_of_mass = input.get<bool>("mra.center_of_mass");
+    center_of_charge = input.get<bool>("mra.center_of_charge");
 
-    diff_kin = input.get<std::string>("Derivatives.kinetic");
-    diff_orb = input.get<std::string>("Derivatives.h_orb");
-    diff_pso = input.get<std::string>("Derivatives.h_pso");
+    diff_kin = input.get<std::string>("derivatives.kinetic");
+    diff_orb = input.get<std::string>("derivatives.h_orb");
+    diff_pso = input.get<std::string>("derivatives.h_pso");
 
-    calc_scf_energy = input.get<bool>("Properties.scf_energy");
-    calc_dipole_moment = input.get<bool>("Properties.dipole_moment");
-    calc_quadrupole_moment = input.get<bool>("Properties.quadrupole_moment");
-    calc_magnetizability = input.get<bool>("Properties.magnetizability");
-    calc_nmr_shielding = input.get<bool>("Properties.nmr_shielding");
-    calc_hyperfine_coupling = input.get<bool>("Properties.hyperfine_coupling");
-    calc_spin_spin_coupling = input.get<bool>("Properties.spin_spin_coupling");
-    calc_polarizability = input.get<bool>("Properties.polarizability");
-    calc_hyperpolarizability = input.get<bool>("Properties.hyperpolarizability");
-    calc_optical_rotation = input.get<bool>("Properties.optical_rotation");
-    calc_geometry_derivatives = input.get<bool>("Properties.geometry_derivatives");
-    calc_solvent_effect = input.get<bool>("Properties.solvent_effect");
+    calc_scf_energy = input.get<bool>("properties.scf_energy");
+    calc_dipole_moment = input.get<bool>("properties.dipole_moment");
+    calc_quadrupole_moment = input.get<bool>("properties.quadrupole_moment");
+    calc_magnetizability = input.get<bool>("properties.magnetizability");
+    calc_nmr_shielding = input.get<bool>("properties.nmr_shielding");
+    calc_hyperfine_coupling = input.get<bool>("properties.hyperfine_coupling");
+    calc_spin_spin_coupling = input.get<bool>("properties.spin_spin_coupling");
+    calc_polarizability = input.get<bool>("properties.polarizability");
+    calc_hyperpolarizability = input.get<bool>("properties.hyperpolarizability");
+    calc_optical_rotation = input.get<bool>("properties.optical_rotation");
+    calc_geometry_derivatives = input.get<bool>("properties.geometry_derivatives");
+    calc_solvent_effect = input.get<bool>("properties.solvent_effect");
 
-    nmr_perturbation = input.get<std::string>("NMRShielding.perturbation");
-    nmr_nucleus_k = input.getIntVec("NMRShielding.nucleus_k");
-    hfcc_nucleus_k = input.getIntVec("HyperfineCoupling.nucleus_k");
-    sscc_nucleus_k = input.getIntVec("SpinSpinCoupling.nucleus_k");
-    sscc_nucleus_l = input.getIntVec("SpinSpinCoupling.nucleus_l");
-    pol_velocity = input.get<bool>("Polarizability.velocity");
-    pol_frequency = input.getDblVec("Polarizability.frequency");
-    optrot_velocity = input.get<bool>("OpticalRotation.velocity");
-    optrot_frequency = input.getDblVec("OpticalRotation.frequency");
-    optrot_perturbation = input.get<std::string>("OpticalRotation.perturbation");
+    nmr_perturbation = input.get<std::string>("nmrshielding.perturbation");
+    nmr_nucleus_k = input.getIntVec("nmrshielding.nucleus_k");
+    hfcc_nucleus_k = input.getIntVec("hyperfinecoupling.nucleus_k");
+    sscc_nucleus_k = input.getIntVec("spinspincoupling.nucleus_k");
+    sscc_nucleus_l = input.getIntVec("spinspincoupling.nucleus_l");
+    pol_velocity = input.get<bool>("polarizability.velocity");
+    pol_frequency = input.getDblVec("polarizability.frequency");
+    optrot_velocity = input.get<bool>("opticalRotation.velocity");
+    optrot_frequency = input.getDblVec("opticalRotation.frequency");
+    optrot_perturbation = input.get<std::string>("opticalrotation.perturbation");
 
-    mol_charge = input.get<int>("Molecule.charge");
-    mol_multiplicity = input.get<int>("Molecule.multiplicity");
-    mol_coords = input.getData("Molecule.coords");
+    mol_charge = input.get<int>("molecule.charge");
+    mol_multiplicity = input.get<int>("molecule.multiplicity");
+    mol_coords = input.getData("molecule.coords");
 
-    wf_restricted = input.get<bool>("WaveFunction.restricted");
-    wf_method = input.get<std::string>("WaveFunction.method");
-
-    if (wf_method == "DFT") {
-        dft_spin = input.get<bool>("DFT.spin");
-        dft_use_gamma = input.get<bool>("DFT.use_gamma");
-        dft_cutoff = input.get<double>("DFT.density_cutoff");
-        dft_func_coefs = input.getDblVec("DFT.func_coefs");
-        dft_func_names = input.getData("DFT.functionals");
-    }
+    wf_restricted = input.get<bool>("waveFunction.restricted");
+    wf_method = input.get<std::string>("waveFunction.method");
 
     if (wf_method == "dft") {
         dft_spin = input.get<bool>("dft.spin");
@@ -148,11 +140,12 @@ SCFDriver::SCFDriver(Getkw &input) {
     rsp_directions = input.getIntVec("response.directions");
     rsp_orbital_prec = input.getDblVec("response.orbital_prec");
 
-    cav_sigma  = input.get<double>("solvent.sigma");
+    // cav_coords = input.getData("Solvent.cavity");
     cav_linear = input.get<bool>("solvent.linear");
-    cav_abc    = input.get<bool>("solvent.atom_based_cavity");
-    cav_eps_o  = input.get<double>("solvent.epsilon");
-    cav_eps_i  = 1.0;
+    cav_abc = input.get<bool>("solvent.atom_based_cavity");
+    cav_sigma = input.get<double>("solvent.sigma");
+    cav_eps_o = input.get<double>("solvent.epsilon");
+    cav_eps_i = 1.0;
     if (not cav_abc) cav_coords = input.getData("solvent.cavity");
 
     ext_electric = input.get<bool>("externalfield.electric_run");
@@ -183,7 +176,6 @@ SCFDriver::SCFDriver(Getkw &input) {
     file_energy_vec = input.get<std::string>("files.energy_vec");
     file_mo_mat_a = input.get<std::string>("files.mo_mat_a");
     file_mo_mat_b = input.get<std::string>("files.mo_mat_b");
-
 
     r_O[0] = 0.0;
     r_O[1] = 0.0;
