@@ -36,17 +36,18 @@ Properties {
   solvent_effect = true
 }
 
-Solvent {
-  epsilon = 2
-  atom_based_cavity = false
-  $cavity
-  1   0.0000   0.0000   0.0000   4.0000
-  $end
-  sigma = 0.5
-  linear = false
-}
+#Solvent {
+#  epsilon = 2
+#  atom_based_cavity = false
+#  $cavity
+#  1   0.0000   0.0000   0.0000   4.0000
+#  $end
+#  sigma = 0.5
+#  linear = false
+#}
 
 SCF {
   run = true
   initial_guess = SAD_DZ
+  #write_orbitals = true
 }
