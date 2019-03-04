@@ -1,5 +1,6 @@
 #include "MRCPP/Gaussians"
 #include "MRCPP/MWOperators"
+#include "MRCPP/Plotter"
 #include <cmath>
 #include <functional>
 
@@ -8,8 +9,11 @@
 #include "chemistry/Nucleus.h"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "scf_solver/KAIN.h"
 
 using mrcpp::ABGVOperator;
 using mrcpp::FunctionTree;
@@ -23,7 +27,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
                                      Cavity *C,
                                      const Nuclei &nucs,
                                      OrbitalVector *Phi,
-                                     bool testing)
+                                     int hist)
         : QMPotential(1, false)
         , cavity(C)
         , nuclei(nucs)
@@ -32,11 +36,11 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
         , derivative(D)
         , rho_tot(false)
         , rho_el(false)
-        , rho_nuc(false) {
+        , rho_nuc(false)
+        , history(hist) {
     this->electronicEnergy = 0.0;
     this->nuclearEnergy = 0.0;
     this->totalEnergy = 0.0;
-    this->testing = testing;
 }
 
 void ReactionPotential::setEpsilon(bool is_inv, QMFunction &cavity_func) {
@@ -94,6 +98,25 @@ void ReactionPotential::grad_G(QMFunction &gamma_func,
     qmfunction::add(grad_G_func, 1.0, temp_func, -1.0, rho_tot, -1.0);
 }
 
+void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain) {
+    OrbitalVector phi_n(0);
+    OrbitalVector dPhi_n(0);
+    phi_n.push_back(Orbital(SPIN::Paired));
+    dPhi_n.push_back(Orbital(SPIN::Paired));
+
+    phi_n[0].QMFunction::operator=(temp);
+    dPhi_n[0].QMFunction::operator=(diff_func);
+
+    // double plevel = TelePrompter::setPrintLevel(-1);
+    kain.accelerate(this->apply_prec, phi_n, dPhi_n);
+    // TelePrompter::setPrintLevel(plevel);
+
+    temp.QMFunction::operator=(phi_n[0]);
+    diff_func.QMFunction::operator=(dPhi_n[0]);
+
+    phi_n.clear();
+    dPhi_n.clear();
+}
 
 void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);
@@ -124,39 +147,48 @@ void ReactionPotential::setup(double prec) {
         tmp_poisson.alloc(NUMBER::Real);
         temp.alloc(NUMBER::Real);
 
-        mrcpp::dot(this->apply_prec, tmp_numerator.real(), dV_0, d_cavity);
-        qmfunction::multiply(gamma_func, tmp_numerator, inv_eps_func, this->apply_prec);
+        mrcpp::dot(prec, tmp_numerator.real(), dV_0, d_cavity);
+        qmfunction::multiply(gamma_func, tmp_numerator, inv_eps_func, prec);
         gamma_func.rescale(1.0 / (4.0 * MATHCONST::pi));
         qmfunction::add(tmp_poisson, 1.0, gamma_func, 1.0, rho_eff_func, -1.0);
-        mrcpp::apply(this->apply_prec, temp.real(), *poisson, tmp_poisson.real());
-
+        mrcpp::apply(prec, temp.real(), *poisson, tmp_poisson.real());
 
         mrcpp::clear(dV_0, true);
     }
-
+    //double A[3] = {0, 0, -5};
+    //double B[3] = {0, 0, 5};
+    //mrcpp::Plotter<3> plt(1000, A, B);
+    // plt.linePlot(gamma_func.real(), "gamma");
+    // plt.linePlot(temp.real(), "V_r");
+    KAIN kain(this->history);
     auto error = 1.00;
-    int iter = 0;
-    while (error >= this->apply_prec) {
+    int iter = 1;
+    while (error >= prec) {
         gamma_func.free(NUMBER::Real);
         QMFunction temp_func;
         QMFunction V_np1_func;
         QMFunction diff_func;
-
         setGamma(inv_eps_func, gamma_func, V_0_func, temp, d_cavity);
-        V_np1_func.alloc(NUMBER::Real);
 
+        V_np1_func.alloc(NUMBER::Real);
         qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
         mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
-
-        qmfunction::add(diff_func, 1.0, temp, -1.0, V_np1_func, -1.0);
+        qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
         error = diff_func.norm();
 
+        // plt.linePlot(V_np1_func.real(), "V_np1(1)");
+        // plt.linePlot(temp.real(), "V_r");
+        // plt.linePlot(diff_func.real(), "difference");
+        if (iter > 1 and this->history > 0) accelerateConvergence(diff_func, temp, kain);
+        V_np1_func.free(NUMBER::Real);
+        qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
+        // plt.linePlot(V_np1_func.real(), "V_np1(2)");
         temp = V_np1_func;
 
-        iter++;
         std::cout << "iter.:\t" << iter << "\n"
                   << "error:\t" << error << std::endl;
-        if (this->testing and iter > 3) break;
+        // if (iter == 1) break;
+        iter++;
         if (error >= 100000.00) break;
     }
 

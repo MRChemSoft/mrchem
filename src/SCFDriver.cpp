@@ -92,16 +92,16 @@ SCFDriver::SCFDriver(Getkw &input) {
     sscc_nucleus_l = input.getIntVec("spinspincoupling.nucleus_l");
     pol_velocity = input.get<bool>("polarizability.velocity");
     pol_frequency = input.getDblVec("polarizability.frequency");
-    optrot_velocity = input.get<bool>("opticalRotation.velocity");
-    optrot_frequency = input.getDblVec("opticalRotation.frequency");
+    optrot_velocity = input.get<bool>("opticalrotation.velocity");
+    optrot_frequency = input.getDblVec("opticalrotation.frequency");
     optrot_perturbation = input.get<std::string>("opticalrotation.perturbation");
 
     mol_charge = input.get<int>("molecule.charge");
     mol_multiplicity = input.get<int>("molecule.multiplicity");
     mol_coords = input.getData("molecule.coords");
 
-    wf_restricted = input.get<bool>("waveFunction.restricted");
-    wf_method = input.get<std::string>("waveFunction.method");
+    wf_restricted = input.get<bool>("wavefunction.restricted");
+    wf_method = input.get<std::string>("wavefunction.method");
 
     if (wf_method == "dft") {
         dft_spin = input.get<bool>("dft.spin");

@@ -4,6 +4,7 @@
 #include "chemistry/chemistry_fwd.h"
 #include "qmfunctions/Density.h"
 #include "qmoperators/one_electron/QMPotential.h"
+#include "scf_solver/KAIN.h"
 
 using namespace mrcpp;
 
@@ -16,7 +17,7 @@ public:
                       Cavity *C,
                       const Nuclei &nucs,
                       OrbitalVector *Phi,
-                      bool testing = false);
+                      int hist = 4);
     ~ReactionPotential() = default;
 
     double &getTotalEnergy();
@@ -40,6 +41,8 @@ private:
     Density rho_el;
     Density rho_nuc;
 
+    int history;
+
     double electronicEnergy;
     double nuclearEnergy;
     double totalEnergy;
@@ -52,6 +55,7 @@ private:
                   QMFunction &temp,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
     void grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func);
+    void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void setup(double prec);
 };
 
