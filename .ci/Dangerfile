@@ -26,7 +26,7 @@ code_style_validation.check validator: 'clang-format',
 # ------------------------------------------------------------------------------
 # What changed?
 # ------------------------------------------------------------------------------
-# Was any code modified in the cmake, external, include and src directories?
+# Was any code modified in the external, and src directories?
 has_code_changes = !git.modified_files.grep(/^(external|src)/).empty?
 # Was any code modified in the cmake directory?
 has_cmake_changes = !git.modified_files.grep(/^(cmake)/).empty?
