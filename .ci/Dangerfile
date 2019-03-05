@@ -27,7 +27,9 @@ code_style_validation.check validator: 'clang-format',
 # What changed?
 # ------------------------------------------------------------------------------
 # Was any code modified in the cmake, external, include and src directories?
-has_code_changes = !git.modified_files.grep(/^(cmake|external|src)/).empty?
+has_code_changes = !git.modified_files.grep(/^(external|src)/).empty?
+# Was any code modified in the cmake directory?
+has_cmake_changes = !git.modified_files.grep(/^(cmake)/).empty?
 # Was any code modified in the tests directory?
 has_test_changes = !git.modified_files.grep(/^tests/).empty?
 # Was documentation added?
@@ -56,6 +58,6 @@ end
 # but didn't write any docs?
 # ------------------------------------------------------------------------------
 doc_changes_recommended = git.insertions > 15
-if has_code_changes && !has_doc_changes && doc_changes_recommended && !declared_trivial
+if has_code_changes && has_cmake_changes !has_doc_changes && doc_changes_recommended && !declared_trivial
   warn("Consider adding supporting documentation to this change. Documentation sources can be found in the `doc` directory.")
 end
