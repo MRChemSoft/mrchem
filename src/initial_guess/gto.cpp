@@ -226,9 +226,7 @@ Density initial_guess::gto::project_density(double prec,
     DoubleMatrix D = math_utils::read_matrix_file(dens_file);
     GaussExp<3> dens_exp = gto_exp.getDens(D);
     Density rho(false);
-    std::cout << "work here 1.1" << std::endl;
     density::compute(prec, rho, dens_exp);
-    std::cout << "work here 1.2" << std::endl;
     return rho;
 }
 

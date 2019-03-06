@@ -219,9 +219,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         std::stringstream dens;
         bas << sad_path << sym << ".bas";
         dens << sad_path << sym << ".dens";
-        std::cout << "work here 1" << std::endl;
         Density rho_k = initial_guess::gto::project_density(prec, nucs[k], bas.str(), dens.str());
-        std::cout << "work here 2" << std::endl;
         printout(0, std::setw(3) << k);
         printout(0, std::setw(7) << sym);
         printout(0, std::setw(49) << rho_k.integrate().real() << "\n");

@@ -226,10 +226,8 @@ void density::compute_local_XY(double prec,
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp) {
     if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-    mrcpp::build_grid(rho.real(), dens_exp);
-    std::cout << "work here 1.1.1" << std::endl;
+    for (int i = 0; i < dens_exp.size(); i++) { mrcpp::build_grid(rho.real(), dens_exp.getFunc(i)); }
     mrcpp::project(prec, rho.real(), dens_exp);
-    std::cout << "work here 1.1.2" << std::endl;
 }
 
 double density::compute_occupation(Orbital &phi, int dens_spin) {
