@@ -53,15 +53,12 @@ double chemistry::compute_nuclear_repulsion(const Nuclei &nucs) {
     return E_nuc;
 }
 
-
 /** @brief Returns the sum of atomic charges*/
 double chemistry::get_total_charge(const Nuclei &nucs) {
     double charge = 0;
     for (const auto &nuc : nucs) charge += nuc.getCharge();
     return charge;
 }
-
-} // namespace mrchem
 
 Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, double alpha) {
     auto beta = std::pow(alpha / MATHCONST::pi, 3.0 / 2.0);
@@ -76,7 +73,7 @@ Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, doub
         gauss.append(gauss_f);
     }
     Density rho(false);
-    density::compute(prec, rho, gauss, DENSITY::Total);
+    density::compute(prec, rho, gauss);
     return rho;
 }
 } // namespace mrchem

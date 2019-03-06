@@ -192,6 +192,7 @@ protected:
     double cav_eps_i;
     bool cav_linear;
     bool cav_abc;
+    int kain_solv;
 
     // External field input
     bool ext_electric;

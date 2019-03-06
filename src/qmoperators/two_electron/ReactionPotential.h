@@ -17,7 +17,7 @@ public:
                       Cavity *C,
                       const Nuclei &nucs,
                       OrbitalVector *Phi,
-                      int hist = 4);
+                      int hist);
     ~ReactionPotential() = default;
 
     double &getTotalEnergy();
@@ -28,7 +28,6 @@ public:
 
 protected:
     void clear();
-
 
 private:
     Cavity *cavity;

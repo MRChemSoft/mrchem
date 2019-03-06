@@ -207,7 +207,9 @@ def setup_keywords(input_dir):
 
     solvent = getkw.Section('solvent')
     # yapf: disable
-    solvent.add_kw('epsilon',                 'DBL', 78.39)
+    solvent.add_kw('kain',                    'INT', 0)
+    solvent.add_kw('epsilon',                 'DBL', 2)
+    solvent.add_kw('epsilon_in',              'DBL', 1)
     solvent.add_kw('atom_based_cavity',       'BOOL', True)
     solvent.add_kw('sigma',                   'DBL', 0.4)
     solvent.add_kw('linear',                  'BOOL', False)

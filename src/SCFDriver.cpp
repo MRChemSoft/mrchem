@@ -140,12 +140,12 @@ SCFDriver::SCFDriver(Getkw &input) {
     rsp_directions = input.getIntVec("response.directions");
     rsp_orbital_prec = input.getDblVec("response.orbital_prec");
 
-    // cav_coords = input.getData("Solvent.cavity");
     cav_linear = input.get<bool>("solvent.linear");
     cav_abc = input.get<bool>("solvent.atom_based_cavity");
     cav_sigma = input.get<double>("solvent.sigma");
     cav_eps_o = input.get<double>("solvent.epsilon");
     cav_eps_i = 1.0;
+    kain_solv = input.get<int>("solvent.kain");
     if (not cav_abc) cav_coords = input.getData("solvent.cavity");
 
     ext_electric = input.get<bool>("externalfield.electric_run");
@@ -407,7 +407,7 @@ void SCFDriver::setup() {
         }
 
         cav->implementEpsilon(false, cav_linear);
-        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi);
+        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi, kain_solv);
         fock->setReactionOperator(Ro);
     }
     // For Hartree, HF and DFT we need the coulomb part
@@ -496,7 +496,7 @@ void SCFDriver::setup_np1() {
 
     if (calc_solvent_effect) {
         // Set up n+1 ReactionOperator
-        Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1);
+        Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1, kain_solv);
         fock_np1->setReactionOperator(Ro_np1);
     }
 

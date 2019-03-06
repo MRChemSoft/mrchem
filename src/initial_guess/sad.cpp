@@ -206,25 +206,22 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     Printer::printSeparator(0, '-');
 
     double crop_prec = (mpi::numerically_exact) ? -1.0 : prec;
-
     std::string sad_path = SAD_BASIS_DIR;
-
     Density rho_loc(false);
     rho_loc.alloc(NUMBER::Real);
     rho_loc.real().setZero();
-
     int oldprec = Printer::setPrecision(15);
     const Nuclei &nucs = mol.getNuclei();
     for (int k = 0; k < nucs.size(); k++) {
         if (mpi::orb_rank != k % mpi::orb_size) continue;
-
         const std::string &sym = nucs[k].getElement().getSymbol();
         std::stringstream bas;
         std::stringstream dens;
         bas << sad_path << sym << ".bas";
         dens << sad_path << sym << ".dens";
-
+        std::cout << "work here 1" << std::endl;
         Density rho_k = initial_guess::gto::project_density(prec, nucs[k], bas.str(), dens.str());
+        std::cout << "work here 2" << std::endl;
         printout(0, std::setw(3) << k);
         printout(0, std::setw(7) << sym);
         printout(0, std::setw(49) << rho_k.integrate().real() << "\n");

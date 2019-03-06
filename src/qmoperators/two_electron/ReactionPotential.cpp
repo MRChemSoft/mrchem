@@ -155,9 +155,9 @@ void ReactionPotential::setup(double prec) {
 
         mrcpp::clear(dV_0, true);
     }
-    //double A[3] = {0, 0, -5};
-    //double B[3] = {0, 0, 5};
-    //mrcpp::Plotter<3> plt(1000, A, B);
+    // double A[3] = {0, 0, -5};
+    // double B[3] = {0, 0, 5};
+    // mrcpp::Plotter<3> plt(1000, A, B);
     // plt.linePlot(gamma_func.real(), "gamma");
     // plt.linePlot(temp.real(), "V_r");
     KAIN kain(this->history);
@@ -189,7 +189,6 @@ void ReactionPotential::setup(double prec) {
                   << "error:\t" << error << std::endl;
         // if (iter == 1) break;
         iter++;
-        if (error >= 100000.00) break;
     }
 
     mrcpp::clear(d_cavity, true);
