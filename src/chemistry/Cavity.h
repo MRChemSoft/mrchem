@@ -27,6 +27,7 @@
 
 #include "MRCPP/MWFunctions"
 #include <array>
+#include <cmath>
 #include <vector>
 
 using namespace mrcpp;
@@ -52,19 +53,23 @@ public:
     bool isInverse() { return is_inv; }
     std::vector<mrcpp::Coord<3>> getCoordinates() { return pos; }
     std::vector<double> getRadius() { return R; }
+    double getCoefficient() { return coefficient; }
     void changeRadius(double r) { this->R[0] = r; }
 
 protected:
-    void readCoordinateString(const std::vector<std::string> &coord_str);
-
     double e_i;
     double e_o;
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
     std::vector<double> alpha;
+    double coefficient = std::log(e_i / e_o);
     double d;
     bool is_inv = false;
     bool is_linear = false;
     bool abc;
+
+    void readCoordinateString(const std::vector<std::string> &coord_str);
+    bool isVisibleAtScale(int scale, int nQuadPts) const;
+    bool isZeroOnInterval(const double *a, const double *b) const;
 };
 } // namespace mrchem

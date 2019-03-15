@@ -42,16 +42,16 @@ private:
 
     int history;
 
+    double d_coefficient;
     double electronicEnergy;
     double nuclearEnergy;
     double totalEnergy;
 
     void setEpsilon(bool is_inv, QMFunction &cavity_func);
-    void setRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func, const QMFunction &cavity_func);
+    void setRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func);
     void setGamma(QMFunction const &inv_eps_func,
                   QMFunction &gamma_func,
-                  QMFunction &V_0_func,
-                  QMFunction &temp,
+                  QMFunction &temp_func1,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
     void grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);

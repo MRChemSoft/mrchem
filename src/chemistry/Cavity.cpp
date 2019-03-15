@@ -34,6 +34,7 @@
 #include "utils/math_utils.h"
 
 namespace mrchem {
+// Add different dimensions to the cavity
 
 Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope, double eps_i, double eps_o) {
     this->pos = coord;
@@ -59,6 +60,12 @@ Cavity::Cavity(const std::vector<std::string> &coord_str,
 void Cavity::implementEpsilon(bool isinv, bool islinear) {
     this->is_inv = isinv;
     this->is_linear = islinear;
+
+    if (islinear) {
+        coefficient = e_i - e_o;
+    } else {
+        coefficient = std::log(e_i / e_o);
+    }
 }
 
 double Cavity::evalf(const mrcpp::Coord<3> &r) const {
@@ -78,13 +85,13 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
 
     switch (expression) {
         case 0:
-            val = e_i * std::exp(log(e_o / e_i) * (1 - C));
+            val = C;
             break;
         case 1:
-            val = e_i * C + e_o * (1 - C);
+            val = C;
             break;
         case 2:
-            val = (1 / e_i) * std::exp(log(e_i / e_o) * (1 - C));
+            val = (1 / e_i) * std::exp(std::log(e_i / e_o) * (1 - C));
             break;
         case 3:
             val = 1 / (e_o + C * (e_i - e_o));
@@ -130,6 +137,33 @@ void Cavity::readCoordinateString(const std::vector<std::string> &coord_str) {
         }
         this->alpha.assign(R.size(), 1.0);
     }
-  }
+}
+
+bool Cavity::isVisibleAtScale(int scale, int nQuadPts) const {
+
+    double stdDeviation = d;
+    auto visibleScale = static_cast<int>(-std::floor(std::log2(nQuadPts * 2.0 * stdDeviation)));
+
+    if (scale < visibleScale) { return false; }
+
+    return true;
+}
+// maybe necessary to state value outside the boundaries of the cavity, that is
+// eps_o and eps_i
+bool Cavity::isZeroOnInterval(const double *a, const double *b) const {
+    for (int k = 0; k < pos.size(); k++) {
+        for (int i = 0; i < 3; i++) {
+            double stdDeviation = d;
+            double cavityMinOut = (this->pos[k][i] - R[i]) - 3.0 * stdDeviation;
+            double cavityMinIn = (this->pos[k][i] - R[i]) + 3.0 * stdDeviation;
+            double cavityMaxIn = (this->pos[k][i] + R[i]) - 3.0 * stdDeviation;
+            double cavityMaxOut = (this->pos[k][i] + R[i]) + 3.0 * stdDeviation;
+            if (a[i] > cavityMaxOut or (a[i] > cavityMinIn and b[i] < cavityMaxIn) or b[i] < cavityMinOut) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 } // namespace mrchem
