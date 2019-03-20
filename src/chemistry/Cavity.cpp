@@ -36,36 +36,17 @@
 namespace mrchem {
 // Add different dimensions to the cavity
 
-Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope, double eps_i, double eps_o) {
+Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, double slope) {
     this->pos = coord;
     this->R = R;
     this->alpha.assign(R.size(), 1.0);
     this->d = slope;
-    this->e_i = eps_i;
-    this->e_o = eps_o;
 }
 
-Cavity::Cavity(const std::vector<std::string> &coord_str,
-               double slope,
-               double eps_i,
-               double eps_o,
-               bool atom_based_cavity) {
+Cavity::Cavity(const std::vector<std::string> &coord_str, double slope, bool atom_based_cavity) {
     this->d = slope;
-    this->e_i = eps_i;
-    this->e_o = eps_o;
     this->abc = atom_based_cavity;
     readCoordinateString(coord_str);
-}
-
-void Cavity::implementEpsilon(bool isinv, bool islinear) {
-    this->is_inv = isinv;
-    this->is_linear = islinear;
-
-    if (islinear) {
-        coefficient = e_i - e_o;
-    } else {
-        coefficient = std::log(e_i / e_o);
-    }
 }
 
 double Cavity::evalf(const mrcpp::Coord<3> &r) const {
@@ -78,29 +59,7 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
         C *= 1 - (1 - O);
     }
     C = 1 - C;
-
-    int I = is_inv, L = is_linear;
-    I = I << 1;
-    int expression = I | L;
-
-    switch (expression) {
-        case 0:
-            val = C;
-            break;
-        case 1:
-            val = C;
-            break;
-        case 2:
-            val = (1 / e_i) * std::exp(std::log(e_i / e_o) * (1 - C));
-            break;
-        case 3:
-            val = 1 / (e_o + C * (e_i - e_o));
-            break;
-        default:
-            std::cout << "no expression" << std::endl;
-    }
-
-    return val;
+    return C;
 }
 
 void Cavity::readCoordinateString(const std::vector<std::string> &coord_str) {

@@ -108,7 +108,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     mrcpp::PoissonOperator P(*MRA, prec);
     mrcpp::ABGVOperator<3> D(*MRA, 0.0, 0.0);
 
-    ReactionOperator V(&P, &D, &C, nucs, &Phi, true);
+    ReactionOperator V(&P, &D, &C, nucs, &Phi, 0);
 
     V.setup(prec);
 

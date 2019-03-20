@@ -401,13 +401,12 @@ void SCFDriver::setup() {
     if (calc_solvent_effect) {
         // setting up cavity
         if (cav_abc) {
-            cav = new Cavity(mol_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
+            cav = new Cavity(mol_coords, cav_sigma, cav_abc);
         } else {
-            cav = new Cavity(cav_coords, cav_sigma, cav_eps_i, cav_eps_o, cav_abc);
+            cav = new Cavity(cav_coords, cav_sigma, cav_abc);
         }
 
-        cav->implementEpsilon(false, cav_linear);
-        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi, kain_solv);
+        Ro = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi, kain_solv, cav_eps_i, cav_eps_o, cav_linear);
         fock->setReactionOperator(Ro);
     }
     // For Hartree, HF and DFT we need the coulomb part
@@ -496,7 +495,7 @@ void SCFDriver::setup_np1() {
 
     if (calc_solvent_effect) {
         // Set up n+1 ReactionOperator
-        Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1, kain_solv);
+        Ro_np1 = new ReactionOperator(P, ABGV_00, cav, *nuclei, phi_np1, kain_solv, cav_eps_i, cav_eps_o, cav_linear);
         fock_np1->setReactionOperator(Ro_np1);
     }
 

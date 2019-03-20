@@ -17,7 +17,10 @@ public:
                       Cavity *C,
                       const Nuclei &nucs,
                       OrbitalVector *Phi,
-                      int hist);
+                      int hist,
+                      double eps_i = 1.0,
+                      double eps_o = 2.0,
+                      bool islin = false);
     ~ReactionPotential() = default;
 
     double &getTotalEnergy();
@@ -42,18 +45,23 @@ private:
 
     int history;
 
-    double d_coefficient;
+    double d_coefficient = std::log(e_i / e_o);
     double electronicEnergy;
     double nuclearEnergy;
     double totalEnergy;
+    double e_i;
+    double e_o;
+    bool is_lin;
 
-    void setEpsilon(bool is_inv, QMFunction &cavity_func);
-    void setRhoEff(QMFunction const &inv_eps_func, QMFunction &rho_eff_func);
+    void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
     void setGamma(QMFunction const &inv_eps_func,
                   QMFunction &gamma_func,
                   QMFunction &temp_func1,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
-    void grad_G(QMFunction &gamma_func, QMFunction &cavity_func, QMFunction &rho_tot, QMFunction &grad_G_func);
+    void grad_G(QMFunction &gamma_func,
+                QMFunction &rho_tot,
+                QMFunction &grad_G_func,
+                std::function<double(const mrcpp::Coord<3> &r)> eps);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void setup(double prec);
 };

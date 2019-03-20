@@ -22,8 +22,11 @@ public:
                      Cavity *C,
                      const Nuclei &nuc,
                      OrbitalVector *Phi,
-                     int history)
-            : potential(new ReactionPotential(P, D, C, nuc, Phi, history)) {
+                     int history,
+                     double eps_i = 1.0,
+                     double eps_o = 2.0,
+                     bool islin = false)
+            : potential(new ReactionPotential(P, D, C, nuc, Phi, history, eps_i, eps_o, islin)) {
         RankZeroTensorOperator &J = (*this);
         J = *this->potential;
     }
