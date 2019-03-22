@@ -26,6 +26,7 @@ public:
     double &getTotalEnergy();
     double &getElectronicEnergy();
     double &getNuclearEnergy();
+    double &getElectronIn();
 
     friend class ReactionOperator;
 
@@ -42,6 +43,7 @@ private:
     Density rho_tot;
     Density rho_el;
     Density rho_nuc;
+    QMFunction cavity_func;
 
     int history;
 
@@ -49,6 +51,7 @@ private:
     double electronicEnergy;
     double nuclearEnergy;
     double totalEnergy;
+    double electronsIn;
     double e_i;
     double e_o;
     bool is_lin;

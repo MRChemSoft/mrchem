@@ -40,6 +40,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
         , rho_tot(false)
         , rho_el(false)
         , rho_nuc(false)
+        , cavity_func(false)
         , history(hist)
         , e_i(eps_i)
         , e_o(eps_o)
@@ -47,6 +48,7 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
     this->electronicEnergy = 0.0;
     this->nuclearEnergy = 0.0;
     this->totalEnergy = 0.0;
+    this->electronsIn = 0.0;
 }
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
@@ -122,7 +124,7 @@ void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);
 
     QMFunction V_0_func;
-    QMFunction cavity_func;
+    // QMFunction cavity_func;
     QMFunction inv_eps_func;
     QMFunction rho_eff_func;
     QMFunction gamma_func;
@@ -211,8 +213,8 @@ void ReactionPotential::setup(double prec) {
                   << "error:\t" << error << std::endl;
         iter++;
     }
-    std::cout << "total energy" << getTotalEnergy() << std::endl;
-    std::cout << "nuclear energy" << getNuclearEnergy() << std::endl;
+    std::cout << "electrons inside the cavity:\t" << getElectronIn() << std::endl;
+    std::cout << "electrons outside the cavity:\t" << getElectronIn() - rho_el.integrate().real() << std::endl;
     mrcpp::clear(d_cavity, true);
 }
 
@@ -237,11 +239,19 @@ double &ReactionPotential::getNuclearEnergy() {
     return nuclearEnergy;
 }
 
+double &ReactionPotential::getElectronIn() {
+    QMFunction temp_prod_func;
+    qmfunction::multiply(temp_prod_func, rho_el, cavity_func, this->apply_prec);
+    electronsIn = temp_prod_func.integrate().real();
+    return electronsIn;
+}
+
 void ReactionPotential::clear() {
     clearApplyPrec();
     rho_tot.free(NUMBER::Real);
     rho_el.free(NUMBER::Real);
     rho_nuc.free(NUMBER::Real);
+    cavity_func.free(NUMBER::Real);
     // QMFunction::free(NUMBER::Total);
 }
 
