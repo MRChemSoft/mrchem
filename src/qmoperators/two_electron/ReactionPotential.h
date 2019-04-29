@@ -61,10 +61,16 @@ private:
                   QMFunction &gamma_func,
                   QMFunction &temp_func1,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
-    void grad_G(QMFunction &gamma_func,
-                QMFunction &rho_tot,
-                QMFunction &grad_G_func,
-                std::function<double(const mrcpp::Coord<3> &r)> eps);
+    void setV_np1(double prec,
+                  double &error,
+                  QMFunction &temp,
+                  QMFunction &V_vac_func,
+                  QMFunction &gamma_func,
+                  mrcpp::FunctionTreeVector<3> &d_cavity,
+                  QMFunction &rho_eff_func,
+                  QMFunction &V_np1_func,
+                  QMFunction &inv_eps_func,
+                  QMFunction &diff_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void setup(double prec);
 };
