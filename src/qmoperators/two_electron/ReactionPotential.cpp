@@ -41,6 +41,8 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
         , rho_el(false)
         , rho_nuc(false)
         , cavity_func(false)
+        , gamma(false)
+        , gammanp1(false)
         , history(hist)
         , e_i(eps_i)
         , e_o(eps_o)
@@ -103,38 +105,12 @@ void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction 
     dPhi_n.clear();
 }
 
-void ReactionPotential::setV_np1(double prec,
-                                 double &error,
-                                 QMFunction &temp,
-                                 QMFunction &V_vac_func,
-                                 QMFunction &gamma_func,
-                                 mrcpp::FunctionTreeVector<3> &d_cavity,
-                                 QMFunction &rho_eff_func,
-                                 QMFunction &V_np1_func,
-                                 QMFunction &inv_eps_func,
-                                 QMFunction &diff_func) {
-    gamma_func.free(NUMBER::Real);
-    QMFunction temp_func;
-    QMFunction V_tot_func;
-
-    V_tot_func.alloc(NUMBER::Real);
-    qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
-    gamma_func.alloc(NUMBER::Real);
-    setGamma(inv_eps_func, gamma_func, V_tot_func, d_cavity);
-    V_np1_func.alloc(NUMBER::Real);
-    qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma_func, -1.0);
-    mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
-    qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
-    error = diff_func.norm();
-}
-
 void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);
 
     QMFunction V_vac_func;
     QMFunction inv_eps_func;
     QMFunction rho_eff_func;
-    QMFunction gamma_func;
     QMFunction &temp = *this;
     mrcpp::FunctionTreeVector<3> d_cavity;
 
@@ -173,9 +149,9 @@ void ReactionPotential::setup(double prec) {
     if (not temp.hasReal()) {
         QMFunction tmp_poisson;
         tmp_poisson.alloc(NUMBER::Real);
-        gamma_func.alloc(NUMBER::Real);
-        setGamma(inv_eps_func, gamma_func, V_vac_func, d_cavity);
-        qmfunction::add(tmp_poisson, 1.0, gamma_func, 1.0, rho_eff_func, -1.0);
+        gamma.alloc(NUMBER::Real);
+        setGamma(inv_eps_func, gamma, V_vac_func, d_cavity);
+        qmfunction::add(tmp_poisson, 1.0, gamma, 1.0, rho_eff_func, -1.0);
         QMFunction tmp_Vr_func;
         tmp_Vr_func.alloc(NUMBER::Real);
         mrcpp::apply(prec, tmp_Vr_func.real(), *poisson, tmp_poisson.real());
@@ -188,8 +164,18 @@ void ReactionPotential::setup(double prec) {
             QMFunction V_np1_func;
             QMFunction diff_func;
 
-            setV_np1(
-                prec, error, temp, V_vac_func, gamma_func, d_cavity, rho_eff_func, V_np1_func, inv_eps_func, diff_func);
+            gamma.free(NUMBER::Real);
+            QMFunction temp_func;
+            QMFunction V_tot_func;
+            V_tot_func.alloc(NUMBER::Real);
+            qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
+            gamma.alloc(NUMBER::Real);
+            setGamma(inv_eps_func, gamma, V_tot_func, d_cavity);
+            V_np1_func.alloc(NUMBER::Real);
+            qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
+            mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
+            qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
+            error = diff_func.norm();
 
             if (iter > 1 and this->history > 0) accelerateConvergence(diff_func, temp, kain);
             V_np1_func.free(NUMBER::Real);
@@ -205,13 +191,23 @@ void ReactionPotential::setup(double prec) {
         QMFunction V_np1_func;
         QMFunction diff_func;
         double error;
-        setV_np1(
-            prec, error, temp, V_vac_func, gamma_func, d_cavity, rho_eff_func, V_np1_func, inv_eps_func, diff_func);
+        QMFunction temp_func;
+        V_np1_func.alloc(NUMBER::Real);
+        qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
+        mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
+        qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
+        error = diff_func.norm();
 
         temp = V_np1_func;
 
         std::cout << "error:\t" << error << std::endl;
     }
+    gammanp1.free(NUMBER::Real);
+    QMFunction V_tot_func;
+    V_tot_func.alloc(NUMBER::Real);
+    qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
+    gammanp1.alloc(NUMBER::Real);
+    setGamma(inv_eps_func, gammanp1, V_tot_func, d_cavity);
 
     std::cout << "electrons outside the cavity:\t" << rho_el.integrate().real() - getElectronIn() << std::endl;
     mrcpp::clear(d_cavity, true);

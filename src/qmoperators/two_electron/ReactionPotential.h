@@ -27,6 +27,9 @@ public:
     double &getElectronicEnergy();
     double &getNuclearEnergy();
     double &getElectronIn();
+    QMFunction &getGamma() { return gamma; }
+    QMFunction &getGammanp1() { return gammanp1; }
+    void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
 
     friend class ReactionOperator;
 
@@ -44,6 +47,8 @@ private:
     Density rho_el;
     Density rho_nuc;
     QMFunction cavity_func;
+    QMFunction gamma;
+    QMFunction gammanp1;
 
     int history;
 
@@ -59,18 +64,8 @@ private:
     void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
     void setGamma(QMFunction const &inv_eps_func,
                   QMFunction &gamma_func,
-                  QMFunction &temp_func1,
+                  QMFunction &V_func,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
-    void setV_np1(double prec,
-                  double &error,
-                  QMFunction &temp,
-                  QMFunction &V_vac_func,
-                  QMFunction &gamma_func,
-                  mrcpp::FunctionTreeVector<3> &d_cavity,
-                  QMFunction &rho_eff_func,
-                  QMFunction &V_np1_func,
-                  QMFunction &inv_eps_func,
-                  QMFunction &diff_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void setup(double prec);
 };

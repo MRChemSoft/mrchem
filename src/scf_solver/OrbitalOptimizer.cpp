@@ -34,7 +34,9 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/two_electron/FockOperator.h"
-
+// temporal add for variational solvent effect
+#include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
 using mrcpp::Printer;
 using mrcpp::Timer;
 
@@ -117,8 +119,14 @@ bool OrbitalOptimizer::optimize() {
     double err_o = orbital::get_errors(Phi_n).maxCoeff();
     double err_t = 1.0;
     double err_p = 1.0;
-
     F.setup(orb_prec);
+    // get the gamma and gammnp1
+    QMFunction gamma = F.getReactionOperator()->getGamma();
+    QMFunction gammanp1 = F.getReactionOperator()->getGammanp1();
+    QMFunction dgamma;
+    dgamma.alloc(NUMBER::Real);
+    qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
+
     F_mat = F(Phi_n, Phi_n);
 
     int nIter = 0;
@@ -159,7 +167,21 @@ bool OrbitalOptimizer::optimize() {
         Phi_np1.clear();
 
         // Employ KAIN accelerator
+        Phi_n.push_back(Orbital(SPIN::Paired));
+        dPhi_n.push_back(Orbital(SPIN::Paired));
+        Phi_n.back().QMFunction::operator=(gamma);
+        dPhi_n.back().QMFunction::operator=(dgamma);
+
         if (useKAIN()) this->kain->accelerate(orb_prec, Phi_n, dPhi_n);
+
+        gammanp1.free(NUMBER::Real);
+        gamma.QMFunction::operator=(Phi_n.back());
+        Phi_n.pop_back();
+        dgamma.QMFunction::operator=(dPhi_n.back());
+        dPhi_n.pop_back();
+
+        qmfunction::add(gammanp1, 1.0, dgamma, 1.0, gamma, -1.0);
+        F.getReactionOperator()->setGamma(gammanp1);
 
         // Compute errors
         DoubleVector errors = orbital::get_norms(dPhi_n);
