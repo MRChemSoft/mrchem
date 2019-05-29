@@ -55,10 +55,11 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
 
+    rho_tot = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
-    qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
+    // qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
     auto onesf = [eps](const mrcpp::Coord<3> &r) { return (1.0 / eps(r)) - 1.0; };
 
     QMFunction ones;
@@ -181,7 +182,7 @@ void ReactionPotential::setup(double prec) {
             V_np1_func.free(NUMBER::Real);
             qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
             temp = V_np1_func;
-
+            std::cout << "integral of gamma:\t" << gamma.integrate().real() << std::endl;
             std::cout << "error:\t" << error << "\n"
                       << "iter.:\t" << iter << std::endl;
             iter++;
@@ -211,6 +212,7 @@ void ReactionPotential::setup(double prec) {
 
     std::cout << "electrons outside the cavity:\t" << rho_el.integrate().real() - getElectronIn() << std::endl;
     mrcpp::clear(d_cavity, true);
+    std::cout << "Reaction field energy:\t" << getTotalEnergy() << std::endl;
 }
 
 double &ReactionPotential::getTotalEnergy() {
