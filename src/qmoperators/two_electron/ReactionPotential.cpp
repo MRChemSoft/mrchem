@@ -107,11 +107,11 @@ void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction 
 
 void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);
+    QMFunction &temp = *this;
 
     QMFunction V_vac_func;
     QMFunction inv_eps_func;
     QMFunction rho_eff_func;
-    QMFunction &temp = *this;
     mrcpp::FunctionTreeVector<3> d_cavity;
 
     cavity_func.alloc(NUMBER::Real);
@@ -190,6 +190,8 @@ void ReactionPotential::setup(double prec) {
         // Variational implementation of generalized poisson equation.
         gamma.free(NUMBER::Real);
         qmfunction::deep_copy(gamma, gammanp1);
+        std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
+                  << gammanp1.integrate().real() << std::endl;
         QMFunction V_np1_func;
         QMFunction diff_func;
         double error;
