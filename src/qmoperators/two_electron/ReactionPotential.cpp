@@ -205,10 +205,11 @@ void ReactionPotential::setup(double prec) {
         std::cout << "error:\t" << error << std::endl;
     }
     gammanp1.free(NUMBER::Real);
+    gammanp1.alloc(NUMBER::Real);
     QMFunction V_tot_func;
     V_tot_func.alloc(NUMBER::Real);
+
     qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
-    gammanp1.alloc(NUMBER::Real);
     setGamma(inv_eps_func, gammanp1, V_tot_func, d_cavity);
 
     std::cout << "electrons outside the cavity:\t" << rho_el.integrate().real() - getElectronIn() << std::endl;

@@ -82,6 +82,7 @@ void KAIN::setupLinearSystem() {
                     // but we define the updates (lowercase f) with opposite sign.
                     orbA(i, j) -= orbital::dot(dPhi_im, dfPhi_jm).real();
                 }
+                std::cout << "dPhi_im\t" << dPhi_im.norm() << std::endl;
                 orbB(i) += orbital::dot(dPhi_im, fPhi_m).real();
             }
         }
