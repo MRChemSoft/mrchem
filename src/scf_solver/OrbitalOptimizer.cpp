@@ -168,20 +168,22 @@ bool OrbitalOptimizer::optimize() {
 
         // Employ KAIN accelerator
         Phi_n.push_back(Orbital(SPIN::Paired));
-        dPhi_n.push_back(Orbital(SPIN::Paired));
         Phi_n.back().QMFunction::operator=(gamma);
+
+        dPhi_n.push_back(Orbital(SPIN::Paired));
         dPhi_n.back().QMFunction::operator=(dgamma);
 
         if (useKAIN()) this->kain->accelerate(orb_prec, Phi_n, dPhi_n);
 
-        gammanp1.free(NUMBER::Real);
         gamma.QMFunction::operator=(Phi_n.back());
         Phi_n.pop_back();
         dgamma.QMFunction::operator=(dPhi_n.back());
         dPhi_n.pop_back();
 
+        gammanp1.free(NUMBER::Real);
         qmfunction::add(gammanp1, 1.0, dgamma, 1.0, gamma, -1.0);
-        F.getReactionOperator()->setGamma(gammanp1);
+        std::cout << "gamma norm:\t" << gammanp1.norm() << std::endl;
+        F.getReactionOperator()->setGammanp1(gammanp1);
 
         // Compute errors
         DoubleVector errors = orbital::get_norms(dPhi_n);

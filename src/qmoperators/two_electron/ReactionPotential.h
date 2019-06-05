@@ -30,7 +30,7 @@ public:
     QMFunction &getGamma() { return gamma; }
     QMFunction &getGammanp1() { return gammanp1; }
     void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
-
+    void setGammanp1(QMFunction new_gamma) { this->gammanp1 = new_gamma; }
     friend class ReactionOperator;
 
 protected:
@@ -47,6 +47,7 @@ private:
     Density rho_el;
     Density rho_nuc;
     QMFunction cavity_func;
+
     QMFunction gamma;
     QMFunction gammanp1;
 

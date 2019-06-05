@@ -55,11 +55,10 @@ ReactionPotential::ReactionPotential(mrcpp::PoissonOperator *P,
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
 
-    rho_tot = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
-    // qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
+    qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
     auto onesf = [eps](const mrcpp::Coord<3> &r) { return (1.0 / eps(r)) - 1.0; };
 
     QMFunction ones;
@@ -189,6 +188,8 @@ void ReactionPotential::setup(double prec) {
         }
     } else {
         // Variational implementation of generalized poisson equation.
+        gamma.free(NUMBER::Real);
+        qmfunction::deep_copy(gamma, gammanp1);
         QMFunction V_np1_func;
         QMFunction diff_func;
         double error;
@@ -213,6 +214,8 @@ void ReactionPotential::setup(double prec) {
     std::cout << "electrons outside the cavity:\t" << rho_el.integrate().real() - getElectronIn() << std::endl;
     mrcpp::clear(d_cavity, true);
     std::cout << "Reaction field energy:\t" << getTotalEnergy() << std::endl;
+    std::cout << "integral of gamman:\t" << gamma.integrate().real() << std::endl;
+    std::cout << "integral of gammanp1:\t" << gammanp1.integrate().real() << std::endl;
 }
 
 double &ReactionPotential::getTotalEnergy() {
