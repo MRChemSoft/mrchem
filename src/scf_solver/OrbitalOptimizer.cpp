@@ -136,6 +136,7 @@ bool OrbitalOptimizer::optimize() {
         Timer timer;
         printCycleHeader(nIter);
         orb_prec = adjustPrecision(err_o);
+    	
 
         // Rotate orbitals
         if (needLocalization(nIter)) {
@@ -166,6 +167,13 @@ bool OrbitalOptimizer::optimize() {
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
         Phi_np1.clear();
 
+	// get the gamma and gammnp1
+    	QMFunction &gamma = F.getReactionOperator()->getGamma();
+    	QMFunction &gammanp1 = F.getReactionOperator()->getGammanp1();
+    	QMFunction dgamma;
+    	dgamma.alloc(NUMBER::Real);
+    	qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
+
         // Employ KAIN accelerator
         Phi_n.push_back(Orbital(SPIN::Paired));
         Phi_n.back().QMFunction::operator=(gamma);
@@ -180,10 +188,14 @@ bool OrbitalOptimizer::optimize() {
         dgamma.QMFunction::operator=(dPhi_n.back());
         dPhi_n.pop_back();
 
+        std::cout << "gammanp1 in orbopt1\t" << F.getReactionOperator()->getGammanp1().integrate().real() << std::endl;
         gammanp1.free(NUMBER::Real);
+        std::cout << "gammanp1 in orbopt2\t" << F.getReactionOperator()->getGammanp1().integrate().real() << std::endl;
         qmfunction::add(gammanp1, 1.0, dgamma, 1.0, gamma, -1.0);
         std::cout << "gamma norm:\t" << gammanp1.norm() << std::endl;
+        std::cout << "gammanp1 in orbopt3\t" << F.getReactionOperator()->getGammanp1().integrate().real() << std::endl;
         F.getReactionOperator()->setGammanp1(gammanp1);
+        std::cout << "gammanp1 in orbopt4\t" << F.getReactionOperator()->getGammanp1().integrate().real() << std::endl;
 
         // Compute errors
         DoubleVector errors = orbital::get_norms(dPhi_n);

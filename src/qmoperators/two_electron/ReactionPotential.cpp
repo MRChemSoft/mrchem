@@ -106,6 +106,9 @@ void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction 
 }
 
 void ReactionPotential::setup(double prec) {
+    
+    std::cout << "gamma int start setup\t" << gamma.integrate().real() << "\ngammanp1 int start setup\t"
+                  << gammanp1.integrate().real() << std::endl;
     setApplyPrec(prec);
     QMFunction &temp = *this;
 
@@ -188,6 +191,8 @@ void ReactionPotential::setup(double prec) {
         }
     } else {
         // Variational implementation of generalized poisson equation.
+        std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
+                  << gammanp1.integrate().real() << std::endl;
         gamma.free(NUMBER::Real);
         qmfunction::deep_copy(gamma, gammanp1);
         std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
@@ -206,6 +211,8 @@ void ReactionPotential::setup(double prec) {
 
         std::cout << "error:\t" << error << std::endl;
     }
+    std::cout << "gamma int out else\t" << gamma.integrate().real() << "\ngammanp1 int out else\t"
+                  << gammanp1.integrate().real() << std::endl;
     gammanp1.free(NUMBER::Real);
     gammanp1.alloc(NUMBER::Real);
     QMFunction V_tot_func;
