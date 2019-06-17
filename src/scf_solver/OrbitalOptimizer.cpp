@@ -121,11 +121,6 @@ bool OrbitalOptimizer::optimize() {
     double err_p = 1.0;
     F.setup(orb_prec);
     // get the gamma and gammnp1
-    QMFunction gamma = F.getReactionOperator()->getGamma();
-    QMFunction gammanp1 = F.getReactionOperator()->getGammanp1();
-    QMFunction dgamma;
-    dgamma.alloc(NUMBER::Real);
-    qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
 
     F_mat = F(Phi_n, Phi_n);
 
