@@ -136,7 +136,6 @@ bool OrbitalOptimizer::optimize() {
         Timer timer;
         printCycleHeader(nIter);
         orb_prec = adjustPrecision(err_o);
-    	
 
         // Rotate orbitals
         if (needLocalization(nIter)) {
@@ -167,12 +166,12 @@ bool OrbitalOptimizer::optimize() {
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
         Phi_np1.clear();
 
-	// get the gamma and gammnp1
-    	QMFunction &gamma = F.getReactionOperator()->getGamma();
-    	QMFunction &gammanp1 = F.getReactionOperator()->getGammanp1();
-    	QMFunction dgamma;
-    	dgamma.alloc(NUMBER::Real);
-    	qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
+        // get the gamma and gammnp1
+        QMFunction &gamma = F.getReactionOperator()->getGamma();
+        QMFunction &gammanp1 = F.getReactionOperator()->getGammanp1();
+        QMFunction dgamma;
+        dgamma.alloc(NUMBER::Real);
+        qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
 
         // Employ KAIN accelerator
         Phi_n.push_back(Orbital(SPIN::Paired));
