@@ -82,9 +82,6 @@ set_target_properties(mrchem.x
 target_link_libraries(mrchem.x
   PRIVATE
     mrchem
-    MRCPP::mrcpp
-    getkw::getkw
-    XCFun::xcfun
   )
 
 # RPATH fixing

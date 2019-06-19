@@ -13,7 +13,6 @@ debug*
 release*
 install*
 intel*
-pilot
 mrcpp.config
 mrcpp.creator*
 mrcpp.files

@@ -5,7 +5,7 @@ target_link_libraries(mrchem-pilot.x
   )
 
 set(MRCHEM_DRIVER_DEBUG ON)
-set(MRCHEM_EXECUTABLE $<TARGET_FILE:mrchem-pilot.x>)
+set(MRCHEM_EXECUTABLE ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}/mrchem-pilot.x)
 configure_file(
   ${PROJECT_SOURCE_DIR}/src/mrchem.in
   ${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/mrchem-pilot
