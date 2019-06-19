@@ -4,11 +4,11 @@
 #include "MRCPP/Timer"
 #include "getkw/Getkw.hpp"
 
-#include "mrenv.h"
 #include "mrchem.h"
+#include "mrenv.h"
 #include "parallel.h"
 
-Getkw mrchem::Input;
+Getkw mrchem::input;
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
 using namespace mrcpp;
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     Timer timer;
 
     // Do your stuff here
-    
+
     timer.stop();
     double wt = timer.getWallTime();
 
@@ -29,4 +29,3 @@ int main(int argc, char **argv) {
     mpi::finalize();
     return 0;
 }
-
