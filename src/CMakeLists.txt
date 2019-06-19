@@ -82,6 +82,9 @@ set_target_properties(mrchem.x
 target_link_libraries(mrchem.x
   PRIVATE
     mrchem
+    MRCPP::mrcpp
+    getkw::getkw
+    XCFun::xcfun
   )
 
 # RPATH fixing
@@ -113,7 +116,7 @@ install(
 # <<< Build initial guess executables >>>
 add_subdirectory(initial_guess)
 
-set(MRCHEM_EXECUTABLE $<TARGET_FILE:mrchem.x>)
+set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
 # configure into CMakeFiles directory, because it must be in a different directory
 # since file(COPY) does rename files
 configure_file(mrchem.in ${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/mrchem @ONLY)
