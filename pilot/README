@@ -1,6 +1,0 @@
-To enable the pilot code:
-
-1) Copy mrchem.cpp.sample to mrchem.cpp
-2) Run setup
-3) make
-

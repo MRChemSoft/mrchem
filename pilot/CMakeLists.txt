@@ -1,29 +1,24 @@
-if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.cpp)
-  add_executable(mrchem-pilot mrchem.cpp)
-  target_include_directories(mrchem-pilot PRIVATE
-      ${PROJECT_BINARY_DIR}
-      ${PROJECT_SOURCE_DIR}/src
-      ${PROJECT_SOURCE_DIR}/src/chemistry
-      ${PROJECT_SOURCE_DIR}/src/properties
-      ${PROJECT_SOURCE_DIR}/src/analyticfunctions
-      ${PROJECT_SOURCE_DIR}/src/qmfunctions
-      ${PROJECT_SOURCE_DIR}/src/qmoperators
-      ${PROJECT_SOURCE_DIR}/src/qmoperators/one_electron
-      ${PROJECT_SOURCE_DIR}/src/qmoperators/two_electron
-      ${PROJECT_SOURCE_DIR}/src/scf_solver
-      )
-  target_link_libraries(mrchem-pilot
-      MRCPP::mrcpp
-      XCFun::xcfun
-      getkw::getkw
-      )
+add_executable(mrchem-pilot.x mrchem-pilot.cpp)
+target_link_libraries(mrchem-pilot.x
+  PRIVATE
+    mrchem
+  )
 
-  set(MRCHEM_DRIVER_DEBUG ON)
-  set(MRCHEM_EXECUTABLE ${PROJECT_BINARY_DIR}/pilot/mrchem-pilot)
-
-  configure_file(${PROJECT_SOURCE_DIR}/src/mrchem.in ${PROJECT_BINARY_DIR}/pilot/mrchem-pilot @ONLY)
-  execute_process(COMMAND chmod 755 ${PROJECT_BINARY_DIR}/pilot/mrchem-pilot OUTPUT_QUIET)
-endif()
+set(MRCHEM_DRIVER_DEBUG ON)
+set(MRCHEM_EXECUTABLE $<TARGET_FILE:mrchem-pilot.x>)
+configure_file(
+  ${PROJECT_SOURCE_DIR}/src/mrchem.in
+  ${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/mrchem-pilot
+  @ONLY
+  )
+file(
+  COPY ${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/mrchem-pilot
+  DESTINATION ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_BINDIR}
+  FILE_PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE
+    GROUP_READ GROUP_EXECUTE
+    WORLD_READ WORLD_EXECUTE
+  )
 
 if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/mrchem.inp)
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.inp DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
