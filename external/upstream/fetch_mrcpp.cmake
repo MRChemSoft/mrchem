@@ -8,10 +8,8 @@ else()
 
   FetchContent_Populate(mrcpp_sources
     QUIET
-    GIT_REPOSITORY
-      https://github.com/MRChemSoft/mrcpp.git
-    GIT_TAG
-      v1.0.0
+    URL
+      https://github.com/MRChemSoft/mrcpp/archive/v1.0.0.tar.gz
     CMAKE_ARGS
       -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
