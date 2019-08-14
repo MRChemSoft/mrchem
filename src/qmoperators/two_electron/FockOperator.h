@@ -21,6 +21,7 @@ class CoulombOperator;
 class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
+class ReactionOperator;
 
 class FockOperator final : public RankZeroTensorOperator {
 public:
@@ -29,7 +30,8 @@ public:
                  std::shared_ptr<CoulombOperator> j = nullptr,
                  std::shared_ptr<ExchangeOperator> k = nullptr,
                  std::shared_ptr<XCOperator> xc = nullptr,
-                 std::shared_ptr<ElectricFieldOperator> ext = nullptr);
+                 std::shared_ptr<ElectricFieldOperator> ext = nullptr,
+                 std::shared_ptr<ReactionOperator> reo = nullptr);
 
     RankZeroTensorOperator &kinetic() { return this->T; }
     RankZeroTensorOperator &potential() { return this->V; }
@@ -41,6 +43,7 @@ public:
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
+    std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -68,6 +71,7 @@ private:
     std::shared_ptr<ExchangeOperator> ex;
     std::shared_ptr<XCOperator> xc;
     std::shared_ptr<ElectricFieldOperator> ext; ///< Total external potential
+    std::shared_ptr<ReactionOperator> Ro;       ///< Reaction field operator
 };
 
 } // namespace mrchem
