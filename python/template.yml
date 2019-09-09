@@ -247,6 +247,44 @@ sections:
         type: str
         docstring: |
           Coordinates in xyz format.
+  - name: Cavity
+    docstring: |
+      Define cavity.
+    keywords:
+      - name: mol_coords
+        type: bool
+        default: true
+        docstring: |
+          Use molecule coordinates instead of given cavity coordinates 
+      - name: epsilon_in
+        type: float
+        default: 1
+        docstring: |
+          Permitivity of vacuum.
+      - name: epsilon_out
+        type: float
+        default: 2
+        docstring: |
+          Dielectric constant of the solvent.
+      - name: width
+        type: float
+        default: 0.2
+        docstring: |
+          Width of cavity boundary
+      - name: linear
+        type: bool
+        default: false
+        docstring: |
+          Run linear dielectric function, false runs exponential
+      - name: angstrom
+        type: bool
+        default: false
+        docstring: |
+          Coordinates given in angstrom rather than bohr.
+      - name: coords
+        type: str
+        docstring: |
+          Coordinates and radii in xyz format.
   - name: WaveFunction
     docstring: |
       Define the wavefunction method.
@@ -356,6 +394,11 @@ sections:
         docstring: |
           Plot converged molecular orbitals from list of indices, negative index
           plots all orbitals.
+      - name: reaction_energy
+        type: bool
+        default: false
+        docstring: |
+          Compute Reaction field energy.
   - name: ExternalFields
     docstring: |
       Define external electromagnetic fields.
@@ -682,3 +725,11 @@ sections:
         docstring: |
           Path to where converged orbitals will be written in connection with
           the ``write_orbitals`` keyword.
+  - name: SolventEffect
+    docstring: |
+      Includes parameters related to the computation of the reaction field
+      energy of a solvent system.
+    keywords:
+      - name: kain
+        type: int
+        default: 0

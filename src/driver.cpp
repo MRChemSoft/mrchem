@@ -29,6 +29,7 @@
 
 #include "driver.h"
 
+#include "chemistry/Cavity.h"
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
 
@@ -53,6 +54,7 @@
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
@@ -134,7 +136,15 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
         auto xyz = coord["xyz"];
         nuclei.push_back(atom, xyz);
     }
-
+    std::vector<double> radii;
+    std::vector<mrcpp::Coord<3>> spheres;
+    for (const auto &coord : json_mol["cavity_coords"].get<json>()) {
+        radii.push_back(coord["radius"].get<double>());
+        spheres.push_back(coord["center"].get<mrcpp::Coord<3>>());
+    }
+    auto width = json_mol["cav_width"].get<double>();
+    auto cavity = std::make_shared<Cavity>(spheres, radii, width);
+    mol.getCavity_p() = cavity;
     mol.printGeometry();
 }
 
@@ -959,6 +969,27 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         } else {
             MSG_ABORT("Invalid perturbation order");
         }
+    }
+    ///////////////////////////////////////////////////////////
+    //////////////////   Reaction Operator   ///////////////////
+    ///////////////////////////////////////////////////////////
+    auto json_reaction = json_fock.find("reaction_operator");
+    if (json_reaction != json_fock.end()) {
+
+        // preparing Reaction Operator
+        auto poisson_prec = (*json_reaction)["poisson_prec"].get<double>();
+        auto P_r = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
+        auto D_r = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
+        auto nuclei_r = mol.getNuclei(); // maybe define here
+        auto cavity_r = mol.getCavity_p();
+        auto phi_r = mol.getOrbitals_p();
+        auto hist_r = (*json_reaction)["reaction_history"].get<int>();
+        auto eps_in_r = (*json_reaction)["eps_in"].get<double>();
+        auto eps_out_r = (*json_reaction)["eps_out"].get<double>();
+        auto linear_r = (*json_reaction)["cav_lin"].get<bool>();
+        auto Reo = std::make_shared<ReactionOperator>(
+            P_r, D_r, cavity_r, nuclei_r, phi_r, hist_r, eps_in_r, eps_out_r, linear_r);
+        F.getReactionOperator() = Reo;
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////
