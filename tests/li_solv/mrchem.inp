@@ -1,0 +1,48 @@
+# vim:syntax=sh:
+
+world_prec = 1.0e-3               # Overall relative precision
+world_size = 5                    # Size of simulation box 2^n
+
+MPI {
+  numerically_exact = true
+  share_coulomb_density = true
+  share_coulomb_potential = true
+  share_nuclear_potential = true
+  share_xc_density = false
+  share_xc_potential = false
+}
+
+Molecule {
+  charge = 1
+$coords
+Li   0.0     0.0    0.0
+$end
+}
+
+WaveFunction {
+  method = hf                     # Wave function method (HF or DFT)
+  restricted = true
+}
+
+Properties {
+  scf_energy = true               # Compute ground state energy
+  reaction_energy = true            # Compute ground state energy
+}
+
+Cavity {
+  $coords
+  0.0     0.0    0.0  3.8
+  $end
+}
+
+SolventEffect{
+  kain = 4
+}
+
+SCF {
+  run = true
+  kain = 4                        # Length of KAIN iterative history
+  max_iter = 5
+  orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
+  initial_guess = SAD_DZ          # Type of initial guess: none, mw, gto
+}
