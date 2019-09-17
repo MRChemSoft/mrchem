@@ -251,19 +251,14 @@ sections:
     docstring: |
       Define cavity.
     keywords:
-      - name: mol_coords
-        type: bool
-        default: true
-        docstring: |
-          Use molecule coordinates instead of given cavity coordinates 
       - name: epsilon_in
         type: float
-        default: 1
+        default: 1.0
         docstring: |
           Permitivity of vacuum.
       - name: epsilon_out
         type: float
-        default: 2
+        default: 2.0
         docstring: |
           Dielectric constant of the solvent.
       - name: width
@@ -283,6 +278,7 @@ sections:
           Coordinates given in angstrom rather than bohr.
       - name: coords
         type: str
+        default: ""
         docstring: |
           Coordinates and radii in xyz format.
   - name: WaveFunction
@@ -733,3 +729,5 @@ sections:
       - name: kain
         type: int
         default: 0
+        docstring: |
+          History for convergence accelerator

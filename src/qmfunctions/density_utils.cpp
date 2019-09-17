@@ -237,6 +237,7 @@ void density::compute_local_XY(double prec,
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp) {
     if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+    mrcpp::build_grid(rho.real(), dens_exp);
     mrcpp::project(prec, rho.real(), dens_exp);
 }
 

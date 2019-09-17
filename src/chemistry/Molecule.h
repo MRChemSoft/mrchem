@@ -89,7 +89,7 @@ public:
     auto &getOrbitals() { return *this->orbitals_0; }
     auto &getOrbitalsX() { return *this->orbitals_x; }
     auto &getOrbitalsY() { return *this->orbitals_y; }
-    auto &getCavity() { return *this->cav; }
+    auto &getCavity() { return *this->cavity; }
     auto &getFockMatrix() { return this->fock_matrix; }
 
     const auto &getNuclei() const { return this->nuclei; }
@@ -101,7 +101,7 @@ public:
     auto getOrbitals_p() const { return this->orbitals_0; }
     auto getOrbitalsX_p() const { return this->orbitals_x; }
     auto getOrbitalsY_p() const { return this->orbitals_y; }
-    auto getCavity_p() const { return this->cav; }
+    auto getCavity_p() const { return this->cavity; }
 
     nlohmann::json json() const;
     void printGeometry() const;
@@ -109,6 +109,7 @@ public:
     void printProperties() const;
 
     void initPerturbedOrbitals(bool dynamic);
+    void initCavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
 
     SCFEnergy &getSCFEnergy() { return this->energy; }
     OrbitalEnergies &getOrbitalEnergies() { return this->epsilon; }
@@ -132,7 +133,7 @@ protected:
     Nuclei nuclei{};
     ComplexMatrix fock_matrix{};
 
-    std::shared_ptr<Cavity> cav{nullptr};
+    std::shared_ptr<Cavity> cavity{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_0{std::make_shared<OrbitalVector>()};
     std::shared_ptr<OrbitalVector> orbitals_x{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_y{nullptr};

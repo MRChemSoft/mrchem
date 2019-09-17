@@ -84,7 +84,7 @@ public:
         print_utils::scalar(0, "N-N energy       ", E_nn,   "(au)", pprec, false);
         print_utils::scalar(0, "Ext. field (nuc) ", E_next, "(au)", pprec, false);
         print_utils::scalar(0, "Tot. Reac. Energy", Er_tot,  "(au)", pprec, false);
-        print_utils::scalar(0, "El. Reac. Energy ", E_el,  "(au)", pprec, false);
+        print_utils::scalar(0, "El. Reac. Energy ", Er_el,  "(au)", pprec, false);
         print_utils::scalar(0, "Nuc. Reac. Energy", Er_nuc,  "(au)", pprec, false);
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);

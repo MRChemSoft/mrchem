@@ -61,13 +61,12 @@ ReactionPotential::ReactionPotential(PoissonOperator_p P,
 }
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
-
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
+    rho_tot = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
-    qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
+    // qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
     auto onesf = [eps](const mrcpp::Coord<3> &r) { return (1.0 / eps(r)) - 1.0; };
-
     QMFunction ones;
     ones.alloc(NUMBER::Real);
     mrcpp::build_grid(ones.real(), *cavity);
@@ -118,12 +117,10 @@ void ReactionPotential::setup(double prec) {
               << gammanp1.integrate().real() << std::endl;
     setApplyPrec(prec);
     QMFunction &temp = *this;
-
     QMFunction V_vac_func;
     QMFunction inv_eps_func;
     QMFunction rho_eff_func;
     mrcpp::FunctionTreeVector<3> d_cavity;
-
     cavity_func.alloc(NUMBER::Real);
     mrcpp::build_grid(cavity_func.real(), *cavity);
     qmfunction::project(cavity_func, *cavity, NUMBER::Real, prec / 100);
@@ -166,58 +163,62 @@ void ReactionPotential::setup(double prec) {
         tmp_Vr_func.alloc(NUMBER::Real);
         mrcpp::apply(prec, tmp_Vr_func.real(), *poisson, tmp_poisson.real());
         temp = tmp_Vr_func;
-
-        KAIN kain(this->history);
-        double error = 1.00;
-        int iter = 1;
-        while (error >= prec) {
-            QMFunction V_np1_func;
-            QMFunction diff_func;
-
-            gamma.free(NUMBER::Real);
-            QMFunction temp_func;
-            QMFunction V_tot_func;
-            V_tot_func.alloc(NUMBER::Real);
-            qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
-            gamma.alloc(NUMBER::Real);
-            setGamma(inv_eps_func, gamma, V_tot_func, d_cavity);
-            V_np1_func.alloc(NUMBER::Real);
-            qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
-            mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
-            qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
-            error = diff_func.norm();
-
-            // if (iter > 1 and this->history > 0) accelerateConvergence(diff_func, temp, kain);
-            V_np1_func.free(NUMBER::Real);
-            qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
-            temp = V_np1_func;
-            std::cout << "integral of gamma:\t" << gamma.integrate().real() << std::endl;
-            std::cout << "error:\t" << error << "\n"
-                      << "iter.:\t" << iter << std::endl;
-            iter++;
-        }
-    } else {
-        // Variational implementation of generalized poisson equation.
-        std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
-                  << gammanp1.integrate().real() << std::endl;
-        gamma.free(NUMBER::Real);
-        qmfunction::deep_copy(gamma, gammanp1);
-        std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
-                  << gammanp1.integrate().real() << std::endl;
+    }
+    KAIN kain(this->history);
+    double error = 1.00;
+    int iter = 1;
+    while (error >= prec) {
         QMFunction V_np1_func;
         QMFunction diff_func;
-        double error;
+
+        gamma.free(NUMBER::Real);
         QMFunction temp_func;
+        QMFunction V_tot_func;
+        V_tot_func.alloc(NUMBER::Real);
+        qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
+        gamma.alloc(NUMBER::Real);
+        setGamma(inv_eps_func, gamma, V_tot_func, d_cavity);
         V_np1_func.alloc(NUMBER::Real);
         qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
         mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
         qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
         error = diff_func.norm();
 
+        if (iter > 1 and this->history > 0) {
+            accelerateConvergence(diff_func, temp, kain);
+            std::cout << "kain history" << this->history << std::endl;
+        }
+        V_np1_func.free(NUMBER::Real);
+        qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
         temp = V_np1_func;
-
-        std::cout << "error:\t" << error << std::endl;
+        std::cout << "integral of gamma:\t" << gamma.integrate().real() << std::endl;
+        std::cout << "error:\t" << error << "\n"
+                  << "iter.:\t" << iter << std::endl;
+        iter++;
     }
+    /*
+        } else {
+            // Variational implementation of generalized poisson equation.
+            std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
+                      << gammanp1.integrate().real() << std::endl;
+            gamma.free(NUMBER::Real);
+            qmfunction::deep_copy(gamma, gammanp1);
+            std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
+                      << gammanp1.integrate().real() << std::endl;
+            QMFunction V_np1_func;
+            QMFunction diff_func;
+            double error;
+            QMFunction temp_func;
+            V_np1_func.alloc(NUMBER::Real);
+            qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
+            mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
+            qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
+            error = diff_func.norm();
+
+            temp = V_np1_func;
+
+            std::cout << "error:\t" << error << std::endl;
+        }*/
     std::cout << "gamma int out else\t" << gamma.integrate().real() << "\ngammanp1 int out else\t"
               << gammanp1.integrate().real() << std::endl;
     gammanp1.free(NUMBER::Real);
@@ -233,6 +234,9 @@ void ReactionPotential::setup(double prec) {
     std::cout << "Reaction field energy:\t" << getTotalEnergy() << std::endl;
     std::cout << "integral of gamman:\t" << gamma.integrate().real() << std::endl;
     std::cout << "integral of gammanp1:\t" << gammanp1.integrate().real() << std::endl;
+    std::cout << "el. Reaction E:\t" << this->getElectronicEnergy() << std::endl;
+    std::cout << "nuc. Reaction E:\t" << this->getNuclearEnergy() << std::endl;
+    std::cout << "tot. Reaction E:\t" << this->getTotalEnergy() << std::endl;
 }
 
 double &ReactionPotential::getTotalEnergy() {

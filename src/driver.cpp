@@ -143,8 +143,8 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
         spheres.push_back(coord["center"].get<mrcpp::Coord<3>>());
     }
     auto width = json_mol["cav_width"].get<double>();
-    auto cavity = std::make_shared<Cavity>(spheres, radii, width);
-    mol.getCavity_p() = cavity;
+
+    mol.initCavity(spheres, radii, width);
     mol.printGeometry();
 }
 
