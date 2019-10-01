@@ -9,6 +9,7 @@ add_executable(mrchem-tests unit_tests.cpp)
 
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
+add_subdirectory(solventeffect)
 
 target_link_libraries(mrchem-tests
   PRIVATE

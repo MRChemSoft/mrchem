@@ -28,7 +28,9 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
-
+// change input of the potential to molecule, so that we get the density, Nuclei and cavity all from it
+// make a dielectric function class which contains: eps_i, eps_o, is_lin and the cavity, but setCavity in
+// ReactionPotential
 ReactionPotential::ReactionPotential(PoissonOperator_p P,
                                      DerivativeOperator_p D,
                                      Cavity_p C,
@@ -62,10 +64,11 @@ ReactionPotential::ReactionPotential(PoissonOperator_p P,
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
-    rho_tot = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
+    // rho_tot = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
-    // qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
+    std::cout << "integral of orbitals:\t" << rho_el.integrate().real() << std::endl;
+    qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
     auto onesf = [eps](const mrcpp::Coord<3> &r) { return (1.0 / eps(r)) - 1.0; };
     QMFunction ones;
     ones.alloc(NUMBER::Real);
@@ -229,7 +232,6 @@ void ReactionPotential::setup(double prec) {
     qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
     setGamma(inv_eps_func, gammanp1, V_tot_func, d_cavity);
 
-    std::cout << "electrons outside the cavity:\t" << rho_el.integrate().real() - getElectronIn() << std::endl;
     mrcpp::clear(d_cavity, true);
     std::cout << "Reaction field energy:\t" << getTotalEnergy() << std::endl;
     std::cout << "integral of gamman:\t" << gamma.integrate().real() << std::endl;

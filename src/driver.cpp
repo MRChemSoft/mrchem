@@ -980,15 +980,15 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto poisson_prec = (*json_reaction)["poisson_prec"].get<double>();
         auto P_r = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         auto D_r = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-        auto nuclei_r = mol.getNuclei(); // maybe define here
+        // auto nuclei_r = mol.getNuclei(); // maybe define here
         auto cavity_r = mol.getCavity_p();
-        auto phi_r = mol.getOrbitals_p();
+        // auto phi_r = mol.getOrbitals_p();
         auto hist_r = (*json_reaction)["reaction_history"].get<int>();
         auto eps_in_r = (*json_reaction)["eps_in"].get<double>();
         auto eps_out_r = (*json_reaction)["eps_out"].get<double>();
         auto linear_r = (*json_reaction)["cav_lin"].get<bool>();
         auto Reo = std::make_shared<ReactionOperator>(
-            P_r, D_r, cavity_r, nuclei_r, phi_r, hist_r, eps_in_r, eps_out_r, linear_r);
+            P_r, D_r, cavity_r, nuclei, Phi_p, hist_r, eps_in_r, eps_out_r, linear_r);
         F.getReactionOperator() = Reo;
     }
     ///////////////////////////////////////////////////////////

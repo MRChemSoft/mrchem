@@ -31,7 +31,7 @@
           0.0,
           0.0
         ],
-        "radius": 3.8
+        "radius": 4.0
       },
       {
         "center": [
@@ -39,15 +39,15 @@
           0.0,
           0.0
         ],
-        "radius": 3.8
+        "radius": 4.0
       }
     ],
-    "cav_width": 0.2,
+    "cav_width": 0.5,
     "cav_AA": false
   },
   "mra": {
     "basis_type": "i",
-    "order": 5,
+    "order": 8,
     "boxes": [
       2,
       2,
@@ -68,7 +68,7 @@
   },
   "initial_guess": {
     "restricted": true,
-    "guess_prec": 0.001,
+    "guess_prec": 1e-05,
     "method": "sad",
     "zeta": 2,
     "start_orbitals": "orbitals/phi",
@@ -115,7 +115,7 @@
     "initial_energy": {
       "method_name": "Hartree-Fock",
       "localize": false,
-      "prec": 0.001
+      "prec": 1e-05
     },
     "orbital_solver": {
       "method_name": "Hartree-Fock",
@@ -123,31 +123,31 @@
       "max_iter": 5,
       "rotation": 0,
       "localize": false,
-      "start_prec": 0.001,
-      "final_prec": 0.001,
+      "start_prec": 1e-05,
+      "final_prec": 1e-05,
       "orbital_thrs": 0.01,
       "property_thrs": -1.0,
-      "helmholtz_prec": 0.001
+      "helmholtz_prec": 1e-05
     },
     "fock_operator": {
       "kinetic_operator": {
         "derivative": "abgv_55"
       },
       "nuclear_operator": {
-        "proj_prec": 0.001,
-        "smooth_prec": 0.001,
+        "proj_prec": 1e-05,
+        "smooth_prec": 1e-05,
         "shared_memory": true
       },
       "coulomb_operator": {
-        "poisson_prec": 0.001,
+        "poisson_prec": 1e-05,
         "shared_memory": true
       },
       "exchange_operator": {
         "screen": false,
-        "poisson_prec": 0.001
+        "poisson_prec": 1e-05
       },
       "reaction_operator": {
-        "poisson_prec": 0.001,
+        "poisson_prec": 1e-05,
         "reaction_history": 4,
         "eps_in": 1.0,
         "eps_out": 2.0,

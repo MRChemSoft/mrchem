@@ -68,6 +68,7 @@ private:
                   QMFunction &gamma_func,
                   QMFunction &V_func,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
+    // void SCRF();
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void setup(double prec);
 };
