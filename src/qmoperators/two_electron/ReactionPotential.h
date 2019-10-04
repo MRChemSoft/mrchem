@@ -31,8 +31,10 @@ public:
     double &getElectronIn();
     QMFunction &getGamma() { return gamma; }
     QMFunction &getGammanp1() { return gammanp1; }
+    bool &getRunVariational() { return variational; }
     void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
     void setGammanp1(QMFunction new_gamma) { this->gammanp1 = new_gamma; }
+    void setRunVariational(bool var) { this->variational = var; }
 
 protected:
     void clear();
@@ -62,14 +64,21 @@ private:
     double e_i;
     double e_o;
     bool is_lin;
+    bool variational;
 
     void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
     void setGamma(QMFunction const &inv_eps_func,
                   QMFunction &gamma_func,
                   QMFunction &V_func,
                   mrcpp::FunctionTreeVector<3> &d_cavity);
-    // void SCRF();
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
+    void poissonSolver(QMFunction rho_eff_func, QMFunction *diff_func, QMFunction *V_np1_func, double *error);
+    void SCRF(QMFunction *V_tot_func,
+              QMFunction *V_vac_func,
+              QMFunction *rho_eff_func,
+              QMFunction &temp,
+              const QMFunction &inv_eps_func,
+              mrcpp::FunctionTreeVector<3> &d_cavity);
     void setup(double prec);
 };
 

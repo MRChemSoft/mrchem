@@ -149,6 +149,7 @@
       "reaction_operator": {
         "poisson_prec": 1e-05,
         "reaction_history": 4,
+        "run_variational": true,
         "eps_in": 1.0,
         "eps_out": 2.0,
         "cav_lin": false

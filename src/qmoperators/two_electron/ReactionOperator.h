@@ -39,10 +39,12 @@ public:
     double &getTotalEnergy() { return this->potential->getTotalEnergy(); }
     double &getElectronicEnergy() { return this->potential->getElectronicEnergy(); }
     double &getNuclearEnergy() { return this->potential->getNuclearEnergy(); }
+    bool &getRunVariational() { return this->potential->getRunVariational(); }
     QMFunction &getGamma() { return this->potential->getGamma(); }
     QMFunction &getGammanp1() { return this->potential->getGammanp1(); }
     void setGamma(QMFunction new_gamma) { this->potential->setGamma(new_gamma); }
     void setGammanp1(QMFunction new_gamma) { this->potential->setGammanp1(new_gamma); }
+    void setRunVariational(bool var) { this->potential->setRunVariational(var); }
 
 private:
     std::shared_ptr<ReactionPotential> potential{nullptr};

@@ -39,6 +39,7 @@ Cavity {
 
 SolventEffect{
   kain = 4
+  variational = true
 }
 
 SCF {

@@ -216,6 +216,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     Timer t_tot;
     json json_out;
 
+    bool solvent_var = false;
+    if (F.getReactionOperator() != nullptr) { solvent_var = F.getReactionOperator()->getRunVariational(); }
+
     KAIN kain(this->history);
     SCFEnergy &E_n = mol.getSCFEnergy();
     const Nuclei &nucs = mol.getNuclei();
@@ -274,8 +277,37 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
         Phi_np1.clear();
 
-        // Employ KAIN accelerator
-        kain.accelerate(orb_prec, Phi_n, dPhi_n);
+        // variational implementation of solvent effect
+        if (solvent_var) {
+            QMFunction &gamma = F.getReactionOperator()->getGamma();
+            QMFunction &gammanp1 = F.getReactionOperator()->getGammanp1();
+            QMFunction dgamma;
+            dgamma.alloc(NUMBER::Real);
+            qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
+
+            Phi_n.push_back(Orbital(SPIN::Paired));
+            Phi_n.back().QMFunction::operator=(gamma);
+
+            dPhi_n.push_back(Orbital(SPIN::Paired));
+            dPhi_n.back().QMFunction::operator=(dgamma);
+            // variational implementation of solvent effect
+
+            // Employ KAIN accelerator
+            kain.accelerate(orb_prec, Phi_n, dPhi_n);
+
+            // variational implementation of solvent effect
+            gamma.QMFunction::operator=(Phi_n.back());
+            Phi_n.pop_back();
+            dgamma.QMFunction::operator=(dPhi_n.back());
+            dPhi_n.pop_back();
+
+            gammanp1.free(NUMBER::Real);
+            qmfunction::add(gammanp1, 1.0, dgamma, 1.0, gamma, -1.0);
+            F.getReactionOperator()->setGammanp1(gammanp1);
+        } else {
+            kain.accelerate(orb_prec, Phi_n, dPhi_n);
+        }
+        // variational implementation of solvent effect
 
         // Compute errors
         errors = orbital::get_norms(dPhi_n);

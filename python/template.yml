@@ -726,6 +726,11 @@ sections:
       Includes parameters related to the computation of the reaction field
       energy of a solvent system.
     keywords:
+      - name: variational
+        type: bool
+        default: false
+        docstring: |
+          Run a variational computation of the reaction field energy.
       - name: kain
         type: int
         default: 0

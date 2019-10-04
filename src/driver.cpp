@@ -989,6 +989,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto linear_r = (*json_reaction)["cav_lin"].get<bool>();
         auto Reo = std::make_shared<ReactionOperator>(
             P_r, D_r, cavity_r, nuclei, Phi_p, hist_r, eps_in_r, eps_out_r, linear_r);
+        Reo->setRunVariational((*json_reaction)["run_variational"].get<bool>());
         F.getReactionOperator() = Reo;
     }
     ///////////////////////////////////////////////////////////

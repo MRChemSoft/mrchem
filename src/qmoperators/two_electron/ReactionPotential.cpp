@@ -64,10 +64,8 @@ ReactionPotential::ReactionPotential(PoissonOperator_p P,
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
-    // rho_tot = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DENSITY::Total);
     rho_el.rescale(-1.0);
-    std::cout << "integral of orbitals:\t" << rho_el.integrate().real() << std::endl;
     qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
     auto onesf = [eps](const mrcpp::Coord<3> &r) { return (1.0 / eps(r)) - 1.0; };
     QMFunction ones;
@@ -114,15 +112,64 @@ void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction 
     dPhi_n.clear();
 }
 
+void ReactionPotential::poissonSolver(QMFunction rho_eff_func,
+                                      QMFunction *diff_func,
+                                      QMFunction *V_np1_func,
+                                      double *error) {
+    QMFunction poisson_func;
+    if (V_np1_func->hasReal()) V_np1_func->free(NUMBER::Real);
+    if (diff_func->hasReal()) diff_func->free(NUMBER::Real);
+    V_np1_func->alloc(NUMBER::Real);
+
+    qmfunction::add(poisson_func, 1.0, rho_eff_func, 1.0, this->gamma, -1.0);
+    mrcpp::apply(this->apply_prec, V_np1_func->real(), *poisson, poisson_func.real());
+    qmfunction::add(*diff_func, -1.0, *this, 1.0, *V_np1_func, -1.0);
+    *error = diff_func->norm();
+}
+
+void ReactionPotential::SCRF(QMFunction *V_tot_func,
+                             QMFunction *V_vac_func,
+                             QMFunction *rho_eff_func,
+                             QMFunction &temp,
+                             const QMFunction &inv_eps_func,
+                             mrcpp::FunctionTreeVector<3> &d_cavity) {
+    KAIN kain(this->history);
+    double error = 1.00;
+    int iter = 1;
+    while (error >= this->apply_prec) { // absolute of error maybe
+        if (this->gamma.hasReal()) this->gamma.free(NUMBER::Real);
+        if (V_tot_func->hasReal()) V_tot_func->free(NUMBER::Real);
+        QMFunction V_np1_func;
+        QMFunction diff_func;
+
+        V_tot_func->alloc(NUMBER::Real);
+        this->gamma.alloc(NUMBER::Real);
+
+        qmfunction::add(*V_tot_func, 1.0, temp, 1.0, *V_vac_func, -1.0);
+        setGamma(inv_eps_func, this->gamma, *V_tot_func, d_cavity);
+
+        poissonSolver(*rho_eff_func, &diff_func, &V_np1_func, &error);
+
+        if (iter > 1 and this->history > 0) { accelerateConvergence(diff_func, temp, kain); }
+
+        V_np1_func.free(NUMBER::Real);
+        qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
+        temp = V_np1_func;
+        std::cout << "error:\t" << error << "\n"
+                  << "iter.:\t" << iter << std::endl;
+        iter++;
+    }
+}
+
 void ReactionPotential::setup(double prec) {
 
-    std::cout << "gamma int start setup\t" << gamma.integrate().real() << "\ngammanp1 int start setup\t"
-              << gammanp1.integrate().real() << std::endl;
     setApplyPrec(prec);
     QMFunction &temp = *this;
     QMFunction V_vac_func;
     QMFunction inv_eps_func;
     QMFunction rho_eff_func;
+    QMFunction V_tot_func;
+
     mrcpp::FunctionTreeVector<3> d_cavity;
     cavity_func.alloc(NUMBER::Real);
     mrcpp::build_grid(cavity_func.real(), *cavity);
@@ -157,88 +204,45 @@ void ReactionPotential::setup(double prec) {
     mrcpp::apply(prec, V_vac_func.real(), *poisson, rho_tot.real());
 
     if (not temp.hasReal()) {
-        QMFunction tmp_poisson;
-        tmp_poisson.alloc(NUMBER::Real);
+        QMFunction zeroth_poisson;
+        zeroth_poisson.alloc(NUMBER::Real);
         gamma.alloc(NUMBER::Real);
         setGamma(inv_eps_func, gamma, V_vac_func, d_cavity);
-        qmfunction::add(tmp_poisson, 1.0, gamma, 1.0, rho_eff_func, -1.0);
+        qmfunction::add(zeroth_poisson, 1.0, gamma, 1.0, rho_eff_func, -1.0);
         QMFunction tmp_Vr_func;
         tmp_Vr_func.alloc(NUMBER::Real);
-        mrcpp::apply(prec, tmp_Vr_func.real(), *poisson, tmp_poisson.real());
+        mrcpp::apply(prec, tmp_Vr_func.real(), *poisson, zeroth_poisson.real());
         temp = tmp_Vr_func;
-    }
-    KAIN kain(this->history);
-    double error = 1.00;
-    int iter = 1;
-    while (error >= prec) {
-        QMFunction V_np1_func;
-        QMFunction diff_func;
-
-        gamma.free(NUMBER::Real);
-        QMFunction temp_func;
-        QMFunction V_tot_func;
-        V_tot_func.alloc(NUMBER::Real);
-        qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
-        gamma.alloc(NUMBER::Real);
-        setGamma(inv_eps_func, gamma, V_tot_func, d_cavity);
-        V_np1_func.alloc(NUMBER::Real);
-        qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
-        mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
-        qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
-        error = diff_func.norm();
-
-        if (iter > 1 and this->history > 0) {
-            accelerateConvergence(diff_func, temp, kain);
-            std::cout << "kain history" << this->history << std::endl;
-        }
-        V_np1_func.free(NUMBER::Real);
-        qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
-        temp = V_np1_func;
-        std::cout << "integral of gamma:\t" << gamma.integrate().real() << std::endl;
-        std::cout << "error:\t" << error << "\n"
-                  << "iter.:\t" << iter << std::endl;
-        iter++;
-    }
-    /*
-        } else {
+        SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp, inv_eps_func, d_cavity);
+    } else {
+        if (this->variational) {
             // Variational implementation of generalized poisson equation.
-            std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
-                      << gammanp1.integrate().real() << std::endl;
-            gamma.free(NUMBER::Real);
+            if (gamma.hasReal()) gamma.free(NUMBER::Real);
             qmfunction::deep_copy(gamma, gammanp1);
-            std::cout << "gamma int in else\t" << gamma.integrate().real() << "\ngammanp1 int in else\t"
-                      << gammanp1.integrate().real() << std::endl;
             QMFunction V_np1_func;
             QMFunction diff_func;
             double error;
-            QMFunction temp_func;
             V_np1_func.alloc(NUMBER::Real);
-            qmfunction::add(temp_func, 1.0, rho_eff_func, 1.0, gamma, -1.0);
-            mrcpp::apply(prec, V_np1_func.real(), *poisson, temp_func.real());
-            qmfunction::add(diff_func, -1.0, temp, 1.0, V_np1_func, -1.0);
-            error = diff_func.norm();
+
+            poissonSolver(rho_eff_func, &diff_func, &V_np1_func, &error);
 
             temp = V_np1_func;
 
             std::cout << "error:\t" << error << std::endl;
-        }*/
-    std::cout << "gamma int out else\t" << gamma.integrate().real() << "\ngammanp1 int out else\t"
-              << gammanp1.integrate().real() << std::endl;
-    gammanp1.free(NUMBER::Real);
+        } else {
+            SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp, inv_eps_func, d_cavity);
+        }
+    }
+
+    if (gammanp1.hasReal()) gammanp1.free(NUMBER::Real);
+    if (V_tot_func.hasReal()) V_tot_func.free(NUMBER::Real);
     gammanp1.alloc(NUMBER::Real);
-    QMFunction V_tot_func;
     V_tot_func.alloc(NUMBER::Real);
 
     qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
     setGamma(inv_eps_func, gammanp1, V_tot_func, d_cavity);
 
     mrcpp::clear(d_cavity, true);
-    std::cout << "Reaction field energy:\t" << getTotalEnergy() << std::endl;
-    std::cout << "integral of gamman:\t" << gamma.integrate().real() << std::endl;
-    std::cout << "integral of gammanp1:\t" << gammanp1.integrate().real() << std::endl;
-    std::cout << "el. Reaction E:\t" << this->getElectronicEnergy() << std::endl;
-    std::cout << "nuc. Reaction E:\t" << this->getNuclearEnergy() << std::endl;
-    std::cout << "tot. Reaction E:\t" << this->getTotalEnergy() << std::endl;
 }
 
 double &ReactionPotential::getTotalEnergy() {
