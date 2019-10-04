@@ -58,30 +58,24 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
     auto history = 4;
-    // auto linear = false;
     // Initialize cavity and dielectric constants
     std::vector<mrcpp::Coord<3>> coords = {{0.0, 0.0, 0.0}};
     std::vector<double> R = {1.0};
     double slope = 0.2;
     auto sphere = std::make_shared<Cavity>(coords, R, slope);
 
-    // ReactionOperator R(P_p, Phi_p);
-
     auto PT = std::make_shared<PeriodicTable>();
     auto N = std::make_shared<Nucleus>(PT->getElement(1), coords[0]);
     auto molecule = std::make_shared<Nuclei>();
-    // sumthin wrong here
     molecule->push_back(*N);
 
     auto Phi_p = std::make_shared<OrbitalVector>();
     Phi_p->push_back(Orbital(SPIN::Paired));
 
-    ReactionOperator Reo(P_p, D_p, sphere, *molecule, Phi_p, history);
+    ReactionOperator Reo(P_p, D_p, sphere, *molecule, Phi_p, history, 1.0, 2.0, false);
     Reo.setup(prec);
     auto gamma_test = Reo.getGammanp1();
-    SECTION("Reaction Energy") { REQUIRE(Reo.getTotalEnergy() == Approx(-0.546377213847).epsilon(thrs)); }
-    SECTION("Integral of the surface charge distribution") {
-        REQUIRE(gamma_test.integrate().real() == Approx(-0.507809384341).epsilon(thrs));
-    }
+    REQUIRE(Reo.getTotalEnergy() == Approx(-0.546377213847).epsilon(thrs));
+    REQUIRE(gamma_test.integrate().real() == Approx(-0.507809384341).epsilon(thrs));
 }
 } // namespace reaction_operator

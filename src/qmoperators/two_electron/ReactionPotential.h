@@ -7,8 +7,6 @@
 #include "qmoperators/one_electron/QMPotential.h"
 #include "scf_solver/KAIN.h"
 
-using namespace mrcpp;
-
 namespace mrchem {
 
 class ReactionPotential final : public QMPotential {
@@ -19,9 +17,9 @@ public:
                       const Nuclei &nucs,
                       std::shared_ptr<mrchem::OrbitalVector> Phi,
                       int hist,
-                      double eps_i = 1.0,
-                      double eps_o = 2.0,
-                      bool islin = false);
+                      double eps_i,
+                      double eps_o,
+                      bool islin);
     ~ReactionPotential() = default;
 
     friend class ReactionOperator;
@@ -43,28 +41,31 @@ private:
     std::shared_ptr<Cavity> cavity;
     Nuclei nuclei;
     std::shared_ptr<OrbitalVector> orbitals;
-    std::shared_ptr<PoissonOperator> poisson;
-    std::shared_ptr<DerivativeOperator<3>> derivative;
+    std::shared_ptr<mrcpp::PoissonOperator> poisson;
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 
     Density rho_tot;
     Density rho_el;
     Density rho_nuc;
     QMFunction cavity_func;
 
+    mrcpp::FunctionTreeVector<3> d_cavity;
+
     QMFunction gamma;
     QMFunction gammanp1;
 
     int history;
 
-    double d_coefficient = std::log(e_i / e_o);
-    double electronicEnergy;
-    double nuclearEnergy;
-    double totalEnergy;
-    double electronsIn;
-    double e_i;
-    double e_o;
-    bool is_lin;
-    bool variational;
+    double d_coefficient; // factor with which rescale the derivative of the cavity function
+    double electronicEnergy{0.0};
+    double nuclearEnergy{0.0};
+    double totalEnergy{0.0};
+    double electronsIn{0.0};
+    double e_i;       // permitivity of free space, 1 inside the cavity
+    double e_o;       // dielectric constant characteristic of the solvent
+    bool is_lin;      // determines if the dielectric function will be implemented linearly or exponentially
+    bool variational; // determines if the Reaction potential will be optimized in its own loop each SCF iteration or if
+                      // it will converge together with the SCF procedure
 
     void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
     void setGamma(QMFunction const &inv_eps_func,

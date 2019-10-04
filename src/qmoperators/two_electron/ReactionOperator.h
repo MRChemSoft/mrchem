@@ -1,8 +1,6 @@
 #pragma once
 
 #include "ReactionPotential.h"
-//#include "ReactionPotentialD1.h"
-//#include "ReactionPotentialD2.h"
 #include "qmoperators/RankZeroTensorOperator.h"
 
 /** @class ReactionOperator
@@ -23,9 +21,9 @@ public:
                      const Nuclei &nuc,
                      std::shared_ptr<mrchem::OrbitalVector> Phi,
                      int history,
-                     double eps_i = 1.0,
-                     double eps_o = 2.0,
-                     bool islin = false) {
+                     double eps_i,
+                     double eps_o,
+                     bool islin) {
         potential = std::make_shared<ReactionPotential>(P, D, C, nuc, Phi, history, eps_i, eps_o, islin);
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &J = (*this);
