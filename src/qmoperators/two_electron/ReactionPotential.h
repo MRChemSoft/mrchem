@@ -68,18 +68,14 @@ private:
                       // it will converge together with the SCF procedure
 
     void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
-    void setGamma(QMFunction const &inv_eps_func,
-                  QMFunction &gamma_func,
-                  QMFunction &V_func,
-                  mrcpp::FunctionTreeVector<3> &d_cavity);
+    void setGamma(QMFunction const &inv_eps_func, QMFunction &gamma_func, QMFunction &V_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void poissonSolver(QMFunction rho_eff_func, QMFunction *diff_func, QMFunction *V_np1_func, double *error);
     void SCRF(QMFunction *V_tot_func,
               QMFunction *V_vac_func,
               QMFunction *rho_eff_func,
               QMFunction &temp,
-              const QMFunction &inv_eps_func,
-              mrcpp::FunctionTreeVector<3> &d_cavity);
+              const QMFunction &inv_eps_func);
     void setup(double prec);
 };
 

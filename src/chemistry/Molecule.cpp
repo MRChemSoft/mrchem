@@ -261,7 +261,7 @@ nlohmann::json Molecule::json() const {
 
 void Molecule::initCavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope) {
     if (cavity) MSG_ABORT("Cavity already initialized");
-    cavity = std::make_shared<Cavity>(coords, R, slope);
+    this->cavity = std::make_shared<Cavity>(coords, R, slope);
 }
 
 } // namespace mrchem

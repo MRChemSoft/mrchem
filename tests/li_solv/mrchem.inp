@@ -1,5 +1,4 @@
 # vim:syntax=sh:
-
 world_prec = 1.0e-5               # Overall relative precision
 world_size = 5                    # Size of simulation box 2^n
 

@@ -33,7 +33,7 @@ class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
     Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
     double evalf(const mrcpp::Coord<3> &r) const override;
-
+    auto getGradVector() { return this->gradvector; }
     std::vector<mrcpp::Coord<3>> &getCoordinates() { return pos; }
     std::vector<double> &getRadius() { return R; }
 
@@ -41,7 +41,9 @@ protected:
     std::vector<mrcpp::Coord<3>> pos;
     std::vector<double> R;
     double d;
+    std::vector<std::function<double(const mrcpp::Coord<3> &r)>> gradvector;
 
+    void setGradVector();
     bool isVisibleAtScale(int scale, int nQuadPts) const override;
     bool isZeroOnInterval(const double *a, const double *b) const override;
 };
