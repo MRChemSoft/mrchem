@@ -98,10 +98,9 @@ sections:
       - name: print_level
         type: int
         default: 0
-        predicates:
-          - 'value >= 0'
         docstring: |
-          Level of detail in the written output. Level 0 for production calculations.
+          Level of detail in the written output. Level 0 for production calculations,
+          negative level for complete silence.
       - name: print_input
         type: bool
         default: false
