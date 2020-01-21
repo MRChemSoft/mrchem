@@ -36,6 +36,9 @@
 namespace mrchem {
 namespace math_utils {
 
+std::vector<double> eigen_to_vector(const DoubleVector &inp);
+std::vector<double> eigen_to_vector(const DoubleMatrix &inp);
+
 double calc_distance(const mrcpp::Coord<3> &a, const mrcpp::Coord<3> &b);
 
 DoubleVector init_nan(int I);
