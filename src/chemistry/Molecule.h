@@ -45,6 +45,7 @@
 #include "properties/DipoleMoment.h"
 #include "properties/Magnetizability.h"
 #include "properties/NMRShielding.h"
+#include "properties/OrbitalEnergies.h"
 #include "properties/Polarizability.h"
 #include "properties/QuadrupoleMoment.h"
 #include "properties/SCFEnergy.h"
@@ -105,6 +106,7 @@ public:
     void initPerturbedOrbitals(bool dynamic);
 
     SCFEnergy &getSCFEnergy();
+    OrbitalEnergies &getOrbitalEnergies();
     DipoleMoment &getDipoleMoment();
     QuadrupoleMoment &getQuadrupoleMoment();
     Magnetizability &getMagnetizability();
@@ -124,6 +126,7 @@ protected:
 
     // Properties
     std::unique_ptr<SCFEnergy> energy{nullptr};
+    std::unique_ptr<OrbitalEnergies> epsilon{nullptr};
     std::unique_ptr<DipoleMoment> dipole{nullptr};
     std::unique_ptr<QuadrupoleMoment> quadrupole{nullptr};
     std::unique_ptr<Magnetizability> magnetizability{nullptr};

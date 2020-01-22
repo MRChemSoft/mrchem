@@ -89,12 +89,11 @@ IntVector get_spins(const OrbitalVector &Phi);
 IntVector get_occupancies(const OrbitalVector &Phi);
 DoubleVector get_norms(const OrbitalVector &Phi);
 DoubleVector get_squared_norms(const OrbitalVector &Phi);
+DoubleVector calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
 ComplexVector get_integrals(const OrbitalVector &Phi);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
-void print_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
-nlohmann::json json_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
 
 } // namespace orbital
 } // namespace mrchem

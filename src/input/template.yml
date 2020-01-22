@@ -326,6 +326,11 @@ sections:
       Provide a list of properties to compute (total SCF energy is always
       computed).
     keywords:
+      - name: orbital_energies
+        type: bool
+        default: true
+        docstring: |
+          Compute orbital energies.
       - name: dipole_moment
         type: bool
         default: false

@@ -32,5 +32,6 @@ class DipoleMoment;
 class Magnetizability;
 class NMRShielding;
 class Polarizability;
+class OrbitalEnergies;
 
 } // namespace mrchem

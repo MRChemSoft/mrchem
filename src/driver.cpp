@@ -346,6 +346,19 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
 
     auto &nuclei = mol.getNuclei();
     auto &Phi = mol.getOrbitals();
+    auto &F_mat = mol.getFockMatrix();
+
+    auto json_eps = json_prop.find("orbital_energies");
+    if (json_eps != json_prop.end()) {
+        t_lap.start();
+        mrcpp::print::header(2, "Computing orbital energies");
+        OrbitalEnergies &eps = mol.getOrbitalEnergies();
+        eps.getOccupancy() = orbital::get_occupancies(Phi);
+        eps.getEpsilon() = orbital::calc_eigenvalues(Phi, F_mat);
+        eps.getSpin() = orbital::get_spins(Phi);
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Orbital energies", t_lap);
+    }
 
     auto json_dip = json_prop.find("dipole_moment");
     if (json_dip != json_prop.end()) {

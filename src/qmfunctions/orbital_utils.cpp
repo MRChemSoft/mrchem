@@ -995,94 +995,36 @@ void orbital::print(const OrbitalVector &Phi) {
     mrcpp::print::separator(0, '=', 2);
 }
 
-void orbital::print_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat) {
-    if (Phi.size() == 0) return;
+DoubleVector orbital::calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat) {
     if (F_mat.cols() != Phi.size()) MSG_ABORT("Invalid Fock matrix");
+    if (not orbital::orbital_vector_is_sane(Phi)) MSG_ABORT("Insane orbital vector");
 
-    // First compute eigenvalues without rotating the orbitals
     DoubleVector epsilon = DoubleVector::Zero(Phi.size());
     int np = orbital::size_paired(Phi);
     int na = orbital::size_alpha(Phi);
     int nb = orbital::size_beta(Phi);
     if (np > 0) {
+        Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(np);
         es.compute(F_mat.block(0, 0, np, np));
         epsilon.segment(0, np) = es.eigenvalues();
+        mrcpp::print::time(2, "Diagonalize Fock matrix", timer);
     }
     if (na > 0) {
+        Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(na);
         es.compute(F_mat.block(np, np, na, na));
         epsilon.segment(np, na) = es.eigenvalues();
+        mrcpp::print::time(2, "Diagonalize Fock matrix (alpha)", timer);
     }
     if (nb > 0) {
+        Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nb);
         es.compute(F_mat.block(np + na, np + na, nb, nb));
         epsilon.segment(np + na, nb) = es.eigenvalues();
+        mrcpp::print::time(2, "Diagonalize Fock matrix (beta)", timer);
     }
-
-    auto pprec = Printer::getPrecision();
-    auto w0 = Printer::getWidth() - 1;
-    auto w1 = 5;
-    auto w2 = 2 * w0 / 9;
-    auto w3 = w0 - 3 * w1 - 3 * w2;
-
-    std::stringstream o_head;
-    o_head << std::setw(w1) << "n";
-    o_head << std::setw(w1) << "Occ";
-    o_head << std::setw(w1) << "Spin";
-    o_head << std::string(w3 - 1, ' ') << ':';
-    o_head << std::setw(3 * w2) << "Epsilon";
-
-    mrcpp::print::header(0, "Orbital Energies");
-    println(0, o_head.str());
-    mrcpp::print::separator(0, '-');
-
-    auto sum_eps = 0.0;
-    for (int i = 0; i < epsilon.size(); i++) {
-        std::stringstream o_txt;
-        o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w1) << Phi[i].occ();
-        o_txt << std::setw(w1) << Phi[i].printSpin();
-        print_utils::scalar(0, o_txt.str(), epsilon(i), "(au)", 2 * pprec);
-        sum_eps += Phi[i].occ() * epsilon(i);
-    }
-    mrcpp::print::separator(0, '-');
-    print_utils::scalar(0, "Sum occupied", sum_eps, "(au)", 2 * pprec);
-    mrcpp::print::separator(0, '=', 2);
-}
-
-json orbital::json_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat) {
-    json json_out;
-    if (Phi.size() == 0) return json_out;
-    if (F_mat.cols() != Phi.size()) MSG_ABORT("Invalid Fock matrix");
-
-    // First compute eigenvalues without rotating the orbitals
-    int np = orbital::size_paired(Phi);
-    int na = orbital::size_alpha(Phi);
-    int nb = orbital::size_beta(Phi);
-    if (np > 0) {
-        json_out["paired"] = {};
-        Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(np);
-        es.compute(F_mat.block(0, 0, np, np));
-        auto &eps = es.eigenvalues();
-        for (int i = 0; i < eps.size(); i++) json_out["paired"].push_back(eps(i));
-    }
-    if (na > 0) {
-        json_out["alpha"] = {};
-        Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(na);
-        es.compute(F_mat.block(np, np, na, na));
-        auto &eps = es.eigenvalues();
-        for (int i = 0; i < eps.size(); i++) json_out["alpha"].push_back(eps(i));
-    }
-    if (nb > 0) {
-        json_out["beta"] = {};
-        Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nb);
-        es.compute(F_mat.block(np + na, np + na, nb, nb));
-        auto &eps = es.eigenvalues();
-        for (int i = 0; i < eps.size(); i++) json_out["beta"].push_back(eps(i));
-    }
-
-    return json_out;
+    return epsilon;
 }
 
 /** @brief Prints statistics about the size of orbitals in an OrbitalVector

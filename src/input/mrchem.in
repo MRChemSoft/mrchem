@@ -484,6 +484,8 @@ def write_scf_solver(user_dict, method_name):
 
 def write_scf_properties(user_dict, mol_dict):
     prop_dict = {}
+    if user_dict["Properties"]["orbital_energies"]:
+        prop_dict["orbital_energies"] = {}
     if user_dict["Properties"]["dipole_moment"]:
         prop_dict["dipole_moment"] = {
             "operator": "h_e_dip",

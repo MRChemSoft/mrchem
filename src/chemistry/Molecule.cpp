@@ -104,6 +104,12 @@ QuadrupoleMoment &Molecule::getQuadrupoleMoment() {
     return *quadrupole;
 }
 
+/** @brief Return property OrbitalEnergies */
+OrbitalEnergies &Molecule::getOrbitalEnergies() {
+    if (epsilon == nullptr) epsilon = std::make_unique<OrbitalEnergies>();
+    return *epsilon;
+}
+
 /** @brief Return property Magnetizability */
 Magnetizability &Molecule::getMagnetizability() {
     if (magnetizability == nullptr) magnetizability = std::make_unique<Magnetizability>();
@@ -265,10 +271,7 @@ void Molecule::printGeometry() const {
  * Only properties that have been initialized will be printed.
  */
 void Molecule::printProperties() const {
-    const auto &Phi = getOrbitals();
-    const auto &F_mat = getFockMatrix();
-    orbital::print_eigenvalues(Phi, F_mat);
-
+    if (this->epsilon != nullptr) this->epsilon->print();
     if (this->energy != nullptr) this->energy->print();
     if (this->dipole != nullptr) this->dipole->print();
     if (this->quadrupole != nullptr) this->quadrupole->print();
@@ -295,12 +298,9 @@ nlohmann::json Molecule::json() const {
     json_out["multiplicity"] = getMultiplicity();
     json_out["center_of_mass"] = calcCenterOfMass();
 
-    const auto &Phi = getOrbitals();
-    const auto &F_mat = getFockMatrix();
-    json_out["eigenvalues"] = orbital::json_eigenvalues(Phi, F_mat);
-
     if (this->energy != nullptr) json_out["scf_energy"] = this->energy->json();
     if (this->dipole != nullptr) json_out["dipole_moment"] = this->dipole->json();
+    if (this->epsilon != nullptr) json_out["orbital_energies"] = this->epsilon->json();
     if (this->magnetizability != nullptr) json_out["magnetizability"] = this->magnetizability->json();
     if (this->polarizability.size() > 0) json_out["polarizability"] = {};
     if (this->nmr.size() > 0) json_out["nmr_shielding"] = {};
