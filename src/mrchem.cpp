@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
         for (const auto &rsp_inp : rsps_inp) driver::rsp::run(rsp_inp, mol);
     }
     mpi::barrier(mpi::comm_orb);
-    driver::print_properties(mol);
+    json_out["properties"] = driver::print_properties(mol);
     mrenv::finalize(timer.elapsed());
     mrenv::dump_json(json_inp, json_out);
 

@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "mrchem.h"
 
 #include "utils/math_utils.h"
@@ -63,6 +65,15 @@ public:
         print_utils::scalar(0, "Magnitude", tot_au, "(au)");
         print_utils::scalar(0, "         ", tot_db, "(Debye)");
         mrcpp::print::separator(0, '=', 2);
+    }
+
+    nlohmann::json json() const {
+        return {
+            {"vector_nuc", math_utils::eigen_to_vector(getNuclear())},
+            {"vector_el", math_utils::eigen_to_vector(getElectronic())},
+            {"vector", math_utils::eigen_to_vector(getTensor())},
+            {"magnitude", getTensor().norm() }
+        };
     }
 
 private:

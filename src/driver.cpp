@@ -948,10 +948,11 @@ DerivativeOperator_p driver::get_derivative(const std::string &name) {
     return D;
 }
 
-void driver::print_properties(const Molecule &mol) {
+json driver::print_properties(const Molecule &mol) {
     print_utils::headline(0, "Printing Molecular Properties");
     mol.printGeometry();
     mol.printProperties();
+    return mol.json();
 }
 
 } // namespace mrchem

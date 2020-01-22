@@ -253,6 +253,7 @@ void Molecule::printGeometry() const {
         o_sym << std::setw(w2) << nuc.getElement().getSymbol();
         print_utils::coord(0, o_sym.str(), nuc.getCoord());
     }
+
     mrcpp::print::separator(0, '-');
     print_utils::coord(0, "Center of mass", calcCenterOfMass());
     print_utils::coord(0, "Gauge origin", getGaugeOrigin());
@@ -278,6 +279,39 @@ void Molecule::printProperties() const {
     for (auto &nmr_k : this->nmr) {
         if (nmr_k != nullptr) nmr_k->print();
     }
+}
+
+nlohmann::json Molecule::json() const {
+    nlohmann::json json_out;
+    json_out["geometry"] = {};
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        nlohmann::json json_atom;
+        json_atom["symbol"] = nuc.getElement().getSymbol();
+        json_atom["xyz"] = nuc.getCoord();
+        json_out["geometry"].push_back(json_atom);
+    }
+    json_out["charge"] = getCharge();
+    json_out["multiplicity"] = getMultiplicity();
+    json_out["center_of_mass"] = calcCenterOfMass();
+
+    const auto &Phi = getOrbitals();
+    const auto &F_mat = getFockMatrix();
+    json_out["eigenvalues"] = orbital::json_eigenvalues(Phi, F_mat);
+
+    if (this->energy != nullptr) json_out["scf_energy"] = this->energy->json();
+    if (this->dipole != nullptr) json_out["dipole_moment"] = this->dipole->json();
+    if (this->magnetizability != nullptr) json_out["magnetizability"] = this->magnetizability->json();
+    if (this->polarizability.size() > 0) json_out["polarizability"] = {};
+    if (this->nmr.size() > 0) json_out["nmr_shielding"] = {};
+
+    for (auto &pol : this->polarizability) {
+        if (pol != nullptr) json_out["polarizability"].push_back(pol->json());
+    }
+    for (auto &nmr_k : this->nmr) {
+        if (nmr_k != nullptr) json_out["nmr_shielding"].push_back(nmr_k->json());
+    }
+    return json_out;
 }
 
 } // namespace mrchem

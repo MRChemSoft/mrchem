@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "mrchem.h"
 
 #include "utils/math_utils.h"
@@ -57,6 +59,14 @@ public:
         print_utils::matrix(0, "Total tensor", getTensor());
         print_utils::scalar(0, "Isotropic average", iso_au, "(au)");
         mrcpp::print::separator(0, '=', 2);
+    }
+
+    nlohmann::json json() const {
+        return {
+            {"frequency", getFrequency()},
+            {"tensor", math_utils::eigen_to_vector(getTensor())},
+            {"isotropic_average", getTensor().trace() / 3.0 }
+        };
     }
 
 private:

@@ -38,7 +38,8 @@
 #include <string>
 #include <vector>
 
-#include "MRCPP/Printer"
+#include <MRCPP/Printer>
+#include <nlohmann/json.hpp>
 
 #include "Nucleus.h"
 #include "properties/DipoleMoment.h"
@@ -97,6 +98,7 @@ public:
     auto getOrbitalsX_p() const { return this->orbitals_x; }
     auto getOrbitalsY_p() const { return this->orbitals_y; }
 
+    nlohmann::json json() const;
     void printGeometry() const;
     void printProperties() const;
 

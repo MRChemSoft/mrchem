@@ -51,6 +51,14 @@ public:
         mrcpp::print::separator(0, '=', 2);
     }
 
+    nlohmann::json json() const {
+        return {
+            {"tensor_nuc", math_utils::eigen_to_vector(getNuclear())},
+            {"tensor_el", math_utils::eigen_to_vector(getElectronic())},
+            {"tensor", math_utils::eigen_to_vector(getTensor())}
+        };
+    }
+
 private:
     DoubleMatrix nuc_tensor{math_utils::init_nan(3)};
     DoubleMatrix el_tensor{math_utils::init_nan(3)};

@@ -23,9 +23,9 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-#include "MRCPP/utils/details.h"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+#include <MRCPP/utils/details.h>
 
 #include "parallel.h"
 #include "utils/RRMaximizer.h"
@@ -1049,6 +1049,40 @@ void orbital::print_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F
     mrcpp::print::separator(0, '-');
     print_utils::scalar(0, "Sum occupied", sum_eps, "(au)", 2 * pprec);
     mrcpp::print::separator(0, '=', 2);
+}
+
+json orbital::json_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat) {
+    json json_out;
+    if (Phi.size() == 0) return json_out;
+    if (F_mat.cols() != Phi.size()) MSG_ABORT("Invalid Fock matrix");
+
+    // First compute eigenvalues without rotating the orbitals
+    int np = orbital::size_paired(Phi);
+    int na = orbital::size_alpha(Phi);
+    int nb = orbital::size_beta(Phi);
+    if (np > 0) {
+        json_out["paired"] = {};
+        Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(np);
+        es.compute(F_mat.block(0, 0, np, np));
+        auto &eps = es.eigenvalues();
+        for (int i = 0; i < eps.size(); i++) json_out["paired"].push_back(eps(i));
+    }
+    if (na > 0) {
+        json_out["alpha"] = {};
+        Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(na);
+        es.compute(F_mat.block(np, np, na, na));
+        auto &eps = es.eigenvalues();
+        for (int i = 0; i < eps.size(); i++) json_out["alpha"].push_back(eps(i));
+    }
+    if (nb > 0) {
+        json_out["beta"] = {};
+        Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nb);
+        es.compute(F_mat.block(np + na, np + na, nb, nb));
+        auto &eps = es.eigenvalues();
+        for (int i = 0; i < eps.size(); i++) json_out["beta"].push_back(eps(i));
+    }
+
+    return json_out;
 }
 
 /** @brief Prints statistics about the size of orbitals in an OrbitalVector

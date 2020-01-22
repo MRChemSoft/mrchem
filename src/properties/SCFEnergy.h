@@ -56,8 +56,11 @@ public:
     double getElectronicEnergy() const { return this->E_el; }
 
     double getKineticEnergy() const { return this->E_kin; }
+    double getNuclearNuclearEnergy() const { return this->E_nn; }
     double getElectronNuclearEnergy() const { return this->E_en; }
     double getElectronElectronEnergy() const { return this->E_ee; }
+    double getElectronExternalEnergy() const { return this->E_eext; }
+    double getNuclearExternalEnergy() const { return this->E_next; }
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
 
@@ -75,6 +78,8 @@ public:
         print_utils::scalar(0, "Exchange energy  ", E_x,    "(au)", pprec, false);
         print_utils::scalar(0, "X-C energy       ", E_xc,   "(au)", pprec, false);
         print_utils::scalar(0, "Ext. field (el)  ", E_eext, "(au)", pprec, false);
+        mrcpp::print::separator(0, '-');
+        print_utils::scalar(0, "N-N energy       ", E_nn,   "(au)", pprec, false);
         print_utils::scalar(0, "Ext. field (nuc) ", E_next, "(au)", pprec, false);
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);
@@ -89,16 +94,17 @@ public:
 
     nlohmann::json json() const {
         return {
-            {"E_tot", E_nuc + E_el},
-            {"E_nuc", E_nuc},
-            {"E_el", E_el},
             {"E_kin", E_kin},
+            {"E_nn", E_nn},
             {"E_en", E_en},
             {"E_ee", E_ee},
+            {"E_next", E_next},
+            {"E_eext", E_eext},
             {"E_x", E_x},
             {"E_xc", E_xc},
-            {"E_next", E_next},
-            {"E_eext", E_eext}
+            {"E_el", E_el},
+            {"E_nuc", E_nuc},
+            {"E_tot", E_nuc + E_el}
         };
     }
 
