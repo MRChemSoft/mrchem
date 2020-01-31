@@ -74,7 +74,7 @@ def main():
     program_dict = translate_input(user_dict)
 
     inp_name, ext_ext = os.path.splitext(inp_file_cmd)
-    xfile = inp_name + '_parsed.json'
+    xfile = inp_name + '.json'
     with open(xfile, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
 
