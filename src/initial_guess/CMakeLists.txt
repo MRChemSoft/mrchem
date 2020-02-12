@@ -1,8 +1,9 @@
 target_sources(mrchem
   PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/core.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/sad.cpp
     ${CMAKE_CURRENT_LIST_DIR}/gto.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/mw.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/sad.cpp
   )
 
 # <<< Driver for LSDalton calculations on stallo >>>

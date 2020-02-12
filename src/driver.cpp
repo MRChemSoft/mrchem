@@ -34,6 +34,7 @@
 
 #include "initial_guess/core.h"
 #include "initial_guess/gto.h"
+#include "initial_guess/mw.h"
 #include "initial_guess/sad.h"
 
 #include "utils/MolPlotter.h"
@@ -143,11 +144,7 @@ bool driver::run_guess(const json &json_guess, Molecule &mol) {
     auto method = json_guess["method"].get<std::string>();
     if (method == "mw") {
         auto start_orbs = json_guess["start_orbitals"].get<std::string>();
-        mrcpp::print::separator(0, '~');
-        print_utils::text(0, "Calculation ", "Read orbitals from file (MW)");
-        print_utils::text(0, "File name   ", start_orbs);
-        mrcpp::print::separator(0, '~', 2);
-        Phi = orbital::load_orbitals(start_orbs);
+        Phi = initial_guess::mw::setup(start_orbs);
     } else if (method == "core") {
         auto guess_prec = json_guess["guess_prec"].get<double>();
         auto restricted = json_guess["restricted"].get<bool>();
