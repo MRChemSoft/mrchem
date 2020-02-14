@@ -279,31 +279,26 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
         // variational implementation of solvent effect
         if (solvent_var) {
-            QMFunction &gamma = F.getReactionOperator()->getGamma();
-            QMFunction &gammanp1 = F.getReactionOperator()->getGammanp1();
-            QMFunction dgamma;
-            dgamma.alloc(NUMBER::Real);
-            qmfunction::add(dgamma, 1.0, gammanp1, -1.0, gamma, -1.0);
+          QMFunction &V_r = F.getReactionOperator()->getPotential();
+            QMFunction &diff_func = F.getReactionOperator()->getDiffFunc();
 
             Phi_n.push_back(Orbital(SPIN::Paired));
-            Phi_n.back().QMFunction::operator=(gamma);
+            Phi_n.back().QMFunction::operator=(V_r);
 
             dPhi_n.push_back(Orbital(SPIN::Paired));
-            dPhi_n.back().QMFunction::operator=(dgamma);
+            dPhi_n.back().QMFunction::operator=(diff_func);
             // variational implementation of solvent effect
 
             // Employ KAIN accelerator
             kain.accelerate(orb_prec, Phi_n, dPhi_n);
 
             // variational implementation of solvent effect
-            gamma.QMFunction::operator=(Phi_n.back());
+            V_r.QMFunction::operator=(Phi_n.back());
             Phi_n.pop_back();
-            dgamma.QMFunction::operator=(dPhi_n.back());
+            diff_func.QMFunction::operator=(dPhi_n.back());
             dPhi_n.pop_back();
 
-            gammanp1.free(NUMBER::Real);
-            qmfunction::add(gammanp1, 1.0, dgamma, 1.0, gamma, -1.0);
-            F.getReactionOperator()->setGammanp1(gammanp1);
+            F.getReactionOperator()->setDiffFunc(diff_func);
         } else {
             kain.accelerate(orb_prec, Phi_n, dPhi_n);
         }

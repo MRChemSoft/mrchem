@@ -39,9 +39,10 @@ public:
     double &getNuclearEnergy() { return this->potential->getNuclearEnergy(); }
     bool &getRunVariational() { return this->potential->getRunVariational(); }
     QMFunction &getGamma() { return this->potential->getGamma(); }
-    QMFunction &getGammanp1() { return this->potential->getGammanp1(); }
+    QMFunction &getDiffFunc() { return this->potential->getDiffFunc(); }
+    QMFunction &getPotential() { return *this->potential; }
     void setGamma(QMFunction new_gamma) { this->potential->setGamma(new_gamma); }
-    void setGammanp1(QMFunction new_gamma) { this->potential->setGammanp1(new_gamma); }
+    void setDiffFunc(QMFunction new_diff_func) { this->potential->setDiffFunc(new_diff_func); }
     void setRunVariational(bool var) { this->potential->setRunVariational(var); }
 
 private:

@@ -1,6 +1,7 @@
 #include "ReactionPotential.h"
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
+#include "MRCPP/Plotter"
 #include "MRCPP/Timer"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
@@ -36,14 +37,14 @@ ReactionPotential::ReactionPotential(PoissonOperator_p P,
         , rho_nuc(false)
         , cavity_func(false)
         , gamma(false)
-        , gammanp1(false)
+        , diff_func(false)
         , history(hist)
         , e_i(eps_i)
         , e_o(eps_o)
         , is_lin(islin) {}
 
 void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
-    rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
+  rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DensityType::Total);
     rho_el.rescale(-1.0);
     qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
@@ -92,14 +93,16 @@ void ReactionPotential::poissonSolver(QMFunction rho_eff_func,
                                       QMFunction *V_np1_func,
                                       double *error) {
     QMFunction poisson_func;
-    if (V_np1_func->hasReal()) V_np1_func->free(NUMBER::Real);
-    if (diff_func->hasReal()) diff_func->free(NUMBER::Real);
-    V_np1_func->alloc(NUMBER::Real);
+    resetQMFunction(*V_np1_func);
+    resetQMFunction(*diff_func);
 
     qmfunction::add(poisson_func, 1.0, rho_eff_func, 1.0, this->gamma, -1.0);
     mrcpp::apply(this->apply_prec, V_np1_func->real(), *poisson, poisson_func.real());
     qmfunction::add(*diff_func, -1.0, *this, 1.0, *V_np1_func, -1.0);
     *error = diff_func->norm();
+    std::cout << "Reaction energy:\t" << getTotalEnergy() << "\n" << "gamma int:\t" << this->gamma.integrate().real() << std::endl;
+    std::cout << "rho_tot int.:\t" << rho_tot.integrate() << std::endl;
+    std::cout << "rho_eff int.:\t" << rho_eff_func.integrate() << std::endl;
 }
 
 void ReactionPotential::SCRF(QMFunction *V_tot_func,
@@ -112,26 +115,27 @@ void ReactionPotential::SCRF(QMFunction *V_tot_func,
     double error = 1.00;
     int iter = 1;
     for (int iter = 1; error >= this->apply_prec; iter++) {
-        if (this->gamma.hasReal()) this->gamma.free(NUMBER::Real);
-        if (V_tot_func->hasReal()) V_tot_func->free(NUMBER::Real);
+      if(iter != 1){
+        QMFunction add_func;
+        qmfunction::add(add_func, 1.0, diff_func, 1.0, temp, -1.0);
+        temp = add_func;
+      }
+        resetQMFunction((*this).gamma);
+        resetQMFunction((*this).diff_func);
+        resetQMFunction(*V_tot_func);
         QMFunction V_np1_func;
-        QMFunction diff_func;
-        V_tot_func->alloc(NUMBER::Real);
-        this->gamma.alloc(NUMBER::Real);
 
         qmfunction::add(*V_tot_func, 1.0, temp, 1.0, *V_vac_func, -1.0);
         setGamma(inv_eps_func, this->gamma, *V_tot_func);
-
         poissonSolver(*rho_eff_func, &diff_func, &V_np1_func, &error);
 
-        if (iter > 1 and this->history > 0) { accelerateConvergence(diff_func, temp, kain); }
+        if (iter > 1 and this->history > 0) accelerateConvergence(diff_func, temp, kain);
 
         V_np1_func.free(NUMBER::Real);
         qmfunction::add(V_np1_func, 1.0, temp, 1.0, diff_func, -1.0);
-        temp = V_np1_func;
         println(0, "Iter:\t");
         println(0, iter);
-        println(0, "error:\t");
+        println(0, "update:\t");
         println(0, error);
     }
 }
@@ -147,7 +151,7 @@ void ReactionPotential::setup(double prec) {
 
     Cavity &C_tmp = *this->cavity;
     double eps_i = this->e_i, eps_o = this->e_o;
-
+    //TODO insert this whole if else block into the zeroth iteration as the cavity does not need to be computed more than once.
     if (is_lin) {
         inv_eps_func.alloc(NUMBER::Real);
         mrcpp::build_grid(inv_eps_func.real(), *cavity);
@@ -189,35 +193,42 @@ void ReactionPotential::setup(double prec) {
         QMFunction tmp_Vr_func;
         tmp_Vr_func.alloc(NUMBER::Real);
         mrcpp::apply(prec, tmp_Vr_func.real(), *poisson, zeroth_poisson.real());
-        temp = tmp_Vr_func;
-        SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp, inv_eps_func);
-    } else {
-        if (this->variational) {
-            // Variational implementation of generalized poisson equation.
-            if (gamma.hasReal()) gamma.free(NUMBER::Real);
-            qmfunction::deep_copy(gamma, gammanp1);
-            QMFunction V_np1_func;
-            QMFunction diff_func;
-            double error;
-            V_np1_func.alloc(NUMBER::Real);
-
-            poissonSolver(rho_eff_func, &diff_func, &V_np1_func, &error);
-
-            temp = V_np1_func;
-
-            println(0, "error:");
-            println(0, error);
-        } else {
-            SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp, inv_eps_func);
-        }
+        qmfunction::add(diff_func, 1.0, tmp_Vr_func, -1.0, V_vac_func, -1.0);
+        temp = V_vac_func;
     }
-    if (gammanp1.hasReal()) gammanp1.free(NUMBER::Real);
-    if (V_tot_func.hasReal()) V_tot_func.free(NUMBER::Real);
-    gammanp1.alloc(NUMBER::Real);
-    V_tot_func.alloc(NUMBER::Real);
+    //update reaction potential
+    QMFunction add_func;
+    qmfunction::add(add_func, 1.0, diff_func, 1.0, temp, -1.0);
+    temp = add_func;
+    if (this->variational) {
+        resetQMFunction(gamma);
+        QMFunction V_np1_func;
+        double error;
+        qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
+        setGamma(inv_eps_func, gamma, V_tot_func);
+        V_np1_func.alloc(NUMBER::Real);
 
-    qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
-    setGamma(inv_eps_func, gammanp1, V_tot_func);
+        poissonSolver(rho_eff_func, &diff_func, &V_np1_func, &error);
+
+        println(0, "error:");
+        println(0, error);
+    } else {
+        SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp, inv_eps_func);
+    }
+
+    //plotting for tests
+    int aPts = 450;                     // Number of points in a
+    int bPts = 450;                     // Number of points in b
+    mrcpp::Coord<3> o{-6.0, -6.0, 0.0}; // Origin vector
+    mrcpp::Coord<3> a{12.0, 0.0, 0.0};   // Boundary vector A
+    mrcpp::Coord<3> b{0.0, 12.0, 0.0};
+    mrcpp::Plotter<3> plot(o);                                           // Plotter of 3D functions
+    plot.setRange(a, b);                                                 // Set plot range
+    plot.surfPlot({aPts, bPts}, gamma.real(), "gamma");    // Write to file f_tree.surf
+    plot.surfPlot({aPts, bPts}, temp.real(), "V_R");    // Write to file f_tree.surf
+    plot.surfPlot({aPts, bPts}, rho_tot.real(), "rho");    // Write to file f_tree.surf
+    plot.surfPlot({aPts, bPts}, rho_el.real(), "rho_el");    // Write to file f_tree.surf
+
 }
 
 double &ReactionPotential::getTotalEnergy() {
@@ -255,4 +266,9 @@ void ReactionPotential::clear() {
     rho_nuc.free(NUMBER::Real);
 }
 
+void ReactionPotential::resetQMFunction(QMFunction &function) {
+    if (function.hasReal()) function.free(NUMBER::Real);
+    if (function.hasImag()) function.free(NUMBER::Imag);
+    function.alloc(NUMBER::Real);
+}
 } // namespace mrchem

@@ -21,39 +21,37 @@ public:
                       double eps_o,
                       bool islin);
     ~ReactionPotential() = default;
-
     friend class ReactionOperator;
+
     double &getTotalEnergy();
     double &getElectronicEnergy();
     double &getNuclearEnergy();
     double &getElectronIn();
     QMFunction &getGamma() { return gamma; }
-    QMFunction &getGammanp1() { return gammanp1; }
+    QMFunction &getDiffFunc() { return diff_func; }
     bool &getRunVariational() { return variational; }
     void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
-    void setGammanp1(QMFunction new_gamma) { this->gammanp1 = new_gamma; }
+    void setDiffFunc(QMFunction new_diff_func) { this->diff_func = new_diff_func; }
     void setRunVariational(bool var) { this->variational = var; }
-
 protected:
     void clear();
 
 private:
-    std::shared_ptr<Cavity> cavity;
+    std::shared_ptr<Cavity> cavity;     // Function describing the interlocking spheres model of the cavity boundary
     Nuclei nuclei;
     std::shared_ptr<OrbitalVector> orbitals;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 
-    Density rho_tot;
-    Density rho_el;
-    Density rho_nuc;
-    QMFunction cavity_func;
+    Density rho_tot;        // Total molecular charge density is equal to the electron density added to the nuclear density
+    Density rho_el;         // Electron charge density
+    Density rho_nuc;        // Nuclear charge density
+    QMFunction cavity_func; // Function which the cavity is projected into
 
-    mrcpp::FunctionTreeVector<3> d_cavity;
+    mrcpp::FunctionTreeVector<3> d_cavity;  // Vector containing the 3 partial derivatives of the cavity function
 
-    QMFunction gamma;
-    QMFunction gammanp1;
-
+    QMFunction gamma;       // Surface charge density
+    QMFunction diff_func;
     int history;
 
     double d_coefficient; // factor with which rescale the derivative of the cavity function
@@ -67,6 +65,7 @@ private:
     bool variational; // determines if the Reaction potential will be optimized in its own loop each SCF iteration or if
                       // it will converge together with the SCF procedure
 
+    void resetQMFunction(QMFunction &function);
     void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
     void setGamma(QMFunction const &inv_eps_func, QMFunction &gamma_func, QMFunction &V_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
