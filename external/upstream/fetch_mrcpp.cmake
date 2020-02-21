@@ -16,6 +16,7 @@ else()
 
   FetchContent_GetProperties(mrcpp_sources)
 
+  set(CMAKE_BUILD_TYPE Release)
   set(ENABLE_OPENMP ${ENABLE_OPENMP})
   set(ENABLE_MPI ${ENABLE_MPI})
   set(Eigen3_DIR ${eigen3_sources_BINARY_DIR})
