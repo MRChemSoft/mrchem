@@ -49,20 +49,24 @@ public:
     virtual ~SCFSolver() = default;
 
     void setHistory(int hist) { this->history = hist; }
+    void setCheckpoint(bool chk) { this->checkpoint = chk; }
     void setThreshold(double orb, double prop);
     void setOrbitalPrec(double init, double final);
     void setHelmholtzPrec(double prec) { this->helmPrec = prec; }
-    void setMaxIterations(int m_iter) { this->maxIter = m_iter; }
+    void setMaxIterations(int iter) { this->maxIter = iter; }
+    void setCheckpointFile(const std::string &file) { this->chkFile = file; }
     void setMethodName(const std::string &name) { this->methodName = name; }
 
 protected:
     int history{0};                      ///< Maximum length of KAIN history
     int maxIter{-1};                     ///< Maximum number of iterations
+    bool checkpoint{false};              ///< Dump orbitals to file every iteration
     double orbThrs{-1.0};                ///< Convergence threshold for norm of orbital update
     double propThrs{-1.0};               ///< Convergence threshold for property
     double helmPrec{-1.0};               ///< Precision for construction of Helmholtz operators
     double orbPrec[3]{-1.0, -1.0, -1.0}; ///< Dynamic precision: [current_prec, start_prec, end_prec]
     std::string methodName;              ///< Name of electronic structure method to appear in output
+    std::string chkFile;                 ///< Name of checkpoint file
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error
