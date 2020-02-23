@@ -48,7 +48,7 @@ def main():
     this_path = Path(__file__).parent
 
     # create necessary directories
-    for d in ['orbitals', 'initial_guess', 'plots']:
+    for d in ['checkpoint', 'orbitals', 'initial_guess', 'plots']:
         if not os.path.exists(d):
             os.mkdir(d)
 
@@ -79,6 +79,7 @@ def main():
         if program_dict["printer"]["print_input"]:
             subprocess.call('cat ' + inp_file_cmd, shell=True)
         subprocess.call(cmd, shell=True)
+
 
 def parse_cmdline():
     usage = "usage: %prog [options] [config] inp_file"
@@ -126,25 +127,34 @@ def parse_cmdline():
 
     return executable, dryrun, inp_json, inp_file
 
+
 def translate_input(user_dict):
-    program_dict = {}
-    write_mpi(program_dict, user_dict);
-    write_printer(program_dict, user_dict);
-    write_molecule(program_dict, user_dict);
-    write_mra(program_dict, user_dict);
-    write_initial_guess(program_dict, user_dict);
-    write_scf_calculation(program_dict, user_dict);
-    write_rsp_calculations(program_dict, user_dict);
+    mol_dict = write_molecule(user_dict);
+    mpi_dict = write_mpi(user_dict);
+    mra_dict = write_mra(user_dict, mol_dict);
+    scf_dict = write_scf_calculation(user_dict, mol_dict);
+    rsp_dict = write_rsp_calculations(user_dict);
+    program_dict = {
+        "mpi": mpi_dict,
+        "mra": mra_dict,
+        "printer": user_dict["Printer"],
+        "molecule": mol_dict,
+        "scf_calculation": scf_dict,
+        "rsp_calculations": rsp_dict
+    }
     return program_dict
 
-def write_mpi(program_dict, user_dict):
-    program_dict["mpi"] = {
+
+def write_mpi(user_dict):
+    mpi_dict = {
         "numerically_exact": user_dict["MPI"]["numerically_exact"],
         "shared_memory_size": user_dict["MPI"]["shared_memory_size"],
         "bank_size": user_dict["MPI"]["bank_size"]
     }
+    return mpi_dict
 
-def write_mra(program_dict, user_dict):
+
+def write_mra(user_dict, mol_dict):
     order = user_dict["Basis"]["order"]
     if order < 0:
         # Set polynomial order based on world_prec
@@ -155,7 +165,7 @@ def write_mra(program_dict, user_dict):
     if min_scale > 1:
         # Compute auto box
         max_coord = 0.0 # single (coord + Z) with largest abs value
-        for coord in program_dict["molecule"]["coords"]:
+        for coord in mol_dict["coords"]:
             Z_i = max(6.0, float(PT[coord["atom"]].Z))
             max_coord = max(max_coord, abs(max(coord["xyz"], key=abs)) + Z_i)
 
@@ -167,7 +177,7 @@ def write_mra(program_dict, user_dict):
     if (max_scale - min_scale) > 30:
         max_scale = 30 + min_scale
 
-    program_dict["mra"] = {
+    mra_dict = {
         "basis_type": user_dict["Basis"]["type"][0].lower(),
         "order": order,
         "boxes": [2, 2, 2],
@@ -176,11 +186,12 @@ def write_mra(program_dict, user_dict):
         "max_scale": max_scale,
         "scaling_factor": [1.0, 1.0, 1.0]
     }
+    return mra_dict
 
-def write_printer(program_dict, user_dict):
-    program_dict["printer"] = user_dict["Printer"]
+def write_printer(user_dict):
+    return user_dict["Printer"]
 
-def write_molecule(program_dict, user_dict):
+def write_molecule(user_dict):
     # Translate into program syntax
     coords_raw = user_dict["Molecule"]["coords"]
     coords_dict = []
@@ -236,18 +247,19 @@ def write_molecule(program_dict, user_dict):
         for coord in coords_dict:
             coord["xyz"] = [r - o for r,o in zip(coord["xyz"], CoM)]
 
-    program_dict["molecule"] = {
+    mol_dict = {
         "charge": user_dict["Molecule"]["charge"],
         "multiplicity": user_dict["Molecule"]["multiplicity"],
         "gauge_origin": origin,
         "coords": coords_dict
     }
+    return mol_dict
 
-def write_initial_guess(program_dict, user_dict):
+def write_scf_guess(user_dict, method_name):
     guess_str = user_dict["SCF"]["guess_type"].lower()
-    method = guess_str.split('_')[0]
+    guess_type = guess_str.split('_')[0]
     zeta = 0
-    if method == 'sad' or method == 'core':
+    if guess_type == 'sad' or guess_type == 'core':
         zeta_str = guess_str.split('_')[1]
         if zeta_str == 'sz':
             zeta = 1
@@ -260,69 +272,82 @@ def write_initial_guess(program_dict, user_dict):
         else:
             print("Invalid zeta:" + guess_suffix)
 
-    program_dict["initial_guess"] = {
-        "restricted": user_dict["WaveFunction"]["restricted"],
-        "guess_prec": user_dict["SCF"]["guess_prec"],
-        "method": method,
+    guess_dict = {
+        "prec": user_dict["SCF"]["guess_prec"],
         "zeta": zeta,
-        "start_orbitals": "orbitals/phi",
-        "final_orbitals": "orbitals/phi",
-        "file_basis": "initial_guess/mrchem.bas",
-        "file_moa": "initial_guess/mrchem.moa",
-        "file_mob": "initial_guess/mrchem.mob",
-        "write_orbitals": False
+        "type": guess_type,
+        "method": method_name,
+        "localize": user_dict["SCF"]["localize"],
+        "restricted": user_dict["WaveFunction"]["restricted"],
+        "file_chk": user_dict["Files"]["file_chk"],
+        "file_gto_basis": user_dict["Files"]["file_gto_basis"],
+        "file_gto_paired": user_dict["Files"]["file_gto_paired"],
+        "file_gto_alpha": user_dict["Files"]["file_gto_alpha"],
+        "file_gto_beta": user_dict["Files"]["file_gto_beta"],
+        "file_mw_paired": user_dict["Files"]["file_mw_paired"],
+        "file_mw_alpha": user_dict["Files"]["file_mw_alpha"],
+        "file_mw_beta": user_dict["Files"]["file_mw_beta"],
     }
+    return guess_dict
 
-def write_scf_calculation(program_dict, user_dict):
+
+def write_scf_solver(user_dict, method_name):
     # SCF precisions and thresholds
-    scf_start_prec = user_dict["SCF"]["start_prec"]
-    scf_final_prec = user_dict["SCF"]["final_prec"]
-    if scf_final_prec < 0.0:
-        scf_final_prec = user_dict["world_prec"]
-    if scf_start_prec < 0.0:
-        scf_start_prec = scf_final_prec
+    start_prec = user_dict["SCF"]["start_prec"]
+    final_prec = user_dict["SCF"]["final_prec"]
+    if final_prec < 0.0:
+        final_prec = user_dict["world_prec"]
+    if start_prec < 0.0:
+        start_prec = final_prec
 
-    scf_orbital_thrs =  user_dict["SCF"]["orbital_thrs"]
-    scf_property_thrs =  user_dict["SCF"]["energy_thrs"]
-    if scf_orbital_thrs < 0.0 and scf_property_thrs < 0.0:
-        scf_property_thrs = user_dict["world_prec"] / 10
-        scf_orbital_thrs = math.sqrt(scf_property_thrs)
+    energy_thrs = user_dict["SCF"]["energy_thrs"]
+    orbital_thrs = user_dict["SCF"]["orbital_thrs"]
+    if orbital_thrs < 0.0 and energy_thrs < 0.0:
+        energy_thrs = user_dict["world_prec"] / 10
+        orbital_thrs = math.sqrt(energy_thrs)
 
-    scf_dict = {
-        "final_orbitals": "orbitals/phi",
-        "write_orbitals": user_dict["SCF"]["write_orbitals"],
+    solver_dict = {
+        "method": method_name,
+        "kain": user_dict["SCF"]["kain"],
+        "max_iter": user_dict["SCF"]["max_iter"],
+        "rotation": user_dict["SCF"]["rotation"],
+        "localize": user_dict["SCF"]["localize"],
+        "file_chk": user_dict["Files"]["file_chk"],
+        "checkpoint": user_dict["SCF"]["checkpoint"],
+        "start_prec": start_prec,
+        "final_prec": final_prec,
+        "energy_thrs": energy_thrs,
+        "orbital_thrs": orbital_thrs,
+        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
     }
+    return solver_dict
 
-    scf_dict["cube_plot"] = {
-        "density": user_dict["SCF"]["plot_density"],
-        "orbital": user_dict["SCF"]["plot_orbital"],
-        "plotter": user_dict["Plotter"]
-    }
 
+def write_scf_properties(user_dict, mol_dict):
     prop_dict = {}
     if user_dict["Properties"]["dipole_moment"]:
         prop_dict["dipole_moment"] = {
             "operator": "h_e_dip",
             "precision": user_dict["world_prec"],
-            "r_O": program_dict["molecule"]["gauge_origin"]
+            "r_O": mol_dict["gauge_origin"]
         }
     if user_dict["Properties"]["quadrupole_moment"]:
         prop_dict["quadrupole_moment"] = {
             "operator": "h_e_quad",
             "precision": user_dict["world_prec"],
-            "r_O": program_dict["molecule"]["gauge_origin"]
+            "r_O": mol_dict["gauge_origin"]
         }
     if user_dict["Properties"]["magnetizability"]:
         prop_dict["magnetizability"] = {
             "operator": "h_bb_dia",
             "precision": user_dict["world_prec"],
-            "r_O": program_dict["molecule"]["gauge_origin"]
+            "r_O": mol_dict["gauge_origin"]
         }
     if user_dict["Properties"]["nmr_shielding"]:
         nuc_vec = user_dict["NMRShielding"]["nucleus_k"]
         prop_dict["nmr_shielding"] = []
         all_nucs = (nuc_vec[0] < 0)
-        nuclei = program_dict["molecule"]["coords"]
+        nuclei = mol_dict["coords"]
         for k in range(len(nuclei)):
             if all_nucs or k in nuc_vec:
                 prop_dict["nmr_shielding"].append({
@@ -330,60 +355,51 @@ def write_scf_calculation(program_dict, user_dict):
                     "operator": "h_bm_dia",
                     "precision": user_dict["world_prec"],
                     "smoothing": user_dict["world_prec"],
-                    "r_O": program_dict["molecule"]["gauge_origin"],
+                    "r_O": mol_dict["gauge_origin"],
                     "r_K": nuclei[k]["xyz"]
                 })
-    scf_dict["properties"] = prop_dict
+    return prop_dict
 
-    method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
 
-    if user_dict["SCF"]["run"]:
-        scf_dict["initial_energy"] = {
-            "method_name": method_name,
-            "localize": user_dict["SCF"]["localize"],
-            "prec": scf_start_prec,
-        }
-        scf_dict["scf_solver"] = {
-            "method_name": method_name,
-            "kain": user_dict["SCF"]["kain"],
-            "max_iter": user_dict["SCF"]["max_iter"],
-            "rotation": user_dict["SCF"]["rotation"],
-            "localize": user_dict["SCF"]["localize"],
-            "start_prec": scf_start_prec,
-            "final_prec": scf_final_prec,
-            "orbital_thrs": scf_orbital_thrs,
-            "energy_thrs": scf_property_thrs,
-            "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
-        }
-    else:
-        scf_dict["initial_energy"] = {
-            "method_name": method_name,
-            "localize": user_dict["SCF"]["localize"],
-            "prec": scf_start_prec,
-        }
+def write_scf_plot(user_dict):
+    plot_dict = {}
+    if user_dict["SCF"]["plot_density"] or len(user_dict["SCF"]["plot_orbital"]):
+        plot_dict["density"] = user_dict["SCF"]["plot_density"]
+        plot_dict["orbital"] = user_dict["SCF"]["plot_orbital"]
+        plot_dict["plotter"] = user_dict["Plotter"]
+    return plot_dict
 
-    fock_dict = {
-        "kinetic_operator": {
-            "derivative": user_dict["Derivatives"]["kinetic"]
-        },
-        "nuclear_operator": {
-            "proj_prec": user_dict["Precisions"]["nuc_prec"],
-            "smooth_prec": user_dict["Precisions"]["nuc_prec"],
-            "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
-        }
+
+def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
+    fock_dict = {}
+
+    # Kinetic
+    fock_dict["kinetic_operator"] = {
+        "derivative": user_dict["Derivatives"]["kinetic"]
     }
 
+    # Nuclear
+    fock_dict["nuclear_operator"] = {
+        "proj_prec": user_dict["Precisions"]["nuc_prec"],
+        "smooth_prec": user_dict["Precisions"]["nuc_prec"],
+        "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
+    }
+
+    # Coulomb
     if wf_method in ['hartree', 'hf', 'dft']:
         fock_dict["coulomb_operator"] = {
             "poisson_prec": user_dict["Precisions"]["poisson_prec"],
             "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
         }
+
+    # Exchange
     if wf_method in ['hf', 'dft']:
         fock_dict["exchange_operator"] = {
             "screen": False,
             "poisson_prec": user_dict["Precisions"]["poisson_prec"]
         }
 
+    # Exchange-Correlation
     if wf_method in ['dft']:
         func_dict = []
         for line in dft_funcs.split('\n'):
@@ -409,16 +425,42 @@ def write_scf_calculation(program_dict, user_dict):
                 "functionals": func_dict
             }
         }
+
+    # External electric field
     if len(user_dict["ExternalFields"]["electric_field"]) > 0:
         fock_dict["external_operator"] = {
             "electric_field": user_dict["ExternalFields"]["electric_field"],
-            "r_O": program_dict["molecule"]["gauge_origin"]
+            "r_O": mol_dict["gauge_origin"]
         }
 
-    scf_dict["fock_operator"] = fock_dict
-    program_dict["scf_calculation"] = scf_dict
+    return fock_dict
 
-def write_rsp_calculations(program_dict, user_dict):
+
+def write_scf_calculation(user_dict, mol_dict):
+    method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
+
+    scf_dict = {}
+    scf_dict["write_orbitals"] = user_dict["SCF"]["write_orbitals"]
+    scf_dict["file_orbitals"] = user_dict["Files"]["file_orbitals"]
+    scf_dict["fock_operator"] = write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs)
+    scf_dict["initial_guess"] = write_scf_guess(user_dict, method_name)
+
+    if user_dict["SCF"]["run"]:
+        scf_dict["scf_solver"] = write_scf_solver(user_dict, method_name)
+
+    plot_dict = write_scf_plot(user_dict)
+    if len(plot_dict) > 0:
+        scf_dict["cube_plot"] = plot_dict
+
+    prop_dict = write_scf_properties(user_dict, mol_dict)
+    if len(prop_dict) > 0:
+        scf_dict["properties"] = prop_dict
+
+    return scf_dict
+
+
+def write_rsp_calculations(user_dict):
+    return []
     # SCF precisions and thresholds
     rsp_start_prec = user_dict["Response"]["start_prec"]
     rsp_final_prec = user_dict["Response"]["final_prec"]

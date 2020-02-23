@@ -317,7 +317,8 @@ sections:
           functionals.
   - name: Properties
     docstring: |
-      Provide a list of properties to compute.
+      Provide a list of properties to compute (total SCF energy is always
+      computed).
     keywords:
       - name: dipole_moment
         type: bool
@@ -413,6 +414,57 @@ sections:
         default: [-1]
         docstring: |
           List of nuclei to compute. Negative value computes all.
+  - name: Files
+    docstring: |
+      Defines file paths used for program input/output.
+    keywords:
+      - name: file_chk
+        type: str
+        default: "checkpoint/phi"
+        docstring: |
+          File name for checkpoint files during SCF, used with 'checkpoint'
+          and 'chk' guess.
+      - name: file_gto_basis
+        type: str
+        default: "initial_guess/mrchem.bas"
+        docstring: |
+          File name for GTO basis set, used with 'gto' guess.
+      - name: file_gto_paired
+        type: str
+        default: "initial_guess/mrchem.mop"
+        docstring: |
+          File name for paired MO matrix, used with 'gto' guess.
+      - name: file_gto_alpha
+        type: str
+        default: "initial_guess/mrchem.moa"
+        docstring: |
+          File name for alpha MO matrix, used with 'gto' guess.
+      - name: file_gto_beta
+        type: str
+        default: "initial_guess/mrchem.mob"
+        docstring: |
+          File name for beta MO matrix, used with 'gto' guess.
+      - name: file_mw_paired
+        type: str
+        default: "orbitals/phi_p"
+        docstring: |
+          File name for paired orbitals, used with 'mw' guess.
+      - name: file_mw_alpha
+        type: str
+        default: "orbitals/phi_a"
+        docstring: |
+          File name for alpha orbitals, used with 'mw' guess.
+      - name: file_mw_beta
+        type: str
+        default: "orbitals/phi_b"
+        docstring: |
+          File name for beta orbitals, used with 'mw' guess.
+      - name: file_orbitals
+        type: str
+        default: "orbitals/phi"
+        docstring: |
+          File name for orbitals, used with 'write_orbitals', will get
+          "_p", "_a" or "_b" extension.
   - name: SCF
     docstring: |
       Includes parameters related to the ground state SCF orbital optimization
@@ -476,6 +528,7 @@ sections:
         predicates:
           - "value.lower() in
             ['mw',
+             'chk',
              'gto',
              'core_sz',
              'core_dz',
@@ -486,19 +539,26 @@ sections:
              'sad_tz',
              'sad_qz']"
         docstring: |
-          Type of initial guess. 'mw' reads previously computed orbitals (must
-          be written using the same world size and polynomial type/order). 'gto'
-          reads precomputed GTO orbitals (requires extra non-standard input
-          files for basis set and MO coefficients). 'core' and 'sad' will
-          diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ)
-          using a Core or Superposition of Atomic Densities Hamiltonian,
-          respectively.
-      - name: write_orbitals
+          Type of initial guess for ground state orbitals.
+          'chk' restarts a previous calculation which was dumped using the
+          'checkpoint' keyword. This will load MRA and electron spin
+          configuration directly from the checkpoint files, which are thus
+          required to be identical in the two calculations.
+          'mw' will start from final orbitals in a previous calculation written
+          using the 'write_orbitals' keyword. The orbitals will be re-projected
+          into the new computational setup, which means that the electron spin
+          configuration and MRA can be different in the two calculations.
+          'gto' reads precomputed GTO orbitals (requires extra non-standard
+          input files for basis set and MO coefficients).
+          'core' and 'sad' will diagonalize the Fock matrix in the given AO
+          basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic
+          Densities Hamiltonian, respectively.
+      - name: checkpoint
         type: bool
         default: false
         docstring: |
-          Write converged orbitals to disk. Can be used as 'mw' initial guess in
-          subsequent calculations.
+          Write orbitals to disk in each iteration. Can be used as 'chk' initial
+          guess in subsequent calculations.
       - name: plot_density
         type: bool
         default: false
@@ -510,6 +570,12 @@ sections:
         docstring: |
           Plot converged molecular orbitals of given index. If the first index
           is negative, all orbitals will be plotted.
+      - name: write_orbitals
+        type: bool
+        default: false
+        docstring: |
+          Write final orbitals to disk. Can be used as 'mw' initial
+          guess in subsequent calculations.
   - name: Response
     docstring: |
       Includes parameters related to the response SCF optimization.
@@ -554,13 +620,27 @@ sections:
         default: -1.0
         docstring: |
           Incremental precision in SCF iterations, final value.
+      - name: guess_prec
+        type: float
+        default: 1.0e-3
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in construction of initial guess.
       - name: guess_type
         type: str
         default: 'none'
         docstring: |
           Type of initial guess for response.
+      - name: checkpoint
+        type: bool
+        default: false
+        docstring: |
+          Write perturbed orbitals to disk in each iteration. Can be used as
+          'chk' initial guess in subsequent calculations.
       - name: write_orbitals
         type: bool
         default: false
         docstring: |
-          Write converged perturbed orbitals to disk.
+          Write final perturbed orbitals to disk. Can be used as 'mw' initial
+          guess in subsequent calculations.

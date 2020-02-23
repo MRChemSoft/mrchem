@@ -149,7 +149,7 @@ bool driver::guess_scf_orbitals(const json &json_guess, Molecule &mol) {
     auto gto_p = json_guess["file_gto_paired"];
     auto gto_a = json_guess["file_gto_alpha"];
     auto gto_b = json_guess["file_gto_beta"];
-    auto gto_bas = json_guess["file_basis"];
+    auto gto_bas = json_guess["file_gto_basis"];
     auto file_chk = json_guess["file_chk"];
     auto restricted = json_guess["restricted"];
 
