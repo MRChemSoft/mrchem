@@ -31,6 +31,7 @@
 namespace mrchem {
 namespace orbital {
 
+bool compare(const OrbitalVector &Phi_a, const OrbitalVector &Phi_b);
 bool compare(const Orbital &phi_a, const Orbital &phi_b);
 int compare_occ(const Orbital &phi_a, const Orbital &phi_b);
 int compare_spin(const Orbital &phi_a, const Orbital &phi_b);
@@ -51,8 +52,8 @@ OrbitalVector param_copy(const OrbitalVector &Phi);
 OrbitalVector adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b);
 OrbitalVector disjoin(OrbitalVector &Phi, int spin);
 
-void save_orbitals(OrbitalVector &Phi, const std::string &file, const std::string &suffix = "", int n_orbs = -1);
-OrbitalVector load_orbitals(const std::string &file, const std::string &suffix = "", int n_orbs = -1);
+void save_orbitals(OrbitalVector &Phi, const std::string &file, int spin = -1);
+OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
 
 void normalize(OrbitalVector &Phi);
 void orthogonalize(double prec, OrbitalVector &Phi);

@@ -64,14 +64,15 @@ void QMFunction::setImag(mrcpp::FunctionTree<3> *tree) {
     this->func_ptr->im = tree;
 }
 
-void QMFunction::alloc(int type) {
+void QMFunction::alloc(int type, mrcpp::MultiResolutionAnalysis<3> *mra) {
+    if (mra == nullptr) MSG_ABORT("Invalid argument");
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (hasReal()) MSG_ABORT("Real part already allocated");
-        this->func_ptr->re = new mrcpp::FunctionTree<3>(*MRA, this->func_ptr->shared_mem);
+        this->func_ptr->re = new mrcpp::FunctionTree<3>(*mra, this->func_ptr->shared_mem);
     }
     if (type == NUMBER::Imag or type == NUMBER::Total) {
         if (hasImag()) MSG_ABORT("Imaginary part already allocated");
-        this->func_ptr->im = new mrcpp::FunctionTree<3>(*MRA, this->func_ptr->shared_mem);
+        this->func_ptr->im = new mrcpp::FunctionTree<3>(*mra, this->func_ptr->shared_mem);
     }
 }
 

@@ -40,7 +40,7 @@ public:
     QMFunction dagger();
     virtual ~QMFunction() = default;
 
-    void alloc(int type);
+    void alloc(int type, mrcpp::MultiResolutionAnalysis<3> *mra = MRA);
     void free(int type);
 
     bool isShared() const { return this->func_ptr->func_data.is_shared; }
@@ -49,6 +49,7 @@ public:
 
     int getSizeNodes(int type) const;
     int getNNodes(int type) const;
+
     FunctionData &getFunctionData();
 
     void setReal(mrcpp::FunctionTree<3> *tree);

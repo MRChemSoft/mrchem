@@ -172,11 +172,26 @@ void Orbital::loadOrbital(const std::string &file) {
     if (f.is_open()) f.read((char *)&orb_data, sizeof(OrbitalData));
     f.close();
 
+    std::array<int, 3> corner{func_data.corner[0], func_data.corner[1], func_data.corner[2]};
+    std::array<int, 3> boxes{func_data.boxes[0], func_data.boxes[1], func_data.boxes[2]};
+    mrcpp::BoundingBox<3> world(func_data.scale, corner, boxes);
+
+    mrcpp::MultiResolutionAnalysis<3> *mra = nullptr;
+    if (func_data.type == mrcpp::Interpol) {
+        mrcpp::InterpolatingBasis basis(func_data.order);
+        mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, func_data.depth);
+    } else if (func_data.type == mrcpp::Legendre) {
+        mrcpp::LegendreBasis basis(func_data.order);
+        mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, func_data.depth);
+    } else {
+        MSG_ABORT("Invalid basis type!");
+    }
+
     // reading real part
     if (func_data.real_size > 0) {
         std::stringstream fname;
         fname << file << "_re";
-        alloc(NUMBER::Real);
+        alloc(NUMBER::Real, mra);
         real().loadTree(fname.str());
     }
 
@@ -184,9 +199,10 @@ void Orbital::loadOrbital(const std::string &file) {
     if (func_data.imag_size > 0) {
         std::stringstream fname;
         fname << file << "_im";
-        alloc(NUMBER::Imag);
+        alloc(NUMBER::Imag, mra);
         imag().loadTree(fname.str());
     }
+    delete mra;
 }
 
 /** @brief Returns a character representing the spin (a/b/p) */

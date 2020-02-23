@@ -143,6 +143,62 @@ int orbital::compare_spin(const Orbital &phi_a, const Orbital &phi_b) {
     return comp;
 }
 
+/** @brief Compare spin and occupancy of two orbital vector
+ *
+ *  Returns true if orbital parameters are the same, orbital ordering
+ *  NOT taken into account.
+ *
+ */
+bool orbital::compare(const OrbitalVector &Phi_a, const OrbitalVector &Phi_b) {
+    bool comp = true;
+    if (orbital::size_alpha(Phi_a) != orbital::size_alpha(Phi_b)) {
+        MSG_WARN("Different alpha occupancy");
+        comp = false;
+    }
+    if (orbital::size_beta(Phi_a) != orbital::size_beta(Phi_b)) {
+        MSG_WARN("Different beta occupancy");
+        comp = false;
+    }
+    if (orbital::size_paired(Phi_a) != orbital::size_paired(Phi_b)) {
+        MSG_WARN("Different paired occupancy");
+        comp = false;
+    }
+    if (orbital::size_empty(Phi_a) != orbital::size_empty(Phi_b)) {
+        MSG_WARN("Different empty occupancy");
+        comp = false;
+    }
+    if (orbital::size_singly(Phi_a) != orbital::size_singly(Phi_b)) {
+        MSG_WARN("Different single occupancy");
+        comp = false;
+    }
+    if (orbital::size_doubly(Phi_a) != orbital::size_doubly(Phi_b)) {
+        MSG_WARN("Different double occupancy");
+        comp = false;
+    }
+    if (orbital::size_occupied(Phi_a) != orbital::size_occupied(Phi_b)) {
+        MSG_WARN("Different total occupancy");
+        comp = false;
+    }
+
+    for (auto &phi_a : Phi_a) {
+        const mrcpp::MultiResolutionAnalysis<3> *mra_a{nullptr};
+        if (phi_a.hasReal()) mra_a = &phi_a.real().getMRA();
+        if (phi_a.hasImag()) mra_a = &phi_a.imag().getMRA();
+        if (mra_a == nullptr) continue;
+        for (auto &phi_b : Phi_b) {
+            const mrcpp::MultiResolutionAnalysis<3> *mra_b{nullptr};
+            if (phi_b.hasReal()) mra_b = &phi_a.real().getMRA();
+            if (phi_b.hasImag()) mra_b = &phi_a.imag().getMRA();
+            if (mra_b == nullptr) continue;
+            if (*mra_a != *mra_b) {
+                MSG_WARN("Different MRA");
+                comp = false;
+            }
+        }
+    }
+    return comp;
+}
+
 /** @brief out_i = a*(inp_a)_i + b*(inp_b)_i
  *
  *  Component-wise addition of orbitals.
@@ -270,27 +326,38 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
  *
  * @param Phi: orbitals to save
  * @param file: file name prefix
- * @param n_orbs: number of orbitals to save
+ * @param spin: type of orbitals to save, negative means all orbitals
  *
  * The given file name (e.g. "phi") will be appended with orbital number ("phi_0").
  * Produces separate files for meta data ("phi_0.meta"), real ("phi_0_re.tree") and
- * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals in the
- * vector are saved.
+ * imaginary ("phi_0_im.tree") parts. If a particular spin is given, the file name
+ * will get an extra "_p", "_a" or "_b" suffix. Negative spin means that all
+ * orbitals in the vector are saved, and no suffix is added.
  */
-void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, const std::string &suffix, int n_orbs) {
+void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, int spin) {
     Timer t_tot;
+    std::string spin_str = "All";
+    if (spin == SPIN::Paired) spin_str = "Paired";
+    if (spin == SPIN::Alpha) spin_str = "Alpha";
+    if (spin == SPIN::Beta) spin_str = "Beta";
     mrcpp::print::header(2, "Writing orbitals");
     print_utils::text(2, "File name", file);
-    print_utils::text(2, "File suffix", suffix);
+    print_utils::text(2, "Spin", spin_str);
     mrcpp::print::separator(2, '-');
-    if (n_orbs < 0) n_orbs = Phi.size();
-    if (n_orbs > Phi.size()) MSG_ERROR("Index out of bounds");
-    for (int i = 0; i < n_orbs; i++) {
-        if (not mpi::my_orb(Phi[i])) continue; // only save own orbitals
+
+    auto n = 0;
+    for (int i = 0; i < Phi.size(); i++) {
         Timer t1;
         std::stringstream orbname;
-        orbname << file << "_" << suffix << i;
-        Phi[i].saveOrbital(orbname.str());
+        orbname << file;
+        if (spin == SPIN::Paired) orbname << "_p";
+        if (spin == SPIN::Alpha) orbname << "_a";
+        if (spin == SPIN::Beta) orbname << "_b";
+        orbname << "_" << n;
+        if ((Phi[i].spin() == spin) or (spin < 0)) {
+            if (mpi::my_orb(Phi[i])) Phi[i].saveOrbital(orbname.str());
+            n++;
+        }
         print_utils::qmfunction(2, "'" + orbname.str() + "'", Phi[i], t1);
     }
     mrcpp::print::footer(2, t_tot, 2);
@@ -306,11 +373,10 @@ void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, const s
  * imaginary ("phi_0_im.tree") parts. Negative n_orbs means that all orbitals matching
  * the prefix name will be read.
  */
-OrbitalVector orbital::load_orbitals(const std::string &file, const std::string &suffix, int n_orbs) {
+OrbitalVector orbital::load_orbitals(const std::string &file, int n_orbs) {
     Timer t_tot;
     mrcpp::print::header(2, "Reading orbitals");
     print_utils::text(2, "File name", file);
-    print_utils::text(2, "File suffix", suffix);
     mrcpp::print::separator(2, '-');
     OrbitalVector Phi;
     for (int i = 0; true; i++) {
@@ -318,7 +384,7 @@ OrbitalVector orbital::load_orbitals(const std::string &file, const std::string 
         Timer t1;
         Orbital phi_i;
         std::stringstream orbname;
-        orbname << file << "_" << suffix << i;
+        orbname << file << "_" << i;
         phi_i.loadOrbital(orbname.str());
         phi_i.setRankID(mpi::orb_rank);
         if (phi_i.hasReal() or phi_i.hasImag()) {
