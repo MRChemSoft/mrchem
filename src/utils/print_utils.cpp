@@ -38,6 +38,16 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
+std::string print_utils::dbl_to_str(double d, int p, bool sci) {
+    std::stringstream o_dbl;
+    if (sci) {
+        o_dbl << std::setprecision(p) << std::scientific << d;
+    } else {
+        o_dbl << std::setprecision(p) << std::fixed << d;
+    }
+    return o_dbl.str();
+}
+
 void print_utils::headline(int level, const std::string &txt) {
     auto pwidth = Printer::getWidth();
     auto txt_width = txt.size();

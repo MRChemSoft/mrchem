@@ -38,6 +38,7 @@ void scalar(int level, const std::string &txt, double val, const std::string &un
 void vector(int level, const std::string &txt, const DoubleVector &val, int p = -1, bool s = false);
 void matrix(int level, const std::string &txt, const DoubleMatrix &val, int p = -1, bool s = false);
 void qmfunction(int level, const std::string &txt, const QMFunction &func, mrcpp::Timer &t);
+std::string dbl_to_str(double d, int p, bool sci);
 
 } // namespace print_utils
 } // namespace mrchem
