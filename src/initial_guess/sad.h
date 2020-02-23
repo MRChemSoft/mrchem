@@ -36,12 +36,12 @@
  */
 
 namespace mrchem {
-class Molecule;
+class Nuclei;
 
 namespace initial_guess {
 namespace sad {
 
-OrbitalVector setup(double prec, const Molecule &mol, bool restricted, int zeta);
+bool setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
 
 } // namespace sad
 } // namespace initial_guess

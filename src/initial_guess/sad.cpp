@@ -23,21 +23,18 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <Eigen/Eigenvalues>
-
-#include "MRCPP/MWFunctions"
-#include "MRCPP/MWOperators"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-#include "MRCPP/utils/details.h"
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+#include <MRCPP/utils/details.h>
 
 #include "core.h"
 #include "gto.h"
 #include "parallel.h"
 #include "sad.h"
-#include "utils/math_utils.h"
 
-#include "chemistry/Molecule.h"
+#include "utils/print_utils.h"
+
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
@@ -58,37 +55,28 @@ namespace mrchem {
 namespace initial_guess {
 namespace sad {
 
-ComplexMatrix diagonalize_fock(KineticOperator &T, RankZeroTensorOperator &V, OrbitalVector &Phi, int spin);
-void project_atomic_densities(double prec, Density &rho_tot, const Molecule &mol);
+void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs);
 
 } // namespace sad
 } // namespace initial_guess
 
-OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool restricted, int zeta) {
-    std::stringstream o_prec, o_zeta;
-    o_prec << std::setprecision(5) << std::scientific << prec;
-    o_zeta << zeta;
+bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
+    if (Phi.size() == 0) return false;
+
+    auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Diagonalize Hamiltonian matrix");
-    print_utils::text(0, "Precision   ", o_prec.str());
+    print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Hamiltonian ", "Superposition of Atomic Densities (SAD)");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
-    print_utils::text(0, "Zeta quality", o_zeta.str());
+    print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
 
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
-
-    // Figure out number of occupied orbitals
-    int mult = mol.getMultiplicity(); // multiplicity
-    int Ne = mol.getNElectrons();     // total electrons
-    int Nd = Ne - (mult - 1);         // doubly occupied electrons
-    if (Nd % 2 != 0) MSG_ABORT("Invalid multiplicity");
-    int Na = Nd / 2 + (mult - 1); // alpha orbitals
-    int Nb = Nd / 2;              // beta orbitals
 
     // Make Fock operator contributions
     t_lap.start();
@@ -102,7 +90,7 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
     auto mrdft_p = xc_factory.build();
 
     KineticOperator T(D_p);
-    NuclearOperator V_nuc(mol.getNuclei(), prec);
+    NuclearOperator V_nuc(nucs, prec);
     CoulombOperator J(P_p);
     XCOperator XC(mrdft_p);
     RankZeroTensorOperator V = V_nuc + J + XC;
@@ -111,25 +99,29 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
     // Compute Coulomb density
     t_lap.start();
     Density &rho_j = J.getDensity();
-    initial_guess::sad::project_atomic_densities(prec, rho_j, mol);
+    initial_guess::sad::project_atomic_densities(prec, rho_j, nucs);
 
     // Compute XC density
     if (restricted) {
         Density &rho_xc = XC.getDensity(DensityType::Total);
         qmfunction::deep_copy(rho_xc, rho_j);
     } else {
+        auto Na = static_cast<double>(orbital::size_alpha(Phi));
+        auto Nb = static_cast<double>(orbital::size_alpha(Phi));
+        auto Ne = orbital::get_electron_number(Phi);
         Density &rho_a = XC.getDensity(DensityType::Alpha);
         Density &rho_b = XC.getDensity(DensityType::Beta);
         qmfunction::deep_copy(rho_a, rho_j);
         qmfunction::deep_copy(rho_b, rho_j);
-        rho_a.rescale(1.0 - static_cast<double>(Nb) / Ne);
-        rho_b.rescale(1.0 - static_cast<double>(Na) / Ne);
+        rho_a.rescale(1.0 - Nb / Ne);
+        rho_b.rescale(1.0 - Na / Ne);
     }
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
     // Project AO basis of hydrogen functions
     t_lap.start();
-    OrbitalVector Phi = initial_guess::core::project_ao(prec, mol.getNuclei(), SPIN::Paired, zeta);
+    OrbitalVector Psi;
+    initial_guess::core::project_ao(Psi, prec, nucs, zeta);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
     mrcpp::print::header(2, "Building Fock operator");
@@ -142,51 +134,29 @@ OrbitalVector initial_guess::sad::setup(double prec, const Molecule &mol, bool r
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
     t_lap.start();
-    OrbitalVector Psi;
-    if (restricted) {
-        if (mult != 1) MSG_ABORT("Restricted open-shell not available");
-        int Np = Nd / 2; // paired orbitals
-        ComplexMatrix U = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Paired);
-        Psi = initial_guess::core::rotate_orbitals(prec, U, Phi, Np, SPIN::Paired);
-    } else {
-        int Na = Nd / 2 + (mult - 1); // alpha orbitals
-        int Nb = Nd / 2;              // beta orbitals
-        ComplexMatrix U_a = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Alpha);
-        OrbitalVector Psi_a = initial_guess::core::rotate_orbitals(prec, U_a, Phi, Na, SPIN::Alpha);
-        mrcpp::print::separator(2, '-');
-        ComplexMatrix U_b = initial_guess::sad::diagonalize_fock(T, V, Phi, SPIN::Beta);
-        OrbitalVector Psi_b = initial_guess::core::rotate_orbitals(prec, U_b, Phi, Nb, SPIN::Beta);
+    auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
+    auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
 
-        Psi = orbital::adjoin(Psi_a, Psi_b);
-    }
+    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V, SPIN::Paired);
+    initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
+
+    ComplexMatrix U_a = initial_guess::core::diagonalize(Psi, T, V, SPIN::Alpha);
+    initial_guess::core::rotate_orbitals(Phi_a, prec, U_a, Psi);
+    mrcpp::print::separator(2, '-');
+    ComplexMatrix U_b = initial_guess::core::diagonalize(Psi, T, V, SPIN::Alpha);
+    initial_guess::core::rotate_orbitals(Phi_b, prec, U_b, Psi);
+
+    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
+    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
     T.clear();
     V.clear();
+
     mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
-
-    return Psi;
+    return true;
 }
 
-ComplexMatrix initial_guess::sad::diagonalize_fock(KineticOperator &T,
-                                                   RankZeroTensorOperator &V,
-                                                   OrbitalVector &Phi,
-                                                   int spin) {
-    Timer t1;
-    for (auto &i : Phi) i.setSpin(spin);
-    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
-    ComplexMatrix f_tilde = T(Phi, Phi) + V(Phi, Phi);
-    ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
-    mrcpp::print::time(1, "Computing Fock matrix", t1);
-
-    Timer t2;
-    DoubleVector eig;
-    ComplexMatrix U = math_utils::diagonalize_hermitian_matrix(f, eig);
-    mrcpp::print::time(1, "Diagonalizing Fock matrix", t2);
-
-    return S_m12 * U;
-}
-
-void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot, const Molecule &mol) {
+void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs) {
     auto pprec = Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
     auto w1 = 5;
@@ -223,7 +193,6 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     auto tot_rho = 0.0;
 
     Timer t_loc;
-    const Nuclei &nucs = mol.getNuclei();
     for (int k = 0; k < nucs.size(); k++) {
         if (mpi::orb_rank != k % mpi::orb_size) continue;
 
@@ -245,8 +214,8 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         o_row << std::setw(w1) << k;
         o_row << std::setw(w2) << sym;
         o_row << std::setw(w4) << " ";
-        o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << nuc_charge;
-        o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << rho_charge;
+        o_row << std::setw(w3) << print_utils::dbl_to_str(nuc_charge, 2 * pprec, false);
+        o_row << std::setw(w3) << print_utils::dbl_to_str(rho_charge, 2 * pprec, false);
         println(2, o_row.str());
     }
     t_loc.stop();
@@ -258,8 +227,8 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     std::stringstream o_row;
     o_row << " Total charge";
     o_row << std::string(w1 + w2 + w4 - 13, ' ');
-    o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << tot_nuc;
-    o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << tot_rho;
+    o_row << std::setw(w3) << print_utils::dbl_to_str(tot_nuc, 2 * pprec, false);
+    o_row << std::setw(w3) << print_utils::dbl_to_str(tot_rho, 2 * pprec, false);
 
     mrcpp::print::separator(2, '-');
     println(2, o_row.str());
