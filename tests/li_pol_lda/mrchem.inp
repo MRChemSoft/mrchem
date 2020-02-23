@@ -35,6 +35,3 @@ Response {
   directions = [0,0,1]
 }
 
-Polarizability {
-  frequency = [0.0]
-}

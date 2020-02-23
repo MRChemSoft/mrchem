@@ -23,6 +23,5 @@ SCF {
   kain = 3                        # Length of KAIN iterative history
   max_iter = 5
   orbital_thrs = 2.0e-2
-  guess_type = GTO             # Type of initial guess (none, gto, mw)
+  guess_type = GTO                # Type of initial guess (none, gto, mw)
 }
-
