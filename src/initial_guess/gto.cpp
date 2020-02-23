@@ -23,19 +23,19 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Gaussians"
-#include "MRCPP/MWFunctions"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-
-#include "parallel.h"
-#include "utils/math_utils.h"
+#include <MRCPP/Gaussians>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "gto.h"
+#include "parallel.h"
+
 #include "utils/gto_utils/Intgrl.h"
 #include "utils/gto_utils/OrbitalExp.h"
+#include "utils/math_utils.h"
+#include "utils/print_utils.h"
 
-#include "chemistry/Molecule.h"
+#include "chemistry/Nucleus.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
@@ -50,49 +50,10 @@ namespace mrchem {
 
 /** @brief Produce an initial guess of orbitals
  *
+ * @param Phi: vector or MW orbitals
  * @param prec: precision used in projection
- * @param mol: molecule
  * @param bas_file: basis set file (LSDalton format)
- * @param mo_file: file with MO coefficients
- *
- * Sets up a precomputed MO basis from a spin restricted LSDalton calculation.
- * Requires the LSDalton basis file and the corresponding MO matrix (not in any
- * official format!). The MO file should start with one entry giving the number
- * of AOs, followed by the columns of the MO matrix concatenated into a single
- * column.
- *
- * Projects only the occupied orbitals.
- *
- */
-OrbitalVector initial_guess::gto::setup(double prec,
-                                        const Molecule &mol,
-                                        const std::string &bas_file,
-                                        const std::string &mo_file) {
-    std::stringstream o_prec;
-    o_prec << std::setprecision(5) << std::scientific << prec;
-    mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation ", "Reading Gaussian-type MOs");
-    print_utils::text(0, "Precision   ", o_prec.str());
-    print_utils::text(0, "Restricted  ", "True");
-    print_utils::text(0, "Basis file  ", bas_file);
-    print_utils::text(0, "MO file     ", mo_file);
-    mrcpp::print::separator(0, '~', 2);
-
-    // Figure out number of occupied orbitals
-    int mult = mol.getMultiplicity(); // multiplicity
-    int Ne = mol.getNElectrons();     // total electrons
-    int Nd = Ne - (mult - 1);         // doubly occupied electrons
-    if (Nd % 2 != 0) MSG_ABORT("Invalid multiplicity");
-    int Np = Nd / 2; // paired orbitals
-
-    return initial_guess::gto::project_mo(prec, bas_file, mo_file, SPIN::Paired, Np);
-}
-
-/** @brief Produce an initial guess of orbitals
- *
- * @param prec: precision used in projection
- * @param mol: molecule
- * @param bas_file: basis set file (LSDalton format)
+ * @param mop_file: file with paired MO coefficients
  * @param moa_file: file with alpha MO coefficients
  * @param mob_file: file with beta MO coefficients
  *
@@ -105,56 +66,60 @@ OrbitalVector initial_guess::gto::setup(double prec,
  * Projects only the occupied orbitals of each spin.
  *
  */
-OrbitalVector initial_guess::gto::setup(double prec,
-                                        const Molecule &mol,
-                                        const std::string &bas_file,
-                                        const std::string &moa_file,
-                                        const std::string &mob_file) {
-    std::stringstream o_prec;
-    o_prec << std::setprecision(5) << std::scientific << prec;
+bool initial_guess::gto::setup(OrbitalVector &Phi,
+                               double prec,
+                               const std::string &bas_file,
+                               const std::string &mop_file,
+                               const std::string &moa_file,
+                               const std::string &mob_file) {
+    if (Phi.size() == 0) return false;
+
     mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation   ", "Reading Gaussian-type MOs");
-    print_utils::text(0, "Precision     ", o_prec.str());
-    print_utils::text(0, "Restricted    ", "False");
-    print_utils::text(0, "Basis file    ", bas_file);
-    print_utils::text(0, "MO alpha file ", moa_file);
-    print_utils::text(0, "MO beta file  ", mob_file);
+    print_utils::text(0, "Calculation   ", "Read orbitals from file (GTO)");
+    print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
+    if (orbital::size_singly(Phi)) {
+        print_utils::text(0, "Restricted    ", "False");
+        print_utils::text(0, "MO alpha file ", moa_file);
+        print_utils::text(0, "MO beta file  ", mob_file);
+    } else {
+        print_utils::text(0, "Restricted    ", "True");
+        print_utils::text(0, "MO file ", mop_file);
+    }
     mrcpp::print::separator(0, '~', 2);
 
-    // Figure out number of occupied orbitals
-    int mult = mol.getMultiplicity(); // multiplicity
-    int Ne = mol.getNElectrons();     // total electrons
-    int Nd = Ne - (mult - 1);         // paired electrons
-    if (Nd % 2 != 0) MSG_ABORT("Invalid multiplicity");
-    int Na = Nd / 2 + (mult - 1); // alpha orbitals
-    int Nb = Nd / 2;              // beta orbitals
+    // Separate alpha/beta from paired orbitals
+    auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
+    auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
 
-    auto Phi_a = initial_guess::gto::project_mo(prec, bas_file, moa_file, SPIN::Alpha, Na);
-    auto Phi_b = initial_guess::gto::project_mo(prec, bas_file, mob_file, SPIN::Beta, Nb);
+    // Project paired, alpha and beta separately
+    initial_guess::gto::project_mo(Phi, prec, bas_file, mop_file);
+    initial_guess::gto::project_mo(Phi_a, prec, bas_file, moa_file);
+    initial_guess::gto::project_mo(Phi_b, prec, bas_file, mob_file);
 
     // Collect orbitals into one vector
-    return orbital::adjoin(Phi_a, Phi_b);
+    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
+    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+
+    return true;
 }
 
 /** @brief Project the N first GTO expansions of the MO basis
  *
+ * @param Phi: vector or MW orbitals
  * @param prec Precision used in projection
  * @param bas_file String containing basis set file
  * @param mo_file String containing MO matrix file
- * @param N Number of orbitals to project
- * @param spin Spin parameter of orbitals
- *
- * @returns Phi: vector or MW orbitals
  *
  * Projects the N first rows of the MO matrix from GTO orbitals into
- * corresponding MW orbitals. All orbitals get the same spin parameter.
+ * corresponding MW orbitals.
  *
  */
-OrbitalVector initial_guess::gto::project_mo(double prec,
-                                             const std::string &bas_file,
-                                             const std::string &mo_file,
-                                             int spin,
-                                             int N) {
+void initial_guess::gto::project_mo(OrbitalVector &Phi,
+                                    double prec,
+                                    const std::string &bas_file,
+                                    const std::string &mo_file) {
+    if (Phi.size() == 0) return;
+
     Timer t_tot;
     auto pprec = Printer::getPrecision();
     auto w0 = Printer::getWidth() - 2;
@@ -169,11 +134,7 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
     o_head << std::setw(w2) << "Size";
     o_head << std::setw(w2) << "Time";
 
-    std::string title = "GTO Initial Guess";
-    if (spin == SPIN::Alpha) title += " (alpha)";
-    if (spin == SPIN::Beta) title += " (beta)";
-
-    mrcpp::print::header(1, title);
+    mrcpp::print::header(1, "GTO Initial Guess");
     println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
@@ -181,21 +142,16 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
     Timer t1;
     gto_utils::Intgrl intgrl(bas_file);
     gto_utils::OrbitalExp gto_exp(intgrl);
-    if (N < 0) N = gto_exp.size();
     t1.stop();
 
     // Read MO file (transpose)
     Timer t2;
     DoubleMatrix MO = math_utils::read_matrix_file(mo_file);
-    if (MO.cols() < N) MSG_ABORT("Size mismatch");
+    if (MO.cols() < Phi.size()) MSG_ABORT("Size mismatch");
     t2.stop();
 
     Timer t3;
-    OrbitalVector Phi;
-    for (int i = 0; i < N; i++) Phi.push_back(Orbital(spin));
-    mpi::distribute(Phi);
-
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
         if (mpi::my_orb(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
@@ -204,7 +160,7 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
         }
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w3) << std::setprecision(pprec) << std::scientific << Phi[i].norm();
+        o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
     }
     mpi::barrier(mpi::comm_orb);
@@ -213,23 +169,19 @@ OrbitalVector initial_guess::gto::project_mo(double prec,
     mrcpp::print::time(1, "Reading MO matrix", t2);
     mrcpp::print::time(1, "Projecting GTO MOs", t3);
     mrcpp::print::footer(1, t_tot, 2);
-    return Phi;
 }
 
 /** @brief Project the N first GTO expansions of the AO basis
  *
+ * @param Phi: vector or MW orbitals
  * @param prec Precision used in projection
  * @param bas_file String containing basis set file
- * @param N Number of orbitals to project
- * @param spin Spin parameter of orbitals
- *
- * @returns Phi: vector or MW orbitals
  *
  * Projects the N first Gaussian-type AOs into corresponding MW orbitals.
- * All orbitals get the same spin parameter.
  *
  */
-OrbitalVector initial_guess::gto::project_ao(double prec, const std::string &bas_file, int spin, int N) {
+void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const std::string &bas_file) {
+    if (Phi.size() == 0) return;
     mrcpp::print::header(0, "Setting up Gaussian-type AOs");
     println(1, "    n  Spin  Occ                           SquareNorm");
     mrcpp::print::separator(0, '-');
@@ -238,24 +190,20 @@ OrbitalVector initial_guess::gto::project_ao(double prec, const std::string &bas
     // Setup AO basis
     gto_utils::Intgrl intgrl(bas_file);
     gto_utils::OrbitalExp gto_exp(intgrl);
-    if (N < 0) N = gto_exp.size();
+    if (gto_exp.size() < Phi.size()) MSG_ABORT("Size mismatch");
 
-    OrbitalVector Phi;
-    for (int i = 0; i < N; i++) {
-        Orbital phi_i(spin);
+    for (int i = 0; i < Phi.size(); i++) {
         GaussExp<3> ao_i = gto_exp.getAO(i);
-        qmfunction::project(phi_i, ao_i, NUMBER::Real, prec);
+        qmfunction::project(Phi[i], ao_i, NUMBER::Real, prec);
         printout(0, std::setw(5) << i);
-        printout(0, std::setw(5) << phi_i.printSpin());
-        printout(0, std::setw(5) << phi_i.occ());
-        printout(0, std::setw(44) << phi_i.norm() << std::endl);
-        Phi.push_back(phi_i);
+        printout(0, std::setw(5) << Phi[i].printSpin());
+        printout(0, std::setw(5) << Phi[i].occ());
+        printout(0, std::setw(44) << Phi[i].norm() << std::endl);
+        Phi.push_back(Phi[i]);
     }
     mpi::barrier(mpi::comm_orb);
     timer.stop();
     mrcpp::print::footer(0, timer, 2);
-
-    return Phi;
 }
 
 Density initial_guess::gto::project_density(double prec,
