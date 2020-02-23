@@ -23,21 +23,19 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <Eigen/Eigenvalues>
-
-#include "MRCPP/MWFunctions"
-#include "MRCPP/MWOperators"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-
-#include "parallel.h"
-#include "utils/math_utils.h"
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "core.h"
+#include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
-#include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
+
+#include "utils/math_utils.h"
+#include "utils/print_utils.h"
+
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
@@ -88,88 +86,59 @@ int PT[29][2] = {
  * and fills the resulting orbitals by the Aufbau principle.
  *
  */
-OrbitalVector initial_guess::core::setup(double prec, const Molecule &mol, bool restricted, int zeta) {
-    std::stringstream o_prec, o_zeta;
-    o_prec << std::setprecision(5) << std::scientific << prec;
-    o_zeta << zeta;
+bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Diagonalize Hamiltonian matrix");
-    print_utils::text(0, "Precision   ", o_prec.str());
-    print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
+    print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Restricted  ", (orbital::size_singly(Phi)) ? "False" : "True");
     print_utils::text(0, "Hamiltonian ", "Core");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
-    print_utils::text(0, "Zeta quality", o_zeta.str());
+    print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
 
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Core-Hamiltonian Initial Guess");
 
-    int mult = mol.getMultiplicity(); // multiplicity
-    int Ne = mol.getNElectrons();     // total electrons
-    int Nd = Ne - (mult - 1);         // doubly occupied
-    if (Nd % 2 != 0) MSG_ABORT("Invalid multiplicity");
-
     // Make Fock operator contributions
     t_lap.start();
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
     KineticOperator T(D_p);
-    NuclearOperator V(mol.getNuclei(), prec);
+    NuclearOperator V(nucs, prec);
     if (plevel == 1) mrcpp::print::time(1, "Projecting nuclear potential", t_lap);
 
     // Project AO basis of hydrogen functions
     t_lap.start();
-    OrbitalVector Phi = initial_guess::core::project_ao(prec, mol.getNuclei(), SPIN::Paired, zeta);
-    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
+    OrbitalVector Psi;
+    initial_guess::core::project_ao(Psi, prec, nucs, zeta);
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Psi);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
-    // Compute Hamiltonian matrix
-    Timer t_diag;
-    mrcpp::print::header(2, "Diagonalize Core-Hamiltonian matrix");
-
+    mrcpp::print::header(2, "Building Hamiltonian operator");
     t_lap.start();
     T.setup(prec);
     V.setup(prec);
-    mrcpp::print::time(1, "Building Fock operator", t_lap);
-    t_lap.start();
-    ComplexMatrix t = T(Phi, Phi);
-    ComplexMatrix v = V(Phi, Phi);
-    ComplexMatrix F = S_m12.adjoint() * (t + v) * S_m12;
-    V.clear();
-    T.clear();
-    mrcpp::print::time(1, "Computing Fock matrix", t_lap);
+    if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
 
-    // Diagonalize Hamiltonian matrix
-    t_lap.start();
-    Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(F.cols());
-    es.compute(F);
-    ComplexMatrix U = S_m12 * es.eigenvectors();
-    mrcpp::print::time(1, "Diagonalizing Fock matrix", t_lap);
-
-    // Need to convert to QMFunctions for linear_combination
-    QMFunctionVector funcs;
-    for (auto &phi_i : Phi) funcs.push_back(phi_i);
+    // Compute Hamiltonian matrix
+    mrcpp::print::header(2, "Diagonalize Hamiltonian matrix");
+    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V, SPIN::Paired);
 
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
-    OrbitalVector Psi;
-    if (restricted) {
-        if (mult != 1) MSG_ABORT("Restricted open-shell not available");
-        int Np = Nd / 2; // paired orbitals
-        Psi = initial_guess::core::rotate_orbitals(prec, U, Phi, Np, SPIN::Paired);
-    } else {
-        int Na = Nd / 2 + (mult - 1); // alpha orbitals
-        int Nb = Nd / 2;              // beta orbitals
-        OrbitalVector Psi_a = initial_guess::core::rotate_orbitals(prec, U, Phi, Na, SPIN::Alpha);
-        OrbitalVector Psi_b = initial_guess::core::rotate_orbitals(prec, U, Phi, Nb, SPIN::Beta);
-        Psi = orbital::adjoin(Psi_a, Psi_b);
-    }
+    auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
+    auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
+    initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
+    initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
+    initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
+    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
+    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+    V.clear();
+    T.clear();
 
-    mrcpp::print::time(1, "Rotating orbitals", t_lap);
-    mrcpp::print::footer(2, t_diag, 2);
+    mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
-
-    return Psi;
+    return true;
 }
 
 /** @brief Project AO basis of hydrogen functions
@@ -192,7 +161,7 @@ OrbitalVector initial_guess::core::setup(double prec, const Molecule &mol, bool 
  * QZ: 1s2s2p3s3p4s3d4p5s4d5p (5s + 12p + 10d)
  *
  */
-OrbitalVector initial_guess::core::project_ao(double prec, const Nuclei &nucs, int spin, int zeta) {
+void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
     Timer t_tot;
     auto w0 = Printer::getWidth() - 2;
     auto w1 = 5;
@@ -214,7 +183,6 @@ OrbitalVector initial_guess::core::project_ao(double prec, const Nuclei &nucs, i
 
     const char label[10] = "spdfg";
 
-    OrbitalVector Phi;
     for (int i = 0; i < nucs.size(); i++) {
         const Nucleus &nuc = nucs[i];
         int minAO = std::ceil(nuc.getElement().getZ() / 2.0);
@@ -237,7 +205,7 @@ OrbitalVector initial_guess::core::project_ao(double prec, const Nuclei &nucs, i
                 Timer t_i;
                 HydrogenFunction h_func(n, l, m, Z, R);
 
-                Phi.push_back(Orbital(spin));
+                Phi.push_back(Orbital(SPIN::Paired));
                 Phi.back().setRankID(Phi.size() % mpi::orb_size);
                 if (mpi::my_orb(Phi.back())) qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
 
@@ -253,14 +221,11 @@ OrbitalVector initial_guess::core::project_ao(double prec, const Nuclei &nucs, i
         }
     }
     mrcpp::print::footer(2, t_tot, 2);
-    return Phi;
 }
 
-OrbitalVector initial_guess::core::rotate_orbitals(double prec, ComplexMatrix &U, OrbitalVector &Phi, int N, int spin) {
+void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi) {
+    if (Psi.size() == 0) return;
     Timer t_tot;
-    OrbitalVector Psi;
-    for (auto i = 0; i < N; i++) Psi.push_back(Orbital(spin));
-    mpi::distribute(Psi);
 
     // To get MPI invariant results we cannot crop until all terms are added
     auto part_prec = (mpi::numerically_exact) ? -1.0 : prec;
@@ -287,7 +252,27 @@ OrbitalVector initial_guess::core::rotate_orbitals(double prec, ComplexMatrix &U
         for (auto &psi : Psi) psi.crop(prec);
 
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
-    return Psi;
+}
+
+ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi,
+                                               KineticOperator &T,
+                                               RankZeroTensorOperator &V,
+                                               int spin) {
+    if (Phi.size() == 0) return ComplexMatrix();
+
+    Timer t1;
+    for (auto &phi : Phi) phi.setSpin(spin);
+    ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
+    ComplexMatrix f_tilde = T(Phi, Phi) + V(Phi, Phi);
+    ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
+    mrcpp::print::time(1, "Computing Fock matrix", t1);
+
+    Timer t2;
+    DoubleVector eig;
+    ComplexMatrix U = math_utils::diagonalize_hermitian_matrix(f, eig);
+    mrcpp::print::time(1, "Diagonalizing Fock matrix", t2);
+
+    return S_m12 * U;
 }
 
 } // namespace mrchem
