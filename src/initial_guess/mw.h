@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <string>
+
 #include "qmfunctions/qmfunction_fwd.h"
 
 /** @file mw.h
@@ -36,12 +38,14 @@
  */
 
 namespace mrchem {
-class Molecule;
-
 namespace initial_guess {
 namespace mw {
 
-OrbitalVector setup(const std::string &file);
+bool setup(OrbitalVector &Phi,
+           double prec,
+           const std::string &file_p,
+           const std::string &file_a,
+           const std::string &file_b);
 
 } // namespace mw
 } // namespace initial_guess

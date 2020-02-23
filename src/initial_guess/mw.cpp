@@ -23,23 +23,115 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
+#include <MRCPP/MWFunctions>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "mw.h"
+#include "parallel.h"
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
 
+using mrcpp::Printer;
+using mrcpp::Timer;
+
 namespace mrchem {
 
-OrbitalVector initial_guess::mw::setup(const std::string &file) {
+namespace initial_guess {
+namespace mw {
+
+void project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file);
+
+} // namespace mw
+} // namespace initial_guess
+
+bool initial_guess::mw::setup(OrbitalVector &Phi,
+                              double prec,
+                              const std::string &file_p,
+                              const std::string &file_a,
+                              const std::string &file_b) {
+    if (Phi.size() == 0) return false;
+
     mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation ", "Read orbitals from file (MW)");
-    print_utils::text(0, "File name   ", file);
+    print_utils::text(0, "Calculation   ", "Read orbitals from file (MW)");
+    print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
+    if (orbital::size_singly(Phi)) {
+        print_utils::text(0, "Restricted    ", "False");
+        print_utils::text(0, "MO alpha file ", file_a);
+        print_utils::text(0, "MO beta file  ", file_b);
+    } else {
+        print_utils::text(0, "Restricted    ", "True");
+        print_utils::text(0, "MO file ", file_p);
+    }
     mrcpp::print::separator(0, '~', 2);
 
-    return orbital::load_orbitals(file);
+    // Separate alpha/beta from paired orbitals
+    auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
+    auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
+
+    // Project paired, alpha and beta separately
+    initial_guess::mw::project_mo(Phi, prec, file_p);
+    initial_guess::mw::project_mo(Phi_a, prec, file_a);
+    initial_guess::mw::project_mo(Phi_b, prec, file_b);
+
+    // Collect orbitals into one vector
+    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
+    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+
+    return true;
+}
+
+void initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file) {
+    if (Phi.size() == 0) return;
+
+    Timer t_tot;
+    auto pprec = Printer::getPrecision();
+    auto w0 = Printer::getWidth() - 2;
+    auto w1 = 5;
+    auto w2 = w0 * 2 / 9;
+    auto w3 = w0 - w1 - 3 * w2;
+
+    std::stringstream o_head;
+    o_head << std::setw(w1) << "n";
+    o_head << std::setw(w3) << "Norm";
+    o_head << std::setw(w2 + 1) << "Nodes";
+    o_head << std::setw(w2) << "Size";
+    o_head << std::setw(w2) << "Time";
+
+    mrcpp::print::header(1, "MW Initial Guess");
+    println(2, o_head.str());
+    mrcpp::print::separator(2, '-');
+
+    for (int i = 0; i < Phi.size(); i++) {
+        Timer t_i;
+        if (mpi::my_orb(Phi[i])) {
+            std::stringstream orbname;
+            orbname << mo_file << "_" << i;
+
+            Orbital phi_i;
+            phi_i.loadOrbital(orbname.str());
+            if (phi_i.hasReal()) {
+                Phi[i].alloc(NUMBER::Real);
+                // Refine to get accurate function values
+                mrcpp::refine_grid(phi_i.real(), 1);
+                mrcpp::project(prec, Phi[i].real(), phi_i.real());
+            }
+            if (phi_i.hasImag()) {
+                Phi[i].alloc(NUMBER::Imag);
+                // Refine to get accurate function values
+                mrcpp::refine_grid(phi_i.imag(), 1);
+                mrcpp::project(prec, Phi[i].imag(), phi_i.imag());
+            }
+        }
+        std::stringstream o_txt;
+        o_txt << std::setw(w1 - 1) << i;
+        o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
+        print_utils::qmfunction(1, o_txt.str(), Phi[i], t_i);
+    }
+    mpi::barrier(mpi::comm_orb);
+    mrcpp::print::footer(1, t_tot, 2);
 }
 
 } // namespace mrchem
