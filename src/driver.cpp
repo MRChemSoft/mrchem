@@ -23,15 +23,16 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/MWOperators"
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "driver.h"
 
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
 
+#include "initial_guess/chk.h"
 #include "initial_guess/core.h"
 #include "initial_guess/gto.h"
 #include "initial_guess/mw.h"
@@ -88,6 +89,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 namespace mrchem {
 
 namespace driver {
+bool guess_scf_orbitals(const json &json_guess, Molecule &mol);
+bool guess_scf_energy(const json &json_guess, Molecule &mol, FockOperator &F);
+
 void build_fock_operator(const json &input, Molecule &mol, FockOperator &F, int order);
 
 void calc_scf_properties(const json &input, Molecule &mol);
@@ -135,48 +139,94 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
  *
  * This function expects the "initial_guess" subsection of the input.
  */
-bool driver::run_guess(const json &json_guess, Molecule &mol) {
-    print_utils::headline(0, "Computing Initial Guess Wavefunction");
+bool driver::guess_scf_orbitals(const json &json_guess, Molecule &mol) {
+    auto prec = json_guess["prec"];
+    auto zeta = json_guess["zeta"];
+    auto type = json_guess["type"];
+    auto mw_p = json_guess["file_mw_paired"];
+    auto mw_a = json_guess["file_mw_alpha"];
+    auto mw_b = json_guess["file_mw_beta"];
+    auto gto_p = json_guess["file_gto_paired"];
+    auto gto_a = json_guess["file_gto_alpha"];
+    auto gto_b = json_guess["file_gto_beta"];
+    auto gto_bas = json_guess["file_basis"];
+    auto file_chk = json_guess["file_chk"];
+    auto restricted = json_guess["restricted"];
 
+    // Figure out number of electrons
+    int mult = mol.getMultiplicity(); // multiplicity
+    int Ne = mol.getNElectrons();     // total electrons
+    int Ns = mult - 1;                // single occ electrons
+    int Nd = Ne - Ns;                 // double occ electrons
+    if (Nd % 2 != 0) {
+        MSG_ERROR("Invalid multiplicity");
+        return false;
+    }
+
+    // Figure out number of occupied orbitals
+    int Na = (restricted) ? Ns : Nd / 2 + Ns; // alpha orbitals
+    int Nb = (restricted) ? 0 : Nd / 2;       // beta orbitals
+    int Np = (restricted) ? Nd / 2 : 0;       // paired orbitals
+
+    // Fill orbital vector
+    auto &nucs = mol.getNuclei();
     auto &Phi = mol.getOrbitals();
-    auto &F_mat = mol.getFockMatrix();
+    for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired));
+    for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
+    for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
 
-    auto method = json_guess["method"].get<std::string>();
-    if (method == "mw") {
-        auto start_orbs = json_guess["start_orbitals"].get<std::string>();
-        Phi = initial_guess::mw::setup(start_orbs);
-    } else if (method == "core") {
-        auto guess_prec = json_guess["guess_prec"].get<double>();
-        auto restricted = json_guess["restricted"].get<bool>();
-        auto zeta = json_guess["zeta"].get<int>();
-        Phi = initial_guess::core::setup(guess_prec, mol, restricted, zeta);
-    } else if (method == "sad") {
-        auto guess_prec = json_guess["guess_prec"].get<double>();
-        auto restricted = json_guess["restricted"].get<bool>();
-        auto zeta = json_guess["zeta"].get<int>();
-        Phi = initial_guess::sad::setup(guess_prec, mol, restricted, zeta);
-    } else if (method == "gto") {
-        auto guess_prec = json_guess["guess_prec"].get<double>();
-        auto restricted = json_guess["restricted"].get<bool>();
-        auto file_basis = json_guess["file_basis"].get<std::string>();
-        auto file_moa = json_guess["file_moa"].get<std::string>();
-        auto file_mob = json_guess["file_mob"].get<std::string>();
-        if (restricted) {
-            Phi = initial_guess::gto::setup(guess_prec, mol, file_basis, file_moa);
-        } else {
-            Phi = initial_guess::gto::setup(guess_prec, mol, file_basis, file_moa, file_mob);
-        }
+    auto success = true;
+    if (type == "chk") {
+        success = initial_guess::chk::setup(Phi, file_chk);
+    } else if (type == "mw") {
+        success = initial_guess::mw::setup(Phi, prec, mw_p, mw_a, mw_b);
+    } else if (type == "core") {
+        success = initial_guess::core::setup(Phi, prec, nucs, zeta);
+    } else if (type == "sad") {
+        success = initial_guess::sad::setup(Phi, prec, nucs, zeta);
+    } else if (type == "gto") {
+        success = initial_guess::gto::setup(Phi, prec, gto_bas, gto_p, gto_a, gto_b);
     } else {
         MSG_ERROR("Invalid initial guess");
-        return false;
+        success = false;
     }
     orbital::print(Phi);
 
-    auto write_orbs = json_guess["write_orbitals"].get<bool>();
-    auto final_orbs = json_guess["final_orbitals"].get<std::string>();
-    if (write_orbs) orbital::save_orbitals(Phi, final_orbs);
+    return success;
+}
 
+bool driver::guess_scf_energy(const json &json_guess, Molecule &mol, FockOperator &F) {
+    double prec = json_guess["prec"];
+    auto method = json_guess["method"];
+    auto localize = json_guess["localize"];
+
+    std::stringstream o_prec;
+    o_prec << std::setprecision(5) << std::scientific << prec;
+
+    mrcpp::print::separator(0, '~');
+    print_utils::text(0, "Calculation  ", "Compute initial energy");
+    print_utils::text(0, "Method       ", method);
+    print_utils::text(0, "Precision    ", o_prec.str());
+    print_utils::text(0, "Localization ", (localize) ? "On" : "Off");
+    mrcpp::print::separator(0, '~', 2);
+
+    Timer timer;
+    auto plevel = Printer::getPrintLevel();
+    if (plevel == 1) mrcpp::print::header(1, "Calculating Molecular Energy");
+
+    auto &Phi = mol.getOrbitals();
+    auto &nucs = mol.getNuclei();
+    auto &F_mat = mol.getFockMatrix();
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
+    if (localize) orbital::localize(prec, Phi, F_mat);
+
+    F.setup(prec);
+    F_mat = F(Phi, Phi);
+    mol.getSCFEnergy() = F.trace(Phi, nucs);
+    F.clear();
+    if (plevel == 1) mrcpp::print::footer(1, timer, 2);
+    if (not localize) orbital::diagonalize(prec, Phi, F_mat);
+    mol.getSCFEnergy().print();
 
     return true;
 }
@@ -193,71 +243,46 @@ bool driver::run_guess(const json &json_guess, Molecule &mol) {
  * This function expects the "scf_calculation" subsection of the input.
  */
 bool driver::run_scf(const json &json_scf, Molecule &mol) {
-    print_utils::headline(0, "Computing Ground State Wavefunction");
+    print_utils::headline(0, "Computing Initial Guess Wavefunction");
 
-    const auto &json_fock = json_scf["fock_operator"].get<json>();
     FockOperator F;
+    const auto &json_fock = json_scf["fock_operator"];
     driver::build_fock_operator(json_fock, mol, F, 0);
 
-    auto success = true;
-    auto &Phi = mol.getOrbitals();
-    auto &nucs = mol.getNuclei();
-    auto &F_mat = mol.getFockMatrix();
-
-    // Calc inital energy if present in input JSON
-    auto initial_energy = json_scf.find("initial_energy");
-    if (initial_energy != json_scf.end()) {
-        auto prec = (*initial_energy)["prec"].get<double>();
-        auto localize = (*initial_energy)["localize"].get<bool>();
-        auto method = (*initial_energy)["method_name"].get<std::string>();
-
-        std::stringstream o_prec;
-        o_prec << std::setprecision(5) << std::scientific << prec;
-        mrcpp::print::separator(0, '~');
-        print_utils::text(0, "Calculation", "Compute initial energy");
-        print_utils::text(0, "Method", method);
-        print_utils::text(0, "Precision", o_prec.str());
-        print_utils::text(0, "Localization", (localize) ? "On" : "Off");
-        mrcpp::print::separator(0, '~', 2);
-
-        Timer timer;
-        auto plevel = Printer::getPrintLevel();
-        if (plevel == 1) mrcpp::print::header(1, "Calculating Molecular Energy");
-        F.setup(prec);
-        F_mat = F(Phi, Phi);
-        mol.getSCFEnergy() = F.trace(Phi, nucs);
-        F.clear();
-
-        if (localize) {
-            orbital::localize(prec, Phi, F_mat);
-        } else {
-            orbital::diagonalize(prec, Phi, F_mat);
-        }
-        if (plevel == 1) mrcpp::print::footer(1, timer, 2);
-
-        mol.getSCFEnergy().print();
+    const auto &json_guess = json_scf["initial_guess"];
+    if (driver::guess_scf_orbitals(json_guess, mol)) {
+        driver::guess_scf_energy(json_guess, mol, F);
+    } else {
+        return false;
     }
 
+    print_utils::headline(0, "Computing Ground State Wavefunction");
+
     // Run GroundStateSolver if present in input JSON
+    auto success = true;
     auto scf_solver = json_scf.find("scf_solver");
     if (scf_solver != json_scf.end()) {
-        auto method = (*scf_solver)["method_name"].get<std::string>();
-        auto kain = (*scf_solver)["kain"].get<int>();
-        auto max_iter = (*scf_solver)["max_iter"].get<int>();
-        auto rotation = (*scf_solver)["rotation"].get<int>();
-        auto localize = (*scf_solver)["localize"].get<bool>();
-        auto start_prec = (*scf_solver)["start_prec"].get<double>();
-        auto final_prec = (*scf_solver)["final_prec"].get<double>();
-        auto energy_thrs = (*scf_solver)["energy_thrs"].get<double>();
-        auto orbital_thrs = (*scf_solver)["orbital_thrs"].get<double>();
-        auto helmholtz_prec = (*scf_solver)["helmholtz_prec"].get<double>();
+        auto kain = (*scf_solver)["kain"];
+        auto method = (*scf_solver)["method_name"];
+        auto max_iter = (*scf_solver)["max_iter"];
+        auto rotation = (*scf_solver)["rotation"];
+        auto localize = (*scf_solver)["localize"];
+        auto file_chk = (*scf_solver)["file_chk"];
+        auto checkpoint = (*scf_solver)["checkpoint"];
+        auto start_prec = (*scf_solver)["start_prec"];
+        auto final_prec = (*scf_solver)["final_prec"];
+        auto energy_thrs = (*scf_solver)["energy_thrs"];
+        auto orbital_thrs = (*scf_solver)["orbital_thrs"];
+        auto helmholtz_prec = (*scf_solver)["helmholtz_prec"];
 
         GroundStateSolver solver;
-        solver.setMethodName(method);
         solver.setHistory(kain);
-        solver.setMaxIterations(max_iter);
         solver.setRotation(rotation);
         solver.setLocalize(localize);
+        solver.setMethodName(method);
+        solver.setCheckpoint(checkpoint);
+        solver.setCheckpointFile(file_chk);
+        solver.setMaxIterations(max_iter);
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
@@ -265,15 +290,18 @@ bool driver::run_scf(const json &json_scf, Molecule &mol) {
     }
 
     if (success) {
-        auto final_orbs = json_scf["final_orbitals"].get<std::string>();
-        auto write_orbs = json_scf["write_orbitals"].get<bool>();
-        if (write_orbs) orbital::save_orbitals(Phi, final_orbs);
+        if (json_scf["write_orbitals"]) {
+            auto &Phi = mol.getOrbitals();
+            orbital::save_orbitals(Phi, json_scf["file_orbitals"], SPIN::Paired);
+            orbital::save_orbitals(Phi, json_scf["file_orbitals"], SPIN::Alpha);
+            orbital::save_orbitals(Phi, json_scf["file_orbitals"], SPIN::Beta);
+        }
 
-        auto json_prop = json_scf["properties"].get<json>();
-        calc_scf_properties(json_prop, mol);
+        auto json_prop = json_scf.find("properties");
+        if (json_prop != json_scf.end()) calc_scf_properties(*json_prop, mol);
 
-        auto json_plot = json_scf["cube_plot"].get<json>();
-        plot_scf_quantities(json_plot, mol);
+        auto json_plot = json_scf.find("cube_plot");
+        if (json_plot != json_scf.end()) plot_scf_quantities(*json_plot, mol);
     }
 
     return success;
