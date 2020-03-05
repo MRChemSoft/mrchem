@@ -30,9 +30,9 @@
 #include "KAIN.h"
 #include "LinearResponseSolver.h"
 
+#include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-
 #include "qmoperators/two_electron/FockOperator.h"
 #include "utils/print_utils.h"
 
@@ -40,12 +40,6 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-
-LinearResponseSolver::LinearResponseSolver(bool dyn, FockOperator &F_0, OrbitalVector &Phi_0, ComplexMatrix &F_mat_0)
-        : dynamic(dyn)
-        , f_oper_0(&F_0)
-        , f_mat_0(&F_mat_0)
-        , phi_0(&Phi_0) {}
 
 /** @brief Run orbital optimization
  *
@@ -65,18 +59,20 @@ LinearResponseSolver::LinearResponseSolver(bool dyn, FockOperator &F_0, OrbitalV
  *  5) Check for convergence
  *
  */
-bool LinearResponseSolver::optimize(double omega, FockOperator &F_1, OrbitalVector &X_n, OrbitalVector &Y_n) {
+bool LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1) {
     printParameters(omega, F_1.perturbation().name());
 
     // Setup KAIN accelerators
     KAIN kain_x(this->history);
     KAIN kain_y(this->history);
-    OrbitalVector &Phi_0 = *this->phi_0;
-    ComplexMatrix &F_mat_0 = *this->f_mat_0;
+    OrbitalVector &Phi_0 = mol.getOrbitals();
+    OrbitalVector &X_n = mol.getOrbitalsX();
+    OrbitalVector &Y_n = mol.getOrbitalsY();
+    ComplexMatrix &F_mat_0 = mol.getFockMatrix();
     ComplexMatrix F_mat_x = F_mat_0 + omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
     ComplexMatrix F_mat_y = F_mat_0 - omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
 
-    RankZeroTensorOperator V_0 = this->f_oper_0->potential();
+    RankZeroTensorOperator V_0 = F_0.potential();
     RankZeroTensorOperator V_1 = F_1.potential() + F_1.perturbation();
 
     double err_o = 1.0;

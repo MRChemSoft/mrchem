@@ -133,7 +133,7 @@ def translate_input(user_dict):
     mpi_dict = write_mpi(user_dict);
     mra_dict = write_mra(user_dict, mol_dict);
     scf_dict = write_scf_calculation(user_dict, mol_dict);
-    rsp_dict = write_rsp_calculations(user_dict);
+    rsp_dict = write_rsp_calculations(user_dict, mol_dict);
     program_dict = {
         "mpi": mpi_dict,
         "mra": mra_dict,
@@ -291,6 +291,22 @@ def write_scf_guess(user_dict, method_name):
     return guess_dict
 
 
+def write_rsp_guess(user_dict, method_name):
+    guess_dict = {
+        "prec": user_dict["Response"]["guess_prec"],
+        "type": user_dict["Response"]["guess_type"].lower(),
+        "file_chk": user_dict["Files"]["file_chk"],
+        "file_gto_basis": user_dict["Files"]["file_gto_basis"],
+        "file_gto_paired": user_dict["Files"]["file_gto_paired"],
+        "file_gto_alpha": user_dict["Files"]["file_gto_alpha"],
+        "file_gto_beta": user_dict["Files"]["file_gto_beta"],
+        "file_mw_paired": user_dict["Files"]["file_mw_paired"],
+        "file_mw_alpha": user_dict["Files"]["file_mw_alpha"],
+        "file_mw_beta": user_dict["Files"]["file_mw_beta"],
+    }
+    return guess_dict
+
+
 def write_scf_solver(user_dict, method_name):
     # SCF precisions and thresholds
     start_prec = user_dict["SCF"]["start_prec"]
@@ -319,6 +335,37 @@ def write_scf_solver(user_dict, method_name):
         "energy_thrs": energy_thrs,
         "orbital_thrs": orbital_thrs,
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
+    }
+    return solver_dict
+
+
+def write_rsp_solver(user_dict, method_name):
+    # Response precisions and thresholds
+    start_prec = user_dict["Response"]["start_prec"]
+    final_prec = user_dict["Response"]["final_prec"]
+    if final_prec < 0.0:
+        final_prec = user_dict["world_prec"]
+    if start_prec < 0.0:
+        start_prec = final_prec
+
+    orbital_thrs = user_dict["Response"]["orbital_thrs"]
+    property_thrs = user_dict["Response"]["property_thrs"]
+    if orbital_thrs < 0.0 and property_thrs < 0.0:
+        property_thrs = user_dict["world_prec"] / 10
+        orbital_thrs = user_dict["world_prec"] * 10
+
+    solver_dict = {
+        "method": method_name,
+        "kain": user_dict["Response"]["kain"],
+        "max_iter": user_dict["Response"]["max_iter"],
+        "file_chk": user_dict["Files"]["file_chk"],
+        "checkpoint": user_dict["SCF"]["checkpoint"],
+        "start_prec": start_prec,
+        "final_prec": final_prec,
+        "orbital_thrs": orbital_thrs,
+        "property_thrs": property_thrs,
+        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
+        "orth_prec": user_dict["Precisions"]["orth_prec"]
     }
     return solver_dict
 
@@ -436,6 +483,53 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
     return fock_dict
 
 
+def write_rsp_fock(user_dict, mol_dict, wf_method, dft_funcs):
+    fock_dict = {}
+
+    # Coulomb
+    if wf_method in ['hartree', 'hf', 'dft']:
+        fock_dict["coulomb_operator"] = {
+            "poisson_prec": user_dict["Precisions"]["poisson_prec"],
+            "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
+        }
+
+    # Exchange
+    if wf_method in ['hf', 'dft']:
+        fock_dict["exchange_operator"] = {
+            "screen": False,
+            "poisson_prec": user_dict["Precisions"]["poisson_prec"],
+        }
+
+    # Exchange-Correlation
+    if wf_method in ['dft']:
+        func_dict = []
+        for line in dft_funcs.split('\n'):
+            sp = line.split()
+            if len(sp) > 0:
+                func = sp[0].lower()
+                coef = [1.0]
+                if len(sp) > 1:
+                    coef = list(map(float, sp[1:]))
+                func_dict.append({
+                    "name": func,
+                    "coef": coef[0]
+                })
+        fock_dict["xc_operator"] = {
+            "grid_prec": user_dict["Precisions"]["dft_prec"],
+            "shared_memory": user_dict["MPI"]["share_xc_potential"],
+            "xc_functional": {
+                "spin": user_dict["DFT"]["spin"],
+                "gamma": user_dict["DFT"]["use_gamma"],
+                "cutoff": user_dict["DFT"]["density_cutoff"],
+                "log_grad": user_dict["DFT"]["log_grad"],
+                "derivative": user_dict["Derivatives"]["dft"],
+                "functionals": func_dict
+            }
+        }
+
+    return fock_dict
+
+
 def write_scf_calculation(user_dict, mol_dict):
     method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
 
@@ -459,163 +553,36 @@ def write_scf_calculation(user_dict, mol_dict):
     return scf_dict
 
 
-def write_rsp_calculations(user_dict):
-    return []
-    # SCF precisions and thresholds
-    rsp_start_prec = user_dict["Response"]["start_prec"]
-    rsp_final_prec = user_dict["Response"]["final_prec"]
-    if rsp_final_prec < 0.0:
-        rsp_final_prec = user_dict["world_prec"]
-    if rsp_start_prec < 0.0:
-        rsp_start_prec = rsp_final_prec
-
-    rsp_orbital_thrs =  user_dict["Response"]["orbital_thrs"]
-    rsp_property_thrs =  user_dict["Response"]["property_thrs"]
-    if rsp_orbital_thrs < 0.0 and rsp_property_thrs < 0.0:
-        rsp_property_thrs = user_dict["world_prec"] / 10
-        rsp_orbital_thrs = user_dict["world_prec"] * 10
-
-    program_dict["rsp_calculations"] = []
-
-    if user_dict["Properties"]["polarizability"]:
-        for omega in user_dict["Polarizability"]["frequency"]:
-            rsp_dict = {
-                "rsp_prec": user_dict["world_prec"],
-                "dynamic": (omega > 1.0e-12),
-                "final_orbitals": "orbitals/phi_x",
-                "write_orbitals": user_dict["Response"]["write_orbitals"],
-                "perturbation": {
-                    "operator": "h_e_dip",
-                    "r_O": program_dict["molecule"]["gauge_origin"]
-                }
-            }
-            prop_dict = {
-                "polarizability": {
-                    "operator": "h_e_dip",
-                    "precision": user_dict["world_prec"],
-                    "r_O": program_dict["molecule"]["gauge_origin"]
-                }
-            }
-            rsp_dict["properties"] = prop_dict
-
-            method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
-
-            if user_dict["Response"]["run"]:
-                rsp_dict["rsp_solver"] = {
-                    "frequency": omega,
-                    "method_name": method_name,
-                    "kain": user_dict["Response"]["kain"],
-                    "max_iter": user_dict["Response"]["max_iter"],
-                    "start_prec": rsp_start_prec,
-                    "final_prec": rsp_final_prec,
-                    "directions": user_dict["Response"]["directions"],
-                    "orbital_thrs": rsp_orbital_thrs,
-                    "property_thrs": rsp_property_thrs,
-                    "orth_prec": user_dict["Precisions"]["orth_prec"],
-                    "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
-                }
-
-            fock_0_dict = {
-                "kinetic_operator": {
-                    "derivative": user_dict["Derivatives"]["kinetic"]
-                },
-                "nuclear_operator": {
-                    "proj_prec": user_dict["Precisions"]["nuc_prec"],
-                    "smooth_prec": user_dict["Precisions"]["nuc_prec"],
-                    "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
-                }
-            }
-            if wf_method in ['hartree', 'hf', 'dft']:
-                fock_0_dict["coulomb_operator"] = {
-                    "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                    "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
-                }
-            if wf_method in ['hf', 'dft']:
-                fock_0_dict["exchange_operator"] = {
-                    "screen": False,
-                    "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                }
-            if wf_method in ['dft']:
-                func_dict = []
-                for line in dft_funcs.split('\n'):
-                    sp = line.split()
-                    if len(sp) > 0:
-                        func = sp[0].lower()
-                        coef = [1.0]
-                        if len(sp) > 1:
-                            coef = list(map(float, sp[1:]))
-                        func_dict.append({
-                            "name": func,
-                            "coef": coef[0]
-                        })
-                fock_0_dict["xc_operator"] = {
-                    "grid_prec": user_dict["Precisions"]["dft_prec"],
-                    "shared_memory": user_dict["MPI"]["share_xc_potential"],
-                    "xc_functional": {
-                        "spin": user_dict["DFT"]["spin"],
-                        "gamma": user_dict["DFT"]["use_gamma"],
-                        "cutoff": user_dict["DFT"]["density_cutoff"],
-                        "log_grad": user_dict["DFT"]["log_grad"],
-                        "derivative": user_dict["Derivatives"]["dft"],
-                        "functionals": func_dict
-                    }
-                }
-            fock_1_dict = {}
-            if wf_method in ['hartree', 'hf', 'dft']:
-                fock_1_dict["coulomb_operator"] = {
-                    "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                    "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
-                }
-            if wf_method in ['hf', 'dft']:
-                fock_1_dict["exchange_operator"] = {
-                    "screen": False,
-                    "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                }
-
-            if wf_method in ['dft']:
-                func_dict = []
-                for line in dft_funcs.split('\n'):
-                    sp = line.split()
-                    if len(sp) > 0:
-                        func = sp[0].lower()
-                        coef = [1.0]
-                        if len(sp) > 1:
-                            coef = list(map(float, sp[1:]))
-                        func_dict.append({
-                            "name": func,
-                            "coef": coef[0]
-                        })
-                fock_1_dict["xc_operator"] = {
-                    "grid_prec": user_dict["Precisions"]["dft_prec"],
-                    "shared_memory": user_dict["MPI"]["share_xc_potential"],
-                    "xc_functional": {
-                        "spin": user_dict["DFT"]["spin"],
-                        "gamma": user_dict["DFT"]["use_gamma"],
-                        "cutoff": user_dict["DFT"]["density_cutoff"],
-                        "log_grad": user_dict["DFT"]["log_grad"],
-                        "derivative": user_dict["Derivatives"]["dft"],
-                        "functionals": func_dict
-                    }
-                }
-
-            rsp_dict["fock_operator_0"] = fock_0_dict
-            rsp_dict["fock_operator_1"] = fock_1_dict
-            program_dict["rsp_calculations"].append(rsp_dict)
-
+def write_rsp_calculations(user_dict, mol_dict):
+    rsp_dict = []
+    run_pol = user_dict["Properties"]["polarizability"]
+    pol_freq = user_dict["Polarizability"]["frequency"]
     run_mag = user_dict["Properties"]["magnetizability"]
     run_nmr = user_dict["Properties"]["nmr_shielding"]
     nuc_spec = user_dict["NMRShielding"]["nuclear_specific"]
-    if run_mag or (run_nmr and not nuc_spec):
-        rsp_dict = {
-            "rsp_prec": user_dict["world_prec"],
-            "dynamic": False,
-            "final_orbitals": "orbitals/phi_x",
-            "write_orbitals": user_dict["Response"]["write_orbitals"],
-            "perturbation": {
-                "operator": "h_b_dip",
-                "derivative": user_dict["Derivatives"]["h_b_dip"],
-                "r_O": program_dict["molecule"]["gauge_origin"]
+
+    if run_pol:
+        for omega in pol_freq:
+            rsp_calc = write_rsp_calc(omega, user_dict, mol_dict)
+            rsp_calc["perturbation"] = {
+                "operator": "h_e_dip",
+                "r_O": mol_dict["gauge_origin"]
             }
+            prop_dict = {}
+            prop_dict["polarizability"] = {
+                "operator": "h_e_dip",
+                "precision": user_dict["world_prec"],
+                "r_O": mol_dict["gauge_origin"]
+            }
+            rsp_calc["properties"] = prop_dict
+            rsp_dict.append(rsp_calc)
+
+    if run_mag or (run_nmr and not nuc_spec):
+        rsp_calc = write_rsp_calc(0.0, user_dict, mol_dict)
+        rsp_calc["perturbation"] = {
+            "operator": "h_b_dip",
+            "derivative": user_dict["Derivatives"]["h_b_dip"],
+            "r_O": mol_dict["gauge_origin"]
         }
         prop_dict = {}
         if run_mag:
@@ -623,13 +590,13 @@ def write_rsp_calculations(user_dict):
                 "operator": "h_b_dip",
                 "precision": user_dict["world_prec"],
                 "derivative": user_dict["Derivatives"]["h_b_dip"],
-                "r_O": program_dict["molecule"]["gauge_origin"]
+                "r_O": mol_dict["gauge_origin"]
             }
-        if run_nmr and not nuc_spec:
+        if (run_nmr and not nuc_spec):
             prop_dict["nmr_shielding"] = []
             nuc_vec = user_dict["NMRShielding"]["nucleus_k"]
             all_nucs = (nuc_vec[0] < 0)
-            nuclei = program_dict["molecule"]["coords"]
+            nuclei = mol_dict["coords"]
             for k in range(len(nuclei)):
                 if all_nucs or k in nuc_vec:
                     prop_dict["nmr_shielding"].append({
@@ -640,98 +607,21 @@ def write_rsp_calculations(user_dict):
                         "derivative": user_dict["Derivatives"]["h_b_dip"],
                         "r_K": nuclei[k]["xyz"]
                     })
-        rsp_dict["properties"] = prop_dict
-
-        method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
-
-        if user_dict["Response"]["run"]:
-            rsp_dict["rsp_solver"] = {
-                "frequency": 0.0,
-                "method_name": method_name,
-                "kain": user_dict["Response"]["kain"],
-                "max_iter": user_dict["Response"]["max_iter"],
-                "start_prec": rsp_start_prec,
-                "final_prec": rsp_final_prec,
-                "directions": user_dict["Response"]["directions"],
-                "orbital_thrs": rsp_orbital_thrs,
-                "property_thrs": rsp_property_thrs,
-                "orth_prec": user_dict["Precisions"]["orth_prec"],
-                "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
-            }
-
-        fock_0_dict = {
-            "kinetic_operator": {
-                "derivative": user_dict["Derivatives"]["kinetic"]
-            },
-            "nuclear_operator": {
-                "proj_prec": user_dict["Precisions"]["nuc_prec"],
-                "smooth_prec": user_dict["Precisions"]["nuc_prec"],
-                "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
-            }
-        }
-        if wf_method in ['hartree', 'hf', 'dft']:
-            fock_0_dict["coulomb_operator"] = {
-                "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
-            }
-        if wf_method in ['hf', 'dft']:
-            fock_0_dict["exchange_operator"] = {
-                "screen": False,
-                "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-            }
-        if wf_method in ['dft']:
-            func_dict = []
-            for line in dft_funcs.split('\n'):
-                sp = line.split()
-                if len(sp) > 0:
-                    func = sp[0].lower()
-                    coef = [1.0]
-                    if len(sp) > 1:
-                        coef = list(map(float, sp[1:]))
-                    func_dict.append({
-                        "name": func,
-                        "coef": coef[0]
-                    })
-            fock_0_dict["xc_operator"] = {
-                "grid_prec": user_dict["Precisions"]["dft_prec"],
-                "shared_memory": user_dict["MPI"]["share_xc_potential"],
-                "xc_functional": {
-                    "spin": user_dict["DFT"]["spin"],
-                    "gamma": user_dict["DFT"]["use_gamma"],
-                    "cutoff": user_dict["DFT"]["density_cutoff"],
-                    "log_grad": user_dict["DFT"]["log_grad"],
-                    "derivative": user_dict["Derivatives"]["dft"],
-                    "functionals": func_dict
-                }
-            }
-        fock_1_dict = {}
-        if wf_method in ['hf', 'dft']:
-            fock_1_dict["exchange_operator"] = {
-                "screen": False,
-                "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-            }
-
-        rsp_dict["fock_operator_0"] = fock_0_dict
-        rsp_dict["fock_operator_1"] = fock_1_dict
-        program_dict["rsp_calculations"].append(rsp_dict)
+        rsp_calc["properties"] = prop_dict
+        rsp_dict.append(rsp_calc)
 
     if run_nmr and nuc_spec:
         nuc_vec = user_dict["NMRShielding"]["nucleus_k"]
         all_nucs = (nuc_vec[0] < 0)
-        nuclei = program_dict["molecule"]["coords"]
+        nuclei = mol_dict["coords"]
         for k in range(len(nuclei)):
-            if all_nucs or k in nuc_vec:
-                rsp_dict = {
-                    "rsp_prec": user_dict["world_prec"],
-                    "dynamic": False,
-                    "final_orbitals": "orbitals/phi_x",
-                    "write_orbitals": user_dict["Response"]["write_orbitals"],
-                    "perturbation": {
-                        "operator": "h_m_pso",
-                        "smoothing": user_dict["world_prec"],
-                        "derivative": user_dict["Derivatives"]["h_m_pso"],
-                        "r_K": nuclei[k]["xyz"]
-                    }
+            if (all_nucs) or (k in nuc_vec):
+                rsp_calc = write_rsp_calc(0.0, user_dict, mol_dict)
+                rsp_calc["perturbation"] = {
+                    "operator": "h_m_pso",
+                    "smoothing": user_dict["world_prec"],
+                    "derivative": user_dict["Derivatives"]["h_m_pso"],
+                    "r_K": nuclei[k]["xyz"]
                 }
                 prop_dict = {}
                 prop_dict["nmr_shielding"] = []
@@ -740,77 +630,37 @@ def write_rsp_calculations(user_dict):
                     "operator": "h_b_dip",
                     "precision": user_dict["world_prec"],
                     "derivative": user_dict["Derivatives"]["h_b_dip"],
-                    "r_O": program_dict["molecule"]["gauge_origin"]
+                    "r_O": mol_dict["gauge_origin"]
                 })
-                rsp_dict["properties"] = prop_dict
+                rsp_calc["properties"] = prop_dict
+                rsp_dict.append(rsp_calc)
 
-                method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
+    return rsp_dict
 
-                if user_dict["Response"]["run"]:
-                    rsp_dict["rsp_solver"] = {
-                        "frequency": 0.0,
-                        "method_name": method_name,
-                        "kain": user_dict["Response"]["kain"],
-                        "max_iter": user_dict["Response"]["max_iter"],
-                        "start_prec": rsp_start_prec,
-                        "final_prec": rsp_final_prec,
-                        "directions": user_dict["Response"]["directions"],
-                        "orbital_thrs": rsp_orbital_thrs,
-                        "property_thrs": rsp_property_thrs,
-                        "orth_prec": user_dict["Precisions"]["orth_prec"],
-                        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
-                    }
 
-                fock_0_dict = {
-                    "kinetic_operator": {
-                        "derivative": user_dict["Derivatives"]["kinetic"]
-                    },
-                    "nuclear_operator": {
-                        "proj_prec": user_dict["Precisions"]["nuc_prec"],
-                        "smooth_prec": user_dict["Precisions"]["nuc_prec"],
-                        "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
-                    }
-                }
-                if wf_method in ['hartree', 'hf', 'dft']:
-                    fock_0_dict["coulomb_operator"] = {
-                        "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                        "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
-                    }
-                if wf_method in ['hf', 'dft']:
-                    fock_0_dict["exchange_operator"] = {
-                        "screen": False,
-                        "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-                    }
-                if wf_method in ['dft']:
-                    func_dict = []
-                    for line in dft_funcs.split('\n'):
-                        sp = line.split()
-                        if len(sp) > 0:
-                            func = sp[0].lower()
-                            coef = [1.0]
-                            if len(sp) > 1:
-                                coef = list(map(float, sp[1:]))
-                            func_dict.append({
-                                "name": func,
-                                "coef": coef[0]
-                            })
-                    fock_0_dict["xc_operator"] = {
-                        "grid_prec": user_dict["Precisions"]["dft_prec"],
-                        "shared_memory": user_dict["MPI"]["share_xc_potential"],
-                        "xc_functional": {
-                            "spin": user_dict["DFT"]["spin"],
-                            "gamma": user_dict["DFT"]["use_gamma"],
-                            "cutoff": user_dict["DFT"]["density_cutoff"],
-                            "log_grad": user_dict["DFT"]["log_grad"],
-                            "derivative": user_dict["Derivatives"]["dft"],
-                            "functionals": func_dict
-                        }
-                    }
-                fock_1_dict = {}
+def write_rsp_calc(omega, user_dict, mol_dict):
+    method_name, wf_method, dft_funcs = parse_wf_method(user_dict)
 
-                rsp_dict["fock_operator_0"] = fock_0_dict
-                rsp_dict["fock_operator_1"] = fock_1_dict
-                program_dict["rsp_calculations"].append(rsp_dict)
+    rsp_calc = {}
+    rsp_calc["frequency"] = omega
+    rsp_calc["dynamic"] = (omega > 1.0e-12)
+    rsp_calc["directions"] = user_dict["Response"]["directions"]
+    rsp_calc["file_orbitals"] = user_dict["Files"]["file_orbitals"]
+    rsp_calc["write_orbitals"] = user_dict["Response"]["write_orbitals"]
+    rsp_calc["fock_operator"] = write_rsp_fock(user_dict, mol_dict, wf_method, dft_funcs)
+    rsp_calc["initial_guess"] = write_rsp_guess(user_dict, method_name)
+
+    rsp_calc["unperturbed"] = {
+        "prec": user_dict["world_prec"],
+        "localize": user_dict["Response"]["localize"],
+        "fock_operator": write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs)
+    }
+
+    if user_dict["Response"]["run"]:
+        rsp_calc["rsp_solver"] = write_rsp_solver(user_dict, method_name)
+
+    return rsp_calc
+
 
 def parse_wf_method(user_dict):
     valid_funcs = [

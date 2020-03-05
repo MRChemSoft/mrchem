@@ -595,6 +595,11 @@ sections:
         default: 3
         docstring: |
           Length of KAIN iterative history.
+      - name: localize
+        type: bool
+        default: false
+        docstring: |
+          Use canonical or localized unperturbed orbitals.
       - name: orbital_thrs
         type: float
         default: -1.0

@@ -33,23 +33,21 @@
 
 namespace mrchem {
 
+class Molecule;
 class FockOperator;
 
 class LinearResponseSolver final : public SCFSolver {
 public:
-    LinearResponseSolver(bool dyn, FockOperator &F_0, OrbitalVector &Phi_0, ComplexMatrix &F_mat_0);
+    explicit LinearResponseSolver(bool dyn = false)
+            : dynamic(dyn) {}
     ~LinearResponseSolver() override = default;
 
-    bool optimize(double omega, FockOperator &F_1, OrbitalVector &X, OrbitalVector &Y);
+    bool optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1);
     void setOrthPrec(double prec) { this->orth_prec = prec; }
 
 protected:
-    bool dynamic{false};
+    const bool dynamic;
     double orth_prec{mrcpp::MachineZero};
-
-    FockOperator *f_oper_0{nullptr};
-    ComplexMatrix *f_mat_0{nullptr};
-    OrbitalVector *phi_0{nullptr};
 
     void printProperty() const;
     void printParameters(double omega, const std::string &oper) const;
