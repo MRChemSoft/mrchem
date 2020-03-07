@@ -347,18 +347,18 @@ void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, int spi
 
     auto n = 0;
     for (int i = 0; i < Phi.size(); i++) {
-        Timer t1;
-        std::stringstream orbname;
-        orbname << file;
-        if (spin == SPIN::Paired) orbname << "_p";
-        if (spin == SPIN::Alpha) orbname << "_a";
-        if (spin == SPIN::Beta) orbname << "_b";
-        orbname << "_" << n;
         if ((Phi[i].spin() == spin) or (spin < 0)) {
+            Timer t1;
+            std::stringstream orbname;
+            orbname << file;
+            if (spin == SPIN::Paired) orbname << "_p";
+            if (spin == SPIN::Alpha) orbname << "_a";
+            if (spin == SPIN::Beta) orbname << "_b";
+            orbname << "_" << n;
             if (mpi::my_orb(Phi[i])) Phi[i].saveOrbital(orbname.str());
+            print_utils::qmfunction(2, "'" + orbname.str() + "'", Phi[i], t1);
             n++;
         }
-        print_utils::qmfunction(2, "'" + orbname.str() + "'", Phi[i], t1);
     }
     mrcpp::print::footer(2, t_tot, 2);
 }
