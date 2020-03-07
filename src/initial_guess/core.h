@@ -48,7 +48,7 @@ namespace core {
 bool setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
 void project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
 void rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi);
-ComplexMatrix diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroTensorOperator &V, int spin);
+ComplexMatrix diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroTensorOperator &V);
 
 } // namespace core
 } // namespace initial_guess

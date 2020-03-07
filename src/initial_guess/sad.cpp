@@ -84,7 +84,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
     mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(not(restricted));
+    xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
@@ -102,20 +102,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     initial_guess::sad::project_atomic_densities(prec, rho_j, nucs);
 
     // Compute XC density
-    if (restricted) {
-        Density &rho_xc = XC.getDensity(DensityType::Total);
-        qmfunction::deep_copy(rho_xc, rho_j);
-    } else {
-        auto Na = static_cast<double>(orbital::size_alpha(Phi));
-        auto Nb = static_cast<double>(orbital::size_alpha(Phi));
-        auto Ne = orbital::get_electron_number(Phi);
-        Density &rho_a = XC.getDensity(DensityType::Alpha);
-        Density &rho_b = XC.getDensity(DensityType::Beta);
-        qmfunction::deep_copy(rho_a, rho_j);
-        qmfunction::deep_copy(rho_b, rho_j);
-        rho_a.rescale(1.0 - Nb / Ne);
-        rho_b.rescale(1.0 - Na / Ne);
-    }
+    Density &rho_xc = XC.getDensity(DensityType::Total);
+    qmfunction::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
     // Project AO basis of hydrogen functions
@@ -133,19 +121,15 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
 
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
+    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V);
+
+    // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
-
-    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V, SPIN::Paired);
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
-
-    ComplexMatrix U_a = initial_guess::core::diagonalize(Psi, T, V, SPIN::Alpha);
-    initial_guess::core::rotate_orbitals(Phi_a, prec, U_a, Psi);
-    mrcpp::print::separator(2, '-');
-    ComplexMatrix U_b = initial_guess::core::diagonalize(Psi, T, V, SPIN::Alpha);
-    initial_guess::core::rotate_orbitals(Phi_b, prec, U_b, Psi);
-
+    initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
+    initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
     for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
     for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
     T.clear();

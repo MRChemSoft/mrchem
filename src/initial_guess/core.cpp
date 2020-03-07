@@ -122,7 +122,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
 
     // Compute Hamiltonian matrix
     mrcpp::print::header(2, "Diagonalize Hamiltonian matrix");
-    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V, SPIN::Paired);
+    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V);
 
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
@@ -254,14 +254,8 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
 }
 
-ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi,
-                                               KineticOperator &T,
-                                               RankZeroTensorOperator &V,
-                                               int spin) {
-    if (Phi.size() == 0) return ComplexMatrix();
-
+ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroTensorOperator &V) {
     Timer t1;
-    for (auto &phi : Phi) phi.setSpin(spin);
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
     ComplexMatrix f_tilde = T(Phi, Phi) + V(Phi, Phi);
     ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
