@@ -313,6 +313,8 @@ bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
             kain.clear();
         }
 
+        if (this->checkpoint) orbital::save_orbitals(Phi_n, this->chkFile);
+
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
         printOrbitals(F_mat.real().diagonal(), errors, Phi_n, 0);
