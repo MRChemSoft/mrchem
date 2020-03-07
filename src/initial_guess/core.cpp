@@ -114,11 +114,8 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Psi);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
-    mrcpp::print::header(2, "Building Hamiltonian operator");
-    t_lap.start();
     T.setup(prec);
     V.setup(prec);
-    if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
 
     // Compute Hamiltonian matrix
     mrcpp::print::header(2, "Diagonalize Hamiltonian matrix");
