@@ -152,25 +152,25 @@ void ReactionPotential::setup(double prec) {
     Cavity &C_tmp = *this->cavity;
     double eps_i = this->e_i, eps_o = this->e_o;
     //TODO insert this whole if else block into the zeroth iteration as the cavity does not need to be computed more than once.
-    if (is_lin) {
-        inv_eps_func.alloc(NUMBER::Real);
-        mrcpp::build_grid(inv_eps_func.real(), *cavity);
-
-        auto eps = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) { return eps_o + C_tmp.evalf(r) * (eps_i - eps_o); };
-
-        auto inv_eps = [eps](const mrcpp::Coord<3> &r) { return 1.0 / eps(r); };
-        qmfunction::project(inv_eps_func, inv_eps, NUMBER::Real, prec / 100);
-
-        this->d_coefficient = e_i - e_o;
-        setRhoEff(rho_eff_func, eps);
-
-    } else {
-        auto eps = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) {
-            return eps_i * std::exp(std::log(eps_o / eps_i) * (1 - C_tmp.evalf(r)));
-        };
-        this->d_coefficient = std::log(e_i / e_o);
-        setRhoEff(rho_eff_func, eps);
-    }
+    //    if (is_lin) {
+    //        inv_eps_func.alloc(NUMBER::Real);
+    //        mrcpp::build_grid(inv_eps_func.real(), *cavity);
+    //
+    //        auto eps = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) { return eps_o + C_tmp.evalf(r) * (eps_i - eps_o); };
+    //
+    //        auto inv_eps = [eps](const mrcpp::Coord<3> &r) { return 1.0 / eps(r); };
+    //        qmfunction::project(inv_eps_func, inv_eps, NUMBER::Real, prec / 100);
+    //
+    //        this->d_coefficient = e_i - e_o;
+    //        setRhoEff(rho_eff_func, eps);
+    //
+    //    } else {
+    auto eps = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) {
+        return eps_i * std::exp(std::log(eps_o / eps_i) * (1 - C_tmp.evalf(r)));
+    };
+    this->d_coefficient = std::log(e_i / e_o);
+    setRhoEff(rho_eff_func, eps);
+    //    }
 
     V_vac_func.alloc(NUMBER::Real);
     mrcpp::apply(prec, V_vac_func.real(), *poisson, rho_tot.real());
