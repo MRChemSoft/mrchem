@@ -100,12 +100,7 @@ script:
            --cmake-options="-DCMAKE_C_COMPILER=${C_COMPILER} -DPYTHON_EXECUTABLE=$(type -P python)"
   - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
-  - |
-    if [[ "${COVERAGE}" = "--coverage" ]]; then
-      travis_wait 60 ctest --output-on-failure --verbose -L "unit" -LE "exchange_hessian"
-    else
-      travis_wait 60 ctest --output-on-failure --verbose
-    fi
+  - ctest --output-on-failure --verbose
 
 after_success:
   - |
