@@ -1,7 +1,7 @@
 #include "ReactionPotential.h"
 #include "MRCPP/MWOperators"
-#include "MRCPP/Printer"
 #include "MRCPP/Plotter"
+#include "MRCPP/Printer"
 #include "MRCPP/Timer"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
@@ -38,35 +38,24 @@ ReactionPotential::ReactionPotential(PoissonOperator_p P,
         , cavity_func(false)
         , gamma(false)
         , diff_func(false)
+        , ones(false)
         , history(hist)
         , e_i(eps_i)
         , e_o(eps_o)
         , is_lin(islin) {}
 
-void ReactionPotential::setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps) {
-  rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
+void ReactionPotential::setRhoTot() {
+    rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, this->nuclei, 1000);
     density::compute(this->apply_prec, rho_el, *orbitals, DensityType::Total);
     rho_el.rescale(-1.0);
     qmfunction::add(rho_tot, 1.0, rho_el, 1.0, rho_nuc, -1.0);
-    auto onesf = [eps](const mrcpp::Coord<3> &r) { return (1.0 / eps(r)) - 1.0; };
-    QMFunction ones;
-    ones.alloc(NUMBER::Real);
-    mrcpp::build_grid(ones.real(), *cavity);
-    qmfunction::project(ones, onesf, NUMBER::Real, this->apply_prec / 100);
-    qmfunction::multiply(rho_eff_func, rho_tot, ones, this->apply_prec);
 }
 
-void ReactionPotential::setGamma(QMFunction const &inv_eps_func, QMFunction &gamma_func, QMFunction &V_func) {
+void ReactionPotential::setGamma(QMFunction &V_func) {
+    resetQMFunction(this->gamma);
     auto d_V = mrcpp::gradient(*derivative, V_func.real());
-    if (is_lin) {
-        QMFunction temp_func2;
-        temp_func2.alloc(NUMBER::Real);
-        mrcpp::dot(this->apply_prec, temp_func2.real(), d_V, this->d_cavity);
-        qmfunction::multiply(gamma_func, temp_func2, inv_eps_func, this->apply_prec);
-    } else if (not is_lin) {
-        mrcpp::dot(this->apply_prec, gamma_func.real(), d_V, this->d_cavity);
-    }
-    gamma_func.rescale(this->d_coefficient / (4.0 * MATHCONST::pi));
+    mrcpp::dot(this->apply_prec, this->gamma.real(), d_V, this->d_cavity);
+    this->gamma.rescale(this->d_coefficient / (4.0 * MATHCONST::pi));
     mrcpp::clear(d_V, true);
 }
 
@@ -100,7 +89,9 @@ void ReactionPotential::poissonSolver(QMFunction rho_eff_func,
     mrcpp::apply(this->apply_prec, V_np1_func->real(), *poisson, poisson_func.real());
     qmfunction::add(*diff_func, -1.0, *this, 1.0, *V_np1_func, -1.0);
     *error = diff_func->norm();
-    std::cout << "Reaction energy:\t" << getTotalEnergy() << "\n" << "gamma int:\t" << this->gamma.integrate().real() << std::endl;
+
+    std::cout << "Reaction energy:\t" << getTotalEnergy() << "\n"
+              << "gamma int:\t" << this->gamma.integrate().real() << std::endl;
     std::cout << "rho_tot int.:\t" << rho_tot.integrate() << std::endl;
     std::cout << "rho_eff int.:\t" << rho_eff_func.integrate() << std::endl;
 }
@@ -108,25 +99,23 @@ void ReactionPotential::poissonSolver(QMFunction rho_eff_func,
 void ReactionPotential::SCRF(QMFunction *V_tot_func,
                              QMFunction *V_vac_func,
                              QMFunction *rho_eff_func,
-                             QMFunction &temp,
-                             const QMFunction &inv_eps_func) {
+                             QMFunction &temp) {
     mrcpp::print::header(0, "Running SCRF");
     KAIN kain(this->history);
     double error = 1.00;
     int iter = 1;
     for (int iter = 1; error >= this->apply_prec; iter++) {
-      if(iter != 1){
-        QMFunction add_func;
-        qmfunction::add(add_func, 1.0, diff_func, 1.0, temp, -1.0);
-        temp = add_func;
-      }
-        resetQMFunction((*this).gamma);
+        if (iter != 1) {
+            QMFunction add_func;
+            qmfunction::add(add_func, 1.0, diff_func, 1.0, temp, -1.0);
+            temp = add_func;
+        }
         resetQMFunction((*this).diff_func);
         resetQMFunction(*V_tot_func);
         QMFunction V_np1_func;
 
         qmfunction::add(*V_tot_func, 1.0, temp, 1.0, *V_vac_func, -1.0);
-        setGamma(inv_eps_func, this->gamma, *V_tot_func);
+        setGamma(*V_tot_func);
         poissonSolver(*rho_eff_func, &diff_func, &V_np1_func, &error);
 
         if (iter > 1 and this->history > 0) accelerateConvergence(diff_func, temp, kain);
@@ -141,42 +130,32 @@ void ReactionPotential::SCRF(QMFunction *V_tot_func,
 }
 
 void ReactionPotential::setup(double prec) {
-
     setApplyPrec(prec);
     QMFunction &temp = *this;
     QMFunction V_vac_func;
-    QMFunction inv_eps_func;
-    QMFunction rho_eff_func;
     QMFunction V_tot_func;
-
+    QMFunction rho_eff_func;
     Cavity &C_tmp = *this->cavity;
     double eps_i = this->e_i, eps_o = this->e_o;
-    //TODO insert this whole if else block into the zeroth iteration as the cavity does not need to be computed more than once.
-    //    if (is_lin) {
-    //        inv_eps_func.alloc(NUMBER::Real);
-    //        mrcpp::build_grid(inv_eps_func.real(), *cavity);
-    //
-    //        auto eps = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) { return eps_o + C_tmp.evalf(r) * (eps_i - eps_o); };
-    //
-    //        auto inv_eps = [eps](const mrcpp::Coord<3> &r) { return 1.0 / eps(r); };
-    //        qmfunction::project(inv_eps_func, inv_eps, NUMBER::Real, prec / 100);
-    //
-    //        this->d_coefficient = e_i - e_o;
-    //        setRhoEff(rho_eff_func, eps);
-    //
-    //    } else {
-    auto eps = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) {
-        return eps_i * std::exp(std::log(eps_o / eps_i) * (1 - C_tmp.evalf(r)));
-    };
-    this->d_coefficient = std::log(e_i / e_o);
-    setRhoEff(rho_eff_func, eps);
-    //    }
 
+    setRhoTot();
     V_vac_func.alloc(NUMBER::Real);
     mrcpp::apply(prec, V_vac_func.real(), *poisson, rho_tot.real());
 
     if (not temp.hasReal()) {
 
+        auto onesf = [C_tmp, eps_i, eps_o](const mrcpp::Coord<3> &r) {
+            return (1.0 / (eps_i * std::exp(std::log(eps_o / eps_i) * (1 - C_tmp.evalf(r))))) - 1.0;
+        };
+        this->d_coefficient = std::log(e_i / e_o);
+
+        ones.alloc(NUMBER::Real);
+        mrcpp::build_grid(this->ones.real(), *cavity);
+        qmfunction::project(ones, onesf, NUMBER::Real, this->apply_prec / 100);
+        rho_eff_func.alloc(NUMBER::Real);
+        qmfunction::multiply(rho_eff_func, rho_tot, ones, this->apply_prec);
+
+        // must do a better fix for this
         mrcpp::FunctionTree<3> *dx_cavity = new mrcpp::FunctionTree<3>(*MRA);
         mrcpp::FunctionTree<3> *dy_cavity = new mrcpp::FunctionTree<3>(*MRA);
         mrcpp::FunctionTree<3> *dz_cavity = new mrcpp::FunctionTree<3>(*MRA);
@@ -187,8 +166,7 @@ void ReactionPotential::setup(double prec) {
 
         QMFunction zeroth_poisson;
         zeroth_poisson.alloc(NUMBER::Real);
-        gamma.alloc(NUMBER::Real);
-        setGamma(inv_eps_func, gamma, V_vac_func);
+        setGamma(V_vac_func);
         qmfunction::add(zeroth_poisson, 1.0, gamma, 1.0, rho_eff_func, -1.0);
         QMFunction tmp_Vr_func;
         tmp_Vr_func.alloc(NUMBER::Real);
@@ -196,16 +174,20 @@ void ReactionPotential::setup(double prec) {
         qmfunction::add(diff_func, 1.0, tmp_Vr_func, -1.0, V_vac_func, -1.0);
         temp = V_vac_func;
     }
-    //update reaction potential
+
+    resetQMFunction(rho_eff_func);
+    qmfunction::multiply(rho_eff_func, rho_tot, ones, this->apply_prec);
+
+    // update reaction potential
     QMFunction add_func;
     qmfunction::add(add_func, 1.0, diff_func, 1.0, temp, -1.0);
     temp = add_func;
+    // Solve the poisson equation
     if (this->variational) {
-        resetQMFunction(gamma);
         QMFunction V_np1_func;
         double error;
         qmfunction::add(V_tot_func, 1.0, temp, 1.0, V_vac_func, -1.0);
-        setGamma(inv_eps_func, gamma, V_tot_func);
+        setGamma(V_tot_func);
         V_np1_func.alloc(NUMBER::Real);
 
         poissonSolver(rho_eff_func, &diff_func, &V_np1_func, &error);
@@ -213,22 +195,8 @@ void ReactionPotential::setup(double prec) {
         println(0, "error:");
         println(0, error);
     } else {
-        SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp, inv_eps_func);
+        SCRF(&V_tot_func, &V_vac_func, &rho_eff_func, temp);
     }
-
-    //plotting for tests
-    int aPts = 450;                     // Number of points in a
-    int bPts = 450;                     // Number of points in b
-    mrcpp::Coord<3> o{-6.0, -6.0, 0.0}; // Origin vector
-    mrcpp::Coord<3> a{12.0, 0.0, 0.0};   // Boundary vector A
-    mrcpp::Coord<3> b{0.0, 12.0, 0.0};
-    mrcpp::Plotter<3> plot(o);                                           // Plotter of 3D functions
-    plot.setRange(a, b);                                                 // Set plot range
-    plot.surfPlot({aPts, bPts}, gamma.real(), "gamma");    // Write to file f_tree.surf
-    plot.surfPlot({aPts, bPts}, temp.real(), "V_R");    // Write to file f_tree.surf
-    plot.surfPlot({aPts, bPts}, rho_tot.real(), "rho");    // Write to file f_tree.surf
-    plot.surfPlot({aPts, bPts}, rho_el.real(), "rho_el");    // Write to file f_tree.surf
-
 }
 
 double &ReactionPotential::getTotalEnergy() {
@@ -254,6 +222,8 @@ double &ReactionPotential::getNuclearEnergy() {
 
 double &ReactionPotential::getElectronIn() {
     QMFunction temp_prod_func;
+    cavity_func.alloc(NUMBER::Real);
+    qmfunction::project(cavity_func, *cavity, NUMBER::Real, this->apply_prec / 100);
     qmfunction::multiply(temp_prod_func, rho_el, cavity_func, this->apply_prec);
     electronsIn = temp_prod_func.integrate().real();
     return electronsIn;

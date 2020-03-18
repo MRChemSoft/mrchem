@@ -25,7 +25,6 @@ WaveFunction {
 }
 
 Properties {
-  scf_energy = true               # Compute ground state energy
   reaction_energy = true            # Compute ground state energy
 }
 
@@ -47,7 +46,7 @@ SCF {
   kain = 4                        # Length of KAIN iterative history
   #max_iter = 5
   orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
-  initial_guess = mw
+  guess_type = mw
   #initial_guess = sad_dz          # Type of initial guess: none, mw, gto
   #write_orbitals = true
 }

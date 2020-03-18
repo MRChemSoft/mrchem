@@ -41,7 +41,6 @@ public:
     QMFunction &getGamma() { return this->potential->getGamma(); }
     QMFunction &getDiffFunc() { return this->potential->getDiffFunc(); }
     QMFunction &getPotential() { return *this->potential; }
-    void setGamma(QMFunction new_gamma) { this->potential->setGamma(new_gamma); }
     void setDiffFunc(QMFunction new_diff_func) { this->potential->setDiffFunc(new_diff_func); }
     void setRunVariational(bool var) { this->potential->setRunVariational(var); }
 

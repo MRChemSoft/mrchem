@@ -34,6 +34,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/two_electron/FockOperator.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -279,7 +280,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
         // variational implementation of solvent effect
         if (solvent_var) {
-          QMFunction &V_r = F.getReactionOperator()->getPotential();
+            QMFunction &V_r = F.getReactionOperator()->getPotential();
             QMFunction &diff_func = F.getReactionOperator()->getDiffFunc();
 
             Phi_n.push_back(Orbital(SPIN::Paired));

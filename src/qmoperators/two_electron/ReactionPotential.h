@@ -30,7 +30,7 @@ public:
     QMFunction &getGamma() { return gamma; }
     QMFunction &getDiffFunc() { return diff_func; }
     bool &getRunVariational() { return variational; }
-    void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
+    //void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
     void setDiffFunc(QMFunction new_diff_func) { this->diff_func = new_diff_func; }
     void setRunVariational(bool var) { this->variational = var; }
 protected:
@@ -52,6 +52,7 @@ private:
 
     QMFunction gamma;       // Surface charge density
     QMFunction diff_func;
+    QMFunction ones;
     int history;
 
     double d_coefficient; // factor with which rescale the derivative of the cavity function
@@ -66,15 +67,14 @@ private:
                       // it will converge together with the SCF procedure
 
     void resetQMFunction(QMFunction &function);
-    void setRhoEff(QMFunction &rho_eff_func, std::function<double(const mrcpp::Coord<3> &r)> eps);
-    void setGamma(QMFunction const &inv_eps_func, QMFunction &gamma_func, QMFunction &V_func);
+    void setRhoTot();
+    void setGamma(QMFunction &V_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void poissonSolver(QMFunction rho_eff_func, QMFunction *diff_func, QMFunction *V_np1_func, double *error);
     void SCRF(QMFunction *V_tot_func,
               QMFunction *V_vac_func,
               QMFunction *rho_eff_func,
-              QMFunction &temp,
-              const QMFunction &inv_eps_func);
+              QMFunction &temp);
     void setup(double prec);
 };
 

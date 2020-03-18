@@ -154,7 +154,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     if (this->Ro != nullptr) {
         Er_nuc = 0.5 * this->Ro->getNuclearEnergy();
         Er_tot = 0.5 * this->Ro->getTotalEnergy();
-        Er_el  = 0.5 * this->Ro->getElectronicEnergy();
+        Er_el = 0.5 * this->Ro->getElectronicEnergy();
     }
     // Electronic part
     if (this->kin != nullptr) E_kin = this->kin->trace(Phi).real();
