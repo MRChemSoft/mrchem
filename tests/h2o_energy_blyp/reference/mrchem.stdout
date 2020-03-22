@@ -3,33 +3,37 @@
 **********************************************************************
 ***                                                                ***
 ***                                                                ***
-***          __  __ ____   ____ _                                  ***
-***         |  \/  |  _ \ / ___| |__   ___ _ __ ___                ***
-***         | |\/| | |_) | |   | '_ \ / _ \ '_ ` _ \               ***
-***         | |  | |  _ <| |___| | | |  __/ | | | | |              ***
-***         |_|  |_|_| \_\\____|_| |_|\___|_| |_| |_|              ***
+***        __  __ ____   ____ _                                    ***
+***       |  \/  |  _ \ / ___| |__   ___ _ __ ___                  ***
+***       | |\/| | |_) | |   | '_ \ / _ \ '_ ` _ \                 ***
+***       | |  | |  _ <| |___| | | |  __/ | | | | |                ***
+***       |_|  |_|_| \_\\____|_| |_|\___|_| |_| |_|                ***
 ***                                                                ***
-***         VERSION    0.0.0        (rev.   edd2455b)              ***
+***       VERSION            0.3.0-alpha                           ***
 ***                                                                ***
-***         Stig Rune Jensen   <stig.r.jensen@uit.no>              ***
-***         Luca Frediani      <luca.frediani@uit.no>              ***
-***         Peter Wind         <peter.wind@uit.no>                 ***
+***       Git branch         rebase/mw-guess                       ***
+***       Git commit hash    f4882d276365e07f1ad7                  ***
+***       Git commit author  Stig Rune Jensen                      ***
+***       Git commit date    Sat Mar 7 13:02:21 2020 +0100         ***
+***                                                                ***
+***       Magnar Bjorgve     <magnar.bjorgve@uit.no>               ***
+***       Roberto Di Remigio <roberto.di.remigio@uit.no>           ***
+***       Luca Frediani      <luca.frediani@uit.no>                ***
+***       Gabriel Gerez      <gsa017@post.uit.no>                  ***
+***       Stig Rune Jensen   <stig.r.jensen@uit.no>                ***
+***       Peter Wind         <peter.wind@uit.no>                   ***
 ***                                                                ***
 **********************************************************************
 
 ----------------------------------------------------------------------
 
- MPI processes         :        (total)                             1
-                       :         (bank)                             0
-                       :      (compute)                             1
-                                                                      
- OpenMP threads        : (threads/proc)                             1
-                                                                      
- CPU cores used        :        (total)                             1
+ MPI processes         :      (no bank)                             1
+ OpenMP threads        :                                            1
+ Total cores           :                                            1
                                                                       
 ----------------------------------------------------------------------
 
-XCFun DFT library Copyright 2009-2011 Ulf Ekstrom and contributors.
+XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
 See http://dftlibs.org/xcfun/ for more information.
 
 This is free software; see the source code for copying conditions.
@@ -41,8 +45,11 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 ----------------------------------------------------------------------
 
- MRCPP version         : 1.1.0
- Git revision          : 3688852
+ MRCPP version         : 1.2.0-alpha3
+ Git branch            : rebase/mw-guess
+ Git commit hash       : f4882d276365e07f1ad7
+ Git commit author     : Stig Rune Jensen
+ Git commit date       : Sat Mar 7 13:02:21 2020 +0100
 
  Linear algebra        : EIGEN v3.3.7
  Parallelization       : OpenMP
@@ -95,17 +102,16 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
                                                                       
 **********************************************************************
 ***                                                                ***
-***              Computing Initial Guess Wavefunction              ***
+***              Computing Ground State Wavefunction               ***
 ***                                                                ***
 **********************************************************************
                                                                       
                                                                       
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- Calculation           : Reading Gaussian-type MOs
+ Calculation           : Read orbitals from file (GTO)
  Precision             : 1.00000e-03
  Restricted            : True
- Basis file            : initial_guess/mrchem.bas
- MO file               : initial_guess/mrchem.moa
+ MO file               : initial_guess/mrchem.mop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -126,14 +132,6 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ======================================================================
 
 
-                                                                      
-**********************************************************************
-***                                                                ***
-***              Computing Ground State Wavefunction               ***
-***                                                                ***
-**********************************************************************
-                                                                      
-                                                                      
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation           : Compute initial energy
  Method                : DFT
@@ -145,21 +143,21 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ======================================================================
                            Molecular Energy
 ----------------------------------------------------------------------
- Kinetic energy        :           (au)               75.847341477606
- E-N energy            :           (au)             -198.727081256770
- Coulomb energy        :           (au)               46.762222788231
+ Kinetic energy        :           (au)               75.846573573185
+ E-N energy            :           (au)             -198.725251434212
+ Coulomb energy        :           (au)               46.762199622162
  Exchange energy       :           (au)                0.000000000000
- X-C energy            :           (au)               -9.318916617302
+ X-C energy            :           (au)               -9.318909037867
  Ext. field (el)       :           (au)                0.000000000000
  Ext. field (nuc)      :           (au)                0.000000000000
 ----------------------------------------------------------------------
- Electronic energy     :           (au)              -85.436433608234
+ Electronic energy     :           (au)              -85.435387276732
  Nuclear energy        :           (au)                9.039235444235
 ----------------------------------------------------------------------
- Total energy          :           (au)           -7.639719816400e+01
-                       :     (kcal/mol)           -4.793996525298e+04
-                       :       (kJ/mol)           -2.005808147486e+05
-                       :           (eV)           -2.078873575982e+03
+ Total energy          :           (au)           -7.639615183250e+01
+                       :     (kcal/mol)           -4.793930867005e+04
+                       :       (kJ/mol)           -2.005780676057e+05
+                       :           (eV)           -2.078845103852e+03
 ======================================================================
 
 
@@ -193,34 +191,34 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ----------------------------------------------------------------------
     n  Occ Spin        :                                      Epsilon
 ----------------------------------------------------------------------
-    0    2    p        :           (au)              -18.783030915591
-    1    2    p        :           (au)               -0.892801040413
-    2    2    p        :           (au)               -0.447028505450
-    3    2    p        :           (au)               -0.303606738209
-    4    2    p        :           (au)               -0.222591510440
+    0    2    p        :           (au)              -18.782961402002
+    1    2    p        :           (au)               -0.892698452791
+    2    2    p        :           (au)               -0.447021541210
+    3    2    p        :           (au)               -0.303255086859
+    4    2    p        :           (au)               -0.222581060353
 ----------------------------------------------------------------------
- Sum occupied          :           (au)              -41.298117420205
+ Sum occupied          :           (au)              -41.297035086430
 ======================================================================
 
 
 ======================================================================
                            Molecular Energy
 ----------------------------------------------------------------------
- Kinetic energy        :           (au)               75.847341477606
- E-N energy            :           (au)             -198.727081256770
- Coulomb energy        :           (au)               46.762222788231
+ Kinetic energy        :           (au)               75.846573573185
+ E-N energy            :           (au)             -198.725251434212
+ Coulomb energy        :           (au)               46.762199622162
  Exchange energy       :           (au)                0.000000000000
- X-C energy            :           (au)               -9.318916617302
+ X-C energy            :           (au)               -9.318909037867
  Ext. field (el)       :           (au)                0.000000000000
  Ext. field (nuc)      :           (au)                0.000000000000
 ----------------------------------------------------------------------
- Electronic energy     :           (au)              -85.436433608234
+ Electronic energy     :           (au)              -85.435387276732
  Nuclear energy        :           (au)                9.039235444235
 ----------------------------------------------------------------------
- Total energy          :           (au)           -7.639719816400e+01
-                       :     (kcal/mol)           -4.793996525298e+04
-                       :       (kJ/mol)           -2.005808147486e+05
-                       :           (eV)           -2.078873575982e+03
+ Total energy          :           (au)           -7.639615183250e+01
+                       :     (kcal/mol)           -4.793930867005e+04
+                       :       (kJ/mol)           -2.005780676057e+05
+                       :           (eV)           -2.078845103852e+03
 ======================================================================
 
 
@@ -264,7 +262,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ***                                                                ***
 ***                         Exiting MRChem                         ***
 ***                                                                ***
-***                    Wall time :  0h  0m 37s                     ***
+***                    Wall time :  0h  0m 36s                     ***
 ***                                                                ***
 **********************************************************************
                                                                       
