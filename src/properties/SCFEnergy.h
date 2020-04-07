@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "mrchem.h"
 #include "utils/print_utils.h"
 
@@ -83,6 +85,21 @@ public:
         print_utils::scalar(0, "                 ", E_kJ,   "(kJ/mol)", pprec, true);
         print_utils::scalar(0, "                 ", E_eV,   "(eV)", pprec, true);
         mrcpp::print::separator(0, '=', 2);
+    }
+
+    nlohmann::json json() const {
+        return {
+            {"E_tot", E_nuc + E_el},
+            {"E_nuc", E_nuc},
+            {"E_el", E_el},
+            {"E_kin", E_kin},
+            {"E_en", E_en},
+            {"E_ee", E_ee},
+            {"E_x", E_x},
+            {"E_xc", E_xc},
+            {"E_next", E_next},
+            {"E_eext", E_eext}
+        };
     }
 
 private:

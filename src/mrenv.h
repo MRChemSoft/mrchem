@@ -30,10 +30,11 @@
 namespace mrchem {
 namespace mrenv {
 
-nlohmann::json fetch_input(int argc, char **argv);
-void initialize(const nlohmann::json &input);
+nlohmann::json fetch_json(int argc, char **argv);
+void dump_json(const nlohmann::json &json_inp, const nlohmann::json &json_out);
+
+void initialize(const nlohmann::json &json_inp);
 void finalize(double wt);
-void init_mpi(const nlohmann::json &json_mpi);
 
 } // namespace mrenv
 } // namespace mrchem

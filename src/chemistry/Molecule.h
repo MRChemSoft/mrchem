@@ -75,7 +75,7 @@ public:
 
     void setCharge(int c) { this->charge = c; }
     void setMultiplicity(int m) { this->multiplicity = m; }
-    void setGaugeOrigin(mrcpp::Coord<3> &o) { this->origin = o; }
+    void setGaugeOrigin(const mrcpp::Coord<3> &o) { this->origin = o; }
 
     mrcpp::Coord<3> getGaugeOrigin() const { return this->origin; }
     mrcpp::Coord<3> calcCenterOfMass() const;

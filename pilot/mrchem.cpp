@@ -16,7 +16,7 @@ using namespace mrchem;
 
 int main(int argc, char **argv) {
     mpi::initialize();
-    const auto json_input = mrenv::fetch_input(argc, argv);
+    const auto json_input = mrenv::fetch_json(argc, argv);
     mrenv::initialize(json_input);
 
     Timer timer;

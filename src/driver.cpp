@@ -118,18 +118,18 @@ void calc_properties(const json &input, Molecule &mol, int dir, double omega);
 void driver::init_molecule(const json &json_mol, Molecule &mol) {
     print_utils::headline(0, "Initializing Molecule");
 
-    auto charge = json_mol["charge"].get<int>();
-    auto multiplicity = json_mol["multiplicity"].get<int>();
-    auto gauge_origin = json_mol["gauge_origin"].get<mrcpp::Coord<3>>();
+    auto charge = json_mol["charge"];
+    auto multiplicity = json_mol["multiplicity"];
+    auto gauge_origin = json_mol["gauge_origin"];
 
     mol.setCharge(charge);
     mol.setMultiplicity(multiplicity);
     mol.setGaugeOrigin(gauge_origin);
 
-    Nuclei &nuclei = mol.getNuclei();
-    for (const auto &coord : json_mol["coords"].get<json>()) {
-        auto atom = coord["atom"].get<std::string>();
-        auto xyz = coord["xyz"].get<mrcpp::Coord<3>>();
+    auto &nuclei = mol.getNuclei();
+    for (const auto &coord : json_mol["coords"]) {
+        auto atom = coord["atom"];
+        auto xyz = coord["xyz"];
         nuclei.push_back(atom, xyz);
     }
 
@@ -147,8 +147,10 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
  *
  * This function expects the "scf_calculation" subsection of the input.
  */
-bool driver::scf::run(const json &json_scf, Molecule &mol) {
+json driver::scf::run(const json &json_scf, Molecule &mol) {
     print_utils::headline(0, "Computing Ground State Wavefunction");
+    json json_out;
+    json_out["success"] = true;
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
@@ -165,8 +167,10 @@ bool driver::scf::run(const json &json_scf, Molecule &mol) {
     const auto &json_guess = json_scf["initial_guess"];
     if (driver::scf::guess_orbitals(json_guess, mol)) {
         driver::scf::guess_energy(json_guess, mol, F);
+        json_out["initial_energy"] = mol.getSCFEnergy().json();
     } else {
-        return false;
+        json_out["success"] = false;
+        return json_out;
     }
 
     ///////////////////////////////////////////////////////////
@@ -174,7 +178,6 @@ bool driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
 
     // Run GroundStateSolver if present in input JSON
-    auto success = true;
     auto scf_solver = json_scf.find("scf_solver");
     if (scf_solver != json_scf.end()) {
         auto kain = (*scf_solver)["kain"];
@@ -201,14 +204,15 @@ bool driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
-        success = solver.optimize(mol, F);
+        json_out["scf_solver"] = solver.optimize(mol, F);
+        json_out["success"] = json_out["scf_solver"]["converged"];
     }
 
     ///////////////////////////////////////////////////////////
     //////////   Computing Ground State Properties   //////////
     ///////////////////////////////////////////////////////////
 
-    if (success) {
+    if (json_out["success"]) {
         auto json_orbs = json_scf.find("write_orbitals");
         if (json_orbs != json_scf.end()) driver::scf::write_orbitals(*json_orbs, mol);
 
@@ -219,7 +223,7 @@ bool driver::scf::run(const json &json_scf, Molecule &mol) {
         if (json_plot != json_scf.end()) driver::scf::plot_quantities(*json_plot, mol);
     }
 
-    return success;
+    return json_out;
 }
 
 /** @brief Run initial guess calculation for the orbitals
@@ -515,8 +519,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
  * This function expects a single subsection entry in the "rsp_calculations"
  * vector of the input.
  */
-bool driver::rsp::run(const json &json_rsp, Molecule &mol) {
+json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     print_utils::headline(0, "Computing Linear Response Wavefunction");
+    json json_out = {};
 
     ///////////////////////////////////////////////////////////
     /////////////   Preparing Unperturbed System   ////////////
@@ -618,7 +623,7 @@ bool driver::rsp::run(const json &json_rsp, Molecule &mol) {
     mol.getOrbitalsX_p().reset(); // Release shared_ptr
     mol.getOrbitalsY_p().reset(); // Release shared_ptr
 
-    return success;
+    return json_out;
 }
 
 /** @brief Run initial guess calculation for the response orbitals

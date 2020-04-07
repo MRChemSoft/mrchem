@@ -40,22 +40,25 @@ using Timer = mrcpp::Timer;
 using namespace mrchem;
 
 int main(int argc, char **argv) {
-    const auto json_input = mrenv::fetch_input(argc, argv);
+    const auto json_inp = mrenv::fetch_json(argc, argv);
 
-    mrenv::initialize(json_input);
-    const auto &json_mol = json_input["molecule"];
-    const auto &json_scf = json_input["scf_calculation"];
-    const auto &json_rsps = json_input["rsp_calculations"];
+    json json_out;
+    mrenv::initialize(json_inp);
+    const auto &mol_inp = json_inp["molecule"];
+    const auto &scf_inp = json_inp["scf_calculation"];
+    const auto &rsps_inp = json_inp["rsp_calculations"];
 
     Timer timer;
     Molecule mol;
-    driver::init_molecule(json_mol, mol);
-    if (driver::scf::run(json_scf, mol)) {
-        for (const auto &json_rsp : json_rsps) driver::rsp::run(json_rsp, mol);
+    driver::init_molecule(mol_inp, mol);
+    json_out["scf_calculation"] = driver::scf::run(scf_inp, mol);
+    if (json_out["scf_calculation"]["success"]) {
+        for (const auto &rsp_inp : rsps_inp) driver::rsp::run(rsp_inp, mol);
     }
-    driver::print_properties(mol);
     mpi::barrier(mpi::comm_orb);
+    driver::print_properties(mol);
     mrenv::finalize(timer.elapsed());
+    mrenv::dump_json(json_inp, json_out);
 
     mpi::finalize();
     return EXIT_SUCCESS;

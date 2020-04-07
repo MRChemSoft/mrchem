@@ -35,12 +35,11 @@ void init_molecule(const nlohmann::json &input, Molecule &mol);
 void print_properties(const Molecule &mol);
 
 namespace scf {
-bool run(const nlohmann::json &input, Molecule &mol);
-} // namespace scf
-
+nlohmann::json run(const nlohmann::json &input, Molecule &mol);
+}
 namespace rsp {
-bool run(const nlohmann::json &input, Molecule &mol);
-} // namespace rsp
+nlohmann::json run(const nlohmann::json &input, Molecule &mol);
+}
 
 } // namespace driver
 } // namespace mrchem

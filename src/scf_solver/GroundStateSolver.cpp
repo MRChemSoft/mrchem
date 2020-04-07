@@ -37,6 +37,7 @@
 
 using mrcpp::Printer;
 using mrcpp::Timer;
+using nlohmann::json;
 
 namespace mrchem {
 
@@ -210,10 +211,10 @@ void GroundStateSolver::reset() {
  * 10) Setup Fock operator
  * 11) Compute Fock matrix
  *
- * Post SCF: diagonalize/localize orbitals
  */
-bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
+json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     printParameters("Optimize ground state orbitals");
+    json json_out;
 
     KAIN kain(this->history);
     SCFEnergy &E_n = mol.getSCFEnergy();
@@ -237,7 +238,9 @@ bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
     int nIter = 0;
     bool converged = false;
+    json_out["cycles"] = {};
     while (nIter++ < this->maxIter or this->maxIter < 0) {
+        json json_cycle;
         std::stringstream o_header;
         o_header << "SCF cycle " << nIter;
         mrcpp::print::header(1, o_header.str(), 0, '#');
@@ -283,6 +286,7 @@ bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         errors = orbital::get_norms(dPhi_n);
         err_o = errors.maxCoeff();
         err_t = errors.norm();
+        json_cycle["mo_residual"] = err_t;
 
         // Update orbitals
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
@@ -301,6 +305,10 @@ bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         this->property.push_back(E_n.getTotalEnergy());
         auto err_p = calcPropertyError();
         converged = checkConvergence(err_o, err_p);
+
+        json_cycle["energy_terms"] = E_n.json();
+        json_cycle["energy_total"] = E_n.getTotalEnergy();
+        json_cycle["energy_update"] = err_p;
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
@@ -327,6 +335,7 @@ bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 
+        json_out["cycles"].push_back(json_cycle);
         if (converged) break;
     }
 
@@ -335,7 +344,8 @@ bool GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     printConvergence(converged, "Total energy");
     reset();
 
-    return converged;
+    json_out["converged"] = converged;
+    return json_out;
 }
 
 /** @brief Test if orbitals needs localization

@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "SCFSolver.h"
 #include "properties/SCFEnergy.h"
 
@@ -57,7 +59,7 @@ public:
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
 
-    bool optimize(Molecule &mol, FockOperator &F);
+    nlohmann::json optimize(Molecule &mol, FockOperator &F);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization

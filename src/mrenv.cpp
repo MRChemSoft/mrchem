@@ -23,11 +23,9 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-
+#include <MRCPP/Printer>
+#include <XCFun/xcfun.h>
 #include <fstream>
-
-#include "XCFun/xcfun.h"
 
 #include "mrchem.h"
 #include "mrenv.h"
@@ -45,10 +43,9 @@ void init_printer(const json &json_print);
 void init_mra(const json &json_mra);
 void init_mpi(const json &json_mpi);
 void print_header();
-void print_footer(double wt);
 } // namespace mrenv
 
-json mrenv::fetch_input(int argc, char **argv) {
+json mrenv::fetch_json(int argc, char **argv) {
     const char *infile = nullptr;
     if (argc == 1) {
         infile = "STDIN";
@@ -64,19 +61,19 @@ json mrenv::fetch_input(int argc, char **argv) {
     ifs >> input;
     ifs.close();
 
-    return input;
+    return input["input"];
 }
 
-void mrenv::initialize(const json &input) {
-    auto json_print = input.find("printer");
-    auto json_mra = input.find("mra");
-    auto json_mpi = input.find("mpi");
+void mrenv::initialize(const json &json_inp) {
+    auto json_print = json_inp.find("printer");
+    auto json_mra = json_inp.find("mra");
+    auto json_mpi = json_inp.find("mpi");
 
-    if (json_mra == input.end()) MSG_ABORT("Missing MRA input!");
+    if (json_mra == json_inp.end()) MSG_ABORT("Missing MRA input!");
 
-    if (json_mra != input.end()) mrenv::init_mra(*json_mra);
-    if (json_mpi != input.end()) mrenv::init_mpi(*json_mpi);
-    if (json_print != input.end()) mrenv::init_printer(*json_print);
+    if (json_mra != json_inp.end()) mrenv::init_mra(*json_mra);
+    if (json_mpi != json_inp.end()) mrenv::init_mpi(*json_mpi);
+    if (json_print != json_inp.end()) mrenv::init_printer(*json_print);
 
     mrenv::print_header();
 }
@@ -214,6 +211,7 @@ void mrenv::finalize(double wt) {
     auto hr = static_cast<int>(wt / 3600.0);
     auto min = static_cast<int>(std::fmod(wt, 3600.0) / 60.0);
     auto sec = static_cast<int>(std::fmod(wt, 60.0));
+
     std::stringstream o_time;
     o_time << "Wall time : " << std::setw(2) << hr << "h" << std::setw(3) << min << "m" << std::setw(3) << sec << "s";
 
@@ -228,6 +226,17 @@ void mrenv::finalize(double wt) {
     mrcpp::print::separator(0, '*');
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, ' ');
+}
+
+void mrenv::dump_json(const json &json_inp, const json &json_out) {
+    json json_tot;
+    json_tot["input"] = json_inp;
+    json_tot["output"] = json_out;
+
+    std::ofstream ofs;
+    ofs.open("mrchem.json", std::ios::out);
+    ofs << json_tot.dump(2) << std::endl;
+    ofs.close();
 }
 
 } // namespace mrchem

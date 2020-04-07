@@ -61,7 +61,8 @@ def main():
 
     # now that all keywords have sensible values,
     # we can translate user input into program input
-    program_dict = translate_input(user_dict)
+    program_dict = {}
+    program_dict["input"] = translate_input(user_dict)
 
     inp_name, ext_ext = os.path.splitext(inp_file_cmd)
     xfile = inp_name + '.json'
@@ -70,7 +71,7 @@ def main():
 
     if not dryrun:
         cmd = executable + ' ' + xfile
-        if program_dict["printer"]["print_input"]:
+        if program_dict["input"]["printer"]["print_input"]:
             subprocess.call('cat ' + inp_file_cmd, shell=True)
         subprocess.call(cmd, shell=True)
 
