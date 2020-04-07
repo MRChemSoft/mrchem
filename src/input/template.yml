@@ -333,7 +333,7 @@ sections:
           Compute orbital energies.
       - name: dipole_moment
         type: bool
-        default: false
+        default: true
         docstring: |
           Compute dipole moment.
       - name: quadrupole_moment

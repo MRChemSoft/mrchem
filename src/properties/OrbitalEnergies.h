@@ -76,11 +76,11 @@ public:
             o_txt << std::setw(w1 - 1) << i;
             o_txt << std::setw(w1) << this->occupancy(i);
             o_txt << std::setw(w1) << sp;
-            print_utils::scalar(0, o_txt.str(), this->epsilon(i), "(au)", 2 * pprec);
+            print_utils::scalar(0, o_txt.str(), this->epsilon(i), "(au)", pprec);
         }
         auto sum_occupied = this->occupancy.cast<double>().dot(this->epsilon);
         mrcpp::print::separator(0, '-');
-        print_utils::scalar(0, "Sum occupied", sum_occupied, "(au)", 2 * pprec);
+        print_utils::scalar(0, "Sum occupied", sum_occupied, "(au)", pprec);
         mrcpp::print::separator(0, '=', 2);
     }
 
