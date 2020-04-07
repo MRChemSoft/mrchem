@@ -572,9 +572,11 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
 
     const auto &json_pert = json_rsp["perturbation"];
     auto h_1 = driver::get_operator<3>(json_pert);
-
-    auto success = true;
+    json_out["perturbation"] = json_pert["operator"];
+    json_out["success"] = true;
+    json_out["components"] = {};
     for (auto d = 0; d < 3; d++) {
+        json comp_out = {};
         const auto &json_comp = json_rsp["components"][d];
         F_1.perturbation() = h_1[d];
 
@@ -583,7 +585,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         ///////////////////////////////////////////////////////////
 
         const auto &json_guess = json_comp["initial_guess"];
-        success = driver::rsp::guess_orbitals(json_guess, mol);
+        json_out["success"] = driver::rsp::guess_orbitals(json_guess, mol);
 
         ///////////////////////////////////////////////////////////
         /////////////   Optimizing Perturbed Orbitals  ////////////
@@ -615,14 +617,15 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             solver.setThreshold(orbital_thrs, property_thrs);
             solver.setOrthPrec(orth_prec);
 
-            success = solver.optimize(omega, mol, F_0, F_1);
+            comp_out["rsp_solver"] = solver.optimize(omega, mol, F_0, F_1);
+            json_out["success"] = comp_out["rsp_solver"]["converged"];
         }
 
         ///////////////////////////////////////////////////////////
         ////////////   Compute Response Properties   //////////////
         ///////////////////////////////////////////////////////////
 
-        if (success) {
+        if (json_out["success"]) {
             auto json_orbs = json_comp.find("write_orbitals");
             if (json_orbs != json_comp.end()) driver::rsp::write_orbitals(*json_orbs, mol, dynamic);
 
@@ -631,6 +634,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         }
         mol.getOrbitalsX().clear(); // Clear orbital vector
         mol.getOrbitalsY().clear(); // Clear orbital vector
+        json_out["components"].push_back(comp_out);
     }
     F_0.clear();
     mol.getOrbitalsX_p().reset(); // Release shared_ptr

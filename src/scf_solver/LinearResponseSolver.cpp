@@ -38,6 +38,7 @@
 
 using mrcpp::Printer;
 using mrcpp::Timer;
+using nlohmann::json;
 
 namespace mrchem {
 
@@ -59,8 +60,9 @@ namespace mrchem {
  *  5) Check for convergence
  *
  */
-bool LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1) {
+json LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1) {
     printParameters(omega, F_1.perturbation().name());
+    json json_out;
 
     // Setup KAIN accelerators
     KAIN kain_x(this->history);
@@ -98,7 +100,9 @@ bool LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
 
     int nIter = 0;
     bool converged = false;
+    json_out["cycles"] = {};
     while (nIter++ < this->maxIter or this->maxIter < 0) {
+        json json_cycle;
         std::stringstream o_header;
         o_header << "SCF cycle " << nIter;
         mrcpp::print::header(1, o_header.str(), 0, '#');
@@ -217,7 +221,6 @@ bool LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
         mrcpp::print::header(2, "Computing symmetric property");
         t_lap.start();
         double prop = F_1.perturbation().trace(Phi_0, X_n, Y_n).real();
-        this->property.push_back(prop);
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing symmetric property", t_lap);
 
@@ -225,11 +228,18 @@ bool LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
         F_1.clear();
 
         // Compute errors
-        auto err_p = std::abs(getUpdate(this->property, nIter, false));
         err_o = std::max(errors_x.maxCoeff(), errors_y.maxCoeff());
         err_t = std::sqrt(errors_x.dot(errors_x) + errors_y.dot(errors_y));
-        converged = checkConvergence(err_o, err_p);
+        json_cycle["mo_residual"] = err_t;
+
+        // Collect convergence data
         this->error.push_back(err_t);
+        this->property.push_back(prop);
+        double err_p = getUpdate(this->property, nIter + 1, true);
+        converged = checkConvergence(err_o, err_p);
+
+        json_cycle["symmetric_property"] = prop;
+        json_cycle["property_update"] = err_p;
 
         // Finalize SCF cycle
         if (plevel < 1) printConvergenceRow(nIter);
@@ -243,13 +253,15 @@ bool LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
         mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 
+        json_out["cycles"].push_back(json_cycle);
         if (converged) break;
     }
 
     printConvergence(converged, "Symmetric property");
     reset();
 
-    return converged;
+    json_out["converged"] = converged;
+    return json_out;
 }
 
 /** @brief Pretty printing of the computed property with update */

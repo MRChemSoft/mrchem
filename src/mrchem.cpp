@@ -53,7 +53,11 @@ int main(int argc, char **argv) {
     driver::init_molecule(mol_inp, mol);
     json_out["scf_calculation"] = driver::scf::run(scf_inp, mol);
     if (json_out["scf_calculation"]["success"]) {
-        for (const auto &rsp_inp : rsps_inp) driver::rsp::run(rsp_inp, mol);
+        json_out["rsp_calculations"] = {};
+        for (const auto &rsp_inp : rsps_inp) {
+            auto rsp_out = driver::rsp::run(rsp_inp, mol);
+            json_out["rsp_calculations"].push_back(rsp_out);
+        }
     }
     mpi::barrier(mpi::comm_orb);
     json_out["properties"] = driver::print_properties(mol);

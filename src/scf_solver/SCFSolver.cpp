@@ -114,8 +114,8 @@ double SCFSolver::getHelmholtzPrec() {
 bool SCFSolver::checkConvergence(double err_o, double err_p) const {
     bool conv_o = false;
     bool conv_p = false;
-    if (err_o < this->orbThrs or this->orbThrs < 0.0) conv_o = true;
-    if (err_p < this->propThrs or this->propThrs < 0.0) conv_p = true;
+    if (std::abs(err_o) < this->orbThrs or this->orbThrs < 0.0) conv_o = true;
+    if (std::abs(err_p) < this->propThrs or this->propThrs < 0.0) conv_p = true;
     return (conv_o and conv_p);
 }
 

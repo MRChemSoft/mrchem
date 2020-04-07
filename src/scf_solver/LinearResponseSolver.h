@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "SCFSolver.h"
 
 /** @class LinearResponseSolver
@@ -42,7 +44,7 @@ public:
             : dynamic(dyn) {}
     ~LinearResponseSolver() override = default;
 
-    bool optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1);
+    nlohmann::json optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1);
     void setOrthPrec(double prec) { this->orth_prec = prec; }
     void setCheckpointFile(const std::string &file_x, const std::string &file_y) {
         this->chkFileX = file_x;
