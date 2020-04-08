@@ -62,6 +62,7 @@ namespace mrchem {
  */
 json LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F_0, FockOperator &F_1) {
     printParameters(omega, F_1.perturbation().name());
+    Timer t_tot;
     json json_out;
 
     // Setup KAIN accelerators
@@ -250,6 +251,8 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
         mrcpp::print::separator(2, '=', 2);
         printProperty();
         printMemory();
+        t_scf.stop();
+        json_cycle["wall_time"] = t_scf.elapsed();
         mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 
@@ -260,6 +263,7 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockOperator &F
     printConvergence(converged, "Symmetric property");
     reset();
 
+    json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;
     return json_out;
 }

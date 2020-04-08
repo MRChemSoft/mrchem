@@ -214,6 +214,7 @@ void GroundStateSolver::reset() {
  */
 json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     printParameters("Optimize ground state orbitals");
+    Timer t_tot;
     json json_out;
 
     KAIN kain(this->history);
@@ -332,6 +333,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         mrcpp::print::separator(2, '=', 2);
         printProperty();
         printMemory();
+        t_scf.stop();
+        json_cycle["wall_time"] = t_scf.elapsed();
         mrcpp::print::footer(1, t_scf, 2, '#');
         mrcpp::print::separator(2, ' ', 2);
 
@@ -344,6 +347,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     printConvergence(converged, "Total energy");
     reset();
 
+    json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;
     return json_out;
 }

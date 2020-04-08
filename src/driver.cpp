@@ -573,6 +573,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     const auto &json_pert = json_rsp["perturbation"];
     auto h_1 = driver::get_operator<3>(json_pert);
     json_out["perturbation"] = json_pert["operator"];
+    json_out["frequency"] = omega;
     json_out["success"] = true;
     json_out["components"] = {};
     for (auto d = 0; d < 3; d++) {
