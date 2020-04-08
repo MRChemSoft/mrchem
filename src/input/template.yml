@@ -644,7 +644,7 @@ sections:
           Length of KAIN iterative history.
       - name: localize
         type: bool
-        default: false
+        default: "user['SCF']['localize']"
         docstring: |
           Use canonical or localized unperturbed orbitals.
       - name: orbital_thrs
