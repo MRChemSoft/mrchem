@@ -233,10 +233,12 @@ void mrenv::dump_json(const json &json_inp, const json &json_out) {
     json_tot["input"] = json_inp;
     json_tot["output"] = json_out;
 
-    std::ofstream ofs;
-    ofs.open("mrchem.json", std::ios::out);
-    ofs << json_tot.dump(2) << std::endl;
-    ofs.close();
+    if (mpi::grand_master()) {
+        std::ofstream ofs;
+        ofs.open("mrchem.json", std::ios::out);
+        ofs << json_tot.dump(2) << std::endl;
+        ofs.close();
+    }
 }
 
 } // namespace mrchem
