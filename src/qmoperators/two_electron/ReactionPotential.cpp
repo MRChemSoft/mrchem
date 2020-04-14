@@ -89,11 +89,6 @@ void ReactionPotential::poissonSolver(QMFunction rho_eff_func,
     mrcpp::apply(this->apply_prec, V_np1_func->real(), *poisson, poisson_func.real());
     qmfunction::add(*diff_func, -1.0, *this, 1.0, *V_np1_func, -1.0);
     *error = diff_func->norm();
-
-    std::cout << "Reaction energy:\t" << getTotalEnergy() << "\n"
-              << "gamma int:\t" << this->gamma.integrate().real() << std::endl;
-    std::cout << "rho_tot int.:\t" << rho_tot.integrate() << std::endl;
-    std::cout << "rho_eff int.:\t" << rho_eff_func.integrate() << std::endl;
 }
 
 void ReactionPotential::SCRF(QMFunction *V_tot_func,

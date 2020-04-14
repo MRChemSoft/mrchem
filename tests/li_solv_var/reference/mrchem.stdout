@@ -3,29 +3,37 @@
 **********************************************************************
 ***                                                                ***
 ***                                                                ***
-***          __  __ ____   ____ _                                  ***
-***         |  \/  |  _ \ / ___| |__   ___ _ __ ___                ***
-***         | |\/| | |_) | |   | '_ \ / _ \ '_ ` _ \               ***
-***         | |  | |  _ <| |___| | | |  __/ | | | | |              ***
-***         |_|  |_|_| \_\\____|_| |_|\___|_| |_| |_|              ***
+***        __  __ ____   ____ _                                    ***
+***       |  \/  |  _ \ / ___| |__   ___ _ __ ___                  ***
+***       | |\/| | |_) | |   | '_ \ / _ \ '_ ` _ \                 ***
+***       | |  | |  _ <| |___| | | |  __/ | | | | |                ***
+***       |_|  |_|_| \_\\____|_| |_|\___|_| |_| |_|                ***
 ***                                                                ***
-***         VERSION    0.2.0        (rev.   02cee954)              ***
+***       VERSION            0.3.0-alpha                           ***
 ***                                                                ***
-***         Stig Rune Jensen   <stig.r.jensen@uit.no>              ***
-***         Luca Frediani      <luca.frediani@uit.no>              ***
-***         Peter Wind         <peter.wind@uit.no>                 ***
+***       Git branch         new_solvent                           ***
+***       Git commit hash    5789e0a6e118cd9a50c2                  ***
+***       Git commit author  Gabriel                               ***
+***       Git commit date    Tue Apr 21 17:28:00 2020 +0200        ***
+***                                                                ***
+***       Magnar Bjorgve     <magnar.bjorgve@uit.no>               ***
+***       Roberto Di Remigio <roberto.di.remigio@uit.no>           ***
+***       Luca Frediani      <luca.frediani@uit.no>                ***
+***       Gabriel Gerez      <gsa017@post.uit.no>                  ***
+***       Stig Rune Jensen   <stig.r.jensen@uit.no>                ***
+***       Peter Wind         <peter.wind@uit.no>                   ***
 ***                                                                ***
 **********************************************************************
 
 ----------------------------------------------------------------------
 
- MPI processes         :                                            1
- OpenMP threads        :                                            4
- Total cores           :                                            4
+ MPI processes         :      (no bank)                             1
+ OpenMP threads        :                                            8
+ Total cores           :                                            8
                                                                       
 ----------------------------------------------------------------------
 
-XCFun DFT library Copyright 2009-2011 Ulf Ekstrom and contributors.
+XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
 See http://dftlibs.org/xcfun/ for more information.
 
 This is free software; see the source code for copying conditions.
@@ -37,10 +45,13 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 ----------------------------------------------------------------------
 
- MRCPP version         : 1.0.1
- Git revision          : bfaa438
+ MRCPP version         : 1.2.0-alpha3
+ Git branch            : new_solvent
+ Git commit hash       : 3f287c5097d6819ab1bc
+ Git commit author     : Gabriel
+ Git commit date       : Thu Apr 2 11:43:14 2020 +0200
 
- Linear algebra        : EIGEN v3.3.4
+ Linear algebra        : EIGEN v3.3.7
  Parallelization       : OpenMP
 
 ----------------------------------------------------------------------
@@ -50,7 +61,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ======================================================================
                        MultiResolution Analysis
 ----------------------------------------------------------------------
- polynomial order      : 8
+ polynomial order      : 5
  polynomial type       : Interpolating
 ----------------------------------------------------------------------
  total boxes           : 8
@@ -82,20 +93,24 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
     0      Li          :       0.000000       0.000000       0.000000
 ----------------------------------------------------------------------
  Center of mass        :       0.000000       0.000000       0.000000
+ Gauge origin          :       0.000000       0.000000       0.000000
 ======================================================================
 
 
                                                                       
 **********************************************************************
 ***                                                                ***
-***              Computing Initial Guess Wavefunction              ***
+***              Computing Ground State Wavefunction               ***
 ***                                                                ***
 **********************************************************************
                                                                       
                                                                       
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- Calculation           : Read orbitals from file (MW)
- File name             : orbitals/phi
+ Calculation           : Compute initial orbitals
+ Method                : Project MW molecular orbitals
+ Precision             : 1.00000e-03
+ Restricted            : True
+ MO file               : initial_guess/phi_p_scf
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -112,86 +127,79 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ======================================================================
 
 
-                                                                      
-**********************************************************************
-***                                                                ***
-***              Computing Ground State Wavefunction               ***
-***                                                                ***
-**********************************************************************
-                                                                      
-                                                                      
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation           : Compute initial energy
- Method                : Hartree-Fock
- Precision             : 1.00000e-05
+ Method                : DFT (PBE0)
+ Precision             : 1.00000e-03
  Localization          : Off
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-error:	3.472459e+00
-iter.:	1
-error:	8.010854e-01
-iter.:	2
-error:	1.388042e-01
-iter.:	3
-error:	4.053069e-03
-iter.:	4
-error:	3.529792e-05
-iter.:	5
-error:	4.822353e-07
-iter.:	6
+error:
+3.471017e+00
 ======================================================================
                            Molecular Energy
 ----------------------------------------------------------------------
- Kinetic energy        :           (au)                7.502032138931
- E-N energy            :           (au)              -16.149344551186
- Coulomb energy        :           (au)                3.306923931099
- Exchange energy       :           (au)               -1.653461853691
- X-C energy            :           (au)                0.000000000000
+ Kinetic energy        :           (au)                7.224479160090
+ E-N energy            :           (au)              -16.102495490693
+ Coulomb energy        :           (au)                3.286744533915
+ Exchange energy       :           (au)               -0.410833798195
+ X-C energy            :           (au)               -1.259291849745
  Ext. field (el)       :           (au)                0.000000000000
  Ext. field (nuc)      :           (au)                0.000000000000
- Tot. Reac. Energy     :           (au)               -0.060633071835
- El. Reac. Energy      :           (au)                0.121266317249
- Nuc. Reac. Energy     :           (au)               -0.181899389085
+ Tot. Reac. Energy     :           (au)               -0.082836124582
+ El. Reac. Energy      :           (au)                0.165701092133
+ Nuc. Reac. Energy     :           (au)               -0.248537216715
 ----------------------------------------------------------------------
- Electronic energy     :           (au)               -7.115116652096
- Nuclear energy        :           (au)               -0.181899389085
+ Electronic energy     :           (au)               -7.095696352494
+ Nuclear energy        :           (au)               -0.248537216715
 ----------------------------------------------------------------------
- Total energy          :           (au)           -7.297016041181e+00
-                       :     (kcal/mol)           -4.578946661286e+03
-                       :       (kJ/mol)           -1.915831284325e+04
-                       :           (eV)           -1.985619132126e+02
+ Total energy          :           (au)           -7.344233569209e+00
+                       :     (kcal/mol)           -4.608576107227e+03
+                       :       (kJ/mol)           -1.928228244515e+04
+                       :           (eV)           -1.998467675489e+02
 ======================================================================
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- Calculation           : Optimize molecular orbitals
- Method                : Hartree-Fock
- Max iterations        : Off
- KAIN solver           : 4
+ Calculation           : Optimize ground state orbitals
+ Method                : DFT (PBE0)
+ Checkpointing         : Off
+ Max iterations        : 100
+ KAIN solver           : 5
  Localization          : Off
  Diagonalization       : First two iterations
- Helmholtz precision   : 1.00000e-05
- Start precision       : 1.00000e-05
- Final precision       : 1.00000e-05
+ Start precision       : 1.00000e-03
+ Final precision       : 1.00000e-03
+ Helmholtz precision   : 1.00000e-03
  Energy threshold      : Off
- Orbital threshold     : 1.00000e-02
+ Orbital threshold     : 1.00000e-03
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 ======================================================================
- Iter         MO residual                Property              Update
+ Iter         MO residual            Total energy              Update
 ----------------------------------------------------------------------
-    0        1.000000e+00         -7.297016041181       -7.297016e+00
-error:	1.642581e-08
-error:	6.033314e-07
-    1        8.353155e-04         -7.297042572417       -2.653124e-05
+    0        1.000000e+00         -7.344233569209       -7.344234e+00
+error:
+7.998382e-01
+error:
+1.377353e-01
+    1        5.814330e-03         -7.322598162628        2.163541e-02
+error:
+1.871925e-02
+    2        4.335649e-03         -7.321803787206        7.943754e-04
+error:
+2.013772e-03
+    3        1.058867e-03         -7.321965853701       -1.620665e-04
+error:
+5.202069e-05
+    4        2.602901e-04         -7.321952442249        1.341145e-05
 ----------------------------------------------------------------------
-                   SCF converged in 1 iterations!
+                   SCF converged in 4 iterations!
 ======================================================================
 
 
-Error: ~QMPotential(), line 36: Potential not cleared
                                                                       
 **********************************************************************
 ***                                                                ***
@@ -211,6 +219,7 @@ Error: ~QMPotential(), line 36: Potential not cleared
     0      Li          :       0.000000       0.000000       0.000000
 ----------------------------------------------------------------------
  Center of mass        :       0.000000       0.000000       0.000000
+ Gauge origin          :       0.000000       0.000000       0.000000
 ======================================================================
 
 
@@ -219,33 +228,33 @@ Error: ~QMPotential(), line 36: Potential not cleared
 ----------------------------------------------------------------------
     n  Occ Spin        :                                      Epsilon
 ----------------------------------------------------------------------
-    0    2    p        :           (au)               -2.670711859187
+    0    2    p        :           (au)               -2.248161344326
 ----------------------------------------------------------------------
- Sum occupied          :           (au)               -5.341423718373
+ Sum occupied          :           (au)               -4.496322688651
 ======================================================================
 
 
 ======================================================================
                            Molecular Energy
 ----------------------------------------------------------------------
- Kinetic energy        :           (au)                7.488168357620
- E-N energy            :           (au)              -16.134498316870
- Coulomb energy        :           (au)                3.304906019834
- Exchange energy       :           (au)               -1.652452899396
- X-C energy            :           (au)                0.000000000000
+ Kinetic energy        :           (au)                7.217071471489
+ E-N energy            :           (au)              -16.094586524024
+ Coulomb energy        :           (au)                3.285641157977
+ Exchange energy       :           (au)               -0.410695934961
+ X-C energy            :           (au)               -1.258832015090
  Ext. field (el)       :           (au)                0.000000000000
  Ext. field (nuc)      :           (au)                0.000000000000
- Tot. Reac. Energy     :           (au)               -0.060633076946
- El. Reac. Energy      :           (au)                0.121266328330
- Nuc. Reac. Energy     :           (au)               -0.181899405276
+ Tot. Reac. Energy     :           (au)               -0.060550597640
+ El. Reac. Energy      :           (au)                0.121121703612
+ Nuc. Reac. Energy     :           (au)               -0.181672301251
 ----------------------------------------------------------------------
- Electronic energy     :           (au)               -7.115143167141
- Nuclear energy        :           (au)               -0.181899405276
+ Electronic energy     :           (au)               -7.140280140997
+ Nuclear energy        :           (au)               -0.181672301251
 ----------------------------------------------------------------------
- Total energy          :           (au)           -7.297042572417e+00
-                       :     (kcal/mol)           -4.578963309888e+03
-                       :       (kJ/mol)           -1.915838250100e+04
-                       :           (eV)           -1.985626351643e+02
+ Total energy          :           (au)           -7.321952442249e+00
+                       :     (kcal/mol)           -4.594594489079e+03
+                       :       (kJ/mol)           -1.922378335478e+04
+                       :           (eV)           -1.992404672238e+02
 ======================================================================
 
 
@@ -255,7 +264,7 @@ Error: ~QMPotential(), line 36: Potential not cleared
 ***                                                                ***
 ***                         Exiting MRChem                         ***
 ***                                                                ***
-***                    Wall time :  0h  1m 28s                     ***
+***                    Wall time :  0h  0m 15s                     ***
 ***                                                                ***
 **********************************************************************
                                                                       

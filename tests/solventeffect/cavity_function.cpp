@@ -27,7 +27,6 @@
 
 #include "MRCPP/MWFunctions"
 #include "MRCPP/MWOperators"
-#include "MRCPP/Plotter"
 #include <array>
 #include <cmath>
 #include <vector>
@@ -42,8 +41,7 @@ using namespace mrchem;
 namespace cavity_function {
 
 TEST_CASE("Cavityfunction", "[cavity_function]") {
-    // const double prec = 1.0e-3;
-    const double prec = 1.0e-3;
+    const double prec = 1.0e-4;
     const double thrs = 1.0e-8;
 
     // test volume of single sphere
@@ -56,7 +54,7 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::project<3>(prec, cav_tree, sphere);
 
     auto sphere_volume = cav_tree.integrate();
-    REQUIRE(sphere_volume == Approx(4.4401176759).epsilon(thrs));
+    REQUIRE(sphere_volume == Approx(4.44011761692970985).epsilon(thrs));
 
     // test gradCavity
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
@@ -68,25 +66,8 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
 
     mrcpp::FunctionTree<3> diff_func(*MRA);
     mrcpp::add(-1.0, diff_func, 1.0, mrcpp::get_func(d_cav, 0), -1.0, dx_cav_analytical);
-    std::cout << diff_func.integrate() << std::endl;
-    int aPts = 100;                     // Number of points in a
-    int bPts = 100;                     // Number of points in b
-    mrcpp::Coord<3> o{-2.0, -2.0, 0.0}; // Origin vector
-    mrcpp::Coord<3> a{4.0, 0.0, 0.0};   // Boundary vector A
-    mrcpp::Coord<3> b{0.0, 4.0, 0.0};
-    mrcpp::Plotter<3> plot(o);                                           // Plotter of 3D functions
-    plot.setRange(a, b);                                                 // Set plot range
-    plot.surfPlot({aPts, bPts}, mrcpp::get_func(d_cav, 0), "dx_cav");    // Write to file f_tree.surf
-    plot.surfPlot({aPts, bPts}, dx_cav_analytical, "dx_cav_analytical"); // Write to file f_tree.surf
-    plot.surfPlot({aPts, bPts}, diff_func, "diff_func");                 // Write to file f_tree.surf
-
-    mrcpp::Coord<3> lo{-2.0, 0.0, 0.0}; // Origin vector
-    mrcpp::Plotter<3> line(lo);
-    line.setRange(a);
-    line.linePlot({aPts}, cav_tree, "cav_line");
-    line.linePlot({aPts}, mrcpp::get_func(d_cav, 0), "dx_cav_line");
-    line.linePlot({aPts}, dx_cav_analytical, "dx_cav_analytical_line");
-    line.linePlot({aPts}, diff_func, "diff_func_line");
+    auto diff = diff_func.integrate();
+    REQUIRE(diff == Approx(-0.0000002610126907934).epsilon(thrs));
 
     // test volume of two interlocking spheres
     coords.push_back({0.0, 0.0, 1.0});
@@ -96,6 +77,6 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::project<3>(prec, two_cav_tree, two_spheres);
 
     auto two_sphere_volume = two_cav_tree.integrate();
-    REQUIRE(two_sphere_volume == Approx(7.50966)); //.epsilon(thrs))
+    REQUIRE(two_sphere_volume == Approx(7.5096630756284952213).epsilon(thrs));
 }
 } // namespace cavity_function

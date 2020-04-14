@@ -232,7 +232,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
-
     const auto &json_guess = json_scf["initial_guess"];
     if (scf::guess_orbitals(json_guess, mol)) {
         scf::guess_energy(json_guess, mol, F);
@@ -980,9 +979,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto poisson_prec = (*json_reaction)["poisson_prec"].get<double>();
         auto P_r = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         auto D_r = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-        // auto nuclei_r = mol.getNuclei(); // maybe define here
         auto cavity_r = mol.getCavity_p();
-        // auto phi_r = mol.getOrbitals_p();
         auto hist_r = (*json_reaction)["reaction_history"].get<int>();
         auto eps_in_r = (*json_reaction)["eps_in"].get<double>();
         auto eps_out_r = (*json_reaction)["eps_out"].get<double>();

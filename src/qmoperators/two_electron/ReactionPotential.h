@@ -20,7 +20,7 @@ public:
                       double eps_i,
                       double eps_o,
                       bool islin);
-    ~ReactionPotential() = default;
+    ~ReactionPotential() override { free(NUMBER::Total); }
     friend class ReactionOperator;
 
     double &getTotalEnergy();
@@ -30,27 +30,28 @@ public:
     QMFunction &getGamma() { return gamma; }
     QMFunction &getDiffFunc() { return diff_func; }
     bool &getRunVariational() { return variational; }
-    //void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
+    // void setGamma(QMFunction new_gamma) { this->gamma = new_gamma; }
     void setDiffFunc(QMFunction new_diff_func) { this->diff_func = new_diff_func; }
     void setRunVariational(bool var) { this->variational = var; }
+
 protected:
     void clear();
 
 private:
-    std::shared_ptr<Cavity> cavity;     // Function describing the interlocking spheres model of the cavity boundary
+    std::shared_ptr<Cavity> cavity; // Function describing the interlocking spheres model of the cavity boundary
     Nuclei nuclei;
     std::shared_ptr<OrbitalVector> orbitals;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 
-    Density rho_tot;        // Total molecular charge density is equal to the electron density added to the nuclear density
-    Density rho_el;         // Electron charge density
-    Density rho_nuc;        // Nuclear charge density
+    Density rho_tot; // Total molecular charge density is equal to the electron density added to the nuclear density
+    Density rho_el;  // Electron charge density
+    Density rho_nuc; // Nuclear charge density
     QMFunction cavity_func; // Function which the cavity is projected into
 
-    mrcpp::FunctionTreeVector<3> d_cavity;  // Vector containing the 3 partial derivatives of the cavity function
+    mrcpp::FunctionTreeVector<3> d_cavity; // Vector containing the 3 partial derivatives of the cavity function
 
-    QMFunction gamma;       // Surface charge density
+    QMFunction gamma; // Surface charge density
     QMFunction diff_func;
     QMFunction ones;
     int history;
@@ -71,10 +72,7 @@ private:
     void setGamma(QMFunction &V_func);
     void accelerateConvergence(QMFunction &diff_func, QMFunction &temp, KAIN &kain);
     void poissonSolver(QMFunction rho_eff_func, QMFunction *diff_func, QMFunction *V_np1_func, double *error);
-    void SCRF(QMFunction *V_tot_func,
-              QMFunction *V_vac_func,
-              QMFunction *rho_eff_func,
-              QMFunction &temp);
+    void SCRF(QMFunction *V_tot_func, QMFunction *V_vac_func, QMFunction *rho_eff_func, QMFunction &temp);
     void setup(double prec);
 };
 

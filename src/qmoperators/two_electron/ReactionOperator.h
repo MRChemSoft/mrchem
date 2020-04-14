@@ -30,8 +30,6 @@ public:
         J = potential;
     }
 
-    ~ReactionOperator() override = default;
-
     ComplexDouble trace(OrbitalVector &Phi) { return RankZeroTensorOperator::trace(Phi); }
 
     double &getTotalEnergy() { return this->potential->getTotalEnergy(); }
