@@ -1,6 +1,6 @@
----------------------
-The mrchem input file
----------------------
+---------------
+User input file
+---------------
 
 The input file is organized in sections and keywords that can be of different
 type. Input keywords and sections are **case-sensitive**, while `values` are

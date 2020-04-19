@@ -24,11 +24,10 @@ Sciences <http://www.ctcc.no/>`_ at
 
 --------------------------------------------------------------------------------
 
-We are currently in the process of rewriting the code and making it publicly
-available, and the latest version (with limited functionality) can be found on
-`GitHub <https://github.com/MRChemSoft/mrchem>`_.
+The code is under active development, and the latest stable releases as well as
+development versions can be found on `GitHub <https://github.com/MRChemSoft/mrchem>`_.
 
-Features in MRChem-0.2.0:
+Features in MRChem-1.0.0:
 -------------------------
 
 * Wave functions:
@@ -44,6 +43,10 @@ Features in MRChem-0.2.0:
 * Properties:
     + Ground state energy
     + Dipole moment
+    + Quadrupole moment
+    + Polarizability
+    + Magnetizability
+    + NMR shielding constant
 * Parallel implementation:
     + Shared memory (OpenMP): ~20 cores
     + Distributed memory (MPI): ~100 procs
@@ -57,23 +60,26 @@ Upcoming features:
 
 * Wave functions:
     + Meta-GGAs
+    + ZORA Hamiltonian
+    + Solvent effects
+    + Periodic Boundary Conditions
+    + External magnetic field
 * Properties:
-    + Quadrupole moment
-    + Polarizability
-    + Hyperpolarizability
     + Optical rotation
-    + Magnetizability
-    + NMR shielding constant
     + Spin-spin coupling constant
     + Hyperfine coupling constant
     + Magnetically induced currents
+    + Hyperpolarizability
     + Geometry optimization
+* Performance:
+    + Improved parallel scalability
+    + Improved exact exchange performance
+    + More efficient memory distribution
 
 
 .. toctree::
    :maxdepth: 2
 
    installation
-   mrchem_manual
-   input_reference
-   code_reference/classes-and-functions
+   users/manual
+   programmers/manual
