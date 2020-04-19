@@ -1,0 +1,10 @@
+{
+  "world_prec": 1.0e-4,
+  "WaveFunction": {
+    "method": "B3LYP"
+  },
+  "Molecule": {
+    "coords": "O  0.0000  0.000 -0.125\nH -1.4375  0.000  1.025\nH  1.4375  0.000  1.025\n"
+  }
+}
+

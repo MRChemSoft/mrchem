@@ -98,7 +98,6 @@ To build the code with only shared memory OpenMP parallelization::
     $ ./setup --prefix=<install-dir> --omp <build-dir>
     $ cd <build-dir>
     $ make
-    $ make install
 
 With the Intel tool chain on Stallo or Fram you need to specify the compilers
 in the setup::
@@ -144,35 +143,20 @@ Note how we used Pipenv to run the integration tests. This ensures that the
 Python dependencies (``parselglossy`` and ``runtest``) are satisfied in a
 virtual environment and available to ``ctest``.
 
--------------------
-Running the program
--------------------
+----------
+Installing
+----------
 
-A Python input parser will be provided along with the mrchem executable::
+After the build has been verified with the test suite, it can be installed with
+the following command::
 
-    $ build/bin/mrchem              // Python input parser
-    $ build/bin/mrchem.x            // MRChem executable
+    $ cd <build-dir>
+    $ make install
 
-The input parser takes a single file argument. It will process the `user_input`
-(usually ``mrchem.inp``) and generate a `program_input` file with a ``.json``
-extension (usually ``mrchem.json``), and pass it to the main MRChem executable.
-Output is written to ``stdout`` but can be redirected to an output file::
+This will install two executables under the ``<install-path>``::
 
-    $ pipenv run ./mrchem mrchem.inp > mrchem.out &
+    <install-path>/bin/mrchem       # Python input parser and launcher
+    <install-path>/bin/mrchem.x     # MRChem executable
 
-Note again that the ``pipenv`` environment must be activated, either `once` by
-``pipenv shell`` or on `every` command using ``pipenv run``, see Python section
-above. To run the program in OpenMP parallel use the environment variable
-``OMP_NUM_THREADS`` (``unset OMP_NUM_THREADS`` will give you all threads
-available, otherwise use ``export OMP_NUM_THREADS N``)::
+Please refer to the User's Manual for instructions for how to run the program.
 
-    $ export OMP_NUM_THREADS 16
-    $ pipenv run mrchem mrchem.inp
-
-When you run the program in hybrid MPI/OpenMP parallel, you must run the input
-parser manually first with the dryrun ``-D`` option, before launching the main
-executable with ``mpirun`` (or equivalent). For 20 threads each on 5 MPI
-processes::
-
-    $ pipenv run mrchem -D mrchem.inp
-    $ OMP_NUM_THREADS=20  mpirun -np 5 mrchem.x mrchem.json >mrchem.out &
