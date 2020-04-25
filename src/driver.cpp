@@ -353,7 +353,7 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
         t_lap.start();
         mrcpp::print::header(2, "Computing orbital energies");
         OrbitalEnergies &eps = mol.getOrbitalEnergies();
-        eps.getOccupancy() = orbital::get_occupancies(Phi);
+        eps.getOccupation() = orbital::get_occupations(Phi);
         eps.getEpsilon() = orbital::calc_eigenvalues(Phi, F_mat);
         eps.getSpin() = orbital::get_spins(Phi);
         mrcpp::print::footer(2, t_lap, 2);

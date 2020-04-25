@@ -103,15 +103,15 @@ ComplexDouble orbital::node_norm_dot(Orbital bra, Orbital ket, bool exact) {
     return qmfunction::node_norm_dot(bra, ket, exact);
 }
 
-/** @brief Compare spin and occupancy of two orbitals
+/** @brief Compare spin and occupation of two orbitals
  *
  *  Returns true if orbital parameters are the same.
  *
  */
 bool orbital::compare(const Orbital &phi_a, const Orbital &phi_b) {
     bool comp = true;
-    if (compare_occ(phi_a, phi_b) < 0) {
-        MSG_WARN("Different occupancy");
+    if (compare_occupation(phi_a, phi_b) < 0) {
+        MSG_WARN("Different occupation");
         comp = false;
     }
     if (compare_spin(phi_a, phi_b) < 0) {
@@ -121,12 +121,12 @@ bool orbital::compare(const Orbital &phi_a, const Orbital &phi_b) {
     return comp;
 }
 
-/** @brief Compare occupancy of two orbitals
+/** @brief Compare occupation of two orbitals
  *
- *  Returns the common occupancy if they match, -1 if they differ.
+ *  Returns the common occupation if they match, -1 if they differ.
  *
  */
-int orbital::compare_occ(const Orbital &phi_a, const Orbital &phi_b) {
+int orbital::compare_occupation(const Orbital &phi_a, const Orbital &phi_b) {
     int comp = -1;
     if (phi_a.occ() == phi_b.occ()) comp = phi_a.occ();
     return comp;
@@ -143,7 +143,7 @@ int orbital::compare_spin(const Orbital &phi_a, const Orbital &phi_b) {
     return comp;
 }
 
-/** @brief Compare spin and occupancy of two orbital vector
+/** @brief Compare spin and occupation of two orbital vector
  *
  *  Returns true if orbital parameters are the same, orbital ordering
  *  NOT taken into account.
@@ -870,20 +870,20 @@ void orbital::set_spins(OrbitalVector &Phi, const IntVector &spins) {
     for (int i = 0; i < Phi.size(); i++) Phi[i].setSpin(spins(i));
 }
 
-/** @brief Returns a vector containing the orbital occupancies */
-IntVector orbital::get_occupancies(const OrbitalVector &Phi) {
+/** @brief Returns a vector containing the orbital occupations */
+IntVector orbital::get_occupations(const OrbitalVector &Phi) {
     int nOrbs = Phi.size();
     IntVector occ = IntVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) occ(i) = Phi[i].occ();
     return occ;
 }
 
-/** @brief Assigns spin to each orbital
+/** @brief Assigns occupation to each orbital
  *
  * Length of input vector must match the number of orbitals in the set.
  *
  */
-void orbital::set_occupancies(OrbitalVector &Phi, const IntVector &occ) {
+void orbital::set_occupations(OrbitalVector &Phi, const IntVector &occ) {
     if (Phi.size() != occ.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < Phi.size(); i++) Phi[i].setOcc(occ(i));
 }

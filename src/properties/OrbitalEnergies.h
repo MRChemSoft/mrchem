@@ -42,11 +42,11 @@ namespace mrchem {
 class OrbitalEnergies final {
 public:
     IntVector &getSpin() { return this->spin; }
-    IntVector &getOccupancy() { return this->occupancy; }
+    IntVector &getOccupation() { return this->occupation; }
     DoubleVector &getEpsilon() { return this->epsilon; }
 
     const IntVector &getSpin() const { return this->spin; }
-    const IntVector &getOccupancy() const { return this->occupancy; }
+    const IntVector &getOccupation() const { return this->occupation; }
     const DoubleVector &getEpsilon() const { return this->epsilon; }
 
     void print() const {
@@ -74,18 +74,18 @@ public:
             if (this->spin(i) == SPIN::Beta) sp = 'b';
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;
-            o_txt << std::setw(w1) << this->occupancy(i);
+            o_txt << std::setw(w1) << this->occupation(i);
             o_txt << std::setw(w1) << sp;
             print_utils::scalar(0, o_txt.str(), this->epsilon(i), "(au)", pprec);
         }
-        auto sum_occupied = this->occupancy.cast<double>().dot(this->epsilon);
+        auto sum_occupied = this->occupation.cast<double>().dot(this->epsilon);
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Sum occupied", sum_occupied, "(au)", pprec);
         mrcpp::print::separator(0, '=', 2);
     }
 
     nlohmann::json json() const {
-        DoubleVector occ = getOccupancy().cast<double>();
+        DoubleVector occ = getOccupation().cast<double>();
         const DoubleVector &eps = getEpsilon();
         std::vector<std::string> spn;
         for (auto i = 0; i < spin.size(); i++) {
@@ -95,7 +95,7 @@ public:
         }
         return {
             {"spin", spn},
-            {"occupancy", math_utils::eigen_to_vector(occ)},
+            {"occupation", math_utils::eigen_to_vector(occ)},
             {"energy", math_utils::eigen_to_vector(eps)},
             {"sum_occupied", occ.dot(eps)}
         };
@@ -103,7 +103,7 @@ public:
 
 private:
     IntVector spin;
-    IntVector occupancy;
+    IntVector occupation;
     DoubleVector epsilon;
 };
 // clang-format on

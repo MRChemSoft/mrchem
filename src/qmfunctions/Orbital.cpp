@@ -44,7 +44,7 @@ Orbital::Orbital()
 /** @brief Constructor
  *
  * @param spin: electron spin (SPIN::Alpha/Beta/Paired)
- * @param occ: occupancy
+ * @param occ: occupation
  * @param rank: MPI ownership (-1 means all MPI ranks)
  *
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
@@ -88,7 +88,7 @@ Orbital &Orbital::operator=(const Orbital &orb) {
 
 /** @brief Parameter copy
  *
- * Returns a new orbital with the same spin, occupancy and rank_id as *this orbital.
+ * Returns a new orbital with the same spin, occupation and rank_id as *this orbital.
  */
 Orbital Orbital::paramCopy() const {
     return Orbital(this->spin(), this->occ(), this->rankID());

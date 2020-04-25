@@ -329,7 +329,7 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi) {
     Timer t1;
     RankZeroTensorOperator &O = *this;
     OrbitalVector OPhi = O(Phi);
-    ComplexVector eta = orbital::get_occupancies(Phi).cast<ComplexDouble>();
+    ComplexVector eta = orbital::get_occupations(Phi).cast<ComplexDouble>();
     ComplexVector phi_vec = orbital::dot(Phi, OPhi);
 
     std::stringstream o_name;
@@ -372,7 +372,7 @@ ComplexDouble RankZeroTensorOperator::trace(OrbitalVector &Phi, OrbitalVector &X
     o_name << "Trace " << O.name() << "(rho_1)";
     mrcpp::print::tree(2, o_name.str(), std::max(x_nodes, y_nodes), std::max(x_size, y_size), t1.elapsed());
 
-    ComplexVector eta = orbital::get_occupancies(Phi).cast<ComplexDouble>();
+    ComplexVector eta = orbital::get_occupations(Phi).cast<ComplexDouble>();
     return eta.dot(x_vec + y_vec);
 }
 

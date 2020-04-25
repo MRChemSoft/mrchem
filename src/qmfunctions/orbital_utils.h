@@ -33,8 +33,8 @@ namespace orbital {
 
 bool compare(const OrbitalVector &Phi_a, const OrbitalVector &Phi_b);
 bool compare(const Orbital &phi_a, const Orbital &phi_b);
-int compare_occ(const Orbital &phi_a, const Orbital &phi_b);
 int compare_spin(const Orbital &phi_a, const Orbital &phi_b);
+int compare_occupation(const Orbital &phi_a, const Orbital &phi_b);
 
 ComplexDouble dot(Orbital bra, Orbital ket);
 ComplexVector dot(OrbitalVector &Bra, OrbitalVector &Ket);
@@ -83,10 +83,10 @@ int get_size_nodes(const OrbitalVector &Phi);
 bool orbital_vector_is_sane(const OrbitalVector &Phi);
 
 void set_spins(OrbitalVector &Phi, const IntVector &spins);
-void set_occupancies(OrbitalVector &Phi, const IntVector &occ);
+void set_occupations(OrbitalVector &Phi, const IntVector &occ);
 
 IntVector get_spins(const OrbitalVector &Phi);
-IntVector get_occupancies(const OrbitalVector &Phi);
+IntVector get_occupations(const OrbitalVector &Phi);
 DoubleVector get_norms(const OrbitalVector &Phi);
 DoubleVector get_squared_norms(const OrbitalVector &Phi);
 DoubleVector calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
