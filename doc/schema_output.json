@@ -1,0 +1,184 @@
+"output": {
+  "properties": {                               # Collection of final properties
+    "charge": int,                              # Total molecular charge
+    "multiplicity": int,                        # Total spin multiplicity
+    "center_of_mass": array[float],             # Center of mass coordinate
+    "geometry": array[                          # Array of atoms
+      {                                         # (one entry per atom)
+        "symbol": string,                       # Atomic symbol
+        "xyz": array[float]                     # Cartesian coordinate
+      }
+    ],
+    "orbital_energies": {                       # Collection of orbital energies
+      "spin": array[string],                    # Array of spins ('p', 'a' or 'b')
+      "energy": array[float],                   # Array of energies
+      "occupation": array[int],                 # Array of orbital occupations
+      "sum_occupied": float                     # \sum_i occupation[i]*energy[i]
+    },
+    "scf_energy": {                             # Collection of energy contributions
+      "E_kin": float,                           # Kinetic energy
+      "E_nn": float,                            # Classical nuclear-nuclear interaction
+      "E_en": float,                            # Classical electron-nuclear interaction
+      "E_ee": float,                            # Classical electron-electron interaction
+      "E_next": float,                          # Classical nuclear-external field interaction
+      "E_eext": float,                          # Classical electron-external field interaction
+      "E_x": float,                             # Hartree-Fock exact exchange energy
+      "E_xc": float,                            # DFT exchange-correlation energy
+      "E_el": float,                            # Sum of electronic contributions
+      "E_nuc": float,                           # Sum of nuclear contributions
+      "E_tot": float                            # Sum of all contributions
+    },
+    "dipole_moment": {                          # Electric dipole moment
+      "magnitude": float,                       # Magnitude of total vector
+      "vector": array[float],                   # Total dipole vector
+      "vector_el": array[float],                # Electronic dipole vector
+      "vector_nuc": array[float]                # Nuclear dipole vector
+    },
+    "quadrupole_moment": {                      # Electric quadrupole moment
+      "tensor": array[float],                   # Total quadrupole tensor
+      "tensor_el": array[float],                # Electronic quadrupole tensor
+      "tensor_nuc": array[float]                # Nuclear quadrupole tensor
+    },
+    "polarizability": {                         # Collection of polarizabilities
+      frequency (float): {                      # Frequency as key
+        "frequency": float,                     # Perturbation frequency
+        "tensor": array[float],                 # Full polarizability tensor
+        "isotropic_average": float,             # Diagonal average
+        "anisotropy": float                     # Anisotropy of tensor
+      }
+    },
+    "magnetizability": {                        # Collection of magnetizability
+      frequency (float): {                      # Frequency as key
+        "tensor": array[float],                 # Full magnetizability tensor
+        "tensor_dia": array[float],             # Diamagnetic tensor
+        "tensor_para": array[float],            # Paramagnetic tensor
+        "isotropic_average": float,             # Diagonal average
+        "anisotropy": float                     # Anisotropy of tensor
+      }
+    },
+    "nmr_shielding": {                          # Collection of NMR shielding tensors
+      nuc_id (string): {                        # "(Nuclear index)+(atomic symbol)" as key
+        "k": int,                               # Nuclear index
+        "element": string,                      # Atomic symbol
+        "tensor": array[float],                 # Full NMR shielding tensor
+        "tensor_dia": array[float],             # Diamagnetic tensor
+        "tensor_para": array[float],            # Paramagnetic tensor
+        "diagonalized_tensor": array[float],    # Diagonalized tensor used for (an)isotropy
+        "isotropic_average": float,             # Diagonal average
+        "anisotropy": float                     # Anisotropy of tensor
+      }
+    }
+  },
+  "scf_calculation": {                          # Ground state SCF calculation
+    "success": bool,                            # SCF finished successfully
+    "initial_energy": {                         # Energy computed from initial orbitals
+      "E_kin": float,                           # Kinetic energy
+      "E_nn": float,                            # Classical nuclear-nuclear interaction
+      "E_en": float,                            # Classical electron-nuclear interaction
+      "E_ee": float,                            # Classical electron-electron interaction
+      "E_next": float,                          # Classical nuclear-external field interaction
+      "E_eext": float,                          # Classical electron-external field interaction
+      "E_x": float,                             # Hartree-Fock exact exchange energy
+      "E_xc": float,                            # DFT exchange-correlation energy
+      "E_el": float,                            # Sum of electronic contributions
+      "E_nuc": float,                           # Sum of nuclear contributions
+      "E_tot": float                            # Sum of all contributions
+    },
+    "scf_solver": {                             # Details from SCF optimization
+      "converged": bool,                        # Optimization converged
+      "wall_time": float,                       # Wall time (sec) for SCF optimization 
+      "cycles": array[                          # Array of SCF cycles
+        {                                       # (one entry per cycle)
+          "energy_total": float,                # Current total energy
+          "energy_update": float,               # Current energy update
+          "mo_residual": float,                 # Current orbital residual
+          "wall_time": float,                   # Wall time (sec) for SCF cycle
+          "energy_terms": {                     # Energy contributions
+            "E_kin": float,                     # Kinetic energy
+            "E_nn": float,                      # Classical nuclear-nuclear interaction
+            "E_en": float,                      # Classical electron-nuclear interaction
+            "E_ee": float,                      # Classical electron-electron interaction
+            "E_next": float,                    # Classical nuclear-external field interaction
+            "E_eext": float,                    # Classical electron-external field interaction
+            "E_x": float,                       # Hartree-Fock exact exchange energy
+            "E_xc": float,                      # DFT exchange-correlation energy
+            "E_el": float,                      # Sum of electronic contributions
+            "E_nuc": float,                     # Sum of nuclear contributions
+            "E_tot": float                      # Sum of all contributions
+          }
+        }
+      ]
+    }
+  },
+  "rsp_calculations": {                         # Collection of response calculations
+    "external_electric": {                      # Response from external electric field
+      frequency (float): {                      # Frequency as key
+        "success": bool,                        # Response finished successfully
+        "wall_time": float,                     # Wall time (sec) for response calculation
+        "frequency": float,                     # Frequency of perturbation
+        "perturbation": string,                 # Name of perturbation operator
+        "components": array[                    # Array of operator components
+          {                                     # (one entry per Cartesian direction)
+            "rsp_solver": {                     # Details from response optimization
+              "converged": bool,                # Optimization converged
+              "cycles": array[                  # Array of response cycles
+                {                               # (one entry per cycle)
+                  "symmetric_property": float,  # Property computed from perturbation operator
+                  "property_update": float,     # Current symmetric property update
+                  "mo_residual": float,         # Current orbital residual
+                  "wall_time": float            # Wall time (sec) for response cycle
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "external_magnetic": {                      # Response from external magnetic field
+      frequency (float): {                      # Frequency as key
+        "success": bool,                        # Response finished successfully
+        "wall_time": float,                     # Wall time (sec) for response calculation
+        "frequency": float,                     # Frequency of perturbation
+        "perturbation": string,                 # Name of perturbation operator
+        "components": array[                    # Array of operator components
+          {                                     # (one entry per Cartesian direction)
+            "rsp_solver": {                     # Details from response optimization
+              "converged": bool,                # Optimization converged
+              "cycles": array[                  # Array of response cycles
+                {                               # (one entry per cycle)
+                  "symmetric_property": float,  # Property computed from perturbation operator
+                  "property_update": float,     # Current symmetric property update
+                  "mo_residual": float,         # Current orbital residual
+                  "wall_time": float            # Wall time (sec) for response cycle
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "nuclear_magnetic": {                       # Response from nuclear magnetic moment
+      nuc_id (string) {                         # "(Nuclear index)+(atomic symbol)" as key
+        "success": bool,                        # Response finished successfully
+        "wall_time": float,                     # Wall time (sec) for response calculation
+        "perturbation": string,                 # Name of perturbation operator
+        "components": array[                    # Array of operator components
+          {                                     # (one entry per Cartesian direction)
+            "rsp_solver": {                     # Details from response optimization
+              "converged": bool,                # Optimization converged
+              "cycles": array[                  # Array of response cycles
+                {                               # (one entry per cycle)
+                  "symmetric_property": float,  # Property computed from perturbation operator
+                  "property_update": float,     # Current symmetric property update
+                  "mo_residual": float,         # Current orbital residual
+                  "wall_time": float            # Wall time (sec) for response cycle
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+
