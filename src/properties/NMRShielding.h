@@ -72,9 +72,9 @@ public:
         return {
             {"k", getK()},
             {"nucleus_k", getNucleus().getElement().getSymbol()},
-            {"tensor_dia", math_utils::eigen_to_vector(getDiamagnetic())},
-            {"tensor_para", math_utils::eigen_to_vector(getParamagnetic())},
-            {"tensor", math_utils::eigen_to_vector(getTensor())},
+            {"tensor_dia", math_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
+            {"tensor_para", math_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
+            {"tensor", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
             {"isotropic_average", getTensor().trace() / 3.0 }
         };
     }

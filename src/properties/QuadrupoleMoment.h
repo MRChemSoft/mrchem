@@ -53,9 +53,9 @@ public:
 
     nlohmann::json json() const {
         return {
-            {"tensor_nuc", math_utils::eigen_to_vector(getNuclear())},
-            {"tensor_el", math_utils::eigen_to_vector(getElectronic())},
-            {"tensor", math_utils::eigen_to_vector(getTensor())}
+            {"tensor_nuc", math_utils::eigen_to_vector(getNuclear(), 1.0e-12)},
+            {"tensor_el", math_utils::eigen_to_vector(getElectronic(), 1.0e-12)},
+            {"tensor", math_utils::eigen_to_vector(getTensor(),1.0e-12f)}
         };
     }
 

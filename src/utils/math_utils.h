@@ -36,8 +36,8 @@
 namespace mrchem {
 namespace math_utils {
 
-std::vector<double> eigen_to_vector(const DoubleVector &inp);
-std::vector<double> eigen_to_vector(const DoubleMatrix &inp);
+std::vector<double> eigen_to_vector(const DoubleVector &inp, double thrs);
+std::vector<double> eigen_to_vector(const DoubleMatrix &inpm, double thrs);
 
 double calc_distance(const mrcpp::Coord<3> &a, const mrcpp::Coord<3> &b);
 

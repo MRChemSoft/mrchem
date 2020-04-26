@@ -95,8 +95,8 @@ public:
         }
         return {
             {"spin", spn},
-            {"occupation", math_utils::eigen_to_vector(occ)},
-            {"energy", math_utils::eigen_to_vector(eps)},
+            {"occupation", math_utils::eigen_to_vector(occ, 1.0e-12)},
+            {"energy", math_utils::eigen_to_vector(eps, 1.0e-12)},
             {"sum_occupied", occ.dot(eps)}
         };
     }

@@ -64,7 +64,7 @@ public:
     nlohmann::json json() const {
         return {
             {"frequency", getFrequency()},
-            {"tensor", math_utils::eigen_to_vector(getTensor())},
+            {"tensor", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
             {"isotropic_average", getTensor().trace() / 3.0 }
         };
     }
