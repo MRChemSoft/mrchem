@@ -306,10 +306,14 @@ nlohmann::json Molecule::json() const {
     if (this->nmr.size() > 0) json_out["nmr_shielding"] = {};
 
     for (auto &pol : this->polarizability) {
-        if (pol != nullptr) json_out["polarizability"].push_back(pol->json());
+        if (pol != nullptr) {
+            std::stringstream omega;
+            omega << std::fixed << std::setprecision(6) << pol->getFrequency();
+            json_out["polarizability"][omega.str()] = pol->json();
+        }
     }
     for (auto &nmr_k : this->nmr) {
-        if (nmr_k != nullptr) json_out["nmr_shielding"].push_back(nmr_k->json());
+        if (nmr_k != nullptr) json_out["nmr_shielding"][nmr_k->getIdentifier()] = nmr_k->json();
     }
     return json_out;
 }

@@ -41,6 +41,7 @@ public:
 
     int getK() const { return this->K; }
     const Nucleus &getNucleus() const { return this->nuc; }
+    std::string getIdentifier() const { return this->nuc.getElement().getSymbol() + std::to_string(getK()); }
 
     DoubleMatrix getTensor() const { return getDiamagnetic() + getParamagnetic(); }
     DoubleMatrix &getDiamagnetic() { return this->dia_tensor; }
