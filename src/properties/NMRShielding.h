@@ -41,7 +41,7 @@ public:
 
     int getK() const { return this->K; }
     const Nucleus &getNucleus() const { return this->nuc; }
-    std::string getIdentifier() const { return this->nuc.getElement().getSymbol() + std::to_string(getK()); }
+    std::string getIdentifier() const { return std::to_string(getK()) + this->nuc.getElement().getSymbol(); }
 
     DoubleMatrix getTensor() const { return getDiamagnetic() + getParamagnetic(); }
     DoubleMatrix &getDiamagnetic() { return this->dia_tensor; }
@@ -50,32 +50,46 @@ public:
     const DoubleMatrix &getParamagnetic() const { return this->para_tensor; }
 
     void print() const {
-        auto iso_ppm_d = getDiamagnetic().trace() / 3.0;
-        auto iso_ppm_p = getParamagnetic().trace() / 3.0;
-        auto iso_ppm_t = iso_ppm_d + iso_ppm_p;
+        auto sigma = getTensor();
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> es;
+        es.compute(sigma);
+
+        auto diag = es.eigenvalues();
+        auto iso_ppm = diag.sum() / 3.0;
+        auto ani_ppm = diag(2) - (diag(0) + diag(1)) / 2.0;
 
         mrcpp::print::header(0, "NMR shielding");
         print_utils::scalar(0, "Nucleus K", getK(), getNucleus().getElement().getSymbol(), 0);
         mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Diamagnetic", getDiamagnetic());
-        print_utils::scalar(0, "Isotropic average", iso_ppm_d, "(ppm)");
         mrcpp::print::separator(0, '-');
-        print_utils::matrix(0, "Paramagnetic", getParamagnetic(), -1);
-        print_utils::scalar(0, "Isotropic average", iso_ppm_p, "(ppm)");
+        print_utils::matrix(0, "Paramagnetic", getParamagnetic());
         mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Total tensor", getTensor());
-        print_utils::scalar(0, "Isotropic average", iso_ppm_t, "(ppm)");
+        mrcpp::print::separator(0, '-');
+        print_utils::vector(0, "Diagonalized tensor", diag);
+        print_utils::scalar(0, "Isotropic average", iso_ppm, "(ppm)");
+        print_utils::scalar(0, "Anisotropy", ani_ppm, "(ppm)");
         mrcpp::print::separator(0, '=', 2);
     }
 
     nlohmann::json json() const {
+        auto sigma = getTensor();
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> es;
+        es.compute(sigma);
+
+        auto diag = es.eigenvalues();
+        auto iso_ppm = diag.sum() / 3.0;
+        auto ani_ppm = diag(2) - (diag(0) + diag(1)) / 2.0;
         return {
             {"k", getK()},
-            {"nucleus_k", getNucleus().getElement().getSymbol()},
+            {"element", getNucleus().getElement().getSymbol()},
             {"tensor_dia", math_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
             {"tensor_para", math_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
-            {"tensor", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
-            {"isotropic_average", getTensor().trace() / 3.0 }
+            {"tensor", math_utils::eigen_to_vector(sigma, 1.0e-12)},
+            {"diagonalized_tensor", math_utils::eigen_to_vector(diag, 1.0e-12)},
+            {"isotropic_average", iso_ppm},
+            {"anisotropy", ani_ppm}
         };
     }
 
