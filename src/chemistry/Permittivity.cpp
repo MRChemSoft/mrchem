@@ -23,29 +23,24 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#pragma once
-
+#include "chemistry/Permittivity.h"
+#include "chemistry/Cavity.h"
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
 
-class Cavity final : public mrcpp::RepresentableFunction<3> {
-public:
-    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
-    double evalf(const mrcpp::Coord<3> &r) const override;
-    auto getGradVector() const { return this->gradvector; }
-    std::vector<mrcpp::Coord<3>> getCoordinates() const { return pos; }
-    std::vector<double> getRadius() const { return R; }
-    friend class Permittivity;
+Permittivity::Permittivity(const mrchem::Cavity C, double epsilon_in, double epsilon_out)
+        : eps_in(epsilon_in)
+        , eps_out(epsilon_out)
+        , Cav(C) {}
 
-protected:
-    std::vector<mrcpp::Coord<3>> pos;
-    std::vector<double> R;
-    double d;
-    std::vector<std::function<double(const mrcpp::Coord<3> &r)>> gradvector;
+double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
+  auto epsilon = eps_in * std::exp(std::log(eps_out / eps_in) * (1 - this->Cav.evalf(r)));
+    if (flipped) {
+        return 1 / epsilon;
+    } else {
+        return epsilon;
+    }
+}
 
-    void setGradVector();
-    bool isVisibleAtScale(int scale, int nQuadPts) const override;
-    bool isZeroOnInterval(const double *a, const double *b) const override;
-};
 } // namespace mrchem

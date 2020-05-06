@@ -3,9 +3,23 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include "MRCPP/MWFunctions"
+#include "MRCPP/MWOperators"
+
+#include "analyticfunctions/HydrogenFunction.h"
+#include "chemistry/Cavity.h"
+#include "chemistry/Element.h"
+#include "chemistry/Nucleus.h"
+#include "chemistry/PeriodicTable.h"
+#include "chemistry/Permittivity.h"
 #include "mrchem.h"
 #include "mrenv.h"
 #include "parallel.h"
+#include "qmfunctions/Orbital.h"
+#include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
+#include "qmoperators/two_electron/SCRF.h"
 
 // Initializing global variables
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;

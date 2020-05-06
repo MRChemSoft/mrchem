@@ -25,27 +25,28 @@
 
 #pragma once
 
+#include "chemistry/Cavity.h"
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
+class Cavity;
 
-class Cavity final : public mrcpp::RepresentableFunction<3> {
+class Permittivity final : public mrcpp::RepresentableFunction<3> {
 public:
-    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
+    Permittivity(const Cavity C, double epsilon_in, double epsilon_out = 1.0);
     double evalf(const mrcpp::Coord<3> &r) const override;
-    auto getGradVector() const { return this->gradvector; }
-    std::vector<mrcpp::Coord<3>> getCoordinates() const { return pos; }
-    std::vector<double> getRadius() const { return R; }
-    friend class Permittivity;
 
-protected:
-    std::vector<mrcpp::Coord<3>> pos;
-    std::vector<double> R;
-    double d;
-    std::vector<std::function<double(const mrcpp::Coord<3> &r)>> gradvector;
+    void flipFunction(bool is_flipped) { this->flipped = is_flipped; };
+    bool isInverse() { return this->flipped; }
+    std::vector<mrcpp::Coord<3>> getCoordinates() const { return this->Cav.getCoordinates(); }
+    std::vector<double> getRadius() const { return this->Cav.getRadius(); }
+    auto getGradVector() const { return this->Cav.getGradVector(); }
+    double eps_in;
+    double eps_out;
 
-    void setGradVector();
-    bool isVisibleAtScale(int scale, int nQuadPts) const override;
-    bool isZeroOnInterval(const double *a, const double *b) const override;
+private:
+    bool flipped = false;
+    Cavity Cav;
 };
+
 } // namespace mrchem

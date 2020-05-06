@@ -69,9 +69,11 @@ void mrenv::initialize(const json &json_inp) {
     auto json_mra = json_inp.find("mra");
     auto json_mpi = json_inp.find("mpi");
 
-    if (json_mra == json_inp.end()) MSG_ABORT("Missing MRA input!");
-
-    if (json_mra != json_inp.end()) mrenv::init_mra(*json_mra);
+    if (json_mra == json_inp.end()) {
+        MSG_ABORT("Missing MRA input!");
+    } else {
+        mrenv::init_mra(*json_mra);
+    }
     if (json_mpi != json_inp.end()) mrenv::init_mpi(*json_mpi);
     if (json_print != json_inp.end()) mrenv::init_printer(*json_print);
 

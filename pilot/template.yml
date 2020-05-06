@@ -31,6 +31,82 @@ keywords:
     docstring: |
       Global gauge origin of the calculation.
 sections:
+  - name: Plotter
+    docstring: |
+      Cube plots of converged orbitals and densities.
+    keywords:
+      - name: path_plots
+        type: str
+        default: "plots"
+        predicates:
+          - "value[-1] != '/'"
+        docstring: |
+          File path to plot directory.
+      - name: points
+        type: List[int]
+        default: [20, 20, 20]
+        predicates:
+          - 'value[0] > 0'
+          - 'value[1] > 0'
+          - 'value[2] > 0'
+        docstring: |
+          Number of points in each direction on the cube grid.
+      - name: O
+        type: List[float]
+        default: [0.0, 0.0, 0.0]
+        docstring: |
+          Origin of cube plot.
+      - name: A
+        type: List[float]
+        default: [1.0, 0.0, 0.0]
+        docstring: |
+          First boundary vector for plot.
+      - name: B
+        type: List[float]
+        default: [0.0, 1.0, 0.0]
+        docstring: |
+          Second boundary vector for plot.
+      - name: C
+        type: List[float]
+        default: [0.0, 0.0, 1.0]
+        docstring: |
+          Third boundary vector for plot.
+  - name: Precisions
+    docstring: |
+      Define specific precision parameters.
+    keywords:
+      - name: nuc_prec
+        type: float
+        default: "user['world_prec']"
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in smoothing and projection of nuclear potential.
+      - name: dft_prec
+        type: float
+        default: "user['world_prec']"
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in DFT grid.
+      - name: poisson_prec
+        type: float
+        default: "user['world_prec']"
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in construction of Poisson operators.
+      - name: helmholtz_prec
+        type: float
+        default: "user['world_prec']"
+        docstring: |
+          Precision parameter used in construction of Helmholtz operators.
+          Negative value means it will follow the dynamic precision in SCF.
+      - name: orth_prec
+        type: float
+        default: 1.0e-14
+        docstring: |
+          Precision parameter used in the response density projection operator (1 - rho_0).
   - name: Printer
     docstring: |
       Define variables for printed output.
@@ -113,3 +189,63 @@ sections:
           - "value.lower() in ['interpolating', 'legendre']"
         docstring: |
           Polynomial type of multiwavelet basis.
+  - name: Environment
+    docstring: |
+      Includes parameters related to the computation of the reaction field
+      energy of a system in an environment.
+    keywords:
+      - name: run_SCRF
+        type: bool
+        default: false
+        docstring: |
+          Perform the Self consistent reaction field calculation of the reaction potential of the
+          interaction between environment and molecule. 
+      - name: run_variational
+        type: bool
+        default: false
+        docstring: |
+          Compute the reaction field using the variational algorithm
+      - name: kain_history
+        type: int
+        default: 0
+        docstring: |
+          Number of previous reaction field iterates kept for convergence acceleration.
+    sections:
+      - name: Cavity
+        docstring: |
+          Define the interlocking spheres cavity.
+        keywords:
+          - name: coords
+            type: str
+            default: ""
+            docstring: |
+              Coordinates and radii  of the spheres written as: x_coord    y_coord    z_coord    radius.
+          - name: cavity_width
+            type: float
+            default: 0.2
+            docstring: |
+              Width of cavity boundary
+          - name: angstrom
+            type: bool
+            default: false
+            docstring: |
+              Coordinates given in angstrom rather than bohr.
+      - name: Permittivity
+        docstring: |
+          parameters for the permittivity function.
+        keywords:
+          - name: epsilon_in
+            type: float
+            default: 1.0
+            docstring: |
+              Permittivity inside the cavity.
+          - name: epsilon_out
+            type: float
+            default: 2.0
+            docstring: |
+              Permittivity outside the cavity.
+          - name: linear
+            type: bool
+            default: false
+            docstring: |
+              Run linear formulation of the Permittivity function, false runs exponential.

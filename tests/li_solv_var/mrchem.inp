@@ -17,18 +17,22 @@ WaveFunction {
 Properties {
   reaction_energy = true            # Compute ground state energy
 }
-
-Cavity {
-  $coords
-  0.0     0.0    0.0  4.0
-  $end
-  width = 0.5
-  epsilon_out = 2.0
-}
-
-SolventEffect{
-  kain = 5
-  variational = true
+Environment {
+  run_SCRF = true
+  run_variational = true
+  kain_history = 5
+  Cavity {
+    $coords
+    0.0     0.0    0.0  4.0
+    $end
+    width = 0.5
+    angstrom = false
+  }
+  Permittivity {
+    epsilon_out = 2.0
+    epsilon_in = 1.0
+    linear = false
+  }
 }
 
 SCF {

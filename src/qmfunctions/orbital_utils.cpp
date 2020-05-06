@@ -599,7 +599,6 @@ ComplexMatrix orbital::calc_norm_overlap_matrix(OrbitalVector &BraKet, bool exac
  * Computes the inverse square root of the orbital overlap matrix S^(-1/2)
  */
 ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
-
     ComplexMatrix S_tilde = orbital::calc_overlap_matrix(Phi);
     ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S_tilde, -1.0 / 2.0);
     return S_m12;

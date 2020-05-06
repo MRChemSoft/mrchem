@@ -36,6 +36,7 @@ import tempfile
 from io import StringIO
 from shutil import copyfile
 from pathlib import Path
+from parselglossy.api import parse, validate #added now
 
 # FIXME This will pick up modules when installed
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
@@ -82,6 +83,7 @@ def main():
         print("launch command: " + cmd)
     else:
         subprocess.call(cmd, shell=True)
+
 
 def parse_cmdline():
     usage = "usage: %prog [options] [config] inp_name"
