@@ -1,4 +1,4 @@
-find_package(nlohmann_json 3.5 CONFIG QUIET)
+find_package(nlohmann_json 3.6 CONFIG QUIET)
 
 if(TARGET nlohmann_json::nlohmann_json)
   get_target_property(
@@ -13,7 +13,7 @@ else()
   FetchContent_Declare(nlohmann_json_sources
     QUIET
     URL
-      https://github.com/nlohmann/json/archive/v3.5.0.tar.gz
+      https://github.com/nlohmann/json/archive/v3.6.1.tar.gz
     )
 
   FetchContent_GetProperties(nlohmann_json_sources)
