@@ -178,20 +178,19 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
 
     // Run GroundStateSolver if present in input JSON
-    auto scf_solver = json_scf.find("scf_solver");
-    if (scf_solver != json_scf.end()) {
-        auto kain = (*scf_solver)["kain"];
-        auto method = (*scf_solver)["method"];
-        auto max_iter = (*scf_solver)["max_iter"];
-        auto rotation = (*scf_solver)["rotation"];
-        auto localize = (*scf_solver)["localize"];
-        auto file_chk = (*scf_solver)["file_chk"];
-        auto checkpoint = (*scf_solver)["checkpoint"];
-        auto start_prec = (*scf_solver)["start_prec"];
-        auto final_prec = (*scf_solver)["final_prec"];
-        auto energy_thrs = (*scf_solver)["energy_thrs"];
-        auto orbital_thrs = (*scf_solver)["orbital_thrs"];
-        auto helmholtz_prec = (*scf_solver)["helmholtz_prec"];
+    if (json_scf.contains("scf_solver")) {
+        auto kain = json_scf["scf_solver"]["kain"];
+        auto method = json_scf["scf_solver"]["method"];
+        auto max_iter = json_scf["scf_solver"]["max_iter"];
+        auto rotation = json_scf["scf_solver"]["rotation"];
+        auto localize = json_scf["scf_solver"]["localize"];
+        auto file_chk = json_scf["scf_solver"]["file_chk"];
+        auto checkpoint = json_scf["scf_solver"]["checkpoint"];
+        auto start_prec = json_scf["scf_solver"]["start_prec"];
+        auto final_prec = json_scf["scf_solver"]["final_prec"];
+        auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
+        auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
+        auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
 
         GroundStateSolver solver;
         solver.setHistory(kain);
@@ -213,14 +212,9 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
 
     if (json_out["success"]) {
-        auto json_orbs = json_scf.find("write_orbitals");
-        if (json_orbs != json_scf.end()) driver::scf::write_orbitals(*json_orbs, mol);
-
-        auto json_prop = json_scf.find("properties");
-        if (json_prop != json_scf.end()) driver::scf::calc_properties(*json_prop, mol);
-
-        auto json_plot = json_scf.find("cube_plot");
-        if (json_plot != json_scf.end()) driver::scf::plot_quantities(*json_plot, mol);
+        if (json_scf.contains("write_orbitals")) driver::scf::write_orbitals(json_scf["write_orbitals"], mol);
+        if (json_scf.contains("properties")) driver::scf::calc_properties(json_scf["properties"], mol);
+        if (json_scf.contains("cube_plot")) driver::scf::plot_quantities(json_scf["cube_plot"], mol);
     }
 
     return json_out;
@@ -592,20 +586,19 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         /////////////   Optimizing Perturbed Orbitals  ////////////
         ///////////////////////////////////////////////////////////
 
-        auto rsp_solver = json_comp.find("rsp_solver");
-        if (rsp_solver != json_comp.end()) {
-            auto kain = (*rsp_solver)["kain"];
-            auto method = (*rsp_solver)["method"];
-            auto max_iter = (*rsp_solver)["max_iter"];
-            auto file_chk_x = (*rsp_solver)["file_chk_x"];
-            auto file_chk_y = (*rsp_solver)["file_chk_y"];
-            auto checkpoint = (*rsp_solver)["checkpoint"];
-            auto orth_prec = (*rsp_solver)["orth_prec"];
-            auto start_prec = (*rsp_solver)["start_prec"];
-            auto final_prec = (*rsp_solver)["final_prec"];
-            auto orbital_thrs = (*rsp_solver)["orbital_thrs"];
-            auto property_thrs = (*rsp_solver)["property_thrs"];
-            auto helmholtz_prec = (*rsp_solver)["helmholtz_prec"];
+        if (json_comp.contains("rsp_solver")) {
+            auto kain = json_comp["rsp_solver"]["kain"];
+            auto method = json_comp["rsp_solver"]["method"];
+            auto max_iter = json_comp["rsp_solver"]["max_iter"];
+            auto file_chk_x = json_comp["rsp_solver"]["file_chk_x"];
+            auto file_chk_y = json_comp["rsp_solver"]["file_chk_y"];
+            auto checkpoint = json_comp["rsp_solver"]["checkpoint"];
+            auto orth_prec = json_comp["rsp_solver"]["orth_prec"];
+            auto start_prec = json_comp["rsp_solver"]["start_prec"];
+            auto final_prec = json_comp["rsp_solver"]["final_prec"];
+            auto orbital_thrs = json_comp["rsp_solver"]["orbital_thrs"];
+            auto property_thrs = json_comp["rsp_solver"]["property_thrs"];
+            auto helmholtz_prec = json_comp["rsp_solver"]["helmholtz_prec"];
 
             LinearResponseSolver solver(dynamic);
             solver.setHistory(kain);
@@ -799,9 +792,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     //////////////////   Kinetic Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    auto json_kinetic = json_fock.find("kinetic_operator");
-    if (json_kinetic != json_fock.end()) {
-        auto kin_diff = (*json_kinetic)["derivative"].get<std::string>();
+    if (json_fock.contains("kinetic_operator")) {
+        auto kin_diff = json_fock["kinetic_operator"]["derivative"];
         auto D_p = driver::get_derivative(kin_diff);
         auto T_p = std::make_shared<KineticOperator>(D_p);
         F.getKineticOperator() = T_p;
@@ -809,21 +801,19 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    auto json_nuclear = json_fock.find("nuclear_operator");
-    if (json_nuclear != json_fock.end()) {
-        auto proj_prec = (*json_nuclear)["proj_prec"].get<double>();
-        auto smooth_prec = (*json_nuclear)["smooth_prec"].get<double>();
-        auto shared_memory = (*json_nuclear)["shared_memory"].get<bool>();
+    if (json_fock.contains("nuclear_operator")) {
+        auto proj_prec = json_fock["nuclear_operator"]["proj_prec"];
+        auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"];
+        auto shared_memory = json_fock["nuclear_operator"]["shared_memory"];
         auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
         F.getNuclearOperator() = V_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    auto json_coulomb = json_fock.find("coulomb_operator");
-    if (json_coulomb != json_fock.end()) {
-        auto poisson_prec = (*json_coulomb)["poisson_prec"].get<double>();
-        auto shared_memory = (*json_coulomb)["shared_memory"].get<bool>();
+    if (json_fock.contains("coulomb_operator")) {
+        auto poisson_prec = json_fock["coulomb_operator"]["poisson_prec"];
+        auto shared_memory = json_fock["coulomb_operator"]["shared_memory"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         if (order == 0) {
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
@@ -839,17 +829,16 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ////////////////////   XC Operator   //////////////////////
     ///////////////////////////////////////////////////////////
     double exx = 1.0;
-    auto json_xc = json_fock.find("xc_operator");
-    if (json_xc != json_fock.end()) {
-        auto grid_prec = (*json_xc)["grid_prec"].get<double>();
-        auto shared_memory = (*json_xc)["shared_memory"].get<bool>();
-        auto json_xcfunc = (*json_xc)["xc_functional"].get<json>();
-        auto xc_spin = json_xcfunc["spin"].get<bool>();
-        auto xc_gamma = json_xcfunc["gamma"].get<bool>();
-        auto xc_log_grad = json_xcfunc["log_grad"].get<bool>();
-        auto xc_cutoff = json_xcfunc["cutoff"].get<double>();
-        auto xc_diff = json_xcfunc["derivative"].get<std::string>();
-        auto xc_funcs = json_xcfunc["functionals"].get<json>();
+    if (json_fock.contains("xc_operator")) {
+        auto grid_prec = json_fock["xc_operator"]["grid_prec"];
+        auto shared_memory = json_fock["xc_operator"]["shared_memory"];
+        auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
+        auto xc_spin = json_xcfunc["spin"];
+        auto xc_gamma = json_xcfunc["gamma"];
+        auto xc_log_grad = json_xcfunc["log_grad"];
+        auto xc_cutoff = json_xcfunc["cutoff"];
+        auto xc_diff = json_xcfunc["derivative"];
+        auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
 
         mrdft::Factory xc_factory(*MRA);
@@ -859,8 +848,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         xc_factory.setLogGradient(xc_log_grad);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {
-            auto name = f["name"].get<std::string>();
-            auto coef = f["coef"].get<double>();
+            auto name = f["name"];
+            auto coef = f["coef"];
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
@@ -879,10 +868,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     /////////////////   Exchange Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    auto json_exchange = json_fock.find("exchange_operator");
-    if (json_exchange != json_fock.end() and exx > mrcpp::MachineZero) {
-        auto poisson_prec = (*json_exchange)["poisson_prec"].get<double>();
-        auto screen_prec = (*json_exchange)["screen"].get<bool>();
+    if (json_fock.contains("exchange_operator") and exx > mrcpp::MachineZero) {
+        auto poisson_prec = json_fock["exchange_operator"]["poisson_prec"];
+        auto screen_prec = json_fock["exchange_operator"]["screen"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         if (order == 0) {
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, screen_prec);
@@ -895,10 +883,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     /////////////////   External Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    auto json_external = json_fock.find("external_operator");
-    if (json_external != json_fock.end()) {
-        auto field = (*json_external)["electric_field"].get<std::array<double, 3>>();
-        auto r_O = (*json_external)["r_O"].get<Coord<3>>();
+    if (json_fock.contains("external_operator")) {
+        auto field = json_fock["external_operator"]["electric_field"];
+        auto r_O = json_fock["external_operator"]["r_O"];
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
