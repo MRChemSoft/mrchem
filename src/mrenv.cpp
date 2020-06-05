@@ -80,10 +80,10 @@ void mrenv::initialize(const json &json_inp) {
 
 void mrenv::init_printer(const json &json_print) {
     // Initialize printing
-    auto print_level = json_print["print_level"].get<int>();
-    auto print_prec = json_print["print_prec"].get<int>();
-    auto print_width = json_print["print_width"].get<int>();
-    auto print_mpi = json_print["print_mpi"].get<bool>();
+    auto print_level = json_print["print_level"];
+    auto print_prec = json_print["print_prec"];
+    auto print_width = json_print["print_width"];
+    auto print_mpi = json_print["print_mpi"];
     auto fname = json_print["file_name"].get<std::string>();
     if (print_mpi) {
         Printer::init(print_level, mpi::world_rank, mpi::world_size, fname.c_str());
@@ -96,16 +96,16 @@ void mrenv::init_printer(const json &json_print) {
 
 void mrenv::init_mra(const json &json_mra) {
     // Initialize world box
-    auto min_scale = json_mra["min_scale"].get<int>();
-    auto max_scale = json_mra["max_scale"].get<int>();
-    auto corner = json_mra["corner"].get<std::array<int, 3>>();
-    auto boxes = json_mra["boxes"].get<std::array<int, 3>>();
-    auto sfac = json_mra["scaling_factor"].get<std::array<double, 3>>();
+    int min_scale = json_mra["min_scale"];
+    int max_scale = json_mra["max_scale"];
+    auto corner = json_mra["corner"];
+    auto boxes = json_mra["boxes"];
+    auto sfac = json_mra["scaling_factor"];
     mrcpp::BoundingBox<3> world(min_scale, corner, boxes, sfac);
 
     // Initialize scaling basis
-    auto order = json_mra["order"].get<int>();
-    auto btype = json_mra["basis_type"].get<std::string>();
+    auto order = json_mra["basis_order"];
+    auto btype = json_mra["basis_type"];
 
     auto max_depth = max_scale - min_scale;
     if (min_scale < mrcpp::MinScale) MSG_ABORT("Root scale too large");
@@ -125,9 +125,9 @@ void mrenv::init_mra(const json &json_mra) {
 }
 
 void mrenv::init_mpi(const json &json_mpi) {
-    mpi::numerically_exact = json_mpi["numerically_exact"].get<bool>();
-    mpi::shared_memory_size = json_mpi["shared_memory_size"].get<int>();
-    mpi::bank_size = json_mpi["bank_size"].get<int>();
+    mpi::numerically_exact = json_mpi["numerically_exact"];
+    mpi::shared_memory_size = json_mpi["shared_memory_size"];
+    mpi::bank_size = json_mpi["bank_size"];
     mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 

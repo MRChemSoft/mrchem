@@ -35,14 +35,19 @@ namespace mrchem {
 // clang-format off
 class QuadrupoleMoment final {
 public:
+    QuadrupoleMoment(const mrcpp::Coord<3> &o) : r_O(o) {}
+
+    const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
     DoubleMatrix getTensor() const { return getNuclear() + getElectronic(); }
     DoubleMatrix &getNuclear() { return this->nuc_tensor; }
     DoubleMatrix &getElectronic() { return this->el_tensor; }
     const DoubleMatrix &getNuclear() const { return this->nuc_tensor; }
     const DoubleMatrix &getElectronic() const { return this->el_tensor; }
 
-    void print() const {
-        mrcpp::print::header(0, "Quadrupole Moment");
+    void print(const std::string &id) const {
+        mrcpp::print::header(0, "Quadrupole Moment (" + id + ")");
+        print_utils::coord(0, "r_O", getOrigin());
+        mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Electronic tensor", getElectronic());
         mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Nuclear tensor", getNuclear());
@@ -53,13 +58,15 @@ public:
 
     nlohmann::json json() const {
         return {
+            {"r_O", getOrigin()},
             {"tensor_nuc", math_utils::eigen_to_vector(getNuclear(), 1.0e-12)},
             {"tensor_el", math_utils::eigen_to_vector(getElectronic(), 1.0e-12)},
-            {"tensor", math_utils::eigen_to_vector(getTensor(),1.0e-12f)}
+            {"tensor", math_utils::eigen_to_vector(getTensor(), 1.0e-12)}
         };
     }
 
 private:
+    mrcpp::Coord<3> r_O;
     DoubleMatrix nuc_tensor{math_utils::init_nan(3)};
     DoubleMatrix el_tensor{math_utils::init_nan(3)};
 };

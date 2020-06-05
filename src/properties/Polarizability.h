@@ -37,24 +37,26 @@ namespace mrchem {
 // clang-format off
 class Polarizability final {
 public:
-    explicit Polarizability(double w = 0.0) : frequency(w) {}
+    explicit Polarizability(double omega, const mrcpp::Coord<3> &o) : frequency(omega), r_O(o) {}
 
     double getFrequency() const { return this->frequency; }
-    double getWavelength() const { return 0.0; }
+    const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
+
     DoubleMatrix &getTensor() { return this->tensor; }
     const DoubleMatrix &getTensor() const { return this->tensor; }
 
-    void print() const {
+    void print(const std::string &id) const {
         auto w_au = getFrequency();
         auto w_cm = PHYSCONST::cm_m1 * w_au;
         auto dynamic = (w_au > mrcpp::MachineZero);
         auto l_nm = (dynamic) ? (1.0e7 / w_cm) : 0.0;
         auto iso_au = getTensor().trace() / 3.0;
 
-        mrcpp::print::header(0, "Polarizability");
+        mrcpp::print::header(0, "Polarizability (" + id + ")");
         if (dynamic) print_utils::scalar(0, "Wavelength", l_nm, "(nm)");
         print_utils::scalar(0, "Frequency", w_au, "(au)");
         print_utils::scalar(0, "         ", w_cm, "(cm-1)");
+        print_utils::coord(0, "r_O", getOrigin());
         mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Total tensor", getTensor());
         print_utils::scalar(0, "Isotropic average", iso_au, "(au)");
@@ -63,6 +65,7 @@ public:
 
     nlohmann::json json() const {
         return {
+            {"r_O", getOrigin()},
             {"frequency", getFrequency()},
             {"tensor", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
             {"isotropic_average", getTensor().trace() / 3.0 }
@@ -71,6 +74,7 @@ public:
 
 private:
     double frequency;
+    mrcpp::Coord<3> r_O;
     DoubleMatrix tensor{math_utils::init_nan(3,3)};
 };
 // clang-format on

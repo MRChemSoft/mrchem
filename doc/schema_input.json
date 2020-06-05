@@ -17,7 +17,7 @@
   },
   "mra": {                                      # Section for MultiResolution Analysis
     "basis_type": string,                       # Basis type (interpolating/legendre)
-    "order": int,                               # Polynomial order of basis
+    "basis_order": int,                         # Polynomial order of basis
     "max_scale": int,                           # Maximum level of refinement
     "min_scale": int,                           # Minimum level of refinement (root scale)
     "boxes": array[int],                        # Number of root boxes

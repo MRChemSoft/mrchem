@@ -42,24 +42,23 @@ using namespace mrchem;
 int main(int argc, char **argv) {
     const auto json_inp = mrenv::fetch_json(argc, argv);
 
-    json json_out;
     mrenv::initialize(json_inp);
     const auto &mol_inp = json_inp["molecule"];
     const auto &scf_inp = json_inp["scf_calculation"];
-    const auto &rsps_inp = json_inp["rsp_calculations"];
+    const auto &rsp_inp = json_inp["rsp_calculations"];
 
     Timer timer;
     Molecule mol;
     driver::init_molecule(mol_inp, mol);
-    json_out["scf_calculation"] = driver::scf::run(scf_inp, mol);
-    if (json_out["scf_calculation"]["success"]) {
-        json_out["rsp_calculations"] = {};
-        for (const auto &rsp_inp : rsps_inp) {
-            auto rsp_out = driver::rsp::run(rsp_inp, mol);
-            json_out["rsp_calculations"].push_back(rsp_out);
-        }
+    auto scf_out = driver::scf::run(scf_inp, mol);
+    json rsp_out = {};
+    if (scf_out["success"]) {
+        for (auto &i : rsp_inp.items()) rsp_out[i.key()] = driver::rsp::run(i.value(), mol);
     }
     mpi::barrier(mpi::comm_orb);
+    json json_out;
+    json_out["scf_calculation"] = scf_out;
+    json_out["rsp_calculations"] = rsp_out;
     json_out["properties"] = driver::print_properties(mol);
     mrenv::finalize(timer.elapsed());
     mrenv::dump_json(json_inp, json_out);

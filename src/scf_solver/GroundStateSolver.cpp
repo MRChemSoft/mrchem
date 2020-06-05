@@ -188,9 +188,8 @@ void GroundStateSolver::reset() {
 
 /** @brief Run orbital optimization
  *
+ * @param mol: Molecule to optimize
  * @param F: FockOperator defining the SCF equations
- * @param Phi_n: Orbitals to optimize
- * @param F_mat: Fock matrix
  *
  * Optimize orbitals until convergence thresholds are met. This algorithm computes
  * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
@@ -346,6 +345,14 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
     printConvergence(converged, "Total energy");
     reset();
+
+    Timer t_eps;
+    mrcpp::print::header(1, "Computing orbital energies");
+    OrbitalEnergies &eps = mol.getOrbitalEnergies();
+    eps.getOccupation() = orbital::get_occupations(Phi_n);
+    eps.getEpsilon() = orbital::calc_eigenvalues(Phi_n, F_mat);
+    eps.getSpin() = orbital::get_spins(Phi_n);
+    mrcpp::print::footer(1, t_eps, 2);
 
     json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;

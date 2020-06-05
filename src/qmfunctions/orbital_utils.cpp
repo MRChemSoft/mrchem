@@ -1008,21 +1008,21 @@ DoubleVector orbital::calc_eigenvalues(const OrbitalVector &Phi, const ComplexMa
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(np);
         es.compute(F_mat.block(0, 0, np, np));
         epsilon.segment(0, np) = es.eigenvalues();
-        mrcpp::print::time(2, "Diagonalize Fock matrix", timer);
+        mrcpp::print::time(1, "Diagonalize Fock matrix", timer);
     }
     if (na > 0) {
         Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(na);
         es.compute(F_mat.block(np, np, na, na));
         epsilon.segment(np, na) = es.eigenvalues();
-        mrcpp::print::time(2, "Diagonalize Fock matrix (alpha)", timer);
+        mrcpp::print::time(1, "Diagonalize Fock matrix (alpha)", timer);
     }
     if (nb > 0) {
         Timer timer;
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> es(nb);
         es.compute(F_mat.block(np + na, np + na, nb, nb));
         epsilon.segment(np + na, nb) = es.eigenvalues();
-        mrcpp::print::time(2, "Diagonalize Fock matrix (beta)", timer);
+        mrcpp::print::time(1, "Diagonalize Fock matrix (beta)", timer);
     }
     return epsilon;
 }

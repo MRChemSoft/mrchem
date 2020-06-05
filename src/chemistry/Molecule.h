@@ -107,11 +107,17 @@ public:
 
     SCFEnergy &getSCFEnergy();
     OrbitalEnergies &getOrbitalEnergies();
-    DipoleMoment &getDipoleMoment();
-    QuadrupoleMoment &getQuadrupoleMoment();
-    Magnetizability &getMagnetizability();
-    NMRShielding &getNMRShielding(int k);
-    Polarizability &getPolarizability(double omega);
+    DipoleMoment &getDipoleMoment(const std::string &id);
+    QuadrupoleMoment &getQuadrupoleMoment(const std::string &id);
+    Polarizability &getPolarizability(const std::string &id);
+    Magnetizability &getMagnetizability(const std::string &id);
+    NMRShielding &getNMRShielding(const std::string &id);
+
+    auto &getDipoleMoments() { return this->dipole; }
+    auto &getQuadrupoleMoments() { return this->quadrupole; }
+    auto &getPolarizabilities() { return this->polarizability; }
+    auto &getMagnetizabilities() { return this->magnetizability; }
+    auto &getNMRShieldings() { return this->nmr_shielding; }
 
 protected:
     int charge{0};
@@ -127,13 +133,12 @@ protected:
     // Properties
     std::unique_ptr<SCFEnergy> energy{nullptr};
     std::unique_ptr<OrbitalEnergies> epsilon{nullptr};
-    std::unique_ptr<DipoleMoment> dipole{nullptr};
-    std::unique_ptr<QuadrupoleMoment> quadrupole{nullptr};
-    std::unique_ptr<Magnetizability> magnetizability{nullptr};
-    std::vector<std::unique_ptr<Polarizability>> polarizability{};
-    std::vector<std::unique_ptr<NMRShielding>> nmr{};
+    std::map<std::string, DipoleMoment> dipole{};
+    std::map<std::string, QuadrupoleMoment> quadrupole{};
+    std::map<std::string, Polarizability> polarizability{};
+    std::map<std::string, Magnetizability> magnetizability{};
+    std::map<std::string, NMRShielding> nmr_shielding{};
 
-    void initNuclearProperties(int nNucs);
     void readCoordinateFile(const std::string &file);
     void readCoordinateString(const std::vector<std::string> &coord_str);
 };

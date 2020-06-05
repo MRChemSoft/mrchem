@@ -72,10 +72,6 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
     readCoordinateString(coord_str);
 }
 
-void Molecule::initNuclearProperties(int nNucs) {
-    for (auto k = 0; k < nNucs; k++) nmr.push_back(nullptr);
-}
-
 void Molecule::initPerturbedOrbitals(bool dynamic) {
     if (dynamic) {
         this->orbitals_x = std::make_shared<OrbitalVector>();
@@ -86,58 +82,41 @@ void Molecule::initPerturbedOrbitals(bool dynamic) {
     }
 }
 
+DipoleMoment &Molecule::getDipoleMoment(const std::string &id) {
+    if (not this->dipole.count(id)) MSG_ERROR("Property not initialized");
+    return this->dipole.at(id);
+}
+
+QuadrupoleMoment &Molecule::getQuadrupoleMoment(const std::string &id) {
+    if (not this->quadrupole.count(id)) MSG_ERROR("Property not initialized");
+    return this->quadrupole.at(id);
+}
+
+Polarizability &Molecule::getPolarizability(const std::string &id) {
+    if (not this->polarizability.count(id)) MSG_ERROR("Property not initialized");
+    return this->polarizability.at(id);
+}
+
+Magnetizability &Molecule::getMagnetizability(const std::string &id) {
+    if (not this->magnetizability.count(id)) MSG_ERROR("Property not initialized");
+    return this->magnetizability.at(id);
+}
+
+NMRShielding &Molecule::getNMRShielding(const std::string &id) {
+    if (not this->nmr_shielding.count(id)) MSG_ERROR("Property not initialized");
+    return this->nmr_shielding.at(id);
+}
+
 /** @brief Return property SCFEnergy */
 SCFEnergy &Molecule::getSCFEnergy() {
     if (energy == nullptr) energy = std::make_unique<SCFEnergy>();
     return *energy;
 }
 
-/** @brief Return property DipoleMoment */
-DipoleMoment &Molecule::getDipoleMoment() {
-    if (dipole == nullptr) dipole = std::make_unique<DipoleMoment>();
-    return *dipole;
-}
-
-/** @brief Return property QuadrupoleMoment */
-QuadrupoleMoment &Molecule::getQuadrupoleMoment() {
-    if (quadrupole == nullptr) quadrupole = std::make_unique<QuadrupoleMoment>();
-    return *quadrupole;
-}
-
 /** @brief Return property OrbitalEnergies */
 OrbitalEnergies &Molecule::getOrbitalEnergies() {
     if (epsilon == nullptr) epsilon = std::make_unique<OrbitalEnergies>();
     return *epsilon;
-}
-
-/** @brief Return property Magnetizability */
-Magnetizability &Molecule::getMagnetizability() {
-    if (magnetizability == nullptr) magnetizability = std::make_unique<Magnetizability>();
-    return *magnetizability;
-}
-
-/** @brief Return property NMRShielding */
-NMRShielding &Molecule::getNMRShielding(int k) {
-    if (nmr.size() == 0) initNuclearProperties(getNNuclei());
-    if (nmr[k] == nullptr) nmr[k] = std::make_unique<NMRShielding>(k, nuclei[k]);
-    return *nmr[k];
-}
-
-/** @brief Return property Polarizability */
-Polarizability &Molecule::getPolarizability(double omega) {
-    auto idx = -1;
-    for (auto i = 0; i < polarizability.size(); i++) {
-        auto omega_i = polarizability[i]->getFrequency();
-        if (std::abs(omega_i - omega) < mrcpp::MachineZero) {
-            idx = i;
-            break;
-        }
-    }
-    if (idx < 0) {
-        polarizability.push_back(std::make_unique<Polarizability>(omega));
-        idx = polarizability.size() - 1;
-    }
-    return *polarizability[idx];
 }
 
 /** @brief Return number of electrons */
@@ -271,17 +250,13 @@ void Molecule::printGeometry() const {
  * Only properties that have been initialized will be printed.
  */
 void Molecule::printProperties() const {
-    if (this->epsilon != nullptr) this->epsilon->print();
-    if (this->energy != nullptr) this->energy->print();
-    if (this->dipole != nullptr) this->dipole->print();
-    if (this->quadrupole != nullptr) this->quadrupole->print();
-    for (auto &pol : this->polarizability) {
-        if (pol != nullptr) pol->print();
-    }
-    if (this->magnetizability != nullptr) this->magnetizability->print();
-    for (auto &nmr_k : this->nmr) {
-        if (nmr_k != nullptr) nmr_k->print();
-    }
+    if (energy != nullptr) energy->print();
+    if (epsilon != nullptr) epsilon->print();
+    for (const auto &dip : dipole) dip.second.print(dip.first);
+    for (const auto &qua : quadrupole) qua.second.print(qua.first);
+    for (const auto &pol : polarizability) pol.second.print(pol.first);
+    for (const auto &mag : magnetizability) mag.second.print(mag.first);
+    for (const auto &nmr : nmr_shielding) nmr.second.print(nmr.first);
 }
 
 nlohmann::json Molecule::json() const {
@@ -298,23 +273,19 @@ nlohmann::json Molecule::json() const {
     json_out["multiplicity"] = getMultiplicity();
     json_out["center_of_mass"] = calcCenterOfMass();
 
-    if (this->energy != nullptr) json_out["scf_energy"] = this->energy->json();
-    if (this->dipole != nullptr) json_out["dipole_moment"] = this->dipole->json();
-    if (this->epsilon != nullptr) json_out["orbital_energies"] = this->epsilon->json();
-    if (this->magnetizability != nullptr) json_out["magnetizability"] = this->magnetizability->json();
-    if (this->polarizability.size() > 0) json_out["polarizability"] = {};
-    if (this->nmr.size() > 0) json_out["nmr_shielding"] = {};
+    if (energy != nullptr) json_out["scf_energy"] = energy->json();
+    if (epsilon != nullptr) json_out["orbital_energies"] = epsilon->json();
+    if (not dipole.empty()) json_out["dipole_moment"] = {};
+    if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
+    if (not polarizability.empty()) json_out["polarizability"] = {};
+    if (not magnetizability.empty()) json_out["magnetizability"] = {};
+    if (not nmr_shielding.empty()) json_out["nmr_shielding"] = {};
+    for (const auto &dip : dipole) json_out["dipole_moment"][dip.first] = dip.second.json();
+    for (const auto &qua : quadrupole) json_out["quadrupole_moment"][qua.first] = qua.second.json();
+    for (const auto &pol : polarizability) json_out["polarizability"][pol.first] = pol.second.json();
+    for (const auto &mag : magnetizability) json_out["magnetizability"][mag.first] = mag.second.json();
+    for (const auto &nmr : nmr_shielding) json_out["nmr_shielding"][nmr.first] = nmr.second.json();
 
-    for (auto &pol : this->polarizability) {
-        if (pol != nullptr) {
-            std::stringstream omega;
-            omega << std::fixed << std::setprecision(6) << pol->getFrequency();
-            json_out["polarizability"][omega.str()] = pol->json();
-        }
-    }
-    for (auto &nmr_k : this->nmr) {
-        if (nmr_k != nullptr) json_out["nmr_shielding"][nmr_k->getIdentifier()] = nmr_k->json();
-    }
     return json_out;
 }
 

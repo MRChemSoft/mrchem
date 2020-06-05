@@ -37,13 +37,23 @@ namespace mrchem {
 // clang-format off
 class Magnetizability final {
 public:
+    explicit Magnetizability(double omega, const mrcpp::Coord<3> &o) : frequency(omega), r_O(o) {}
+
+    double getFrequency() const { return this->frequency; }
+    const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
+
     DoubleMatrix getTensor() const { return getDiamagnetic() + getParamagnetic(); }
     DoubleMatrix &getDiamagnetic() { return this->dia_tensor; }
     DoubleMatrix &getParamagnetic() { return this->para_tensor; }
     const DoubleMatrix &getDiamagnetic() const { return this->dia_tensor; }
     const DoubleMatrix &getParamagnetic() const { return this->para_tensor; }
 
-    void print() const {
+    void print(const std::string &id) const {
+        auto w_au = getFrequency();
+        auto w_cm = PHYSCONST::cm_m1 * w_au;
+        auto dynamic = (w_au > mrcpp::MachineZero);
+        auto l_nm = (dynamic) ? (1.0e7 / w_cm) : 0.0;
+
         auto iso_au_d = getDiamagnetic().trace() / 3.0;
         auto iso_au_p = getParamagnetic().trace() / 3.0;
         auto iso_au_t = iso_au_d + iso_au_p;
@@ -53,7 +63,12 @@ public:
         auto iso_si_d = iso_au_d * PHYSCONST::JT_m2;
         auto iso_si_p = iso_au_p * PHYSCONST::JT_m2;
 
-        mrcpp::print::header(0, "Magnetizability");
+        mrcpp::print::header(0, "Magnetizability (" + id + ")");
+        if (dynamic) print_utils::scalar(0, "Wavelength", l_nm, "(nm)");
+        print_utils::scalar(0, "Frequency", w_au, "(au)");
+        print_utils::scalar(0, "         ", w_cm, "(cm-1)");
+        print_utils::coord(0, "r_O", getOrigin());
+        mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Diamagnetic", getDiamagnetic());
         print_utils::scalar(0, "Isotropic average", iso_au_d, "(au)");
         print_utils::scalar(0, "                 ", iso_si_d, "(SI)");
@@ -70,6 +85,8 @@ public:
 
     nlohmann::json json() const {
         return {
+            {"r_O", getOrigin()},
+            {"frequency", getFrequency()},
             {"tensor_dia", math_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
             {"tensor_para", math_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
             {"tensor", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
@@ -78,6 +95,8 @@ public:
     }
 
 private:
+    double frequency;
+    mrcpp::Coord<3> r_O;
     DoubleMatrix dia_tensor{math_utils::init_nan(3,3)};
     DoubleMatrix para_tensor{math_utils::init_nan(3,3)};
 };

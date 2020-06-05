@@ -230,7 +230,7 @@ def write_mra(user_dict, mol_dict):
 
     mra_dict = {
         "basis_type": user_dict["Basis"]["type"][0].lower(),
-        "order": order,
+        "basis_order": order,
         "boxes": [2, 2, 2],
         "corner": [-1, -1, -1],
         "min_scale": min_scale,
@@ -484,41 +484,55 @@ def write_scf_solver(user_dict, method_name):
 
 def write_scf_properties(user_dict, mol_dict):
     prop_dict = {}
-    if user_dict["Properties"]["orbital_energies"]:
-        prop_dict["orbital_energies"] = {}
     if user_dict["Properties"]["dipole_moment"]:
-        prop_dict["dipole_moment"] = {
-            "operator": "h_e_dip",
+        prop_dict["dipole_moment"] = {}
+        prop_dict["dipole_moment"]['dip-1'] = {
             "precision": user_dict["world_prec"],
+            "operator": "h_e_dip",
             "r_O": mol_dict["gauge_origin"]
         }
     if user_dict["Properties"]["quadrupole_moment"]:
-        prop_dict["quadrupole_moment"] = {
-            "operator": "h_e_quad",
+        prop_dict["quadrupole_moment"] = {}
+        prop_dict["quadrupole_moment"]['quad-1'] = {
             "precision": user_dict["world_prec"],
+            "operator": "h_e_quad",
             "r_O": mol_dict["gauge_origin"]
         }
     if user_dict["Properties"]["magnetizability"]:
-        prop_dict["magnetizability"] = {
-            "operator": "h_bb_dia",
+        omega = 0.0 # only static magnetic response
+        freq_key = f'{omega:6f}'
+        mag_key = 'mag-' + freq_key
+        prop_dict["magnetizability"] = {}
+        prop_dict["magnetizability"][mag_key] = {
+            "frequency": omega,
             "precision": user_dict["world_prec"],
+            "dia_operator": "h_bb_dia",
+            "para_operator": "h_b_dip",
+            "derivative": user_dict["Derivatives"]["h_b_dip"],
             "r_O": mol_dict["gauge_origin"]
         }
     if user_dict["Properties"]["nmr_shielding"]:
+        prop_dict["nmr_shielding"] = {}
         nuc_vec = user_dict["NMRShielding"]["nucleus_k"]
-        prop_dict["nmr_shielding"] = []
         all_nucs = (nuc_vec[0] < 0)
         nuclei = mol_dict["coords"]
         for k in range(len(nuclei)):
             if all_nucs or k in nuc_vec:
-                prop_dict["nmr_shielding"].append({
-                    "nucleus_k": k,
-                    "operator": "h_bm_dia",
+                nmr_dict = {
                     "precision": user_dict["world_prec"],
+                    "dia_operator": "h_bm_dia",
                     "smoothing": user_dict["world_prec"],
                     "r_O": mol_dict["gauge_origin"],
-                    "r_K": nuclei[k]["xyz"]
-                })
+                    "r_K": nuclei[k]["xyz"],
+                }
+                if user_dict["NMRShielding"]["nuclear_specific"]:
+                    nmr_dict["para_operator"] = "h_b_dip"
+                    nmr_dict["derivative"] = user_dict["Derivatives"]["h_b_dip"]
+                else:
+                    nmr_dict["para_operator"] = "h_m_pso"
+                    nmr_dict["derivative"] = user_dict["Derivatives"]["h_m_pso"]
+                nmr_key = 'nmr-' + str(k) + nuclei[k]["atom"]
+                prop_dict["nmr_shielding"][nmr_key] = nmr_dict
     return prop_dict
 
 
@@ -536,61 +550,73 @@ def write_scf_plot(user_dict):
 ############################################################
 
 def write_rsp_calculations(user_dict, mol_dict):
-    rsp_dict = []
+    rsp_dict = {}
     run_pol = user_dict["Properties"]["polarizability"]
-    pol_freq = user_dict["Polarizability"]["frequency"]
     run_mag = user_dict["Properties"]["magnetizability"]
     run_nmr = user_dict["Properties"]["nmr_shielding"]
     nuc_spec = user_dict["NMRShielding"]["nuclear_specific"]
 
     if run_pol:
-        for omega in pol_freq:
+        for omega in user_dict["Polarizability"]["frequency"]:
+            freq_key = f'{omega:6f}'
+            pol_key = 'pol-' + freq_key
             rsp_calc = write_rsp_calc(omega, user_dict, mol_dict)
             rsp_calc["perturbation"] = {
                 "operator": "h_e_dip",
                 "r_O": mol_dict["gauge_origin"]
             }
-            prop_dict = {}
-            prop_dict["polarizability"] = {
-                "operator": "h_e_dip",
+            rsp_calc["properties"] = {}
+            rsp_calc["properties"]["polarizability"] = {}
+            rsp_calc["properties"]["polarizability"][pol_key] = {
+                "frequency": omega,
                 "precision": user_dict["world_prec"],
+                "operator": "h_e_dip",
                 "r_O": mol_dict["gauge_origin"]
             }
-            rsp_calc["properties"] = prop_dict
-            rsp_dict.append(rsp_calc)
+            rsp_key = "ext_el-" + freq_key
+            rsp_dict[rsp_key] = rsp_calc
 
     if run_mag or (run_nmr and not nuc_spec):
+        omega = 0.0 # only static magnetic response
+        freq_key = f'{omega:6f}'
+        mag_key = 'mag-' + freq_key
         rsp_calc = write_rsp_calc(0.0, user_dict, mol_dict)
         rsp_calc["perturbation"] = {
             "operator": "h_b_dip",
             "derivative": user_dict["Derivatives"]["h_b_dip"],
             "r_O": mol_dict["gauge_origin"]
         }
-        prop_dict = {}
+        rsp_calc["properties"] = {}
         if run_mag:
-            prop_dict["magnetizability"] = {
-                "operator": "h_b_dip",
+            rsp_calc["properties"]["magnetizability"] = {}
+            rsp_calc["properties"]["magnetizability"][mag_key] = {
+                "frequency": omega,
                 "precision": user_dict["world_prec"],
+                "dia_operator": "h_bb_dia",
+                "para_operator": "h_b_dip",
                 "derivative": user_dict["Derivatives"]["h_b_dip"],
                 "r_O": mol_dict["gauge_origin"]
             }
         if (run_nmr and not nuc_spec):
-            prop_dict["nmr_shielding"] = []
+            rsp_calc["properties"]["nmr_shielding"] = {}
             nuc_vec = user_dict["NMRShielding"]["nucleus_k"]
             all_nucs = (nuc_vec[0] < 0)
             nuclei = mol_dict["coords"]
             for k in range(len(nuclei)):
                 if all_nucs or k in nuc_vec:
-                    prop_dict["nmr_shielding"].append({
-                        "nucleus_k": k,
-                        "operator": "h_m_pso",
+                    atom_key = str(k) + nuclei[k]["atom"]
+                    nmr_key = 'nmr-' + atom_key
+                    rsp_calc["properties"]["nmr_shielding"][nmr_key] = {
                         "precision": user_dict["world_prec"],
+                        "dia_operator": "h_bm_dia",
+                        "para_operator": "h_m_pso",
                         "smoothing": user_dict["world_prec"],
-                        "derivative": user_dict["Derivatives"]["h_b_dip"],
+                        "derivative": user_dict["Derivatives"]["h_m_pso"],
+                        "r_O": mol_dict["gauge_origin"],
                         "r_K": nuclei[k]["xyz"]
-                    })
-        rsp_calc["properties"] = prop_dict
-        rsp_dict.append(rsp_calc)
+                    }
+        rsp_key = "ext_mag-" + freq_key
+        rsp_dict[rsp_key] = rsp_calc
 
     if run_nmr and nuc_spec:
         nuc_vec = user_dict["NMRShielding"]["nucleus_k"]
@@ -598,6 +624,8 @@ def write_rsp_calculations(user_dict, mol_dict):
         nuclei = mol_dict["coords"]
         for k in range(len(nuclei)):
             if (all_nucs) or (k in nuc_vec):
+                atom_key = str(k) + nuclei[k]["atom"]
+                nmr_key = 'nmr-' + atom_key
                 rsp_calc = write_rsp_calc(0.0, user_dict, mol_dict)
                 rsp_calc["perturbation"] = {
                     "operator": "h_m_pso",
@@ -605,17 +633,19 @@ def write_rsp_calculations(user_dict, mol_dict):
                     "derivative": user_dict["Derivatives"]["h_m_pso"],
                     "r_K": nuclei[k]["xyz"]
                 }
-                prop_dict = {}
-                prop_dict["nmr_shielding"] = []
-                prop_dict["nmr_shielding"].append({
-                    "nucleus_k": k,
-                    "operator": "h_b_dip",
+                rsp_calc["properties"] = {}
+                rsp_calc["properties"]["nmr_shielding"] = {}
+                rsp_calc["properties"]["nmr_shielding"][nmr_key] = {
                     "precision": user_dict["world_prec"],
+                    "dia_operator": "h_bm_dia",
+                    "para_operator": "h_b_dip",
+                    "smoothing": user_dict["world_prec"],
                     "derivative": user_dict["Derivatives"]["h_b_dip"],
-                    "r_O": mol_dict["gauge_origin"]
-                })
-                rsp_calc["properties"] = prop_dict
-                rsp_dict.append(rsp_calc)
+                    "r_O": mol_dict["gauge_origin"],
+                    "r_K": nuclei[k]["xyz"]
+                }
+                rsp_key = "nuc_mag-" + atom_key
+                rsp_dict[rsp_key] = rsp_calc
 
     return rsp_dict
 
@@ -631,7 +661,7 @@ def write_rsp_calc(omega, user_dict, mol_dict):
     rsp_calc["dynamic"] = (omega > 1.0e-12)
     rsp_calc["fock_operator"] = write_rsp_fock(user_dict, mol_dict, wf_method, dft_funcs)
     rsp_calc["unperturbed"] = {
-        "prec": user_dict["world_prec"],
+        "precision": user_dict["world_prec"],
         "localize": rsp_dict["localize"],
         "fock_operator": write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs)
     }
@@ -640,8 +670,8 @@ def write_rsp_calc(omega, user_dict, mol_dict):
     for d in [0, 1, 2]:
         rsp_comp = {}
         rsp_comp["initial_guess"] = {
-            "prec": rsp_dict["guess_prec"],
             "type": rsp_dict["guess_type"].lower(),
+            "precision": rsp_dict["guess_prec"],
             "file_chk_x": rsp_dict["path_checkpoint"] + "/X_rsp_" + str(d),
             "file_chk_y": rsp_dict["path_checkpoint"] + "/Y_rsp_" + str(d),
             "file_x_p": file_dict["guess_x_p"] + "_rsp_" + str(d),

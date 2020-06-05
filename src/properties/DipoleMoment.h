@@ -37,13 +37,16 @@ namespace mrchem {
 // clang-format off
 class DipoleMoment final {
 public:
+    DipoleMoment(const mrcpp::Coord<3> &o) : r_O(o) {}
+
+    const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
     DoubleVector getTensor() const { return getNuclear() + getElectronic(); }
     DoubleVector &getNuclear() { return this->nuc_tensor; }
     DoubleVector &getElectronic() { return this->el_tensor; }
     const DoubleVector &getNuclear() const { return this->nuc_tensor; }
     const DoubleVector &getElectronic() const { return this->el_tensor; }
 
-    void print() const {
+    void print(const std::string &id) const {
         auto el_au = getElectronic().norm();
         auto nuc_au = getNuclear().norm();
         auto tot_au = getTensor().norm();
@@ -52,7 +55,9 @@ public:
         auto nuc_db = nuc_au * PHYSCONST::Debye;
         auto tot_db = tot_au * PHYSCONST::Debye;
 
-        mrcpp::print::header(0, "Dipole Moment");
+        mrcpp::print::header(0, "Dipole Moment (" + id + ")");
+        print_utils::coord(0, "r_O", getOrigin());
+        mrcpp::print::separator(0, '-');
         print_utils::vector(0, "Electronic vector", getElectronic());
         print_utils::scalar(0, "Magnitude", el_au, "(au)");
         print_utils::scalar(0, "         ", el_db, "(Debye)");
@@ -69,6 +74,7 @@ public:
 
     nlohmann::json json() const {
         return {
+            {"r_O", getOrigin()},
             {"vector_nuc", math_utils::eigen_to_vector(getNuclear(), 1.0e-12)},
             {"vector_el", math_utils::eigen_to_vector(getElectronic(), 1.0e-12)},
             {"vector", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
@@ -77,6 +83,7 @@ public:
     }
 
 private:
+    mrcpp::Coord<3> r_O;
     DoubleVector nuc_tensor{math_utils::init_nan(3)};
     DoubleVector el_tensor{math_utils::init_nan(3)};
 };

@@ -37,11 +37,10 @@ namespace mrchem {
 // clang-format off
 class NMRShielding final {
 public:
-    NMRShielding(int k, const Nucleus &n) : K(k), nuc(n) {}
+    explicit NMRShielding(const mrcpp::Coord<3> &k, const mrcpp::Coord<3> &o) : r_K(k), r_O(o) {}
 
-    int getK() const { return this->K; }
-    const Nucleus &getNucleus() const { return this->nuc; }
-    std::string getIdentifier() const { return std::to_string(getK()) + this->nuc.getElement().getSymbol(); }
+    const mrcpp::Coord<3> &getCoordK() const { return this->r_K; }
+    const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
 
     DoubleMatrix getTensor() const { return getDiamagnetic() + getParamagnetic(); }
     DoubleMatrix &getDiamagnetic() { return this->dia_tensor; }
@@ -49,7 +48,7 @@ public:
     const DoubleMatrix &getDiamagnetic() const { return this->dia_tensor; }
     const DoubleMatrix &getParamagnetic() const { return this->para_tensor; }
 
-    void print() const {
+    void print(const std::string &id) const {
         auto sigma = getTensor();
         Eigen::SelfAdjointEigenSolver<DoubleMatrix> es;
         es.compute(sigma);
@@ -58,8 +57,9 @@ public:
         auto iso_ppm = diag.sum() / 3.0;
         auto ani_ppm = diag(2) - (diag(0) + diag(1)) / 2.0;
 
-        mrcpp::print::header(0, "NMR shielding");
-        print_utils::scalar(0, "Nucleus K", getK(), getNucleus().getElement().getSymbol(), 0);
+        mrcpp::print::header(0, "NMR shielding (" + id + ")");
+        print_utils::coord(0, "r_O", getOrigin());
+        print_utils::coord(0, "r_K", getCoordK());
         mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Diamagnetic", getDiamagnetic());
         mrcpp::print::separator(0, '-');
@@ -82,8 +82,8 @@ public:
         auto iso_ppm = diag.sum() / 3.0;
         auto ani_ppm = diag(2) - (diag(0) + diag(1)) / 2.0;
         return {
-            {"k", getK()},
-            {"element", getNucleus().getElement().getSymbol()},
+            {"r_K", getCoordK()},
+            {"r_O", getOrigin()},
             {"tensor_dia", math_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
             {"tensor_para", math_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
             {"tensor", math_utils::eigen_to_vector(sigma, 1.0e-12)},
@@ -94,8 +94,8 @@ public:
     }
 
 private:
-    const int K;
-    const Nucleus nuc;
+    mrcpp::Coord<3> r_K;
+    mrcpp::Coord<3> r_O;
     DoubleMatrix dia_tensor{math_utils::init_nan(3,3)};
     DoubleMatrix para_tensor{math_utils::init_nan(3,3)};
 };

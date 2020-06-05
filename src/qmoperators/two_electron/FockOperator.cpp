@@ -128,7 +128,7 @@ void FockOperator::rotate(const ComplexMatrix &U) {
 SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
-    mrcpp::print::header(2, "Calculating molecular energy");
+    mrcpp::print::header(2, "Computing molecular energy");
 
     double E_kin = 0.0;  // Kinetic energy
     double E_nn = 0.0;   // Nuclear repulsion
@@ -151,7 +151,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
     mrcpp::print::footer(2, t_tot, 2);
-    if (plevel == 1) mrcpp::print::time(1, "Calculating molecular energy", t_tot);
+    if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
 
     return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext};
 }
@@ -159,7 +159,7 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
-    mrcpp::print::header(2, "Calculating Fock matrix");
+    mrcpp::print::header(2, "Computing Fock matrix");
 
     auto t = this->getKineticOperator();
     auto v = this->potential();
@@ -171,7 +171,7 @@ ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     if (v.size() > 0) V += v(bra, ket);
 
     mrcpp::print::footer(2, t_tot, 2);
-    if (plevel == 1) mrcpp::print::time(1, "Calculating Fock matrix", t_tot);
+    if (plevel == 1) mrcpp::print::time(1, "Computing Fock matrix", t_tot);
     return T + V;
 }
 

@@ -28,38 +28,45 @@
       "E_nuc": float,                           # Sum of nuclear contributions
       "E_tot": float                            # Sum of all contributions
     },
-    "dipole_moment": {                          # Electric dipole moment
-      "magnitude": float,                       # Magnitude of total vector
-      "vector": array[float],                   # Total dipole vector
-      "vector_el": array[float],                # Electronic dipole vector
-      "vector_nuc": array[float]                # Nuclear dipole vector
+    "dipole_moment": {                          # Collection of electric dipole moments
+      id (string): {                            # Unique identifier, default 'dip-1'
+        "r_O": array[float],                    # Gauge origin vector
+        "vector": array[float],                 # Total dipole vector
+        "vector_el": array[float],              # Electronic dipole vector
+        "vector_nuc": array[float],             # Nuclear dipole vector
+        "magnitude": float                      # Magnitude of total vector
+      }
     },
-    "quadrupole_moment": {                      # Electric quadrupole moment
-      "tensor": array[float],                   # Total quadrupole tensor
-      "tensor_el": array[float],                # Electronic quadrupole tensor
-      "tensor_nuc": array[float]                # Nuclear quadrupole tensor
+    "quadrupole_moment": {                      # Collection of electric quadrupole moments
+      id (string): {                            # Unique identifier, default 'quad-1'
+        "r_O": array[float],                    # Gauge origin vector
+        "tensor": array[float],                 # Total quadrupole tensor
+        "tensor_el": array[float],              # Electronic quadrupole tensor
+        "tensor_nuc": array[float]              # Nuclear quadrupole tensor
+      }
     },
     "polarizability": {                         # Collection of polarizabilities
-      frequency (float): {                      # Frequency as key
+      id (string): {                            # Unique identifier, default 'pol-${frequency}'
         "frequency": float,                     # Perturbation frequency
+        "r_O": array[float],                    # Gauge origin vector
         "tensor": array[float],                 # Full polarizability tensor
-        "isotropic_average": float,             # Diagonal average
-        "anisotropy": float                     # Anisotropy of tensor
+        "isotropic_average": float              # Diagonal average
       }
     },
     "magnetizability": {                        # Collection of magnetizability
-      frequency (float): {                      # Frequency as key
+      id (string): {                            # Unique identifier, default 'mag-${frequency}'
+        "frequency": float,                     # Perturbation frequency
+        "r_O": array[float],                    # Gauge origin vector
         "tensor": array[float],                 # Full magnetizability tensor
         "tensor_dia": array[float],             # Diamagnetic tensor
         "tensor_para": array[float],            # Paramagnetic tensor
-        "isotropic_average": float,             # Diagonal average
-        "anisotropy": float                     # Anisotropy of tensor
+        "isotropic_average": float              # Diagonal average
       }
     },
     "nmr_shielding": {                          # Collection of NMR shielding tensors
-      nuc_id (string): {                        # "(Nuclear index)+(atomic symbol)" as key
-        "k": int,                               # Nuclear index
-        "element": string,                      # Atomic symbol
+      id (string): {                            # Unique identifier, default 'index+symbol'
+        "r_O": array[float],                    # Gauge origin vector
+        "r_K": array[float],                    # Nuclear coordinate vector
         "tensor": array[float],                 # Full NMR shielding tensor
         "tensor_dia": array[float],             # Diamagnetic tensor
         "tensor_para": array[float],            # Paramagnetic tensor
@@ -111,73 +118,26 @@
     }
   },
   "rsp_calculations": {                         # Collection of response calculations
-    "external_electric": {                      # Response from external electric field
-      frequency (float): {                      # Frequency as key
-        "success": bool,                        # Response finished successfully
-        "wall_time": float,                     # Wall time (sec) for response calculation
-        "frequency": float,                     # Frequency of perturbation
-        "perturbation": string,                 # Name of perturbation operator
-        "components": array[                    # Array of operator components
-          {                                     # (one entry per Cartesian direction)
-            "rsp_solver": {                     # Details from response optimization
-              "converged": bool,                # Optimization converged
-              "cycles": array[                  # Array of response cycles
-                {                               # (one entry per cycle)
-                  "symmetric_property": float,  # Property computed from perturbation operator
-                  "property_update": float,     # Current symmetric property update
-                  "mo_residual": float,         # Current orbital residual
-                  "wall_time": float            # Wall time (sec) for response cycle
-                }
-              ]
-            }
+    id (string): {                              # Response identifier, e.g. 'ext_el-${frequency}'
+      "success": bool,                          # Response finished successfully
+      "frequency": float,                       # Frequency of perturbation
+      "perturbation": string,                   # Name of perturbation operator
+      "components": array[                      # Array of operator components
+        {                                       # (one entry per Cartesian direction)
+          "rsp_solver": {                       # Details from response optimization
+            "wall_time": float,                 # Wall time (sec) for response calculation
+            "converged": bool,                  # Optimization converged
+            "cycles": array[                    # Array of response cycles
+              {                                 # (one entry per cycle)
+                "symmetric_property": float,    # Property computed from perturbation operator
+                "property_update": float,       # Current symmetric property update
+                "mo_residual": float,           # Current orbital residual
+                "wall_time": float              # Wall time (sec) for response cycle
+              }
+            ]
           }
-        ]
-      }
-    },
-    "external_magnetic": {                      # Response from external magnetic field
-      frequency (float): {                      # Frequency as key
-        "success": bool,                        # Response finished successfully
-        "wall_time": float,                     # Wall time (sec) for response calculation
-        "frequency": float,                     # Frequency of perturbation
-        "perturbation": string,                 # Name of perturbation operator
-        "components": array[                    # Array of operator components
-          {                                     # (one entry per Cartesian direction)
-            "rsp_solver": {                     # Details from response optimization
-              "converged": bool,                # Optimization converged
-              "cycles": array[                  # Array of response cycles
-                {                               # (one entry per cycle)
-                  "symmetric_property": float,  # Property computed from perturbation operator
-                  "property_update": float,     # Current symmetric property update
-                  "mo_residual": float,         # Current orbital residual
-                  "wall_time": float            # Wall time (sec) for response cycle
-                }
-              ]
-            }
-          }
-        ]
-      }
-    },
-    "nuclear_magnetic": {                       # Response from nuclear magnetic moment
-      nuc_id (string) {                         # "(Nuclear index)+(atomic symbol)" as key
-        "success": bool,                        # Response finished successfully
-        "wall_time": float,                     # Wall time (sec) for response calculation
-        "perturbation": string,                 # Name of perturbation operator
-        "components": array[                    # Array of operator components
-          {                                     # (one entry per Cartesian direction)
-            "rsp_solver": {                     # Details from response optimization
-              "converged": bool,                # Optimization converged
-              "cycles": array[                  # Array of response cycles
-                {                               # (one entry per cycle)
-                  "symmetric_property": float,  # Property computed from perturbation operator
-                  "property_update": float,     # Current symmetric property update
-                  "mo_residual": float,         # Current orbital residual
-                  "wall_time": float            # Wall time (sec) for response cycle
-                }
-              ]
-            }
-          }
-        ]
-      }
+        }
+      ]
     }
   }
 }
