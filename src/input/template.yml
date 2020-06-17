@@ -189,7 +189,7 @@ sections:
         type: str
         default: 'interpolating'
         predicates:
-          - "value[0].lower() in ['i', 'l']"
+          - "value.lower() in ['interpolating', 'legendre']"
         docstring: |
           Polynomial type of multiwavelet basis.
   - name: Derivatives

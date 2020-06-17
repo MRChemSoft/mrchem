@@ -113,10 +113,10 @@ void mrenv::init_mra(const json &json_mra) {
     if (max_depth > mrcpp::MaxDepth) MSG_ABORT("Max depth too large");
 
     // Initialize global MRA
-    if (btype == "i") {
+    if (btype == "interpolating") {
         mrcpp::InterpolatingBasis basis(order);
         MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
-    } else if (btype == "l") {
+    } else if (btype == "legendre") {
         mrcpp::LegendreBasis basis(order);
         MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
     } else {

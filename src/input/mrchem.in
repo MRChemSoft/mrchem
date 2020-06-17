@@ -229,7 +229,7 @@ def write_mra(user_dict, mol_dict):
         max_scale = 30 + min_scale
 
     mra_dict = {
-        "basis_type": user_dict["Basis"]["type"][0].lower(),
+        "basis_type": user_dict["Basis"]["type"].lower(),
         "basis_order": order,
         "boxes": [2, 2, 2],
         "corner": [-1, -1, -1],
