@@ -64,7 +64,7 @@
       }
     },
     "nmr_shielding": {                          # Collection of NMR shielding tensors
-      id (string): {                            # Unique identifier, default 'index+symbol'
+      id (string): {                            # Unique identifier, default 'nmr-${index}+${symbol}'
         "r_O": array[float],                    # Gauge origin vector
         "r_K": array[float],                    # Nuclear coordinate vector
         "tensor": array[float],                 # Full NMR shielding tensor

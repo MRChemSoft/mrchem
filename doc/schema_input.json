@@ -103,36 +103,45 @@
       "energy_thrs":float,                      # Convergence threshold energy
     },
     "properties": {                             # Collection of properties to compute
-      "orbital_energies": {},                   # Compute orbital energies
-      "dipole_moment": {                        # Compute dipole moment
-        "operator": string,                     # Operator used for property
-        "precision": float,                     # Operator precision
-        "r_O": array[float]                     # Operator gauge origin
-      },
-      "quadrupole_moment": {                    # Compute quadrupole moment
-        "operator": string,                     # Operator used for property
-        "precision": float,                     # Operator precision
-        "r_O": array[float]                     # Operator gauge origin
-      },                                          
-      "magnetizability": {                      # Compute (dia) magnetizability
-        "operator": string,                     # Operator used for property
-        "precision": float,                     # Operator precision
-        "r_O": array[float]                     # Operator gauge origin
-      },                                          
-      "nmr_shielding": array[                   # Compute (dia) NMR shielding tensors
-        {                                       # (one entry per nucleus)
-          "nucleus_k": int,                     # Nuclear index
-          "operator": string,                   # Operator used for property
+      "dipole_moment": {                        # Collection of dipole moments
+        id (string): {                          # Unique identifier, default 'dip-1'
           "precision": float,                   # Operator precision
+          "operator": string,                   # Operator used for property
+          "r_O": array[float]                   # Operator gauge origin
+        }
+      },
+      "quadrupole_moment": {                    # Collection of quadrupole moments
+        id (string): {                          # Unique identifier, default 'quad-1'
+          "precision": float,                   # Operator precision
+          "operator": string,                   # Operator used for property
+          "r_O": array[float]                   # Operator gauge origin
+        }
+      },
+      "magnetizability": {                      # Collection of magnetizabilities
+        id (string): {                          # Unique identifier, default 'mag-${frequency}'
+          "frequency": float,                   # Perturbation frequency
+          "precision": float,                   # Operator precision
+          "dia_operator": string,               # Operator used for diamagnetic property
+          "para_operator": string,              # Operator used for paramagnetic property
+          "derivative": string,                 # Operator derivative type
+          "r_O": array[float]                   # Operator gauge origin
+        }
+      },
+      "nmr_shielding": {                        # Collection of NMR shieldings
+        id (string): {                          # Unique identifier, default 'nmr-${index}+${symbol}'
+          "precision": float,                   # Operator precision
+          "dia_operator": string,               # Operator used for diamagnetic property
+          "para_operator": string,              # Operator used for paramagnetic property
+          "derivative": string,                 # Operator derivative type
           "smoothing": float,                   # Operator smoothing parameter
           "r_O": array[float],                  # Operator gauge origin
           "r_K": array[float]                   # Nuclear coordinate
-        }                                         
-      ]                                           
+        }
+      }
     }
   },
-  "rsp_calculations": array[                    # Array of response calculations
-    {                                           # (one per perturbation operator)
+  "rsp_calculations": {                         # Collection of response calculations
+    id (string): {                              # Response identifier, e.g. 'ext_el-${frequency}'
       "dynamic": bool,                          # Use dynamic response solver
       "frequency": float,                       # Perturbation frequency
       "perturbation": {                         # Perturbation operator
@@ -169,26 +178,34 @@
         }
       ],
       "properties": {                           # Collection of properties to compute
-        "polarizability": {                     # Compute polarizability
-          "operator": string,                   # Operator used for property
-          "precision": float,                   # Operator precision
-          "r_O": array[float]                   # Operator gauge origin
-        },                                      
-        "magnetizability": {                    # Compute (dia) magnetizability
-          "operator": string,                   # Operator used for property
-          "precision": float,                   # Operator precision
-          "r_O": array[float]                   # Operator gauge origin
-        },                                      
-        "nmr_shielding": array[                 # Compute (dia) NMR shielding tensors
-          {                                     # (one entry per nucleus)
-            "nucleus_k": int,                   # Nuclear index
-            "operator": string,                 # Operator used for property
+        "polarizability": {                     # Collection of polarizabilities
+           id (string): {                       # Unique identifier, default 'pol-${frequency}'
             "precision": float,                 # Operator precision
+            "operator": string,                 # Operator used for property
+            "r_O": array[float]                 # Operator gauge origin
+          }
+        },
+        "magnetizability": {                    # Collection of magnetizabilities
+          id (string): {                        # Unique identifier, default 'mag-${frequency}'
+            "frequency": float,                 # Perturbation frequency
+            "precision": float,                 # Operator precision
+            "dia_operator": string,             # Operator used for diamagnetic property
+            "para_operator": string,            # Operator used for paramagnetic property
+            "derivative": string,               # Operator derivative type
+            "r_O": array[float]                 # Operator gauge origin
+          }
+        },
+        "nmr_shielding": {                      # Collection of NMR shieldings
+          id (string): {                        # Unique identifier, default 'nmr-${index}+${symbol}'
+            "precision": float,                 # Operator precision
+            "dia_operator": string,             # Operator used for diamagnetic property
+            "para_operator": string,            # Operator used for paramagnetic property
+            "derivative": string,               # Operator derivative type
             "smoothing": float,                 # Operator smoothing parameter
-            "derivative": string,               # Type of derivative operator
+            "r_O": array[float],                # Operator gauge origin
             "r_K": array[float]                 # Nuclear coordinate
-          }                                         
-        ]                                           
+          }
+        }
       },
       "fock_operator": {                        # Contributions to perturbed Fock operator
         "coulomb_operator": {                   # Add Coulomb operator to Fock
@@ -261,5 +278,5 @@
         }
       }
     }
-  ]
+  }
 }
