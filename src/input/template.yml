@@ -328,7 +328,7 @@ sections:
     keywords:
       - name: dipole_moment
         type: bool
-        default: true
+        default: false
         docstring: |
           Compute dipole moment.
       - name: quadrupole_moment
