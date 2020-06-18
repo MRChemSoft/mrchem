@@ -604,6 +604,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     driver::build_fock_operator(unpert_fock, mol, F_0, 0);
     F_0.setup(unpert_prec);
 
+    if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
+
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////
     ///////////////////////////////////////////////////////////

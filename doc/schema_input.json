@@ -11,7 +11,7 @@
     ],
   },
   "mpi": {                                      # Section for MPI specification
-    "bank_size": int,                           # Number of MPI ranks in memory bank 
+    "bank_size": int,                           # Number of MPI ranks in memory bank
     "numerically_exact": bool,                  # Guarantee MPI invariant results
     "shared_memory_size": int                   # Size (MB) of MPI shared memory blocks
   },
@@ -102,40 +102,19 @@
       "orbital_thrs": float,                    # Convergence threshold orbitals
       "energy_thrs":float,                      # Convergence threshold energy
     },
-    "properties": {                             # Collection of properties to compute
+    "properties": {                             # Collection of ground state properties to compute
       "dipole_moment": {                        # Collection of dipole moments
-        id (string): {                          # Unique identifier, default 'dip-1'
+        id (string): {                          # Unique identifier: 'dip-${number}'
           "precision": float,                   # Operator precision
           "operator": string,                   # Operator used for property
           "r_O": array[float]                   # Operator gauge origin
         }
       },
       "quadrupole_moment": {                    # Collection of quadrupole moments
-        id (string): {                          # Unique identifier, default 'quad-1'
+        id (string): {                          # Unique identifier: 'quad-${number}'
           "precision": float,                   # Operator precision
           "operator": string,                   # Operator used for property
           "r_O": array[float]                   # Operator gauge origin
-        }
-      },
-      "magnetizability": {                      # Collection of magnetizabilities
-        id (string): {                          # Unique identifier, default 'mag-${frequency}'
-          "frequency": float,                   # Perturbation frequency
-          "precision": float,                   # Operator precision
-          "dia_operator": string,               # Operator used for diamagnetic property
-          "para_operator": string,              # Operator used for paramagnetic property
-          "derivative": string,                 # Operator derivative type
-          "r_O": array[float]                   # Operator gauge origin
-        }
-      },
-      "nmr_shielding": {                        # Collection of NMR shieldings
-        id (string): {                          # Unique identifier, default 'nmr-${index}+${symbol}'
-          "precision": float,                   # Operator precision
-          "dia_operator": string,               # Operator used for diamagnetic property
-          "para_operator": string,              # Operator used for paramagnetic property
-          "derivative": string,                 # Operator derivative type
-          "smoothing": float,                   # Operator smoothing parameter
-          "r_O": array[float],                  # Operator gauge origin
-          "r_K": array[float]                   # Nuclear coordinate
         }
       }
     }
@@ -177,7 +156,7 @@
           }
         }
       ],
-      "properties": {                           # Collection of properties to compute
+      "properties": {                           # Collection of response properties to compute
         "polarizability": {                     # Collection of polarizabilities
            id (string): {                       # Unique identifier, default 'pol-${frequency}'
             "precision": float,                 # Operator precision
@@ -185,25 +164,25 @@
             "r_O": array[float]                 # Operator gauge origin
           }
         },
-        "magnetizability": {                    # Collection of magnetizabilities
-          id (string): {                        # Unique identifier, default 'mag-${frequency}'
-            "frequency": float,                 # Perturbation frequency
-            "precision": float,                 # Operator precision
-            "dia_operator": string,             # Operator used for diamagnetic property
-            "para_operator": string,            # Operator used for paramagnetic property
-            "derivative": string,               # Operator derivative type
-            "r_O": array[float]                 # Operator gauge origin
+        "magnetizability": {                      # Collection of magnetizabilities
+          id (string): {                          # Unique identifier: 'mag-${frequency}'
+            "frequency": float,                   # Perturbation frequency
+            "precision": float,                   # Operator precision
+            "dia_operator": string,               # Operator used for diamagnetic property
+            "para_operator": string,              # Operator used for paramagnetic property
+            "derivative": string,                 # Operator derivative type
+            "r_O": array[float]                   # Operator gauge origin
           }
         },
-        "nmr_shielding": {                      # Collection of NMR shieldings
-          id (string): {                        # Unique identifier, default 'nmr-${index}+${symbol}'
-            "precision": float,                 # Operator precision
-            "dia_operator": string,             # Operator used for diamagnetic property
-            "para_operator": string,            # Operator used for paramagnetic property
-            "derivative": string,               # Operator derivative type
-            "smoothing": float,                 # Operator smoothing parameter
-            "r_O": array[float],                # Operator gauge origin
-            "r_K": array[float]                 # Nuclear coordinate
+        "nmr_shielding": {                        # Collection of NMR shieldings
+          id (string): {                          # Unique identifier: 'nmr-${nuc_idx}${atomic_symbol}'
+            "precision": float,                   # Operator precision
+            "dia_operator": string,               # Operator used for diamagnetic property
+            "para_operator": string,              # Operator used for paramagnetic property
+            "derivative": string,                 # Operator derivative type
+            "smoothing": float,                   # Operator smoothing parameter
+            "r_O": array[float],                  # Operator gauge origin
+            "r_K": array[float]                   # Nuclear coordinate
           }
         }
       },
