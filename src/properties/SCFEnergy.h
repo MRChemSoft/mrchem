@@ -64,14 +64,14 @@ public:
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
 
-    void print() const {
+    void print(const std::string &id) const {
         auto E_au = E_nuc + E_el;
         auto E_eV = E_au * PHYSCONST::eV;
         auto E_kJ = E_au * PHYSCONST::kJ;
         auto E_kcal = E_au * PHYSCONST::kcal;
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
-        mrcpp::print::header(0, "Molecular Energy");
+        mrcpp::print::header(0, "Molecular Energy (" + id + ")");
         print_utils::scalar(0, "Kinetic energy   ", E_kin,  "(au)", pprec, false);
         print_utils::scalar(0, "E-N energy       ", E_en,   "(au)", pprec, false);
         print_utils::scalar(0, "Coulomb energy   ", E_ee,   "(au)", pprec, false);

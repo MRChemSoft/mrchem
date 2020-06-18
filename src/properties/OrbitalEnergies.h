@@ -49,7 +49,7 @@ public:
     const IntVector &getOccupation() const { return this->occupation; }
     const DoubleVector &getEpsilon() const { return this->epsilon; }
 
-    void print() const {
+    void print(const std::string &id) const {
         auto pprec = 2 * mrcpp::Printer::getPrecision();
         auto w0 = mrcpp::Printer::getWidth() - 1;
         auto w1 = 5;
@@ -63,7 +63,7 @@ public:
         o_head << std::string(w3 - 1, ' ') << ':';
         o_head << std::setw(3 * w2) << "Epsilon";
 
-        mrcpp::print::header(0, "Orbital Energies");
+        mrcpp::print::header(0, "Orbital Energies (" + id + ")");
         println(0, o_head.str());
         mrcpp::print::separator(0, '-');
 

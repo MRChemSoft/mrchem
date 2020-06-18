@@ -373,9 +373,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockOperat
     eps.getSpin() = orbital::get_spins(Phi);
     mrcpp::print::footer(1, t_eps, 2);
 
-    mol.getSCFEnergy().print();
-    mol.getOrbitalEnergies().print();
-
+    mol.printEnergies("initial");
     return true;
 }
 
@@ -1003,6 +1001,7 @@ DerivativeOperator_p driver::get_derivative(const std::string &name) {
 json driver::print_properties(const Molecule &mol) {
     print_utils::headline(0, "Printing Molecular Properties");
     mol.printGeometry();
+    mol.printEnergies("final");
     mol.printProperties();
     return mol.json();
 }

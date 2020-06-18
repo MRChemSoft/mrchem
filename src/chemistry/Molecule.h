@@ -101,17 +101,18 @@ public:
 
     nlohmann::json json() const;
     void printGeometry() const;
+    void printEnergies(const std::string &txt) const;
     void printProperties() const;
 
     void initPerturbedOrbitals(bool dynamic);
 
-    SCFEnergy &getSCFEnergy();
-    OrbitalEnergies &getOrbitalEnergies();
-    DipoleMoment &getDipoleMoment(const std::string &id);
-    QuadrupoleMoment &getQuadrupoleMoment(const std::string &id);
-    Polarizability &getPolarizability(const std::string &id);
-    Magnetizability &getMagnetizability(const std::string &id);
-    NMRShielding &getNMRShielding(const std::string &id);
+    auto &getSCFEnergy() { return this->energy; }
+    auto &getOrbitalEnergies() { return this->epsilon; }
+    auto &getDipoleMoment(const std::string &id) { return this->dipole.at(id); }
+    auto &getQuadrupoleMoment(const std::string &id) { return this->quadrupole.at(id); }
+    auto &getPolarizability(const std::string &id) { return this->polarizability.at(id); }
+    auto &getMagnetizability(const std::string &id) { return this->magnetizability.at(id); }
+    auto &getNMRShielding(const std::string &id) { return this->nmr_shielding.at(id); }
 
     auto &getDipoleMoments() { return this->dipole; }
     auto &getQuadrupoleMoments() { return this->quadrupole; }
@@ -131,8 +132,8 @@ protected:
     std::shared_ptr<OrbitalVector> orbitals_y{nullptr};
 
     // Properties
-    std::unique_ptr<SCFEnergy> energy{nullptr};
-    std::unique_ptr<OrbitalEnergies> epsilon{nullptr};
+    SCFEnergy energy{};
+    OrbitalEnergies epsilon{};
     std::map<std::string, DipoleMoment> dipole{};
     std::map<std::string, QuadrupoleMoment> quadrupole{};
     std::map<std::string, Polarizability> polarizability{};

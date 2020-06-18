@@ -82,43 +82,6 @@ void Molecule::initPerturbedOrbitals(bool dynamic) {
     }
 }
 
-DipoleMoment &Molecule::getDipoleMoment(const std::string &id) {
-    if (not this->dipole.count(id)) MSG_ERROR("Property not initialized");
-    return this->dipole.at(id);
-}
-
-QuadrupoleMoment &Molecule::getQuadrupoleMoment(const std::string &id) {
-    if (not this->quadrupole.count(id)) MSG_ERROR("Property not initialized");
-    return this->quadrupole.at(id);
-}
-
-Polarizability &Molecule::getPolarizability(const std::string &id) {
-    if (not this->polarizability.count(id)) MSG_ERROR("Property not initialized");
-    return this->polarizability.at(id);
-}
-
-Magnetizability &Molecule::getMagnetizability(const std::string &id) {
-    if (not this->magnetizability.count(id)) MSG_ERROR("Property not initialized");
-    return this->magnetizability.at(id);
-}
-
-NMRShielding &Molecule::getNMRShielding(const std::string &id) {
-    if (not this->nmr_shielding.count(id)) MSG_ERROR("Property not initialized");
-    return this->nmr_shielding.at(id);
-}
-
-/** @brief Return property SCFEnergy */
-SCFEnergy &Molecule::getSCFEnergy() {
-    if (energy == nullptr) energy = std::make_unique<SCFEnergy>();
-    return *energy;
-}
-
-/** @brief Return property OrbitalEnergies */
-OrbitalEnergies &Molecule::getOrbitalEnergies() {
-    if (epsilon == nullptr) epsilon = std::make_unique<OrbitalEnergies>();
-    return *epsilon;
-}
-
 /** @brief Return number of electrons */
 int Molecule::getNElectrons() const {
     auto totZ = 0;
@@ -245,13 +208,18 @@ void Molecule::printGeometry() const {
     mrcpp::print::separator(0, '=', 2);
 }
 
+void Molecule::printEnergies(const std::string &txt) const {
+    energy.print(txt);
+    epsilon.print(txt);
+}
+
 /** @brief Pretty output of molecular properties
  *
  * Only properties that have been initialized will be printed.
  */
 void Molecule::printProperties() const {
-    if (energy != nullptr) energy->print();
-    if (epsilon != nullptr) epsilon->print();
+    // For each std::map entry (first = id string, second = property)
+    // this will print the property with its id appearing in the header
     for (const auto &dip : dipole) dip.second.print(dip.first);
     for (const auto &qua : quadrupole) qua.second.print(qua.first);
     for (const auto &pol : polarizability) pol.second.print(pol.first);
@@ -273,8 +241,8 @@ nlohmann::json Molecule::json() const {
     json_out["multiplicity"] = getMultiplicity();
     json_out["center_of_mass"] = calcCenterOfMass();
 
-    if (energy != nullptr) json_out["scf_energy"] = energy->json();
-    if (epsilon != nullptr) json_out["orbital_energies"] = epsilon->json();
+    json_out["scf_energy"] = energy.json();
+    json_out["orbital_energies"] = epsilon.json();
     if (not dipole.empty()) json_out["dipole_moment"] = {};
     if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
     if (not polarizability.empty()) json_out["polarizability"] = {};
