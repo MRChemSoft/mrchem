@@ -470,7 +470,7 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
     }
 
     if (json_prop.contains("hyperpolarizability")) MSG_ERROR("Hyperpolarizability not implemented");
-    if (json_prop.contains("geometry_derivative")) MSG_ERROR("Geometry derivative not implemented");
+    if (json_prop.contains("geometric_derivative")) MSG_ERROR("Geometric derivative not implemented");
     if (json_prop.contains("hyperfine_coupling")) MSG_ERROR("Hyperfine coupling not implemented");
     if (json_prop.contains("spin_spin_coupling")) MSG_ERROR("Spin-spin coupling not implemented");
 
