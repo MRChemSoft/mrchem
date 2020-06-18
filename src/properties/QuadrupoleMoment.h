@@ -35,9 +35,11 @@ namespace mrchem {
 // clang-format off
 class QuadrupoleMoment final {
 public:
-    QuadrupoleMoment(const mrcpp::Coord<3> &o) : r_O(o) {}
+    explicit QuadrupoleMoment(const mrcpp::Coord<3> &o = {}) : r_O(o) {}
 
+    void setOrigin(const mrcpp::Coord<3> &o) { this->r_O = o; }
     const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
+
     DoubleMatrix getTensor() const { return getNuclear() + getElectronic(); }
     DoubleMatrix &getNuclear() { return this->nuc_tensor; }
     DoubleMatrix &getElectronic() { return this->el_tensor; }

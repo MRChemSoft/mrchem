@@ -37,9 +37,11 @@ namespace mrchem {
 // clang-format off
 class DipoleMoment final {
 public:
-    DipoleMoment(const mrcpp::Coord<3> &o) : r_O(o) {}
+    explicit DipoleMoment(const mrcpp::Coord<3> &o = {}) : r_O(o) {}
 
+    void setOrigin(const mrcpp::Coord<3> &o) { this->r_O = o; }
     const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
+
     DoubleVector getTensor() const { return getNuclear() + getElectronic(); }
     DoubleVector &getNuclear() { return this->nuc_tensor; }
     DoubleVector &getElectronic() { return this->el_tensor; }

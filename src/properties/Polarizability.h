@@ -37,7 +37,10 @@ namespace mrchem {
 // clang-format off
 class Polarizability final {
 public:
-    explicit Polarizability(double omega, const mrcpp::Coord<3> &o) : frequency(omega), r_O(o) {}
+    explicit Polarizability(double omega = 0.0, const mrcpp::Coord<3> &o = {}) : frequency(omega), r_O(o) {}
+
+    void setFrequency(double omega) { this->frequency = omega; }
+    void setOrigin(const mrcpp::Coord<3> &o) { this->r_O = o; }
 
     double getFrequency() const { return this->frequency; }
     const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }

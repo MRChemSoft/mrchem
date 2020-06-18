@@ -41,10 +41,10 @@ namespace mrchem {
 // clang-format off
 class SCFEnergy final {
 public:
-    SCFEnergy() = default;
-    SCFEnergy(double kin, double nn, double en,
-              double ee, double x, double xc,
-              double next, double eext) :
+    explicit SCFEnergy(double kin = 0.0, double nn = 0.0,
+                       double en = 0.0, double ee = 0.0,
+                       double x = 0.0, double xc = 0.0,
+                       double next = 0.0, double eext = 0.0) :
         E_kin(kin), E_nn(nn), E_en(en), E_ee(ee),
         E_x(x), E_xc(xc), E_next(next), E_eext(eext) {
             E_nuc = E_nn + E_next;

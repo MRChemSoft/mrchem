@@ -37,7 +37,10 @@ namespace mrchem {
 // clang-format off
 class NMRShielding final {
 public:
-    explicit NMRShielding(const mrcpp::Coord<3> &k, const mrcpp::Coord<3> &o) : r_K(k), r_O(o) {}
+    explicit NMRShielding(const mrcpp::Coord<3> &k = {}, const mrcpp::Coord<3> &o = {}) : r_K(k), r_O(o) {}
+
+    void setCoordK(const mrcpp::Coord<3> &k) { this->r_K = k; }
+    void setOrigin(const mrcpp::Coord<3> &o) { this->r_O = o; }
 
     const mrcpp::Coord<3> &getCoordK() const { return this->r_K; }
     const mrcpp::Coord<3> &getOrigin() const { return this->r_O; }
