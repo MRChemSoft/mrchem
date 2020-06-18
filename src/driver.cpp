@@ -195,7 +195,7 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
  * This function expects the "scf_calculation" subsection of the input.
  */
 json driver::scf::run(const json &json_scf, Molecule &mol) {
-    print_utils::headline(0, "Computing ground state wavefunction");
+    print_utils::headline(0, "Computing Ground State Wavefunction");
     json json_out = {{"success", true}};
 
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
@@ -577,7 +577,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
  * vector of the input.
  */
 json driver::rsp::run(const json &json_rsp, Molecule &mol) {
-    print_utils::headline(0, "Computing linear response wavefunction");
+    print_utils::headline(0, "Computing Linear Response Wavefunction");
     json json_out = {{"success", true}};
 
     if (json_rsp.contains("properties")) driver::init_properties(json_rsp["properties"], mol);
@@ -585,6 +585,10 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     /////////////   Preparing Unperturbed System   ////////////
     ///////////////////////////////////////////////////////////
+
+    Timer t_unpert;
+    auto plevel = Printer::getPrintLevel();
+    if (plevel == 1) mrcpp::print::header(1, "Preparing unperturbed system");
 
     const auto &json_unpert = json_rsp["unperturbed"];
     const auto &unpert_fock = json_unpert["fock_operator"];
@@ -603,6 +607,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     FockOperator F_0;
     driver::build_fock_operator(unpert_fock, mol, F_0, 0);
     F_0.setup(unpert_prec);
+    if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
     if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
 
