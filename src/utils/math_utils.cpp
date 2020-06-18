@@ -32,28 +32,6 @@
 namespace mrchem {
 namespace math_utils {
 
-std::vector<double> eigen_to_vector(const DoubleVector &inp, double thrs) {
-    std::vector<double> out;
-    for (int i = 0; i < inp.size(); i++) {
-        auto out_i = inp(i);
-        if (std::abs(out_i) < thrs) out_i = 0.0;
-        out.push_back(out_i);
-    }
-    return out;
-}
-
-std::vector<double> eigen_to_vector(const DoubleMatrix &inp, double thrs) {
-    std::vector<double> out;
-    for (int i = 0; i < inp.rows(); i++) {
-        for (int j = 0; j < inp.cols(); j++) {
-            auto out_ij = inp(i, j);
-            if (std::abs(out_ij) < thrs) out_ij = 0.0;
-            out.push_back(out_ij);
-        }
-    }
-    return out;
-}
-
 DoubleVector init_nan(int I) {
     DoubleVector V(I);
     for (int i = 0; i < I; i++) V(i) = std::numeric_limits<double>::quiet_NaN();

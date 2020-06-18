@@ -77,9 +77,9 @@ public:
     nlohmann::json json() const {
         return {
             {"r_O", getOrigin()},
-            {"vector_nuc", math_utils::eigen_to_vector(getNuclear(), 1.0e-12)},
-            {"vector_el", math_utils::eigen_to_vector(getElectronic(), 1.0e-12)},
-            {"vector", math_utils::eigen_to_vector(getTensor(), 1.0e-12)},
+            {"vector_nuc", print_utils::eigen_to_vector(getNuclear(), 1.0e-12)},
+            {"vector_el", print_utils::eigen_to_vector(getElectronic(), 1.0e-12)},
+            {"vector", print_utils::eigen_to_vector(getTensor(), 1.0e-12)},
             {"magnitude", getTensor().norm() }
         };
     }

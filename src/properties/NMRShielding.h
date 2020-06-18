@@ -87,10 +87,10 @@ public:
         return {
             {"r_K", getCoordK()},
             {"r_O", getOrigin()},
-            {"tensor_dia", math_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
-            {"tensor_para", math_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
-            {"tensor", math_utils::eigen_to_vector(sigma, 1.0e-12)},
-            {"diagonalized_tensor", math_utils::eigen_to_vector(diag, 1.0e-12)},
+            {"tensor_dia", print_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
+            {"tensor_para", print_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
+            {"tensor", print_utils::eigen_to_vector(sigma, 1.0e-12)},
+            {"diagonalized_tensor", print_utils::eigen_to_vector(diag, 1.0e-12)},
             {"isotropic_average", iso_ppm},
             {"anisotropy", ani_ppm}
         };

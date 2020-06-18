@@ -38,6 +38,28 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
+std::vector<double> print_utils::eigen_to_vector(const DoubleVector &inp, double thrs) {
+    std::vector<double> out;
+    for (int i = 0; i < inp.size(); i++) {
+        auto out_i = inp(i);
+        if (std::abs(out_i) < thrs) out_i = 0.0;
+        out.push_back(out_i);
+    }
+    return out;
+}
+
+std::vector<double> print_utils::eigen_to_vector(const DoubleMatrix &inp, double thrs) {
+    std::vector<double> out;
+    for (int i = 0; i < inp.rows(); i++) {
+        for (int j = 0; j < inp.cols(); j++) {
+            auto out_ij = inp(i, j);
+            if (std::abs(out_ij) < thrs) out_ij = 0.0;
+            out.push_back(out_ij);
+        }
+    }
+    return out;
+}
+
 std::string print_utils::dbl_to_str(double d, int p, bool sci) {
     std::stringstream o_dbl;
     if (sci) {

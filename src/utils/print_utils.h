@@ -39,6 +39,8 @@ void vector(int level, const std::string &txt, const DoubleVector &val, int p = 
 void matrix(int level, const std::string &txt, const DoubleMatrix &val, int p = -1, bool s = false);
 void qmfunction(int level, const std::string &txt, const QMFunction &func, mrcpp::Timer &t);
 std::string dbl_to_str(double d, int p, bool sci);
+std::vector<double> eigen_to_vector(const DoubleVector &inp, double thrs);
+std::vector<double> eigen_to_vector(const DoubleMatrix &inpm, double thrs);
 
 } // namespace print_utils
 } // namespace mrchem
