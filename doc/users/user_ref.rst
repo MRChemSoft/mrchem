@@ -16,14 +16,14 @@ User input reference
 - Predicates, if present, are the functions run to validate user input.
 
 :red:`Keywords`
- :world_prec: Overall relative precision in the calculation. 
+ :world_prec: Overall relative precision in the calculation.
 
   **Type** ``float``
 
   **Predicates**
     - ``1.0e-10 < value < 1.0``
 
- :world_size: Total size of computational domain given as 2**(world_size). Always cubic and symmetric around the origin. Negative value means it will be computed from the molecular geometry. 
+ :world_size: Total size of computational domain given as 2**(``world_size``). Always cubic and symmetric around the origin. Negative value means it will be computed from the molecular geometry.
 
   **Type** ``int``
 
@@ -33,407 +33,730 @@ User input reference
     - ``value <= 10``
 
 :red:`Sections`
- :Plotter: Cube plots of converged orbitals and densities. 
+ :Plotter: Cube plots of converged orbitals and densities.
 
   :red:`Keywords`
-   :points: Number of points in each direction on the cube grid. 
-  
+   :path_plots: File path to plot directory.
+
+    **Type** ``str``
+
+    **Default** ``plots``
+
+    **Predicates**
+      - ``value[-1] != '/'``
+
+   :points: Number of points in each direction on the cube grid.
+
     **Type** ``List[int]``
-  
+
     **Default** ``[20, 20, 20]``
-  
+
     **Predicates**
       - ``value[0] > 0``
       - ``value[1] > 0``
       - ``value[2] > 0``
-  
-   :O: Origin of cube plot. 
-  
+
+   :O: Origin of cube plot.
+
     **Type** ``List[float]``
-  
+
     **Default** ``[0.0, 0.0, 0.0]``
-  
-   :A: First boundary vector for plot. 
-  
+
+   :A: First boundary vector for plot.
+
     **Type** ``List[float]``
-  
+
     **Default** ``[1.0, 0.0, 0.0]``
-  
-   :B: Second boundary vector for plot. 
-  
+
+   :B: Second boundary vector for plot.
+
     **Type** ``List[float]``
-  
+
     **Default** ``[0.0, 1.0, 0.0]``
-  
-   :C: Third boundary vector for plot. 
-  
+
+   :C: Third boundary vector for plot.
+
     **Type** ``List[float]``
-  
+
     **Default** ``[0.0, 0.0, 1.0]``
-  
- :Precisions: Define specific precision parameters. 
+
+ :Precisions: Define specific precision parameters.
 
   :red:`Keywords`
-   :nuc_prec: Precision parameter used in smoothing and projection of nuclear potential. 
-  
+   :nuc_prec: Precision parameter used in smoothing and projection of nuclear potential.
+
     **Type** ``float``
-  
+
     **Default** ``user['world_prec']``
-  
+
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-  
-   :poisson_prec: Precision parameter used in construction of Poisson operators. 
-  
+
+   :dft_prec: Precision parameter used in DFT grid.
+
     **Type** ``float``
-  
+
     **Default** ``user['world_prec']``
-  
+
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-  
-   :helmholtz_prec: Precision parameter used in construction of Helmholtz operators. Negative value means it will follow the dynamic precision in SCF. 
-  
+
+   :poisson_prec: Precision parameter used in construction of Poisson operators.
+
     **Type** ``float``
-  
+
     **Default** ``user['world_prec']``
-  
- :Printer: Define variables for printed output. 
+
+    **Predicates**
+      - ``1.0e-10 < value < 1.0``
+
+   :helmholtz_prec: Precision parameter used in construction of Helmholtz operators. Negative value means it will follow the dynamic precision in SCF.
+
+    **Type** ``float``
+
+    **Default** ``user['world_prec']``
+
+   :orth_prec: Precision parameter used in the response density projection operator (1 - rho_0).
+
+    **Type** ``float``
+
+    **Default** ``1e-14``
+
+ :Printer: Define variables for printed output.
 
   :red:`Keywords`
-   :print_level: Level of detail in the written output. Level 0 for production calculations. 
-  
+   :print_level: Level of detail in the written output. Level 0 for production calculations, negative level for complete silence.
+
     **Type** ``int``
-  
+
     **Default** ``0``
-  
-    **Predicates**
-      - ``value >= 0``
-  
-   :print_input: Print the user input file at the start of the calculation. 
-  
+
+   :print_input: Print the user input file at the start of the calculation.
+
     **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :print_mpi: Write separate output from each MPI to file called <file_name>-<mpi-rank>.out. 
-  
+
+   :print_mpi: Write separate output from each MPI to file called ``<file_name>-<mpi-rank>.out``.
+
     **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :file_name: Name of output file in MPI print. 
-  
+
+   :file_name: Name of output file in MPI print.
+
     **Type** ``str``
-  
+
     **Default** ``mrchem``
-  
-   :print_prec: Number of digits in property output (energy with factor two). 
-  
+
+   :print_prec: Number of digits in property output (energy with factor two).
+
     **Type** ``int``
-  
+
     **Default** ``6``
-  
+
     **Predicates**
       - ``0 < value < 10``
-  
-   :print_width: Line width of printed output (in number of characters). 
-  
+
+   :print_width: Line width of printed output (in number of characters).
+
     **Type** ``int``
-  
+
     **Default** ``70``
-  
+
     **Predicates**
       - ``50 < value < 100``
-  
- :MPI: Define MPI related parameters. 
+
+ :MPI: Define MPI related parameters.
 
   :red:`Keywords`
-   :numerically_exact: This will use MPI algorithms that guarantees that the output is invariant wrt the number of MPI processes. 
-  
+   :numerically_exact: This will use MPI algorithms that guarantees that the output is invariant wrt the number of MPI processes.
+
     **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :shared_memory_size: Size (MB) of the MPI shared memory blocks of each shared function. 
-  
+
+   :shared_memory_size: Size (MB) of the MPI shared memory blocks of each shared function.
+
     **Type** ``int``
-  
+
     **Default** ``10000``
-  
-   :share_nuclear_potential: This will use MPI shared memory for the nuclear potential. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
-   :share_coulomb_potential: This will use MPI shared memory for the Coulomb potential. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
- :Basis: Define polynomial basis. 
 
-  :red:`Keywords`
-   :order: Polynomial order of multiwavelet basis. Negative value means it will be set automatically based on the world precision. 
-  
+   :share_nuclear_potential: This will use MPI shared memory for the nuclear potential.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :share_coulomb_density: This will use MPI shared memory for the Coulomb density.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :share_coulomb_potential: This will use MPI shared memory for the Coulomb potential.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :share_xc_density: This will use MPI shared memory for the exchange-correlation density.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :share_xc_potential: This will use MPI shared memory for the exchange-correlation potential.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :bank_size: Number of MPI processes exclusively dedicated to manage orbital bank.
+
     **Type** ``int``
-  
+
     **Default** ``-1``
-  
-   :type: Polynomial type of multiwavelet basis. 
-  
+
+ :Basis: Define polynomial basis.
+
+  :red:`Keywords`
+   :order: Polynomial order of multiwavelet basis. Negative value means it will be set automatically based on the world precision.
+
+    **Type** ``int``
+
+    **Default** ``-1``
+
+   :type: Polynomial type of multiwavelet basis.
+
     **Type** ``str``
-  
+
     **Default** ``interpolating``
-  
+
     **Predicates**
-      - ``value[0].lower() in ['i', 'l']``
-  
- :Derivatives: Define various derivative operators used in the code. 
+      - ``value.lower() in ['interpolating', 'legendre']``
+
+ :Derivatives: Define various derivative operators used in the code.
 
   :red:`Keywords`
-   :kinetic: Derivative used in kinetic operator. 
-  
+   :kinetic: Derivative used in kinetic operator.
+
     **Type** ``str``
-  
+
     **Default** ``abgv_55``
-  
- :Molecule: Define molecule. 
+
+   :h_b_dip: Derivative used in magnetic dipole operator.
+
+    **Type** ``str``
+
+    **Default** ``abgv_00``
+
+   :h_m_pso: Derivative used in paramagnetic spin-orbit operator.
+
+    **Type** ``str``
+
+    **Default** ``abgv_00``
+
+   :dft: Derivative used in exchange-correlation operator.
+
+    **Type** ``str``
+
+    **Default** ``abgv_00``
+
+ :Molecule: Define molecule.
 
   :red:`Keywords`
-   :charge: Total charge of molecule.  
-  
+   :charge: Total charge of molecule.
+
     **Type** ``int``
-  
+
     **Default** ``0``
-  
-   :multiplicity: Spin multiplicity of molecule.  
-  
+
+   :multiplicity: Spin multiplicity of molecule.
+
     **Type** ``int``
-  
+
     **Default** ``1``
-  
-   :angstrom: Coordinates given in angstrom rather than bohr. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
-   :translate: Translate center of mass to origin. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
-   :coords: Coordinates in xyz format. 
-  
-    **Type** ``str``
-  
- :WaveFunction: Define the wavefunction method. 
 
-  :red:`Keywords`
-   :method: Wavefunction method. See predicates for valid methods. 'hf', 'hartreefock' and 'hartree-fock' all mean the same thing, while 'lda' is an alias for 'svwn5'. You can set a non-standard DFT functional (e.g. varying the amount of exact exchange) by choosing 'dft' and specifing the functional(s) in the 'DFT' section below.  
-  
-    **Type** ``str``
-  
-   :restricted: Use spin restricted wavefunction. 
-  
-    **Type** ``bool``
-  
-    **Default** ``True``
-  
-    **Predicates**
-      - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock', 'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86', 'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
-  
- :DFT: Define the exchange-correlation functional in case of DFT. 
+   :angstrom: Coordinates given in angstrom rather than bohr.
 
-  :red:`Keywords`
-   :spin: Use spin separated density functionals. 
-  
     **Type** ``bool``
-  
-    **Default** ``not(user['WaveFunction']['restricted'])``
-  
-   :use_gamma: Express functional derivative through the gradient invariant gamma. 
-  
-    **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :density_cutoff: Hard cutoff for passing density values to XCFun. 
-  
-    **Type** ``float``
-  
-    **Default** ``0.0``
-  
-   :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 'EXX 0.25', 'PBEX 0.75', 'PBEC 1.0'. See xcfun documentation for valid functionals.  
-  
-    **Type** ``str``
-  
-    **Default** `` ``
-  
- :Properties: Provide a list of properties to compute. 
 
-  :red:`Keywords`
-   :scf_energy: Compute SCF energy. 
-  
+   :translate: Translate center of mass to gauge origin.
+
     **Type** ``bool``
-  
-    **Default** ``True``
-  
-   :dipole_moment: Compute dipole moment. 
-  
-    **Type** ``bool``
-  
+
     **Default** ``False``
-  
- :ExternalFields: Define external electromagnetic fields. 
 
-  :red:`Keywords`
-   :electric_field: Strength of external electric field. 
-  
+   :gauge_origin: Gauge origin used in property calculations.
+
     **Type** ``List[float]``
-  
+
+    **Default** ``[0.0, 0.0, 0.0]``
+
+   :coords: Coordinates in xyz format.
+
+    **Type** ``str``
+
+ :WaveFunction: Define the wavefunction method.
+
+  :red:`Keywords`
+   :method: Wavefunction method. See predicates for valid methods. ``hf``, ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda`` is an alias for ``svwn5``. You can set a non-standard DFT functional (e.g. varying the amount of exact exchange) by choosing ``dft`` and specifing the functional(s) in the ``DFT`` section below.
+
+    **Type** ``str``
+
+    **Predicates**
+      - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock',``
+        ``'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86',``
+        ``'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
+
+   :restricted: Use spin restricted wavefunction.
+
+    **Type** ``bool``
+
+    **Default** ``True``
+
+ :DFT: Define the exchange-correlation functional in case of DFT.
+
+  :red:`Keywords`
+   :spin: Use spin separated density functionals.
+
+    **Type** ``bool``
+
+    **Default** ``not(user['WaveFunction']['restricted'])``
+
+   :use_gamma: Express functional derivative through the gradient invariant gamma.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :log_grad: Compute density gradient from log(rho).
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :density_cutoff: Hard cutoff for passing density values to XCFun.
+
+    **Type** ``float``
+
+    **Default** ``0.0``
+
+   :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``. See xcfun documentation for valid functionals.
+
+    **Type** ``str``
+
+    **Default** `` ``
+
+ :Properties: Provide a list of properties to compute (total SCF energy and orbital energies are always computed).
+
+  :red:`Keywords`
+   :dipole_moment: Compute dipole moment.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :quadrupole_moment: Compute quadrupole moment.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :geometry_derivative: Compute geometric derivative.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :polarizability: Compute polarizability tensor.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :hyperpolarizability: Compute hyperpolarizability tensor.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :optical_rotation: Compute optical rotation tensor.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :magnetizability: Compute magnetizability tensor.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :nmr_shielding: Compute NMR shielding tensor.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :spin_spin_coupling: Compute spin-spin coupling tensors.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :hyperfine_coupling: Compute hyperfine coupling tensors.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+ :ExternalFields: Define external electromagnetic fields.
+
+  :red:`Keywords`
+   :electric_field: Strength of external electric field.
+
+    **Type** ``List[float]``
+
     **Default** ``[]``
-  
+
     **Predicates**
       - ``len(value) == 0 or len(value) == 3``
-  
- :SCF: Includes parameters related to the ground state SCF orbital optimization (algorithm using explicit calculation of kinetic energy matrix). 
+
+ :Polarizability: Give details regarding the polarizability calculation.
 
   :red:`Keywords`
-   :run: Run SCF solver. Otherwise properties are computed on the initial orbitals. 
-  
+   :velocity: Use velocity gauge in calculation of polarizability tensor.
+
     **Type** ``bool``
-  
-    **Default** ``True``
-  
-   :max_iter: Maximum number of SCF iterations. 
-  
-    **Type** ``int``
-  
-    **Default** ``-1``
-  
-   :kain: Length of KAIN iterative history. 
-  
-    **Type** ``int``
-  
-    **Default** ``0``
-  
-   :rotation: Number of iterations between each diagonalization/localization. 
-  
-    **Type** ``int``
-  
-    **Default** ``0``
-  
-   :localize: Use canonical or localized orbitals. 
-  
-    **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :orbital_thrs: Convergence threshold for orbtial residuals. 
-  
+
+   :frequency: List of external field frequencies.
+
+    **Type** ``List[float]``
+
+    **Default** ``[0.0]``
+
+   :wavelength: List of external field wavelengths.
+
+    **Type** ``List[float]``
+
+    **Default** ``[]``
+
+ :NMRShielding: Give details regarding the NMR shileding calculation.
+
+  :red:`Keywords`
+   :nuclear_specific: Use nuclear specific perturbation operator (h_m_pso).
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :nucleus_k: List of nuclei to compute. Negative value computes all.
+
+    **Type** ``List[int]``
+
+    **Default** ``[-1]``
+
+ :Files: Defines file paths used for program input/output.
+
+  :red:`Keywords`
+   :guess_basis: File name for GTO basis set, used with ``gto`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/mrchem.bas``
+
+   :guess_gto_p: File name for paired orbitals, used with ``gto`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/mrchem.mop``
+
+   :guess_gto_a: File name for alpha orbitals, used with ``gto`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/mrchem.moa``
+
+   :guess_gto_b: File name for beta orbitals, used with ``gto`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/mrchem.mob``
+
+   :guess_phi_p: File name for paired orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/phi_p``
+
+   :guess_phi_a: File name for alpha orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/phi_a``
+
+   :guess_phi_b: File name for beta orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/phi_b``
+
+   :guess_x_p: File name for paired response orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/X_p``
+
+   :guess_x_a: File name for alpha response orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/X_a``
+
+   :guess_x_b: File name for beta response orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/X_b``
+
+   :guess_y_p: File name for paired response orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/Y_p``
+
+   :guess_y_a: File name for alpha response orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/Y_a``
+
+   :guess_y_b: File name for beta response orbitals, used with ``mw`` guess.
+
+    **Type** ``str``
+
+    **Default** ``initial_guess/Y_b``
+
+ :SCF: Includes parameters related to the ground state SCF orbital optimization.
+
+  :red:`Keywords`
+   :run: Run SCF solver. Otherwise properties are computed on the initial orbitals.
+
+    **Type** ``bool``
+
+    **Default** ``True``
+
+   :max_iter: Maximum number of SCF iterations.
+
+    **Type** ``int``
+
+    **Default** ``100``
+
+   :kain: Length of KAIN iterative history.
+
+    **Type** ``int``
+
+    **Default** ``3``
+
+   :rotation: Number of iterations between each diagonalization/localization.
+
+    **Type** ``int``
+
+    **Default** ``0``
+
+   :localize: Use canonical or localized orbitals.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :orbital_thrs: Convergence threshold for orbtial residuals.
+
     **Type** ``float``
-  
+
     **Default** ``-1.0``
-  
-   :property_thrs: Convergence threshold for SCF energy. 
-  
+
+   :energy_thrs: Convergence threshold for SCF energy.
+
     **Type** ``float``
-  
+
     **Default** ``-1.0``
-  
-   :guess_prec: Precision parameter used in construction of initial guess. 
-  
+
+   :guess_prec: Precision parameter used in construction of initial guess.
+
     **Type** ``float``
-  
-    **Default** ``user['world_prec']``
-  
+
+    **Default** ``0.001``
+
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-  
-   :start_prec: Incremental precision in SCF iterations, initial value. 
-  
+
+   :start_prec: Incremental precision in SCF iterations, initial value.
+
     **Type** ``float``
-  
+
     **Default** ``-1.0``
-  
-   :final_prec: Incremental precision in SCF iterations, final value. 
-  
+
+   :final_prec: Incremental precision in SCF iterations, final value.
+
     **Type** ``float``
-  
+
     **Default** ``-1.0``
-  
-   :initial_guess: Type of initial guess. 'mw' reads previously computed orbitals (must be written using the same world size and polynomial type/order). 'gto' reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). 'core' and 'sad' will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. 
-  
+
+   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively.
+
     **Type** ``str``
-  
+
+    **Default** ``sad_dz``
+
     **Predicates**
-      - ``value.lower() in ['mw', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
-  
-   :write_orbitals: Write converged orbitals to disk. 
-  
+      - ``value.lower() in ['mw', 'chk', 'gto',``
+        ``'core_sz', 'core_dz', 'core_tz', 'core_qz',``
+        ``'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
+
+   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations.
+
     **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :plot_density: Plot converged electron density. Including spin densities for open-shell. 
-  
+
+   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess.
+
+    **Type** ``str``
+
+    **Default** ``checkpoint``
+
+    **Predicates**
+      - ``value[-1] != '/'``
+
+   :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations.
+
     **Type** ``bool``
-  
+
     **Default** ``False``
-  
-   :plot_orbital: Plot converged molecular orbitals of given index. Negative first index plots all. 
-  
+
+   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword.
+
+    **Type** ``str``
+
+    **Default** ``orbitals``
+
+    **Predicates**
+      - ``value[-1] != '/'``
+
+   :plot_density: Plot converged electron density. Including spin densities for open-shell.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :plot_orbital: Plot converged molecular orbitals of given index. If the first index is negative, all orbitals will be plotted.
+
     **Type** ``List[int]``
-  
+
     **Default** ``[]``
-  
- :KineticFree: Includes parameters related to the ground state SCF optimization (kinetic free algorithm). 
+
+ :Response: Includes parameters related to the response SCF optimization.
 
   :red:`Keywords`
-   :run: Run kinetic free SCF solver. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
-   :max_iter: Maximum number of SCF iterations. 
-  
+   :run: In which Cartesian directions to run response solver.
+
+    **Type** ``List[bool]``
+
+    **Default** ``[True, True, True]``
+
+   :max_iter: Maximum number of response iterations.
+
     **Type** ``int``
-  
-    **Default** ``-1``
-  
-   :localize: Use canonical or localized orbitals. 
-  
+
+    **Default** ``100``
+
+   :kain: Length of KAIN iterative history.
+
+    **Type** ``int``
+
+    **Default** ``3``
+
+   :localize: Use canonical or localized unperturbed orbitals.
+
     **Type** ``bool``
-  
+
+    **Default** ``user['SCF']['localize']``
+
+   :orbital_thrs: Convergence threshold for orbtial residuals.
+
+    **Type** ``float``
+
+    **Default** ``-1.0``
+
+   :property_thrs: Convergence threshold for SCF energy.
+
+    **Type** ``float``
+
+    **Default** ``-1.0``
+
+   :start_prec: Incremental precision in SCF iterations, initial value.
+
+    **Type** ``float``
+
+    **Default** ``-1.0``
+
+   :final_prec: Incremental precision in SCF iterations, final value.
+
+    **Type** ``float``
+
+    **Default** ``-1.0``
+
+   :guess_prec: Precision parameter used in construction of initial guess.
+
+    **Type** ``float``
+
+    **Default** ``0.001``
+
+    **Predicates**
+      - ``1.0e-10 < value < 1.0``
+
+   :guess_type: Type of initial guess for response. ``none`` will start from a zero guess for the response functions. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup.
+
+    **Type** ``str``
+
+    **Default** ``none``
+
+    **Predicates**
+      - ``value.lower() in ['none', 'chk', 'mw']``
+
+   :write_checkpoint: Write perturbed orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations.
+
+    **Type** ``bool``
+
     **Default** ``False``
-  
-   :start_prec: Incremental precision in SCF iterations, initial value. 
-  
-    **Type** ``float``
-  
-    **Default** ``-1.0``
-  
-   :final_prec: Incremental precision in SCF iterations, final value. 
-  
-    **Type** ``float``
-  
-    **Default** ``-1.0``
-  
-   :orbital_thrs: Convergence threshold for orbtial residuals. 
-  
-    **Type** ``float``
-  
-    **Default** ``-1.0``
-  
-   :property_thrs: Convergence threshold for SCF energy. 
-  
-    **Type** ``float``
-  
-    **Default** ``-1.0``
-  
+
+   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess.
+
+    **Type** ``str``
+
+    **Default** ``checkpoint``
+
+    **Predicates**
+      - ``value[-1] != '/'``
+
+   :write_orbitals: Write final perturbed orbitals to disk, file name ``<path_orbitals>/<X/Y>_<p/a/b>_rsp_<direction>_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations.
+
+    **Type** ``bool``
+
+    **Default** ``False``
+
+   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword.
+
+    **Type** ``str``
+
+    **Default** ``orbitals``
+
+    **Predicates**
+      - ``value[-1] != '/'``
