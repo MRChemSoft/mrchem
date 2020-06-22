@@ -224,7 +224,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             for (int i = 0; i < S.rows(); i++) {
                 for (int j = 0; j < S.cols(); j++) {
                     if (i == j) REQUIRE(Snorm(i, j).real() == Approx(1.0));
-                    if (i != j) REQUIRE(Snorm(i, j).real() >= std::abs(S(i, j)));
+                    if (i != j) REQUIRE(Snorm(i, j).real() >= Approx(std::abs(S(i, j))));
                 }
             }
             SECTION("exact norm overlap") {
@@ -232,7 +232,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
                 for (int i = 0; i < S.rows(); i++) {
                     for (int j = 0; j < S.cols(); j++) {
                         if (i == j) REQUIRE(Snorm_exact(i, j).real() == Approx(1.0));
-                        if (i != j) REQUIRE(Snorm_exact(i, j).real() >= std::abs(S(i, j)));
+                        if (i != j) REQUIRE(Snorm_exact(i, j).real() >= Approx(std::abs(S(i, j))));
                     }
                 }
             }
