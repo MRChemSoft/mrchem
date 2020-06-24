@@ -82,19 +82,15 @@ def main():
     with open(json_file, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
 
-    if not dryrun:
-        if stdout:
-            if program_dict["input"]["printer"]["print_input"]:
-                with open(inp_file, "r") as f:
-                    print("".join(f.readlines()))
-            cmd = executable + ' ' + str(json_file)
-            subprocess.call(cmd, shell=True)
-        else:
-            if program_dict["input"]["printer"]["print_input"]:
-                copyfile(inp_file, out_file)
-            cmd = executable + ' ' + str(json_file) + ' >> ' + str(out_file)
-            subprocess.call(cmd, shell=True)
+    if stdout or program_dict["input"]["printer"]["print_level"] < 0:
+        cmd = executable + ' ' + str(json_file)
+    else:
+        cmd = executable + ' ' + str(json_file) + ' > ' + str(out_file)
 
+    if dryrun:
+        print("launch command: " + cmd)
+    else:
+        subprocess.call(cmd, shell=True)
 
 def parse_cmdline():
     usage = "usage: %prog [options] [config] inp_name"

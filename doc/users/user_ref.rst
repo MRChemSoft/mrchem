@@ -131,23 +131,11 @@ User input reference
 
     **Default** ``0``
 
-   :print_input: Print the user input file at the start of the calculation.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
    :print_mpi: Write separate output from each MPI to file called ``<file_name>-<mpi-rank>.out``.
 
     **Type** ``bool``
 
     **Default** ``False``
-
-   :file_name: Name of output file in MPI print.
-
-    **Type** ``str``
-
-    **Default** ``mrchem``
 
    :print_prec: Number of digits in property output (energy with factor two).
 
