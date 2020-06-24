@@ -49,7 +49,7 @@ def main():
     this_path = Path(__file__).parent
 
     # Parse command line
-    executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
+    launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
     tmpl_file = Path('@PROJECT_SOURCE_DIR@/src/input/template.yml')
 
@@ -83,9 +83,9 @@ def main():
         fd.write(json.dumps(program_dict, indent=2))
 
     if stdout or program_dict["input"]["printer"]["print_level"] < 0:
-        cmd = executable + ' ' + str(json_file)
+        cmd = launcher + ' ' + executable + ' ' + str(json_file)
     else:
-        cmd = executable + ' ' + str(json_file) + ' > ' + str(out_file)
+        cmd = launcher + ' ' + executable + ' ' + str(json_file) + ' > ' + str(out_file)
 
     if dryrun:
         print("launch command: " + cmd)
@@ -97,6 +97,21 @@ def parse_cmdline():
     version = "@MRCHEM_VERSION@"
     cmdln = optparse.OptionParser(
         usage=usage, version="%prog {0}".format(version))
+    cmdln.add_option(
+        '--launcher',
+        action='store',
+        dest='launcher',
+        type='string',
+        default='',
+        help='Set program launcher string')
+    cmdln.add_option(
+        '-x',
+        '--executable',
+        action='store',
+        dest='executable',
+        type='string',
+        default='@MRCHEM_EXECUTABLE@',
+        help='Set executable name')
     cmdln.add_option(
         '-D',
         '--dryrun',
@@ -111,14 +126,6 @@ def parse_cmdline():
         default=False,
         help='Print to stdout')
     cmdln.add_option(
-        '-x',
-        '--executable',
-        action='store',
-        dest='executable',
-        type='string',
-        default='@MRCHEM_EXECUTABLE@',
-        help='set executable name')
-    cmdln.add_option(
         '-j',
         '--json',
         action='store_true',
@@ -129,6 +136,7 @@ def parse_cmdline():
 
     opts, args = cmdln.parse_args()
 
+    launcher = opts.launcher
     executable = opts.executable
     dryrun = opts.dryrun
     stdout = opts.stdout
@@ -143,7 +151,7 @@ def parse_cmdline():
         cmdln.error('Incorrect number of files')
         sys.exit(1)
 
-    return executable, dryrun, stdout, inp_json, inp_name
+    return launcher, executable, dryrun, stdout, inp_json, inp_name
 
 
 def parse_wf_method(user_dict):
