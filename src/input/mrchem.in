@@ -82,7 +82,8 @@ def main():
     if not dryrun:
         cmd = executable + ' ' + xfile
         if program_dict["input"]["printer"]["print_input"]:
-            subprocess.call('cat ' + inp_file_cmd, shell=True)
+            with open(inp_file_cmd, "r") as f:
+                print("".join(f.readlines()))
         subprocess.call(cmd, shell=True)
 
 
