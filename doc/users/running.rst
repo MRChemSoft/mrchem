@@ -40,6 +40,14 @@ This separation can be useful for instance for developers or advanced users
 who want to change some automatically generated input values before launching
 the actual program.
 
+Printing to standard output
+---------------------------
+
+By default the program will write to the text output file (``.out`` extension),
+but if you rather would like it printed in the terminal you can add the 
+``--stdout`` option (then no text output file is created)::
+
+    $ mrchem --stdout h2o
 
 Reproducing old calculations
 ----------------------------
