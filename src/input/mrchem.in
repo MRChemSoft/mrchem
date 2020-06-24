@@ -82,7 +82,9 @@ def main():
     with open(json_file, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
 
-    if stdout or program_dict["input"]["printer"]["print_level"] < 0:
+    print_mpi =  program_dict["input"]["printer"]["print_mpi"]
+    print_level =  program_dict["input"]["printer"]["print_level"]
+    if stdout or print_mpi or print_level < 0:
         cmd = launcher + ' ' + executable + ' ' + str(json_file)
     else:
         cmd = launcher + ' ' + executable + ' ' + str(json_file) + ' > ' + str(out_file)
