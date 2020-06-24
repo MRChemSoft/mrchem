@@ -1,7 +1,7 @@
 /** The MRChem sandbox */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "mrchem.h"
 #include "mrenv.h"
@@ -16,18 +16,18 @@ using namespace mrchem;
 
 int main(int argc, char **argv) {
     mpi::initialize();
-    const auto json_input = mrenv::fetch_json(argc, argv);
-    mrenv::initialize(json_input);
+    const auto json_inp = mrenv::fetch_json(argc, argv);
+    mrenv::initialize(json_inp);
 
     Timer timer;
 
     // Do your stuff here
-    println(0, json_input.dump(2));
+    println(0, json_inp.dump(2));
 
     timer.stop();
     double wt = timer.elapsed();
 
     mrenv::finalize(wt);
     mpi::finalize();
-    return 0;
+    return EXIT_SUCCESS;
 }

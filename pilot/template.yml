@@ -1,31 +1,19 @@
 keywords:
-  - name: rel_prec
+  - name: world_prec
     type: float
-    default: -1.0
+    predicates:
+      - '1.0e-10 < value < 1.0'
     docstring: |
       Overall relative precision in the calculation.
-  - name: nuc_prec
-    type: float
-    default: -1.0
-    docstring: |
-      Precision used in the smoothing and projection of the nuclear potential.
-  - name: abs_prec
-    type: float
-    default: -1.0
-    docstring: |
-      Overall absolute precision in the calculation.
-  - name: est_norm
-    type: float
-    default: -1.0
-    docstring: |
-      Norm used in translation from abs_prec to rel_prec.
-  - name: energy_unit
-    type: str
-    default: 'au'
+  - name: world_size
+    type: int
+    default: -1
     predicates:
-      - value in ['au', 'kcal', 'kJ']
+      - 'value <= 10'
     docstring: |
-      Unit used in the translation from abs_prec to rel_prec.
+      Total size of computational domain given as 2**(``world_size``). Always cubic
+      and symmetric around the origin. Negative value means it will be computed
+      from the molecular geometry.
 sections:
   - name: Printer
     docstring: |
@@ -34,10 +22,9 @@ sections:
       - name: print_level
         type: int
         default: 0
-        predicates:
-          - 'value >= 0'
         docstring: |
-          Level of detail in the written output. Level 0 for production calculations.
+          Level of detail in the written output. Level 0 for production calculations,
+          negative level for complete silence.
       - name: print_input
         type: bool
         default: false
@@ -47,7 +34,7 @@ sections:
         type: bool
         default: false
         docstring: |
-          Write separate output from each MPI to file called <file_name>-<mpi-rank>.out.
+          Write separate output from each MPI to file called ``<file_name>-<mpi-rank>.out``.
       - name: file_name
         type: str
         default: 'mrchem'
@@ -107,62 +94,25 @@ sections:
         default: false
         docstring: |
           This will use MPI shared memory for the exchange-correlation potential.
-  - name: MRA
+      - name: bank_size
+        type: int
+        default: -1
+        docstring: |
+          Number of MPI processes exclusively dedicated to manage orbital bank.
+  - name: Basis
     docstring: |
-      Define polynomial basis and computational domain.
+      Define polynomial basis.
     keywords:
       - name: order
         type: int
         default: -1
         docstring: |
-          Polynomial order of multiwavelet basis.
-      - name: basis_type
+          Polynomial order of multiwavelet basis. Negative value means it will
+          be set automatically based on the world precision.
+      - name: type
         type: str
         default: 'interpolating'
         predicates:
-          - value[0].lower() in ['i', 'l']
+          - "value.lower() in ['interpolating', 'legendre']"
         docstring: |
           Polynomial type of multiwavelet basis.
-      - name: min_scale
-        type: int
-        default: 0
-        predicates:
-          - '-32 < value < 32'
-        docstring: |
-          Root scale of multiresolution analysis. Size of root boxes is 2^{-min_scale}.
-      - name: max_scale
-        type: int
-        default: 20
-        predicates:
-          - '-32 < value < 32'
-        docstring: |
-          Maximum refinement scale of multiresolution analysis.
-      - name: boxes
-        type: List[int]
-        default: [1,1,1]
-        predicates:
-          - '0 < value[0] < 8'
-          - '0 < value[1] < 8'
-          - '0 < value[2] < 8'
-        docstring: |
-          Number of root boxes.
-      - name: corner
-        type: List[int]
-        default: [0,0,0]
-        docstring: |
-          Translation of the first root box.
-      - name: center_of_mass
-        type: bool
-        default: false
-        docstring: |
-          Set gauge origin to center of mass.
-      - name: center_of_charge
-        type: bool
-        default: false
-        docstring: |
-          Set gauge origin to center of charge.
-      - name: gauge_origin
-        type: List[float]
-        default: [0.0, 0.0, 0.0]
-        docstring: |
-          Gauge origin.

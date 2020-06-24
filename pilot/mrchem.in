@@ -40,7 +40,7 @@ from pathlib import Path
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
 sys.path.append('@PROJECT_SOURCE_DIR@/src/chemistry')
 
-from parselglossy.api import parse
+from parselglossy.api import parse, validate
 from periodictable import PeriodicTable as PT
 
 
@@ -48,16 +48,16 @@ def main():
     this_path = Path(__file__).parent
 
     # Parse command line
-    executable, dryrun, inp_file_cmd = parse_cmdline()
+    executable, dryrun, inp_json, inp_file_cmd = parse_cmdline()
 
     in_path = Path(inp_file_cmd)
     tmpl_path = Path('@PROJECT_SOURCE_DIR@/pilot/template.yml')
 
-    # read user input file (JSONDict <- getkw file)
-    user_dict = parse(infile=in_path, template=tmpl_path, grammar='getkw')
-
-    # run user defined verification (JSONDict <- JSONDict)
-    verify_prec(user_dict)
+    # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
+    if inp_json:
+        user_dict = validate(infile=in_path, template=tmpl_path)
+    else:
+        user_dict = parse(infile=in_path, template=tmpl_path, grammar='getkw')
 
     # now that all keywords have sensible values,
     # we can translate user input into program input
@@ -72,8 +72,10 @@ def main():
     if not dryrun:
         cmd = executable + ' ' + xfile
         if program_dict["input"]["printer"]["print_input"]:
-            subprocess.call('cat ' + inp_file_cmd, shell=True)
+            with open(inp_file_cmd, "r") as f:
+                print("".join(f.readlines()))
         subprocess.call(cmd, shell=True)
+
 
 def parse_cmdline():
     usage = "usage: %prog [options] [config] inp_file"
@@ -95,65 +97,80 @@ def parse_cmdline():
         type='string',
         default='@MRCHEM_EXECUTABLE@',
         help='set executable name')
+    cmdln.add_option(
+        '-j',
+        '--json',
+        action='store_true',
+        dest='inp_json',
+        default=False,
+        help='Input file is in json format')
+
 
     opts, args = cmdln.parse_args()
 
     executable = opts.executable
     dryrun = opts.dryrun
+    inp_json = opts.inp_json
 
     if (len(args) == 0):
-        cmdln.error('Not input file passed!')
-        sys.exit(0)
+        cmdln.error('No input file passed!')
+        sys.exit(1)
     elif (len(args) == 1):
         inp_file = args[0]
     else:
-        cmdln.error('incorrect number of files')
-        sys.exit(0)
+        cmdln.error('Incorrect number of files')
+        sys.exit(1)
 
-    return executable, dryrun, inp_file
+    return executable, dryrun, inp_json, inp_file
 
-def verify_prec(user_dict):
-  # Overall precision parameters
-  if user_dict["est_norm"] < 0.0:
-    user_dict["est_norm"] = 1.0
-
-  if user_dict["abs_prec"] < 0.0:
-    user_dict["abs_prec"] = user_dict["rel_prec"]
-
-  if user_dict["nuc_prec"] < 0.0:
-    user_dict["nuc_prec"] = user_dict["rel_prec"]
-
-  # Set polynomial order based on precision
-  if user_dict["MRA"]["order"] < 0:
-    prec = user_dict["rel_prec"]
-    user_dict["MRA"]["order"] = int(math.ceil(-1.5 * math.log10(prec)))
 
 def translate_input(user_dict):
-  program_dict = {}
-  write_mpi(program_dict, user_dict);
-  write_mra(program_dict, user_dict);
-  write_printer(program_dict, user_dict);
-  return program_dict
+    mpi_dict = write_mpi(user_dict);
+    mra_dict = write_mra(user_dict);
+    program_dict = {
+        "mpi": mpi_dict,
+        "mra": mra_dict,
+        "printer": user_dict["Printer"],
+    }
+    return program_dict
 
-def write_mpi(program_dict, user_dict):
-  program_dict["mpi"] = {
-    "numerically_exact": user_dict["MPI"]["numerically_exact"],
-    "shared_memory_size": user_dict["MPI"]["shared_memory_size"]
-  }
 
-def write_mra(program_dict, user_dict):
-  program_dict["mra"] = {
-    "basis_type": user_dict["MRA"]["basis_type"][0].lower(),
-    "order": user_dict["MRA"]["order"],
-    "boxes": user_dict["MRA"]["boxes"],
-    "corner": user_dict["MRA"]["corner"],
-    "min_scale": user_dict["MRA"]["min_scale"],
-    "max_scale": user_dict["MRA"]["max_scale"],
-    "scaling_factor": [1.0, 1.0, 1.0]
-  }
+def write_mpi(user_dict):
+    mpi_dict = {
+        "numerically_exact": user_dict["MPI"]["numerically_exact"],
+        "shared_memory_size": user_dict["MPI"]["shared_memory_size"],
+        "bank_size": user_dict["MPI"]["bank_size"]
+    }
+    return mpi_dict
 
-def write_printer(program_dict, user_dict):
-  program_dict["printer"] = user_dict["Printer"]
+
+def write_mra(user_dict):
+    order = user_dict["Basis"]["order"]
+    if order < 0:
+        # Set polynomial order based on world_prec
+        prec = user_dict["world_prec"]
+        order = int(math.ceil(-1.5 * math.log10(prec)))
+
+    min_scale = -(user_dict["world_size"] - 1)
+    max_scale = 20
+    if (max_scale - min_scale) > 30:
+        max_scale = 30 + min_scale
+
+    mra_dict = {
+        "basis_type": user_dict["Basis"]["type"].lower(),
+        "basis_order": order,
+        "boxes": [2, 2, 2],
+        "corner": [-1, -1, -1],
+        "min_scale": min_scale,
+        "max_scale": max_scale,
+        "scaling_factor": [1.0, 1.0, 1.0]
+    }
+    return mra_dict
+
+
+def write_printer(user_dict):
+    return user_dict["Printer"]
+
 
 if __name__ == '__main__':
     main()
