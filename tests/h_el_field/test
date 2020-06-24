@@ -29,7 +29,6 @@ f = [
 options = cli()
 
 ierr = 0
-ierr += run(
-    options, configure, input_files=['mrchem.inp'], filters={'stdout': f})
+ierr += run(options, configure, input_files=['h'], filters={'stdout': f}, extra_args=["--stdout"])
 
 sys.exit(ierr)
