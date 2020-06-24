@@ -34,6 +34,7 @@ import subprocess
 import sys
 import tempfile
 from io import StringIO
+from shutil import copyfile
 from pathlib import Path
 
 # FIXME This will pick up modules when installed
@@ -48,16 +49,19 @@ def main():
     this_path = Path(__file__).parent
 
     # Parse command line
-    executable, dryrun, inp_json, inp_file_cmd = parse_cmdline()
+    executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
-    in_path = Path(inp_file_cmd)
-    tmpl_path = Path('@PROJECT_SOURCE_DIR@/src/input/template.yml')
+    tmpl_file = Path('@PROJECT_SOURCE_DIR@/src/input/template.yml')
+
+    inp_file = Path(inp_name + '.inp')
+    out_file = Path(inp_name + '.out')
+    json_file = Path(inp_name + '.json')
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
     if inp_json:
-        user_dict = validate(infile=in_path, template=tmpl_path)
+        user_dict = validate(infile=inp_file, template=tmpl_file)
     else:
-        user_dict = parse(infile=in_path, template=tmpl_path, grammar='getkw')
+        user_dict = parse(infile=inp_file, template=tmpl_file, grammar='getkw')
 
     # create necessary directories
     for d in [user_dict["SCF"]["path_checkpoint"],
@@ -74,21 +78,25 @@ def main():
     program_dict = {}
     program_dict["input"] = translate_input(user_dict)
 
-    inp_name, ext_ext = os.path.splitext(inp_file_cmd)
-    xfile = inp_name + '.json'
-    with open(xfile, 'w') as fd:
+    with open(json_file, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
 
     if not dryrun:
-        cmd = executable + ' ' + xfile
-        if program_dict["input"]["printer"]["print_input"]:
-            with open(inp_file_cmd, "r") as f:
-                print("".join(f.readlines()))
-        subprocess.call(cmd, shell=True)
+        if stdout:
+            if program_dict["input"]["printer"]["print_input"]:
+                with open(inp_file, "r") as f:
+                    print("".join(f.readlines()))
+            cmd = executable + ' ' + str(json_file)
+            subprocess.call(cmd, shell=True)
+        else:
+            if program_dict["input"]["printer"]["print_input"]:
+                copyfile(inp_file, out_file)
+            cmd = executable + ' ' + str(json_file) + ' >> ' + str(out_file)
+            subprocess.call(cmd, shell=True)
 
 
 def parse_cmdline():
-    usage = "usage: %prog [options] [config] inp_file"
+    usage = "usage: %prog [options] [config] inp_name"
     version = "@MRCHEM_VERSION@"
     cmdln = optparse.OptionParser(
         usage=usage, version="%prog {0}".format(version))
@@ -99,6 +107,12 @@ def parse_cmdline():
         dest='dryrun',
         default=False,
         help='Only process input')
+    cmdln.add_option(
+        '--stdout',
+        action='store_true',
+        dest='stdout',
+        default=False,
+        help='Print to stdout')
     cmdln.add_option(
         '-x',
         '--executable',
@@ -120,18 +134,19 @@ def parse_cmdline():
 
     executable = opts.executable
     dryrun = opts.dryrun
+    stdout = opts.stdout
     inp_json = opts.inp_json
 
     if (len(args) == 0):
         cmdln.error('No input file passed!')
         sys.exit(1)
     elif (len(args) == 1):
-        inp_file = args[0]
+        inp_name = args[0]
     else:
         cmdln.error('Incorrect number of files')
         sys.exit(1)
 
-    return executable, dryrun, inp_json, inp_file
+    return executable, dryrun, stdout, inp_json, inp_name
 
 
 def parse_wf_method(user_dict):
