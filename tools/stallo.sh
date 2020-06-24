@@ -5,8 +5,8 @@ if [ `hostname | grep -i stallo | wc -l` == 0 ]; then
    exit 1
 fi 
 
-source stallo.env
 mrchem_dir="$(pwd)"
+source ${mrchem_dir}/tools/stallo.env
 
 cd ${mrchem_dir}
 version=`cat VERSION`

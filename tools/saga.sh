@@ -5,8 +5,8 @@ if [ `hostname | grep -i login | wc -l` == 0 ]; then
    exit 1
 fi 
 
-source saga.env
 mrchem_dir="$(pwd)"
+source ${mrchem_dir}/tools/saga.env
 
 cd ${mrchem_dir}
 version=`cat VERSION`
