@@ -3,7 +3,7 @@
 if [ `hostname | grep -i stallo | wc -l` == 0 ]; then
    echo "This script MUST be run on the LOGIN node as it requires internet access"
    exit 1
-fi 
+fi
 
 mrchem_dir="$(pwd)"
 source ${mrchem_dir}/tools/stallo.env
