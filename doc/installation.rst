@@ -151,7 +151,7 @@ for GNU and ``--cxx=mpiicpc`` for Intel)::
 When dependencies are fetched at configuration time, they will be downloaded
 into ``<build-dir>/_deps``. For the example of MRCPP, sources are saved into
 the folders ``<build-dir>/_deps/mrcpp_sources-src`` and built into
-``<build-dir>/_deps/mrcpp_source-build``.
+``<build-dir>/_deps/mrcpp_sources-build``.
 
 .. note::
     If you compile the MRCPP library manually as a separate project, the level
@@ -185,7 +185,8 @@ To run a couple of more involved integration tests::
 
 Note how we used Pipenv to run the integration tests. This ensures that the
 Python dependencies (``parselglossy`` and ``runtest``) are satisfied in a
-virtual environment and available to ``ctest``.
+virtual environment and available to ``ctest`` (these are required only for
+the integration tests, not the unit tests).
 
 
 Install
@@ -197,17 +198,25 @@ the following command::
     $ cd <build-dir>
     $ make install
 
-This will install _two_ executables under the ``<install-path>``::
+This will install *two* executables under the ``<install-path>``::
 
     <install-path>/bin/mrchem       # Python input parser and launcher
     <install-path>/bin/mrchem.x     # MRChem executable
 
-Please refer to the User's Manual for instructions for how to run the program.
+Please refer to the :ref:`User's Manual` for instructions for how to run the program.
 
 .. hint::
     We have collected scripts for configure and build of the hybrid OpenMP + MPI
     version on the different Norwegian HPC systems under ``tools/<machine>.sh``.
     These scripts will build the current version under ``build-${version}``,
-    run the unit tests and install under ``install-${version}``. The configure
-    step requires internet access, so scripts must be run on the login nodes,
-    and it will run on a single core, so it might take some minutes to complete.
+    run the unit tests and install under ``install-${version}``, e.g. to build
+    version v1.0.0 on Fram::
+
+        $ cd mrchem
+        $ git checkout v1.0.0
+        $ tools/fram.sh
+
+    The configure step requires internet access, so the scripts must be run on
+    the login nodes, and it will run on a single core, so it might take some
+    minutes to complete. The scripts will *not* install the :ref:`Python
+    dependencies`, so this must be done manually in order to run the code.

@@ -19,7 +19,8 @@ This will under the hood actually do the following two steps::
     $ mrchem.x h2o.json > h2o.out
 
 Note that the first step requires that the input parser library
-``parselglossy`` is installed and available, see Installation instructions.
+``parselglossy`` is installed and available, see :ref:`Installation`
+instructions.
 
 
 Dry-running the input parser
@@ -28,7 +29,7 @@ Dry-running the input parser
 The execution of the two steps above can be done separately by dry-running the
 parser script::
 
-    $ mrchem -D h2o
+    $ mrchem --dryrun h2o
 
 This will only run the input validation part and generate the ``h2o.json``
 program input, but it will *not* launch the main executable ``mrchem.x``.
@@ -44,7 +45,7 @@ Printing to standard output
 ---------------------------
 
 By default the program will write to the text output file (``.out`` extension),
-but if you rather would like it printed in the terminal you can add the 
+but if you rather would like it printed in the terminal you can add the
 ``--stdout`` option (then no text output file is created)::
 
     $ mrchem --stdout h2o
@@ -88,7 +89,7 @@ The MRChem program comes with support for both shared memory and distributed
 memory parallelization, as well as a hybrid combination of the two. In order
 to activate these capabilities, the code needs to be compiled with OpenMP
 and/or MPI support (``--omp`` and/or ``--mpi`` options to the CMake ``setup``
-script, see Installation instructions).
+script, see :ref:`Installation` instructions).
 
 
 Shared memory OpenMP
@@ -111,13 +112,13 @@ the main executable ``mrchem.x`` that should be launched in parallel, **not**
 the ``mrchem`` input parser script. This can be achieved *either* by running
 these separately in a dry-run (here two MPI processes)::
 
-    $ mrchem -D h2o
+    $ mrchem --dryrun h2o
     $ mpirun -np 2 mrchem.x h2o.json
 
 *or* in a single command by passing the launcher string as argument to the
 parser::
 
-    $ mrchem --launcher='mpirun -np 2' h2o
+    $ mrchem --launcher="mpirun -np 2" h2o
 
 This string can contain any argument you would normally pass to ``mpirun``
 as it will be literally prepended to the ``mrchem.x`` command when the
@@ -127,12 +128,13 @@ as it will be literally prepended to the ``mrchem.x`` command when the
 .. hint::
 
     For best performance, it is recommended to use shared memory *within*
-    each socket (or NUMA domain) of your CPU, and MPI across sockets and
+    each NUMA domain (usually one per socket) of your CPU, and MPI across
+    NUMA domains and
     ultimately machines. Ideally, the number of OpenMP threads should be
     between 8-20. E.g. on hardware with two sockets of 16 cores each, use
     OMP_NUM_THREADS=16 and scale the number of MPI processes by the size
     of the molecule, typically one process per ~5 orbitals or so (and
-    definitely not _more_ than one process per orbital).
+    definitely not *more* than one process per orbital).
 
 
 Parallel pitfalls
@@ -198,7 +200,7 @@ How to verify a parallel MRChem run
      MPI processes         :      (no bank)                             2
      OpenMP threads        :                                           16
      Total cores           :                                           32
-                                                                      
+
     ----------------------------------------------------------------------
 
 - Monitor your run with ``top`` to see that you got the expected number of
@@ -216,7 +218,7 @@ How to verify a parallel MRChem run
   setup it is rather common that each MPI process becomes bound to a single
   core, which means that all threads spawned by this process will occupy the
   same core (possibly two hyper-threads). This is then easily detected with
-  ``htop``. 
+  ``htop``.
 
 - Perform dummy executions of your parallel launcher (``mpirun``, ``srun``, etc)
   to check whether it picks up the correct parameters from the resource manager
@@ -234,4 +236,3 @@ How to verify a parallel MRChem run
 - Perform a small scaling test on e.g. 1, 2, 4 processes and/or 1, 2, 4 threads
   and verify that the total computation time is reduced as expected (don't
   expect 100% efficiency at any step).
-
