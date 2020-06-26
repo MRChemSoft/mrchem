@@ -44,6 +44,7 @@ sys.path.append('@PROJECT_SOURCE_DIR@/src/chemistry')
 from parselglossy.api import parse, validate
 from periodictable import PeriodicTable as PT
 
+origin = [0.0, 0.0, 0.0] # global gauge origin in bohrs
 
 def main():
     this_path = Path(__file__).parent
@@ -288,9 +289,10 @@ def write_molecule(user_dict):
             })
 
     # Convert angstrom -> bohr
-    origin = user_dict["Molecule"]["gauge_origin"]
-    if user_dict["Molecule"]["angstrom"]:
-        AA = 1.889725989
+    global origin
+    origin = user_dict["world_origin"]
+    if user_dict["world_unit"] == "angstrom":
+        AA = 1.889725989 # Angstrom unit conversion
         origin = [AA * r for r in origin]
         for coord in coords_dict:
             coord["xyz"] = [AA * r for r in coord["xyz"]]
@@ -327,9 +329,8 @@ def write_molecule(user_dict):
             coord["xyz"] = [r - o for r,o in zip(coord["xyz"], CoM)]
 
     mol_dict = {
-        "charge": user_dict["Molecule"]["charge"],
         "multiplicity": user_dict["Molecule"]["multiplicity"],
-        "gauge_origin": origin,
+        "charge": user_dict["Molecule"]["charge"],
         "coords": coords_dict
     }
     return mol_dict
@@ -428,7 +429,7 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
     if len(user_dict["ExternalFields"]["electric_field"]) > 0:
         fock_dict["external_operator"] = {
             "electric_field": user_dict["ExternalFields"]["electric_field"],
-            "r_O": mol_dict["gauge_origin"]
+            "r_O": origin
         }
 
     return fock_dict
@@ -510,16 +511,16 @@ def write_scf_properties(user_dict, mol_dict):
     if user_dict["Properties"]["dipole_moment"]:
         prop_dict["dipole_moment"] = {}
         prop_dict["dipole_moment"]['dip-1'] = {
-            "precision": user_dict["world_prec"],
             "operator": "h_e_dip",
-            "r_O": mol_dict["gauge_origin"]
+            "precision": user_dict["world_prec"],
+            "r_O": origin
         }
     if user_dict["Properties"]["quadrupole_moment"]:
         prop_dict["quadrupole_moment"] = {}
         prop_dict["quadrupole_moment"]['quad-1'] = {
-            "precision": user_dict["world_prec"],
             "operator": "h_e_quad",
-            "r_O": mol_dict["gauge_origin"]
+            "precision": user_dict["world_prec"],
+            "r_O": origin
         }
     return prop_dict
 
@@ -551,7 +552,7 @@ def write_rsp_calculations(user_dict, mol_dict):
             rsp_calc = write_rsp_calc(omega, user_dict, mol_dict)
             rsp_calc["perturbation"] = {
                 "operator": "h_e_dip",
-                "r_O": mol_dict["gauge_origin"]
+                "r_O": origin
             }
             rsp_calc["properties"] = {}
             rsp_calc["properties"]["polarizability"] = {}
@@ -559,7 +560,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                 "frequency": omega,
                 "precision": user_dict["world_prec"],
                 "operator": "h_e_dip",
-                "r_O": mol_dict["gauge_origin"]
+                "r_O": origin
             }
             rsp_key = "ext_el-" + freq_key
             rsp_dict[rsp_key] = rsp_calc
@@ -572,7 +573,7 @@ def write_rsp_calculations(user_dict, mol_dict):
         rsp_calc["perturbation"] = {
             "operator": "h_b_dip",
             "derivative": user_dict["Derivatives"]["h_b_dip"],
-            "r_O": mol_dict["gauge_origin"]
+            "r_O": origin
         }
         rsp_calc["properties"] = {}
         if run_mag:
@@ -583,7 +584,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                 "dia_operator": "h_bb_dia",
                 "para_operator": "h_b_dip",
                 "derivative": user_dict["Derivatives"]["h_b_dip"],
-                "r_O": mol_dict["gauge_origin"]
+                "r_O": origin
             }
         if (run_nmr and not nuc_spec):
             rsp_calc["properties"]["nmr_shielding"] = {}
@@ -600,7 +601,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                         "para_operator": "h_m_pso",
                         "smoothing": user_dict["world_prec"],
                         "derivative": user_dict["Derivatives"]["h_m_pso"],
-                        "r_O": mol_dict["gauge_origin"],
+                        "r_O": origin,
                         "r_K": nuclei[k]["xyz"]
                     }
         rsp_key = "ext_mag-" + freq_key
@@ -629,7 +630,7 @@ def write_rsp_calculations(user_dict, mol_dict):
                     "para_operator": "h_b_dip",
                     "smoothing": user_dict["world_prec"],
                     "derivative": user_dict["Derivatives"]["h_b_dip"],
-                    "r_O": mol_dict["gauge_origin"],
+                    "r_O": origin,
                     "r_K": nuclei[k]["xyz"]
                 }
                 rsp_key = "nuc_mag-" + atom_key

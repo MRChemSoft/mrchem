@@ -79,9 +79,7 @@ public:
 
     void setCharge(int c) { this->charge = c; }
     void setMultiplicity(int m) { this->multiplicity = m; }
-    void setGaugeOrigin(const mrcpp::Coord<3> &o) { this->origin = o; }
 
-    mrcpp::Coord<3> getGaugeOrigin() const { return this->origin; }
     mrcpp::Coord<3> calcCenterOfMass() const;
     mrcpp::Coord<3> calcCenterOfCharge() const;
 
@@ -126,7 +124,6 @@ protected:
     int charge{0};
     int multiplicity{1};
     Nuclei nuclei{};
-    mrcpp::Coord<3> origin{};
     ComplexMatrix fock_matrix{};
 
     std::shared_ptr<OrbitalVector> orbitals_0{std::make_shared<OrbitalVector>()};

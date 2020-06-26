@@ -121,11 +121,9 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
 
     auto charge = json_mol["charge"];
     auto multiplicity = json_mol["multiplicity"];
-    auto gauge_origin = json_mol["gauge_origin"];
 
     mol.setCharge(charge);
     mol.setMultiplicity(multiplicity);
-    mol.setGaugeOrigin(gauge_origin);
 
     auto &nuclei = mol.getNuclei();
     for (const auto &coord : json_mol["coords"]) {

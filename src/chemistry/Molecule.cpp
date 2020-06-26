@@ -204,7 +204,6 @@ void Molecule::printGeometry() const {
 
     mrcpp::print::separator(0, '-');
     print_utils::coord(0, "Center of mass", calcCenterOfMass());
-    print_utils::coord(0, "Gauge origin", getGaugeOrigin());
     mrcpp::print::separator(0, '=', 2);
 }
 
