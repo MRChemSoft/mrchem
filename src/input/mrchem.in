@@ -69,7 +69,7 @@ def main():
               user_dict["SCF"]["path_orbitals"],
               user_dict["Response"]["path_checkpoint"],
               user_dict["Response"]["path_orbitals"],
-              user_dict["Plotter"]["path_plots"]]:
+              user_dict["Plotter"]["path"]]:
         if not os.path.exists(d):
             os.mkdir(d)
 
@@ -358,13 +358,13 @@ def write_scf_calculation(user_dict, mol_dict):
     if user_dict["SCF"]["run"]:
         scf_dict["scf_solver"] = write_scf_solver(user_dict, method_name)
 
-    prop_dict = write_scf_properties(user_dict, mol_dict)
+    prop_dict = write_scf_properties(user_dict)
     if len(prop_dict) > 0:
         scf_dict["properties"] = prop_dict
 
     plot_dict = write_scf_plot(user_dict)
     if len(plot_dict) > 0:
-        scf_dict["cube_plot"] = plot_dict
+        scf_dict["plots"] = plot_dict
 
     return scf_dict
 
@@ -478,12 +478,6 @@ def write_scf_solver(user_dict, method_name):
     if start_prec < 0.0:
         start_prec = final_prec
 
-    energy_thrs = user_dict["SCF"]["energy_thrs"]
-    orbital_thrs = user_dict["SCF"]["orbital_thrs"]
-    if orbital_thrs < 0.0 and energy_thrs < 0.0:
-        energy_thrs = user_dict["world_prec"] / 10
-        orbital_thrs = math.sqrt(energy_thrs)
-
     scf_dict = user_dict["SCF"]
     solver_dict = {
         "method": method_name,
@@ -495,14 +489,14 @@ def write_scf_solver(user_dict, method_name):
         "checkpoint": scf_dict["write_checkpoint"],
         "start_prec": start_prec,
         "final_prec": final_prec,
-        "energy_thrs": energy_thrs,
-        "orbital_thrs": orbital_thrs,
+        "energy_thrs": scf_dict["energy_thrs"],
+        "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
     }
     return solver_dict
 
 
-def write_scf_properties(user_dict, mol_dict):
+def write_scf_properties(user_dict):
     prop_dict = {}
     if user_dict["Properties"]["dipole_moment"]:
         prop_dict["dipole_moment"] = {}
@@ -523,9 +517,9 @@ def write_scf_properties(user_dict, mol_dict):
 
 def write_scf_plot(user_dict):
     plot_dict = {}
-    if user_dict["SCF"]["plot_density"] or len(user_dict["SCF"]["plot_orbital"]):
-        plot_dict["density"] = user_dict["SCF"]["plot_density"]
-        plot_dict["orbital"] = user_dict["SCF"]["plot_orbital"]
+    if user_dict["Properties"]["plot_density"] or len(user_dict["Properties"]["plot_orbitals"]):
+        plot_dict["orbitals"] = user_dict["Properties"]["plot_orbitals"]
+        plot_dict["density"] = user_dict["Properties"]["plot_density"]
         plot_dict["plotter"] = user_dict["Plotter"]
     return plot_dict
 
@@ -734,12 +728,6 @@ def write_rsp_solver(user_dict, method_name, d):
     if start_prec < 0.0:
         start_prec = final_prec
 
-    orbital_thrs = user_dict["Response"]["orbital_thrs"]
-    property_thrs = user_dict["Response"]["property_thrs"]
-    if orbital_thrs < 0.0 and property_thrs < 0.0:
-        property_thrs = user_dict["world_prec"] / 10
-        orbital_thrs = user_dict["world_prec"] * 10
-
     rsp_dict = user_dict["Response"]
     solver_dict = {
         "method": method_name,
@@ -750,10 +738,10 @@ def write_rsp_solver(user_dict, method_name, d):
         "checkpoint": rsp_dict["write_checkpoint"],
         "start_prec": start_prec,
         "final_prec": final_prec,
-        "orbital_thrs": orbital_thrs,
-        "property_thrs": property_thrs,
+        "orbital_thrs": user_dict["Response"]["orbital_thrs"],
+        "property_thrs": user_dict["Response"]["property_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
-        "orth_prec": user_dict["Precisions"]["orth_prec"]
+        "orth_prec": 1.0e-14
     }
     return solver_dict
 
