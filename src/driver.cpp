@@ -260,7 +260,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol);
-        if (json_scf.contains("cube_plot")) scf::plot_quantities(json_scf["cube_plot"], mol);
+        if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
 
     return json_out;
@@ -483,17 +483,24 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
 void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
     Timer t_tot, t_lap;
 
-    auto path = json_plot["plotter"]["path_plots"].get<std::string>();
+    auto path = json_plot["plotter"]["path"].get<std::string>();
+    auto type = json_plot["plotter"]["type"].get<std::string>();
     auto npts = json_plot["plotter"]["points"];
     auto O = json_plot["plotter"]["O"];
     auto A = json_plot["plotter"]["A"];
     auto B = json_plot["plotter"]["B"];
     auto C = json_plot["plotter"]["C"];
     auto dens_plot = json_plot["density"];
-    auto orb_idx = json_plot["orbital"];
+    auto orb_idx = json_plot["orbitals"];
+
+    auto line = (type == "line") ? true : false;
+    auto surf = (type == "surf") ? true : false;
+    auto cube = (type == "cube") ? true : false;
 
     print_utils::headline(1, "Plotting Ground State Quantities");
-    mrcpp::print::header(1, "CubePlot");
+    if (line) mrcpp::print::header(1, "LinePlot");
+    if (surf) mrcpp::print::header(1, "SurfPlot");
+    if (cube) mrcpp::print::header(1, "CubePlot");
 
     auto &Phi = mol.getOrbitals();
     MolPlotter plt(mol, O);
@@ -505,7 +512,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         t_lap.start();
         std::string fname = path + "/rho_t";
         density::compute(-1.0, rho, Phi, DensityType::Total);
-        plt.cubePlot(npts, rho, fname);
+        if (line) plt.linePlot(npts, rho, fname);
+        if (surf) plt.surfPlot(npts, rho, fname);
+        if (cube) plt.cubePlot(npts, rho, fname);
         rho.free(NUMBER::Total);
         mrcpp::print::time(1, fname, t_lap);
 
@@ -513,21 +522,27 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             t_lap.start();
             fname = path + "/rho_s";
             density::compute(-1.0, rho, Phi, DensityType::Spin);
-            plt.cubePlot(npts, rho, fname);
+            if (line) plt.linePlot(npts, rho, fname);
+            if (surf) plt.surfPlot(npts, rho, fname);
+            if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
             rho.free(NUMBER::Total);
 
             t_lap.start();
             fname = path + "/rho_a";
             density::compute(-1.0, rho, Phi, DensityType::Alpha);
-            plt.cubePlot(npts, rho, fname);
+            if (line) plt.linePlot(npts, rho, fname);
+            if (surf) plt.surfPlot(npts, rho, fname);
+            if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
             rho.free(NUMBER::Total);
 
             t_lap.start();
             fname = path + "/rho_b";
             density::compute(-1.0, rho, Phi, DensityType::Beta);
-            plt.cubePlot(npts, rho, fname);
+            if (line) plt.linePlot(npts, rho, fname);
+            if (surf) plt.surfPlot(npts, rho, fname);
+            if (cube) plt.cubePlot(npts, rho, fname);
             rho.free(NUMBER::Total);
             mrcpp::print::time(1, fname, t_lap);
         }
@@ -542,7 +557,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
                 t_lap.start();
                 std::stringstream name;
                 name << path << "/phi_" << i;
-                plt.cubePlot(npts, Phi[i], name.str());
+                if (line) plt.linePlot(npts, Phi[i], name.str());
+                if (surf) plt.surfPlot(npts, Phi[i], name.str());
+                if (cube) plt.cubePlot(npts, Phi[i], name.str());
                 mrcpp::print::time(1, name.str(), t_lap);
             }
         } else {
@@ -552,7 +569,9 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
                 t_lap.start();
                 std::stringstream name;
                 name << path << "/phi_" << i;
-                plt.cubePlot(npts, Phi[i], name.str());
+                if (line) plt.linePlot(npts, Phi[i], name.str());
+                if (surf) plt.surfPlot(npts, Phi[i], name.str());
+                if (cube) plt.cubePlot(npts, Phi[i], name.str());
                 mrcpp::print::time(1, name.str(), t_lap);
             }
         }

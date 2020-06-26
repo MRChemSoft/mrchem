@@ -39,11 +39,21 @@ public:
             : mrcpp::Plotter<3>(o)
             , molecule(&mol) {}
 
+    void linePlot(const std::array<int, 1> &npts, QMFunction &func, const std::string &fname) {
+        if (func.hasReal()) linePlot(npts, func.real(), fname + "_re");
+        if (func.hasImag()) linePlot(npts, func.imag(), fname + "_im");
+    }
+    void surfPlot(const std::array<int, 2> &npts, QMFunction &func, const std::string &fname) {
+        if (func.hasReal()) surfPlot(npts, func.real(), fname + "_re");
+        if (func.hasImag()) surfPlot(npts, func.imag(), fname + "_im");
+    }
     void cubePlot(const std::array<int, 3> &npts, QMFunction &func, const std::string &fname) {
         if (func.hasReal()) cubePlot(npts, func.real(), fname + "_re");
         if (func.hasImag()) cubePlot(npts, func.imag(), fname + "_im");
     }
 
+    using Plotter<3>::linePlot;
+    using Plotter<3>::surfPlot;
     using Plotter<3>::cubePlot;
 
 protected:
