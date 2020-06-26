@@ -66,13 +66,6 @@ sections:
           - '1.0e-10 < value < 1.0'
         docstring: |
           Precision parameter used in smoothing and projection of nuclear potential.
-      - name: dft_prec
-        type: float
-        default: "user['world_prec']"
-        predicates:
-          - '1.0e-10 < value < 1.0'
-        docstring: |
-          Precision parameter used in DFT grid.
       - name: poisson_prec
         type: float
         default: "user['world_prec']"
@@ -86,11 +79,6 @@ sections:
         docstring: |
           Precision parameter used in construction of Helmholtz operators.
           Negative value means it will follow the dynamic precision in SCF.
-      - name: orth_prec
-        type: float
-        default: 1.0e-14
-        docstring: |
-          Precision parameter used in the response density projection operator (1 - rho_0).
   - name: Printer
     docstring: |
       Define variables for printed output.
@@ -201,11 +189,6 @@ sections:
         default: 'abgv_00'
         docstring: |
           Derivative used in paramagnetic spin-orbit operator.
-      - name: dft
-        type: str
-        default: 'abgv_00'
-        docstring: |
-          Derivative used in exchange-correlation operator.
   - name: Molecule
     docstring: |
       Define molecule.
@@ -289,16 +272,6 @@ sections:
         default: "not(user['WaveFunction']['restricted'])"
         docstring: |
           Use spin separated density functionals.
-      - name: use_gamma
-        type: bool
-        default: false
-        docstring: |
-          Express functional derivative through the gradient invariant gamma.
-      - name: log_grad
-        type: bool
-        default: false
-        docstring: |
-          Compute density gradient from log(rho).
       - name: density_cutoff
         type: float
         default: 0.0
@@ -309,8 +282,8 @@ sections:
         default: ' '
         docstring: |
           List of density functionals with numerical coefficient. E.g. for PBE0
-          ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``. See xcfun documentation for valid
-          functionals.
+          ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``. See xcfun documentation for
+          valid functionals.
   - name: Properties
     docstring: |
       Provide a list of properties to compute (total SCF energy and orbital energies

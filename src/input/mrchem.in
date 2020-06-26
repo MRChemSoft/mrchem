@@ -413,14 +413,10 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
                     "coef": coef[0]
                 })
         fock_dict["xc_operator"] = {
-            "grid_prec": user_dict["Precisions"]["dft_prec"],
             "shared_memory": user_dict["MPI"]["share_xc_potential"],
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
-                "gamma": user_dict["DFT"]["use_gamma"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                "log_grad": user_dict["DFT"]["log_grad"],
-                "derivative": user_dict["Derivatives"]["dft"],
                 "functionals": func_dict
             }
         }
@@ -718,14 +714,10 @@ def write_rsp_fock(user_dict, mol_dict, wf_method, dft_funcs):
                     "coef": coef[0]
                 })
         fock_dict["xc_operator"] = {
-            "grid_prec": user_dict["Precisions"]["dft_prec"],
             "shared_memory": user_dict["MPI"]["share_xc_potential"],
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
-                "gamma": user_dict["DFT"]["use_gamma"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                "log_grad": user_dict["DFT"]["log_grad"],
-                "derivative": user_dict["Derivatives"]["dft"],
                 "functionals": func_dict
             }
         }

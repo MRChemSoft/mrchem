@@ -911,22 +911,16 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     double exx = 1.0;
     if (json_fock.contains("xc_operator")) {
-        auto grid_prec = json_fock["xc_operator"]["grid_prec"];
         auto shared_memory = json_fock["xc_operator"]["shared_memory"];
         auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
         auto xc_spin = json_xcfunc["spin"];
-        auto xc_gamma = json_xcfunc["gamma"];
-        auto xc_log_grad = json_xcfunc["log_grad"];
         auto xc_cutoff = json_xcfunc["cutoff"];
-        auto xc_diff = json_xcfunc["derivative"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
         xc_factory.setOrder(xc_order);
-        xc_factory.setUseGamma(xc_gamma);
-        xc_factory.setLogGradient(xc_log_grad);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
