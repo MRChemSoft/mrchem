@@ -44,7 +44,7 @@ namespace mrchem {
 /** @brief Computes the SCF energy update from last iteration */
 double GroundStateSolver::calcPropertyError() const {
     int iter = this->property.size();
-    return std::abs(getUpdate(this->property, iter, false));
+    return std::abs(getUpdate(this->property, iter, true));
 }
 
 /** @brief Pretty printing of the different contributions to the SCF energy */
