@@ -1,18 +1,18 @@
 # vim:syntax=sh:
 
-world_prec = 1.0e-3               # Overall relative precision
-world_size = 6                    # Size of simulation box 2^n
+world_prec = 1.0e-3                 # Overall relative precision
+world_size = 6                      # Size of simulation box 2^n
+world_origin = [0.0, 0.0, 0.003683] # CoM in order to get correct quadrupole
 
 MPI {
-  numerically_exact = true        # Guarantee identical results in MPI
+  numerically_exact = true          # Guarantee identical results in MPI
 }
 
 Basis {
-  order = 6                       # Polynomial order
+  order = 6                         # Polynomial order
 }
 
 Molecule {
-  gauge_origin = [0.0, 0.0, 0.003683] # CoM in order to get correct quadrupole
 $coords
 O       0.0000  0.0000  -0.1250
 H      -1.4375  0.0000   1.0250
@@ -21,7 +21,7 @@ $end
 }
 
 WaveFunction {
-  method = DFT                    # Wave function method (HF or DFT)
+  method = DFT                      # Wave function method (HF or DFT)
 }
 
 DFT {
@@ -31,12 +31,12 @@ $end
 }
 
 Properties {
-  dipole_moment = true            # Compute electrostatic dipole moment
-  quadrupole_moment = true        # Compute electrostatic quadrupole moment
+  dipole_moment = true              # Compute electrostatic dipole moment
+  quadrupole_moment = true          # Compute electrostatic quadrupole moment
 }
 
 SCF {
   run = false
-  localize = true                 # Use canonical of localized orbitals
-  guess_type = GTO                # Type of initial guess: none, mw, gto
+  localize = true                   # Use canonical of localized orbitals
+  guess_type = GTO                  # Type of initial guess: none, mw, gto
 }
