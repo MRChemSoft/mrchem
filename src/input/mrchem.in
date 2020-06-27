@@ -521,6 +521,12 @@ def write_scf_plot(user_dict):
         plot_dict["orbitals"] = user_dict["Properties"]["plot_orbitals"]
         plot_dict["density"] = user_dict["Properties"]["plot_density"]
         plot_dict["plotter"] = user_dict["Plotter"]
+        if user_dict["world_unit"] == "angstrom":
+            AA = 1.889725989 # Angstrom unit conversion
+            plot_dict["plotter"]["O"] = [AA * r for r in plot_dict["plotter"]["O"]]
+            plot_dict["plotter"]["A"] = [AA * r for r in plot_dict["plotter"]["A"]]
+            plot_dict["plotter"]["B"] = [AA * r for r in plot_dict["plotter"]["B"]]
+            plot_dict["plotter"]["C"] = [AA * r for r in plot_dict["plotter"]["C"]]
     return plot_dict
 
 

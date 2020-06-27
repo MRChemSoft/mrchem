@@ -107,29 +107,38 @@ sections:
         type: List[int]
         default: [20, 20, 20]
         predicates:
-          - 'value[0] > 0'
-          - 'value[1] > 0'
-          - 'value[2] > 0'
+          - "all(p > 0 for p in value)"
+          - "not (user['Plotter']['type'] == 'line' and len(value) < 1)"
+          - "not (user['Plotter']['type'] == 'surf' and len(value) < 2)"
+          - "not (user['Plotter']['type'] == 'cube' and len(value) < 3)"
         docstring: |
           Number of points in each direction on the cube grid.
       - name: O
         type: List[float]
         default: [0.0, 0.0, 0.0]
+        predicates:
+          - 'len(value) == 3'
         docstring: |
           Origin of cube plot.
       - name: A
         type: List[float]
         default: [1.0, 0.0, 0.0]
+        predicates:
+          - 'len(value) == 3'
         docstring: |
           First boundary vector for plot.
       - name: B
         type: List[float]
         default: [0.0, 1.0, 0.0]
+        predicates:
+          - 'len(value) == 3'
         docstring: |
           Second boundary vector for plot.
       - name: C
         type: List[float]
         default: [0.0, 0.0, 1.0]
+        predicates:
+          - 'len(value) == 3'
         docstring: |
           Third boundary vector for plot.
   - name: MPI
