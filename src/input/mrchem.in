@@ -241,8 +241,8 @@ def write_mra(user_dict, mol_dict):
         # Compute auto box
         max_coord = 0.0 # single (coord + Z) with largest abs value
         for coord in mol_dict["coords"]:
-            Z_i = max(6.0, float(PT[coord["atom"]].Z))
-            max_coord = max(max_coord, abs(max(coord["xyz"], key=abs)) + Z_i)
+            Z_i = max(5.0, float(PT[coord["atom"]].Z))
+            max_coord = max(max_coord, abs(max(coord["xyz"], key=abs)) + 2.0*Z_i)
 
         min_scale = 0
         while 2.0**(-min_scale) < max_coord:
