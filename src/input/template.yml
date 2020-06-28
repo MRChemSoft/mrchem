@@ -492,7 +492,7 @@ sections:
         type: float
         default: "10 * user['world_prec']"
         docstring: |
-          Convergence threshold for orbtial residuals.
+          Convergence threshold for orbital residuals.
       - name: energy_thrs
         type: float
         default: -1.0
@@ -604,7 +604,7 @@ sections:
         type: float
         default: "10 * user['world_prec']"
         docstring: |
-          Convergence threshold for orbtial residuals.
+          Convergence threshold for orbital residuals.
       - name: property_thrs
         type: float
         default: -1.0
