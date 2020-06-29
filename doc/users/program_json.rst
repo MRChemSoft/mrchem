@@ -1,6 +1,6 @@
------------------------------
-The program input/output file
------------------------------
+-------------------------
+Program input/output file
+-------------------------
 
 
 Input schema

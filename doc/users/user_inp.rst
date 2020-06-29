@@ -490,7 +490,7 @@ between the default locations.
     setup (if you run with a different computational domain or MW basis
     type/order the calculation will crash). The ``mw`` guess will re-project
     the old orbitals onto the new computational setup and populate the orbitals
-    based on the *new* molecule (here the computation domain and MW basis does
+    based on the *new* molecule (here the computation domain and MW basis do
     *not* have to match).
 
 

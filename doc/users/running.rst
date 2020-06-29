@@ -32,7 +32,7 @@ parser script::
 
     $ mrchem --dryrun h2o
 
-This will only run the input validation part and generate the ``h2o.json``
+This will run only the input validation part and generate the ``h2o.json``
 program input, but it will *not* launch the main executable ``mrchem.x``.
 This can then be done manually in a subsequent step by calling::
 
@@ -40,7 +40,7 @@ This can then be done manually in a subsequent step by calling::
 
 This separation can be useful for instance for developers or advanced users
 who want to change some automatically generated input values before launching
-the actual program, see `:ref:Input schema`.
+the actual program, see :ref:`Input schema`.
 
 Printing to standard output
 ---------------------------
