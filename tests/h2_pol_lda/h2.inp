@@ -1,6 +1,6 @@
 {
     "world_prec": 0.001,
-    "world_size": 6,
+    "world_size": 5,
     "world_unit": "angstrom",
     "MPI": {
         "numerically_exact": true
