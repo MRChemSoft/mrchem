@@ -34,6 +34,7 @@ import subprocess
 import sys
 import tempfile
 from io import StringIO
+from shutil import copyfile
 from pathlib import Path
 
 # FIXME This will pick up modules when installed
@@ -43,45 +44,65 @@ sys.path.append('@PROJECT_SOURCE_DIR@/src/chemistry')
 from parselglossy.api import parse, validate
 from periodictable import PeriodicTable as PT
 
-
 def main():
     this_path = Path(__file__).parent
 
     # Parse command line
-    executable, dryrun, inp_json, inp_file_cmd = parse_cmdline()
+    launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
-    in_path = Path(inp_file_cmd)
-    tmpl_path = Path('@PROJECT_SOURCE_DIR@/pilot/template.yml')
+    tmpl_file = Path('@PROJECT_SOURCE_DIR@/pilot/template.yml')
+
+    inp_file = Path(inp_name + '.inp')
+    out_file = Path(inp_name + '.out')
+    json_file = Path(inp_name + '.json')
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
     if inp_json:
-        user_dict = validate(infile=in_path, template=tmpl_path)
+        user_dict = validate(infile=inp_file, template=tmpl_file)
     else:
-        user_dict = parse(infile=in_path, template=tmpl_path, grammar='getkw')
+        user_dict = parse(infile=inp_file, template=tmpl_file, grammar='getkw')
 
     # now that all keywords have sensible values,
     # we can translate user input into program input
     program_dict = {}
     program_dict["input"] = translate_input(user_dict)
+    program_dict["input"]["printer"]["file_name"] = inp_name
 
-    inp_name, ext_ext = os.path.splitext(inp_file_cmd)
-    xfile = inp_name + '.json'
-    with open(xfile, 'w') as fd:
+    with open(json_file, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
 
-    if not dryrun:
-        cmd = executable + ' ' + xfile
-        if program_dict["input"]["printer"]["print_input"]:
-            with open(inp_file_cmd, "r") as f:
-                print("".join(f.readlines()))
+    print_mpi =  program_dict["input"]["printer"]["print_mpi"]
+    print_level =  program_dict["input"]["printer"]["print_level"]
+    if stdout or print_mpi or print_level < 0:
+        cmd = launcher + ' ' + executable + ' ' + str(json_file)
+    else:
+        cmd = launcher + ' ' + executable + ' ' + str(json_file) + ' > ' + str(out_file)
+
+    if dryrun:
+        print("launch command: " + cmd)
+    else:
         subprocess.call(cmd, shell=True)
 
-
 def parse_cmdline():
-    usage = "usage: %prog [options] [config] inp_file"
+    usage = "usage: %prog [options] [config] inp_name"
     version = "@MRCHEM_VERSION@"
     cmdln = optparse.OptionParser(
         usage=usage, version="%prog {0}".format(version))
+    cmdln.add_option(
+        '--launcher',
+        action='store',
+        dest='launcher',
+        type='string',
+        default='',
+        help='Set program launcher string')
+    cmdln.add_option(
+        '-x',
+        '--executable',
+        action='store',
+        dest='executable',
+        type='string',
+        default='@MRCHEM_EXECUTABLE@',
+        help='Set executable name')
     cmdln.add_option(
         '-D',
         '--dryrun',
@@ -90,13 +111,11 @@ def parse_cmdline():
         default=False,
         help='Only process input')
     cmdln.add_option(
-        '-x',
-        '--executable',
-        action='store',
-        dest='executable',
-        type='string',
-        default='@MRCHEM_EXECUTABLE@',
-        help='set executable name')
+        '--stdout',
+        action='store_true',
+        dest='stdout',
+        default=False,
+        help='Print to stdout')
     cmdln.add_option(
         '-j',
         '--json',
@@ -108,20 +127,22 @@ def parse_cmdline():
 
     opts, args = cmdln.parse_args()
 
+    launcher = opts.launcher
     executable = opts.executable
     dryrun = opts.dryrun
+    stdout = opts.stdout
     inp_json = opts.inp_json
 
     if (len(args) == 0):
         cmdln.error('No input file passed!')
         sys.exit(1)
     elif (len(args) == 1):
-        inp_file = args[0]
+        inp_name = args[0]
     else:
         cmdln.error('Incorrect number of files')
         sys.exit(1)
 
-    return executable, dryrun, inp_json, inp_file
+    return launcher, executable, dryrun, stdout, inp_json, inp_name
 
 
 def translate_input(user_dict):
@@ -130,7 +151,7 @@ def translate_input(user_dict):
     program_dict = {
         "mpi": mpi_dict,
         "mra": mra_dict,
-        "printer": user_dict["Printer"],
+        "printer": user_dict["Printer"]
     }
     return program_dict
 
@@ -152,6 +173,11 @@ def write_mra(user_dict):
         order = int(math.ceil(-1.5 * math.log10(prec)))
 
     min_scale = -(user_dict["world_size"] - 1)
+
+    # Approximately scale world angstrom -> bohr
+    if user_dict["world_unit"] == "angstrom":
+        min_scale -= 1
+
     max_scale = 20
     if (max_scale - min_scale) > 30:
         max_scale = 30 + min_scale
@@ -162,11 +188,9 @@ def write_mra(user_dict):
         "boxes": [2, 2, 2],
         "corner": [-1, -1, -1],
         "min_scale": min_scale,
-        "max_scale": max_scale,
-        "scaling_factor": [1.0, 1.0, 1.0]
+        "max_scale": max_scale
     }
     return mra_dict
-
 
 def write_printer(user_dict):
     return user_dict["Printer"]

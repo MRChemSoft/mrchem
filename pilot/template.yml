@@ -14,6 +14,22 @@ keywords:
       Total size of computational domain given as 2**(``world_size``). Always cubic
       and symmetric around the origin. Negative value means it will be computed
       from the molecular geometry.
+  - name: world_unit
+    type: str
+    default: "bohr"
+    predicates:
+      - 'value.lower() in ["bohr", "angstrom"]'
+    docstring: |
+      Length unit for *all* coordinates given in user input. Everything will be
+      converted to atomic units (bohr) before the main executable is launched,
+      so the JSON input is *always* given in bohrs.
+  - name: world_origin
+    type: List[float]
+    default: [0.0, 0.0, 0.0]
+    predicates:
+      - 'len(value) == 3'
+    docstring: |
+      Global gauge origin of the calculation.
 sections:
   - name: Printer
     docstring: |
@@ -23,33 +39,24 @@ sections:
         type: int
         default: 0
         docstring: |
-          Level of detail in the written output. Level 0 for production calculations,
-          negative level for complete silence.
-      - name: print_input
-        type: bool
-        default: false
-        docstring: |
-          Print the user input file at the start of the calculation.
+          Level of detail in the written output. Level 0 for production
+          calculations, negative level for complete silence.
       - name: print_mpi
         type: bool
         default: false
         docstring: |
           Write separate output from each MPI to file called ``<file_name>-<mpi-rank>.out``.
-      - name: file_name
-        type: str
-        default: 'mrchem'
-        docstring: |
-          Name of output file in MPI print.
       - name: print_prec
         type: int
         default: 6
         predicates:
           - '0 < value < 10'
         docstring: |
-          Number of digits in property output (energy with factor two).
+          Number of digits in property output (energies will get twice this
+          number of digits).
       - name: print_width
         type: int
-        default: 70
+        default: 75
         predicates:
           - '50 < value < 100'
         docstring: |
@@ -74,21 +81,11 @@ sections:
         default: false
         docstring: |
           This will use MPI shared memory for the nuclear potential.
-      - name: share_coulomb_density
-        type: bool
-        default: false
-        docstring: |
-          This will use MPI shared memory for the Coulomb density.
       - name: share_coulomb_potential
         type: bool
         default: false
         docstring: |
           This will use MPI shared memory for the Coulomb potential.
-      - name: share_xc_density
-        type: bool
-        default: false
-        docstring: |
-          This will use MPI shared memory for the exchange-correlation density.
       - name: share_xc_potential
         type: bool
         default: false
