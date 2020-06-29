@@ -2,7 +2,6 @@
   "molecule": {                              # Section for Molecule specification
     "charge": int,                           # Total molecular charge
     "multiplicity": int                      # Total spin multiplicity
-    "gauge_origin": array[float],            # Gauge origin coordinate
     "coords": array[                         # Array of atoms
       {                                      # (one entry per atom)
         "atom": string,                      # Atomic symbol
@@ -26,7 +25,6 @@
   },                                         
   "printer": {                               # Section for printed output
     "file_name": string,                     # Name of output file
-    "print_input": bool,                     # Dump user input in output file
     "print_level": int,                      # Amount of printed output
     "print_mpi": bool,                       # Use separate output file for each MPI
     "print_prec": int,                       # Number of digits for printed output
@@ -51,14 +49,10 @@
         "screen": bool                       # Use screening in Exchange operator
       },                                     
       "xc_operator": {                       # Add XC operator to Fock
-        "grid_prec": float,                  # Projection prec for density
         "shared_memory": bool,               # Use shared memory for potential
         "xc_functional": {                   # XC functional specification
           "spin": bool,                      # Use spin separated functional
-          "gamma": bool,                     # Use gamma density variable
           "cutoff": float,                   # Cutoff value for small densities
-          "log_grad": bool,                  # Use log parametrization of gradient
-          "derivative": string,              # Type of derivative operator
           "functionals": array[              # Array of density functionals
             {                                
               "coef": float,                 # Numerical coefficient
@@ -117,7 +111,19 @@
           "r_O": array[float]                # Operator gauge origin
         }                                    
       }                                      
-    }                                        
+    },
+    "plots": {                               # Collection of plots to perform
+      "density": bool,                       # Plot converged densities
+      "orbitals": array[int],                # List of orbitals to plot
+      "plotter": {                           # Section specifying plotting parameters
+        "path": string,                      # Path to output files
+        "type": string,                      # Type of plot (line, surf or cube)
+        "points": array[int],                # Number of points in each direction
+        "O": array[float],                   # Plotting range origin
+        "A": array[float],                   # Plotting range A vector
+        "B": array[float],                   # Plotting range B vector
+        "C": array[float]                    # Plotting range C vector
+    }
   },                                         
   "rsp_calculations": {                      # Collection of response calculations
     id (string): {                           # Response id: e.g. 'ext_el-${frequency}'
@@ -196,14 +202,10 @@
           "screen": bool                     # Use screening in Exchange operator
         },                                   
         "xc_operator": {                     # Add XC operator to Fock
-          "grid_prec": float,                # Projection prec for density
           "shared_memory": bool,             # Use shared memory for potential
           "xc_functional": {                 # XC functional specification
             "spin": bool,                    # Use spin separated functional
-            "gamma": bool,                   # Use gamma density variable
             "cutoff": float,                 # Cutoff value for small densities
-            "log_grad": bool,                # Use log parametrization of gradient
-            "derivative": string,            # Type of derivative operator
             "functionals": array[            # Array of density functionals
               {                              
                 "coef": float,               # Numerical coefficient
@@ -234,14 +236,10 @@
             "screen": bool                   # Use screening in Exchange operator
           },
           "xc_operator": {                   # Add XC operator to Fock
-            "grid_prec": float,              # Projection prec for density
             "shared_memory": bool,           # Use shared memory for potential
             "xc_functional": {               # XC functional specification
               "spin": bool,                  # Use spin separated functional
-              "gamma": bool,                 # Use gamma density variable
               "cutoff": float,               # Cutoff value for small densities
-              "log_grad": bool,              # Use log parametrization of gradient
-              "derivative": string,          # Type of derivative operator
               "functionals": array[          # Array of density functionals
                 {
                   "coef": float,             # Numerical coefficient
