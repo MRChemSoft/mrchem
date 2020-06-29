@@ -247,6 +247,10 @@ def write_mra(user_dict, mol_dict):
         min_scale = 0
         while 2.0**(-min_scale) < max_coord:
             min_scale = min_scale - 1
+    else:
+        # Approximately scale world angstrom -> bohr
+        if user_dict["world_unit"] == "angstrom":
+            min_scale -= 1
 
     max_scale = 20
     if (max_scale - min_scale) > 30:
@@ -258,8 +262,7 @@ def write_mra(user_dict, mol_dict):
         "boxes": [2, 2, 2],
         "corner": [-1, -1, -1],
         "min_scale": min_scale,
-        "max_scale": max_scale,
-        "scaling_factor": [1.0, 1.0, 1.0]
+        "max_scale": max_scale
     }
     return mra_dict
 

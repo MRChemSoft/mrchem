@@ -100,8 +100,7 @@ void mrenv::init_mra(const json &json_mra) {
     int max_scale = json_mra["max_scale"];
     auto corner = json_mra["corner"];
     auto boxes = json_mra["boxes"];
-    auto sfac = json_mra["scaling_factor"];
-    mrcpp::BoundingBox<3> world(min_scale, corner, boxes, sfac);
+    mrcpp::BoundingBox<3> world(min_scale, corner, boxes);
 
     // Initialize scaling basis
     auto order = json_mra["basis_order"];

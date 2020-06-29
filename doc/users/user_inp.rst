@@ -32,7 +32,7 @@ by name, just write the keywords directly, e.g
 .. code-block:: bash
 
     world_prec = 1.0e-5                     # Overall relative precision
-    world_size = 5                          # World size 2^world_size
+    world_size = 5                          # Size of domain 2^{world_size}
     world_unit = bohr                       # Global length unit
     world_origin = [0.0, 0.0, 0.0]          # Global gauge origin
 
@@ -41,14 +41,21 @@ you are expected to get out of the computation (note that
 :math:`\epsilon_{rel}=10^{-6}` yields :math:`\mu` Ha accuracy for the hydrogen
 molecule, but only mHa accuracy for benzene).
 
-The computational domain is always symmetric around the origin, with `total`
+The computational domain is always symmetric around the origin, with *total*
 size given by the ``world_size`` parameter as :math:`[2^n]^3`, e.i.
-``world_size=5`` gives a domain of :math:`[-16,16]^3` ``world_unit`` s.
+``world_size = 5`` gives a domain of :math:`[-16,16]^3`.
 Make sure that the world is large enough to allow the molecular density to
 reach zero on the boundary. The ``world_size`` parameter can be left out,
 in which case the size will be estimated based on the molecular geometry.
 The ``world_unit`` relates to **all** coordinates given in the input file and
 can be one of two options: ``angstrom`` or ``bohr``.
+
+.. note::
+
+    The ``world_size`` will be only approximately scaled by the angstrom unit,
+    by adding an extra factor of 2 rather than the appropriate factor of ~1.89.
+    This means that e.g. ``world_size = 5`` (:math:`[-16,16]^3`) with
+    ``world_unit = angstrom`` will be translated into :math:`[-32,32]^3` bohrs.
 
 Precisions
 ----------
