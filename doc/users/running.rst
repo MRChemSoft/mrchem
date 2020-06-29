@@ -18,9 +18,10 @@ This will under the hood actually do the following two steps::
     $ mrchem h2o.inp > h2o.json
     $ mrchem.x h2o.json > h2o.out
 
-Note that the first step requires that the input parser library
-``parselglossy`` is installed and available, see :ref:`Installation`
-instructions.
+The first step includes input validation, which means that everything
+tht passes this step is a well-formed computation. This step also requires
+that the input parser library ``parselglossy`` is installed and available,
+see :ref:`Installation` instructions.
 
 
 Dry-running the input parser
@@ -39,7 +40,7 @@ This can then be done manually in a subsequent step by calling::
 
 This separation can be useful for instance for developers or advanced users
 who want to change some automatically generated input values before launching
-the actual program.
+the actual program, see `:ref:Input schema`.
 
 Printing to standard output
 ---------------------------
@@ -55,8 +56,9 @@ Reproducing old calculations
 
 The JSON in/out file acts as a full record of the calculation, and can be
 used to reproduce old results. Simply pass the JSON file once more
-to ``mrchem.x``, and the ``"output"`` section will be overwritten.
+to ``mrchem.x``, and the ``"output"`` section will be overwritten::
 
+    $ mrchem.x h2o.json
 
 User input in JSON format
 -------------------------
@@ -106,7 +108,7 @@ the code on 16 threads (all sharing the same physical memory space)::
 Distributed memory MPI
 ++++++++++++++++++++++
 
-In order to run a program in MPI parallel, it must be executed with an MPI
+In order to run a program in an MPI parallel fashion, it must be executed with an MPI
 launcher like ``mpirun``, ``mpiexec``, ``srun``, etc. Note that it is only
 the main executable ``mrchem.x`` that should be launched in parallel, **not**
 the ``mrchem`` input parser script. This can be achieved *either* by running
@@ -128,8 +130,8 @@ as it will be literally prepended to the ``mrchem.x`` command when the
 .. hint::
 
     For best performance, it is recommended to use shared memory *within*
-    each NUMA domain (usually one per socket) of your CPU, and MPI across
-    NUMA domains and
+    each `NUMA <https://en.wikipedia.org/wiki/Non-uniform_memory_access>`_
+    domain (usually one per socket) of your CPU, and MPI across NUMA domains and
     ultimately machines. Ideally, the number of OpenMP threads should be
     between 8-20. E.g. on hardware with two sockets of 16 cores each, use
     OMP_NUM_THREADS=16 and scale the number of MPI processes by the size
@@ -140,12 +142,14 @@ as it will be literally prepended to the ``mrchem.x`` command when the
 Parallel pitfalls
 -----------------
 
-Parallel program execution is not a black box procedure, and the behavior and
-efficiency of the run depends on several factors, like hardware configuration,
-operating system, compiler type and flags, libraries for OpenMP and MPI, type
-of queing system on a shared cluster, etc. Please make sure that the program
-runs correctly on *your* system and is able to utilize the computational
-resources before commencing production calculations.
+.. warning::
+
+    Parallel program execution is not a black box procedure, and the behavior and
+    efficiency of the run depends on several factors, like hardware configuration,
+    operating system, compiler type and flags, libraries for OpenMP and MPI, type
+    of queing system on a shared cluster, etc. Please make sure that the program
+    runs correctly on *your* system and is able to utilize the computational
+    resources before commencing production calculations.
 
 Typical pitfalls for OpenMP
 +++++++++++++++++++++++++++

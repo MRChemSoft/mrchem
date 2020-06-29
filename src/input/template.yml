@@ -301,8 +301,8 @@ sections:
         default: ' '
         docstring: |
           List of density functionals with numerical coefficient. E.g. for PBE0
-          ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``. See xcfun documentation for
-          valid functionals.
+          ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun
+          documentation <https://xcfun.readthedocs.io/>_.
   - name: Properties
     docstring: |
       Provide a list of properties to compute (total SCF energy and orbital

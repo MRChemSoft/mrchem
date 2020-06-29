@@ -316,7 +316,8 @@ User input reference
 
     **Default** ``0.0``
 
-   :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``. See xcfun documentation for valid functionals.
+
+   :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun documentation <https://xcfun.readthedocs.io/>_.
 
     **Type** ``str``
 
