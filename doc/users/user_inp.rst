@@ -9,28 +9,29 @@ type. Input keywords and sections are **case-sensitive**, while `values` are
 .. code-block:: bash
 
     Section {
-       keyword_1 = 1                       # int
-       keyword_2 = 3.14                    # double
-       keyword_3 = [1, 2, 3]               # int array
-       keyword_4 = foo                     # string
-       keyword_5 = true                    # bool
+      keyword_1 = 1                       # int
+      keyword_2 = 3.14                    # float
+      keyword_3 = [1, 2, 3]               # int array
+      keyword_4 = foo                     # string
+      keyword_5 = true                    # bool
     }
 
-A  complete list of available input keywords can be found in the :ref:`Input
-parameters`.
+A  complete list of available input keywords can be found in the :ref:`User input
+reference`.
 
 Top section
 -----------
 
-The main input section contain two keywords, the relative precision
+The main input section contain three keywords, the relative precision
 :math:`\epsilon_{rel}` that will be guaranteed in the calculation and the size
-of the computational domain. The top section is not specified by name, just
-write the keywords directly, e.g
+and origin of the computational domain. The top section is not specified by
+name, just write the keywords directly, e.g
 
 .. code-block:: bash
 
     world_prec = 1.0e-5                       # Overall relative precision
     world_size = 5                            # World size 2^world_size
+    world_origin = [0.0, 0.0, 0.0]            # Global gauge origin
 
 The relative precision sets an upper limit for the number of correct digits
 you are expected to get out of the computation (note that
@@ -41,7 +42,7 @@ The computational domain is always symmetric around the origin, with `total`
 size given by the ``world_size`` parameter as :math:`[2^n]^3`, e.i.
 ``world_size=5`` gives a domain of :math:`[-16,16]^3` atomic units (bohrs).
 Make sure that the world
-is large enough to allow the molecular density to reach zero on the boundary. 
+is large enough to allow the molecular density to reach zero on the boundary.
 The ``world_size`` parameter can be left out, in which case the size will be
 estimated based on the molecular geometry.
 
@@ -57,33 +58,35 @@ the `construction` of the Poisson and Helmholtz integral operators.
 .. code-block:: bash
 
     Precisions {
-        nuc_prec = 1.0e-6
-        poisson_prec = 1.0e-6
-        helmholtz_prec = 1.0e-6
+      nuc_prec = 1.0e-6
+      poisson_prec = 1.0e-6
+      helmholtz_prec = 1.0e-6
     }
 
-By default, all precision parameters follows ``world_prec``.
+By default, all precision parameters follow ``world_prec``.
 
 Printer
 -------
 
-The following are the most important Printer keywords:
+This section controls the format of the printed output file (``.out``
+extension). The most important option is the ``print_level``
 
 .. code-block:: bash
 
     Printer {
-        print_level = 0       # Level of detail in the written output
-        print_input = true    # Print the input file at the start of the calculation
+      print_level = 0       # Level of detail in the written output
     }
 
 Available print levels:
 
+- ``print_level=-1`` no output is printed
 - ``print_level=0`` prints mainly properties
 - ``print_level=1`` adds timings for individual steps
 - ``print_level=2`` adds memory and timing information on ``OrbitalVector`` level
 - ``print_level=3`` adds memory and timing information on ``Orbital`` level
 - ``print_level>10`` adds a *lot* more output from deep within MRCPP
 
+See :ref:`User output file` for more details.
 
 
 Basis
@@ -94,12 +97,13 @@ This section defines the polynomial MultiWavelet basis
 .. code-block:: bash
 
     Basis {
-        type = Interpolating  # Legendre or Interpolating
-        order = 7             # Polynomial order of MW basis
+      type = Interpolating  # Legendre or Interpolating
+      order = 7             # Polynomial order of MW basis
     }
 
 The MW basis is defined by the polynomial order :math:`k`, and the type of
-scaling functions (Legendre or Interpolating polynomials). Note that
+scaling functions: Legendre or Interpolating polynomials (in the current
+implementation it doesn't really matter which type you choose). Note that
 increased precision requires higher polynomial order (use e.g :math:`k = 5`
 for :math:`\epsilon_{rel} = 10^{-3}`, and :math:`k = 13` for
 :math:`\epsilon_{rel} = 10^{-9}`, and interpolate in between). If the ``order``
@@ -119,10 +123,10 @@ shown)
 .. code-block:: bash
 
     Molecule {
-        charge       = 0                    # total charge of molecule
-        multiplicity = 1                    # spin multiplicity
-        translate    = false                # translate center of mass to origin
-        angstrom     = false                # geometry given in angstrom
+      charge       = 0                    # total charge of molecule
+      multiplicity = 1                    # spin multiplicity
+      translate    = false                # translate center of mass to origin
+      angstrom     = false                # geometry given in angstrom
     $coords
     O   0.0000     0.0000     0.0000
     H   0.0000     1.4375     1.1500
@@ -143,16 +147,16 @@ must be specified, otherwise defaults are shown)
 .. code-block:: bash
 
     WaveFunction {
-        method     = <wavefunction_method>  # Core, Hartree, HF or DFT
-        restricted = true                   # Spin restricted/unrestricted
+      method     = <wavefunction_method>  # Core, Hartree, HF or DFT
+      restricted = true                   # Spin restricted/unrestricted
     }
 
 There are currently four methods available: Core Hamiltonian, Hartree,
 Hartree-Fock (HF) and Density Functional Theory (DFT). When running DFT you can
 `either` set one of the default functionals in this section (e.g. ``method =
 B3LYP``), `or` you can set ``method = DFT`` and specify a "non-standard"
-functional in the separate DFT section (see below). See :ref:`Input
-parameters` for a list of available default functionals.
+functional in the separate DFT section (see below). See
+:ref:`User input reference` for a list of available default functionals.
 
 DFT
 ---
@@ -164,58 +168,130 @@ This section can be omitted if you are using a default functional, see above.
 .. code-block:: bash
 
     DFT {
-        spin = false                        # Use spin-polarized functionals
-        use_gamma = true                    # Use explicit derivatives or gamma
-        density_cutoff = 0.0                # Cutoff to set XC potential to zero
-        $functionals
-        <func1>     1.0                     # Functional name and coefficient
-        <func2>     1.0
-        $end
+      spin = false                        # Use spin-polarized functionals
+      density_cutoff = 0.0                # Cutoff to set XC potential to zero
+    $functionals
+    <func1>     1.0                       # Functional name and coefficient
+    <func2>     1.0
+    $end
     }
 
 You can specify as many functionals as you want, and they will be added on top
 of each other with the given coefficient. Both exchange and correlation
 functionals must be set explicitly, e.g. ``SLATERX`` and ``VWN5C`` for the
-standard LDA functional. If the ``spin`` parameter is not explicitly set it will
-follow the ``restricted`` parameter of the ``WaveFunction`` section.
-Option to use explicit partial derivatives for the density gradients
-(:math:`\delta f_{xc}/\delta\nabla\rho`) or the invariants
-(:math:`\gamma=\nabla\rho\cdot\nabla\rho`). For hybrid functionals you must
-specify the amount of exact Hartree-Fock exchange as a separate functional
+standard LDA functional. For hybrid functionals you must specify the amount
+of exact Hartree-Fock exchange as a separate functional
 ``EXX`` (``EXX 0.2`` for B3LYP and ``EXX 0.25`` for PBE0 etc.). Option to use
-spin-polarized functionals. Unrestricted calculations will use spin-polarized
-functionals by default. The XC functionals are provided by the
+spin-polarized functionals or not. Unrestricted calculations will use
+spin-polarized functionals by default. The XC functionals are provided by the
 `XCFun <https://github.com/dftlibs/xcfun>`_ library.
 
 Properties
 ----------
 
-Specify which properties to compute. Currently the following are available
-(defaults shown)
+Specify which properties to compute. By default, only the ground state SCF
+energy as well as orbital energies will be computed. Currently the following
+properties are available (all are ``false`` by default)
 
 .. code-block:: bash
 
     Properties {
-        scf_energy    = true                # Compute total SCF energy
-        dipole_moment = false               # Compute dipole moment
+      dipole_moment = false               # Compute dipole moment
+      quadrupole_moment = false           # Compute quadrupole moment
+      polarizabiltity = false             # Compute polarizability
+      magnetizability = false             # Compute magnetizability
+      nmr_shielding = false               # Compute NMR shieldings
+      plot_density = false                # Plot converged density
+      plot_orbitals = []                  # Plot converged orbitals
     }
 
-SCF
----
+Each of these properties will be described in detail below.
+
+
+Molecular energy
+++++++++++++++++
+
+Dipole moment
++++++++++++++
+
+Quadrupole moment
++++++++++++++++++
+
+Polarizability
+++++++++++++++
+
+.. code-block:: bash
+
+    Polarizability {
+      frequency = [0.0]                   # List of frequencies to compute
+    }
+
+Magnetizability
++++++++++++++++
+
+NMR shielding
++++++++++++++
+
+    NMRShielding {
+      nuclear_specific = false            # Use nuclear specific perturbation operator
+      nucleus_k = [-1]                    # List of nuclei to compute (-1 computes all)
+    }
+
+Density plots
++++++++++++++
+
+    PlotDensity {
+      path_plots = plots
+      points = [20, 20, 20]             # number of grid points
+      O = [-4.0,-4.0,-4.0]              # plot origin
+      A = [8.0, 0.0, 0.0]               # boundary vector
+      B = [0.0, 8.0, 0.0]               # boundary vector
+      C = [0.0, 0.0, 8.0]               # boundary vector
+    }
+
+Orbital plots
++++++++++++++
+
+    PlotOrbitals {
+      orbital = [-1]                    # List of nuclei to compute (-1 computes all)
+    }
+
+SCF calculation
+---------------
 
 Specify the parameters for the SCF optimization of the ground state wave
 function (defaults shown)
 
+Initial guess
++++++++++++++
+
+Several types of initial guesses are available.
+
 .. code-block:: bash
 
     SCF {
-        kain           = 0                 # Length of KAIN iterative subspace
-        max_iter       = -1                # Maximum number of SCF iterations
-        rotation       = 0                 # Iterations between diagonalize/localize
-        localize       = false             # Use canonical or localized  orbitals
-        orbital_thrs   = -1.0              # Convergence threshold orbitals
-        property_thrs  = -1.0              # Convergence threshold energy
-        initial_guess  = sad_dz            # Type of inital guess (mw, gto, core, sad)
+      guess_prec     = 1.0e-3
+      guess_type     = sad_dz            # Type of inital guess (chk, mw, gto, core, sad)
+    }
+
+Write orbitals
+++++++++++++++
+
+Checkpointing
++++++++++++++
+
+SCF solver
+++++++++++
+
+.. code-block:: bash
+
+    SCF {
+      kain           = 3                 # Length of KAIN iterative subspace
+      max_iter       = 100               # Maximum number of SCF iterations
+      rotation       = 0                 # Iterations between diagonalize/localize
+      localize       = false             # Use canonical or localized  orbitals
+      orbital_thrs   = -1.0              # Convergence threshold orbitals
+      energy_thrs    = -1.0              # Convergence threshold energy
     }
 
 We specify a convergence threshold both for the orbitals
@@ -293,7 +369,7 @@ orbitals 1 and 2:
 
     SCF {
       plot_density = true    # plot converged density (including spin for open-shell)
-      plot_orbital = [1,2]   # plot converged 1 and 2 (negative idx plots all)
+      plot_orbital = [1,2]   # plot orbital 1 and 2 (negative idx plots all)
     }
 
 The generated files (e.g. ``plots/phi_1_re.cube``) can be viewed directly in a
