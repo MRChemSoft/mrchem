@@ -379,8 +379,8 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs):
 
     # Nuclear
     fock_dict["nuclear_operator"] = {
-        "proj_prec": user_dict["Precisions"]["nuc_prec"],
-        "smooth_prec": user_dict["Precisions"]["nuc_prec"],
+        "proj_prec": user_dict["Precisions"]["nuclear_prec"],
+        "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
         "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
     }
 

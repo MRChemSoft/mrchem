@@ -54,7 +54,7 @@ User input reference
  :Precisions: Define specific precision parameters.
 
   :red:`Keywords`
-   :nuc_prec: Precision parameter used in smoothing and projection of nuclear potential.
+   :nuclear_prec: Precision parameter used in smoothing and projection of nuclear potential.
 
     **Type** ``float``
 
