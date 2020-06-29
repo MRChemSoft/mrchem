@@ -20,8 +20,7 @@
     "max_scale": int,                        # Maximum level of refinement
     "min_scale": int,                        # Minimum level of refinement (root scale)
     "boxes": array[int],                     # Number of root boxes
-    "corner": array[int],                    # Translation of first root box
-    "scaling_factor": array[float]           # Coordinate scaling factor
+    "corner": array[int]                     # Translation of first root box
   },                                         
   "printer": {                               # Section for printed output
     "file_name": string,                     # Name of output file
