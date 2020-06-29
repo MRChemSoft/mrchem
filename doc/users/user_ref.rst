@@ -32,67 +32,29 @@ User input reference
   **Predicates**
     - ``value <= 10``
 
+ :world_unit: Length unit for *all* coordinates given in user input. Everything will be converted to atomic units (bohr) before the main executable is launched, so the JSON input is *always* given in bohrs.
+
+  **Type** ``str``
+
+  **Default** ``bohr``
+
+  **Predicates**
+    - ``value.lower() in ["bohr", "angstrom"]``
+
+ :world_origin: Global gauge origin of the calculation.
+
+  **Type** ``List[float]``
+
+  **Default** ``[0.0, 0.0, 0.0]``
+
+  **Predicates**
+    - ``len(value) == 3``
+
 :red:`Sections`
- :Plotter: Cube plots of converged orbitals and densities.
-
-  :red:`Keywords`
-   :path_plots: File path to plot directory.
-
-    **Type** ``str``
-
-    **Default** ``plots``
-
-    **Predicates**
-      - ``value[-1] != '/'``
-
-   :points: Number of points in each direction on the cube grid.
-
-    **Type** ``List[int]``
-
-    **Default** ``[20, 20, 20]``
-
-    **Predicates**
-      - ``value[0] > 0``
-      - ``value[1] > 0``
-      - ``value[2] > 0``
-
-   :O: Origin of cube plot.
-
-    **Type** ``List[float]``
-
-    **Default** ``[0.0, 0.0, 0.0]``
-
-   :A: First boundary vector for plot.
-
-    **Type** ``List[float]``
-
-    **Default** ``[1.0, 0.0, 0.0]``
-
-   :B: Second boundary vector for plot.
-
-    **Type** ``List[float]``
-
-    **Default** ``[0.0, 1.0, 0.0]``
-
-   :C: Third boundary vector for plot.
-
-    **Type** ``List[float]``
-
-    **Default** ``[0.0, 0.0, 1.0]``
-
  :Precisions: Define specific precision parameters.
 
   :red:`Keywords`
    :nuc_prec: Precision parameter used in smoothing and projection of nuclear potential.
-
-    **Type** ``float``
-
-    **Default** ``user['world_prec']``
-
-    **Predicates**
-      - ``1.0e-10 < value < 1.0``
-
-   :dft_prec: Precision parameter used in DFT grid.
 
     **Type** ``float``
 
@@ -116,12 +78,6 @@ User input reference
 
     **Default** ``user['world_prec']``
 
-   :orth_prec: Precision parameter used in the response density projection operator (1 - rho_0).
-
-    **Type** ``float``
-
-    **Default** ``1e-14``
-
  :Printer: Define variables for printed output.
 
   :red:`Keywords`
@@ -137,7 +93,7 @@ User input reference
 
     **Default** ``False``
 
-   :print_prec: Number of digits in property output (energy with factor two).
+   :print_prec: Number of digits in property output (energies will get twice this number of digits).
 
     **Type** ``int``
 
@@ -150,10 +106,79 @@ User input reference
 
     **Type** ``int``
 
-    **Default** ``70``
+    **Default** ``75``
 
     **Predicates**
       - ``50 < value < 100``
+
+ :Plotter: Give details regarding the density and orbital plots. Three types of plots are available, line, surface and cube, and the plotting ranges are defined by three vectors (A, B and C) and an origin (O): ``line``: plots on line spanned by A, starting from O. ``surf``: plots on surface spanned by A and B, starting from O. ``cube``: plots on volume spanned by A, B and C, starting from O.
+
+  :red:`Keywords`
+   :path: File path to plot directory.
+
+    **Type** ``str``
+
+    **Default** ``plots``
+
+    **Predicates**
+      - ``value[-1] != '/'``
+
+   :type: Type of plot: line (1D), surface (2D) or cube (3D).
+
+    **Type** ``str``
+
+    **Default** ``cube``
+
+    **Predicates**
+      - ``value.lower() in ['line', 'surf', 'cube']``
+
+   :points: Number of points in each direction on the cube grid.
+
+    **Type** ``List[int]``
+
+    **Default** ``[20, 20, 20]``
+
+    **Predicates**
+      - ``all(p > 0 for p in value)``
+      - ``not (user['Plotter']['type'] == 'line' and len(value) < 1)``
+      - ``not (user['Plotter']['type'] == 'surf' and len(value) < 2)``
+      - ``not (user['Plotter']['type'] == 'cube' and len(value) < 3)``
+
+   :O: Origin of plotting ranges.
+
+    **Type** ``List[float]``
+
+    **Default** ``[0.0, 0.0, 0.0]``
+
+    **Predicates**
+      - ``len(value) == 3``
+
+   :A: First boundary vector for plot.
+
+    **Type** ``List[float]``
+
+    **Default** ``[1.0, 0.0, 0.0]``
+
+    **Predicates**
+      - ``len(value) == 3``
+
+   :B: Second boundary vector for plot.
+
+    **Type** ``List[float]``
+
+    **Default** ``[0.0, 1.0, 0.0]``
+
+    **Predicates**
+      - ``len(value) == 3``
+
+   :C: Third boundary vector for plot.
+
+    **Type** ``List[float]``
+
+    **Default** ``[0.0, 0.0, 1.0]``
+
+    **Predicates**
+      - ``len(value) == 3``
 
  :MPI: Define MPI related parameters.
 
@@ -176,19 +201,7 @@ User input reference
 
     **Default** ``False``
 
-   :share_coulomb_density: This will use MPI shared memory for the Coulomb density.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
    :share_coulomb_potential: This will use MPI shared memory for the Coulomb potential.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :share_xc_density: This will use MPI shared memory for the exchange-correlation density.
 
     **Type** ``bool``
 
@@ -245,12 +258,6 @@ User input reference
 
     **Default** ``abgv_00``
 
-   :dft: Derivative used in exchange-correlation operator.
-
-    **Type** ``str``
-
-    **Default** ``abgv_00``
-
  :Molecule: Define molecule.
 
   :red:`Keywords`
@@ -266,23 +273,11 @@ User input reference
 
     **Default** ``1``
 
-   :angstrom: Coordinates given in angstrom rather than bohr.
+   :translate: Translate coordinates such that center of mass coincides with the global gauge origin.
 
     **Type** ``bool``
 
     **Default** ``False``
-
-   :translate: Translate center of mass to gauge origin.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :gauge_origin: Gauge origin used in property calculations.
-
-    **Type** ``List[float]``
-
-    **Default** ``[0.0, 0.0, 0.0]``
 
    :coords: Coordinates in xyz format.
 
@@ -315,18 +310,6 @@ User input reference
 
     **Default** ``not(user['WaveFunction']['restricted'])``
 
-   :use_gamma: Express functional derivative through the gradient invariant gamma.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :log_grad: Compute density gradient from log(rho).
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
    :density_cutoff: Hard cutoff for passing density values to XCFun.
 
     **Type** ``float``
@@ -348,31 +331,13 @@ User input reference
 
     **Default** ``False``
 
-   :quadrupole_moment: Compute quadrupole moment.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :geometry_derivative: Compute geometric derivative.
+   :quadrupole_moment: Compute quadrupole moment. Note: Gauge origin dependent, should be used with ``translate = true`` in Molecule.
 
     **Type** ``bool``
 
     **Default** ``False``
 
    :polarizability: Compute polarizability tensor.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :hyperpolarizability: Compute hyperpolarizability tensor.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :optical_rotation: Compute optical rotation tensor.
 
     **Type** ``bool``
 
@@ -390,17 +355,17 @@ User input reference
 
     **Default** ``False``
 
-   :spin_spin_coupling: Compute spin-spin coupling tensors.
+   :plot_density: Plot converged electron density.
 
     **Type** ``bool``
 
     **Default** ``False``
 
-   :hyperfine_coupling: Compute hyperfine coupling tensors.
+   :plot_orbitals: Plot converged molecular orbitals from list of indices, negative index plots all orbitals.
 
-    **Type** ``bool``
+    **Type** ``List[int]``
 
-    **Default** ``False``
+    **Default** ``[]``
 
  :ExternalFields: Define external electromagnetic fields.
 
@@ -417,23 +382,11 @@ User input reference
  :Polarizability: Give details regarding the polarizability calculation.
 
   :red:`Keywords`
-   :velocity: Use velocity gauge in calculation of polarizability tensor.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
    :frequency: List of external field frequencies.
 
     **Type** ``List[float]``
 
     **Default** ``[0.0]``
-
-   :wavelength: List of external field wavelengths.
-
-    **Type** ``List[float]``
-
-    **Default** ``[]``
 
  :NMRShielding: Give details regarding the NMR shileding calculation.
 
@@ -444,13 +397,13 @@ User input reference
 
     **Default** ``False``
 
-   :nucleus_k: List of nuclei to compute. Negative value computes all.
+   :nucleus_k: List of nuclei to compute. Negative value computes all nuclei.
 
     **Type** ``List[int]``
 
     **Default** ``[-1]``
 
- :Files: Defines file paths used for program input/output.
+ :Files: Defines file paths used for program input/output. Note: all paths must be given in quotes if they contain slashes "path/to/file".
 
   :red:`Keywords`
    :guess_basis: File name for GTO basis set, used with ``gto`` guess.
@@ -550,7 +503,7 @@ User input reference
 
     **Type** ``int``
 
-    **Default** ``3``
+    **Default** ``5``
 
    :rotation: Number of iterations between each diagonalization/localization.
 
@@ -564,11 +517,11 @@ User input reference
 
     **Default** ``False``
 
-   :orbital_thrs: Convergence threshold for orbtial residuals.
+   :orbital_thrs: Convergence threshold for orbital residuals.
 
     **Type** ``float``
 
-    **Default** ``-1.0``
+    **Default** ``10 * user['world_prec']``
 
    :energy_thrs: Convergence threshold for SCF energy.
 
@@ -608,7 +561,7 @@ User input reference
         ``'core_sz', 'core_dz', 'core_tz', 'core_qz',``
         ``'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
 
-   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations.
+   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint".
 
     **Type** ``bool``
 
@@ -629,7 +582,7 @@ User input reference
 
     **Default** ``False``
 
-   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword.
+   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. Note: must be given in quotes if there are slashes in the path "path/to/orbitals".
 
     **Type** ``str``
 
@@ -637,18 +590,6 @@ User input reference
 
     **Predicates**
       - ``value[-1] != '/'``
-
-   :plot_density: Plot converged electron density. Including spin densities for open-shell.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :plot_orbital: Plot converged molecular orbitals of given index. If the first index is negative, all orbitals will be plotted.
-
-    **Type** ``List[int]``
-
-    **Default** ``[]``
 
  :Response: Includes parameters related to the response SCF optimization.
 
@@ -669,7 +610,7 @@ User input reference
 
     **Type** ``int``
 
-    **Default** ``3``
+    **Default** ``5``
 
    :localize: Use canonical or localized unperturbed orbitals.
 
@@ -677,13 +618,13 @@ User input reference
 
     **Default** ``user['SCF']['localize']``
 
-   :orbital_thrs: Convergence threshold for orbtial residuals.
+   :orbital_thrs: Convergence threshold for orbital residuals.
 
     **Type** ``float``
 
-    **Default** ``-1.0``
+    **Default** ``10 * user['world_prec']``
 
-   :property_thrs: Convergence threshold for SCF energy.
+   :property_thrs: Convergence threshold for symmetric property. Symmetric meaning the property computed from the same operator as the response purturbation, e.g. for external magnetic field the symmetric property corresponds to the magnetizability (NMR shielding in non-symmetric, since one of the operators is external magnetic field, while the other is nuclear magnetic moment).
 
     **Type** ``float``
 

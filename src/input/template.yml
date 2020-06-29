@@ -87,7 +87,12 @@ sections:
           Line width of printed output (in number of characters).
   - name: Plotter
     docstring: |
-      Give details regarding the density and orbital plots.
+      Give details regarding the density and orbital plots. Three types of
+      plots are available, line, surface and cube, and the plotting ranges
+      are defined by three vectors (A, B and C) and an origin (O):
+      ``line``: plots on line spanned by A, starting from O.
+      ``surf``: plots on surface spanned by A and B, starting from O.
+      ``cube``: plots on volume spanned by A, B and C, starting from O.
     keywords:
       - name: path
         type: str
@@ -119,7 +124,7 @@ sections:
         predicates:
           - 'len(value) == 3'
         docstring: |
-          Origin of cube plot.
+          Origin of plotting ranges.
       - name: A
         type: List[float]
         default: [1.0, 0.0, 0.0]
@@ -161,21 +166,11 @@ sections:
         default: false
         docstring: |
           This will use MPI shared memory for the nuclear potential.
-      - name: share_coulomb_density
-        type: bool
-        default: false
-        docstring: |
-          This will use MPI shared memory for the Coulomb density.
       - name: share_coulomb_potential
         type: bool
         default: false
         docstring: |
           This will use MPI shared memory for the Coulomb potential.
-      - name: share_xc_density
-        type: bool
-        default: false
-        docstring: |
-          This will use MPI shared memory for the exchange-correlation density.
       - name: share_xc_potential
         type: bool
         default: false
@@ -370,12 +365,6 @@ sections:
         default: [0.0]
         docstring: |
           List of external field frequencies.
-      - name: wavelength
-        type: List[float]
-        default: []
-        docstring: |
-          List of external field wavelengths (will be converted to frequency
-          before the main executable is launched).
   - name: NMRShielding
     docstring: |
       Give details regarding the NMR shileding calculation.
@@ -393,6 +382,8 @@ sections:
   - name: Files
     docstring: |
       Defines file paths used for program input/output.
+      Note: all paths must be given in quotes if they contain slashes
+      "path/to/file".
     keywords:
       - name: guess_basis
         type: str
@@ -552,7 +543,8 @@ sections:
         docstring: |
           Write orbitals to disk in each iteration, file name
           ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial
-          guess in subsequent calculations.
+          guess in subsequent calculations. Note: must be given in quotes if
+          there are slashes in the path "path/to/checkpoint".
       - name: path_checkpoint
         type: str
         default: "checkpoint"
@@ -575,7 +567,8 @@ sections:
           - "value[-1] != '/'"
         docstring: |
           Path to where converged orbitals will be written in connection with
-          the ``write_orbitals`` keyword.
+          the ``write_orbitals`` keyword. Note: must be given in quotes if
+          there are slashes in the path "path/to/orbitals".
   - name: Response
     docstring: |
       Includes parameters related to the response SCF optimization.
@@ -609,7 +602,12 @@ sections:
         type: float
         default: -1.0
         docstring: |
-          Convergence threshold for SCF energy.
+          Convergence threshold for symmetric property. Symmetric meaning the
+          property computed from the same operator as the response purturbation,
+          e.g. for external magnetic field the symmetric property corresponds to
+          the magnetizability (NMR shielding in non-symmetric, since one of the
+          operators is external magnetic field, while the other is nuclear
+          magnetic moment).
       - name: start_prec
         type: float
         default: -1.0
