@@ -254,7 +254,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         Timer t_scf;
         double orb_prec = adjustPrecision(err_o);
         double helm_prec = getHelmholtzPrec();
-        if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateTotalDensity(Phi_n, orb_prec);
+        if (F.getReactionOperator() != nullptr) {
+            F.getReactionOperator()->updateTotalDensity(Phi_n, orb_prec);
+            F.getReactionOperator()->updateMOResidual(err_t);
+        }
         if (nIter < 2) F.setup(orb_prec);
 
         // Init Helmholtz operator
@@ -282,7 +285,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // variational implementation of solvent effect
         if (solvent_var) {
             auto helper = F.getReactionOperator()->getHelper();
-            QMFunction V_r = helper->getPotential();
+            QMFunction V_r = *(helper->getReactionPotential());
             QMFunction diff_func = helper->getDifferencePotential();
 
             Phi_n.push_back(Orbital(SPIN::Paired));
@@ -320,7 +323,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
         // Compute Fock matrix and energy
-        if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateTotalDensity(Phi_n, orb_prec);
+        if (F.getReactionOperator() != nullptr) {
+            F.getReactionOperator()->updateTotalDensity(Phi_n, orb_prec);
+            F.getReactionOperator()->updateMOResidual(err_t);
+        }
         F.setup(orb_prec);
         F_mat = F(Phi_n, Phi_n);
         E_n = F.trace(Phi_n, nucs);
@@ -342,7 +348,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
             F.rotate(U_mat);
             kain.clear();
         } else if (needDiagonalization(nIter, converged)) {
-          ComplexMatrix U_mat = orbital::diagonalize(orb_prec, Phi_n, F_mat);
+            ComplexMatrix U_mat = orbital::diagonalize(orb_prec, Phi_n, F_mat);
             F.rotate(U_mat);
             kain.clear();
         }

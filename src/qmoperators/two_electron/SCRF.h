@@ -10,36 +10,39 @@
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
 using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
+// using ReactionPotential_p = std::shared_ptr<mrchem::ReactionPotential>;
 
 namespace mrchem {
 class ReactionPotential;
 class SCRF final {
 public:
-  SCRF(Nuclei N, Permittivity e, OrbitalVector_p phi, PoissonOperator_p P, DerivativeOperator_p D, double orb_prec);
+    SCRF(std::shared_ptr<ReactionPotential> Rp, Nuclei N, Permittivity e, OrbitalVector_p phi, double orb_prec);
     friend class ReactionPotential;
     void updateTotalDensity(OrbitalVector Phi,
                             double prec); // pass the electron orbitals and computes the total density
-    void updatePotential(QMFunction new_potential);
+    void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
     void updateDifferencePotential(QMFunction diff_potential);
-    QMFunction getPotential() const { return this->potential; }
+    std::shared_ptr<mrchem::ReactionPotential> getReactionPotential() const { return this->reaction_potential; }
     QMFunction getDifferencePotential() const { return this->difference_potential; }
-    void setReactionPotential(std::shared_ptr<ReactionPotential> new_Rp) { this->Rp = new_Rp; }
+
 protected:
     void clear();
+
 private:
     double apply_prec;
     Permittivity epsilon;
-    PoissonOperator_p poisson;
-    DerivativeOperator_p derivative;
     Density rho_nuc;
+    Density rho_ext;
     Density rho_tot;
     QMFunction difference_potential;
-    QMFunction potential;
-    std::shared_ptr<ReactionPotential> Rp;
+    std::shared_ptr<mrchem::ReactionPotential> reaction_potential;
     mrcpp::FunctionTreeVector<3> d_cavity; // Vector containing the 3 partial derivatives of the cavity function
 
-    QMFunctionVector makeTerms(double prec);
-    QMFunction updateGamma(QMFunction potential_nm1, double prec);
+    QMFunctionVector makeTerms(DerivativeOperator_p derivative, PoissonOperator_p poisson, double prec);
+    void updateGamma(QMFunction &gamma_func,
+                     const DerivativeOperator_p derivative,
+                     QMFunction potential_nm1,
+                     const double prec);
     double getNuclearEnergy();
     double getElectronicEnergy();
     double getTotalEnergy();
