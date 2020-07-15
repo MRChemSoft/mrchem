@@ -76,6 +76,8 @@ void ReactionPotential::setup(double prec) {
         KAIN kain(this->history);
         double error = 10;
         double converge_prec = this->mo_residual;
+        if ((std::abs(this->mo_residual) < this->apply_prec * 10 && this->run_hybrid) || this->run_absolute)
+            converge_prec = this->apply_prec;
         for (int iter = 1; error >= converge_prec && iter <= 100; iter++) {
             if (iter > 1) {
                 dV_n.free(NUMBER::Real);
@@ -103,7 +105,6 @@ void ReactionPotential::setup(double prec) {
 
             print_utils::text(0, "error:           ", print_utils::dbl_to_str(error, 5, true));
             print_utils::text(0, "Microiteration:  ", std::to_string(iter));
-            // if ((error <= converge_prec) && (iter < 20) && (converge_prec > this->apply_prec)) converge_prec /= 10.0;
         }
         println(0, " Converged Reaction Potential!");
         V_tot.free(NUMBER::Real);

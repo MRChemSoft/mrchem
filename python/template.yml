@@ -718,11 +718,6 @@ sections:
             default: 0.2
             docstring: |
               Width of cavity boundary
-          - name: angstrom
-            type: bool
-            default: false
-            docstring: |
-              Coordinates given in angstrom rather than bohr.
       - name: Permittivity
         docstring: |
           parameters for the permittivity function.

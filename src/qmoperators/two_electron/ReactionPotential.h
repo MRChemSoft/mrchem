@@ -36,6 +36,8 @@ private:
     bool variational; // determines if the Reaction potential will be optimized in its own loop each SCF iteration or if
                       // it will converge together with the SCF procedure
     bool run_once;
+    bool run_hybrid = false;
+    bool run_absolute = false;
     int history;
     double mo_residual;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
