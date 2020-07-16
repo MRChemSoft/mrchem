@@ -6,6 +6,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/QMFunction.h"
 #include "qmfunctions/qmfunction_fwd.h"
+#include "scf_solver/KAIN.h"
 
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
@@ -22,8 +23,10 @@ public:
                             double prec); // pass the electron orbitals and computes the total density
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
     void updateDifferencePotential(QMFunction diff_potential);
-    std::shared_ptr<mrchem::ReactionPotential> getReactionPotential() const { return this->reaction_potential; }
-    QMFunction getDifferencePotential() const { return this->difference_potential; }
+    void updateReactionPotential(QMFunction reac_potential);
+    std::shared_ptr<mrchem::ReactionPotential> getReactionPotential() { return this->reaction_potential; }
+    QMFunction &getDifferencePotential() { return this->difference_potential; }
+    KAIN &getKain() { return this->reaction_optimizer; }
 
 protected:
     void clear();
@@ -36,6 +39,7 @@ private:
     Density rho_tot;
     QMFunction difference_potential;
     std::shared_ptr<mrchem::ReactionPotential> reaction_potential;
+    KAIN reaction_optimizer;
     mrcpp::FunctionTreeVector<3> d_cavity; // Vector containing the 3 partial derivatives of the cavity function
 
     QMFunctionVector makeTerms(DerivativeOperator_p derivative, PoissonOperator_p poisson, double prec);

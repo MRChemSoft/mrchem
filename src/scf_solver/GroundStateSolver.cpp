@@ -33,6 +33,7 @@
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
@@ -285,29 +286,43 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         // variational implementation of solvent effect
         if (solvent_var) {
             auto helper = F.getReactionOperator()->getHelper();
-            QMFunction V_r = *(helper->getReactionPotential());
-            QMFunction diff_func = helper->getDifferencePotential();
+            QMFunction V_r;
+            QMFunction diff_func;
 
-            Phi_n.push_back(Orbital(SPIN::Paired));
-            Phi_n.back().QMFunction::operator=(V_r);
+            qmfunction::deep_copy(V_r, *(helper->getReactionPotential()));
+            qmfunction::deep_copy(diff_func, helper->getDifferencePotential());
 
-            dPhi_n.push_back(Orbital(SPIN::Paired));
-            dPhi_n.back().QMFunction::operator=(diff_func);
-            // variational implementation of solvent effect
+            std::cout << __FILE__ << " " << __func__ << "\n"
+                      << __LINE__ << " V_r intetgral:\t" << V_r.integrate() << "\n";
+            std::cout << __LINE__ << " diff_func integral:\t" << diff_func.integrate() << "\n";
+
+            OrbitalVector V_n;
+            OrbitalVector dV_n;
+
+            V_n.push_back(Orbital(SPIN::Paired));
+            V_n.back().QMFunction::operator=(V_r);
+
+            dV_n.push_back(Orbital(SPIN::Paired));
+            dV_n.back().QMFunction::operator=(diff_func);
 
             // Employ KAIN accelerator
-            kain.accelerate(orb_prec, Phi_n, dPhi_n);
+            MSG_INFO(" this is where my KAIN starts");
+            helper->getKain().accelerate(orb_prec, V_n, dV_n);
+            std::cout << __func__ << " this is where my KAIN ends\n";
 
-            // variational implementation of solvent effect
-            V_r.QMFunction::operator=(Phi_n.back());
-            Phi_n.pop_back();
-            diff_func.QMFunction::operator=(dPhi_n.back());
-            dPhi_n.pop_back();
+            V_r.QMFunction::operator=(V_n.back());
+            V_n.pop_back();
+            diff_func.QMFunction::operator=(dV_n.back());
+            dV_n.pop_back();
+
+            std::cout << __FILE__ << " " << __func__ << "\n"
+                      << __LINE__ << " V_r intetgral:\t" << V_r.integrate() << "\n";
+            std::cout << __LINE__ << " diff_func integral:\t" << diff_func.integrate() << "\n";
 
             helper->updateDifferencePotential(diff_func);
-        } else {
-            kain.accelerate(orb_prec, Phi_n, dPhi_n);
+            helper->updateDifferencePotential(diff_func);
         }
+        kain.accelerate(orb_prec, Phi_n, dPhi_n);
         // variational implementation of solvent effect
 
         // Compute errors

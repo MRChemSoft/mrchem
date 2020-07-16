@@ -23,7 +23,8 @@ SCRF::SCRF(std::shared_ptr<ReactionPotential> Rp, Nuclei N, Permittivity e, Orbi
         , rho_ext(false)
         , rho_tot(false)
         , difference_potential(false)
-        , reaction_potential(Rp) {
+        , reaction_potential(Rp)
+        , reaction_optimizer(reaction_potential->history, 0, false, 1.0e-3) {
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, N, 1000);
     updateTotalDensity(*phi, this->apply_prec);
 
@@ -113,8 +114,13 @@ QMFunctionVector SCRF::makeTerms(DerivativeOperator_p derivative, PoissonOperato
 }
 
 void SCRF::updateDifferencePotential(QMFunction diff_potential) {
-    resetQMFunction(difference_potential);
+    // resetQMFunction(difference_potential);
     qmfunction::deep_copy(this->difference_potential, diff_potential);
+}
+
+void SCRF::updateReactionPotential(QMFunction reac_potential) {
+    // resetQMFunction(reaction_potential);
+    qmfunction::deep_copy(*reaction_potential, reac_potential);
 }
 
 double SCRF::getNuclearEnergy() {

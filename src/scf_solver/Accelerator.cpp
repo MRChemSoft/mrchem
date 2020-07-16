@@ -131,8 +131,7 @@ void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatr
         if (dF == nullptr) MSG_ERROR("Need to give both F and dF");
         if (this->fock.size() != nHistory) MSG_ERROR("Size mismatch orbitals vs matrices");
     }
-
-    auto historyIsFull = (nHistory >= this->maxHistory) ? true : false;
+    auto historyIsFull = (nHistory >= this->maxHistory);
     if (historyIsFull and this->orbitals.size() > 0) this->orbitals.pop_front();
     if (historyIsFull and this->dOrbitals.size() > 0) this->dOrbitals.pop_front();
     if (historyIsFull and this->fock.size() > 0) this->fock.pop_front();

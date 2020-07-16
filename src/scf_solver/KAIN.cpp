@@ -85,7 +85,7 @@ void KAIN::setupLinearSystem() {
                 orbB(i) += orbital::dot(dPhi_im, fPhi_m);
             }
         }
-        A_matrices.push_back(orbA);
+        A_matrices.push_back(orbA * this->scaling);
         b_vectors.push_back(orbB);
     }
 

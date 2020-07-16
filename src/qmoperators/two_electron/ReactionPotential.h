@@ -5,7 +5,6 @@
 #include "qmfunctions/Orbital.h"
 #include "qmoperators/one_electron/QMPotential.h"
 #include "qmoperators/two_electron/SCRF.h"
-#include "scf_solver/KAIN.h"
 
 namespace mrchem {
 class SCRF;

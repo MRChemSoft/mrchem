@@ -975,25 +975,24 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     ///////////////////////////////////////////////////////////
     //////////////////   Reaction Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    auto json_reaction = json_fock.find("reaction_operator");
-    if (json_reaction != json_fock.end()) {
+    if (json_fock.contains("reaction_operator")) {
 
         // preparing Reaction Operator
-        auto poisson_prec = (*json_reaction)["poisson_prec"].get<double>();
+        auto poisson_prec = json_fock["reaction_operator"]["poisson_prec"];
         auto P_r = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         auto D_r = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-        auto hist_r = (*json_reaction)["kain_history"].get<int>();
+        auto hist_r = json_fock["reaction_operator"]["kain_history"];
 
         auto cavity_r = mol.getCavity_p();
-        auto eps_in_r = (*json_reaction)["epsilon_in"].get<double>();
-        auto eps_out_r = (*json_reaction)["epsilon_out"].get<double>();
+        auto eps_in_r = json_fock["reaction_operator"]["epsilon_in"];
+        auto eps_out_r = json_fock["reaction_operator"]["epsilon_out"];
         Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r);
 
         auto Reo = std::make_shared<ReactionOperator>(P_r, D_r, hist_r);
         auto helper = std::make_shared<SCRF>(
             Reo->getPotential(), nuclei, dielectric_func, Phi_p, poisson_prec); // want to use orb_prec for this
         Reo->setHelper(helper);
-        Reo->setRunVariational((*json_reaction)["run_variational"].get<bool>());
+        Reo->setRunVariational(json_fock["reaction_operator"]["run_variational"]);
         F.getReactionOperator() = Reo;
     }
     ///////////////////////////////////////////////////////////

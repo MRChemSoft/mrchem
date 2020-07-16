@@ -6,6 +6,7 @@
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "scf_solver/KAIN.h"
 #include "utils/print_utils.h"
 #include <string>
 
@@ -46,11 +47,11 @@ void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction 
 void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);
 
+    QMFunction &temp = *this;
     if (this->run_once) {
         this->run_once = false;
         return;
     }
-    QMFunction &temp = *this;
 
     // Solve the poisson equation
     QMFunctionVector Terms = this->helper->makeTerms(this->derivative, this->poisson, this->apply_prec);
@@ -61,14 +62,21 @@ void ReactionPotential::setup(double prec) {
     QMFunction V_n;
     QMFunction dV_n;
     QMFunction poisson_func;
+
     if (this->variational) {
         V_n.alloc(NUMBER::Real);
         qmfunction::add(poisson_func, 1.0, gamma, 1.0, rho_eff, -1.0);
         mrcpp::apply(this->apply_prec, V_n.real(), *poisson, poisson_func.real());
         qmfunction::add(dV_n, 1.0, V_n, -1.0, V_nm1, -1.0);
-        auto error = dV_n.norm();
 
-        print_utils::text(0, "error:           ", print_utils::dbl_to_str(error, 5, true));
+        QMFunction residual;
+        QMFunction epsilon;
+        epsilon.alloc(NUMBER::Real);
+        residual.alloc(NUMBER::Real);
+        this->helper->epsilon.flipFunction(false);
+        qmfunction::project(epsilon, this->helper->epsilon, NUMBER::Real, this->apply_prec / 100);
+        qmfunction::multiply(residual, dV_n, epsilon, this->apply_prec);
+
     } else {
         print_utils::headline(0, "Calculating Reaction Potential");
         QMFunction V_tot;
@@ -103,8 +111,8 @@ void ReactionPotential::setup(double prec) {
             qmfunction::add(V_tot, 1.0, V_n, 1.0, V_vac, -1.0);
             this->helper->updateGamma(gamma, derivative, V_tot, this->apply_prec);
 
-            print_utils::text(0, "error:           ", print_utils::dbl_to_str(error, 5, true));
-            print_utils::text(0, "Microiteration:  ", std::to_string(iter));
+            print_utils::text(0, "error           ", print_utils::dbl_to_str(error, 5, true));
+            print_utils::text(0, "Microiteration  ", std::to_string(iter));
         }
         println(0, " Converged Reaction Potential!");
         V_tot.free(NUMBER::Real);
