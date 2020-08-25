@@ -112,17 +112,16 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
 
 /** @brief Update iterative history with the latest orbitals and updates
  *
- * @param Phi: Next set ov orbitals
+ * @param Phi: Next set of orbitals
  * @param dPhi: Next set of orbital updates
  * @param F: Next Fock matrix
  * @param dF: Next Fock matrix update
  *
- * The new orbitals are moved from the input sets and into the newly
- * constructed local sets. This means that the input sets contain a
- * bunch of zero pointers after this routine. To get the orbitals
- * back, use calcUpdates or getOrbitals. If F and dF are given as
- * input, the matrices are included in the subspace. If the length
- * of the history exceed maxHistory the oldest orbitals are discarded.
+ * The new orbitals are deep copied from the input sets and into the
+ * accelerator history. The input sets are left unchanged. If F and
+ * dF are given as input, the matrices are included in the subspace.
+ * If the length of the history exceed maxHistory the oldest orbitals
+ * are discarded.
  */
 void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatrix *F, ComplexMatrix *dF) {
     Timer t_tot;
@@ -142,13 +141,10 @@ void Accelerator::push_back(OrbitalVector &Phi, OrbitalVector &dPhi, ComplexMatr
         this->clear();
     }
 
-    this->orbitals.push_back(Phi);
-    this->dOrbitals.push_back(dPhi);
+    this->orbitals.push_back(orbital::deep_copy(Phi));
+    this->dOrbitals.push_back(orbital::deep_copy(dPhi));
     if (F != nullptr) this->fock.push_back(*F);
     if (dF != nullptr) this->dFock.push_back(*dF);
-
-    Phi.clear();
-    dPhi.clear();
 
     mrcpp::print::time(2, "Push back orbitals", t_tot);
 }
@@ -193,31 +189,33 @@ bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
  * @param F: Fock matrix to accelerate (in/out)
  * @param dF: Fock matrix update to accelerate (in/out)
  *
- * Solves the linear system of equations \f$ Ac = b \f$ that defines the
- * coefficients \f$ c \f$ of the next step
- * copies the resulting orbitals into the output sets. If length of history
- * is less than minHistory, the latest orbitals are copied directly into
- * the output sets without solving the linear problem. Existing input
- * orbitals and updates are replaced by new ones.
+ * This routine will make a local copy of the input orbitals/matrices
+ * and keep the history. It then solves a linear system of equations
+ * \f$ Ac = b \f$ that defines the coefficients \f$ c \f$ of the next
+ * step. If length of history is _smaller_ than minHistory, the input
+ * orbitals/matrices remain _unchanged_, otherwise they are _overwritten_
+ * by new ones. If the length of history is _larger_ than maxHistory, the
+ * oldest iteration is discarded.
  */
 void Accelerator::accelerate(double prec,
                              OrbitalVector &Phi,
                              OrbitalVector &dPhi,
                              ComplexMatrix *F,
                              ComplexMatrix *dF) {
+    if (this->maxHistory < 1) return;
+
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Iterative subspace accelerator");
 
+    // Deep copy into history
     this->push_back(Phi, dPhi, F, dF);
 
     int nHistory = this->orbitals.size() - 1;
-    if (nHistory <= this->minHistory) {
-        copyOrbitals(Phi);
-        copyOrbitalUpdates(dPhi);
-    } else {
+    if (nHistory > this->minHistory) {
         setupLinearSystem();
         solveLinearSystem();
+        // Overwrites (Phi, dPhi, F, dF) with new guess
         expandSolution(prec, Phi, dPhi, F, dF);
         clearLinearSystem();
     }
