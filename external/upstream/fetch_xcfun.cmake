@@ -18,7 +18,6 @@ else()
 
   set(CMAKE_BUILD_TYPE Release)
   set(ENABLE_TESTALL FALSE CACHE BOOL "")
-  set(STATIC_LIBRARY_ONLY TRUE CACHE BOOL "")
   set(XCFUN_MAX_ORDER 3)  # TODO Maybe as a user-facing option?
   set(XCFUN_PYTHON_INTERFACE FALSE CACHE BOOL "")
 
