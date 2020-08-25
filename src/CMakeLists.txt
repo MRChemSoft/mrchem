@@ -1,4 +1,5 @@
 # <<< Build MRChem library >>>
+set(BUILD_SHARED_LIBS OFF)
 add_library(mrchem
   driver.cpp
   parallel.cpp
