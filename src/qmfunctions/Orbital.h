@@ -61,6 +61,7 @@ public:
 
     Orbital(const Orbital &orb);
     Orbital &operator=(const Orbital &orb);
+    Orbital &operator=(const QMFunction &func);
     Orbital paramCopy() const;
     Orbital dagger() const;
 

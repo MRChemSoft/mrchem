@@ -86,6 +86,11 @@ Orbital &Orbital::operator=(const Orbital &orb) {
     return *this;
 }
 
+Orbital &Orbital::operator=(const QMFunction &func) {
+    if (this != &func) QMFunction::operator=(func);
+    return *this;
+}
+
 /** @brief Parameter copy
  *
  * Returns a new orbital with the same spin, occupation and rank_id as *this orbital.
