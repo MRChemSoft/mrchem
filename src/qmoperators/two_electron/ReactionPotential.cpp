@@ -37,8 +37,8 @@ void ReactionPotential::accelerateConvergence(QMFunction &diff_func, QMFunction 
 
     kain.accelerate(this->apply_prec, phi_n, dPhi_n);
 
-    temp.QMFunction::operator=(phi_n[0]);
-    diff_func.QMFunction::operator=(dPhi_n[0]);
+    temp = (phi_n[0]);
+    diff_func = (dPhi_n[0]);
 
     phi_n.clear();
     dPhi_n.clear();

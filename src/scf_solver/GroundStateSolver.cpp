@@ -310,9 +310,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
             helper->getKain().accelerate(orb_prec, V_n, dV_n);
             std::cout << __func__ << " this is where my KAIN ends\n";
 
-            V_r.QMFunction::operator=(V_n.back());
+            V_r = (V_n.back());
             V_n.pop_back();
-            diff_func.QMFunction::operator=(dV_n.back());
+            diff_func = (dV_n.back());
             dV_n.pop_back();
 
             std::cout << __FILE__ << " " << __func__ << "\n"
