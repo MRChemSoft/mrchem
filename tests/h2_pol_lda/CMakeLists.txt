@@ -1,7 +1,7 @@
 set(_h2_pol_lda_launcher " ")
 
 if(ENABLE_MPI)
-    set(_h2_pol_lda_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
+    set(_h2_pol_lda_launcher "'${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1'")
 endif()
 
 add_integration_test(
