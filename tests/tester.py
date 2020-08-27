@@ -124,7 +124,7 @@ def run(options, *, input_file, filters=None, extra_args=None):
     if success and options.clean_up:
         computed.unlink()
         out = Path(options.work_dir) / f"{inp_no_suffix}.out"
-        out.unlink()
+        out.unlink(missing_ok=True)
 
     return 0 if success else 137
 
