@@ -16,7 +16,6 @@ macro(add_integration_test)
       --binary $<TARGET_FILE_DIR:mrchem.x>
       --work-dir ${CMAKE_CURRENT_BINARY_DIR}
       --launch-agent ${_integration_test_LAUNCH_AGENT}
-      --clean-up
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_BINARY_DIR}
     )

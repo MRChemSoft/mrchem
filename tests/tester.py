@@ -120,12 +120,6 @@ def run(options, *, input_file, filters=None, extra_args=None):
             sys.stdout.write(f"\n{message}")
             success = success and passed
 
-    # clean up output files on success (if requested!)
-    if success and options.clean_up:
-        computed.unlink()
-        out = Path(options.work_dir) / f"{inp_no_suffix}.out"
-        out.unlink(missing_ok=True)
-
     return 0 if success else 137
 
 
@@ -253,13 +247,6 @@ def script_cli():
         action="store_true",
         default=False,
         help="run calculation(s) but do not verify results [default: %default]",
-    )
-    parser.add_option(
-        "--clean-up",
-        "-c",
-        action="store_true",
-        default=True,
-        help="clean up output files on successful test [default: %default]",
     )
 
     (options, args) = parser.parse_args(args=sys.argv[1:])
