@@ -53,11 +53,11 @@ def main():
     # Parse command line
     launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
-    if inp_name.endswith(".inp"):
-        inp_name = inp_name[:-4]
-    inp_file = Path(inp_name + '.inp')
-    out_file = Path(inp_name + '.out')
-    json_file = Path(inp_name + '.json')
+    inp_file = Path(inp_name) if inp_name.endswith(".inp") else Path(inp_name + ".inp")
+    name = inp_file.stem
+    # these two are always in the current working directory
+    out_file = f"{name}.out"
+    json_file = f"{name}.json"
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
     if inp_json:
@@ -79,7 +79,7 @@ def main():
     # we can translate user input into program input
     program_dict = {}
     program_dict["input"] = translate_input(user_dict)
-    program_dict["input"]["printer"]["file_name"] = inp_name
+    program_dict["input"]["printer"]["file_name"] = inp_file.name
 
     with open(json_file, 'w') as fd:
         fd.write(json.dumps(program_dict, indent=2))
@@ -87,9 +87,9 @@ def main():
     print_mpi =  program_dict["input"]["printer"]["print_mpi"]
     print_level =  program_dict["input"]["printer"]["print_level"]
     if stdout or print_mpi or print_level < 0:
-        cmd = launcher + ' ' + executable + ' ' + str(json_file)
+        cmd = f"{launcher} {executable} {json_file}"
     else:
-        cmd = launcher + ' ' + executable + ' ' + str(json_file) + ' > ' + str(out_file)
+        cmd = f"{launcher} {executable} {json_file} > {out_file}"
 
     if dryrun:
         print("launch command: " + cmd)

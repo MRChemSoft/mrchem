@@ -1,7 +1,7 @@
 set(_h2_scf_hf_launcher " ")
 
 if(ENABLE_MPI)
-    set(_h2_scf_hf_launcher "mpirun -np 1")
+    set(_h2_scf_hf_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
 add_integration_test(

@@ -8,6 +8,11 @@ from math import log10
 from optparse import OptionParser
 from pathlib import Path
 
+frame = inspect.stack()[-1]
+module = inspect.getmodule(frame[0])
+caller_file = module.__file__
+caller_dir = Path(caller_file).resolve().parent
+
 SUM_OCCUPIED = ("output", "properties", "orbital_energies", "sum_occupied")
 E_KIN = ("output", "properties", "scf_energy", "E_kin")
 E_EN = ("output", "properties", "scf_energy", "E_en")
@@ -57,9 +62,11 @@ def run(options, *, input_file, filters=None, extra_args=None):
     launcher = "mrchem"
     launcher_full_path = Path(options.binary_dir).joinpath(launcher).resolve()
 
+    input_file = caller_dir / input_file
+
     command = []
     command.append(str(launcher_full_path))
-    command.append(input_file)
+    command.append(str(input_file))
     command.append(f"--executable={options.binary_dir}/mrchem.x")
     if extra_args is not None:
         command += extra_args
@@ -67,7 +74,7 @@ def run(options, *, input_file, filters=None, extra_args=None):
     if options.launch_agent is not None:
         command.append(f"--launcher={options.launch_agent}")
 
-    inp_no_suffix = Path(input_file).stem
+    inp_no_suffix = input_file.stem
     output_prefix = inp_no_suffix
 
     sys.stdout.write(
@@ -77,37 +84,49 @@ def run(options, *, input_file, filters=None, extra_args=None):
     if options.skip_run:
         sys.stdout.write("(skipped run with -s|--skip-run)\n")
     else:
-        process = subprocess.Popen(
+        child = subprocess.run(
             command,
             cwd=options.work_dir,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            check=True,
             universal_newlines=True,
         )
-        stdout, stderr = process.communicate()
+        # might still be the returncode is zero, but something happened
+        if child.stderr:
+            print(child.stderr)
+            return 137
 
-    computed = Path(options.work_dir).joinpath(inp_no_suffix + ".json")
-    expected = Path(
-        options.work_dir).joinpath("reference").joinpath(inp_no_suffix +
-                                                         ".json")
+    computed = Path(options.work_dir) / f"{inp_no_suffix}.json"
+    expected = caller_dir / f"reference/{inp_no_suffix}.json"
     with computed.open("r") as o_json, expected.open("r") as r_json:
         out = json.load(o_json)
         ref = json.load(r_json)
 
+    success = True
     for what, threshold in filters.items():
-        computed = nested_get(out, what)
-        expected = nested_get(ref, what)
+        cptd = nested_get(out, what)
+        xptd = nested_get(ref, what)
         where = location_in_dict(address=what)
         if options.no_verification:
             sys.stdout.write("\nskipped verification")
         else:
-            passed, message = compare_values(computed,
-                                             expected,
+            passed, message = compare_values(cptd,
+                                             xptd,
                                              where,
                                              rtol=threshold.rtol,
                                              atol=threshold.atol)
             sys.stdout.write(f"\n{message}")
+            success = success and passed
+
+    # clean up output files on success (if requested!)
+    if success and options.clean_up:
+        computed.unlink()
+        out = Path(options.work_dir) / f"{inp_no_suffix}.out"
+        out.unlink()
+
+    return 0 if success else 137
 
 
 class Tolerance:
@@ -196,11 +215,6 @@ def location_in_dict(*, address, dict_name="JSON"):
 
 
 def script_cli():
-    frame = inspect.stack()[-1]
-    module = inspect.getmodule(frame[0])
-    caller_file = module.__file__
-    caller_dir = Path(caller_file).resolve().parent
-
     parser = OptionParser(
         description="MRChem test runner. Heavily inspired by runtest.")
 
@@ -239,6 +253,13 @@ def script_cli():
         action="store_true",
         default=False,
         help="run calculation(s) but do not verify results [default: %default]",
+    )
+    parser.add_option(
+        "--clean-up",
+        "-c",
+        action="store_true",
+        default=True,
+        help="clean up output files on successful test [default: %default]",
     )
 
     (options, args) = parser.parse_args(args=sys.argv[1:])
@@ -296,7 +317,7 @@ def compare_values(
     # check that type of computed and expected match, shortcircuit if not
     types_match = isinstance(computed, type(expected))
     if not types_match:
-        return False, f"\tType of computed value ({type(computed).__name__}) does not match expected type ({type(expected.__type__)})."
+        return False, f"\tType of computed value ({type(computed).__name__}) does not match expected type ({type(expected).__name__})."
 
     expected_is_list = isinstance(expected, list)
     computed_is_list = isinstance(computed, list)

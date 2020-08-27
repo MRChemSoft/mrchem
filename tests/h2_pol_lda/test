@@ -22,4 +22,6 @@ filters = {
     POLARIZABILITY(0.0): rel_tolerance(1.0e-6),
 }
 
-run(options, input_file="h2", filters=filters, extra_args=["--json"])
+ierr = run(options, input_file="h2", filters=filters, extra_args=["--json"])
+
+sys.exit(ierr)

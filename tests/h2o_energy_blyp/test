@@ -27,4 +27,6 @@ filters = {
     QUADRUPOLE_MOMENT_NUC(1): abs_tolerance(1.0e-6),
 }
 
-run(options, input_file="h2o", filters=filters)
+ierr = run(options, input_file="h2o", filters=filters)
+
+sys.exit(ierr)

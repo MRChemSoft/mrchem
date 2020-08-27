@@ -238,7 +238,7 @@ void mrenv::dump_json(const json &json_inp, const json &json_out) {
     json_tot["input"] = json_inp;
     json_tot["output"] = json_out;
 
-    const auto file_name = json_inp["printer"]["file_name"].get<std::string>();
+    const auto file_name = detail::remove_extension(json_inp["printer"]["file_name"].get<std::string>());
     if (mpi::grand_master()) {
         std::ofstream ofs;
         ofs.open(file_name + ".json", std::ios::out);
@@ -247,4 +247,9 @@ void mrenv::dump_json(const json &json_inp, const json &json_out) {
     }
 }
 
+std::string detail::remove_extension(const std::string &fname) {
+    size_t lastdot = fname.find_last_of(".");
+    if (lastdot == std::string::npos) return fname;
+    return fname.substr(0, lastdot);
+}
 } // namespace mrchem

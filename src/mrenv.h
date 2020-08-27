@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <nlohmann/json.hpp>
 
 namespace mrchem {
@@ -37,4 +39,7 @@ void initialize(const nlohmann::json &json_inp);
 void finalize(double wt);
 
 } // namespace mrenv
+namespace detail {
+std::string remove_extension(const std::string &fname);
+} // namespace detail
 } // namespace mrchem
