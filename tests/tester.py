@@ -78,7 +78,7 @@ def run(options, *, input_file, filters=None, extra_args=None):
     output_prefix = inp_no_suffix
 
     sys.stdout.write(
-        f"\nrunning {' '.join(command)}\ntest with input files {input_file} and args {extra_args}"
+        f"\nrunning {' '.join(command)}\ntest with input files {input_file} and args {extra_args}\n"
     )
 
     if options.skip_run:
@@ -90,12 +90,12 @@ def run(options, *, input_file, filters=None, extra_args=None):
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            check=True,
             universal_newlines=True,
         )
         # might still be the returncode is zero, but something happened
-        if child.stderr:
-            print(child.stderr)
+        if child.returncode != 0 or child.stderr:
+            print(f"\nstdout\n{child.stdout}")
+            print(f"\nstderr\n{child.stderr}")
             return 137
 
     computed = Path(options.work_dir) / f"{inp_no_suffix}.json"
