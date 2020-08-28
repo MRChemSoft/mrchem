@@ -23,12 +23,16 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <iostream>
+#include <string>
+
 #include <MRCPP/Timer>
 
 #include "driver.h"
 #include "mrchem.h"
 #include "mrenv.h"
 #include "parallel.h"
+#include "version.h"
 
 #include "chemistry/Molecule.h"
 
@@ -40,6 +44,11 @@ using Timer = mrcpp::Timer;
 using namespace mrchem;
 
 int main(int argc, char **argv) {
+    if (std::string(argv[1]) == "--version" || std::string(argv[1]) == "-v") {
+        std::cout << program_version() << std::endl;
+        return EXIT_SUCCESS;
+    }
+
     const auto json_inp = mrenv::fetch_json(argc, argv);
 
     mrenv::initialize(json_inp);

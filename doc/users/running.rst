@@ -19,9 +19,7 @@ This will under the hood actually do the following two steps::
     $ mrchem.x h2o.json > h2o.out
 
 The first step includes input validation, which means that everything
-tht passes this step is a well-formed computation. This step also requires
-that the input parser library ``parselglossy`` is installed and available,
-see :ref:`Installation` instructions.
+that passes this step is a well-formed computation.
 
 
 Dry-running the input parser
