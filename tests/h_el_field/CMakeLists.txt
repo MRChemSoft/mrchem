@@ -1,5 +1,3 @@
-set(_h_el_field_launcher " ")
-
 if(ENABLE_MPI)
     set(_h_el_field_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()

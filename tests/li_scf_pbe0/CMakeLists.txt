@@ -1,5 +1,3 @@
-set(_li_scf_pbe0_launcher " ")
-
 if(ENABLE_MPI)
     set(_li_scf_pbe0_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2")
 endif()

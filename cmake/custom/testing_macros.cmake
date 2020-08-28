@@ -8,6 +8,10 @@ macro(add_integration_test)
     ${ARGN}
     )
 
+  if(_integration_test_LAUNCH_AGENT)
+    set(_launch_agent_flag "\"--launch-agent ${_integration_test_LAUNCH_AGENT}\"")
+  endif()
+
   add_test(
     NAME
       ${_integration_test_NAME}
@@ -15,7 +19,7 @@ macro(add_integration_test)
       ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_LIST_DIR}/test
       --binary $<TARGET_FILE_DIR:mrchem.x>
       --work-dir ${CMAKE_CURRENT_BINARY_DIR}
-      --launch-agent ${_integration_test_LAUNCH_AGENT}
+      ${_launch_agent_flag}
     WORKING_DIRECTORY
       ${CMAKE_CURRENT_BINARY_DIR}
     )
