@@ -58,8 +58,6 @@ jobs:
     <<: *ubuntu-1804
     steps:
       - checkout
-      - *submodules
-      - *report
       - *configure-serial
       - *build
       - *tests
@@ -69,8 +67,6 @@ jobs:
       - OMP_NUM_THREADS: '2'
     steps:
       - checkout
-      - *submodules
-      - *report
       - *configure-omp
       - *build
       - *tests
@@ -78,8 +74,6 @@ jobs:
     <<: *ubuntu-1804
     steps:
       - checkout
-      - *submodules
-      - *report
       - *configure-mpi
       - *build
       - *tests
