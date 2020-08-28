@@ -1,7 +1,7 @@
 set(_h2o_energy_blyp_launcher " ")
 
 if(ENABLE_MPI)
-    set(_h2o_energy_blyp_launcher "'${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2'")
+    set(_h2o_energy_blyp_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2")
 endif()
 
 add_integration_test(
