@@ -241,7 +241,7 @@ void mrenv::dump_json(const json &json_inp, const json &json_out) {
     const auto file_name = detail::remove_extension(json_inp["printer"]["file_name"].get<std::string>());
     if (mpi::grand_master()) {
         std::ofstream ofs;
-        ofs.open(file_name + ".json", std::ios::out);
+        ofs.open(file_name + "_out.json", std::ios::out);
         ofs << json_tot.dump(2) << std::endl;
         ofs.close();
     }
