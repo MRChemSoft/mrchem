@@ -53,11 +53,24 @@ def main():
     # Parse command line
     launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
 
-    inp_file = Path(inp_name) if inp_name.endswith(".inp") else Path(inp_name + ".inp")
+    suffix = Path(inp_name).suffix
+    if suffix == ".inp":
+       inp_file = Path(inp_name)
+    elif suffix == ".json":
+       inp_file = Path(inp_name)
+       inp_json = True
+    elif suffix == "":
+       # no suffix, infer from inp_json
+       if inp_json:
+          inp_file = Path(inp_name + ".json")
+       else:
+          inp_file = Path(inp_name + ".inp")
+    else:
+       raise(f"Unrecognized file format ({suffix}) as input file.")
     name = inp_file.stem
     # these two are always in the current working directory
     out_file = f"{name}.out"
-    json_file = f"{name}.json"
+    json_file = f"{name}_out.json"
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
     if inp_json:

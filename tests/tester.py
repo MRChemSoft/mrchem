@@ -98,7 +98,7 @@ def run(options, *, input_file, filters=None, extra_args=None):
             print(f"\nstderr\n{child.stderr}")
             return 137
 
-    computed = Path(options.work_dir) / f"{inp_no_suffix}.json"
+    computed = Path(options.work_dir) / f"{inp_no_suffix}_out.json"
     expected = caller_dir / f"reference/{inp_no_suffix}.json"
     with computed.open("r") as o_json, expected.open("r") as r_json:
         out = json.load(o_json)
