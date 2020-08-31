@@ -10,24 +10,50 @@
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/qmfunction_fwd.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "utils/print_utils.h"
+#include <string>
+
+using mrcpp::Printer;
+using mrcpp::Timer;
 
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
 using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
-SCRF::SCRF(std::shared_ptr<ReactionPotential> Rp, Nuclei N, Permittivity e, OrbitalVector_p phi, double orb_prec)
-        : apply_prec(orb_prec)
+SCRF::SCRF(Permittivity e,
+           const Nuclei &N,
+           PoissonOperator_p P,
+           DerivativeOperator_p D,
+           double orb_prec,
+           int kain_hist,
+           int max_iter,
+           bool accelerate_Vr,
+           bool run_hybrid,
+           bool run_absolute)
+        : history(kain_hist)
+        , apply_prec(orb_prec)
         , epsilon(e)
         , rho_nuc(false)
         , rho_ext(false)
         , rho_tot(false)
-        , difference_potential(false)
-        , reaction_potential(Rp)
-        , reaction_optimizer(reaction_potential->history, 0, false, 1.0e-3) {
+        , Vr_n(false)
+        , dVr_n(false)
+        , Vr_nm1(false)
+        , gamma_n(false)
+        , dgamma_n(false)
+        , gamma_nm1(false)
+        , derivative(D)
+        , poisson(P) {
+    setDCavity();
     rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, N, 1000);
-    updateTotalDensity(*phi, this->apply_prec);
+}
 
+void SCRF::clear() {
+    this->rho_tot.free(NUMBER::Real);
+}
+
+void SCRF::setDCavity() {
     mrcpp::FunctionTree<3> *dx_cavity = new mrcpp::FunctionTree<3>(*MRA);
     mrcpp::FunctionTree<3> *dy_cavity = new mrcpp::FunctionTree<3>(*MRA);
     mrcpp::FunctionTree<3> *dz_cavity = new mrcpp::FunctionTree<3>(*MRA);
@@ -37,124 +63,201 @@ SCRF::SCRF(std::shared_ptr<ReactionPotential> Rp, Nuclei N, Permittivity e, Orbi
     mrcpp::project<3>(this->apply_prec / 100, this->d_cavity, this->epsilon.getGradVector());
 }
 
-void SCRF::updateTotalDensity(OrbitalVector Phi,
-                              double prec) { // pass the electron orbitals and computes the total density
+void SCRF::computeDensities(OrbitalVector &Phi) {
     resetQMFunction(this->rho_tot);
     Density rho_el(false);
-    density::compute(prec, rho_el, Phi, DensityType::Total);
+    density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
     rho_el.rescale(-1.0);
     qmfunction::add(this->rho_tot, 1.0, rho_el, 1.0, this->rho_nuc, -1.0); // probably change this into a vector
 }
 
-void SCRF::updateGamma(QMFunction &gamma_func,
-                       const DerivativeOperator_p derivative,
-                       QMFunction potential_nm1,
-                       const double prec) {
-    resetQMFunction(gamma_func);
-    auto d_V = mrcpp::gradient(*derivative, potential_nm1.real());
-    mrcpp::dot(prec, gamma_func.real(), d_V, d_cavity);
-    gamma_func.rescale(std::log((epsilon.eps_in / epsilon.eps_out)) * (1.0 / (4.0 * MATHCONST::pi)));
+void SCRF::computeGamma(QMFunction Potential, QMFunction &out_gamma) {
+    auto d_V = mrcpp::gradient(*derivative, Potential.real());
+    mrcpp::dot(this->apply_prec, out_gamma.real(), d_V, d_cavity);
+    out_gamma.rescale(std::log((epsilon.eps_in / epsilon.eps_out)) * (1.0 / (4.0 * MATHCONST::pi)));
     mrcpp::clear(d_V, true);
 }
 
-QMFunctionVector SCRF::makeTerms(DerivativeOperator_p derivative, PoissonOperator_p poisson, double prec) {
-    QMFunction vacuum_potential;
+QMFunction SCRF::solvePoissonEquation(const QMFunction &in_gamma) {
+    QMFunction Poisson_func;
     QMFunction rho_eff;
-    QMFunction eps_inv;
     QMFunction first_term;
-    QMFunction gamma;
-    QMFunction total_potential;
-    Density Poisson_density(false);
-
-    vacuum_potential.alloc(NUMBER::Real);
-    rho_eff.alloc(NUMBER::Real);
+    QMFunction Vr;
+    QMFunction eps_inv;
     eps_inv.alloc(NUMBER::Real);
-    first_term.alloc(NUMBER::Real);
-    total_potential.alloc(NUMBER::Real);
+    Vr.alloc(NUMBER::Real);
 
-    if (rho_ext.hasReal()) {
-        qmfunction::add(Poisson_density, 1.0, this->rho_tot, 1.0, this->rho_ext, -1.0);
+    this->epsilon.flipFunction(true);
+    qmfunction::project(eps_inv, this->epsilon, NUMBER::Real, this->apply_prec / 100);
+    this->epsilon.flipFunction(false);
+    qmfunction::multiply(first_term, this->rho_tot, eps_inv, this->apply_prec);
+    qmfunction::add(rho_eff, 1.0, first_term, -1.0, this->rho_tot, -1.0);
+
+    qmfunction::add(Poisson_func, 1.0, in_gamma, 1.0, rho_eff, -1.0);
+    mrcpp::apply(this->apply_prec, Vr.real(), *poisson, Poisson_func.real());
+
+    return Vr;
+}
+
+void SCRF::accelerateConvergence(QMFunction &dfunc, QMFunction &func, KAIN &kain) {
+    OrbitalVector phi_n(0);
+    OrbitalVector dPhi_n(0);
+    phi_n.push_back(Orbital(SPIN::Paired));
+    dPhi_n.push_back(Orbital(SPIN::Paired));
+
+    phi_n[0] = func;
+    dPhi_n[0] = dfunc;
+
+    kain.accelerate(this->apply_prec, phi_n, dPhi_n);
+
+    func = phi_n[0];
+    dfunc = dPhi_n[0]; // see if you can remove these two lines
+
+    phi_n.clear();
+    dPhi_n.clear();
+}
+
+void SCRF::variationalSCRF(QMFunction V_vac) {
+    QMFunction Vr_np1;
+    QMFunction V_tot;
+
+    Vr_np1 = solvePoissonEquation(this->gamma_n);
+
+    resetQMFunction(this->dVr_n);
+    qmfunction::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
+    double update = dVr_n.norm();
+
+    qmfunction::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
+    QMFunction gamma_np1;
+    computeGamma(V_tot, gamma_np1);
+
+    resetQMFunction(dgamma_n);
+    qmfunction::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
+}
+
+void SCRF::nestedSCRF(QMFunction V_vac) {
+    print_utils::headline(0, "Calculating Reaction Potential");
+    KAIN kain(this->history);
+    double update = 10;
+    double converge_thrs = std::abs(this->mo_residual);
+
+    if ((std::abs(this->mo_residual) < this->apply_prec * 10 && this->run_hybrid) || this->run_absolute) {
+        converge_thrs = this->apply_prec;
+    }
+    for (int iter = 1; update >= converge_thrs && iter <= max_iter; iter++) {
+        QMFunction Vr_np1;
+        QMFunction V_tot;
+        // solve the poisson equation
+
+        Vr_np1 = solvePoissonEquation(this->gamma_n);
+
+        // use a convergence accelerator
+        resetQMFunction(this->dVr_n);
+        qmfunction::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
+        update = dVr_n.norm();
+
+        if (iter > 1 and this->history > 0 and this->accelerate_Vr) {
+            accelerateConvergence(dVr_n, Vr_n, kain);
+            Vr_np1.free(NUMBER::Real);
+            qmfunction::add(Vr_np1, 1.0, Vr_n, 1.0, dVr_n, -1.0);
+        }
+
+        // set up for next iteration
+        qmfunction::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
+        updateCurrentReactionPotential(Vr_np1); // push_back() maybe
+
+        QMFunction gamma_np1;
+        computeGamma(V_tot, gamma_np1);
+
+        resetQMFunction(dgamma_n);
+        qmfunction::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
+
+        if (iter > 1 and this->history > 0 and (not this->accelerate_Vr)) {
+            accelerateConvergence(dgamma_n, gamma_n, kain);
+            gamma_np1.free(NUMBER::Real);
+            qmfunction::add(gamma_np1, 1.0, gamma_n, 1.0, dgamma_n, -1.0);
+        }
+
+        updateCurrentGamma(gamma_np1);
+
+        print_utils::text(0, "Update          ", print_utils::dbl_to_str(update, 5, true));
+        print_utils::text(0, "Microiteration  ", std::to_string(iter));
+    }
+    println(0, " Converged Reaction Potential!");
+    resetQMFunction(this->dVr_n);
+    resetQMFunction(this->dgamma_n);
+    kain.clear();
+}
+
+QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi, bool variational) {
+    this->apply_prec = prec;
+    computeDensities(*Phi);
+    QMFunction V_vac;
+    V_vac.alloc(NUMBER::Real);
+    mrcpp::apply(this->apply_prec, V_vac.real(), *poisson, this->rho_tot.real());
+
+    // set up the zero-th iteration potential and gamma, so the first iteration gamma and potentials can be made
+
+    if ((not this->Vr_n.hasReal()) or (not this->gamma_n.hasReal())) {
+        QMFunction gamma_0;
+        QMFunction V_tot;
+        computeGamma(V_vac, gamma_0);
+        this->Vr_n = solvePoissonEquation(gamma_0);
+        qmfunction::add(V_tot, 1.0, V_vac, 1.0, this->Vr_n, -1.0);
+        computeGamma(V_tot, this->gamma_n);
+    }
+
+    // update the potential/gamma before doing anything with them
+
+    if (accelerate_Vr) {
+        QMFunction temp_Vr_n;
+        qmfunction::add(temp_Vr_n, 1.0, this->Vr_n, 1.0, this->dVr_n, -1.0);
+        qmfunction::deep_copy(this->Vr_n, temp_Vr_n);
+        temp_Vr_n.free(NUMBER::Real);
+        QMFunction V_tot;
+        qmfunction::add(V_tot, 1.0, this->Vr_n, 1.0, V_vac, -1.0);
+        resetQMFunction(this->gamma_n);
+        computeGamma(V_tot, this->gamma_n);
     } else {
-        Poisson_density = this->rho_tot;
+        QMFunction temp_gamma_n;
+        qmfunction::add(temp_gamma_n, 1.0, this->gamma_n, 1.0, this->dgamma_n, -1.0);
+        qmfunction::deep_copy(this->gamma_n, temp_gamma_n);
+        temp_gamma_n.free(NUMBER::Real);
     }
 
-    mrcpp::apply(prec, vacuum_potential.real(), *poisson, Poisson_density.real());
+    // do either the nested or the variational procedure
 
-    epsilon.flipFunction(true);
-    qmfunction::project(eps_inv, epsilon, NUMBER::Real, prec / 100);
-    epsilon.flipFunction(false);
-    qmfunction::multiply(first_term, rho_tot, eps_inv, prec);
-    qmfunction::add(rho_eff, 1.0, first_term, -1.0, rho_tot, -1.0);
-
-    if (not this->reaction_potential->hasReal()) {
-        QMFunction poisson_func;
-        QMFunction V_n;
-        poisson_func.alloc(NUMBER::Real);
-        V_n.alloc(NUMBER::Real);
-
-        updateGamma(gamma, derivative, vacuum_potential, prec);
-        qmfunction::add(poisson_func, 1.0, rho_eff, 1.0, gamma, -1.0);
-        mrcpp::apply(prec, V_n.real(), *poisson, poisson_func.real());
-        this->difference_potential = V_n;
+    if (variational) {
+        variationalSCRF(V_vac);
+    } else {
+        nestedSCRF(V_vac);
     }
-    QMFunction Vr_nm1;
-    Vr_nm1.alloc(NUMBER::Real);
-    qmfunction::add(Vr_nm1, 1.0, *reaction_potential, 1.0, difference_potential, -1.0);
 
-    qmfunction::add(total_potential, 1.0, Vr_nm1, 1.0, vacuum_potential, -1.0);
-    updateGamma(gamma, derivative, total_potential, prec);
-
-    QMFunctionVector terms_vector;
-    terms_vector.push_back(Vr_nm1);
-    terms_vector.push_back(gamma);
-    terms_vector.push_back(rho_eff);
-    terms_vector.push_back(vacuum_potential);
-
-    return terms_vector;
-}
-
-void SCRF::updateDifferencePotential(QMFunction diff_potential) {
-    // resetQMFunction(difference_potential);
-    qmfunction::deep_copy(this->difference_potential, diff_potential);
-}
-
-void SCRF::updateReactionPotential(QMFunction reac_potential) {
-    // resetQMFunction(reaction_potential);
-    qmfunction::deep_copy(*reaction_potential, reac_potential);
+    return this->Vr_n;
 }
 
 double SCRF::getNuclearEnergy() {
-    QMFunction V_n;
     QMFunction integral_product;
-    V_n.alloc(NUMBER::Real);
-    integral_product.alloc(NUMBER::Real);
 
-    qmfunction::add(V_n, 1.0, *(this->reaction_potential), 1.0, this->difference_potential, -1.0);
-    qmfunction::multiply(integral_product, this->rho_nuc, V_n, this->apply_prec);
+    qmfunction::multiply(integral_product, this->rho_nuc, this->Vr_n, this->apply_prec);
     return integral_product.integrate().real();
 }
 
 double SCRF::getElectronicEnergy() {
-    QMFunction V_n;
     QMFunction integral_product;
     QMFunction rho_el;
-    V_n.alloc(NUMBER::Real);
     integral_product.alloc(NUMBER::Real);
     rho_el.alloc(NUMBER::Real);
-    qmfunction::add(rho_el, 1.0, rho_tot, -1.0, rho_nuc, -1.0);
-    qmfunction::add(V_n, 1.0, *(this->reaction_potential), 1.0, this->difference_potential, -1.0);
-    qmfunction::multiply(integral_product, rho_el, V_n, this->apply_prec);
+    qmfunction::add(rho_el, 1.0, this->rho_tot, -1.0, this->rho_nuc, -1.0);
+    qmfunction::multiply(integral_product, rho_el, this->Vr_n, this->apply_prec);
     return integral_product.integrate().real();
 }
 
 double SCRF::getTotalEnergy() {
-    QMFunction V_n;
     QMFunction integral_product;
-    V_n.alloc(NUMBER::Real);
     integral_product.alloc(NUMBER::Real);
 
-    qmfunction::add(V_n, 1.0, *(this->reaction_potential), 1.0, this->difference_potential, -1.0);
-    qmfunction::multiply(integral_product, this->rho_tot, V_n, this->apply_prec);
+    qmfunction::multiply(integral_product, this->rho_tot, this->Vr_n, this->apply_prec);
     return integral_product.integrate().real();
 }
 
@@ -163,7 +266,20 @@ void SCRF::resetQMFunction(QMFunction &function) {
     if (function.hasImag()) function.free(NUMBER::Imag);
     function.alloc(NUMBER::Real);
 }
-void SCRF::clear() {
-    this->rho_tot.free(NUMBER::Real);
+
+void SCRF::updateCurrentReactionPotential(QMFunction &Vr_np1) {
+    resetQMFunction(this->Vr_nm1);
+    qmfunction::deep_copy(this->Vr_nm1, this->Vr_n);
+    resetQMFunction(this->Vr_n);
+    qmfunction::deep_copy(this->Vr_n, Vr_np1);
+    Vr_np1.free(NUMBER::Real);
+}
+
+void SCRF::updateCurrentGamma(QMFunction &gamma_np1) {
+    resetQMFunction(this->gamma_nm1);
+    qmfunction::deep_copy(this->gamma_nm1, this->gamma_n);
+    resetQMFunction(this->gamma_n);
+    qmfunction::deep_copy(this->gamma_n, gamma_np1);
+    gamma_np1.free(NUMBER::Real);
 }
 } // namespace mrchem

@@ -16,10 +16,8 @@ class SCRF;
 
 class ReactionOperator final : public RankZeroTensorOperator {
 public:
-    ReactionOperator(std::shared_ptr<mrcpp::PoissonOperator> P,
-                     std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-                     int history) {
-        potential = std::make_shared<ReactionPotential>(P, D, history);
+    ReactionOperator(OrbitalVector_p Phi_p, SCRF help, bool var = false) {
+        potential = std::make_shared<ReactionPotential>(Phi_p, help, var);
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &J = (*this);
         J = potential;
@@ -31,13 +29,19 @@ public:
     double getElectronicEnergy() { return this->potential->getElectronicEnergy(); }
     double getNuclearEnergy() { return this->potential->getNuclearEnergy(); }
     bool getRunVariational() { return this->potential->getRunVariational(); }
-    void setRunVariational(bool var) { this->potential->setRunVariational(var); }
-    std::shared_ptr<SCRF> getHelper() { return this->potential->getHelper(); }
-    void setHelper(std::shared_ptr<SCRF> helper) { this->potential->setHelper(helper); }
+    SCRF getHelper() { return this->potential->getHelper(); }
     std::shared_ptr<ReactionPotential> getPotential() { return this->potential; }
-    void updateTotalDensity(OrbitalVector Phi, double prec) { this->potential->updateTotalDensity(Phi, prec); }
-    void initial_setup() { this->potential->initial_setup(); }
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }
+
+    QMFunction &getCurrentReactionPotential() { return this->potential->getCurrentReactionPotential(); }
+    QMFunction &getPreviousReactionPotential() { return this->potential->getPreviousReactionPotential(); }
+    QMFunction &getCurrentDifferenceReactionPotential() {
+        return this->potential->getCurrentDifferenceReactionPotential();
+    }
+
+    QMFunction &getCurrentGamma() { return this->potential->getCurrentGamma(); }
+    QMFunction &getPreviousGamma() { return this->potential->getPreviousGamma(); }
+    QMFunction &getCurrentDifferenceGamma() { return this->potential->getCurrentDifferenceGamma(); }
 
 private:
     std::shared_ptr<ReactionPotential> potential{nullptr};

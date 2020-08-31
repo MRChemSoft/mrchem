@@ -255,12 +255,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         Timer t_scf;
         double orb_prec = adjustPrecision(err_o);
         double helm_prec = getHelmholtzPrec();
-        if (F.getReactionOperator() != nullptr) {
-            F.getReactionOperator()->updateTotalDensity(Phi_n, orb_prec);
-            F.getReactionOperator()->updateMOResidual(err_t);
+        if (nIter < 2) {
+            if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
+            F.setup(orb_prec);
         }
-        if (nIter < 2) F.setup(orb_prec);
-
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
 
@@ -285,44 +283,36 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
         // variational implementation of solvent effect
         if (solvent_var) {
-            auto helper = F.getReactionOperator()->getHelper();
-            QMFunction V_r;
-            QMFunction diff_func;
-
-            qmfunction::deep_copy(V_r, *(helper->getReactionPotential()));
-            qmfunction::deep_copy(diff_func, helper->getDifferencePotential());
+            QMFunction &V_r = F.getReactionOperator()->getCurrentReactionPotential();
+            QMFunction &diff_func = F.getReactionOperator()->getCurrentDifferenceReactionPotential();
 
             std::cout << __FILE__ << " " << __func__ << "\n"
                       << __LINE__ << " V_r intetgral:\t" << V_r.integrate() << "\n";
             std::cout << __LINE__ << " diff_func integral:\t" << diff_func.integrate() << "\n";
 
-            OrbitalVector V_n;
-            OrbitalVector dV_n;
+            Phi_n.push_back(Orbital(SPIN::Paired));
+            Phi_n.back() = (V_r);
 
-            V_n.push_back(Orbital(SPIN::Paired));
-            V_n.back().QMFunction::operator=(V_r);
-
-            dV_n.push_back(Orbital(SPIN::Paired));
-            dV_n.back().QMFunction::operator=(diff_func);
+            dPhi_n.push_back(Orbital(SPIN::Paired));
+            dPhi_n.back() = (diff_func);
 
             // Employ KAIN accelerator
             MSG_INFO(" this is where my KAIN starts");
-            helper->getKain().accelerate(orb_prec, V_n, dV_n);
-            std::cout << __func__ << " this is where my KAIN ends\n";
+            kain.accelerate(orb_prec, Phi_n, dPhi_n);
+            MSG_INFO(" this is where my KAIN ends");
 
-            V_r = (V_n.back());
-            V_n.pop_back();
-            diff_func = (dV_n.back());
-            dV_n.pop_back();
+            V_r = (Phi_n.back());
+            Phi_n.pop_back();
+            diff_func = (dPhi_n.back());
+            dPhi_n.pop_back();
 
             std::cout << __FILE__ << " " << __func__ << "\n"
                       << __LINE__ << " V_r intetgral:\t" << V_r.integrate() << "\n";
             std::cout << __LINE__ << " diff_func integral:\t" << diff_func.integrate() << "\n";
 
-            helper->updateDifferencePotential(diff_func);
-            helper->updateDifferencePotential(diff_func);
+        } else {
+            kain.accelerate(orb_prec, Phi_n, dPhi_n);
         }
-        kain.accelerate(orb_prec, Phi_n, dPhi_n);
         // variational implementation of solvent effect
 
         // Compute errors
@@ -338,10 +328,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
         // Compute Fock matrix and energy
-        if (F.getReactionOperator() != nullptr) {
-            F.getReactionOperator()->updateTotalDensity(Phi_n, orb_prec);
-            F.getReactionOperator()->updateMOResidual(err_t);
-        }
+        if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
         F.setup(orb_prec);
         F_mat = F(Phi_n, Phi_n);
         E_n = F.trace(Phi_n, nucs);

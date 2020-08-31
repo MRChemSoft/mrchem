@@ -81,10 +81,8 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     Permittivity dielectric_func(*sphere, eps_in, eps_out);
 
     // SCRF helper(molecule, dielectric_func, Phi_p, P_p, D_p);
-    auto Reo = std::make_shared<ReactionOperator>(P_p, D_p, history);
-    auto helper = std::make_shared<SCRF>(Reo->getPotential(), molecule, dielectric_func, Phi_p, prec);
-    Reo->setHelper(helper);
-    Reo->setRunVariational(false);
+    SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history);
+    auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper, false);
     Reo->setup(prec);
     std::cout << Reo->getPotential() << "\n";
     std::cout << "you shall not pass"
