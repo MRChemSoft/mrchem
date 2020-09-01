@@ -5,9 +5,10 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Cavity.cpp
     )
 
-install(
-  FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/periodictable.py
+# copy periodictable.py in mrchem folder (in the build folder)
+file(
+  COPY
+    ${CMAKE_CURRENT_LIST_DIR}/periodictable.py
   DESTINATION
-    ${PYTHON_SITE_INSTALL_DIR}
+    ${CMAKE_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem
   )

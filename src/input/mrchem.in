@@ -39,11 +39,9 @@ from shutil import copyfile
 
 # FIXME This will pick up modules when installed
 sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
-sys.path.append('@PROJECT_SOURCE_DIR@/src/input')
-sys.path.append('@PROJECT_SOURCE_DIR@/src/chemistry')
+sys.path.append("@CMAKE_BINARY_DIR@/@PYTHON_SITE_INSTALL_DIR@")
 
-from input_parser.api import parse, validate
-from periodictable import PeriodicTable as PT
+from mrchem import cli, validate, parse, PeriodicTable as PT
 
 origin = [0.0, 0.0, 0.0] # global gauge origin in bohrs
 
@@ -51,17 +49,17 @@ def main():
     this_path = Path(__file__).parent
 
     # Parse command line
-    launcher, executable, dryrun, stdout, inp_json, inp_name = parse_cmdline()
+    args = cli()
 
-    inp_file = Path(inp_name) if inp_name.endswith(".inp") else Path(inp_name + ".inp")
+    inp_file = Path(args.inp_name) if args.inp_name.endswith(".inp") else Path(args.inp_name + ".inp")
     name = inp_file.stem
     # these two are always in the current working directory
     out_file = f"{name}.out"
     json_file = f"{name}.json"
 
     # read user input file (JSONDict <- getkw file) or (JSONDict <- json file)
-    if inp_json:
-        user_dict = validate(infile=inp_file)
+    if args.inp_json:
+        user_dict = validate(ir_in=inp_file)
     else:
         user_dict = parse(infile=inp_file)
 
@@ -86,76 +84,15 @@ def main():
 
     print_mpi =  program_dict["input"]["printer"]["print_mpi"]
     print_level =  program_dict["input"]["printer"]["print_level"]
-    if stdout or print_mpi or print_level < 0:
-        cmd = f"{launcher} {executable} {json_file}"
+    if args.stdout or print_mpi or print_level < 0:
+        cmd = f"{args.launcher} {args.executable} {json_file}"
     else:
-        cmd = f"{launcher} {executable} {json_file} > {out_file}"
+        cmd = f"{args.launcher} {args.executable} {json_file} > {out_file}"
 
-    if dryrun:
+    if args.dryrun:
         print("launch command: " + cmd)
     else:
         subprocess.call(cmd, shell=True)
-
-def parse_cmdline():
-    usage = "usage: %prog [options] [config] inp_name"
-    version = "@MRCHEM_VERSION@"
-    cmdln = optparse.OptionParser(
-        usage=usage, version=f"%prog {version}")
-    cmdln.add_option(
-        '--launcher',
-        action='store',
-        dest='launcher',
-        type='string',
-        default='',
-        help='Set program launcher string')
-    cmdln.add_option(
-        '-x',
-        '--executable',
-        action='store',
-        dest='executable',
-        type='string',
-        default='@MRCHEM_EXECUTABLE@',
-        help='Set executable name')
-    cmdln.add_option(
-        '-D',
-        '--dryrun',
-        action='store_true',
-        dest='dryrun',
-        default=False,
-        help='Only process input')
-    cmdln.add_option(
-        '--stdout',
-        action='store_true',
-        dest='stdout',
-        default=False,
-        help='Print to stdout')
-    cmdln.add_option(
-        '-j',
-        '--json',
-        action='store_true',
-        dest='inp_json',
-        default=False,
-        help='Input file is in json format')
-
-
-    opts, args = cmdln.parse_args()
-
-    launcher = opts.launcher
-    executable = opts.executable
-    dryrun = opts.dryrun
-    stdout = opts.stdout
-    inp_json = opts.inp_json
-
-    if (len(args) == 0):
-        cmdln.error('No input file passed!')
-        sys.exit(1)
-    elif (len(args) == 1):
-        inp_name = args[0]
-    else:
-        cmdln.error('Incorrect number of files')
-        sys.exit(1)
-
-    return launcher, executable, dryrun, stdout, inp_json, inp_name
 
 
 def parse_wf_method(user_dict):

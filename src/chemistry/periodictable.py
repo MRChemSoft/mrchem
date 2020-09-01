@@ -9,23 +9,22 @@ class Element(
     __slots__ = ()
 
     def __new__(cls, iterable):
-        return super(cls, Element).__new__(
-            cls,
-            radius=float(iterable[0]),
-            covalent=float(iterable[1]),
-            Z=int(iterable[2]),
-            mass=float(iterable[3]),
-            symbol=iterable[4],
-            bpt=float(iterable[5]),
-            mpt=float(iterable[6]),
-            density=float(iterable[7]),
-            volume=float(iterable[8]),
-            name=iterable[9],
-            debye=float(iterable[10]),
-            a=float(iterable[11]),
-            crystal=iterable[12],
-            cpera=float(iterable[13]),
-            conf=iterable[14])
+        return super(cls, Element).__new__(cls,
+                                           radius=float(iterable[0]),
+                                           covalent=float(iterable[1]),
+                                           Z=int(iterable[2]),
+                                           mass=float(iterable[3]),
+                                           symbol=iterable[4],
+                                           bpt=float(iterable[5]),
+                                           mpt=float(iterable[6]),
+                                           density=float(iterable[7]),
+                                           volume=float(iterable[8]),
+                                           name=iterable[9],
+                                           debye=float(iterable[10]),
+                                           a=float(iterable[11]),
+                                           crystal=iterable[12],
+                                           cpera=float(iterable[13]),
+                                           conf=iterable[14])
 
     def __str__(self):
         return "{:s} ({:s}): {{{:s}}}, Z={:d}, m={:f}".format(

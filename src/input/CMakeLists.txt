@@ -15,6 +15,21 @@ file(
     WORLD_READ WORLD_EXECUTE
   )
 
+# copy mrchem folder to build folder
+file(
+  COPY
+    ${CMAKE_CURRENT_LIST_DIR}/mrchem/
+  DESTINATION
+    ${CMAKE_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem
+  PATTERN "config.py.in" EXCLUDE
+  )
+# configure config.py.in
+configure_file(
+  mrchem/config.py.in
+  ${CMAKE_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem/config.py
+  @ONLY
+  )
+
 # install the frontend script alongside the mrchem.x executable
 install(
   PROGRAMS
@@ -23,13 +38,14 @@ install(
     ${CMAKE_INSTALL_BINDIR}
   )
 
-# install the (generated) input_parser folder
+# install the mrchem folder, which includes the (generated) input_parser folder
 install(
   DIRECTORY
-    ${CMAKE_CURRENT_LIST_DIR}/input_parser
+    ${CMAKE_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem
   DESTINATION
     ${PYTHON_SITE_INSTALL_DIR}
   FILES_MATCHING
     PATTERN "*.py"
   PATTERN "__pycache__" EXCLUDE
+  PATTERN "*.py.in" EXCLUDE
   )
