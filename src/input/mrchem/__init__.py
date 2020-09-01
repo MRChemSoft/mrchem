@@ -23,16 +23,24 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from .input_parser.api import *
+from .api import *
 from .cli import cli
 from .config import MRCHEM_VERSION
-from .periodictable import PeriodicTable
+from .input_parser.api import *
 
+# yapf: disable
 __all__ = [
     "validate",
     "parse",
     "lex",
     "cli",
     "PeriodicTable",
+    "translate_input",
+    "write_mpi",
+    "write_mra",
+    "write_molecule",
+    "write_scf_calculation",
+    "write_rsp_calculations"
 ]
+# yapf: enable
 __version__ = MRCHEM_VERSION

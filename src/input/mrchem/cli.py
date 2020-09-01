@@ -24,7 +24,8 @@
 #
 
 import argparse
-from .config import MRCHEM_VERSION, MRCHEM_EXECUTABLE
+
+from .config import MRCHEM_EXECUTABLE, MRCHEM_VERSION
 
 
 def cli():
