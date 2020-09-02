@@ -93,8 +93,7 @@ script:
            --prefix=${HOME}/Software/MRChem \
            --cxx=${CXX_COMPILER} \
            ${COVERAGE} \
-           ${OPENMP} \
-           --cmake-options="-DPython3_ROOT_DIR=/opt/pyenv/shims"
+           ${OPENMP}
   - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
   - |
