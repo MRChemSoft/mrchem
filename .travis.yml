@@ -86,7 +86,8 @@ before_script:
 
 script:
   - ./.ci/report_versions.sh
-  - pyenv local 3.6.9
+  - pyenv versions
+  - pyenv local 3.6
   - |
     python ./setup \
            --type=${BUILD_TYPE} \
