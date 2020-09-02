@@ -61,6 +61,8 @@ env:
     - PYTHONIOENCODING=UTF-8
     - OMP_NUM_THREADS=2
     - CMAKE_VERSION="3.12.4"
+    # Invalidate PYENV_ROOT
+    - PYENV_ROOT=$HOME/fuffa
 
 cache:
   timeout: 1000
