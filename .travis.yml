@@ -1,7 +1,6 @@
 language: cpp
 dist: bionic
 ruby: 2.5.3
-python: 3.6
 
 notifications:
   slack:
@@ -87,8 +86,9 @@ before_script:
 
 script:
   - ./.ci/report_versions.sh
+  - pyenv local 3.6.9
   - |
-    python3 ./setup \
+    python ./setup \
            --type=${BUILD_TYPE} \
            --prefix=${HOME}/Software/MRChem \
            --cxx=${CXX_COMPILER} \
