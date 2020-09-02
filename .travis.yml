@@ -88,6 +88,8 @@ script:
   - ./.ci/report_versions.sh
   - pyenv versions
   - pyenv local 3.6
+  - type -P python
+  - type -P python3
   - |
     python ./setup \
            --type=${BUILD_TYPE} \
