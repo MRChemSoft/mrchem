@@ -95,7 +95,7 @@ script:
            --cxx=${CXX_COMPILER} \
            ${COVERAGE} \
            ${OPENMP} \
-           --cmake-options="-DCMAKE_C_COMPILER=${C_COMPILER}"
+           --cmake-options="-DCMAKE_C_COMPILER=${C_COMPILER} -DPython3_ROOT_DIR=$(python3-config --prefix)"
   - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
   - |
