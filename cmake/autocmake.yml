@@ -1,6 +1,6 @@
 name: MRChem
 language: CXX
-min_cmake_version: 3.11
+min_cmake_version: 3.12
 setup_script: setup
 default_build_type: release
 
@@ -17,7 +17,6 @@ modules:
   - source:
     - '%(url_root)modules/default_build_paths.cmake'
     - '%(url_root)modules/safeguards.cmake'
-    - '%(url_root)modules/python_interpreter.cmake'
     - '%(url_root)modules/code_coverage.cmake'
 - custom:
   - source:

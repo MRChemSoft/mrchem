@@ -15,7 +15,6 @@ variables:
         python3 setup \
           --type=release \
           --cxx=g++ \
-          --python=$(type -P python3) \
           --prefix=$HOME/Software/MRChem
   configure-omp: &configure-omp
     run:
@@ -26,7 +25,6 @@ variables:
           --type=release \
           --cxx=g++ \
           --omp \
-          --python=$(type -P python3) \
           --prefix=$HOME/Software/MRChem-omp
   configure-mpi: &configure-mpi
     run:
@@ -37,7 +35,6 @@ variables:
           --type=release \
           --cxx=mpicxx \
           --mpi \
-          --python=$(type -P python3) \
           --prefix=$HOME/Software/MRChem-mpi
   build: &build
     run:

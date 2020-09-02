@@ -51,21 +51,16 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
     GENERATED 1
   )
 
-if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS 3.6)
-    message(FATAL_ERROR "You will need Python >= 3.6 to run MRChem")
-endif()
-
-set(PYTHON_SITE_INSTALL_DIR ${CMAKE_INSTALL_LIBDIR}/python${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}/site-packages)
-
-# Fetch dependencies: order is important!
-include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
 # We save CMAKE_BUILD_TYPE, as we will set it to Release for externals
 set(_build_type ${CMAKE_BUILD_TYPE})
+
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
 
+# reset CMAKE_BUILD_TYPE to whatever it was for MRChem
 set(CMAKE_BUILD_TYPE ${_build_type})
 add_subdirectory(src)
+add_subdirectory(python)
 add_subdirectory(pilot)
