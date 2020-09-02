@@ -73,11 +73,15 @@ before_install:
 install:
   - ./.ci/cmake.sh
   - export PATH=$HOME/Deps/cmake/$CMAKE_VERSION/bin${PATH:+:$PATH}
+  - pip install --user pipenv --upgrade
+  - pipenv install --three
+  - pipenv run python --version
 
 before_script:
   - test -n $CC && unset CC
   - test -n $CXX && unset CXX
   - test -n $FC && unset FC
+  - source $(pipenv --venv)/bin/activate
   - |
     if [[ "${RUN_DANGER}" = true ]]; then
       bundle install --gemfile=.ci/Gemfile
@@ -86,10 +90,6 @@ before_script:
 
 script:
   - ./.ci/report_versions.sh
-  - pyenv versions
-  - pyenv local 3.6
-  - type -P python
-  - type -P python3
   - |
     python ./setup \
            --type=${BUILD_TYPE} \
