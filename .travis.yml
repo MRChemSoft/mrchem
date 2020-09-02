@@ -88,6 +88,8 @@ before_script:
 
 script:
   - ./.ci/report_versions.sh
+  - python3 --version
+  - type -P python3
   - |
     python3 ./setup \
            --type=${BUILD_TYPE} \
@@ -95,7 +97,7 @@ script:
            --cxx=${CXX_COMPILER} \
            ${COVERAGE} \
            ${OPENMP} \
-           --cmake-options="-DCMAKE_C_COMPILER=${C_COMPILER} -DPython3_ROOT_DIR=$(python3-config --prefix)"
+           --cmake-options="-DPython3_ROOT_DIR=$(python3-config --prefix)"
   - cmake --build build --target install -- VERBOSE=1 -j2
   - cd build
   - |
