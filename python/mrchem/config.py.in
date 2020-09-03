@@ -23,5 +23,11 @@
 # <https://mrchem.readthedocs.io/>
 #
 
+from pathlib import Path
+
 MRCHEM_VERSION = "@MRCHEM_VERSION@"
+"""Version of MRChem"""
 MRCHEM_EXECUTABLE = "@MRCHEM_EXECUTABLE@"
+"""Full path to the ``mrchem.x`` executable"""
+MRCHEM_MODULE = Path(__file__).parents[1]
+"""Path to the ``mrchem`` Python frontend module. Do ``sys.path.append(MRCHEM_MODULE)`` to use it"""

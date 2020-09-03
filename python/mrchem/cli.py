@@ -25,45 +25,53 @@
 
 import argparse
 
-from .config import MRCHEM_EXECUTABLE, MRCHEM_VERSION
+from .config import MRCHEM_EXECUTABLE, MRCHEM_VERSION, MRCHEM_MODULE
 
 
 def cli():
     cli = argparse.ArgumentParser(description="Front-end CLI for MRChem")
-    cli.add_argument("-v",
-                     "--version",
-                     action='version',
-                     version=MRCHEM_VERSION)
-    cli.add_argument('--launcher',
-                     action='store',
-                     dest='launcher',
-                     type=str,
-                     default='',
-                     help="Set program launcher string")
-    cli.add_argument('--executable',
-                     '-x',
-                     action='store',
-                     dest='executable',
-                     type=str,
-                     default=MRCHEM_EXECUTABLE,
-                     help='Set executable name')
-    cli.add_argument('--dryrun',
-                     '-D',
-                     action='store_true',
-                     dest='dryrun',
-                     default=False,
-                     help='Only process input')
-    cli.add_argument('--stdout',
-                     action='store_true',
-                     dest='stdout',
-                     default=False,
-                     help='Print to stdout')
-    cli.add_argument('--json',
-                     '-j',
-                     action='store_true',
-                     dest='inp_json',
-                     default=False,
-                     help='Input file is in json format')
+    cli.add_argument("-v", "--version", action="version", version=MRCHEM_VERSION)
+    cli.add_argument(
+        "--launcher",
+        action="store",
+        dest="launcher",
+        type=str,
+        default="",
+        help="Set program launcher string",
+    )
+    cli.add_argument(
+        "--executable",
+        "-x",
+        action="store",
+        dest="executable",
+        type=str,
+        default=MRCHEM_EXECUTABLE,
+        help="Set executable name",
+    )
+    cli.add_argument(
+        "--dryrun",
+        "-D",
+        action="store_true",
+        dest="dryrun",
+        default=False,
+        help="Only process input",
+    )
+    cli.add_argument(
+        "--stdout",
+        action="store_true",
+        dest="stdout",
+        default=False,
+        help="Print to stdout",
+    )
+    cli.add_argument(
+        "--json",
+        "-j",
+        action="store_true",
+        dest="inp_json",
+        default=False,
+        help="Input file is in json format",
+    )
+    cli.add_argument("--module", "-m", action="version", version=str(MRCHEM_MODULE))
     cli.add_argument("inp_name", type=str, help="Input file in getkw format")
 
     args = cli.parse_args()

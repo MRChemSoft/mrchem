@@ -42,8 +42,11 @@ def main():
     # Parse command line
     args = cli()
 
-    inp_file = Path(args.inp_name) if args.inp_name.endswith(".inp") else Path(
-        args.inp_name + ".inp")
+    inp_file = (
+        Path(args.inp_name)
+        if args.inp_name.endswith(".inp")
+        else Path(args.inp_name + ".inp")
+    )
     name = inp_file.stem
     # these two are always in the current working directory
     out_file = f"{name}.out"
@@ -57,11 +60,11 @@ def main():
 
     # create necessary directories
     for d in [
-            user_dict["SCF"]["path_checkpoint"],
-            user_dict["SCF"]["path_orbitals"],
-            user_dict["Response"]["path_checkpoint"],
-            user_dict["Response"]["path_orbitals"],
-            user_dict["Plotter"]["path"]
+        user_dict["SCF"]["path_checkpoint"],
+        user_dict["SCF"]["path_orbitals"],
+        user_dict["Response"]["path_checkpoint"],
+        user_dict["Response"]["path_orbitals"],
+        user_dict["Plotter"]["path"],
     ]:
         if not Path(d).exists():
             Path(d).mkdir()
@@ -71,7 +74,7 @@ def main():
     program_dict = {"input": translate_input(user_dict)}
     program_dict["input"]["printer"]["file_name"] = inp_file.name
 
-    with open(json_file, 'w') as fd:
+    with open(json_file, "w") as fd:
         fd.write(dumps(program_dict, indent=2))
 
     print_mpi = program_dict["input"]["printer"]["print_mpi"]
@@ -87,5 +90,5 @@ def main():
         subprocess.call(cmd, shell=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
