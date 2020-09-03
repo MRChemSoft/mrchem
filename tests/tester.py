@@ -119,6 +119,7 @@ def run(options, *, input_file, filters=None, extra_args=None):
                                              atol=threshold.atol)
             sys.stdout.write(f"\n{message}")
             success = success and passed
+    sys.stdout.write("\n")
 
     return 0 if success else 137
 
