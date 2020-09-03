@@ -44,6 +44,8 @@ def translate_input(user_dict):
 
     # piece everything together
     program_dict = {
+        "schema_name": "mrchem_input",
+        "schema_version": 1,
         "mpi": mpi_dict,
         "mra": mra_dict,
         "printer": user_dict["Printer"],
