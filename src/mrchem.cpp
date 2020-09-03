@@ -69,8 +69,6 @@ int main(int argc, char **argv) {
     // Name and version of the output schema
     json_out["schema_name"] = "mrchem_output";
     json_out["schema_version"] = 1;
-    // Global success field: true if all requested calculations succeeded
-    json_out["success"] = detail::all_success(json_out);
     // Provenance
     json_out["provenance"] = {{"creator", "MRChem"},
                               {"version", program_version()},
@@ -82,6 +80,8 @@ int main(int argc, char **argv) {
     json_out["scf_calculation"] = scf_out;
     json_out["rsp_calculations"] = rsp_out;
     json_out["properties"] = driver::print_properties(mol);
+    // Global success field: true if all requested calculations succeeded
+    json_out["success"] = detail::all_success(json_out);
     mrenv::finalize(timer.elapsed());
     mrenv::dump_json(json_inp, json_out);
 
