@@ -41,5 +41,6 @@ void finalize(double wt);
 } // namespace mrenv
 namespace detail {
 std::string remove_extension(const std::string &fname);
+bool all_success(const nlohmann::json &json_out);
 } // namespace detail
 } // namespace mrchem

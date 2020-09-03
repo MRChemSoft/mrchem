@@ -252,4 +252,11 @@ std::string detail::remove_extension(const std::string &fname) {
     if (lastdot == std::string::npos) return fname;
     return fname.substr(0, lastdot);
 }
+
+bool detail::all_success(const json &json_out) {
+    auto scf_success = json_out["scf_calculation"]["success"].get<bool>();
+    auto rsp_success = true;
+    for (const auto &x : json_out["rsp_calculations"]) { rsp_success &= x["success"].get<bool>(); }
+    return scf_success & rsp_success;
+}
 } // namespace mrchem
