@@ -21,6 +21,7 @@ else()
   FetchContent_GetProperties(nlohmann_json_sources)
 
   set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
+  set(JSON_ImplicitConversions OFF CACHE BOOL "" FORCE)
 
   if(NOT nlohmann_json_sources_POPULATED)
     FetchContent_Populate(nlohmann_json_sources)
