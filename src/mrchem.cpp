@@ -66,6 +66,19 @@ int main(int argc, char **argv) {
     }
     mpi::barrier(mpi::comm_orb);
     json json_out;
+    // Name and version of the output schema
+    json_out["schema_name"] = "mrchem_output";
+    json_out["schema_version"] = 1;
+    // Global success field: true if all requested calculations succeeded
+    json_out["success"] = detail::all_success(json_out);
+    // Provenance
+    json_out["provenance"] = {{"creator", "MRChem"},
+                              {"version", program_version()},
+                              {"nthreads", omp::n_threads},
+                              {"mpi_processes", mpi::world_size},
+                              {"total_cores", mpi::world_size * omp::n_threads},
+                              {"routine", "mrchem.x"}};
+    // Computed values
     json_out["scf_calculation"] = scf_out;
     json_out["rsp_calculations"] = rsp_out;
     json_out["properties"] = driver::print_properties(mol);

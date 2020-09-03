@@ -1,4 +1,6 @@
 "input": {
+  "schema_name": string,                     # Name of the input schema
+  "schema_version": int,                     # Version of the input schema
   "molecule": {                              # Section for Molecule specification
     "charge": int,                           # Total molecular charge
     "multiplicity": int                      # Total spin multiplicity

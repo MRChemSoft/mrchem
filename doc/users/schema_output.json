@@ -1,4 +1,15 @@
 "output": {
+  "success": bool,                           # Whether all requested calculations succeeded
+  "schema_name": string,                     # Name of the output schema
+  "schema_version": int,                     # Version of the output schema
+  "provenance": {                            # Information on how the results were obtained
+    "creator": string,                       # Program name
+    "version": string,                       # Program version
+    "nthreads": int,                         # Number of OpenMP threads used
+    "mpi_processes": int,                    # Number of MPI processes used
+    "total_cores": int,                      # Total number of cores used
+    "routine": string                        # The function that generated the output
+  },
   "properties": {                            # Collection of final properties
     "charge": int,                           # Total molecular charge
     "multiplicity": int,                     # Total spin multiplicity
