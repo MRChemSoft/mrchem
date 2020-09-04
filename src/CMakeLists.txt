@@ -98,6 +98,7 @@ set_target_properties(mrchem.x
     SKIP_BUILD_RPATH OFF
     BUILD_WITH_INSTALL_RPATH OFF
     INSTALL_RPATH "${MRChem_RPATH}"
+    INSTALL_RPATH_USE_LINK_PATH ON
   )
 
 install(

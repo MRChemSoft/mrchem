@@ -53,14 +53,14 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
 
 # We save CMAKE_BUILD_TYPE, as we will set it to Release for externals
 set(_build_type ${CMAKE_BUILD_TYPE})
-
+# Order IS important here!
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
-
 # reset CMAKE_BUILD_TYPE to whatever it was for MRChem
 set(CMAKE_BUILD_TYPE ${_build_type})
+
 add_subdirectory(src)
 add_subdirectory(python)
 add_subdirectory(pilot)
