@@ -6,3 +6,8 @@ Run:
 $ cd python
 $ parselglossy generate --template template.yml --docfile user_ref.rst --doc-header="User input reference" --target="mrchem/input_parser"
 ```
+Remember to also update the documentation:
+
+``` bash
+cp python/mrchem/input_parser/doc/user_ref.rst doc/user/user_ref.rst
+```

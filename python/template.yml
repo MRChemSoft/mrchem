@@ -310,12 +310,12 @@ sections:
     keywords:
       - name: dipole_moment
         type: bool
-        default: false
+        default: true
         docstring: |
           Compute dipole moment.
       - name: quadrupole_moment
         type: bool
-        default: false
+        default: true
         docstring: |
           Compute quadrupole moment. Note: Gauge origin dependent, should be
           used with ``translate = true`` in Molecule.

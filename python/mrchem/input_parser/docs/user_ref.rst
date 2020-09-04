@@ -327,13 +327,13 @@ User input reference
   
     **Type** ``bool``
   
-    **Default** ``False``
+    **Default** ``True``
   
    :quadrupole_moment: Compute quadrupole moment. Note: Gauge origin dependent, should be used with ``translate = true`` in Molecule. 
   
     **Type** ``bool``
   
-    **Default** ``False``
+    **Default** ``True``
   
    :polarizability: Compute polarizability tensor. 
   
