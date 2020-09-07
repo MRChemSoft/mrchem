@@ -31,7 +31,11 @@ SCRF::SCRF(Permittivity e,
            bool accelerate_Vr,
            bool run_hybrid,
            bool run_absolute)
-        : history(kain_hist)
+        : accelerate_Vr(accelerate_Vr)
+        , run_hybrid(run_hybrid)
+        , run_absolute(run_absolute)
+        , max_iter(max_iter)
+        , history(kain_hist)
         , apply_prec(orb_prec)
         , epsilon(e)
         , rho_nuc(false)
@@ -73,7 +77,7 @@ void SCRF::computeDensities(OrbitalVector &Phi) {
 
 void SCRF::computeGamma(QMFunction Potential, QMFunction &out_gamma) {
     auto d_V = mrcpp::gradient(*derivative, Potential.real());
-    if (not out_gamma.hasReal()) out_gamma.alloc(NUMBER::Real);
+    resetQMFunction(out_gamma);
     mrcpp::dot(this->apply_prec, out_gamma.real(), d_V, d_cavity);
     out_gamma.rescale(std::log((epsilon.eps_in / epsilon.eps_out)) * (1.0 / (4.0 * MATHCONST::pi)));
     mrcpp::clear(d_V, true);
@@ -185,8 +189,10 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
         print_utils::text(0, "Microiteration  ", std::to_string(iter));
     }
     println(0, " Converged Reaction Potential!");
-    resetQMFunction(this->dVr_n);
-    //resetQMFunction(this->dgamma_n);
+    this->dVr_n.real().clear();
+    this->dVr_n.real().setZero();
+    this->dgamma_n.real().clear();
+    this->dgamma_n.real().setZero();
     kain.clear();
 }
 
@@ -206,7 +212,6 @@ QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi, bool variationa
         this->Vr_n = solvePoissonEquation(gamma_0);
         qmfunction::add(V_tot, 1.0, V_vac, 1.0, this->Vr_n, -1.0);
         computeGamma(V_tot, this->gamma_n);
-        qmfunction::add(this->dgamma_n, 1.0, this->gamma_n, -1.0, gamma_0, -1.0);
     }
 
     // update the potential/gamma before doing anything with them

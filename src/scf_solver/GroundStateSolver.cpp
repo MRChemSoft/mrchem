@@ -220,12 +220,14 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
     bool solvent_var = false;
     if (F.getReactionOperator() != nullptr) { solvent_var = F.getReactionOperator()->getRunVariational(); }
-
-    KAIN kain(this->history);
     SCFEnergy &E_n = mol.getSCFEnergy();
     const Nuclei &nucs = mol.getNuclei();
     OrbitalVector &Phi_n = mol.getOrbitals();
     ComplexMatrix &F_mat = mol.getFockMatrix();
+
+    auto scaling = std::vector<double>(Phi_n.size(), 1.0);
+    if (solvent_var) scaling.push_back(1e-3);
+    KAIN kain(this->history, 0, false, scaling);
 
     DoubleVector errors = DoubleVector::Ones(Phi_n.size());
     double err_o = errors.maxCoeff();

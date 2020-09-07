@@ -44,7 +44,7 @@ namespace mrchem {
 
 class KAIN final : public Accelerator {
 public:
-    KAIN(int max, int min = 0, bool sep = false, double scaling = 1.0)
+    KAIN(int max, int min = 0, bool sep = false, std::vector<double> scaling = {})
             : Accelerator(max, min, sep)
             , scaling(scaling) {}
 
@@ -58,7 +58,7 @@ protected:
                         ComplexMatrix *dF) override;
     // clang-format on
 private:
-    double scaling;
+    std::vector<double> scaling;
 };
 
 } // namespace mrchem

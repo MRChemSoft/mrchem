@@ -43,9 +43,9 @@ protected:
     void clear();
 
 private:
+    bool accelerate_Vr;
     bool run_hybrid;
     bool run_absolute;
-    bool accelerate_Vr;
 
     int max_iter;
     int history;
