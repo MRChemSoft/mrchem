@@ -698,3 +698,61 @@ User input reference
   
     **Default** ``user['SCF']['localize']``
   
+ :Environment: Includes parameters related to the computation of the reaction field energy of a system in an environment. 
+
+  :red:`Keywords`
+   :run_SCRF: Perform the Self consistent reaction field calculation of the reaction potential of the interaction between environment and molecule.  
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :run_variational: Compute the reaction field using the variational algorithm 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :kain_history: Number of previous reaction field iterates kept for convergence acceleration. 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+  :red:`Sections`
+   :Cavity: Define the interlocking spheres cavity. 
+  
+      :red:`Keywords`
+       :coords: Coordinates and radii  of the spheres written as: x_coord    y_coord    z_coord    radius. 
+      
+        **Type** ``str``
+      
+        **Default** ````
+      
+       :cavity_width: Width of cavity boundary 
+      
+        **Type** ``float``
+      
+        **Default** ``0.2``
+      
+   :Permittivity: parameters for the permittivity function. 
+  
+      :red:`Keywords`
+       :epsilon_in: Permittivity inside the cavity. 
+      
+        **Type** ``float``
+      
+        **Default** ``1.0``
+      
+       :epsilon_out: Permittivity outside the cavity. 
+      
+        **Type** ``float``
+      
+        **Default** ``2.0``
+      
+       :linear: Run linear formulation of the Permittivity function, false runs exponential. 
+      
+        **Type** ``bool``
+      
+        **Default** ``False``
+      

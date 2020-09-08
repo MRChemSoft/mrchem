@@ -108,6 +108,9 @@ public:
             {"E_x", E_x},
             {"E_xc", E_xc},
             {"E_el", E_el},
+            {"Er_tot", Er_tot},
+            {"Er_el", Er_el},
+            {"Er_nuc", Er_nuc},
             {"E_nuc", E_nuc},
             {"E_tot", E_nuc + E_el}
         };

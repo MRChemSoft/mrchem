@@ -1,33 +1,29 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
-import os
 import sys
+from pathlib import Path
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from runtest import cli, get_filter, run, version_info  # isort:skip
-from runtest_config import configure  # isort:skip
+from tester import *  # isort:skip
 
-assert version_info.major == 2
+options = script_cli()
 
-f = [
-    get_filter(string='Sum occupied',                 rel_tolerance=1.0e-6),
-    get_filter(string='Kinetic energy',               rel_tolerance=1.0e-6),
-    get_filter(string='E-N energy',                   rel_tolerance=1.0e-6),
-    get_filter(string='Tot. Reac. Energy',               rel_tolerance=1.0e-6),
-    get_filter(string='El. Reac. Energy',              rel_tolerance=1.0e-6),
-    get_filter(string='Nuc. Reac. Energy',                   rel_tolerance=1.0e-6),
-    get_filter(string='Electronic energy',            rel_tolerance=1.0e-6),
-    get_filter(string='Nuclear energy',               rel_tolerance=1.0e-6),
-    get_filter(string='(kcal/mol)',                   rel_tolerance=1.0e-6),
-    get_filter(string='(kJ/mol)',                     rel_tolerance=1.0e-6),
-    get_filter(string='(eV)',                         rel_tolerance=1.0e-6),
-]
+filters = {
+    SUM_OCCUPIED: rel_tolerance(1.0e-6),
+    E_KIN: rel_tolerance(1.0e-6),
+    E_EN: rel_tolerance(1.0e-6),
+    E_EE: rel_tolerance(1.0e-6),
+    E_X: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(1.0e-6),
+    E_EEXT: rel_tolerance(1.0e-6),
+    E_NEXT: rel_tolerance(1.0e-6),
+    E_EL: rel_tolerance(1.0e-6),
+    ER_TOT: rel_tolerance(1.0e-6),
+    ER_EL: rel_tolerance(1.0e-6),
+    ER_NUC: rel_tolerance(1.0e-6),
+}
 
-options = cli()
-
-ierr = 0
-ierr += run(
-    options, configure, input_files=['mrchem.inp'], filters={'stdout': f})
+ierr = run(options, input_file="mrchem", filters=filters)
 
 sys.exit(ierr)

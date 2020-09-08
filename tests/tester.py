@@ -22,6 +22,9 @@ E_XC = ("output", "properties", "scf_energy", "E_xc")
 E_EEXT = ("output", "properties", "scf_energy", "E_eext")
 E_NEXT = ("output", "properties", "scf_energy", "E_next")
 E_EL = ("output", "properties", "scf_energy", "E_el")
+ER_TOT = ("output", "properties", "scf_energy", "Er_tot")
+ER_EL = ("output", "properties", "scf_energy", "Er_el")
+ER_NUC = ("output", "properties", "scf_energy", "Er_nuc")
 
 
 def DIPOLE_MOMENT(index):

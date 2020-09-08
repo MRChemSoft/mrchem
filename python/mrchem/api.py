@@ -154,11 +154,46 @@ def write_molecule(user_dict, origin):
         for coord in coords_dict:
             coord["xyz"] = [r - o for r, o in zip(coord["xyz"], CoM)]
 
+    #point of bug possibly
+    cav_coords_dict = []
+    if len(user_dict["Environment"]["Cavity"]["coords"]) > 0:
+        cav_coords_raw = user_dict["Environment"]["Cavity"]["coords"]
+        for line in cav_coords_raw.split('\n'):
+            sp = line.split()
+            if len(sp) > 0:
+                center = list(map(float, sp[:-1]))
+                radius = float(sp[-1])
+                if len(center) != 3:
+                    print("Invalid coordinate: " +  " " + str(center))
+                    sys.exit(1)
+            cav_coords_dict.append({
+                "center": center,
+                "radius": radius
+            })
+    else:
+        for atom in coords_dict:
+            radius = float(PT[atom["atom"]].radius)
+            cav_coords_dict.append({
+                "center": atom["xyz"],
+                "radius": radius
+            })
+
+    if user_dict["world_unit"] == "angstrom" :
+        for coord in cav_coords_dict:
+            coord["center"] = [ANGSTROM_2_BOHR * r for r in coord["center"]]
+            coord["radius"] *= ANGSTROM_2_BOHR
+        cavity_width = user_dict["Environment"]["Cavity"]["cavity_width"]*ANGSTROM_2_BOHR
+    else:
+        cavity_width = user_dict["Environment"]["Cavity"]["cavity_width"]
+
     mol_dict = {
         "multiplicity": user_dict["Molecule"]["multiplicity"],
         "charge": user_dict["Molecule"]["charge"],
         "coords": coords_dict,
+        "cavity_coords": cav_coords_dict,
+        "cavity_width": cavity_width
     }
+
     return mol_dict
 
 
