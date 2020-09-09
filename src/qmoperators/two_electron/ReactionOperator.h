@@ -16,8 +16,8 @@ class SCRF;
 
 class ReactionOperator final : public RankZeroTensorOperator {
 public:
-    ReactionOperator(OrbitalVector_p Phi_p, SCRF help, bool var = false) {
-        potential = std::make_shared<ReactionPotential>(Phi_p, help, var);
+    ReactionOperator(OrbitalVector_p Phi_p, SCRF help) {
+        potential = std::make_shared<ReactionPotential>(Phi_p, help);
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &J = (*this);
         J = potential;
@@ -28,7 +28,6 @@ public:
     double getTotalEnergy() { return this->potential->getTotalEnergy(); }
     double getElectronicEnergy() { return this->potential->getElectronicEnergy(); }
     double getNuclearEnergy() { return this->potential->getNuclearEnergy(); }
-    bool getRunVariational() { return this->potential->getRunVariational(); }
     SCRF getHelper() { return this->potential->getHelper(); }
     std::shared_ptr<ReactionPotential> getPotential() { return this->potential; }
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }

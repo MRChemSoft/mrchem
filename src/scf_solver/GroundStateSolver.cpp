@@ -218,15 +218,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
     Timer t_tot;
     json json_out;
 
-    bool solvent_var = false;
-    if (F.getReactionOperator() != nullptr) { solvent_var = F.getReactionOperator()->getRunVariational(); }
     SCFEnergy &E_n = mol.getSCFEnergy();
     const Nuclei &nucs = mol.getNuclei();
     OrbitalVector &Phi_n = mol.getOrbitals();
     ComplexMatrix &F_mat = mol.getFockMatrix();
 
     auto scaling = std::vector<double>(Phi_n.size(), 1.0);
-    if (solvent_var) scaling.push_back(1e-3);
     KAIN kain(this->history, 0, false, scaling);
 
     DoubleVector errors = DoubleVector::Ones(Phi_n.size());
@@ -283,39 +280,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
         Phi_np1.clear();
 
-        // variational implementation of solvent effect
-        if (solvent_var) {
-            QMFunction &V_r = F.getReactionOperator()->getCurrentReactionPotential();
-            QMFunction &diff_func = F.getReactionOperator()->getCurrentDifferenceReactionPotential();
-
-            std::cout << __FILE__ << " " << __func__ << "\n"
-                      << __LINE__ << " V_r intetgral:\t" << V_r.integrate() << "\n";
-            std::cout << __LINE__ << " diff_func integral:\t" << diff_func.integrate() << "\n";
-
-            Phi_n.push_back(Orbital(SPIN::Paired));
-            Phi_n.back() = (V_r);
-
-            dPhi_n.push_back(Orbital(SPIN::Paired));
-            dPhi_n.back() = (diff_func);
-
-            // Employ KAIN accelerator
-            MSG_INFO(" this is where my KAIN starts");
-            kain.accelerate(orb_prec, Phi_n, dPhi_n);
-            MSG_INFO(" this is where my KAIN ends");
-
-            V_r = (Phi_n.back());
-            Phi_n.pop_back();
-            diff_func = (dPhi_n.back());
-            dPhi_n.pop_back();
-
-            std::cout << __FILE__ << " " << __func__ << "\n"
-                      << __LINE__ << " V_r intetgral:\t" << V_r.integrate() << "\n";
-            std::cout << __LINE__ << " diff_func integral:\t" << diff_func.integrate() << "\n";
-
-        } else {
-            kain.accelerate(orb_prec, Phi_n, dPhi_n);
-        }
-        // variational implementation of solvent effect
+        kain.accelerate(orb_prec, Phi_n, dPhi_n);
 
         // Compute errors
         errors = orbital::get_norms(dPhi_n);

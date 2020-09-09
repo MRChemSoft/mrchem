@@ -79,9 +79,9 @@ private:
 
     void accelerateConvergence(QMFunction &dfunc, QMFunction &func, KAIN &kain);
 
-    void variationalSCRF(QMFunction V_vac);
+    // TODO    void variationalSCRF(QMFunction V_vac);
     void nestedSCRF(QMFunction V_vac);
-    QMFunction &setup(double prec, const OrbitalVector_p &Phi, bool variational = false);
+    QMFunction &setup(double prec, const OrbitalVector_p &Phi);
 
     double getNuclearEnergy();
     double getElectronicEnergy();

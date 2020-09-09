@@ -122,24 +122,6 @@ void SCRF::accelerateConvergence(QMFunction &dfunc, QMFunction &func, KAIN &kain
     dPhi_n.clear();
 }
 
-void SCRF::variationalSCRF(QMFunction V_vac) {
-    QMFunction Vr_np1;
-    QMFunction V_tot;
-
-    Vr_np1 = solvePoissonEquation(this->gamma_n);
-
-    resetQMFunction(this->dVr_n);
-    qmfunction::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
-    double update = dVr_n.norm();
-
-    qmfunction::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
-    QMFunction gamma_np1;
-    computeGamma(V_tot, gamma_np1);
-
-    resetQMFunction(dgamma_n);
-    qmfunction::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
-}
-
 void SCRF::nestedSCRF(QMFunction V_vac) {
     print_utils::headline(0, "Calculating Reaction Potential");
     KAIN kain(this->history);
@@ -196,7 +178,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
     kain.clear();
 }
 
-QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi, bool variational) {
+QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
     this->apply_prec = prec;
     computeDensities(*Phi);
     QMFunction V_vac;
@@ -234,11 +216,7 @@ QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi, bool variationa
 
     // do either the nested or the variational procedure
 
-    if (variational) {
-        variationalSCRF(V_vac);
-    } else {
-        nestedSCRF(V_vac);
-    }
+    nestedSCRF(V_vac);
 
     return this->Vr_n;
 }

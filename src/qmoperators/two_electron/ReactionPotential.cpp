@@ -20,9 +20,8 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-ReactionPotential::ReactionPotential(OrbitalVector_p Phi_p, SCRF help, bool var)
+ReactionPotential::ReactionPotential(OrbitalVector_p Phi_p, SCRF help)
         : QMPotential(1, false)
-        , variational(var)
         , Phi(Phi_p)
         , helper(help) {}
 
@@ -33,7 +32,7 @@ void ReactionPotential::setup(double prec) {
         this->first_iteration = false;
         return;
     }
-    qmfunction::deep_copy(temp, this->helper.setup(prec, this->Phi, this->variational));
+    qmfunction::deep_copy(temp, this->helper.setup(prec, this->Phi));
 }
 
 void ReactionPotential::clear() {

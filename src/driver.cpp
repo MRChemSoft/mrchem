@@ -140,19 +140,14 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
     }
     std::vector<double> radii;
     std::vector<mrcpp::Coord<3>> spheres;
-    std::cout << __func__ << __LINE__ << "\n";
     for (const auto &coord : json_mol["cavity_coords"].get<json>()) {
         radii.push_back(coord["radius"].get<double>());
         spheres.push_back(coord["center"].get<mrcpp::Coord<3>>());
     }
-    std::cout << __func__ << __LINE__ << "\n";
     auto cavity_width = json_mol["cavity_width"].get<double>();
 
-    std::cout << __func__ << __LINE__ << "\n";
     mol.initCavity(spheres, radii, cavity_width);
-    std::cout << __func__ << __LINE__ << "\n";
     mol.printGeometry();
-    std::cout << __func__ << __LINE__ << "\n";
 }
 
 void driver::init_properties(const json &json_prop, Molecule &mol) {
@@ -992,7 +987,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r);
 
         SCRF helper(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r);
-        auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper, json_fock["reaction_operator"]["run_variational"]);
+        auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
         F.getReactionOperator() = Reo;
     }
     ///////////////////////////////////////////////////////////

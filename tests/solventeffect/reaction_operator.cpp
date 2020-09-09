@@ -82,11 +82,8 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
 
     // SCRF helper(molecule, dielectric_func, Phi_p, P_p, D_p);
     SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history);
-    auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper, false);
+    auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
     Reo->setup(prec);
-    std::cout << Reo->getPotential() << "\n";
-    std::cout << "you shall not pass"
-              << "\n";
     Reo->clear();
     REQUIRE(eps_in == 0.00);
 }
