@@ -65,9 +65,9 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::FunctionTreeVector<3> d_cav = mrcpp::gradient(*D_p, cav_tree);
 
     mrcpp::FunctionTree<3> diff_func(*MRA);
-    mrcpp::add(-1.0, diff_func, 1.0, mrcpp::get_func(d_cav, 0), -1.0, dx_cav_analytical);
-    auto diff = diff_func.integrate();
-    REQUIRE(diff == Approx(-0.0000002610126907934).epsilon(thrs));
+    mrcpp::add(prec, diff_func, 1.0, mrcpp::get_func(d_cav, 0), -1.0, dx_cav_analytical);
+    double diff = diff_func.integrate();
+    REQUIRE(diff == Approx(0.00).margin(prec));
 
     // test volume of two interlocking spheres
     coords.push_back({0.0, 0.0, 1.0});
@@ -76,9 +76,7 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::FunctionTree<3> two_cav_tree(*MRA);
     mrcpp::project<3>(prec, two_cav_tree, two_spheres);
 
-    auto two_sphere_volume = two_cav_tree.integrate();
-    // REQUIRE(two_sphere_volume == Approx(7.5096630756284952213).epsilon(thrs));
-
-    REQUIRE(two_sphere_volume == Approx(1).epsilon(thrs));
+    double two_sphere_volume = two_cav_tree.integrate();
+    REQUIRE(two_sphere_volume == Approx(7.5096630756284952213).epsilon(thrs * 10));
 }
 } // namespace cavity_function

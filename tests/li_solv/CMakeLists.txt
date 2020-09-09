@@ -9,4 +9,5 @@ add_integration_test(
   LABELS "mrchem;li_solv;Li_SOLV;scf;energy"
   COST 100
   LAUNCH_AGENT ${_li_solv_launcher}
+  INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess
   )

@@ -80,11 +80,12 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     double eps_out = 2.0;
     Permittivity dielectric_func(*sphere, eps_in, eps_out);
 
-    // SCRF helper(molecule, dielectric_func, Phi_p, P_p, D_p);
     SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history);
     auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
+    Reo->setTesting();
     Reo->setup(prec);
+    double total_energy = Reo->getTotalEnergy();
     Reo->clear();
-    REQUIRE(eps_in == 0.00);
+    REQUIRE(total_energy == Approx(-0.191434124263).epsilon(thrs));
 }
 } // namespace reaction_operator

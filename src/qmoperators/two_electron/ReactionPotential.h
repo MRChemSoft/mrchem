@@ -28,6 +28,7 @@ public:
     QMFunction &getCurrentGamma() { return this->helper.getCurrentGamma(); }
     QMFunction &getPreviousGamma() { return this->helper.getPreviousGamma(); }
     QMFunction &getCurrentDifferenceGamma() { return this->helper.getCurrentDifferenceGamma(); }
+    void setTesting() { this->first_iteration = false; }
 
 protected:
     void clear();

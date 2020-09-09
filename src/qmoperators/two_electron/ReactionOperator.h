@@ -42,6 +42,8 @@ public:
     QMFunction &getPreviousGamma() { return this->potential->getPreviousGamma(); }
     QMFunction &getCurrentDifferenceGamma() { return this->potential->getCurrentDifferenceGamma(); }
 
+    void setTesting() { this->potential->setTesting(); }
+
 private:
     std::shared_ptr<ReactionPotential> potential{nullptr};
 };
