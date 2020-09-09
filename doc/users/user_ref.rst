@@ -335,7 +335,7 @@ User input reference
   
     **Type** ``bool``
   
-    **Default** ``True``
+    **Default** ``False``
   
    :polarizability: Compute polarizability tensor. 
   

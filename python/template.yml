@@ -315,7 +315,7 @@ sections:
           Compute dipole moment.
       - name: quadrupole_moment
         type: bool
-        default: true
+        default: false
         docstring: |
           Compute quadrupole moment. Note: Gauge origin dependent, should be
           used with ``translate = true`` in Molecule.
