@@ -34,40 +34,47 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &coord, std::vector<double> &R, doub
     setGradVector();
 }
 
+auto gradCavity(const mrcpp::Coord<3> &r,
+                int index,
+                const std::vector<mrcpp::Coord<3>> &centers,
+                std::vector<double> &radii,
+                double slope) -> double {
+    double C = 1.0;
+    double DC = 0.0;
+    for (int i = 0; i < centers.size(); i++) {
+        double s = math_utils::calc_distance(centers[i], r) - radii[i];
+        double ds = (r[index] - centers[i][index]) / (math_utils::calc_distance(centers[i], r));
+        double O = 0.5 * (1 + std::erf(s / slope));
+        double Ci = 1.0 - O;
+        C *= 1.0 - Ci;
+
+        double DCi = -(1.0 / (slope * std::sqrt(MATHCONST::pi))) * std::exp(-std::pow(s / slope, 2.0)) * ds;
+
+        double numerator = DCi;
+        double denominator = 1.0 - Ci;
+
+        if (((1.0 - Ci) < 1.0e-12) and ((1.0 - Ci) >= 0)) {
+            denominator = 1.0e-12;
+        } else if (((1.0 - Ci) > -1.0e-12) and ((1.0 - Ci) <= 0)) {
+            denominator = -1.0e-12;
+        }
+
+        if ((DCi < 1.0e-12) and (DCi >= 0)) {
+            numerator = 1.0e-12;
+        } else if ((DCi > -1.0e-12) and (DCi <= 0)) {
+            numerator = -1.0e-12;
+        }
+        DC += numerator / denominator;
+    }
+    DC = C * DC;
+    return DC;
+}
+
 void Cavity::setGradVector() {
-    for (int j = 0; j < 3; j++) {
-        auto gradcavity = [j, this](const mrcpp::Coord<3> &r) -> double {
-            double C = 1.0;
-            double DC = 0.0;
-            for (int i = 0; i < pos.size(); i++) {
-                double s = math_utils::calc_distance(pos[i], r) - R[i];
-                double ds = (r[j] - pos[i][j]) / (math_utils::calc_distance(pos[i], r));
-                double O = 0.5 * (1 + std::erf(s / d));
-                double Ci = 1.0 - O;
-                C *= 1.0 - Ci;
-
-                double DCi = -(1.0 / (d * std::sqrt(MATHCONST::pi))) * std::exp(-std::pow(s / d, 2.0)) * ds;
-
-                double numerator = DCi;
-                double denominator = 1.0 - Ci;
-
-                if (((1.0 - Ci) < 1.0e-12) and ((1.0 - Ci) >= 0)) {
-                    denominator = 1.0e-12;
-                } else if (((1.0 - Ci) > -1.0e-12) and ((1.0 - Ci) <= 0)) {
-                    denominator = -1.0e-12;
-                }
-
-                if ((DCi < 1.0e-12) and (DCi >= 0)) {
-                    numerator = 1.0e-12;
-                } else if ((DCi > -1.0e-12) and (DCi <= 0)) {
-                    numerator = -1.0e-12;
-                }
-                DC += numerator / denominator;
-            }
-            DC = C * DC;
-            return DC;
-        };
-        this->gradvector.push_back(gradcavity);
+    auto p_gradcavity = [this](const mrcpp::Coord<3> &r, int index) { return gradCavity(r, index, pos, R, d); };
+    for (auto i = 0; i < 3; i++) {
+        this->gradvector.push_back(
+            [i, p_gradcavity](const mrcpp::Coord<3> &r) -> double { return p_gradcavity(r, i); });
     }
 }
 
