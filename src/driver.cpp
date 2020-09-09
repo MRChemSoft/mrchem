@@ -984,9 +984,12 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto cavity_r = mol.getCavity_p();
         auto eps_in_r = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_out_r = json_fock["reaction_operator"]["epsilon_out"];
+        auto max_iter = json_fock["reaction_operator"]["max_iter"];
+        auto run_hybrid = json_fock["reaction_operator"]["run_hybrid"];
+        auto accelerate_Vr = json_fock["reaction_operator"]["accelerate_Vr"];
         Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r);
 
-        SCRF helper(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r);
+        SCRF helper(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, run_hybrid);
         auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
         F.getReactionOperator() = Reo;
     }

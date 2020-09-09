@@ -29,11 +29,9 @@ SCRF::SCRF(Permittivity e,
            int kain_hist,
            int max_iter,
            bool accelerate_Vr,
-           bool run_hybrid,
-           bool run_absolute)
+           bool run_hybrid)
         : accelerate_Vr(accelerate_Vr)
         , run_hybrid(run_hybrid)
-        , run_absolute(run_absolute)
         , max_iter(max_iter)
         , history(kain_hist)
         , apply_prec(orb_prec)
@@ -128,7 +126,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
     double update = 10;
     double converge_thrs = std::abs(this->mo_residual);
 
-    if ((std::abs(this->mo_residual) < this->apply_prec * 10 && this->run_hybrid) || this->run_absolute) {
+    if (std::abs(this->mo_residual) < this->apply_prec * 10 || not this->run_hybrid) {
         converge_thrs = this->apply_prec;
     }
     for (int iter = 1; update >= converge_thrs && iter <= max_iter; iter++) {

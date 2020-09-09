@@ -73,7 +73,10 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
             "run_variational": user_dict["Environment"]["run_variational"],
             "epsilon_in": user_dict["Environment"]["Permittivity"]["epsilon_in"],
             "epsilon_out": user_dict["Environment"]["Permittivity"]["epsilon_out"],
-            "linear": user_dict["Environment"]["Permittivity"]["linear"]
+            "linear": user_dict["Environment"]["Permittivity"]["linear"],
+            "max_iter": user_dict["Environment"]["max_iter"],
+            "run_hybrid": user_dict["Environment"]["run_hybrid"],
+            "accelerate_Vr": user_dict["Environment"]["extrapolate_Vr"]
     }
 
     # Coulomb

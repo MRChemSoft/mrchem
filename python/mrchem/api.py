@@ -154,7 +154,7 @@ def write_molecule(user_dict, origin):
         for coord in coords_dict:
             coord["xyz"] = [r - o for r, o in zip(coord["xyz"], CoM)]
 
-    #point of bug possibly
+    # initialize the cavity
     cav_coords_dict = []
     if len(user_dict["Environment"]["Cavity"]["coords"]) > 0:
         cav_coords_raw = user_dict["Environment"]["Cavity"]["coords"]

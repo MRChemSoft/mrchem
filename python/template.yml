@@ -687,6 +687,11 @@ sections:
       Includes parameters related to the computation of the reaction field
       energy of a system in an environment.
     keywords:
+      - name: max_iter
+        type: int
+        default: 100
+        docstring: |
+          Max number of iterations allowed in the nested procedure.
       - name: run_SCRF
         type: bool
         default: false
@@ -698,6 +703,17 @@ sections:
         default: false
         docstring: |
           Compute the reaction field using the variational algorithm
+      - name: run_hybrid
+        type: bool
+        default: true
+        docstring: |
+          Adjust the convergence threshold for the nested procedure with regards to the orbital residual.
+          When the orbitals are close to convergence the convergence threshold will be equal to the orbital threshold.
+      - name: extrapolate_Vr
+        type: bool
+        default: true
+        docstring: |
+          Extrapolate on the reaction potential if true, or on the surface charge distribution in the convergence acceleration.
       - name: kain_history
         type: int
         default: 0

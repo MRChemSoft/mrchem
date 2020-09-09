@@ -705,6 +705,12 @@ User input reference
  :Environment: Includes parameters related to the computation of the reaction field energy of a system in an environment. 
 
   :red:`Keywords`
+   :max_iter: Max number of iterations allowed in the nested procedure. 
+  
+    **Type** ``int``
+  
+    **Default** ``100``
+  
    :run_SCRF: Perform the Self consistent reaction field calculation of the reaction potential of the interaction between environment and molecule.  
   
     **Type** ``bool``
@@ -716,6 +722,18 @@ User input reference
     **Type** ``bool``
   
     **Default** ``False``
+  
+   :run_hybrid: Adjust the convergence threshold for the nested procedure with regards to the orbital residual. When the orbitals are close to convergence the convergence threshold will be equal to the orbital threshold. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+   :extrapolate_Vr: Extrapolate on the reaction potential if true, or on the surface charge distribution in the convergence acceleration. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
   
    :kain_history: Number of previous reaction field iterates kept for convergence acceleration. 
   

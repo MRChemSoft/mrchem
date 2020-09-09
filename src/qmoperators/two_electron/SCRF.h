@@ -24,8 +24,7 @@ public:
          int kain_hist = 0,
          int max_iter = 100,
          bool accelerate_Vr = true,
-         bool run_hybrid = true,
-         bool run_absolute = false);
+         bool run_hybrid = true);
     friend class ReactionPotential;
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
 
@@ -45,7 +44,6 @@ protected:
 private:
     bool accelerate_Vr;
     bool run_hybrid;
-    bool run_absolute;
 
     int max_iter;
     int history;
