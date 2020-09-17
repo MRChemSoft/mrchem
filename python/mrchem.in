@@ -1,4 +1,4 @@
-#!@Python3_EXECUTABLE@
+#!/usr/bin/env python3
 
 #
 # MRChem, a numerical real-space code for molecular electronic structure
