@@ -51,8 +51,11 @@ def main():
     # Parse command line
     args = cli()
 
-    inp_file = (Path(args.inp_name) if args.inp_name.endswith(".inp") else
-                Path(args.inp_name + ".inp"))
+    inp_file = (
+        Path(args.inp_name)
+        if args.inp_name.endswith(".inp")
+        else Path(args.inp_name + ".inp")
+    )
     name = inp_file.stem
     # these two are always in the current working directory
     out_file = f"{name}.out"
@@ -66,11 +69,11 @@ def main():
 
     # create necessary directories
     for d in [
-            user_dict["SCF"]["path_checkpoint"],
-            user_dict["SCF"]["path_orbitals"],
-            user_dict["Response"]["path_checkpoint"],
-            user_dict["Response"]["path_orbitals"],
-            user_dict["Plotter"]["path"],
+        user_dict["SCF"]["path_checkpoint"],
+        user_dict["SCF"]["path_orbitals"],
+        user_dict["Response"]["path_checkpoint"],
+        user_dict["Response"]["path_orbitals"],
+        user_dict["Plotter"]["path"],
     ]:
         if not Path(d).exists():
             Path(d).mkdir()
