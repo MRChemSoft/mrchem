@@ -30,23 +30,29 @@ import sys
 from json import dumps
 from pathlib import Path
 
-sys.path.append("@CMAKE_INSTALL_PREFIX@/@PYTHON_SITE_INSTALL_DIR@")
-sys.path.append("@CMAKE_BINARY_DIR@/@PYTHON_SITE_INSTALL_DIR@")
+this_path = Path(__file__).parent
+# import the MRChem Python frontend module
+mod_install_tree = Path("@CMAKE_INSTALL_PREFIX@/lib/@PYMOD_INSTALL_LIBDIR@")
+mod_build_tree = Path("@CMAKE_BINARY_DIR@/lib/@PYMOD_INSTALL_LIBDIR@")
+if Path("@CMAKE_BINARY_DIR@") in this_path.parents:
+    sys.path.append(str(mod_build_tree))
+else:
+    if mod_install_tree.exists():
+        sys.path.append(str(mod_install_tree))
+    elif mod_build_tree.exists():
+        sys.path.append(str(mod_build_tree))
+    else:
+        raise RuntimeError("MRChem Python frontend module not found!")
 
 from mrchem import cli, parse, translate_input, validate
 
 
 def main():
-    this_path = Path(__file__).parent
-
     # Parse command line
     args = cli()
 
-    inp_file = (
-        Path(args.inp_name)
-        if args.inp_name.endswith(".inp")
-        else Path(args.inp_name + ".inp")
-    )
+    inp_file = (Path(args.inp_name) if args.inp_name.endswith(".inp") else
+                Path(args.inp_name + ".inp"))
     name = inp_file.stem
     # these two are always in the current working directory
     out_file = f"{name}.out"
@@ -60,11 +66,11 @@ def main():
 
     # create necessary directories
     for d in [
-        user_dict["SCF"]["path_checkpoint"],
-        user_dict["SCF"]["path_orbitals"],
-        user_dict["Response"]["path_checkpoint"],
-        user_dict["Response"]["path_orbitals"],
-        user_dict["Plotter"]["path"],
+            user_dict["SCF"]["path_checkpoint"],
+            user_dict["SCF"]["path_orbitals"],
+            user_dict["Response"]["path_checkpoint"],
+            user_dict["Response"]["path_orbitals"],
+            user_dict["Plotter"]["path"],
     ]:
         if not Path(d).exists():
             Path(d).mkdir()

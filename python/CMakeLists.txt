@@ -4,7 +4,15 @@ if("${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}" VERSION_LESS 3.6)
     message(FATAL_ERROR "You will need Python >= 3.6 to run MRChem")
 endif()
 
-set(PYTHON_SITE_INSTALL_DIR lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}/site-packages)
+if(NOT DEFINED PYMOD_INSTALL_LIBDIR)
+  message(STATUS "Setting (unspecified) option PYMOD_INSTALL_LIBDIR: python")
+  set(PYMOD_INSTALL_LIBDIR "python" CACHE STRING "Location under 'lib' to which Python modules are installed" FORCE)
+else()
+  message(STATUS "Setting option PYMOD_INSTALL_LIBDIR: ${PYMOD_INSTALL_LIBDIR}")
+  set(PYMOD_INSTALL_LIBDIR "${PYMOD_INSTALL_LIBDIR}" CACHE STRING "Location under 'lib' to which Python modules are installed" FORCE)
+endif()
+file(TO_NATIVE_PATH "lib/${PYMOD_INSTALL_LIBDIR}/mrchem" PYMOD_INSTALL_FULLDIR)
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR})
 
 # define variable used in mrchem.in
 set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
@@ -29,14 +37,14 @@ file(
   COPY
     ${CMAKE_CURRENT_LIST_DIR}/mrchem/
   DESTINATION
-    ${PROJECT_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem
+    ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}
   PATTERN "__pycache__" EXCLUDE
   PATTERN "*.py.in" EXCLUDE
   )
 # configure config.py.in
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/mrchem/config.py.in
-  ${PROJECT_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem/config.py
+  ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}/config.py
   @ONLY
   )
 
@@ -49,11 +57,12 @@ install(
   )
 
 # install the mrchem folder, which includes the (generated) input_parser folder
+# NOTE the trailing "/" is important!
 install(
   DIRECTORY
-    ${PROJECT_BINARY_DIR}/${PYTHON_SITE_INSTALL_DIR}/mrchem
+    ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}/
   DESTINATION
-    ${PYTHON_SITE_INSTALL_DIR}
+    ${PYMOD_INSTALL_FULLDIR}
   FILES_MATCHING
     PATTERN "*.py"
   PATTERN "__pycache__" EXCLUDE
