@@ -3,7 +3,7 @@ version: 2
 variables:
   ubuntu-1804: &ubuntu-1804
     docker:
-      - image: mrchemsoft/circleci_ubuntu-18.04:3f7c39f57bd4
+      - image: quay.io/metamr/circleci_ubuntu-18.04:f969788
         name: tsubame
         user: merzbow
     working_directory: ~/mrchem
