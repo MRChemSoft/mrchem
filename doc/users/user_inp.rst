@@ -107,7 +107,7 @@ Available print levels are:
 MPI
 ---
 
-This section defines some parameters that are used in MPI runs (dfaults shown):
+This section defines some parameters that are used in MPI runs (defaults shown):
 
 .. code-block:: bash
 
@@ -121,9 +121,13 @@ This section defines some parameters that are used in MPI runs (dfaults shown):
 
 The memory bank will allow larger molecules to get though if memory is the
 limiting factor, but it will be slower, as the bank processes will not take
-part in any computation. For smaller calculations it is recommended to use
-``bank_size = 0``. A negative bank size will set it automatically based on
-the number of available processes.
+part in any computation. For calculations involving exact exchange (Hartree-Fock
+or hybrid DFT functionals) a memory bank is **required** whenever there's more
+than one MPI process. A negative bank size will set it automatically based on
+the number of available processes. For pure DFT functionals on smaller molecules
+it is likely more efficient to set `bank_size = 0`, otherwise it's recommended
+to use the default. If a particular calculation runs out of memory, it might
+help to increase the number of bank processes from the default value.
 
 The ``numerically_exact`` keyword will trigger algorithms that guarantee that
 the computed results are invariant (within double precision) with respect to
@@ -366,7 +370,7 @@ on the initial guess wavefunction.
 
 The ``kain`` (Krylov Accelerated Inexact Newton) keyword gives the length of
 the iterative subspace accelerator (similar to DIIS). The ``rotation`` keyword
-gives the nuber of iterations between every orbital rotation, which can be
+gives the number of iterations between every orbital rotation, which can be
 either localization or diagonalization, depending on the ``localize`` keyword.
 The first two iterations in the SCF are always rotated, otherwise it is
 controlled by the ``rotation`` keyword (usually this is not very important, but
