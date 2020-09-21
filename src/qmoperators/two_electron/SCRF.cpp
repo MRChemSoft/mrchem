@@ -121,7 +121,7 @@ void SCRF::accelerateConvergence(QMFunction &dfunc, QMFunction &func, KAIN &kain
 }
 
 void SCRF::nestedSCRF(QMFunction V_vac) {
-    print_utils::headline(0, "Calculating Reaction Potential");
+    print_utils::headline(2, "Calculating Reaction Potential");
     KAIN kain(this->history);
     double update = 10;
     double converge_thrs = std::abs(this->mo_residual);
@@ -165,8 +165,8 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
 
         updateCurrentGamma(gamma_np1);
 
-        print_utils::text(0, "Update          ", print_utils::dbl_to_str(update, 5, true));
-        print_utils::text(0, "Microiteration  ", std::to_string(iter));
+        print_utils::text(2, "Update          ", print_utils::dbl_to_str(update, 5, true));
+        print_utils::text(2, "Microiteration  ", std::to_string(iter));
     }
     println(0, " Converged Reaction Potential!");
     this->dVr_n.real().clear();

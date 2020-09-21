@@ -28,6 +28,14 @@
 #include "chemistry/Cavity.h"
 #include <MRCPP/MWFunctions>
 
+/** @class Permittivity
+ *
+ * @brief Permittivity function defined by a Cavity function and dielectric constants
+ *
+ *
+ *
+ */
+
 namespace mrchem {
 class Cavity;
 
@@ -45,7 +53,8 @@ public:
     double eps_out;
 
 private:
-    bool flipped = false;
+    bool flipped =
+        false; //** If true, the function evalf evaluates 1/epsilon, if false the function evaluates epsilon */
     Cavity Cav;
 };
 
