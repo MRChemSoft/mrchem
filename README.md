@@ -17,3 +17,75 @@ Sciences at UiT - The Arctic University of Norway.
 ### User support: [mrchem.slack.com](https://join.slack.com/t/mrchem/shared_invite/enQtNTI3MjMzNjM0NTk0LWNkODZjNTMwYmM4NmRmODExMjQzMDc3NThlMzNmNmIyNWQwM2YwOGY0OWY4NmNmNzE4ZmM2NzgxYzUzNDg3NDM)
 ### Documentation: [mrchem.readthedocs.io](http://mrchem.readthedocs.io)
 
+
+## Installation
+
+For optimal performance it is recommended to build from source, as the packaged
+builds are quite generic without architecture specific optimizations.
+
+
+### From source including code examples
+
+To build MRChem from source with MPI+OpenMP parallelization:
+
+    $ git clone git@github.com:MRChemSoft/mrchem.git
+    $ cd mrchem
+    $ ./setup --prefix=<install-dir> --omp --mpi --cxx=<mpi-compiler> <build-dir>
+    $ cd <build-dir>
+    $ make
+    $ make test
+    $ make install
+
+All dependencies will be fetched at configure time, if not already available.
+For more information on different kinds of builds, see
+[installation instructions](http://mrchem.readthedocs.io/en/latest/installation.html).
+
+
+### Using Conda
+
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/mrchem/badges/version.svg)](https://anaconda.org/conda-forge/mrchem)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/mrchem/badges/latest_release_date.svg)](https://anaconda.org/conda-forge/mrchem)
+[![Anaconda-Server Badge](https://anaconda.org/conda-forge/mrchem/badges/downloads.svg)](https://anaconda.org/conda-forge/mrchem)
+
+To install MRChem in a Conda environment `myenv`:
+
+    $ conda create -n myenv
+    $ conda activate myenv
+    $ conda install -c conda-forge mrchem               # latest version (OpenMP only)
+    $ conda install -c conda-forge mrchem=1.0.0         # tagged version (OpenMP only)
+    $ conda install -c conda-forge mrchem=*=*openmpi*   # latest version (MPI+OpenMP)
+    $ conda install -c conda-forge mrchem=*=*mpich*     # latest version (MPI+OpenMP)
+
+To list all available versions
+
+    $ conda search -c conda-forge mrchem
+
+
+### Using Spack
+
+To install MRCPP in a Spack environment `myenv`:
+
+    $ spack env create myenv
+    $ spack env activate myenv
+    $ spack install mrchem                              # latest version (MPI+OpenMP)
+    $ spack install mrchem @1.0.0                       # tagged version (MPI+OpenMP)
+    $ spack install mrchem -mpi                         # latest version (OpenMP only)
+
+For information on available Spack builds:
+
+    $ spack info mrchem
+
+
+### Using EasyBuild
+
+To install MRChem in an EasyBuild/Lmod environment (only MPI+OpenMP version
+available):
+
+    $ eb MRChem-<version>-<toolchain> --fetch
+    $ eb MRChem-<version>-<toolchain> --robot
+    $ module load MRChem/<version>-<toolchain>
+
+See
+[EasyBuild](https://github.com/easybuilders/easybuild-easyconfigs/tree/develop/easybuild/easyconfigs/m/MRChem)
+for available `<versions>` and `<toolchains>`.
+
