@@ -35,7 +35,7 @@ public:
     double evalf(const mrcpp::Coord<3> &r) const override;
     auto getGradVector() const { return this->gradvector; }
     std::vector<mrcpp::Coord<3>> getCoordinates() const { return pos; }
-    std::vector<double> getRadius() const { return R; }
+    std::vector<double> getRadii() const { return R; }
     friend class Permittivity;
 
 protected:

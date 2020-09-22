@@ -29,39 +29,22 @@
 
 namespace mrchem {
 
-Permittivity::Permittivity(const mrchem::Cavity C, double epsilon_in, double epsilon_out)
-        : eps_in(epsilon_in)
-        , eps_out(epsilon_out)
-        , Cav(C) {}
-
+Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, double epsilon_out)
+        : epsilon_in(epsilon_in)
+        , epsilon_out(epsilon_out)
+        , cavity(cavity) {}
+/** @brief Evaluates Permittivity at a point in 3D space with respect to the state of #inverse.
+ *  @param r coordinates of a 3D point in space.
+ *  \return \f$\frac{1}{\epsilon(\mathbf{r})}\f$ if #inverse is true, and \f$ \epsilon(\mathbf{r})\f$ if inverse is
+ *  false.
+ */
 double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
-    auto epsilon = eps_in * std::exp(std::log(eps_out / eps_in) * (1 - this->Cav.evalf(r)));
-    if (flipped) {
+    auto epsilon = epsilon_in * std::exp(std::log(epsilon_out / epsilon_in) * (1 - this->cavity.evalf(r)));
+    if (inverse) {
         return 1 / epsilon;
     } else {
         return epsilon;
     }
 }
 
-// Not supported in C:
-// C
-// C_i
-// Derivative
-// Derivative
-// Derivative
-// Derivative
-// Derivative
-// Derivative
-// (1.0/4.0)*K*(K*pow(1 - C(O.x, O.y, O.z), 2)*pow(Sum(Derivative(C_i(O.x, O.y, O.z, i), O.x)/(1 - C_i(O.x, O.y, O.z,
-// i)), (i, 1, N)), 2) + K*pow(1 - C(O.x, O.y, O.z), 2)*pow(Sum(Derivative(C_i(O.x, O.y, O.z, i), O.y)/(1 - C_i(O.x,
-// O.y, O.z, i)), (i, 1, N)), 2) + K*pow(1 - C(O.x, O.y, O.z), 2)*pow(Sum(Derivative(C_i(O.x, O.y, O.z, i), O.z)/(1 -
-// C_i(O.x, O.y, O.z, i)), (i, 1, N)), 2) + 2*(1 - C(O.x, O.y, O.z))*pow(Sum(Derivative(C_i(O.x, O.y, O.z, i), O.x)/(1 -
-// C_i(O.x, O.y, O.z, i)), (i, 1, N)), 2) + 2*(1 - C(O.x, O.y, O.z))*pow(Sum(Derivative(C_i(O.x, O.y, O.z, i), O.y)/(1 -
-// C_i(O.x, O.y, O.z, i)), (i, 1, N)), 2) + 2*(1 - C(O.x, O.y, O.z))*pow(Sum(Derivative(C_i(O.x, O.y, O.z, i), O.z)/(1 -
-// C_i(O.x, O.y, O.z, i)), (i, 1, N)), 2) - 2*(1 - C(O.x, O.y, O.z))*Sum(Derivative(C_i(O.x, O.y, O.z, i), (O.x, 2))/(1
-// - C_i(O.x, O.y, O.z, i)) + pow(Derivative(C_i(O.x, O.y, O.z, i), O.x), 2)/pow(1 - C_i(O.x, O.y, O.z, i), 2), (i, 1,
-// N)) - 2*(1 - C(O.x, O.y, O.z))*Sum(Derivative(C_i(O.x, O.y, O.z, i), (O.y, 2))/(1 - C_i(O.x, O.y, O.z, i)) +
-// pow(Derivative(C_i(O.x, O.y, O.z, i), O.y), 2)/pow(1 - C_i(O.x, O.y, O.z, i), 2), (i, 1, N)) - 2*(1 - C(O.x, O.y,
-// O.z))*Sum(Derivative(C_i(O.x, O.y, O.z, i), (O.z, 2))/(1 - C_i(O.x, O.y, O.z, i)) + pow(Derivative(C_i(O.x, O.y, O.z,
-// i), O.z), 2)/pow(1 - C_i(O.x, O.y, O.z, i), 2), (i, 1, N)))
 } // namespace mrchem

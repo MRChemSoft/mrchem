@@ -77,7 +77,7 @@ void SCRF::computeGamma(QMFunction Potential, QMFunction &out_gamma) {
     auto d_V = mrcpp::gradient(*derivative, Potential.real());
     resetQMFunction(out_gamma);
     mrcpp::dot(this->apply_prec, out_gamma.real(), d_V, d_cavity);
-    out_gamma.rescale(std::log((epsilon.eps_in / epsilon.eps_out)) * (1.0 / (4.0 * MATHCONST::pi)));
+    out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * MATHCONST::pi)));
     mrcpp::clear(d_V, true);
 }
 

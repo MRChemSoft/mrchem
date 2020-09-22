@@ -30,10 +30,16 @@
 
 /** @class Permittivity
  *
- * @brief Permittivity function defined by a Cavity function and dielectric constants
+ * @brief Permittivity function related to a substrate molecule and a solvent continuum.
  *
- *
- *
+ * The Permittivity class represents the following function
+ * \f[
+ * \epsilon(\mathbf{r}) = \epsilon_{in}\exp\left(\left(\log\frac{\epsilon_{out}}{\epsilon_{in}} \right)
+ *                                               \left(1 - C(\mathbf{r})\right)\right)
+ * \f]
+ * where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$ C \f$ is the #cavity function of the substrate,
+ * and \f$\epsilon_{in}\f$ and \f$ \epsilon_{out} \f$ are the dielectric constants describing, respectively, the
+ * permittivity \link #epsilon_in inside \endlink  and \link #epsilon_out outside\endlink the #cavity of the substrate.
  */
 
 namespace mrchem {
@@ -41,21 +47,35 @@ class Cavity;
 
 class Permittivity final : public mrcpp::RepresentableFunction<3> {
 public:
-    Permittivity(const Cavity C, double epsilon_in, double epsilon_out = 1.0);
+    Permittivity(const Cavity cavity, double epsilon_in, double epsilon_out = 1.0); //!< Standard constructor.
     double evalf(const mrcpp::Coord<3> &r) const override;
 
-    void flipFunction(bool is_flipped) { this->flipped = is_flipped; };
-    bool isInverse() { return this->flipped; }
-    std::vector<mrcpp::Coord<3>> getCoordinates() const { return this->Cav.getCoordinates(); }
-    std::vector<double> getRadius() const { return this->Cav.getRadius(); }
-    auto getGradVector() const { return this->Cav.getGradVector(); }
-    double eps_in;
-    double eps_out;
+    /** @brief Changes the value of #inverse. */
+    void flipFunction(bool is_inverse) { this->inverse = is_inverse; }
+
+    /** @brief Returns the current state of #inverse. */
+    auto isInverse() const { return this->inverse; }
+
+    /** @brief Calls the Cavity::getCoordinates() method of the #cavity instance. */
+    auto getCoordinates() const { return this->cavity.getCoordinates(); }
+
+    /** @brief Calls the Cavity::getRadii() method of the #cavity instance. */
+    auto getRadii() const { return this->cavity.getRadii(); }
+
+    /** @brief Calls the Cavity::getGradVector() method of the #cavity instance. */
+    auto getGradVector() const { return this->cavity.getGradVector(); }
+
+    /** @brief Returns the value of #epsilon_in. */
+    auto getEpsIn() const { return this->epsilon_in; }
+
+    /** @brief Returns the value of epsilon_out. */
+    auto getEpsOut() const { return this->epsilon_out; }
 
 private:
-    bool flipped =
-        false; //** If true, the function evalf evaluates 1/epsilon, if false the function evaluates epsilon */
-    Cavity Cav;
+    bool inverse = false; //!< If true, the function evaluates to 1/epsilon, if false the function evaluates to epsilon.
+    double epsilon_in;    //!< Dielectric constant describing the permittivity of free space.
+    double epsilon_out;   //!< Dielectric constant describing the permittivity of the solvent.
+    Cavity cavity;        //!< A Cavity class instance.
 };
 
 } // namespace mrchem
