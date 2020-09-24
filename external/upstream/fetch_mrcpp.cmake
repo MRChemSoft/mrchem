@@ -13,7 +13,7 @@ else()
   FetchContent_Declare(mrcpp_sources
     QUIET
     URL
-      https://github.com/MRChemSoft/mrcpp/archive/v1.3.1.tar.gz
+      https://github.com/MRChemSoft/mrcpp/archive/v1.3.3.tar.gz
     )
 
   FetchContent_GetProperties(mrcpp_sources)
