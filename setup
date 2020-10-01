@@ -20,7 +20,7 @@ Usage:
 Options:
   --cxx=<CXX>                            C++ compiler [default: g++].
   --extra-cxx-flags=<EXTRA_CXXFLAGS>     Extra C++ compiler flags [default: ''].
-  --arch-flags                           Enable architecture-specific compiler flags [default: True].
+  --arch-flags=<ARCH_FLAGS>              Enable architecture-specific compiler flags [default: True].
   --coverage                             Enable code coverage [default: OFF].
   --mpi                                  Enable MPI parallelization [default: False].
   --omp                                  Enable OpenMP parallelization [default: False].

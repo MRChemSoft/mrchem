@@ -10,7 +10,7 @@
 # set_compiler_flag(result <REQUIRED> FLAGS flag1 flag2 ...)
 #
 # Example:
-# set_compiler_flag(working_compile_flag REQUIRED "-Wall" "-warn all")
+# set_compiler_flag(working_compile_flag REQUIRED FLAGS "-Wall" "-warn all")
 
 include(CheckCXXCompilerFlag)
 
@@ -25,8 +25,12 @@ function(set_compiler_flag _result)
     ${ARGN}
     )
 
-  set(_flag_found FALSE)
+  # Silently check compiler flags
+  set(restore_CMAKE_REQUIRED_QUIET ${CMAKE_REQUIRED_QUIET})
+  set(CMAKE_REQUIRED_QUIET TRUE)
+
   # loop over all flags, try to find the first which works
+  set(_flag_found FALSE)
   foreach(flag IN ITEMS ${_flagger_FLAGS})
     unset(_flag_works CACHE)
     check_cxx_compiler_flag("${flag}" _flag_works)
@@ -44,4 +48,7 @@ function(set_compiler_flag _result)
   if(_flagger_REQUIRED AND NOT _flag_found)
     message(FATAL_ERROR "None of the required flags were supported")
   endif()
+
+  # Restore CMAKE_REQUIRED_QUIET
+  set(CMAKE_REQUIRED_QUIET ${restore_CMAKE_REQUIRED_QUIET})
 endfunction()
