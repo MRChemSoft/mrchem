@@ -1,7 +1,0 @@
-if(NOT DEFINED ENV{CFLAGS})
-    if(CMAKE_C_COMPILER_ID MATCHES GNU)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wno-sign-compare")
-        set(CMAKE_C_FLAGS_RELEASE "-O3 -march=native -DNDEBUG -Wno-unused")
-        set(CMAKE_C_FLAGS_DEBUG "-O0 -g3 -DDEBUG")
-    endif()
-endif()
