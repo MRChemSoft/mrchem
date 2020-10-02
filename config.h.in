@@ -33,11 +33,3 @@ inline constexpr auto sad_basis_install_dir() noexcept {
     return "@SAD_BASIS_INSTALL_DIR@";
 }
 } // namespace mrchem
-
-#define BLAS_H "@BLAS_H@"
-
-#cmakedefine HAVE_MPI
-
-#cmakedefine HAVE_BLAS
-
-#cmakedefine HAVE_XCFUN
