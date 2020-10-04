@@ -34,14 +34,14 @@ filters = {
     E_EEXT: rel_tolerance(1.0e-6),
     E_NEXT: rel_tolerance(1.0e-6),
     E_EL: rel_tolerance(1.0e-6),
-    GEOMETRIC_DERIVATIVE("total"): rel_tolerance(1.0e-6),
+    GEOMETRIC_DERIVATIVE(1, "total"): rel_tolerance(1.0e-6),
 }
 
 ierr = run(options, input_file="hf", filters=filters)
 
 # compare nuclear component of the molecular gradient with Psi4
 with Path("hf.json").open("r") as o:
-    nuc_grad = json.load(o)["output"]["properties"]["geometric_derivative"]["nuclear"]
+    nuc_grad = json.load(o)["output"]["properties"]["geometric_derivative"]["geom-1"]["nuclear"]
 passed, message = compare_values(
     nuc_grad,
     psi4_nuc_grad,
@@ -104,7 +104,7 @@ def finite_difference_gradient(energies):
 
 ## compare analytical vs. numerical electronic component of the molecular gradient
 # with (Path(__file__).resolve().parent / "hf.json").open("r") as o:
-#    ele_grad = json.load(o)["output"]["properties"]["geometric_derivative"]["electronic"]
+#    ele_grad = #    json.load(o)["output"]["properties"]["geometric_derivative"]["geom-1"]["electronic"]
 # passed, message = compare_values(ele_grad,
 #                                 finite_difference_gradient(ele_es),
 #                                 "Analytic vs. numeric electronic component of the molecular gradient",
@@ -115,7 +115,8 @@ def finite_difference_gradient(energies):
 #
 ## compare analytical vs. numerical total molecular gradient
 # with (Path(__file__).resolve().parent / "hf.json").open("r") as o:
-#    tot_grad = json.load(o)["output"]["properties"]["geometric_derivative"]["total"]
+#    tot_grad =
+#    json.load(o)["output"]["properties"]["geometric_derivative"]["geom-1"]["total"]
 # passed, message = compare_values(tot_grad,
 #                                 finite_difference_gradient(tot_es),
 #                                 "Analytic vs. numeric total molecular gradient",

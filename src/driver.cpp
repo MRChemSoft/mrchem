@@ -182,9 +182,11 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
         }
     }
     if (json_prop.contains("geometric_derivative")) {
-        auto &grad = mol.getGeometricDerivatives();
-        if (not grad.count("geometric_derivative"))
-            grad.insert({"geometric_derivative", GeometricDerivative(mol.getNNuclei())});
+        for (const auto &item : json_prop["geometric_derivative"].items()) {
+            const auto &id = item.key();
+            auto &geom_map = mol.getGeometricDerivatives();
+            if (not geom_map.count(id)) geom_map.insert({id, GeometricDerivative(mol.getNNuclei())});
+        }
     }
 }
 
@@ -443,6 +445,42 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
         if (plevel == 1) mrcpp::print::time(1, "Quadrupole moment", t_lap);
     }
 
+    if (json_prop.contains("geometric_derivative")) {
+        t_lap.start();
+        mrcpp::print::header(2, "Computing geometric derivative");
+        for (const auto &item : json_prop["geometric_derivative"].items()) {
+            const auto &id = item.key();
+            const auto &prec = item.value()["precision"];
+            const auto &smoothing = item.value()["smooth_prec"];
+            GeometricDerivative &G = mol.getGeometricDerivative(id);
+            auto &nuc = G.getNuclear();
+            auto &el = G.getElectronic();
+
+            for (auto k = 0; k < mol.getNNuclei(); ++k) {
+                const auto nuc_k = nuclei[k];
+                auto Z_k = nuc_k.getCharge();
+                auto R_k = nuc_k.getCoord();
+                auto smooth = detail::nuclear_gradient_smoothing(mol.getNNuclei(), smoothing, Z_k);
+                NuclearGradientOperator h(Z_k, R_k, smooth);
+                h.setup(prec);
+                nuc.row(k) = Eigen::RowVector3d::Zero();
+                for (auto l = 0; l < mol.getNNuclei(); ++l) {
+                    if (l == k) continue;
+                    const auto nuc_l = nuclei[l];
+                    auto Z_l = nuc_l.getCharge();
+                    auto R_l = nuc_l.getCoord();
+                    std::array<double, 3> R_kl = {R_k[0] - R_l[0], R_k[1] - R_l[1], R_k[2] - R_l[2]};
+                    auto R_kl_3_2 = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);
+                    nuc.row(k) -= Eigen::Map<Eigen::RowVector3d>(R_kl.data()) * (Z_k * Z_l / R_kl_3_2);
+                }
+                el.row(k) = h.trace(Phi).real();
+                h.clear();
+            }
+        }
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Geometric derivative", t_lap);
+    }
+
     if (json_prop.contains("magnetizability")) {
         t_lap.start();
         mrcpp::print::header(2, "Computing magnetizability (dia)");
@@ -475,38 +513,6 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "NMR shielding (dia)", t_lap);
-    }
-
-    if (json_prop.contains("geometric_derivative")) {
-        t_lap.start();
-        mrcpp::print::header(2, "Computing geometric derivative");
-        const auto &prec = json_prop["geometric_derivative"]["precision"];
-        const auto &smoothing = json_prop["geometric_derivative"]["smooth_prec"];
-        const auto nuclei = mol.getNuclei();
-        auto &nuc = mol.getGeometricDerivative().getNuclear();
-        auto &el = mol.getGeometricDerivative().getElectronic();
-
-        for (auto k = 0; k < mol.getNNuclei(); ++k) {
-            const auto nuc_k = nuclei[k];
-            auto Z_k = nuc_k.getCharge();
-            auto R_k = nuc_k.getCoord();
-            auto smooth = detail::nuclear_gradient_smoothing(mol.getNNuclei(), smoothing, Z_k);
-            NuclearGradientOperator h(Z_k, R_k, smooth);
-            h.setup(prec);
-            for (auto l = 0; l < mol.getNNuclei(); ++l) {
-                if (l == k) continue;
-                const auto nuc_l = nuclei[l];
-                auto Z_l = nuc_l.getCharge();
-                auto R_l = nuc_l.getCoord();
-                std::array<double, 3> R_kl = {R_k[0] - R_l[0], R_k[1] - R_l[1], R_k[2] - R_l[2]};
-                auto R_kl_3_2 = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);
-                nuc.row(k) -= Eigen::Map<Eigen::RowVector3d>(R_kl.data()) * (Z_k * Z_l / R_kl_3_2);
-            }
-            el.row(k) = h.trace(Phi).real();
-            h.clear();
-        }
-        mrcpp::print::footer(2, t_lap, 2);
-        if (plevel == 1) mrcpp::print::time(1, "Geometric derivative", t_lap);
     }
 
     if (json_prop.contains("hyperpolarizability")) MSG_ERROR("Hyperpolarizability not implemented");

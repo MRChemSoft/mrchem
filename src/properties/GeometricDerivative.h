@@ -28,6 +28,8 @@
 #include <nlohmann/json.hpp>
 
 #include "mrchem.h"
+
+#include "utils/math_utils.h"
 #include "utils/print_utils.h"
 
 namespace mrchem {
@@ -35,8 +37,8 @@ namespace mrchem {
 class GeometricDerivative final {
 public:
     explicit GeometricDerivative(int k = 1)
-            : nuclear(DoubleMatrix::Zero(k, 3))
-            , electronic(DoubleMatrix::Zero(k, 3)) {}
+            : nuclear(math_utils::init_nan(k, 3))
+            , electronic(math_utils::init_nan(k, 3)) {}
 
     DoubleMatrix getTensor() const { return this->nuclear + this->electronic; }
     DoubleMatrix &getNuclear() { return this->nuclear; }
@@ -44,8 +46,8 @@ public:
     const DoubleMatrix &getNuclear() const { return this->nuclear; }
     const DoubleMatrix &getElectronic() const { return this->electronic; }
 
-    void print() const {
-        mrcpp::print::header(0, "Geometric Derivative");
+    void print(const std::string &id) const {
+        mrcpp::print::header(0, "Geometric Derivative (" + id + ")");
         print_utils::matrix(0, "Total", getTensor());
         print_utils::scalar(0, "Norm", getTensor().norm(), "(au)");
         mrcpp::print::separator(0, '-');

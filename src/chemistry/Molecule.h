@@ -114,9 +114,7 @@ public:
     Polarizability &getPolarizability(const std::string &id) { return this->polarizability.at(id); }
     Magnetizability &getMagnetizability(const std::string &id) { return this->magnetizability.at(id); }
     NMRShielding &getNMRShielding(const std::string &id) { return this->nmr_shielding.at(id); }
-    GeometricDerivative &getGeometricDerivative(const std::string &id = "geometric_derivative") {
-        return this->geometric_derivative.at(id);
-    }
+    GeometricDerivative &getGeometricDerivative(const std::string &id) { return this->geometric_derivative.at(id); }
 
     PropertyMap<DipoleMoment> &getDipoleMoments() { return this->dipole; }
     PropertyMap<QuadrupoleMoment> &getQuadrupoleMoments() { return this->quadrupole; }
