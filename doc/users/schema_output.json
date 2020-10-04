@@ -86,13 +86,15 @@
         "anisotropy": float                  # Anisotropy of tensor
       }
     },
-    "geometric_derivative": {                # The geometric derivative
-      "electronic": array[float],            # Electronic component of the geometric derivative
-      "electronic_norm": float,              # Norm of the electronic component of the geoemtric derivative
-      "nuclear": array[float],               # Nuclear component of the geometric derivative
-      "nuclear_norm": float,                 # Norm of the nuclear component of the geometric derivative
-      "total": array[float],                 # Geometric derivative
-      "total_norm": float                    # Norm of the geometric derivative
+    "geometric_derivative": {                # Collection of geometric derivatives
+      id (string): {                         # Unique id: 'geom-${number}'
+        "electronic": array[float],          # Electronic component of the geometric derivative
+        "electronic_norm": float,            # Norm of the electronic component of the geoemtric derivative
+        "nuclear": array[float],             # Nuclear component of the geometric derivative
+        "nuclear_norm": float,               # Norm of the nuclear component of the geometric derivative
+        "total": array[float],               # Geometric derivative
+        "total_norm": float                  # Norm of the geometric derivative
+      }
     }
   },
   "scf_calculation": {                       # Ground state SCF calculation

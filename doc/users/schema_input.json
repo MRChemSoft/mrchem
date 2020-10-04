@@ -112,10 +112,12 @@
           "r_O": array[float]                # Operator gauge origin
         }                                    
       },
-      "geometric_derivative": {
-        "precision": float,                  # Operator precision
-        "operator": string,                  # Operator used for property
-        "smooth_prec": float                 # Smoothing parameter for potential
+      "geometric_derivative": {              # Collection of geometric derivatives
+        id (string): {                       # Unique id: 'geom-${number}'
+          "precision": float,                # Operator precision
+          "operator": string,                # Operator used for property
+          "smooth_prec": float               # Smoothing parameter for potential
+        }
       }
     },
     "plots": {                               # Collection of plots to perform
