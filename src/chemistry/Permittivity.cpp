@@ -35,7 +35,7 @@ Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, doubl
         , cavity(cavity) {}
 /** @brief Evaluates Permittivity at a point in 3D space with respect to the state of #inverse.
  *  @param r coordinates of a 3D point in space.
- *  \return \f$\frac{1}{\epsilon(\mathbf{r})}\f$ if #inverse is true, and \f$ \epsilon(\mathbf{r})\f$ if inverse is
+ *  @return \f$\frac{1}{\epsilon(\mathbf{r})}\f$ if #inverse is true, and \f$ \epsilon(\mathbf{r})\f$ if inverse is
  *  false.
  */
 double Permittivity::evalf(const mrcpp::Coord<3> &r) const {

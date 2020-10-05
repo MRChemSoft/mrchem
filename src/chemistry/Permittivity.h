@@ -28,11 +28,11 @@
 #include "chemistry/Cavity.h"
 #include <MRCPP/MWFunctions>
 
+namespace mrchem {
 /** @class Permittivity
  *
  * @brief Permittivity function related to a substrate molecule and a solvent continuum.
- *
- * The Permittivity class represents the following function
+ * The Permittivity class represents the following function \cite Fosso-Tande2013
  * \f[
  * \epsilon(\mathbf{r}) = \epsilon_{in}\exp\left(\left(\log\frac{\epsilon_{out}}{\epsilon_{in}} \right)
  *                                               \left(1 - C(\mathbf{r})\right)\right)
@@ -42,7 +42,6 @@
  * permittivity \link #epsilon_in inside \endlink  and \link #epsilon_out outside\endlink the #cavity of the substrate.
  */
 
-namespace mrchem {
 class Cavity;
 
 class Permittivity final : public mrcpp::RepresentableFunction<3> {
@@ -68,11 +67,11 @@ public:
     /** @brief Returns the value of #epsilon_in. */
     auto getEpsIn() const { return this->epsilon_in; }
 
-    /** @brief Returns the value of epsilon_out. */
+    /** @brief Returns the value of #epsilon_out. */
     auto getEpsOut() const { return this->epsilon_out; }
 
 private:
-    bool inverse = false; //!< If true, the function evaluates to 1/epsilon, if false the function evaluates to epsilon.
+    bool inverse = false; //!< State of #evalf
     double epsilon_in;    //!< Dielectric constant describing the permittivity of free space.
     double epsilon_out;   //!< Dielectric constant describing the permittivity of the solvent.
     Cavity cavity;        //!< A Cavity class instance.

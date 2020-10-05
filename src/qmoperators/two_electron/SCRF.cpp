@@ -168,7 +168,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
         print_utils::text(2, "Update          ", print_utils::dbl_to_str(update, 5, true));
         print_utils::text(2, "Microiteration  ", std::to_string(iter));
     }
-    println(0, " Converged Reaction Potential!");
+    println(2, " Converged Reaction Potential!");
     this->dVr_n.real().clear();
     this->dVr_n.real().setZero();
     this->dgamma_n.real().clear();

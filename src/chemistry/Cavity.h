@@ -28,21 +28,33 @@
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
+/** @class Cavity
+ * @brief Interlocking spheres cavity centered on the nuclei of the molecule.
+ * The Cavity class represents the following function \cite Fosso-Tande2013
+ * \f[
+ * C(\mathbf{r}) = 1 - \prod^N_{i=1} (1-C_i(\mathbf{r}))\\
+ * C_i(\mathbf{r}) = 1 - \frac{1}{2}\left( 1 + \textrm{erf}\left(\frac{|\mathbf{r} - \mathbf{r}_i| - R_i}{\sigma}\right)
+ * \right) \f] where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$\mathbf{r}_i\f$ is the coordinate of
+ * the i-th nucleus, \f$R_i\f$ is the radius of the i-th sphere, and \f$\sigma\f$ is the #Width of the transition
+ * between the inside and outside of the cavity. The transition has a sigmoidal shape, such that the boundary is a
+ * smooth function instead of sharp boundaries often seen in other continuum models. This function is \f$1\f$ inside and
+ * \f$0\f$ outside the cavity.
+ */
 
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
-    Cavity(std::vector<mrcpp::Coord<3>> &coords, std::vector<double> &R, double slope);
+    Cavity(std::vector<mrcpp::Coord<3>> &centers, std::vector<double> &radii, double width);
     double evalf(const mrcpp::Coord<3> &r) const override;
     auto getGradVector() const { return this->gradvector; }
-    std::vector<mrcpp::Coord<3>> getCoordinates() const { return pos; }
-    std::vector<double> getRadii() const { return R; }
+    std::vector<mrcpp::Coord<3>> getCoordinates() const { return Centers; } //!< Returns #Centers.
+    std::vector<double> getRadii() const { return Radii; }                  //!< Returns #Radii.
     friend class Permittivity;
 
 protected:
-    std::vector<mrcpp::Coord<3>> pos;
-    std::vector<double> R;
-    double d;
-    std::vector<std::function<double(const mrcpp::Coord<3> &r)>> gradvector;
+    double Width;                         //!< Width of the Cavity boundary.
+    std::vector<double> Radii;            //!< Contains the radius of each sphere in #Center.
+    std::vector<mrcpp::Coord<3>> Centers; //!< Contains each of the spheres centered on the nuclei of the Molecule.
+    std::vector<std::function<double(const mrcpp::Coord<3> &r)>> gradvector; //< Analytical derivatives of the Cavity.
 
     void setGradVector();
     bool isVisibleAtScale(int scale, int nQuadPts) const override;
