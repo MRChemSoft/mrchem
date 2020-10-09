@@ -28,7 +28,7 @@
 #include "MRCPP/Parallel"
 #include <map>
 
-#ifdef HAVE_MPI
+#ifdef MRCHEM_HAS_MPI
 #include <mpi.h>
 #else
 using MPI_Comm = int;
