@@ -29,9 +29,13 @@
 #include <map>
 
 #ifdef MRCHEM_HAS_MPI
+#ifndef MRCPP_HAS_MPI
 #include <mpi.h>
+#endif
 #else
+#ifndef MRCPP_HAS_MPI
 using MPI_Comm = int;
+#endif
 #endif
 
 #include "mrchem.h"

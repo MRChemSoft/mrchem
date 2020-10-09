@@ -8,6 +8,12 @@ add_library(mrchem
 
 add_dependencies(mrchem mrchem-info)
 
+target_compile_definitions(mrchem
+  PUBLIC
+    $<BUILD_INTERFACE:$<$<TARGET_EXISTS:OpenMP::OpenMP_CXX>:MRCHEM_HAS_OMP>>
+    $<BUILD_INTERFACE:$<$<TARGET_EXISTS:MPI::MPI_CXX>:MPI_HAS_MPI>>
+  )
+
 target_include_directories(mrchem
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>

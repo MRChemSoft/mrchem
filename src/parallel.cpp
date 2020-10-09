@@ -31,10 +31,13 @@
 #include "qmfunctions/Orbital.h"
 
 #ifdef MRCHEM_HAS_OMP
+#ifndef MRCPP_HAS_OMP
 #include <omp.h>
+#endif
 #define mrchem_get_max_threads() omp_get_max_threads()
 #define mrchem_get_num_threads() omp_get_num_threads()
 #define mrchem_get_thread_num() omp_get_thread_num()
+#define mrchem_set_dynamic(n) omp_set_dynamic(n)
 #else
 #define mrchem_get_max_threads() 1
 #define mrchem_get_num_threads() 1
@@ -323,14 +326,14 @@ void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 /** Update a shared function after it has been changed by one of the MPI ranks. */
 void mpi::share_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef MRCHEM_HAS_MPI
- #ifdef MRCPP_HAS_MPI
+#ifdef MRCPP_HAS_MPI
     if (func.isShared()) {
         if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, comm);
         if (func.hasImag()) mrcpp::share_tree(func.imag(), src, 2 * tag, comm);
     }
- #else
+#else
     MSG_ABORT("MRCPP compiled without MPI support");
- #endif
+#endif
 #endif
 }
 
