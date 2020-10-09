@@ -54,7 +54,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("copy constructor") {
             QMFunction func_2(func_1);
-            REQUIRE(not func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -63,7 +63,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("default constructor plus assignment") {
             QMFunction func_2;
             func_2 = func_1;
-            REQUIRE(not func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -71,7 +71,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("assigment constructor") {
             QMFunction func_2 = func_1;
-            REQUIRE(not func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -88,7 +88,6 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("deep copy to shared") {
             QMFunction func_2(true);
             qmfunction::deep_copy(func_2, func_1);
-            REQUIRE(func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() != &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -101,7 +100,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("copy constructor") {
             QMFunction func_2(func_1);
-            REQUIRE(func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -110,7 +109,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("default constructor plus assignment") {
             QMFunction func_2;
             func_2 = func_1;
-            REQUIRE(func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -118,7 +117,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("assigment constructor") {
             QMFunction func_2 = func_1;
-            REQUIRE(func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
@@ -135,7 +134,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("deep copy to shared") {
             QMFunction func_2(true);
             qmfunction::deep_copy(func_2, func_1);
-            REQUIRE(func_2.isShared());
+            REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() != &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());

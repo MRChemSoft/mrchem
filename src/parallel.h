@@ -30,6 +30,8 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#else
+using MPI_Comm = int;
 #endif
 
 #include "mrchem.h"

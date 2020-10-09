@@ -30,13 +30,25 @@
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 
+#ifdef MRCHEM_HAS_OMP
+#include <omp.h>
+#define mrchem_get_max_threads() omp_get_max_threads()
+#define mrchem_get_num_threads() omp_get_num_threads()
+#define mrchem_get_thread_num() omp_get_thread_num()
+#else
+#define mrchem_get_max_threads() 1
+#define mrchem_get_num_threads() 1
+#define mrchem_get_thread_num() 0
+#define mrchem_set_dynamic(n)
+#endif
+
 using mrcpp::Printer;
 
 namespace mrchem {
 
 namespace omp {
 
-int n_threads = omp_get_max_threads();
+int n_threads = mrchem_get_max_threads();
 
 } // namespace omp
 
@@ -71,6 +83,7 @@ int const id_shift = 100000000; // to ensure that nodes, orbitals and functions 
 
 void mpi::initialize() {
     omp_set_dynamic(0);
+    mrcpp::set_max_threads(omp::n_threads);
 
 #ifdef HAVE_MPI
     MPI_Init(nullptr, nullptr);
@@ -269,17 +282,22 @@ void mpi::recv_orbital(Orbital &orb, int src, int tag, MPI_Comm comm) {
 // send a function with MPI
 void mpi::send_function(QMFunction &func, int dst, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
+ #ifdef MRCPP_HAS_MPI
     if (func.isShared()) MSG_WARN("Sending a shared function is not recommended");
     FunctionData &funcinfo = func.getFunctionData();
     MPI_Send(&funcinfo, sizeof(FunctionData), MPI_BYTE, dst, 0, comm);
     if (func.hasReal()) mrcpp::send_tree(func.real(), dst, tag, comm, funcinfo.real_size);
     if (func.hasImag()) mrcpp::send_tree(func.imag(), dst, tag + 10000, comm, funcinfo.imag_size);
+ #else
+    MSG_ABORT("MRCPP compiled without MPI support");
+ #endif
 #endif
 }
 
 // receive a function with MPI
 void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
+ #ifdef MRCPP_HAS_MPI
     if (func.isShared()) MSG_WARN("Receiving a shared function is not recommended");
     MPI_Status status;
 
@@ -296,16 +314,23 @@ void mpi::recv_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
         if (not func.hasImag()) func.alloc(NUMBER::Imag);
         mrcpp::recv_tree(func.imag(), src, tag + 10000, comm, funcinfo.imag_size);
     }
+ #else
+    MSG_ABORT("MRCPP compiled without MPI support");
+ #endif
 #endif
 }
 
 /** Update a shared function after it has been changed by one of the MPI ranks. */
 void mpi::share_function(QMFunction &func, int src, int tag, MPI_Comm comm) {
 #ifdef HAVE_MPI
+ #ifdef MRCPP_HAS_MPI
     if (func.isShared()) {
         if (func.hasReal()) mrcpp::share_tree(func.real(), src, tag, comm);
         if (func.hasImag()) mrcpp::share_tree(func.imag(), src, 2 * tag, comm);
     }
+ #else
+    MSG_ABORT("MRCPP compiled without MPI support");
+ #endif
 #endif
 }
 

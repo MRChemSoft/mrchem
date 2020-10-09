@@ -48,6 +48,8 @@ target_link_libraries(mrchem
     XCFun::xcfun
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json
+    $<BUILD_INTERFACE:$<$<TARGET_EXISTS:OpenMP::OpenMP_CXX>:OpenMP::OpenMP_CXX>>
+    $<BUILD_INTERFACE:$<$<TARGET_EXISTS:MPI::MPI_CXX>:MPI::MPI_CXX>>
   )
 
 set_target_properties(mrchem
@@ -88,8 +90,6 @@ add_executable(mrchem.x mrchem.cpp)
 target_link_libraries(mrchem.x
   PRIVATE
     mrchem
-    $<$<TARGET_EXISTS:MPI::MPI_CXX>:MPI::MPI_CXX>
-    $<$<TARGET_EXISTS:OpenMP::OpenMP_CXX>:OpenMP::OpenMP_CXX>
   )
 
 set_target_properties(mrchem.x
