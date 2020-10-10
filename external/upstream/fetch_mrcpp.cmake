@@ -6,6 +6,30 @@ find_package(MRCPP CONFIG QUIET
 if(TARGET MRCPP::mrcpp)
   get_property(_loc TARGET MRCPP::mrcpp PROPERTY LOCATION)
   message(STATUS "Found MRCPP: ${_loc} (found version ${MRCPP_VERSION})")
+
+  # check that the parallel configurations of MRChem and MRCPP are compatible
+  # these checks are only needed when picking up an installed library:
+  # if we build it ourselves, then the parallel configuration for MRCPP will follow that of MRChem
+  #
+  # 1. OMP MRChem + non-OMP MRCPP is not a great idea, but it's not problematic.
+  #    We just emit a warning.
+  get_target_property(MRCPP_HAS_OMP MRCPP::mrcpp MRCPP_HAS_OMP)
+  if(ENABLE_OPENMP AND NOT MRCPP_HAS_OMP)
+    message(WARNING
+      "You are building MRChem with OpenMP, while using a non-OpenMP version of MRCPP!\
+         We recommend rebuilding MRCPP with OpenMP support."
+      )
+  endif()
+
+  # 1. MPI MRChem + non-MPI MRCPP will lead to runtime failures.
+  #    Fail configuration with a fatal error.
+  get_target_property(MRCPP_HAS_MPI MRCPP::mrcpp MRCPP_HAS_MPI)
+  if(ENABLE_MPI AND NOT MRCPP_HAS_MPI)
+    message(FATAL_ERROR
+      "You cannot build MRChem with MPI and link against a non-MPI version of MRCPP!\
+         Rebuild MRCPP with MPI support or disable it for MRChem."
+      )
+  endif()
 else()
   message(STATUS "Suitable MRCPP could not be located. Fetching and building!")
   include(FetchContent)
