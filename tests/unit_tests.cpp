@@ -13,9 +13,10 @@ void finalize_mra();
 
 int main(int argc, char *argv[]) {
     // global setup
-    mrchem::mpi::initialize();
-    mrchem::mpi::numerically_exact = true; // Required for MPI invariant results
     initialize_mra();
+    mrchem::mpi::bank_size = 1;            // Will be set to zero if world_size == 1
+    mrchem::mpi::numerically_exact = true; // Required for MPI invariant results
+    mrchem::mpi::initialize();
 
     // run tests
     int result = Catch::Session().run(argc, argv);
