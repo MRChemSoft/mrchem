@@ -9,7 +9,7 @@ macro(add_integration_test)
     )
 
   if(_integration_test_LAUNCH_AGENT)
-    set(_launch_agent_flag "\"--launch-agent ${_integration_test_LAUNCH_AGENT}\"")
+    set(_launch_agent_flag "--launch-agent" "${_integration_test_LAUNCH_AGENT}")
   endif()
 
   add_test(
