@@ -64,7 +64,7 @@ macro(add_Catch_test)
     )
 
   if (ENABLE_MPI)
-      set(_unit_launcher ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2)
+      set(_unit_launcher ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1)
   endif()
 
   add_test(

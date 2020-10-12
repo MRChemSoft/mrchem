@@ -1,5 +1,5 @@
 if(ENABLE_MPI)
-    set(_hf_grad_lda_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2")
+    set(_hf_grad_lda_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
 add_integration_test(
