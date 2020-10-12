@@ -22,11 +22,15 @@ if(ENABLE_ARCH_FLAGS)
   include(${CMAKE_CURRENT_LIST_DIR}/set_compiler_flag.cmake)
   # iterate over list of flags and use the first one that is compatible with the
   # compiler in use
-  set_compiler_flag(_arch_flag
-    FLAGS
-      "-march=native"  # valid wth GNU and probably Clang too
-      "-xHost"  # valid with Intel
-    )
+  if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+    set_compiler_flag(_arch_flag FLAGS "-march=native")
+  endif()
+  if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    set_compiler_flag(_arch_flag FLAGS "-march=native")
+  endif()
+  if(CMAKE_CXX_COMPILER_ID MATCHES Intel)
+    set_compiler_flag(_arch_flag FLAGS "-xHost")
+  endif()
   message(STATUS "Adding architecture-specific compiler flag: ${_arch_flag}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_arch_flag}")
 endif()
