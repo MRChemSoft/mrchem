@@ -170,7 +170,7 @@ TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
 
     SECTION("energy in the external field") {
         double E_ext = EF.trace(Phi).real();
-        double E_nex = EF.trace(nucs).real();
+        double E_nex = -EF.trace(nucs).real();
         REQUIRE(E_ext < thrs);
         REQUIRE(E_nex == Approx(2.0));
     }
