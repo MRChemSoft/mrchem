@@ -63,10 +63,15 @@ macro(add_Catch_test)
     ${ARGN}
     )
 
+  if (ENABLE_MPI)
+      set(_unit_launcher ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 2)
+  endif()
+
   add_test(
     NAME
       ${_Catch_test_NAME}
     COMMAND
+      ${_unit_launcher}
       $<TARGET_FILE:mrchem-tests>
       [${_Catch_test_NAME}] --success --out
       ${PROJECT_BINARY_DIR}/tests/${_Catch_test_NAME}.log --durations yes
