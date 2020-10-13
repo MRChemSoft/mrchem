@@ -85,3 +85,8 @@ add_Catch_test(
   NAME electric_field_operator
   LABELS "electric_field_operator"
   )
+
+add_Catch_test(
+  NAME electric_field_energy
+  LABELS "electric_field_energy"
+  )
