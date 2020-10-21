@@ -435,7 +435,7 @@ void Bank::open() {
 
     // The bank never goes out of this loop until it receives a close message!
     while (true) {
-        MPI_Recv(&message, 1, MPI_INTEGER, MPI_ANY_SOURCE, MPI_ANY_TAG, mpi::comm_bank, &status);
+        MPI_Recv(&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, mpi::comm_bank, &status);
         if (printinfo)
             std::cout << mpi::world_rank << " got message " << message << " from " << status.MPI_SOURCE << std::endl;
         if (message == CLOSE_BANK) {
@@ -446,11 +446,11 @@ void Bank::open() {
         if (message == CLEAR_BANK) {
             this->clear_bank();
             // send message that it is ready (value of message is not used)
-            MPI_Send(&message, 1, MPI_INTEGER, status.MPI_SOURCE, 77, mpi::comm_bank);
+            MPI_Send(&message, 1, MPI_INT, status.MPI_SOURCE, 77, mpi::comm_bank);
         }
         if (message == GETMAXTOTDATA) {
             int maxsize_int = maxsize / 1024; // convert into MB
-            MPI_Send(&maxsize_int, 1, MPI_INTEGER, status.MPI_SOURCE, 1171, mpi::comm_bank);
+            MPI_Send(&maxsize_int, 1, MPI_INT, status.MPI_SOURCE, 1171, mpi::comm_bank);
         }
         if (message == GET_ORBITAL or message == GET_ORBITAL_AND_WAIT or message == GET_ORBITAL_AND_DELETE or
             message == GET_FUNCTION or message == GET_DATA) {
@@ -463,7 +463,7 @@ void Bank::open() {
                     int found = 0;
                     if (printinfo)
                         std::cout << mpi::world_rank << " sending found 0 to " << status.MPI_SOURCE << std::endl;
-                    MPI_Send(&found, 1, MPI_INTEGER, status.MPI_SOURCE, 117, mpi::comm_bank);
+                    MPI_Send(&found, 1, MPI_INT, status.MPI_SOURCE, 117, mpi::comm_bank);
                 } else {
                     // the id does not exist. Put in queue and Wait until it is defined
                     if (printinfo) std::cout << mpi::world_rank << " queuing " << status.MPI_TAG << std::endl;
@@ -480,7 +480,7 @@ void Bank::open() {
                 if (message == GET_ORBITAL or message == GET_ORBITAL_AND_WAIT or message == GET_ORBITAL_AND_DELETE) {
                     if (message == GET_ORBITAL or message == GET_ORBITAL_AND_DELETE) {
                         int found = 1;
-                        MPI_Send(&found, 1, MPI_INTEGER, status.MPI_SOURCE, 117, mpi::comm_bank);
+                        MPI_Send(&found, 1, MPI_INT, status.MPI_SOURCE, 117, mpi::comm_bank);
                     }
                     mpi::send_orbital(*deposits[ix].orb, status.MPI_SOURCE, deposits[ix].id, mpi::comm_bank);
                     if (message == GET_ORBITAL_AND_DELETE) {
@@ -570,7 +570,7 @@ void Bank::open() {
         }
         if (message == SET_DATASIZE) {
             int datasize_new;
-            MPI_Recv(&datasize_new, 1, MPI_INTEGER, status.MPI_SOURCE, status.MPI_TAG, mpi::comm_bank, &status);
+            MPI_Recv(&datasize_new, 1, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, mpi::comm_bank, &status);
             if (datasize_new != datasize) {
                 // make sure that all old data arrays are deleted
                 for (int ix = 1; ix < deposits.size(); ix++) {
@@ -591,7 +591,7 @@ int Bank::put_orb(int id, Orbital &orb) {
 #ifdef MRCHEM_HAS_MPI
     // for now we distribute according to id
     if (id > id_shift) MSG_WARN("Bank id should be less than id_shift (100000000)");
-    MPI_Send(&SAVE_ORBITAL, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+    MPI_Send(&SAVE_ORBITAL, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     mpi::send_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
 #endif
     return 1;
@@ -604,9 +604,9 @@ int Bank::get_orb(int id, Orbital &orb, int wait) {
 #ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     if (wait == 0) {
-        MPI_Send(&GET_ORBITAL, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+        MPI_Send(&GET_ORBITAL, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
         int found;
-        MPI_Recv(&found, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], 117, mpi::comm_bank, &status);
+        MPI_Recv(&found, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], 117, mpi::comm_bank, &status);
         if (found != 0) {
             mpi::recv_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
             return 1;
@@ -614,7 +614,7 @@ int Bank::get_orb(int id, Orbital &orb, int wait) {
             return 0;
         }
     } else {
-        MPI_Send(&GET_ORBITAL_AND_WAIT, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+        MPI_Send(&GET_ORBITAL_AND_WAIT, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
         mpi::recv_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     }
 #endif
@@ -626,9 +626,9 @@ int Bank::get_orb(int id, Orbital &orb, int wait) {
 int Bank::get_orb_del(int id, Orbital &orb) {
 #ifdef MRCHEM_HAS_MPI
     MPI_Status status;
-    MPI_Send(&GET_ORBITAL_AND_DELETE, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+    MPI_Send(&GET_ORBITAL_AND_DELETE, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     int found;
-    MPI_Recv(&found, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], 117, mpi::comm_bank, &status);
+    MPI_Recv(&found, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], 117, mpi::comm_bank, &status);
     if (found != 0) {
         mpi::recv_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
         return 1;
@@ -644,7 +644,7 @@ int Bank::put_func(int id, QMFunction &func) {
 #ifdef MRCHEM_HAS_MPI
     // for now we distribute according to id
     id += id_shift;
-    MPI_Send(&SAVE_FUNCTION, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+    MPI_Send(&SAVE_FUNCTION, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     mpi::send_function(func, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
 #endif
     return 1;
@@ -655,7 +655,7 @@ int Bank::get_func(int id, QMFunction &func) {
 #ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     id += id_shift;
-    MPI_Send(&GET_FUNCTION, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+    MPI_Send(&GET_FUNCTION, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     mpi::recv_function(func, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
 #endif
     return 1;
@@ -665,8 +665,8 @@ int Bank::get_func(int id, QMFunction &func) {
 int Bank::set_datasize(int datasize) {
 #ifdef MRCHEM_HAS_MPI
     for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&SET_DATASIZE, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
-        MPI_Send(&datasize, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
+        MPI_Send(&SET_DATASIZE, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
+        MPI_Send(&datasize, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
     }
 #endif
     return 1;
@@ -677,7 +677,7 @@ int Bank::put_data(int id, int size, double *data) {
 #ifdef MRCHEM_HAS_MPI
     // for now we distribute according to id
     id += 2 * id_shift;
-    MPI_Send(&SAVE_DATA, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+    MPI_Send(&SAVE_DATA, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     MPI_Send(data, size, MPI_DOUBLE, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
 #endif
     return 1;
@@ -688,7 +688,7 @@ int Bank::get_data(int id, int size, double *data) {
 #ifdef MRCHEM_HAS_MPI
     MPI_Status status;
     id += 2 * id_shift;
-    MPI_Send(&GET_DATA, 1, MPI_INTEGER, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
+    MPI_Send(&GET_DATA, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
     MPI_Recv(data, size, MPI_DOUBLE, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank, &status);
 #endif
     return 1;
@@ -698,7 +698,7 @@ int Bank::get_data(int id, int size, double *data) {
 void Bank::close() {
 #ifdef MRCHEM_HAS_MPI
     for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&CLOSE_BANK, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
+        MPI_Send(&CLOSE_BANK, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
     }
 #endif
 }
@@ -709,8 +709,8 @@ int Bank::get_maxtotalsize() {
     MPI_Status status;
     int datasize;
     for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&GETMAXTOTDATA, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
-        MPI_Recv(&datasize, 1, MPI_INTEGER, mpi::bankmaster[i], 1171, mpi::comm_bank, &status);
+        MPI_Send(&GETMAXTOTDATA, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
+        MPI_Recv(&datasize, 1, MPI_INT, mpi::bankmaster[i], 1171, mpi::comm_bank, &status);
         maxtot = std::max(maxtot, datasize);
     }
 #endif
@@ -726,13 +726,13 @@ void Bank::clear_all(int iclient, MPI_Comm comm) {
     // master send signal to bank
     if (iclient == 0) {
         for (int i = 0; i < mpi::bank_size; i++) {
-            MPI_Send(&CLEAR_BANK, 1, MPI_INTEGER, mpi::bankmaster[i], 0, mpi::comm_bank);
+            MPI_Send(&CLEAR_BANK, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
         }
         for (int i = 0; i < mpi::bank_size; i++) {
             // wait until Bank is finished and has sent signal
             MPI_Status status;
             int message;
-            MPI_Recv(&message, 1, MPI_INTEGER, mpi::bankmaster[i], 77, mpi::comm_bank, &status);
+            MPI_Recv(&message, 1, MPI_INT, mpi::bankmaster[i], 77, mpi::comm_bank, &status);
         }
     }
     mpi::barrier(comm);
