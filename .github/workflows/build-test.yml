@@ -1,0 +1,53 @@
+name: Build and test MRChem
+
+on:
+  push:
+    branches:
+      - master
+      - release/*
+  pull_request:
+    branches:
+      - master
+      - release/*
+  release:
+    types:
+      - created
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.6
+
+    - name: Install dependencies
+      run: |
+        sudo chown -R $USER $CONDA
+        $CONDA/bin/conda create --name mrchem python=3.6 eigen mrcpp xcfun nlohmann_json ninja -c conda-forge
+    - name: Configure
+      shell: bash
+      run: |
+        source $CONDA/bin/activate mrchem
+        python ./setup --type=$BUILD_TYPE --omp --arch-flags=false --generator=Ninja --prefix=$GITHUB_WORKSPACE/Software/MRChem build --cmake-options="-DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DPYTHON_EXECUTABLE=$CONDA_PREFIX/bin/python"
+    - name: Build
+      shell: bash
+      run: |
+        source $CONDA/bin/activate mrchem
+        cmake --build build --config $BUILD_TYPE --target install -- -v -d stats
+    - name: Test
+      shell: bash
+      run: |
+        cd build
+        source $CONDA/bin/activate mrchem
+        ctest -C $BUILD_TYPE --output-on-failure --verbose
