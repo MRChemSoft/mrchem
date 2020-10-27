@@ -54,11 +54,8 @@ target_link_libraries(mrchem
     XCFun::xcfun
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json
-    $<$<TARGET_EXISTS:OpenMP::OpenMP_CXX>:OpenMP::OpenMP_CXX>
-    $<$<TARGET_EXISTS:MPI::MPI_CXX>:MPI::MPI_CXX>
-    # NOTE the above should become this for consistency, but this requires #155 in MRCPP to be merged first
-    #$<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:OpenMP::OpenMP_CXX>
-    #$<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MPI::MPI_CXX>
+    $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:OpenMP::OpenMP_CXX>
+    $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MPI::MPI_CXX>
   )
 
 set_target_properties(mrchem
