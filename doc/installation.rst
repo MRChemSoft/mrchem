@@ -7,7 +7,7 @@ Build prerequisites
 -------------------
 
 - Python-3.6 (or later)
-- CMake-3.11 (or later)
+- CMake-3.12 (or later)
 - GNU-5.4 or Intel-17 (or later) compilers (C++14 standard)
 
 .. hint::
@@ -23,7 +23,7 @@ C++ dependencies
 The MRChem program depends on the following C++ libraries:
 
 - Input handling: `nlohmann/json-3.6  <https://github.com/nlohmann/json>`_
-- Multiwavelets: `MRCPP-1.2  <https://github.com/MRChemSoft/mrcpp>`_
+- Multiwavelets: `MRCPP-1.3  <https://github.com/MRChemSoft/mrcpp>`_
 - Linear algebra: `Eigen-3.3  <https://gitlab.com/libeigen/eigen>`_
 - DFT functionals: `XCFun-2.0  <https://github.com/dftlibs/xcfun>`_
 
@@ -39,10 +39,11 @@ CMake, but can also be linked manually by setting the variables::
 Python dependencies
 -------------------
 
-A Python3 interpreter is also required for configuration (``setup`` script) as
-well as launching the program (``mrchem`` script). Developers will additionally
-need Python to update the input parser and build the documentation locally with
-Sphinx.
+**Users** only need a Python3 interpreter, which is used for configuration
+(``setup`` script) as well as launching the program (``mrchem`` script).
+
+**Developers** will need some extra Python packages to update the input
+parser and build the documentation locally with Sphinx.
 
 We **strongly** suggest not to install these Python dependencies globally, but
 rather to use a local virtual environment. We provide a ``Pipfile`` for
@@ -51,17 +52,9 @@ We recommend using `Pipenv <https://pipenv.readthedocs.io/en/latest/>`_, since
 it manages virtual environment and package installation seamlessly.
 After installing it with your package manager, run::
 
-    $ pipenv install
+    $ pipenv install --dev
 
-to create a virtual environment with all packages installed.
-
-.. note::
-   Developers might want to run::
-
-      $ pipenv install --dev
-
-   to install development packages, such as those needed to generate
-   documentation with Sphinx.
+to create a virtual environment with all developer packages installed.
 
 The environment can be activated with::
 
@@ -87,8 +80,7 @@ The released versions can be found from Git tags ``vX.Y.Z`` under the
 downloaded from `Zenodo <https://doi.org/10.5281/zenodo.3606658>`_.
 
 By default, all dependencies will be **fetched** at configure time if they are
-not already available. In the following we will assume that the Python
-environment has been installed and activated as described above.
+not already available.
 
 
 Configure
@@ -211,3 +203,4 @@ Please refer to the :ref:`User's Manual` for instructions for how to run the pro
     the login nodes, and it will run on a single core, so it might take some
     minutes to complete. The scripts will *not* install the :ref:`Python
     dependencies`, so this must be done manually in order to run the code.
+
