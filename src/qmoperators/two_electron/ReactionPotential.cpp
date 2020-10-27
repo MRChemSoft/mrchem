@@ -20,10 +20,10 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-ReactionPotential::ReactionPotential(OrbitalVector_p Phi_p, SCRF help)
+ReactionPotential::ReactionPotential(OrbitalVector_p Phi_p, SCRF helper)
         : QMPotential(1, false)
         , Phi(Phi_p)
-        , helper(help) {}
+        , helper(helper) {}
 
 void ReactionPotential::setup(double prec) {
     setApplyPrec(prec);

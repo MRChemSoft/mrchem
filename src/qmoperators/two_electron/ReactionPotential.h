@@ -9,9 +9,12 @@
 using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
+/** @brief class containing the solvent-substrate interaction reaction potential
+ *
+ */
 class ReactionPotential final : public QMPotential {
 public:
-    ReactionPotential(OrbitalVector_p Phi_p, SCRF help);
+    ReactionPotential(OrbitalVector_p Phi_p, SCRF helper);
     ~ReactionPotential() override { free(NUMBER::Total); }
     friend class ReactionOperator;
 
