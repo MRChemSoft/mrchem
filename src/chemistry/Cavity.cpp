@@ -29,9 +29,9 @@ namespace mrchem {
 
 /** @brief Initializes the members of the class and constructs the analytical gradient vector of the Cavity. */
 Cavity::Cavity(std::vector<mrcpp::Coord<3>> &centers, std::vector<double> &radii, double width)
-        : Centers(centers)
+        : Width(width)
         , Radii(radii)
-        , Width(width) {
+        , Centers(centers) {
     setGradVector();
 }
 
