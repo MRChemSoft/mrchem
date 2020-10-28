@@ -1,5 +1,19 @@
 # Change log
 
+## Version 1.0.0 2020-10-28
+
+### Added
+
+- Installation instructions to README
+
+### Changed
+
+- Updated MRCPP to v1.3.6
+
+### Fixed
+
+- Faulty MPI_INTEGER type
+
 ## Version 1.0.0-alpha3 2020-10-10
 
 ### Added
