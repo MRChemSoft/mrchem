@@ -89,3 +89,16 @@ See
 [EasyBuild](https://github.com/easybuilders/easybuild-easyconfigs/tree/develop/easybuild/easyconfigs/m/MRChem)
 for available `<versions>` and `<toolchains>`.
 
+
+### Using Singularity
+
+To download MRChem image from Singularity Hub:
+
+    $ singularity pull --name mrchem-omp.sif shub://MRChemSoft/mrchem-singularity:v1.0.0-nompi
+    $ singularity pull --name mrchem-mpi.sif shub://MRChemSoft/mrchem-singularity:v1.0.0-openmpi4.0.5
+
+Note that the MPI image requires that a compatible MPI library is installed and
+available on the host. For information on how to launch the container:
+
+    $ singularity --run-help mrchem-mpi.sif
+
