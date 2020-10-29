@@ -6,45 +6,33 @@
   },
   "creators": [
     {
-      "affiliation": "Hylleraas Centre for Quantum Molecular Sciences, UiT - The Arctic University of Norway",
-      "name": "Frediani, Luca"
-    }
-  ],
-  "contributors": [
-    {
-      "type": "Other",
       "name": "Bast, Radovan"
     },
     {
-      "type": "Other",
       "name": "Bjorgve, Magnar"
     },
     {
-      "type": "Other",
       "name": "Di Remigio, Roberto"
     },
     {
-      "type": "Other",
       "name": "Durdek, Antoine"
     },
     {
-      "type": "Other",
+      "name": "Frediani, Luca"
+    },
+    {
       "name": "Gerez, Gabriel"
     },
     {
-      "type": "Other",
       "name": "Jensen, Stig Rune"
     },
     {
-      "type": "Other",
       "name": "Juselius, Jonas"
     },
     {
-      "type": "Other",
       "name": "Monstad, Rune"
     },
     {
-      "type": "Other",
       "name": "Wind, Peter"
     }
   ]
