@@ -12,7 +12,6 @@ else()
   set(PYMOD_INSTALL_LIBDIR "${PYMOD_INSTALL_LIBDIR}" CACHE STRING "Location under 'lib' to which Python modules are installed" FORCE)
 endif()
 file(TO_NATIVE_PATH "lib/${PYMOD_INSTALL_LIBDIR}/mrchem" PYMOD_INSTALL_FULLDIR)
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR})
 
 # define variable used in mrchem.in
 set(MRCHEM_EXECUTABLE ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_BINDIR}/mrchem.x)
@@ -33,14 +32,16 @@ file(
   )
 
 # copy mrchem folder under build tree
-file(
-  COPY
-    ${CMAKE_CURRENT_LIST_DIR}/mrchem/
-  DESTINATION
-    ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}
-  PATTERN "__pycache__" EXCLUDE
-  PATTERN "*.py.in" EXCLUDE
+add_custom_target(mrchem-python
+  ALL
+    ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_LIST_DIR}/mrchem/*.py ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_LIST_DIR}/mrchem/input_parser ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}/input_parser
+  COMMENT
+    "Copy ${CMAKE_CURRENT_LIST_DIR}/mrchem to ${PROJECT_BINARY_DIR}/${PYMOD_INSTALL_FULLDIR}"
   )
+add_dependencies(mrchem.x mrchem-python)
+
 # configure config.py.in
 configure_file(
   ${CMAKE_CURRENT_LIST_DIR}/mrchem/config.py.in
