@@ -61,6 +61,7 @@
 #include "qmoperators/one_electron/H_B_spin.h"
 #include "qmoperators/one_electron/H_E_dip.h"
 #include "qmoperators/one_electron/H_E_quad.h"
+#include "qmoperators/one_electron/H_MB_dia.h"
 #include "qmoperators/one_electron/H_M_fc.h"
 #include "qmoperators/one_electron/H_M_pso.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
@@ -997,6 +998,8 @@ RankTwoTensorOperator<I, J> driver::get_operator(const std::string &name, const 
     } else if (name == "h_bb_dia") {
         h = H_BB_dia(json_inp["r_O"]);
     } else if (name == "h_bm_dia") {
+        h = H_MB_dia(json_inp["r_O"], json_inp["r_K"], json_inp["smoothing"]);
+    } else if (name == "h_mb_dia") {
         h = H_BM_dia(json_inp["r_O"], json_inp["r_K"], json_inp["smoothing"]);
     } else {
         MSG_ERROR("Invalid operator: " << name);

@@ -277,7 +277,7 @@ def write_rsp_calculations(user_dict, mol_dict, origin):
             if (all_nucs) or (k in nuc_vec):
                 atom_key = str(k) + nuclei[k]["atom"]
                 nmr_key = "nmr-" + atom_key
-                rsp_calc = write_rsp_calc(0.0, user_dict, mol_dict)
+                rsp_calc = write_rsp_calc(0.0, user_dict, mol_dict, origin)
                 rsp_calc["perturbation"] = {
                     "operator": "h_m_pso",
                     "smoothing": user_dict["world_prec"],
@@ -288,7 +288,7 @@ def write_rsp_calculations(user_dict, mol_dict, origin):
                 rsp_calc["properties"]["nmr_shielding"] = {}
                 rsp_calc["properties"]["nmr_shielding"][nmr_key] = {
                     "precision": user_dict["world_prec"],
-                    "dia_operator": "h_bm_dia",
+                    "dia_operator": "h_mb_dia",
                     "para_operator": "h_b_dip",
                     "smoothing": user_dict["world_prec"],
                     "derivative": user_dict["Derivatives"]["h_b_dip"],

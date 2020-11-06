@@ -53,12 +53,12 @@ public:
 
     void print(const std::string &id) const {
         auto sigma = getTensor();
-        Eigen::SelfAdjointEigenSolver<DoubleMatrix> es;
+        Eigen::EigenSolver<DoubleMatrix> es;
         es.compute(sigma);
 
-        auto diag = es.eigenvalues();
+        DoubleVector diag = es.eigenvalues().real();
         auto iso_ppm = diag.sum() / 3.0;
-        auto ani_ppm = diag(2) - (diag(0) + diag(1)) / 2.0;
+        auto ani_ppm = (3.0/2.0)*diag.maxCoeff() - diag.sum() / 2.0;
 
         mrcpp::print::header(0, "NMR shielding (" + id + ")");
         print_utils::coord(0, "r_O", getOrigin());
@@ -78,18 +78,19 @@ public:
 
     nlohmann::json json() const {
         auto sigma = getTensor();
-        Eigen::SelfAdjointEigenSolver<DoubleMatrix> es;
+        Eigen::EigenSolver<DoubleMatrix> es;
         es.compute(sigma);
 
-        auto diag = es.eigenvalues();
+        DoubleVector diag = es.eigenvalues().real();
         auto iso_ppm = diag.sum() / 3.0;
-        auto ani_ppm = diag(2) - (diag(0) + diag(1)) / 2.0;
+        auto ani_ppm = (3.0/2.0)*diag.maxCoeff() - diag.sum() / 2.0;
+
         return {
             {"r_K", getCoordK()},
             {"r_O", getOrigin()},
             {"tensor_dia", print_utils::eigen_to_vector(getDiamagnetic(), 1.0e-12)},
             {"tensor_para", print_utils::eigen_to_vector(getParamagnetic(), 1.0e-12)},
-            {"tensor", print_utils::eigen_to_vector(sigma, 1.0e-12)},
+            {"tensor", print_utils::eigen_to_vector(getTensor(), 1.0e-12)},
             {"diagonalized_tensor", print_utils::eigen_to_vector(diag, 1.0e-12)},
             {"isotropic_average", iso_ppm},
             {"anisotropy", ani_ppm}
