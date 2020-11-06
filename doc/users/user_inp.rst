@@ -292,7 +292,10 @@ The ``nuclear_specific`` keyword triggers response calculations using the
 nuclear magnetic moment operator instead of the external magnetic field. For
 small molecules this is not recommended since it requires a separate response
 calculation for each nucleus, but it might be beneficial for larger systems if
-you are interested only in a single shielding constant.
+you are interested only in a single shielding constant. Note that the components
+of the *perturbing* operator defines the *row* index in the output tensor, so
+``nuclear_specific = true`` will result in a shielding tensor which is
+the transpose of the one obtained with ``nuclear_specific = false``.
 
 Plotter
 +++++++
