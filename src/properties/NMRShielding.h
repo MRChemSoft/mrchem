@@ -55,6 +55,7 @@ public:
         auto sigma = getTensor();
         Eigen::EigenSolver<DoubleMatrix> es;
         es.compute(sigma);
+        if (es.eigenvalues().imag().norm() > 1.0e-6) MSG_WARN("Complex NMR eigenvalue")
 
         DoubleVector diag = es.eigenvalues().real();
         auto iso_ppm = diag.sum() / 3.0;
