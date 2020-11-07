@@ -11,7 +11,7 @@ namespace mrchem {
  * @brief Fermi-Contact operator
  *
  * Interaction operator obtained by differentiating the spin Hamiltonian wrt
- * the nuclear magnetic moment of nucleaus K:
+ * the nuclear magnetic moment of nucleus K:
  *
  * dH/dM_K = H_M_pso + H_M_sd + H_M_fc
  *
