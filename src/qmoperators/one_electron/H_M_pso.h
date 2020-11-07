@@ -6,6 +6,20 @@
 
 namespace mrchem {
 
+/** @class H_M_pso
+ *
+ * @brief Paramagnetic Spin-Orbit operator
+ *
+ * Interaction operator obtained by differentiating the spin Hamiltonian wrt
+ * the nuclear magnetic moment of nucleaus K:
+ *
+ * dH/dM_K = H_M_pso + H_M_sd + H_M_fc
+ *
+ * H_M_pso = alpha^2 \sum_j \frac{l_{jK}}{r_{jK}^3}
+ *
+ * where l_{jK} is the orbital angular momentum.
+ */
+
 class H_M_pso final : public RankOneTensorOperator<3> {
 public:
     H_M_pso(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &k, double c)

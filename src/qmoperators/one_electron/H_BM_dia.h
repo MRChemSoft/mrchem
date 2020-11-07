@@ -6,6 +6,21 @@
 
 namespace mrchem {
 
+/** @class H_BM_dia
+ *
+ * @brief Diamagnetic NMR operator
+ *
+ * Interaction operator obtained by differentiating the spin Hamiltonian wrt the
+ * external magnetic field B and the nuclear magnetic moment M_K of nucleus K:
+ *
+ * d^2H/dBdM_K = H_BM_dia
+ *
+ * H_BM_dia = \frac{alpha^2}{2}
+ *            \sum_j \frac{(r_{jO} \cdot r_{jK})1 - r_{jK}r_{jO}^T}{r_jK}^3}
+ *
+ * This operator is the transpose of H_MB_dia.
+ */
+
 class H_BM_dia final : public RankTwoTensorOperator<3, 3> {
 public:
     H_BM_dia(const mrcpp::Coord<3> &o, const mrcpp::Coord<3> &k, double c)

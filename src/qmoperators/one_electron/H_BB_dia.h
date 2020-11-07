@@ -5,6 +5,18 @@
 
 namespace mrchem {
 
+/** @class H_BB_dia
+ *
+ * @brief Diamagnetic magnetizability operator
+ *
+ * Interaction operator obtained by differentiating the spin Hamiltonian twice
+ * wrt the external magnetic field B:
+ *
+ * d^2H/dB^2 = H_BB_dia
+ *
+ * H_BB_dia = \sum_j (r_{jO} \cdot r_{jO})1 - r_{jO}r_{jO}^T
+ */
+
 class H_BB_dia final : public RankTwoTensorOperator<3, 3> {
 public:
     H_BB_dia(const mrcpp::Coord<3> &o)

@@ -5,6 +5,20 @@
 
 namespace mrchem {
 
+/** @class H_B_dip
+ *
+ * @brief Magnetic dipole operator
+ *
+ * Interaction operator obtained by differentiating the spin Hamiltonian wrt
+ * the external magnetic field B:
+ *
+ * dH/dB = H_B_dip + H_B_spin
+ *
+ * H_B_dip = \frac{1}{2} \sum_j l_{jO}
+ *
+ * where l_{jO} is the orbital angular momentum.
+ */
+
 class H_B_dip final : public RankOneTensorOperator<3> {
 public:
     H_B_dip(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, const mrcpp::Coord<3> &o)

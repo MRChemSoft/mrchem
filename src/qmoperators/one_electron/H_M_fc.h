@@ -6,6 +6,20 @@
 
 namespace mrchem {
 
+/** @class H_M_fc
+ *
+ * @brief Fermi-Contact operator
+ *
+ * Interaction operator obtained by differentiating the spin Hamiltonian wrt
+ * the nuclear magnetic moment of nucleaus K:
+ *
+ * dH/dM_K = H_M_pso + H_M_sd + H_M_fc
+ *
+ * H_M_fc = -\frac{8\pi\alpha^2}{3} \sum_j \delta(r_{jK})m_j
+ *
+ * where m_j is the magnetic moment of the electron.
+ */
+
 class H_M_fc final : public RankOneTensorOperator<3> {
 public:
     H_M_fc(const mrcpp::Coord<3> &o)

@@ -5,6 +5,20 @@
 
 namespace mrchem {
 
+/** @class H_B_spin
+ *
+ * @brief Magnetic spin operator
+ *
+ * Interaction operator obtained by differentiating the spin Hamiltonian wrt
+ * the external magnetic field B:
+ *
+ * dH/dB = H_B_dip + H_B_spin
+ *
+ * H_B_spin = -\sum_j m_j
+ *
+ * where m_j is the magnetic moment of the electron.
+ */
+
 class H_B_spin final : public RankOneTensorOperator<3> {
 public:
     H_B_spin() {
