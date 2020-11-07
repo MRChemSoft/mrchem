@@ -53,11 +53,14 @@ public:
 
     void print(const std::string &id) const {
         auto sigma = getTensor();
-        Eigen::EigenSolver<DoubleMatrix> es;
-        es.compute(sigma);
-        if (es.eigenvalues().imag().norm() > 1.0e-6) MSG_WARN("Complex NMR eigenvalue")
+        DoubleVector diag = math_utils::init_nan(3);
+        if (not sigma.hasNaN()) {
+            Eigen::EigenSolver<DoubleMatrix> es;
+            es.compute(sigma);
+            if (es.eigenvalues().imag().norm() > 1.0e-6) MSG_WARN("Complex NMR eigenvalue")
 
-        DoubleVector diag = es.eigenvalues().real();
+            diag = es.eigenvalues().real();
+        }
         auto iso_ppm = diag.sum() / 3.0;
         auto ani_ppm = (3.0/2.0)*diag.maxCoeff() - diag.sum() / 2.0;
 
@@ -79,10 +82,12 @@ public:
 
     nlohmann::json json() const {
         auto sigma = getTensor();
-        Eigen::EigenSolver<DoubleMatrix> es;
-        es.compute(sigma);
-
-        DoubleVector diag = es.eigenvalues().real();
+        DoubleVector diag = math_utils::init_nan(3);
+        if (not sigma.hasNaN()) {
+            Eigen::EigenSolver<DoubleMatrix> es;
+            es.compute(sigma);
+            diag = es.eigenvalues().real();
+        }
         auto iso_ppm = diag.sum() / 3.0;
         auto ani_ppm = (3.0/2.0)*diag.maxCoeff() - diag.sum() / 2.0;
 
