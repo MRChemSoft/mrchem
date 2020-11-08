@@ -42,7 +42,7 @@ namespace mrchem {
 namespace initial_guess {
 namespace mw {
 
-void project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file);
+bool project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file);
 
 } // namespace mw
 } // namespace initial_guess
@@ -73,19 +73,20 @@ bool initial_guess::mw::setup(OrbitalVector &Phi,
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
 
     // Project paired, alpha and beta separately
-    initial_guess::mw::project_mo(Phi, prec, file_p);
-    initial_guess::mw::project_mo(Phi_a, prec, file_a);
-    initial_guess::mw::project_mo(Phi_b, prec, file_b);
+    auto success = true;
+    success &= initial_guess::mw::project_mo(Phi, prec, file_p);
+    success &= initial_guess::mw::project_mo(Phi_a, prec, file_a);
+    success &= initial_guess::mw::project_mo(Phi_b, prec, file_b);
 
     // Collect orbitals into one vector
     for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
     for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
 
-    return true;
+    return success;
 }
 
-void initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file) {
-    if (Phi.size() == 0) return;
+bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file) {
+    if (Phi.size() == 0) return true;
 
     Timer t_tot;
     auto pprec = Printer::getPrecision();
@@ -105,6 +106,7 @@ void initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
     println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
+    bool success = true;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
         if (mpi::my_orb(Phi[i])) {
@@ -113,6 +115,10 @@ void initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
 
             Orbital phi_i;
             phi_i.loadOrbital(orbname.str());
+            if (phi_i.squaredNorm() < 0.0) {
+                MSG_ERROR("Guess orbital not found: " << orbname.str());
+                success &= false;
+            }
             if (phi_i.hasReal()) {
                 Phi[i].alloc(NUMBER::Real);
                 // Refine to get accurate function values
@@ -133,6 +139,7 @@ void initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
     }
     mpi::barrier(mpi::comm_orb);
     mrcpp::print::footer(1, t_tot, 2);
+    return success;
 }
 
 } // namespace mrchem
