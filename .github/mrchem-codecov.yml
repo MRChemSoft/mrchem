@@ -1,0 +1,12 @@
+name: mrchem-codecov
+channels:
+  - conda-forge
+dependencies:
+  - cmake
+  - cxx-compiler
+  - eigen
+  - lcov
+  - mrcpp
+  - ninja
+  - nlohmann_json
+  - xcfun
