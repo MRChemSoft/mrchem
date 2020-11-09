@@ -19,14 +19,13 @@ jobs:
     - uses: actions/cache@v1
       with:
         path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('Gemfile') }} # change your gemfile path
+        key: ${{ runner.os }}-gems-${{ hashFiles('.github/Gemfile') }} # change your gemfile path
         restore-keys: |
           ${{ runner.os }}-gems-
 
     - uses: MeilCli/danger-action@v5
       with:
         plugins_file: '.github/Gemfile'
-        install_path: 'vendor/bundle'
         danger_file: '.github/Dangerfile'
         danger_id: 'danger-pr'
       env:

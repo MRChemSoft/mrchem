@@ -38,7 +38,7 @@ jobs:
       run: |
         cmake --build build --config $BUILD_TYPE --target install -- -v -d stats
     
-    - name: Test VAMPyR and generate coverage report
+    - name: Test MRChem and generate coverage report
       shell: bash -l {0}
       run: |
         cd build
