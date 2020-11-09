@@ -26,28 +26,37 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Set up Python 3.6
-      uses: actions/setup-python@v2
+    - name: Cache conda
+      uses: actions/cache@v1
+      env:
+        CACHE_NUMBER: 0  # Increase this value to reset cache if .github/mrchem-gha.yml has not changed
       with:
-        python-version: 3.6
+        path: ~/conda_pkgs_dir
+        key:
+          ${{ matrix.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('.github/mrchem-gha.yml') }}
 
-    - name: Install dependencies
-      run: |
-        sudo chown -R $USER $CONDA
-        $CONDA/bin/conda create --name mrchem python=3.6 eigen mrcpp xcfun nlohmann_json ninja -c conda-forge
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+          auto-update-conda: true
+          auto-activate-base: false
+          activate-environment: mrchem-gha
+          environment-file: .github/mrchem-gha.yml
+          channel-priority: true
+          python-version: 3.6
+          use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+
     - name: Configure
-      shell: bash
+      shell: bash -l {0}
       run: |
-        source $CONDA/bin/activate mrchem
-        python ./setup --type=$BUILD_TYPE --omp --arch-flags=false --generator=Ninja --prefix=$GITHUB_WORKSPACE/Software/MRChem build --cmake-options="-DCMAKE_PREFIX_PATH=$CONDA_PREFIX -DPYTHON_EXECUTABLE=$CONDA_PREFIX/bin/python"
+        python ./setup --type=$BUILD_TYPE --omp --arch-flags=false --generator=Ninja --prefix=$GITHUB_WORKSPACE/Software/MRChem build
+        
     - name: Build
-      shell: bash
+      shell: bash -l {0}
       run: |
-        source $CONDA/bin/activate mrchem
         cmake --build build --config $BUILD_TYPE --target install -- -v -d stats
+        
     - name: Test
-      shell: bash
+      shell: bash -l {0}
       run: |
         cd build
-        source $CONDA/bin/activate mrchem
         ctest -C $BUILD_TYPE --output-on-failure --verbose
