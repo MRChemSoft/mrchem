@@ -1,0 +1,11 @@
+name: mrchem-gha
+channels:
+  - conda-forge
+dependencies:
+  - cmake
+  - cxx-compiler
+  - eigen
+  - mrcpp
+  - ninja
+  - nlohmann_json
+  - xcfun
