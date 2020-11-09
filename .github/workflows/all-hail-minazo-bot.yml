@@ -9,14 +9,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: conda-incubator/setup-miniconda@v2
-      with:
-          auto-update-conda: true
-          auto-activate-base: false
-          activate-environment: mrchem-minazo
-          environment-file: .github/mrchem-minazo.yml
-          channel-priority: true
-          python-version: 3.6
+    - run: |
+        sudo apt-get -y install clang-format
 
     - uses: actions/setup-ruby@v1
       with:
