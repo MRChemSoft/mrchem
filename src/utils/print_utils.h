@@ -41,6 +41,12 @@ void qmfunction(int level, const std::string &txt, const QMFunction &func, mrcpp
 std::string dbl_to_str(double d, int p, bool sci);
 std::vector<double> eigen_to_vector(const DoubleVector &inp, double thrs);
 std::vector<double> eigen_to_vector(const DoubleMatrix &inpm, double thrs);
+void ltrim(std::string &s);
+void rtrim(std::string &s);
+void trim(std::string &s); 
+std::string ltrim_copy(std::string s);
+std::string rtrim_copy(std::string s);
+std::string trim_copy(std::string s);
 
 } // namespace print_utils
 } // namespace mrchem

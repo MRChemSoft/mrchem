@@ -23,11 +23,14 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <algorithm>
+#include <cctype>
 #include <iomanip>
 #include <iostream>
+#include <locale>
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
 
 #include "print_utils.h"
 
@@ -190,6 +193,44 @@ void print_utils::qmfunction(int level, const std::string &txt, const QMFunction
     auto memory = func.getSizeNodes(NUMBER::Total);
     auto time = timer.elapsed();
     mrcpp::print::tree(level, txt, nodes, memory, time);
+}
+
+// trim from start (in place)
+void print_utils::ltrim(std::string &s) {
+    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }));
+}
+
+// trim from end (in place)
+void print_utils::rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
+// trim from both ends (in place)
+void print_utils::trim(std::string &s) {
+    ltrim(s);
+    rtrim(s);
+}
+
+// trim from start (copying)
+std::string print_utils::ltrim_copy(std::string s) {
+    ltrim(s);
+    return s;
+}
+
+// trim from end (copying)
+std::string print_utils::rtrim_copy(std::string s) {
+    rtrim(s);
+    return s;
+}
+
+// trim from both ends (copying)
+std::string print_utils::trim_copy(std::string s) {
+    trim(s);
+    return s;
 }
 
 } // namespace mrchem
