@@ -25,4 +25,4 @@ jobs:
         bundle install --gemfile=.github/Gemfile
         BUNDLE_GEMFILE=.github/Gemfile bundle exec danger --dangerfile=.github/Dangerfile
       env:
-        DANGER_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        DANGER_GITHUB_API_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
