@@ -24,6 +24,6 @@ filters = {
     ER_NUC: rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="Li", filters=filters, extra_args=["--stdout"])
+ierr = run(options, input_file="Li", filters=filters)
 
 sys.exit(ierr)
