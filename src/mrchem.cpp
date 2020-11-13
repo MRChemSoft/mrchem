@@ -54,13 +54,10 @@ int main(int argc, char **argv) {
     mrenv::initialize(json_inp);
     const auto &mol_inp = json_inp["molecule"];
     const auto &scf_inp = json_inp["scf_calculation"];
-    const auto &rsp_inp = 
-           json_inp["rsp_calculations"];
+    const auto &rsp_inp = json_inp["rsp_calculations"];
 
     Timer timer;
-    Molecule 
-           mol     
-          ;
+    Molecule mol;
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
     json rsp_out = {};
