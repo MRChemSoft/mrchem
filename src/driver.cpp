@@ -347,7 +347,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
 }
 
 bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockOperator &F) {
-    double prec = json_guess["prec"];
+    auto prec = json_guess["prec"];
     auto method = json_guess["method"];
     auto localize = json_guess["localize"];
 
@@ -771,7 +771,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
  */
 bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto type = json_guess["type"];
-    auto prec = json_guess["precision"];
+    auto prec = json_guess["prec"];
     auto mw_xp = json_guess["file_x_p"];
     auto mw_xa = json_guess["file_x_a"];
     auto mw_xb = json_guess["file_x_b"];

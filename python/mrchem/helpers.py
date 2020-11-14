@@ -113,7 +113,13 @@ def write_scf_guess(user_dict, method_name):
     guess_str = user_dict["SCF"]["guess_type"].lower()
     guess_type = guess_str.split('_')[0]
     zeta = 0
-    if guess_type == 'sad' or guess_type == 'core':
+
+    scf_dict = user_dict["SCF"]
+    guess_prec = scf_dict["guess_prec"]
+    if guess_type == 'chk':
+        guess_prec = user_dict['world_prec']
+
+    if guess_type in ['core', 'sad']:
         zeta_str = guess_str.split('_')[1]
         if zeta_str == 'sz':
             zeta = 1
@@ -126,11 +132,10 @@ def write_scf_guess(user_dict, method_name):
         else:
             print("Invalid zeta:" + guess_suffix)
 
-    scf_dict = user_dict["SCF"]
     file_dict = user_dict["Files"]
     guess_dict = {
-        "prec": scf_dict["guess_prec"],
         "zeta": zeta,
+        "prec": guess_prec,
         "type": guess_type,
         "method": method_name,
         "localize": scf_dict["localize"],
@@ -233,12 +238,18 @@ def write_rsp_calc(omega, user_dict, mol_dict, origin):
                                         dft_funcs, origin)
     }
 
+    guess_str = rsp_dict["guess_type"].lower()
+    guess_type = guess_str.split('_')[0]
+    guess_prec = rsp_dict["guess_prec"]
+    if guess_type == 'chk':
+        guess_prec = user_dict['world_prec']
+
     rsp_calc["components"] = []
     for d in [0, 1, 2]:
         rsp_comp = {}
         rsp_comp["initial_guess"] = {
-            "type": rsp_dict["guess_type"].lower(),
-            "precision": rsp_dict["guess_prec"],
+            "prec": guess_prec,
+            "type": guess_type,
             "file_chk_x": rsp_dict["path_checkpoint"] + "/X_rsp_" + str(d),
             "file_chk_y": rsp_dict["path_checkpoint"] + "/Y_rsp_" + str(d),
             "file_x_p": file_dict["guess_x_p"] + "_rsp_" + str(d),
