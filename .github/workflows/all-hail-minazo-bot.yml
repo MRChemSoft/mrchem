@@ -8,25 +8,20 @@ env:
 jobs:
   danger:
     runs-on: ubuntu-latest
-    if: github.event_name  == 'pull_request'  # if only run pull request when multiple trigger workflow
     steps:
     - uses: actions/checkout@v2
 
-    - uses: ruby/setup-ruby@v1
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
       with:
         ruby-version: 2.6
         bundler-cache: true  # runs 'bundle install' and caches installed gems automatically
         working-directory: '.github'
-
-    - uses: actions/cache@v1
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('.github/Gemfile') }} # change your gemfile path
-        restore-keys: |
-          ${{ runner.os }}-gems-
  
-    - run: |
-        sudo apt-get -y install clang-format
-        bundle install #--gemfile=.github/Gemfile
-        #BUNDLE_GEMFILE=.github/Gemfile 
-        bundle exec danger --dangerfile=.github/Dangerfile
+    - name: Install clang-format
+      run: sudo apt-get -y install clang-format
+    
+    - name: Run Danger
+      run: |
+        #bundle install --gemfile=.github/Gemfile
+        BUNDLE_GEMFILE=.github/Gemfile bundle exec danger --dangerfile=.github/Dangerfile
