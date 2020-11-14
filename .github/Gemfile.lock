@@ -1,6 +1,7 @@
 GIT
-  remote: https://github.com/flix-tech/danger-code_style_validation.git
-  revision: f1ffb28af0f4d6f27711639abcd1e29ed065e232
+  remote: https://github.com/robertodr/danger-code_style_validation.git
+  revision: c1b84f1d055b05a66cc42e2dd7316855e0576f5c
+  branch: better-error-message
   specs:
     danger-code_style_validation (0.3.0)
       danger-plugin-api (~> 1.0)
@@ -68,4 +69,4 @@ DEPENDENCIES
   danger-code_style_validation!
 
 BUNDLED WITH
-   1.16.1
+   1.17.2
