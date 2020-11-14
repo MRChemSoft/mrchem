@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/robertodr/danger-code_style_validation.git
-  revision: c1b84f1d055b05a66cc42e2dd7316855e0576f5c
+  revision: cde68341f5abeb7cd5f3b91390ae45a210f39002
   branch: better-error-message
   specs:
     danger-code_style_validation (0.3.0)
