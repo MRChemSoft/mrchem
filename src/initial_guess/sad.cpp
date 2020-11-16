@@ -162,8 +162,9 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     auto crop_prec = (mpi::numerically_exact) ? -1.0 : prec;
     std::string sad_path;
     for (auto n : {sad_basis_source_dir(), sad_basis_install_dir()}) {
-        if (mrcpp::details::directory_exists(n)) {
-            sad_path = n;
+        auto trimmed = print_utils::rtrim_copy(n);
+        if (mrcpp::details::directory_exists(trimmed)) {
+            sad_path = trimmed;
             break;
         }
     }

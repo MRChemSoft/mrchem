@@ -2,7 +2,7 @@
  */
 #pragma once
 
-#include "MRCPP/Gaussians"
+#include <MRCPP/Gaussians>
 
 #include <fstream>
 #include <string>
@@ -34,7 +34,7 @@ protected:
     std::vector<Nucleus *> nuclei;
     std::vector<AOBasis *> basis;
 
-    void readIntgrlFile(std::ifstream &ifs);
+    void readIntgrlFile(const std::string &fname, std::ifstream &ifs);
     void readContractionBlock(std::ifstream &ifs, AOBasis &basis, int l);
     void readAtomBlock(std::ifstream &ifs);
     void readAtomData(std::ifstream &ifs, int n_atoms, double z);

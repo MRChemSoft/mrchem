@@ -1,14 +1,13 @@
-#include "MRCPP/Printer"
-
-#include "chemistry/Nucleus.h"
-
-#include "AOBasis.h"
 #include "Intgrl.h"
 
-using mrcpp::GaussExp;
+#include <string>
 
-#define GETLINE(X, S)                                                                                                  \
-    if (not getline(X, S)) MSG_ABORT("Unexpected end of file while reading basis sets!");
+#include <MRCPP/Printer>
+
+#include "chemistry/Nucleus.h"
+#include "AOBasis.h"
+
+using mrcpp::GaussExp;
 
 namespace mrchem {
 namespace gto_utils {
@@ -16,7 +15,7 @@ namespace gto_utils {
 Intgrl::Intgrl(const std::string &file) {
     std::ifstream ifs(file.c_str());
     if (not ifs) MSG_ABORT("Failed to open basis set file: " << file);
-    readIntgrlFile(ifs);
+    readIntgrlFile(file, ifs);
     ifs.close();
 }
 
@@ -29,11 +28,13 @@ Intgrl::~Intgrl() {
     }
 }
 
-void Intgrl::readIntgrlFile(std::ifstream &ifs) {
+void Intgrl::readIntgrlFile(const std::string &fname, std::ifstream &ifs) {
     int nTypes;
     std::string line;
-    GETLINE(ifs, line); // First line is a comment
-    GETLINE(ifs, line); // Second line is number of atom types
+    // First line is a comment
+    if (not std::getline(ifs, line)) MSG_ABORT("Unexpected end of file " << fname << "  while reading basis sets!");
+    // Second line is number of atom types
+    if (not std::getline(ifs, line)) MSG_ABORT("Unexpected end of file " << fname << "  while reading basis sets!");
     std::istringstream iss(line);
     iss >> nTypes;
     for (int i = 0; i < nTypes; i++) { readAtomBlock(ifs); }
