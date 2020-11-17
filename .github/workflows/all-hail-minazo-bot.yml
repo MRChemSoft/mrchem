@@ -1,6 +1,8 @@
 name: All hail Minazo bot
 
-on: pull_request
+on: 
+  pull_request_target:
+    branches: [ master, release/* ]
 
 
 jobs:
@@ -8,7 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-
+      with:
+        fetch-depth: 0
+        
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
       with:
