@@ -1,6 +1,9 @@
 name: All hail Minazo bot
 
-on: pull_request #_target
+on: 
+  pull_request_target:
+    branches: [ master, release/* ]
+
 
 jobs:
   danger:
@@ -9,8 +12,6 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.ref }}
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
         
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
