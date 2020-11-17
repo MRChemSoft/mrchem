@@ -22,5 +22,5 @@ jobs:
     
     - name: Run Danger
       env:
-        DANGER_GITHUB_API_TOKEN: ${{ secrets.DANGER_GITHUB_API_TOKEN }}
+        DANGER_GITHUB_API_TOKEN: 0f8e593f9b3cb43e20657052785715081537661b
       run: BUNDLE_GEMFILE=.github/Gemfile bundle exec danger --dangerfile=.github/Dangerfile
