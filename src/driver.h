@@ -32,7 +32,10 @@ class Molecule;
 namespace driver {
 
 void init_molecule(const nlohmann::json &input, Molecule &mol);
-nlohmann::json print_properties(const Molecule &mol);
+nlohmann::json 
+      print_properties(const 
+                           Molecule &
+                    mol);
 
 namespace scf {
 nlohmann::json run(const nlohmann::json &input, Molecule &mol);
