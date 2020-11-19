@@ -1,5 +1,0 @@
-name: mrchem-minazo
-channels:
-  - conda-forge
-dependencies:
-  - clang-format
