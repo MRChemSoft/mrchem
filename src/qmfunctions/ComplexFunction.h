@@ -50,10 +50,10 @@ public:
             : shared_mem(nullptr)
             , re(nullptr)
             , im(nullptr) {
-        if (share and mpi::share_size > 1) {
+        this->func_data.is_shared = share;
+        if (this->func_data.is_shared and mpi::share_size > 1) {
             // Memory size in MB defined in input. Virtual memory, does not cost anything if not used.
 #ifdef MRCPP_HAS_MPI
-            this->func_data.is_shared = true;
             this->shared_mem = new mrcpp::SharedMemory(mpi::comm_share, mpi::shared_memory_size);
 #endif
         }
