@@ -8,9 +8,7 @@ jobs:
   danger:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
+    - uses: actions/checkout@v1
         
     - name: Setup Ruby
       uses: ruby/setup-ruby@v1
