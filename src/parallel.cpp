@@ -85,6 +85,7 @@ Bank orb_bank;
 int const id_shift = 100000000; // to ensure that nodes, orbitals and functions do not collide
 
 void mpi::initialize() {
+    Eigen::setNbThreads(1);
     mrchem_set_dynamic(0);
     mrcpp::set_max_threads(omp::n_threads);
 
