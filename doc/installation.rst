@@ -73,7 +73,7 @@ Obtaining and building the code
 The latest development version of MRChem can be found on the ``master``
 branch on GitHub::
 
-    $ git clone git@github.com:MRChemSoft/mrchem.git
+    $ git clone https://github.com/MRChemSoft/mrchem.git
 
 The released versions can be found from Git tags ``vX.Y.Z`` under the
 ``release/X.Y`` branches in the same repository, or a zip file can be

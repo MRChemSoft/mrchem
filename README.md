@@ -28,7 +28,7 @@ builds are quite generic without architecture specific optimizations.
 
 To build MRChem from source with MPI+OpenMP parallelization:
 
-    $ git clone git@github.com:MRChemSoft/mrchem.git
+    $ git clone https://github.com/MRChemSoft/mrchem.git
     $ cd mrchem
     $ ./setup --prefix=<install-dir> --omp --mpi --cxx=<mpi-compiler> <build-dir>
     $ cd <build-dir>
