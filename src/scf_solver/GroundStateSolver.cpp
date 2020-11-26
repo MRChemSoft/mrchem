@@ -31,11 +31,11 @@
 #include "KAIN.h"
 
 #include "chemistry/Molecule.h"
+#include "environment/ReactionOperator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/two_electron/FockOperator.h"
-#include "qmoperators/two_electron/ReactionOperator.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

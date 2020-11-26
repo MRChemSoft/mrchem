@@ -17,3 +17,4 @@ MRA {
   corner = [-1, -1, -1 ]          # Translation of corner root box [x,y,z]
   boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
 }
+

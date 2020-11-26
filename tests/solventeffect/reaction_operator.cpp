@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "MRCPP/MWFunctions"
-#include "MRCPP/MWOperators"
+#include <MRCPP/MWOperators>
 
 #include "mrchem.h"
 #include "parallel.h"
@@ -41,11 +41,11 @@
 #include "chemistry/Nucleus.h"
 #include "chemistry/PeriodicTable.h"
 #include "chemistry/Permittivity.h"
+#include "environment/ReactionOperator.h"
+#include "environment/SCRF.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
-#include "qmoperators/two_electron/ReactionOperator.h"
-#include "qmoperators/two_electron/SCRF.h"
 
 using namespace mrchem;
 using namespace orbital;

@@ -55,8 +55,6 @@
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
-#include "qmoperators/two_electron/ReactionOperator.h"
-#include "qmoperators/two_electron/SCRF.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
@@ -71,6 +69,9 @@
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 
 #include "properties/GeometricDerivative.h"
+
+#include "environment/ReactionOperator.h"
+#include "environment/SCRF.h"
 
 #include "scf_solver/GroundStateSolver.h"
 #include "scf_solver/KAIN.h"

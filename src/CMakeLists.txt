@@ -46,6 +46,7 @@ add_subdirectory(qmoperators)
 add_subdirectory(mrdft)
 add_subdirectory(scf_solver)
 add_subdirectory(utils)
+add_subdirectory(environment)
 
 target_link_libraries(mrchem
   PRIVATE
