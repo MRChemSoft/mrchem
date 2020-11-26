@@ -25,26 +25,19 @@
 
 #pragma once
 
-#include "chemistry/Nucleus.h"
 #include "chemistry/Permittivity.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/QMFunction.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "scf_solver/KAIN.h"
-
-using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
-using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
-using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
-class ReactionPotential;
+class Nuclei;
+class KAIN;
 class SCRF final {
 public:
     SCRF(Permittivity e,
          const Nuclei &N,
-         PoissonOperator_p P,
-         DerivativeOperator_p D,
+         std::shared_ptr<mrcpp::PoissonOperator> P,
+         std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
          double orb_prec,
          int kain_hist = 0,
          int max_iter = 100,
@@ -90,8 +83,8 @@ private:
     QMFunction gamma_nm1;
 
     mrcpp::FunctionTreeVector<3> d_cavity; // Vector containing the 3 partial derivatives of the cavity function
-    DerivativeOperator_p derivative;
-    PoissonOperator_p poisson;
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
+    std::shared_ptr<mrcpp::PoissonOperator> poisson;
 
     void setDCavity();
 
@@ -104,7 +97,7 @@ private:
 
     // TODO    void variationalSCRF(QMFunction V_vac);
     void nestedSCRF(QMFunction V_vac);
-    QMFunction &setup(double prec, const OrbitalVector_p &Phi);
+    QMFunction &setup(double prec, const std::shared_ptr<mrchem::OrbitalVector> &Phi);
 
     double getNuclearEnergy();
     double getElectronicEnergy();

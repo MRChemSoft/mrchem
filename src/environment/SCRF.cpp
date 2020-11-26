@@ -24,19 +24,15 @@
  */
 
 #include "SCRF.h"
-#include "MRCPP/MWOperators"
-#include "ReactionPotential.h"
-#include "chemistry/Nucleus.h"
-#include "chemistry/Permittivity.h"
+#include <MRCPP/MWOperators>
+
 #include "chemistry/chemistry_utils.h"
-#include "qmfunctions/Density.h"
-#include "qmfunctions/Orbital.h"
-#include "qmfunctions/QMFunction.h"
 #include "qmfunctions/density_utils.h"
-#include "qmfunctions/qmfunction_fwd.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "scf_solver/KAIN.h"
 #include "utils/print_utils.h"
-#include <string>
+
+#include "ReactionPotential.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

@@ -25,10 +25,6 @@
 
 #pragma once
 #include "SCRF.h"
-#include "chemistry/Cavity.h"
-#include "chemistry/Nucleus.h"
-#include "qmfunctions/Density.h"
-#include "qmfunctions/Orbital.h"
 #include "qmoperators/one_electron/QMPotential.h"
 
 namespace mrchem {
@@ -37,7 +33,7 @@ namespace mrchem {
  */
 class ReactionPotential final : public QMPotential {
 public:
-    ReactionPotential(OrbitalVector_p Phi_p, SCRF helper);
+    ReactionPotential(std::shared_ptr<mrchem::OrbitalVector> Phi_p, SCRF helper);
     ~ReactionPotential() override { free(NUMBER::Total); }
     friend class ReactionOperator;
 
@@ -61,7 +57,7 @@ protected:
 
 private:
     bool first_iteration = true;
-    OrbitalVector_p Phi;
+    std::shared_ptr<mrchem::OrbitalVector> Phi;
     SCRF helper;
 
     void setup(double prec);

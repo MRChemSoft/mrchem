@@ -41,7 +41,7 @@ class SCRF;
 
 class ReactionOperator final : public RankZeroTensorOperator {
 public:
-    ReactionOperator(OrbitalVector_p Phi_p, SCRF help) {
+    ReactionOperator(std::shared_ptr<mrchem::OrbitalVector> Phi_p, SCRF help) {
         potential = std::make_shared<ReactionPotential>(Phi_p, help);
         // Invoke operator= to assign *this operator
         RankZeroTensorOperator &J = (*this);
