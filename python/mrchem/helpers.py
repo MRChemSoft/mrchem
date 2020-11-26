@@ -66,16 +66,16 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
     }
 
     # Reaction
-    if user_dict["Environment"]["run_SCRF"]:
+    if user_dict["Environment"]["run_environment"]:
         fock_dict["reaction_operator"] = {
             "poisson_prec": user_dict["world_prec"],
-            "kain_history": user_dict["Environment"]["kain_history"],
-            "run_variational": user_dict["Environment"]["run_variational"],
+            "kain": user_dict["Environment"]["kain"],
+            "algorithm": user_dict["Environment"]["algorithm"],
             "epsilon_in": user_dict["Environment"]["Permittivity"]["epsilon_in"],
             "epsilon_out": user_dict["Environment"]["Permittivity"]["epsilon_out"],
-            "linear": user_dict["Environment"]["Permittivity"]["linear"],
+            "formulation": user_dict["Environment"]["Permittivity"]["formulation"],
             "max_iter": user_dict["Environment"]["max_iter"],
-            "run_hybrid": user_dict["Environment"]["run_hybrid"],
+            "convergence_criterion": user_dict["Environment"]["convergence_criterion"],
             "accelerate_Vr": user_dict["Environment"]["extrapolate_Vr"]
     }
 

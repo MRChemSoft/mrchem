@@ -39,10 +39,11 @@ public:
          std::shared_ptr<mrcpp::PoissonOperator> P,
          std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
          double orb_prec,
-         int kain_hist = 0,
-         int max_iter = 100,
-         bool accelerate_Vr = true,
-         bool run_hybrid = true);
+         int kain_hist,
+         int max_iter,
+         bool accelerate_Vr,
+         std::string convergence_criterion,
+         std::string algorithm);
     friend class ReactionPotential;
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
 
@@ -61,7 +62,8 @@ protected:
 
 private:
     bool accelerate_Vr;
-    bool run_hybrid;
+    std::string convergence_criterion;
+    std::string algorithm;
 
     int max_iter;
     int history;

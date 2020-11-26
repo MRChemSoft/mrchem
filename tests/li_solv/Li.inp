@@ -22,24 +22,24 @@ WaveFunction {
   restricted = true
 }
 Environment {
-  run_SCRF = true
-  run_variational = false
-  kain_history = 5
+  run_environment = true
+  algorithm = scrf
+  kain = 5
   max_iter = 100
-  run_hybrid = true
+  convergence_criterion = dynamic
   extrapolate_Vr = true
 
   Cavity {
     cavity_width = 0.5
-    $coords
+    $spheres
     0.0     0.0    0.0  4.0
     $end
   }
 
   Permittivity {
-  epsilon_in = 1.0
-  epsilon_out = 2.0
-  linear = false
+    epsilon_in = 1.0
+    epsilon_out = 2.0
+    formulation = exponential
   }
 }
 

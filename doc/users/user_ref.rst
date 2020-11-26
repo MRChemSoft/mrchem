@@ -297,12 +297,10 @@ User input reference
     **Type** ``str``
   
     **Predicates**
-      - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock',``
-        ``'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86',``
-        ``'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
-
-   :restricted: Use spin restricted wavefunction.
-
+      - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock', 'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86', 'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
+  
+   :restricted: Use spin restricted wavefunction. 
+  
     **Type** ``bool``
   
     **Default** ``True``
@@ -563,12 +561,10 @@ User input reference
     **Default** ``sad_dz``
   
     **Predicates**
-      - ``value.lower() in ['mw', 'chk', 'gto',``
-        ``'core_sz', 'core_dz', 'core_tz', 'core_qz',``
-        ``'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
-
-   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint".
-
+      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
+  
+   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint". 
+  
     **Type** ``bool``
   
     **Default** ``False``
@@ -711,23 +707,29 @@ User input reference
   
     **Default** ``100``
   
-   :run_SCRF: Perform the Self consistent reaction field calculation of the reaction potential of the interaction between environment and molecule.  
+   :run_environment: Perform the reaction field calculation of the reaction potential of the interaction between environment and molecule.  
   
     **Type** ``bool``
   
     **Default** ``False``
   
-   :run_variational: Compute the reaction field using the variational algorithm 
+   :algorithm: What algorithm to use for the reaction field ``scrf`` runs a nested algorithm where the generalized Poisson equation is solved iterativelly until self consistency wrt. the convergence threshold. 
   
-    **Type** ``bool``
+    **Type** ``str``
   
-    **Default** ``False``
+    **Default** ``scrf``
   
-   :run_hybrid: Adjust the convergence threshold for the nested procedure with regards to the orbital residual. When the orbitals are close to convergence the convergence threshold will be equal to the orbital threshold. 
+    **Predicates**
+      - ``value.lower() in ['scrf', 'variational']``
   
-    **Type** ``bool``
+   :convergence_criterion: Adjust the convergence threshold for the nested procedure. ``dynamic`` Uses the absolute value of the latest orbital update as convergence threshold. When the orbitals are close to convergence (``mo_residual < world_prec*10``) the convergence threshold will be equal to ``world_prec``. ``static`` uses ``world_prec`` as convergence threshold. 
   
-    **Default** ``True``
+    **Type** ``str``
+  
+    **Default** ``dynamic``
+  
+    **Predicates**
+      - ``value.lower() in ['dynamic', 'static']``
   
    :extrapolate_Vr: Extrapolate on the reaction potential if true, or on the surface charge distribution in the convergence acceleration. 
   
@@ -735,17 +737,17 @@ User input reference
   
     **Default** ``True``
   
-   :kain_history: Number of previous reaction field iterates kept for convergence acceleration. 
+   :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
   
     **Type** ``int``
   
-    **Default** ``0``
+    **Default** ``user['SCF']['kain']``
   
   :red:`Sections`
    :Cavity: Define the interlocking spheres cavity. 
   
       :red:`Keywords`
-       :coords: Coordinates and radii  of the spheres written as: x_coord    y_coord    z_coord    radius. 
+       :spheres: Coordinates and radii  of the spheres written as $spheres x_0    y_0    z_0    R_0 ... x_N    y_N    z_N    R_N $end The units used are the same specified with the `world_unit` keyword. 
       
         **Type** ``str``
       
@@ -757,24 +759,27 @@ User input reference
       
         **Default** ``0.2``
       
-   :Permittivity: parameters for the permittivity function. 
+   :Permittivity: Parameters for the permittivity function. 
   
       :red:`Keywords`
-       :epsilon_in: Permittivity inside the cavity. 
+       :epsilon_in: Permittivity inside the cavity. 1.0 is the permittivity of free space, anything other than this is undefined behaviour. 
       
         **Type** ``float``
       
         **Default** ``1.0``
       
-       :epsilon_out: Permittivity outside the cavity. 
+       :epsilon_out: Permittivity outside the cavity. This is characteristic of the solvent used. 
       
         **Type** ``float``
       
         **Default** ``2.0``
       
-       :linear: Run linear formulation of the Permittivity function, false runs exponential. 
+       :formulation: Formulation of the Permittivity function. Currently only the exponential is used. 
       
-        **Type** ``bool``
+        **Type** ``str``
       
-        **Default** ``False``
+        **Default** ``exponential``
+      
+        **Predicates**
+          - ``value.lower() in ['exponential']``
       

@@ -9,5 +9,5 @@ $ parselglossy generate --template template.yml --docfile user_ref.rst --doc-hea
 Remember to also update the documentation:
 
 ``` bash
-cp python/mrchem/input_parser/docs/user_ref.rst doc/user/user_ref.rst
+cp python/mrchem/input_parser/docs/user_ref.rst doc/users/user_ref.rst
 ```

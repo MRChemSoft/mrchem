@@ -78,9 +78,9 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     qmfunction::project((*Phi_p)[0], f, NUMBER::Real, prec);
     double eps_in = 1.0;
     double eps_out = 2.0;
-    Permittivity dielectric_func(*sphere, eps_in, eps_out);
+    Permittivity dielectric_func(*sphere, eps_in, eps_out, "exponential");
 
-    SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history);
+    SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history, 100, true, "dynamic", "scrf");
     auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
     Reo->setTesting();
     Reo->setup(prec);

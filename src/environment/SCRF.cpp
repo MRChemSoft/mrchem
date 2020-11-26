@@ -24,6 +24,7 @@
  */
 
 #include "SCRF.h"
+
 #include <MRCPP/MWOperators>
 
 #include "chemistry/chemistry_utils.h"
@@ -50,9 +51,11 @@ SCRF::SCRF(Permittivity e,
            int kain_hist,
            int max_iter,
            bool accelerate_Vr,
-           bool run_hybrid)
+           std::string convergence_criterion,
+           std::string algorithm)
         : accelerate_Vr(accelerate_Vr)
-        , run_hybrid(run_hybrid)
+        , convergence_criterion(convergence_criterion)
+        , algorithm(algorithm)
         , max_iter(max_iter)
         , history(kain_hist)
         , apply_prec(orb_prec)
@@ -147,7 +150,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
     double update = 10;
     double converge_thrs = std::abs(this->mo_residual);
 
-    if (std::abs(this->mo_residual) < this->apply_prec * 10 || not this->run_hybrid) {
+    if (std::abs(this->mo_residual) < this->apply_prec * 10 || this->convergence_criterion == "static") {
         converge_thrs = this->apply_prec;
     }
     for (int iter = 1; update >= converge_thrs && iter <= max_iter; iter++) {
@@ -233,10 +236,7 @@ QMFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
         temp_gamma_n.free(NUMBER::Real);
     }
 
-    // do either the nested or the variational procedure
-
-    nestedSCRF(V_vac);
-
+    if (this->algorithm == "scrf") { nestedSCRF(V_vac); }
     return this->Vr_n;
 }
 

@@ -29,9 +29,10 @@
 
 namespace mrchem {
 
-Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, double epsilon_out)
+Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, double epsilon_out, std::string formulation)
         : epsilon_in(epsilon_in)
         , epsilon_out(epsilon_out)
+        , formulation(formulation)
         , cavity(cavity) {}
 /** @brief Evaluates Permittivity at a point in 3D space with respect to the state of #inverse.
  *  @param r coordinates of a 3D point in space.

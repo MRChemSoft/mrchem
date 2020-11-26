@@ -156,8 +156,8 @@ def write_molecule(user_dict, origin):
 
     # initialize the cavity
     cav_coords_dict = []
-    if len(user_dict["Environment"]["Cavity"]["coords"]) > 0:
-        cav_coords_raw = user_dict["Environment"]["Cavity"]["coords"]
+    if len(user_dict["Environment"]["Cavity"]["spheres"]) > 0:
+        cav_coords_raw = user_dict["Environment"]["Cavity"]["spheres"]
         for line in cav_coords_raw.split('\n'):
             sp = line.split()
             if len(sp) > 0:

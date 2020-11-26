@@ -46,7 +46,10 @@ class Cavity;
 
 class Permittivity final : public mrcpp::RepresentableFunction<3> {
 public:
-    Permittivity(const Cavity cavity, double epsilon_in, double epsilon_out = 1.0); //!< Standard constructor.
+    Permittivity(const Cavity cavity,
+                 double epsilon_in,
+                 double epsilon_out,
+                 std::string formulation); //!< Standard constructor.
     double evalf(const mrcpp::Coord<3> &r) const override;
 
     /** @brief Changes the value of #inverse. */
@@ -71,10 +74,11 @@ public:
     auto getEpsOut() const { return this->epsilon_out; }
 
 private:
-    bool inverse = false; //!< State of #evalf
-    double epsilon_in;    //!< Dielectric constant describing the permittivity of free space.
-    double epsilon_out;   //!< Dielectric constant describing the permittivity of the solvent.
-    Cavity cavity;        //!< A Cavity class instance.
+    bool inverse = false;    //!< State of #evalf
+    double epsilon_in;       //!< Dielectric constant describing the permittivity of free space.
+    double epsilon_out;      //!< Dielectric constant describing the permittivity of the solvent.
+    std::string formulation; //!< Formulation of the permittivity function, only exponential is used as of now.
+    Cavity cavity;           //!< A Cavity class instance.
 };
 
 } // namespace mrchem

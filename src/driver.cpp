@@ -980,17 +980,28 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto poisson_prec = json_fock["reaction_operator"]["poisson_prec"];
         auto P_r = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         auto D_r = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-        auto hist_r = json_fock["reaction_operator"]["kain_history"];
+        auto hist_r = json_fock["reaction_operator"]["kain"];
 
         auto cavity_r = mol.getCavity_p();
         auto eps_in_r = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_out_r = json_fock["reaction_operator"]["epsilon_out"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];
-        auto run_hybrid = json_fock["reaction_operator"]["run_hybrid"];
+        auto convergence_criterion = json_fock["reaction_operator"]["convergence_criterion"];
+        auto algorithm = json_fock["reaction_operator"]["algorithm"]; // This has no use as of now
         auto accelerate_Vr = json_fock["reaction_operator"]["accelerate_Vr"];
-        Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r);
+        auto formulation = json_fock["reaction_operator"]["formulation"];
+        Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r, formulation);
 
-        SCRF helper(dielectric_func, nuclei, P_r, D_r, poisson_prec, hist_r, max_iter, accelerate_Vr, run_hybrid);
+        SCRF helper(dielectric_func,
+                    nuclei,
+                    P_r,
+                    D_r,
+                    poisson_prec,
+                    hist_r,
+                    max_iter,
+                    accelerate_Vr,
+                    convergence_criterion,
+                    algorithm);
         auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
         F.getReactionOperator() = Reo;
     }
