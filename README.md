@@ -100,5 +100,5 @@ To download MRChem image from Singularity Hub:
 Note that the MPI image requires that a compatible MPI library is installed and
 available on the host. For information on how to launch the container:
 
-    $ singularity --run-help mrchem-mpi.sif
+    $ singularity run-help mrchem-mpi.sif
 
