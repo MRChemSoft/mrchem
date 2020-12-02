@@ -153,9 +153,7 @@ void SCFSolver::printUpdate(int plevel, const std::string &txt, double P, double
     int w3 = 8;
     int w4 = w0 - w1 - w2 - w3;
 
-    double p = 1.0;
-    if (std::abs(P) > mrcpp::MachineZero) p = P;
-    bool done = (std::abs(dP / p) < thrs) or (thrs < 0.0);
+    bool done = (std::abs(dP) < thrs) or (thrs < 0.0);
 
     std::stringstream o_row;
     o_row << txt << std::string(w1 - txt.size(), ' ');

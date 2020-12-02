@@ -118,11 +118,11 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     V.setup(prec);
 
     // Compute Hamiltonian matrix
+    t_lap.start();
     mrcpp::print::header(2, "Diagonalize Hamiltonian matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V);
 
     // Rotate orbitals and fill electrons by Aufbau
-    t_lap.start();
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
