@@ -341,8 +341,12 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         MSG_ERROR("Invalid initial guess");
         success = false;
     }
-    orbital::print(Phi);
+    for (const auto &phi_i : Phi) {
+        double err = (mpi::my_orb(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        if (err > 0.01) MSG_WARN("MO not normalized!");
+    }
 
+    orbital::print(Phi);
     return success;
 }
 

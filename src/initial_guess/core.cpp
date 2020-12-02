@@ -204,7 +204,10 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 
                 Phi.push_back(Orbital(SPIN::Paired));
                 Phi.back().setRankID(Phi.size() % mpi::orb_size);
-                if (mpi::my_orb(Phi.back())) qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
+                if (mpi::my_orb(Phi.back())) {
+                    qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
+                    if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
+                }
 
                 std::stringstream o_txt;
                 o_txt << std::setw(w1 - 1) << Phi.size() - 1;

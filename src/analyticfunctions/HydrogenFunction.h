@@ -36,6 +36,8 @@ public:
 
     double evalf(const mrcpp::Coord<1> &r) const override;
 
+    friend class HydrogenFunction;
+
 protected:
     const int N;
     const int L;
@@ -44,6 +46,9 @@ protected:
 
     double calcConstant(double Z) const;
     double evalfPoly(double r) const;
+
+    double calcStdDev() const { return std::pow(2.0 * this->c_1, -0.5); }
+    bool isVisibleAtScale(int scale, int nQuadPts) const override;
 };
 
 class AngularFunction final : public mrcpp::RepresentableFunction<3> {
@@ -72,6 +77,9 @@ protected:
     mrcpp::Coord<3> origin;
     RadialFunction R;
     AngularFunction Y;
+
+    bool isVisibleAtScale(int scale, int nQuadPts) const override { return this->R.isVisibleAtScale(scale, nQuadPts); }
+    bool isZeroOnInterval(const double *a, const double *b) const override;
 };
 
 } // namespace mrchem
