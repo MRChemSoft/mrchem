@@ -1,5 +1,21 @@
 # Change log
 
+## Version 1.0.1 2020-12-04
+
+### Changed
+
+- Moved CI from Travis to GitHub Actions
+- Abort on failure when reading MW guess
+
+### Fixed
+
+- Minor issues with the printed output
+- Error in NMR tensor output (dia term printed transposed)
+- Precision issue with CHK guess (now full world_prec is used)
+- MPI dead-lock when mixing shared-mem potentials with orbital bank
+- SAD guess for large systems (Eigen threading error in matrix multiply)
+- CORE/SAD guess for heavy atoms (force refinement for sharp s-functions)
+
 ## Version 1.0.0 2020-10-28
 
 ### Added
