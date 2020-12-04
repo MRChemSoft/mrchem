@@ -977,6 +977,8 @@ void orbital::print(const OrbitalVector &Phi) {
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');
 
+    auto norms = orbital::get_norms(Phi); // includes allreduce
+
     auto nodes = 0;
     auto memory = 0.0;
     for (int i = 0; i < Phi.size(); i++) {
@@ -986,7 +988,7 @@ void orbital::print(const OrbitalVector &Phi) {
         o_txt << std::setw(w1 - 1) << i;
         o_txt << std::setw(w1) << Phi[i].occ();
         o_txt << std::setw(w1) << Phi[i].printSpin();
-        print_utils::scalar(0, o_txt.str(), Phi[i].norm(), "", 2 * pprec, true);
+        print_utils::scalar(0, o_txt.str(), norms[i], "", 2 * pprec, true);
     }
 
     mrcpp::print::separator(2, '-');

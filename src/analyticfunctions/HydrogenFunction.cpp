@@ -43,6 +43,13 @@ double RadialFunction::evalf(const mrcpp::Coord<1> &r) const {
     return this->c_0 * this->evalfPoly(rho) * exp(-rho / 2.0);
 }
 
+// Copied from mrcpp::Gaussian, but should be visible at higher scales than Gaussians
+bool RadialFunction::isVisibleAtScale(int scale, int nQuadPts) const {
+    auto stdDev = calcStdDev();
+    auto visibleScale = static_cast<int>(-std::floor(std::log2(nQuadPts * 5.0 * stdDev)));
+    return (scale >= visibleScale);
+}
+
 // clang-format off
 double RadialFunction::calcConstant(double Z) const {
     double c = 0.0;
@@ -172,6 +179,18 @@ double HydrogenFunction::evalf(const mrcpp::Coord<3> &p) const {
     mrcpp::Coord<3> q{p[0] - o[0], p[1] - o[1], p[2] - o[2]};
     mrcpp::Coord<1> r{math_utils::calc_distance(p, o)};
     return this->R.evalf(r) * this->Y.evalf(q);
+}
+
+// Copied from mrcpp::Gaussian
+bool HydrogenFunction::isZeroOnInterval(const double *a, const double *b) const {
+    bool outside = true;
+    double stdDev = this->R.calcStdDev();
+    for (int i = 0; i < 3; i++) {
+        double gaussBoxMin = this->origin[i] - 15.0 * stdDev;
+        double gaussBoxMax = this->origin[i] + 15.0 * stdDev;
+        outside &= (a[i] < gaussBoxMax and b[i] > gaussBoxMin);
+    }
+    return not(outside);
 }
 
 } // namespace mrchem

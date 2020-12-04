@@ -118,11 +118,11 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     V.setup(prec);
 
     // Compute Hamiltonian matrix
+    t_lap.start();
     mrcpp::print::header(2, "Diagonalize Hamiltonian matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V);
 
     // Rotate orbitals and fill electrons by Aufbau
-    t_lap.start();
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
@@ -204,7 +204,10 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 
                 Phi.push_back(Orbital(SPIN::Paired));
                 Phi.back().setRankID(Phi.size() % mpi::orb_size);
-                if (mpi::my_orb(Phi.back())) qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
+                if (mpi::my_orb(Phi.back())) {
+                    qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
+                    if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
+                }
 
                 std::stringstream o_txt;
                 o_txt << std::setw(w1 - 1) << Phi.size() - 1;

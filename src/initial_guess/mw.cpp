@@ -131,11 +131,11 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
                 mrcpp::refine_grid(phi_i.imag(), 1);
                 mrcpp::project(prec, Phi[i].imag(), phi_i.imag());
             }
+            std::stringstream o_txt;
+            o_txt << std::setw(w1 - 1) << i;
+            o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
+            print_utils::qmfunction(1, o_txt.str(), Phi[i], t_i);
         }
-        std::stringstream o_txt;
-        o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
-        print_utils::qmfunction(1, o_txt.str(), Phi[i], t_i);
     }
     mpi::barrier(mpi::comm_orb);
     mrcpp::print::footer(1, t_tot, 2);
