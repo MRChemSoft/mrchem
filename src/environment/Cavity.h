@@ -32,13 +32,13 @@ namespace mrchem {
  * @brief Interlocking spheres cavity centered on the nuclei of the molecule.
  * The Cavity class represents the following function \cite Fosso-Tande2013
  * \f[
- * C(\mathbf{r}) = 1 - \prod^N_{i=1} (1-C_i(\mathbf{r}))\\
- * C_i(\mathbf{r}) = 1 - \frac{1}{2}\left( 1 + \textrm{erf}\left(\frac{|\mathbf{r} - \mathbf{r}_i| - R_i}{\sigma}\right)
- * \right) \f] where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$\mathbf{r}_i\f$ is the coordinate of
- * the i-th nucleus, \f$R_i\f$ is the radius of the i-th sphere, and \f$\sigma\f$ is the #Width of the transition
- * between the inside and outside of the cavity. The transition has a sigmoidal shape, such that the boundary is a
- * smooth function instead of sharp boundaries often seen in other continuum models. This function is \f$1\f$ inside and
- * \f$0\f$ outside the cavity.
+ *    C(\mathbf{r}) = 1 - \prod^N_{i=1} (1-C_i(\mathbf{r}))\               \
+ *    C_i(\mathbf{r}) = 1 - \frac{1}{2}\left( 1 + \textrm{erf}\left(\frac{|\mathbf{r} - \mathbf{r}_i| -
+ * R_i}{\sigma}\right) \right) \f] where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$\mathbf{r}_i\f$
+ * is the coordinate of the i-th nucleus, \f$R_i\f$ is the radius of the i-th sphere, and \f$\sigma\f$ is the #Width of
+ * the transition between the inside and outside of the cavity. The transition has a sigmoidal shape, such that the
+ * boundary is a smooth function instead of sharp boundaries often seen in other continuum models. This function is
+ * \f$1\f$ inside and \f$0\f$ outside the cavity.
  */
 
 class Cavity final : public mrcpp::RepresentableFunction<3> {

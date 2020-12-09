@@ -29,10 +29,10 @@
 
 #include "driver.h"
 
-#include "chemistry/Cavity.h"
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
-#include "chemistry/Permittivity.h"
+#include "environment/Cavity.h"
+#include "environment/Permittivity.h"
 
 #include "initial_guess/chk.h"
 #include "initial_guess/core.h"
@@ -55,6 +55,7 @@
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
@@ -70,7 +71,6 @@
 
 #include "properties/GeometricDerivative.h"
 
-#include "environment/ReactionOperator.h"
 #include "environment/SCRF.h"
 
 #include "scf_solver/GroundStateSolver.h"

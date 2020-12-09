@@ -30,10 +30,9 @@
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/two_electron/ReactionPotential.h"
 #include "scf_solver/KAIN.h"
 #include "utils/print_utils.h"
-
-#include "ReactionPotential.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

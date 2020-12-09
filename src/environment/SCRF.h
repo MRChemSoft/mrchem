@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "chemistry/Permittivity.h"
+#include "Permittivity.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 

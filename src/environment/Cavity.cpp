@@ -39,11 +39,15 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &centers, std::vector<double> &radii
  *   @brief Constructs a single element of the gradient of the Cavity.
  *
  *   This constructs the analytical partial derivative of the Cavity \f$C\f$ with respect to \f$x\f$, \f$y\f$ or \f$z\f$
- * coordinates and evaluates it at a point \f$\mathbf{r}\f$. This is given for \f$x\f$ by \f[ \frac{\partial
- * C\left(\mathbf{r}\right)}{\partial x} = \left(1 - C{\left(\mathbf{r} \right)}\right) \sum_{i=1}^{N} - \frac{\left(x
+ * coordinates and evaluates it at a point \f$\mathbf{r}\f$. This is given for \f$x\f$ by
+ * \f[
+ * \frac{\partial C\left(\mathbf{r}\right)}{\partial x} = \left(1 - C{\left(\mathbf{r} \right)}\right) \sum_{i=1}^{N} -
+ * \frac{\left(x
  * -{x}_{i}\right) e^{- \frac{\operatorname{s_{i}}^{2}{\left(\mathbf{r}  \right)}}{\sigma^{2}}}}{\sqrt{\pi} \sigma
  * \left(0.5 \operatorname{erf}{\left(\frac{\operatorname{s_{i}}{\left(\mathbf{r}  \right)}}{\sigma} \right)} +
- * 0.5\right) \left| \mathbf{r} - \mathbf{r}_{i} \right|} \f] where the subscript \f$i\f$ is the index related to each
+ * 0.5\right) \left| \mathbf{r} - \mathbf{r}_{i} \right|}
+ * \f]
+ * where the subscript \f$i\f$ is the index related to each
  * sphere in the cavity, and \f$\operatorname{s}\f$ is the signed normal distance from the surface of each sphere.
  *   @param r The coordinates of a test point in 3D space.
  *   @param index An integer that defines the variable of differentiation (0->x, 1->z and 2->z).

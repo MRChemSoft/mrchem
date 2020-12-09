@@ -9,4 +9,5 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/XCPotential.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/XCPotentialD1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/XCPotentialD2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ReactionPotential.cpp
     )

@@ -41,7 +41,6 @@
 #include <MRCPP/Printer>
 #include <nlohmann/json.hpp>
 
-#include "Cavity.h"
 #include "Nucleus.h"
 #include "properties/DipoleMoment.h"
 #include "properties/GeometricDerivative.h"
@@ -63,7 +62,7 @@
  */
 
 namespace mrchem {
-
+class Cavity;
 template <typename P> using PropertyMap = std::map<std::string, P>;
 
 class Molecule final {

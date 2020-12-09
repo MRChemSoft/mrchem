@@ -23,8 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "chemistry/Permittivity.h"
-#include "chemistry/Cavity.h"
+#include "Permittivity.h"
+#include "Cavity.h"
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {

@@ -24,7 +24,7 @@
  */
 
 #pragma once
-#include "SCRF.h"
+#include "environment/SCRF.h"
 #include "qmoperators/one_electron/QMPotential.h"
 
 namespace mrchem {

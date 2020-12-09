@@ -28,6 +28,7 @@
 #include "Molecule.h"
 #include "Nucleus.h"
 
+#include "environment/Cavity.h"
 #include "qmfunctions/orbital_utils.h"
 
 using mrcpp::Coord;

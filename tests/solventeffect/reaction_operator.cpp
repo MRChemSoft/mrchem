@@ -36,16 +36,16 @@
 #include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
-#include "chemistry/Cavity.h"
 #include "chemistry/Element.h"
 #include "chemistry/Nucleus.h"
 #include "chemistry/PeriodicTable.h"
-#include "chemistry/Permittivity.h"
-#include "environment/ReactionOperator.h"
+#include "environment/Cavity.h"
+#include "environment/Permittivity.h"
 #include "environment/SCRF.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/two_electron/ReactionOperator.h"
 
 using namespace mrchem;
 using namespace orbital;

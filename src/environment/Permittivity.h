@@ -25,7 +25,7 @@
 
 #pragma once
 
-#include "chemistry/Cavity.h"
+#include "Cavity.h"
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
@@ -34,7 +34,7 @@ namespace mrchem {
  * @brief Permittivity function related to a substrate molecule and a solvent continuum.
  * The Permittivity class represents the following function \cite Fosso-Tande2013
  * \f[
- * \epsilon(\mathbf{r}) = \epsilon_{in}\exp\left(\left(\log\frac{\epsilon_{out}}{\epsilon_{in}} \right)
+ *   \epsilon(\mathbf{r}) = \epsilon_{in}\exp\left(\left(\log\frac{\epsilon_{out}}{\epsilon_{in}} \right)
  *                                               \left(1 - C(\mathbf{r})\right)\right)
  * \f]
  * where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$ C \f$ is the #cavity function of the substrate,

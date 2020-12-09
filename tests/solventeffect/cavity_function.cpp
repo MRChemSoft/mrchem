@@ -34,7 +34,7 @@
 #include "mrchem.h"
 #include "parallel.h"
 
-#include "chemistry/Cavity.h"
+#include "environment/Cavity.h"
 
 using namespace mrchem;
 
