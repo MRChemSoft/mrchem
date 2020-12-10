@@ -29,9 +29,9 @@ namespace mrchem {
 
 /** @brief Initializes the members of the class and constructs the analytical gradient vector of the Cavity. */
 Cavity::Cavity(std::vector<mrcpp::Coord<3>> &centers, std::vector<double> &radii, double width)
-        : Width(width)
-        , Radii(radii)
-        , Centers(centers) {
+        : width(width)
+        , radii(radii)
+        , centers(centers) {
     setGradVector();
 }
 
@@ -41,11 +41,12 @@ Cavity::Cavity(std::vector<mrcpp::Coord<3>> &centers, std::vector<double> &radii
  *   This constructs the analytical partial derivative of the Cavity \f$C\f$ with respect to \f$x\f$, \f$y\f$ or \f$z\f$
  * coordinates and evaluates it at a point \f$\mathbf{r}\f$. This is given for \f$x\f$ by
  * \f[
- * \frac{\partial C\left(\mathbf{r}\right)}{\partial x} = \left(1 - C{\left(\mathbf{r} \right)}\right) \sum_{i=1}^{N} -
- * \frac{\left(x
- * -{x}_{i}\right) e^{- \frac{\operatorname{s_{i}}^{2}{\left(\mathbf{r}  \right)}}{\sigma^{2}}}}{\sqrt{\pi} \sigma
- * \left(0.5 \operatorname{erf}{\left(\frac{\operatorname{s_{i}}{\left(\mathbf{r}  \right)}}{\sigma} \right)} +
- * 0.5\right) \left| \mathbf{r} - \mathbf{r}_{i} \right|}
+ *    \frac{\partial C\left(\mathbf{r}\right)}{\partial x} = \left(1 - C{\left(\mathbf{r} \right)}\right)
+ *                                                           \sum_{i=1}^{N} - \frac{\left(x-{x}_{i}\right)e^{-
+ * \frac{\operatorname{s_{i}}^{2}{\left(\mathbf{r} \right)}}{\sigma^{2}}}}
+ *                                                           {\sqrt{\pi}\sigma\left(0.5
+ * \operatorname{erf}{\left(\frac{\operatorname{s_{i}}{\left(\mathbf{r}  \right)}}{\sigma} \right)}
+ *                                                           + 0.5\right) \left| \mathbf{r} - \mathbf{r}_{i} \right|}
  * \f]
  * where the subscript \f$i\f$ is the index related to each
  * sphere in the cavity, and \f$\operatorname{s}\f$ is the signed normal distance from the surface of each sphere.
@@ -94,7 +95,7 @@ auto gradCavity(const mrcpp::Coord<3> &r,
 /** @brief Sets the different partial derivatives in the \link #gradvector gradient \endlink of the Cavity. */
 void Cavity::setGradVector() {
     auto p_gradcavity = [this](const mrcpp::Coord<3> &r, int index) {
-        return gradCavity(r, index, Centers, Radii, Width);
+        return gradCavity(r, index, centers, radii, width);
     };
     for (auto i = 0; i < 3; i++) {
         this->gradvector.push_back(
@@ -107,9 +108,9 @@ void Cavity::setGradVector() {
  */
 double Cavity::evalf(const mrcpp::Coord<3> &r) const {
     double C = 1.0;
-    for (int i = 0; i < Centers.size(); i++) {
-        double s = math_utils::calc_distance(Centers[i], r) - Radii[i];
-        double Theta = 0.5 * (1 + std::erf(s / Width));
+    for (int i = 0; i < centers.size(); i++) {
+        double s = math_utils::calc_distance(centers[i], r) - radii[i];
+        double Theta = 0.5 * (1 + std::erf(s / width));
         double Ci = 1 - Theta;
         C *= 1 - Ci;
     }
@@ -119,7 +120,7 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
 
 bool Cavity::isVisibleAtScale(int scale, int nQuadPts) const {
 
-    auto visibleScale = static_cast<int>(-std::floor(std::log2(nQuadPts * 2.0 * this->Width)));
+    auto visibleScale = static_cast<int>(-std::floor(std::log2(nQuadPts * 2.0 * this->width)));
 
     if (scale < visibleScale) { return false; }
 
@@ -127,12 +128,12 @@ bool Cavity::isVisibleAtScale(int scale, int nQuadPts) const {
 }
 
 bool Cavity::isZeroOnInterval(const double *a, const double *b) const {
-    for (int k = 0; k < Centers.size(); k++) {
+    for (int k = 0; k < centers.size(); k++) {
         for (int i = 0; i < 3; i++) {
-            double cavityMinOut = (this->Centers[k][i] - Radii[i]) - 3.0 * this->Width;
-            double cavityMinIn = (this->Centers[k][i] - Radii[i]) + 3.0 * this->Width;
-            double cavityMaxIn = (this->Centers[k][i] + Radii[i]) - 3.0 * this->Width;
-            double cavityMaxOut = (this->Centers[k][i] + Radii[i]) + 3.0 * this->Width;
+            double cavityMinOut = (this->centers[k][i] - radii[i]) - 3.0 * this->width;
+            double cavityMinIn = (this->centers[k][i] - radii[i]) + 3.0 * this->width;
+            double cavityMaxIn = (this->centers[k][i] + radii[i]) - 3.0 * this->width;
+            double cavityMaxOut = (this->centers[k][i] + radii[i]) + 3.0 * this->width;
             if (a[i] > cavityMaxOut or (a[i] > cavityMinIn and b[i] < cavityMaxIn) or b[i] < cavityMinOut) {
                 return true;
             }

@@ -23,11 +23,11 @@
  * <https://mrchem.readthedocs.io/>
  */
 #include "chemistry_utils.h"
-#include "MRCPP/Gaussians"
 #include "Nucleus.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/density_utils.h"
 #include "utils/math_utils.h"
+#include <MRCPP/Gaussians>
 namespace mrchem {
 
 /** @brief computes the repulsion self energy of a set of nuclei
