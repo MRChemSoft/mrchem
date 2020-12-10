@@ -51,10 +51,12 @@ SCRF::SCRF(Permittivity e,
            int max_iter,
            bool accelerate_Vr,
            std::string convergence_criterion,
-           std::string algorithm)
+           std::string algorithm,
+           std::string density_type)
         : accelerate_Vr(accelerate_Vr)
         , convergence_criterion(convergence_criterion)
         , algorithm(algorithm)
+        , density_type(density_type)
         , max_iter(max_iter)
         , history(kain_hist)
         , apply_prec(orb_prec)
@@ -93,7 +95,13 @@ void SCRF::computeDensities(OrbitalVector &Phi) {
     Density rho_el(false);
     density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
     rho_el.rescale(-1.0);
-    qmfunction::add(this->rho_tot, 1.0, rho_el, 1.0, this->rho_nuc, -1.0); // probably change this into a vector
+    if (this->density_type == "electronic") {
+        qmfunction::deep_copy(this->rho_tot, rho_el);
+    } else if (this->density_type == "nuclear") {
+        qmfunction::deep_copy(this->rho_tot, this->rho_nuc);
+    } else {
+        qmfunction::add(this->rho_tot, 1.0, rho_el, 1.0, this->rho_nuc, -1.0); // probably change this into a vector
+    }
 }
 
 void SCRF::computeGamma(QMFunction Potential, QMFunction &out_gamma) {

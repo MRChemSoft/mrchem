@@ -509,6 +509,13 @@ def stencil() -> JSONDict:
                                         {   'default': True,
                                             'name': 'extrapolate_Vr',
                                             'type': 'bool'},
+                                        {   'default': 'total',
+                                            'name': 'density_type',
+                                            'predicates': [   'value.lower() '
+                                                              "in ['total', "
+                                                              "'nuclear', "
+                                                              "'electronic']"],
+                                            'type': 'str'},
                                         {   'default': "user['SCF']['kain']",
                                             'name': 'kain',
                                             'type': 'int'}],

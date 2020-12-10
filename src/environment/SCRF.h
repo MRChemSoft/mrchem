@@ -43,7 +43,8 @@ public:
          int max_iter,
          bool accelerate_Vr,
          std::string convergence_criterion,
-         std::string algorithm);
+         std::string algorithm,
+         std::string density_type);
     friend class ReactionPotential;
     void UpdateExternalDensity(Density new_density) { this->rho_ext = new_density; }
 
@@ -64,6 +65,7 @@ private:
     bool accelerate_Vr;
     std::string convergence_criterion;
     std::string algorithm;
+    std::string density_type;
 
     int max_iter;
     int history;
@@ -84,7 +86,7 @@ private:
     QMFunction dgamma_n;
     QMFunction gamma_nm1;
 
-    mrcpp::FunctionTreeVector<3> d_cavity; // Vector containing the 3 partial derivatives of the cavity function
+    mrcpp::FunctionTreeVector<3> d_cavity; //!< Vector containing the 3 partial derivatives of the cavity function
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
 

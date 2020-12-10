@@ -737,6 +737,15 @@ User input reference
   
     **Default** ``True``
   
+   :density_type: What part of the total molecular charge density to use in the algorithm. ``total`` uses the total charge density. ``nuclear`` uses only the nuclear part of the total charge density. ``electronic`` uses only the electronic part of the total charge density. 
+  
+    **Type** ``str``
+  
+    **Default** ``total``
+  
+    **Predicates**
+      - ``value.lower() in ['total', 'nuclear', 'electronic']``
+  
    :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
   
     **Type** ``int``

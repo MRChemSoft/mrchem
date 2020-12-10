@@ -80,7 +80,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     double eps_out = 2.0;
     Permittivity dielectric_func(*sphere, eps_in, eps_out, "exponential");
 
-    SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history, 100, true, "dynamic", "scrf");
+    SCRF helper(dielectric_func, molecule, P_p, D_p, prec, history, 100, true, "dynamic", "scrf", "total");
     auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
     Reo->setTesting();
     Reo->setup(prec);

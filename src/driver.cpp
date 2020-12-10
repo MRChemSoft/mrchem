@@ -990,6 +990,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto algorithm = json_fock["reaction_operator"]["algorithm"]; // This has no use as of now
         auto accelerate_Vr = json_fock["reaction_operator"]["accelerate_Vr"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
+        auto density_type = json_fock["reaction_operator"]["density_type"];
         Permittivity dielectric_func(*cavity_r, eps_in_r, eps_out_r, formulation);
 
         SCRF helper(dielectric_func,
@@ -1001,7 +1002,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
                     max_iter,
                     accelerate_Vr,
                     convergence_criterion,
-                    algorithm);
+                    algorithm,
+                    density_type);
         auto Reo = std::make_shared<ReactionOperator>(Phi_p, helper);
         F.getReactionOperator() = Reo;
     }

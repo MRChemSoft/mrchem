@@ -76,7 +76,8 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
             "formulation": user_dict["Environment"]["Permittivity"]["formulation"],
             "max_iter": user_dict["Environment"]["max_iter"],
             "convergence_criterion": user_dict["Environment"]["convergence_criterion"],
-            "accelerate_Vr": user_dict["Environment"]["extrapolate_Vr"]
+            "accelerate_Vr": user_dict["Environment"]["extrapolate_Vr"],
+            "density_type": user_dict["Environment"]["density_type"]
     }
 
     # Coulomb
