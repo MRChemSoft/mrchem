@@ -164,7 +164,7 @@ def write_molecule(user_dict, origin):
                 center = list(map(float, sp[:-1]))
                 radius = float(sp[-1])
                 if len(center) != 3:
-                    print("Invalid coordinate: " +  " " + str(center))
+                    print( f"Invalid coordinate: {center}" )
                     sys.exit(1)
             cav_coords_dict.append({
                 "center": center,

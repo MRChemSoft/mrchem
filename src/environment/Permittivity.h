@@ -46,10 +46,20 @@ class Cavity;
 
 class Permittivity final : public mrcpp::RepresentableFunction<3> {
 public:
-    Permittivity(const Cavity cavity,
-                 double epsilon_in,
-                 double epsilon_out,
-                 std::string formulation); //!< Standard constructor.
+    /** @brief Standard constructor. Initializes the #cavity, #epsilon_in and #epsilon_out with the input parameters.
+     *  @param cavity interlocking spheres of Cavity class.
+     *  @param epsilon_in permittivity inside the #cavity.
+     *  @param epsilon_out permittivity outside the #cavity.
+     *  @param formulation Decides which formulation of the #Permittivity function to implement, only exponential
+     * available as of now.
+     */
+    Permittivity(const Cavity cavity, double epsilon_in, double epsilon_out, std::string formulation);
+
+    /** @brief Evaluates Permittivity at a point in 3D space with respect to the state of #inverse.
+     *  @param r coordinates of a 3D point in space.
+     *  @return \f$\frac{1}{\epsilon(\mathbf{r})}\f$ if #inverse is true, and \f$ \epsilon(\mathbf{r})\f$ if #inverse is
+     *  false.
+     */
     double evalf(const mrcpp::Coord<3> &r) const override;
 
     /** @brief Changes the value of #inverse. */

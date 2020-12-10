@@ -702,7 +702,7 @@ sections:
         type: str
         default: "scrf"
         predicates:
-            - "value.lower() in ['scrf', 'variational']"
+            - "value.lower() in ['scrf']"
         docstring: |
           What algorithm to use for the reaction field
           ``scrf`` runs a nested algorithm where the generalized Poisson

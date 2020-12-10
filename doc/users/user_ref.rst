@@ -720,7 +720,7 @@ User input reference
     **Default** ``scrf``
   
     **Predicates**
-      - ``value.lower() in ['scrf', 'variational']``
+      - ``value.lower() in ['scrf']``
   
    :convergence_criterion: Adjust the convergence threshold for the nested procedure. ``dynamic`` Uses the absolute value of the latest orbital update as convergence threshold. When the orbitals are close to convergence (``mo_residual < world_prec*10``) the convergence threshold will be equal to ``world_prec``. ``static`` uses ``world_prec`` as convergence threshold. 
   

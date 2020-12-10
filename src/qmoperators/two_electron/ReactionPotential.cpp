@@ -47,7 +47,6 @@ void ReactionPotential::setup(double prec) {
 }
 
 void ReactionPotential::clear() {
-    //    QMFunction::free(NUMBER::Real);
     clearApplyPrec();
     this->helper.clear();
 }
