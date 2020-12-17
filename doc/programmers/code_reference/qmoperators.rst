@@ -30,6 +30,7 @@ XCPotential
 ReactionPotential
 -----------------
 .. doxygenclass:: mrchem::ReactionPotential
+   :project: MRChem
    :members:
    :protected-members:
    :private-members:

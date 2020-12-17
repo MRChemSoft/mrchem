@@ -30,6 +30,9 @@
 #include "qmfunctions/Orbital.h"
 
 namespace mrchem {
+/** @class SCRF
+ *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
+ */
 class Nuclei;
 class KAIN;
 class SCRF final {
