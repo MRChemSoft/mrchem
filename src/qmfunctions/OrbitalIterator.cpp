@@ -1,5 +1,5 @@
 /*
- * MRChem, a numerical real-space code for molecular electronic structure
+ * Mrchem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
  * Copyright (C) 2020 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
@@ -28,6 +28,7 @@
 #include "Orbital.h"
 #include "OrbitalIterator.h"
 #include "parallel.h"
+#include "utils/Bank.h"
 
 namespace mrchem {
 
@@ -220,7 +221,7 @@ bool OrbitalIterator::bank_next(int max_recv) {
         for (int i = 0; i < this->orbitals->size(); i++) {
             Orbital &phi_i = (*this->orbitals)[i];
             if (not mpi::my_orb(phi_i)) continue;
-            mpi::orb_bank.put_orb(i, phi_i);
+            orbBank.put_orb(i, phi_i);
         }
     }
 
@@ -229,7 +230,7 @@ bool OrbitalIterator::bank_next(int max_recv) {
         int tag = i;
         int orb_ix = this->received_counter;
         Orbital &phi_i = (*this->orbitals)[orb_ix];
-        mpi::orb_bank.get_orb(orb_ix, phi_i);
+        orbBank.get_orb(orb_ix, phi_i);
         this->received_orbital_index.push_back(orb_ix);
         this->received_orbitals.push_back(phi_i);
         this->received_counter++; // total

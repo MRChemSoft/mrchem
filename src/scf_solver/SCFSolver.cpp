@@ -315,9 +315,9 @@ void SCFSolver::printMemory() const {
     if (mpi::bank_size > 0 and mpi::grand_master()) {
         if (mem_unit == "(GB)") {
             mrcpp::print::value(
-                1, "Maximum data in bank", (double)mpi::orb_bank.get_maxtotalsize() / 1024, mem_unit, 2, false);
+                1, "Maximum data in bank", (double)dataBank.get_maxtotalsize() / 1024, mem_unit, 2, false);
         } else {
-            mrcpp::print::value(1, "Maximum data in bank", (double)mpi::orb_bank.get_maxtotalsize(), "(MB)", 2, false);
+            mrcpp::print::value(1, "Maximum data in bank", (double)dataBank.get_maxtotalsize(), "(MB)", 2, false);
         }
     }
     mrcpp::print::separator(2, '=', 2);

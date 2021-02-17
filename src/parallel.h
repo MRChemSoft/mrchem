@@ -47,7 +47,11 @@ namespace omp {
 extern int n_threads;
 } // namespace omp
 
+class CentralBank;
+extern CentralBank dataBank;
+
 namespace mpi {
+
 extern bool numerically_exact;
 extern int shared_memory_size;
 
@@ -61,6 +65,7 @@ extern int sh_group_rank;
 extern int is_bank;
 extern int is_bankclient;
 extern int bank_size;
+extern int max_tag;
 extern std::vector<int> bankmaster;
 
 extern MPI_Comm comm_orb;
@@ -101,81 +106,6 @@ void allreduce_matrix(IntMatrix &vec, MPI_Comm comm);
 void allreduce_matrix(DoubleMatrix &mat, MPI_Comm comm);
 void allreduce_matrix(ComplexMatrix &mat, MPI_Comm comm);
 
-} // namespace mpi
-
-namespace bank {
-
-struct deposit {
-    Orbital *orb;
-    double *data; // for pure data arrays
-    bool hasdata;
-    int datasize;
-    int id = -1; // to identify what is deposited
-    int source;  // mpi rank from the source of the data
-};
-
-struct queue_struct {
-    int id;
-    std::vector<int> clients;
-};
-
-} // namespace bank
-
-class Bank {
-public:
-    Bank() = default;
-    ~Bank();
-    void open();
-    void close();
-    void clear_all(int i = mpi::orb_rank, MPI_Comm comm = mpi::comm_orb);
-    void clear(int ix);
-    int put_orb(int id, Orbital &orb);
-    int get_orb(int id, Orbital &orb, int wait = 0);
-    int get_orb_del(int id, Orbital &orb);
-    int put_func(int id, QMFunction &func);
-    int get_func(int id, QMFunction &func);
-    int set_datasize(int datasize);
-    int put_data(int id, int size, double *data);
-    int get_data(int id, int size, double *data);
-    int put_nodedata(int id, int nodeid, int size, double *data);
-    int get_nodedata(int id, int nodeid, int size, double *data, std::vector<int> &idVec);
-    int get_nodeblock(int nodeid, double *data, std::vector<int> &idVec);
-    int get_orbblock(int orbid, double *&data, std::vector<int> &nodeidVec, int bankstart);
-    void clear_blockdata(int i = mpi::orb_rank, int nodeidmax = 0, MPI_Comm comm = mpi::comm_orb);
-    int get_maxtotalsize();
-    std::vector<int> get_totalsize();
-
-private:
-    int const CLOSE_BANK = 1;
-    int const CLEAR_BANK = 2;
-    int const GET_ORBITAL = 3;
-    int const GET_ORBITAL_AND_WAIT = 4;
-    int const GET_ORBITAL_AND_DELETE = 5;
-    int const SAVE_ORBITAL = 6;
-    int const GET_FUNCTION = 7;
-    int const SAVE_FUNCTION = 8;
-    int const SET_DATASIZE = 9;
-    int const GET_DATA = 10;
-    int const SAVE_DATA = 11;
-    int const SAVE_NODEDATA = 12;
-    int const GET_NODEDATA = 13;
-    int const GET_NODEBLOCK = 14;
-    int const GET_ORBBLOCK = 15;
-    int const CLEAR_BLOCKS = 16;
-    int const GETMAXTOTDATA = 17;
-    int const GETTOTDATA = 18;
-    std::map<int, int> id2ix;
-    std::vector<bank::deposit> deposits;
-    std::map<int, int> id2qu;
-    std::vector<bank::queue_struct> queue;
-    long long currentsize = 0; // total deposited data size (without containers)
-    long long maxsize = 0;     // max total deposited data size (without containers)
-
-    void clear_bank();
-};
-
-namespace mpi {
-extern Bank orb_bank;
 } // namespace mpi
 
 } // namespace mrchem

@@ -31,15 +31,21 @@ ExchangePotentialD1::ExchangePotentialD1(PoissonOperator_p P, OrbitalVector_p Ph
 /** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */
 void ExchangePotentialD1::setupBank() {
     if (mpi::bank_size < 1) return;
-
     Timer timer;
     mpi::barrier(mpi::comm_orb);
     OrbitalVector &Phi = *this->orbitals;
     for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) mpi::orb_bank.put_orb(i, Phi[i]);
+        if (mpi::my_orb(Phi[i])) PhiBank.put_orb(i, Phi[i]);
     }
     mpi::barrier(mpi::comm_orb);
     mrcpp::print::time(4, "Setting up exchange bank", timer);
+}
+
+/** @brief Clears rbital bank accounts.
+ *
+ */
+void ExchangePotentialD1::clearBank() {
+    PhiBank.clear();
 }
 
 /** @brief Test if a given contribution has been precomputed
@@ -116,6 +122,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     int id_shift = 100000; // temporary shift for not colliding with existing ids
     OrbitalVector &Ex = this->exchange;
     OrbitalVector &Phi = *this->orbitals;
+    BankAccount ExBank;
 
     // use fixed exchange_prec if set explicitly, otherwise use setup prec
     double precf = (this->exchange_prec > 0.0) ? this->exchange_prec : prec;
@@ -150,7 +157,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             if (i > j + (N - 1) / 2 and i > j and use_sym) continue;
             if (i > j - (N + 1) / 2 and i < j and use_sym) continue;
             Orbital phi_i;
-            mpi::orb_bank.get_orb(i, phi_i, 1); // fetch also own orbitals (simpler for clean up, and they are few)
+            PhiBank.get_orb(i, phi_i, 1); // fetch also own orbitals (simpler for clean up, and they are few)
 
             Orbital ex_jji = phi_i.paramCopy();
             Orbital ex_iij = phi_j.paramCopy();
@@ -172,7 +179,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                     // must store contribution to exchange_i in bank
                     timerS.resume();
                     totsize += ex_jji.getSizeNodes(NUMBER::Total);
-                    if (ex_jji.norm() > prec) mpi::orb_bank.put_orb(i + (j + 1) * N + id_shift, ex_jji);
+                    if (ex_jji.norm() > prec) ExBank.put_orb(i + (j + 1) * N + id_shift, ex_jji);
                     timerS.stop();
                 } else {
                     // must add contribution to exchange_i
@@ -200,7 +207,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                         // Fetch other half of matrix (in band where i-j > size/2 %size)
                         if ((ii > jj + (N - 1) / 2 and ii > jj) or (ii > jj - (N + 1) / 2 and ii < jj)) {
                             double j_fac = getSpinFactor(Phi[ii], Phi[jj]);
-                            int found = mpi::orb_bank.get_orb_del(jj + (ii + 1) * N + id_shift, ex_rcv);
+                            int found = ExBank.get_orb_del(jj + (ii + 1) * N + id_shift, ex_rcv);
                             foundcount += found;
                             if (found) Ex[jj].add(j_fac, ex_rcv);
                         }
@@ -228,7 +235,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             // Fetch other half of matrix (in band where i-j > size/2 %size)
             if ((i > j + (N - 1) / 2 and i > j) or (i > j - (N + 1) / 2 and i < j)) {
                 double j_fac = getSpinFactor(Phi[i], Phi[j]);
-                int found = mpi::orb_bank.get_orb_del(j + (i + 1) * N + id_shift, ex_rcv);
+                int found = ExBank.get_orb_del(j + (i + 1) * N + id_shift, ex_rcv);
                 foundcount += found;
                 if (found) Ex[j].add(j_fac, ex_rcv);
             }
@@ -239,8 +246,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
     println(3, " fetched in total " << foundcount << " Exchange contributions from bank");
     mrcpp::print::time(3, "Time send/rcv exchanges", timerS);
     mrcpp::print::time(3, "Time calculate exchanges", t_calc);
-
-    mpi::orb_bank.clear_all(mpi::orb_rank, mpi::comm_orb);
 
     auto n = orbital::get_n_nodes(Ex);
     auto m = orbital::get_size_nodes(Ex);
@@ -269,7 +274,7 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
-        if (not mpi::my_orb(phi_i)) mpi::orb_bank.get_orb(i, phi_i, 1);
+        if (not mpi::my_orb(phi_i)) PhiBank.get_orb(i, phi_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {

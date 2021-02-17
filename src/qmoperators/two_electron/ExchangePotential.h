@@ -5,6 +5,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/qmfunction_fwd.h"
 #include "qmoperators/QMOperator.h"
+#include "utils/Bank.h"
 
 namespace mrchem {
 
@@ -46,7 +47,7 @@ protected:
     void clear() override;
 
     virtual void setupBank() = 0;
-    void clearBank();
+    virtual void clearBank() {}
 
     virtual int testInternal(Orbital phi_p) const { return -1; }
     virtual void setupInternal(double prec) {}

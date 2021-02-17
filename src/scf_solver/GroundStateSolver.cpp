@@ -344,7 +344,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
 
     F.clear();
     mpi::barrier(mpi::comm_orb);
-    if (mpi::bank_size > 0) mpi::orb_bank.clear_all(mpi::orb_rank, mpi::comm_orb);
 
     printConvergence(converged, "Total energy");
     reset();

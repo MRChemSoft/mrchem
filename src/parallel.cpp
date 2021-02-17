@@ -30,6 +30,7 @@
 #include "qmfunctions/ComplexFunction.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
+#include "utils/Bank.h"
 
 #ifdef MRCHEM_HAS_OMP
 #ifndef MRCPP_HAS_OMP
@@ -58,6 +59,8 @@ int n_threads = mrchem_get_max_threads();
 
 using namespace Eigen;
 
+CentralBank dataBank;
+
 namespace mpi {
 
 bool numerically_exact = false;
@@ -71,9 +74,11 @@ int share_size = 1;
 int share_rank = 0;
 int sh_group_rank = 0;
 int is_bank = 0;
+int is_centralbank = 0;
 int is_bankclient = 1;
 int is_bankmaster = 0; // only one bankmaster is_bankmaster
 int bank_size = -1;
+int max_tag = 0; // max value allowed by MPI. Set by initialize()
 std::vector<int> bankmaster;
 
 MPI_Comm comm_orb;
@@ -81,14 +86,12 @@ MPI_Comm comm_share;
 MPI_Comm comm_sh_group;
 MPI_Comm comm_bank;
 
-Bank orb_bank;
-
 } // namespace mpi
 
 int id_shift; // to ensure that nodes, orbitals and functions do not collide
 
-int metadata_block[3]; // can add more metadata in future
-int const size_metadata = 3;
+extern int metadata_block[3]; // can add more metadata in future
+extern int const size_metadata = 3;
 
 void mpi::initialize() {
     Eigen::setNbThreads(1);
@@ -124,10 +127,12 @@ void mpi::initialize() {
     if (mpi::world_rank < mpi::world_size - mpi::bank_size) {
         // everything which is left
         mpi::is_bank = 0;
+        mpi::is_centralbank = 0;
         mpi::is_bankclient = 1;
     } else {
-        // special group of bankmasters
+        // special group of centralbankmasters
         mpi::is_bank = 1;
+        mpi::is_centralbank = 1;
         mpi::is_bankclient = 0;
         if (mpi::world_rank == mpi::world_size - mpi::bank_size) mpi::is_bankmaster = 1;
     }
@@ -160,11 +165,12 @@ void mpi::initialize() {
     void *val;
     int flag;
     MPI_Comm_get_attr(MPI_COMM_WORLD, MPI_TAG_UB, &val, &flag); // max value allowed by MPI for tags
-    id_shift = *(int *)val / 2;                                 // half is reserved for non orbital.
+    max_tag = *(int *)val / 2;
+    id_shift = max_tag / 2; // half is reserved for non orbital.
 
     if (mpi::is_bank) {
         // bank is open until end of program
-        mpi::orb_bank.open();
+        if (mpi::is_centralbank) { dataBank.open(); }
         mpi::finalize();
         exit(EXIT_SUCCESS);
     }
@@ -175,9 +181,10 @@ void mpi::initialize() {
 
 void mpi::finalize() {
 #ifdef MRCHEM_HAS_MPI
+    std::cout << world_rank << " finalize" << std::endl;
     if (mpi::bank_size > 0 and mpi::grand_master()) {
-        println(3, " max data in bank " << mpi::orb_bank.get_maxtotalsize() << " MB ");
-        mpi::orb_bank.close();
+        println(3, " max data in bank " << dataBank.get_maxtotalsize() << " MB ");
+        dataBank.close();
     }
     MPI_Barrier(MPI_COMM_WORLD); // to ensure everybody got here
     MPI_Finalize();
@@ -520,722 +527,6 @@ void mpi::broadcast_Tree_noCoeff(mrcpp::FunctionTree<3> &tree, MPI_Comm comm) {
         fac /= 2;
     }
     MPI_Barrier(comm);
-#endif
-}
-
-/**************************
- * Bank related functions *
- **************************/
-
-Bank::~Bank() {
-    for (int ix = 1; ix < this->deposits.size(); ix++) this->clear(ix);
-}
-
-void Bank::open() {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    char safe_data1;
-    int deposit_size = sizeof(bank::deposit);
-    int n_chunks, ix;
-    int message;
-    int datasize = -1;
-    struct Blockdata_struct {
-        std::vector<double *> data; // to store the incoming data
-        std::vector<bool> deleted;  // to indicate if it has been deleted already
-        MatrixXd BlockData;         // to put the final block
-        // eigen matrix are per default stored column-major (one can add columns at the end)
-        std::vector<int> N_rows;
-        std::map<int, int> id2data; // internal index of the data in the block
-        std::vector<int> id;        // the id of each column. Either nodeid, or orbid
-    };
-    std::map<int, Blockdata_struct *> nodeid2block; // to get block from its nodeid (all coeff for one node)
-    std::map<int, Blockdata_struct *> orbid2block;  // to get block from its orbid
-
-    deposits.resize(1); // we reserve 0, since it is the value returned for undefined key
-    queue.resize(1);    // we reserve 0, since it is the value returned for undefined key
-
-    bool printinfo = false;
-
-    // The bank never goes out of this loop until it receives a close message!
-    while (true) {
-        MPI_Recv(&message, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG, mpi::comm_bank, &status);
-        if (printinfo)
-            std::cout << mpi::world_rank << " got message " << message << " from " << status.MPI_SOURCE << std::endl;
-        if (message == CLOSE_BANK) {
-            if (mpi::is_bankmaster and printinfo) std::cout << "Bank is closing" << std::endl;
-            this->clear_bank();
-            break; // close bank, i.e stop listening for incoming messages
-        }
-        if (message == CLEAR_BANK) {
-            this->clear_bank();
-            for (auto const &block : nodeid2block) {
-                if (block.second == nullptr) continue;
-                for (int i = 0; i < block.second->data.size(); i++) {
-                    if (not block.second->deleted[i]) {
-                        this->currentsize -= block.second->N_rows[i] / 128; // converted into kB
-                        delete[] block.second->data[i];
-                    }
-                }
-                delete block.second;
-            }
-            nodeid2block.clear();
-            orbid2block.clear();
-            // send message that it is ready (value of message is not used)
-            MPI_Ssend(&message, 1, MPI_INT, status.MPI_SOURCE, 77, mpi::comm_bank);
-        }
-        if (message == CLEAR_BLOCKS) {
-            // clear only blocks whith id less than status.MPI_TAG.
-            std::vector<int> toeraseVec; // it is dangerous to erase an iterator within its own loop
-            for (auto const &block : nodeid2block) {
-                if (block.second == nullptr) toeraseVec.push_back(block.first);
-                if (block.second == nullptr) continue;
-                if (block.first >= status.MPI_TAG and status.MPI_TAG != 0) continue;
-                for (int i = 0; i < block.second->data.size(); i++) {
-                    if (not block.second->deleted[i]) {
-                        this->currentsize -= block.second->N_rows[i] / 128; // converted into kB
-                        delete[] block.second->data[i];
-                    }
-                }
-                this->currentsize -= block.second->BlockData.size() / 128; // converted into kB
-                block.second->BlockData.resize(0, 0); // NB: the matrix does not clear itself otherwise
-                assert(this->currentsize >= 0);
-                this->currentsize = std::max(0ll, this->currentsize);
-                toeraseVec.push_back(block.first);
-            }
-            for (int ierase : toeraseVec) { nodeid2block.erase(ierase); }
-            toeraseVec.clear();
-            std::vector<int> datatoeraseVec;
-            for (auto const &block : orbid2block) {
-                if (block.second == nullptr) toeraseVec.push_back(block.first);
-                if (block.second == nullptr) continue;
-                datatoeraseVec.clear();
-                for (int i = 0; i < block.second->data.size(); i++) {
-                    if (block.second->id[i] < status.MPI_TAG or status.MPI_TAG == 0) datatoeraseVec.push_back(i);
-                    if (block.second->id[i] < status.MPI_TAG or status.MPI_TAG == 0) block.second->data[i] = nullptr;
-                }
-                std::sort(datatoeraseVec.begin(), datatoeraseVec.end());
-                std::reverse(datatoeraseVec.begin(), datatoeraseVec.end());
-                for (int ierase : datatoeraseVec) {
-                    block.second->id.erase(block.second->id.begin() + ierase);
-                    block.second->data.erase(block.second->data.begin() + ierase);
-                    block.second->N_rows.erase(block.second->N_rows.begin() + ierase);
-                }
-                if (block.second->data.size() == 0) toeraseVec.push_back(block.first);
-            }
-            for (int ierase : toeraseVec) { orbid2block.erase(ierase); }
-
-            if (status.MPI_TAG == 0) orbid2block.clear();
-            // could have own clear for data?
-            for (int ix = 1; ix < deposits.size(); ix++) {
-                if (deposits[ix].id >= id_shift) {
-                    if (deposits[ix].hasdata) delete deposits[ix].data;
-                    if (deposits[ix].hasdata) id2ix[deposits[ix].id] = 0; // indicate that it does not exist
-                    deposits[ix].hasdata = false;
-                }
-            }
-            // send message that it is ready (value of message is not used)
-            MPI_Ssend(&message, 1, MPI_INT, status.MPI_SOURCE, 78, mpi::comm_bank);
-        }
-        if (message == GETMAXTOTDATA) {
-            int maxsize_int = maxsize / 1024; // convert into MB
-            MPI_Send(&maxsize_int, 1, MPI_INT, status.MPI_SOURCE, 1171, mpi::comm_bank);
-        }
-        if (message == GETTOTDATA) {
-            int maxsize_int = currentsize / 1024; // convert into MB
-            MPI_Send(&maxsize_int, 1, MPI_INT, status.MPI_SOURCE, 1172, mpi::comm_bank);
-        }
-
-        if (message == GET_NODEDATA or message == GET_NODEBLOCK) {
-            // NB: has no queue system yet
-            int nodeid = status.MPI_TAG; // which block to fetch from
-            if (nodeid2block.count(nodeid) and nodeid2block[nodeid] != nullptr) {
-                Blockdata_struct *block = nodeid2block[nodeid];
-                int dataindex = 0; // internal index of the data in the block
-                int size = 0;
-                if (message == GET_NODEDATA) {
-                    // get id of data within block
-                    MPI_Recv(
-                        metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, nodeid + 1, mpi::comm_bank, &status);
-                    int orbid = metadata_block[1];     // which part of the block to fetch
-                    dataindex = block->id2data[orbid]; // column of the data in the block
-                    size = block->N_rows[dataindex];   // number of doubles to fetch
-                    if (metadata_block[2] == 0) {
-                        metadata_block[2] = size;
-                        MPI_Send(metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, nodeid, mpi::comm_bank);
-                    }
-                } else {
-                    // send entire block. First make one contiguous superblock
-                    // Prepare the data as one contiguous block
-                    if (block->data.size() == 0)
-                        std::cout << "Zero size blockdata! " << nodeid << " " << block->N_rows.size() << std::endl;
-                    block->BlockData.resize(block->N_rows[0], block->data.size());
-                    size = block->N_rows[0] * block->data.size();
-                    if (printinfo)
-                        std::cout << " rewrite into superblock " << block->data.size() << " " << block->N_rows[0]
-                                  << " tag " << status.MPI_TAG << std::endl;
-                    for (int j = 0; j < block->data.size(); j++) {
-                        for (int i = 0; i < block->N_rows[j]; i++) { block->BlockData(i, j) = block->data[j][i]; }
-                    }
-                    // repoint to the data in BlockData
-                    for (int j = 0; j < block->data.size(); j++) {
-                        if (block->deleted[j] == true) std::cout << "ERROR data already deleted " << std::endl;
-                        assert(block->deleted[j] == false);
-                        delete[] block->data[j];
-                        block->deleted[j] = true;
-                        block->data[j] = block->BlockData.col(j).data();
-                    }
-                    dataindex = 0; // start from first column
-                    // send info about the size of the superblock
-                    metadata_block[0] = status.MPI_TAG;     // nodeid
-                    metadata_block[1] = block->data.size(); // number of columns
-                    metadata_block[2] = size;               // total size = rows*columns
-                    MPI_Send(metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, nodeid, mpi::comm_bank);
-                    // send info about the id of each column
-                    MPI_Send(
-                        block->id.data(), metadata_block[1], MPI_INT, status.MPI_SOURCE, nodeid + 1, mpi::comm_bank);
-                }
-                double *data_p = block->data[dataindex];
-                if (size > 0) MPI_Send(data_p, size, MPI_DOUBLE, status.MPI_SOURCE, nodeid + 2, mpi::comm_bank);
-            } else {
-                // Block with this id does not exist.
-                if (message == GET_NODEDATA) {
-                    MPI_Recv(
-                        metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, nodeid + 1, mpi::comm_bank, &status);
-                    int size = metadata_block[2]; // number of doubles to send
-                    if (size == 0) {
-                        metadata_block[2] = size;
-                        MPI_Send(metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, nodeid, mpi::comm_bank);
-                    } else {
-                        std::vector<double> zero(size, 0.0); // send zeroes
-                        MPI_Ssend(zero.data(), size, MPI_DOUBLE, status.MPI_SOURCE, nodeid + 2, mpi::comm_bank);
-                    }
-                } else {
-                    metadata_block[0] = status.MPI_TAG; // nodeid
-                    metadata_block[1] = 0;              // number of columns
-                    metadata_block[2] = 0;              // total size = rows*columns
-                    MPI_Send(
-                        metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, metadata_block[0], mpi::comm_bank);
-                }
-            }
-        }
-        if (message == GET_ORBBLOCK) {
-            // NB: BLOCKDATA has no queue system yet
-            int orbid = status.MPI_TAG; // which block to fetch from
-
-            if (orbid2block.count(orbid) and orbid2block[orbid] != nullptr) {
-                Blockdata_struct *block = orbid2block[orbid];
-                int dataindex = 0; // internal index of the data in the block
-                int size = 0;
-                // send entire block. First make one contiguous superblock
-                // Prepare the data as one contiguous block
-                if (block->data.size() == 0)
-                    std::cout << "Zero size blockdata! C " << orbid << " " << block->N_rows.size() << std::endl;
-                size = 0;
-                for (int j = 0; j < block->data.size(); j++) size += block->N_rows[j];
-
-                std::vector<double> coeff(size);
-                int ij = 0;
-                for (int j = 0; j < block->data.size(); j++) {
-                    for (int i = 0; i < block->N_rows[j]; i++) { coeff[ij++] = block->data[j][i]; }
-                }
-                // send info about the size of the superblock
-                metadata_block[0] = orbid;
-                metadata_block[1] = block->data.size(); // number of columns
-                metadata_block[2] = size;               // total size = rows*columns
-                MPI_Send(metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, orbid, mpi::comm_bank);
-                MPI_Send(block->id.data(), metadata_block[1], MPI_INT, status.MPI_SOURCE, orbid + 1, mpi::comm_bank);
-                MPI_Send(coeff.data(), size, MPI_DOUBLE, status.MPI_SOURCE, orbid + 2, mpi::comm_bank);
-            } else {
-                // it is possible and allowed that the block has not been written
-                if (printinfo)
-                    std::cout << " block does not exist " << orbid << " " << orbid2block.count(orbid) << std::endl;
-                // Block with this id does not exist.
-                metadata_block[0] = orbid;
-                metadata_block[1] = 0; // number of columns
-                metadata_block[2] = 0; // total size = rows*columns
-                MPI_Send(metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, orbid, mpi::comm_bank);
-            }
-        }
-
-        if (message == GET_ORBITAL or message == GET_ORBITAL_AND_WAIT or message == GET_ORBITAL_AND_DELETE or
-            message == GET_FUNCTION or message == GET_DATA) {
-            // withdrawal
-            int ix = id2ix[status.MPI_TAG];
-            if (ix == 0) {
-                if (printinfo) std::cout << mpi::world_rank << " not found " << status.MPI_TAG << std::endl;
-                if (message == GET_ORBITAL or message == GET_ORBITAL_AND_DELETE) {
-                    // do not wait for the orbital to arrive
-                    int found = 0;
-                    if (printinfo)
-                        std::cout << mpi::world_rank << " sending found 0 to " << status.MPI_SOURCE << std::endl;
-                    MPI_Send(&found, 1, MPI_INT, status.MPI_SOURCE, 117, mpi::comm_bank);
-                } else {
-                    // the id does not exist. Put in queue and Wait until it is defined
-                    if (printinfo) std::cout << mpi::world_rank << " queuing " << status.MPI_TAG << std::endl;
-                    if (id2qu[status.MPI_TAG] == 0) {
-                        queue.push_back({status.MPI_TAG, {status.MPI_SOURCE}});
-                        id2qu[status.MPI_TAG] = queue.size() - 1;
-                    } else {
-                        // somebody is already waiting for this id. queue in queue
-                        queue[id2qu[status.MPI_TAG]].clients.push_back(status.MPI_SOURCE);
-                    }
-                }
-            } else {
-                if (deposits[ix].id != status.MPI_TAG) std::cout << ix << " Bank accounting error " << std::endl;
-                if (message == GET_ORBITAL or message == GET_ORBITAL_AND_WAIT or message == GET_ORBITAL_AND_DELETE) {
-                    if (message == GET_ORBITAL or message == GET_ORBITAL_AND_DELETE) {
-                        int found = 1;
-                        MPI_Send(&found, 1, MPI_INT, status.MPI_SOURCE, 117, mpi::comm_bank);
-                    }
-                    mpi::send_orbital(*deposits[ix].orb, status.MPI_SOURCE, deposits[ix].id, mpi::comm_bank);
-                    if (message == GET_ORBITAL_AND_DELETE) {
-                        this->currentsize -= deposits[ix].orb->getSizeNodes(NUMBER::Total);
-                        deposits[ix].orb->free(NUMBER::Total);
-                        id2ix[status.MPI_TAG] = 0;
-                    }
-                }
-                if (message == GET_FUNCTION) {
-                    mpi::send_function(*deposits[ix].orb, status.MPI_SOURCE, deposits[ix].id, mpi::comm_bank);
-                }
-                if (message == GET_DATA) {
-                    MPI_Send(deposits[ix].data,
-                             deposits[ix].datasize,
-                             MPI_DOUBLE,
-                             status.MPI_SOURCE,
-                             deposits[ix].id,
-                             mpi::comm_bank);
-                }
-            }
-        }
-        if (message == SAVE_NODEDATA) {
-            // get the extra metadata
-            MPI_Recv(
-                metadata_block, size_metadata, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, mpi::comm_bank, &status);
-            int nodeid = metadata_block[0]; // which block to write (should = status.MPI_TAG)
-            int orbid = metadata_block[1];  // which part of the block
-            int size = metadata_block[2];   // number of doubles
-
-            // test if the block exists already
-            if (printinfo)
-                std::cout << mpi::world_rank << " save data nodeid " << nodeid << " size " << size << std::endl;
-            if (nodeid2block.count(nodeid) == 0 or nodeid2block[nodeid] == nullptr) {
-                if (printinfo) std::cout << mpi::world_rank << " block does not exist yet  " << std::endl;
-                // the block does not exist yet, create it
-                Blockdata_struct *block = new Blockdata_struct;
-                nodeid2block[nodeid] = block;
-            }
-            if (orbid2block.count(orbid) == 0 or orbid2block[orbid] == nullptr) {
-                // the block does not exist yet, create it
-                Blockdata_struct *orbblock = new Blockdata_struct;
-                orbid2block[orbid] = orbblock;
-            }
-            // append the incoming data
-            Blockdata_struct *block = nodeid2block[nodeid];
-            block->id2data[orbid] = nodeid2block[nodeid]->data.size(); // internal index of the data in the block
-            double *data_p = new double[size];
-            this->currentsize += size / 128; // converted into kB
-            this->maxsize = std::max(this->currentsize, this->maxsize);
-            block->data.push_back(data_p);
-            block->deleted.push_back(false);
-            block->id.push_back(orbid);
-            block->N_rows.push_back(size);
-
-            Blockdata_struct *orbblock = orbid2block[orbid];
-            orbblock->id2data[nodeid] = orbblock->data.size(); // internal index of the data in the block
-            orbblock->data.push_back(data_p);
-            orbblock->deleted.push_back(false);
-            orbblock->id.push_back(nodeid);
-            orbblock->N_rows.push_back(size);
-
-            MPI_Recv(data_p, size, MPI_DOUBLE, status.MPI_SOURCE, status.MPI_TAG, mpi::comm_bank, &status);
-            if (printinfo)
-                std::cout << " written block " << nodeid << " id " << orbid << " subblocks "
-                          << nodeid2block[nodeid]->data.size() << std::endl;
-        }
-        if (message == SAVE_ORBITAL or message == SAVE_FUNCTION or message == SAVE_DATA) {
-            // make a new deposit
-            int exist_flag = 0;
-            if (id2ix[status.MPI_TAG]) {
-                std::cout << "WARNING: id " << status.MPI_TAG << " exists already"
-                          << " " << status.MPI_SOURCE << " " << message << " " << std::endl;
-                ix = id2ix[status.MPI_TAG]; // the deposit exist from before. Will be overwritten
-                exist_flag = 1;
-                if (message == SAVE_DATA and !deposits[ix].hasdata) {
-                    exist_flag = 0;
-                    deposits[ix].data = new double[datasize];
-                    deposits[ix].hasdata = true;
-                }
-            } else {
-                ix = deposits.size(); // NB: ix is now index of last element + 1
-                deposits.resize(ix + 1);
-                if (message == SAVE_ORBITAL or message == SAVE_FUNCTION) deposits[ix].orb = new Orbital(0);
-                if (message == SAVE_DATA) {
-                    deposits[ix].data = new double[datasize];
-                    deposits[ix].hasdata = true;
-                }
-            }
-            deposits[ix].id = status.MPI_TAG;
-            id2ix[deposits[ix].id] = ix;
-            deposits[ix].source = status.MPI_SOURCE;
-            if (message == SAVE_ORBITAL) {
-                mpi::recv_orbital(*deposits[ix].orb, deposits[ix].source, deposits[ix].id, mpi::comm_bank);
-                if (exist_flag == 0) {
-                    this->currentsize += deposits[ix].orb->getSizeNodes(NUMBER::Total);
-                    this->maxsize = std::max(this->currentsize, this->maxsize);
-                }
-            }
-            if (message == SAVE_FUNCTION) {
-                mpi::recv_function(*deposits[ix].orb, deposits[ix].source, deposits[ix].id, mpi::comm_bank);
-            }
-            if (message == SAVE_DATA) {
-                deposits[ix].datasize = datasize;
-                MPI_Recv(deposits[ix].data,
-                         datasize,
-                         MPI_DOUBLE,
-                         deposits[ix].source,
-                         deposits[ix].id,
-                         mpi::comm_bank,
-                         &status);
-                this->currentsize += datasize / 128; // converted into kB
-                this->maxsize = std::max(this->currentsize, this->maxsize);
-            }
-            if (id2qu[deposits[ix].id] != 0) {
-                // someone is waiting for those data. Send to them
-                int iq = id2qu[deposits[ix].id];
-                if (deposits[ix].id != queue[iq].id) std::cout << ix << " Bank queue accounting error " << std::endl;
-                for (int iqq : queue[iq].clients) {
-                    if (message == SAVE_ORBITAL) {
-                        mpi::send_orbital(*deposits[ix].orb, iqq, queue[iq].id, mpi::comm_bank);
-                    }
-                    if (message == SAVE_FUNCTION) {
-                        mpi::send_function(*deposits[ix].orb, iqq, queue[iq].id, mpi::comm_bank);
-                    }
-                    if (message == SAVE_DATA) {
-                        MPI_Send(deposits[ix].data, datasize, MPI_DOUBLE, iqq, queue[iq].id, mpi::comm_bank);
-                    }
-                }
-                queue[iq].clients.clear(); // cannot erase entire queue[iq], because that would require to shift all the
-                                           // id2qu value larger than iq
-                queue[iq].id = -1;
-                id2qu.erase(deposits[ix].id);
-            }
-        }
-        if (message == SET_DATASIZE) {
-            int datasize_new;
-            MPI_Recv(&datasize_new, 1, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, mpi::comm_bank, &status);
-            if (datasize_new != datasize) {
-                // make sure that all old data arrays are deleted
-                for (int ix = 1; ix < deposits.size(); ix++) {
-                    if (deposits[ix].hasdata) {
-                        delete deposits[ix].data;
-                        deposits[ix].hasdata = false;
-                    }
-                }
-            }
-            datasize = datasize_new;
-        }
-    }
-#endif
-}
-
-// save orbital in Bank with identity id
-int Bank::put_orb(int id, Orbital &orb) {
-#ifdef MRCHEM_HAS_MPI
-    // for now we distribute according to id
-    if (id > id_shift) MSG_ABORT("Bank id must be less than max allowed tag / 2 ");
-    MPI_Send(&SAVE_ORBITAL, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    mpi::send_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-#endif
-    return 1;
-}
-
-// get orbital with identity id.
-// If wait=0, return immediately with value zero if not available (default)
-// else, wait until available
-int Bank::get_orb(int id, Orbital &orb, int wait) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    if (wait == 0) {
-        MPI_Send(&GET_ORBITAL, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-        int found;
-        MPI_Recv(&found, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], 117, mpi::comm_bank, &status);
-        if (found != 0) {
-            mpi::recv_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-            return 1;
-        } else {
-            return 0;
-        }
-    } else {
-        MPI_Send(&GET_ORBITAL_AND_WAIT, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-        mpi::recv_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    }
-#endif
-    return 1;
-}
-
-// get orbital with identity id, and delete from bank.
-// return immediately with value zero if not available
-int Bank::get_orb_del(int id, Orbital &orb) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    MPI_Send(&GET_ORBITAL_AND_DELETE, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    int found;
-    MPI_Recv(&found, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], 117, mpi::comm_bank, &status);
-    if (found != 0) {
-        mpi::recv_orbital(orb, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-        return 1;
-    } else {
-        return 0;
-    }
-#endif
-    return 1;
-}
-
-// save function in Bank with identity id
-int Bank::put_func(int id, QMFunction &func) {
-#ifdef MRCHEM_HAS_MPI
-    // for now we distribute according to id
-    id += id_shift;
-    MPI_Send(&SAVE_FUNCTION, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    mpi::send_function(func, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-#endif
-    return 1;
-}
-
-// get function with identity id
-int Bank::get_func(int id, QMFunction &func) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    id += id_shift;
-    MPI_Send(&GET_FUNCTION, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    mpi::recv_function(func, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-#endif
-    return 1;
-}
-
-// set the size of the data arrays (in size of doubles) to be sent/received later
-int Bank::set_datasize(int datasize) {
-#ifdef MRCHEM_HAS_MPI
-    for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&SET_DATASIZE, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
-        MPI_Send(&datasize, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
-    }
-#endif
-    return 1;
-}
-
-// save data in Bank with identity id . datasize MUST have been set already. NB:not tested
-int Bank::put_data(int id, int size, double *data) {
-#ifdef MRCHEM_HAS_MPI
-    // for now we distribute according to id
-    id += id_shift;
-    MPI_Send(&SAVE_DATA, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    MPI_Send(data, size, MPI_DOUBLE, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-#endif
-    return 1;
-}
-
-// get data with identity id
-int Bank::get_data(int id, int size, double *data) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    id += id_shift;
-    MPI_Send(&GET_DATA, 1, MPI_INT, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank);
-    MPI_Recv(data, size, MPI_DOUBLE, mpi::bankmaster[id % mpi::bank_size], id, mpi::comm_bank, &status);
-#endif
-    return 1;
-}
-
-// save data in Bank with identity id as part of block with identity nodeid.
-int Bank::put_nodedata(int id, int nodeid, int size, double *data) {
-#ifdef MRCHEM_HAS_MPI
-    // for now we distribute according to nodeid
-    metadata_block[0] = nodeid; // which block
-    metadata_block[1] = id;     // id within block
-    metadata_block[2] = size;   // size of this data
-    MPI_Send(&SAVE_NODEDATA, 1, MPI_INT, mpi::bankmaster[nodeid % mpi::bank_size], nodeid, mpi::comm_bank);
-    MPI_Send(metadata_block, size_metadata, MPI_INT, mpi::bankmaster[nodeid % mpi::bank_size], nodeid, mpi::comm_bank);
-    MPI_Send(data, size, MPI_DOUBLE, mpi::bankmaster[nodeid % mpi::bank_size], nodeid, mpi::comm_bank);
-#endif
-    return 1;
-}
-
-// get data with identity id
-int Bank::get_nodedata(int id, int nodeid, int size, double *data, std::vector<int> &idVec) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    // get the column with identity id
-    metadata_block[0] = nodeid; // which block
-    metadata_block[1] = id;     // id within block.
-    metadata_block[2] = size;   // expected size of data
-    MPI_Send(&GET_NODEDATA, 1, MPI_INT, mpi::bankmaster[nodeid % mpi::bank_size], nodeid, mpi::comm_bank);
-    MPI_Send(
-        metadata_block, size_metadata, MPI_INT, mpi::bankmaster[nodeid % mpi::bank_size], nodeid + 1, mpi::comm_bank);
-
-    MPI_Recv(data, size, MPI_DOUBLE, mpi::bankmaster[nodeid % mpi::bank_size], nodeid + 2, mpi::comm_bank, &status);
-#endif
-    return 1;
-}
-
-// get all data for nodeid
-int Bank::get_nodeblock(int nodeid, double *data, std::vector<int> &idVec) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    // get the entire superblock and also the id of each column
-    MPI_Send(&GET_NODEBLOCK, 1, MPI_INT, mpi::bankmaster[nodeid % mpi::bank_size], nodeid, mpi::comm_bank);
-    MPI_Recv(metadata_block,
-             size_metadata,
-             MPI_INT,
-             mpi::bankmaster[nodeid % mpi::bank_size],
-             nodeid,
-             mpi::comm_bank,
-             &status);
-    idVec.resize(metadata_block[1]);
-    int size = metadata_block[2];
-    if (size > 0)
-        MPI_Recv(idVec.data(),
-                 metadata_block[1],
-                 MPI_INT,
-                 mpi::bankmaster[nodeid % mpi::bank_size],
-                 nodeid + 1,
-                 mpi::comm_bank,
-                 &status);
-    if (size > 0)
-        MPI_Recv(data, size, MPI_DOUBLE, mpi::bankmaster[nodeid % mpi::bank_size], nodeid + 2, mpi::comm_bank, &status);
-#endif
-    return 1;
-}
-
-// get all data with identity orbid
-int Bank::get_orbblock(int orbid, double *&data, std::vector<int> &nodeidVec, int bankstart) {
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    int nodeid = mpi::orb_rank + bankstart;
-    // get the entire superblock and also the nodeid of each column
-    MPI_Send(&GET_ORBBLOCK, 1, MPI_INT, mpi::bankmaster[nodeid % mpi::bank_size], orbid, mpi::comm_bank);
-    MPI_Recv(metadata_block,
-             size_metadata,
-             MPI_INT,
-             mpi::bankmaster[nodeid % mpi::bank_size],
-             orbid,
-             mpi::comm_bank,
-             &status);
-    nodeidVec.resize(metadata_block[1]);
-    int totsize = metadata_block[2];
-    if (totsize > 0)
-        MPI_Recv(nodeidVec.data(),
-                 metadata_block[1],
-                 MPI_INT,
-                 mpi::bankmaster[nodeid % mpi::bank_size],
-                 orbid + 1,
-                 mpi::comm_bank,
-                 &status);
-    data = new double[totsize];
-    if (totsize > 0)
-        MPI_Recv(
-            data, totsize, MPI_DOUBLE, mpi::bankmaster[nodeid % mpi::bank_size], orbid + 2, mpi::comm_bank, &status);
-#endif
-    return 1;
-}
-
-// Ask to close the Bank
-void Bank::close() {
-#ifdef MRCHEM_HAS_MPI
-    for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&CLOSE_BANK, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
-    }
-#endif
-}
-
-int Bank::get_maxtotalsize() {
-    int maxtot = 0;
-#ifdef MRCHEM_HAS_MPI
-    MPI_Status status;
-    int datasize;
-    for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&GETMAXTOTDATA, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
-        MPI_Recv(&datasize, 1, MPI_INT, mpi::bankmaster[i], 1171, mpi::comm_bank, &status);
-        maxtot = std::max(maxtot, datasize);
-    }
-#endif
-    return maxtot;
-}
-
-std::vector<int> Bank::get_totalsize() {
-    std::vector<int> tot;
-#ifdef HAVE_MPI
-    MPI_Status status;
-    int datasize;
-    for (int i = 0; i < mpi::bank_size; i++) {
-        MPI_Send(&GETTOTDATA, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
-        MPI_Recv(&datasize, 1, MPI_INT, mpi::bankmaster[i], 1172, mpi::comm_bank, &status);
-        tot.push_back(datasize);
-    }
-#endif
-    return tot;
-}
-
-// remove all deposits
-// NB:: collective call. All clients must call this
-void Bank::clear_all(int iclient, MPI_Comm comm) {
-#ifdef MRCHEM_HAS_MPI
-    // 1) wait until all clients are ready
-    mpi::barrier(comm);
-    // master send signal to bank
-    if (iclient == 0) {
-        for (int i = 0; i < mpi::bank_size; i++) {
-            // should be made explicitely non-blocking
-            MPI_Send(&CLEAR_BANK, 1, MPI_INT, mpi::bankmaster[i], 0, mpi::comm_bank);
-        }
-        for (int i = 0; i < mpi::bank_size; i++) {
-            // wait until Bank is finished and has sent signal
-            MPI_Status status;
-            int message;
-            MPI_Recv(&message, 1, MPI_INT, mpi::bankmaster[i], 77, mpi::comm_bank, &status);
-        }
-    }
-    mpi::barrier(comm);
-#endif
-}
-
-// remove all blockdata with nodeid < nodeidmax
-// NB:: collective call. All clients must call this
-void Bank::clear_blockdata(int iclient, int nodeidmax, MPI_Comm comm) {
-#ifdef MRCHEM_HAS_MPI
-    // 1) wait until all clients are ready
-    mpi::barrier(comm);
-    // master send signal to bank
-    if (iclient == 0) {
-        for (int i = 0; i < mpi::bank_size; i++) {
-            MPI_Send(&CLEAR_BLOCKS, 1, MPI_INT, mpi::bankmaster[i], nodeidmax, mpi::comm_bank);
-        }
-        for (int i = 0; i < mpi::bank_size; i++) {
-            // wait until Bank is finished and has sent signal
-            MPI_Status status;
-            int message;
-            MPI_Recv(&message, 1, MPI_INT, mpi::bankmaster[i], 78, mpi::comm_bank, &status);
-        }
-    }
-    mpi::barrier(comm);
-#endif
-}
-
-void Bank::clear_bank() {
-#ifdef MRCHEM_HAS_MPI
-    for (int ix = 1; ix < this->deposits.size(); ix++) this->clear(ix);
-    this->deposits.resize(1);
-    this->queue.resize(1);
-    this->id2ix.clear();
-    this->id2qu.clear();
-    this->currentsize = 0;
-#endif
-}
-
-void Bank::clear(int ix) {
-#ifdef MRCHEM_HAS_MPI
-    if (deposits[ix].orb != nullptr) deposits[ix].orb->free(NUMBER::Total);
-    if (deposits[ix].hasdata) delete deposits[ix].data;
-    deposits[ix].hasdata = false;
 #endif
 }
 

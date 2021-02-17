@@ -150,14 +150,17 @@ library on Betzy.
   Tells the system to place the first MPI rank on the first node, the second MPI
   rank on the second node, until the last node, then start at the first node again.
 
-``--map-by numa``
-  Tells the system to map MPI ranks according to NUMA (Non Uniform Memory Access).
+``--map-by socket``
+  Tells the system to map (group) MPI ranks according to socket before distribution
+  between nodes. This will ensure that for example two bank cores will access
+  different parts of memory.
+
+``--bind-to numa``
+  Tells the system to bind cores to one NUMA (Non Uniform Memory Access) group.
   On Betzy memory configuration groups cores by groups of 16, with cores in the same
   group having the same access to memory (other cores will have access to that part
   of the memory too, but slower).
-
-``--bind-to numa``
-  Tells the system to bind cores to one NUMA group. That means that a process will
+  That means that a process will
   only be allowed to use one of the 16 cores of the group. (The operating system may
   change the core assigned to a thread/process and, without precautions, it may be
   assigned to any other core, which would result in much reduced performance). The 16

@@ -33,6 +33,7 @@ class OrbitalIterator final {
 public:
     OrbitalIterator(OrbitalVector &Phi, bool sym = false);
 
+    BankAccount orbBank;
     bool next(int max_recv = -1);
     bool bank_next(int max_recv = 1);
 
