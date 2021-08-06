@@ -24,13 +24,15 @@
  */
 
 #include "CUBEfunction.h"
-#include <Eigen/Core>
-#include <Eigen/StdVector>
+
 #include <cmath>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+
+#include <Eigen/Core>
+#include <Eigen/StdVector>
 
 namespace mrchem {
 

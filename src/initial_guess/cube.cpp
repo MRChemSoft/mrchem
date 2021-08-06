@@ -23,15 +23,14 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "cube.h"
+
 #include <fstream>
 
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-
 #include <nlohmann/json.hpp>
-
-#include "cube.h"
 #include "parallel.h"
 
 #include "analyticfunctions/CUBEfunction.h"
