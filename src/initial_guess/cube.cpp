@@ -34,7 +34,7 @@
 #include "cube.h"
 #include "parallel.h"
 
-#include "qmfunctions/CUBEfunction.h"
+#include "analyticfunctions/CUBEfunction.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
