@@ -42,7 +42,6 @@ def translate_input(user_dict):
     mra_dict = write_mra(user_dict, mol_dict)
     scf_dict = write_scf_calculation(user_dict, mol_dict, origin)
     rsp_dict = write_rsp_calculations(user_dict, mol_dict, origin)
-    CUBE_guess= write_cube_dict(user_dict)
 
     # piece everything together
     program_dict = {
@@ -54,7 +53,6 @@ def translate_input(user_dict):
         "molecule": mol_dict,
         "scf_calculation": scf_dict,
         "rsp_calculations": rsp_dict,
-        "CUBE_guess": CUBE_guess,
     }
     return program_dict
 

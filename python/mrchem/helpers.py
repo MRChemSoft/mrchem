@@ -151,9 +151,8 @@ def write_scf_guess(user_dict, method_name):
 
     file_dict = user_dict["Files"]
 
-    CUBE_guess = write_cube_dict(file_dict)
-    if (CUBE_guess):
-        guess_type = "CUBE"
+    if (guess_type == 'cube'):
+        write_cube_dict(file_dict)
 
     guess_dict = {
         "zeta": zeta,
@@ -169,7 +168,7 @@ def write_scf_guess(user_dict, method_name):
         "file_gto_b": file_dict["guess_gto_b"],
         "file_phi_p": file_dict["guess_phi_p"] + "_scf",
         "file_phi_a": file_dict["guess_phi_a"] + "_scf",
-        "file_phi_b": file_dict["guess_phi_b"] + "_scf"
+        "file_phi_b": file_dict["guess_phi_b"] + "_scf",
         "file_CUBE_p": "CUBE_p_vector.json"
 
     }

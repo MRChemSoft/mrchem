@@ -538,7 +538,8 @@ sections:
              'sad_sz',
              'sad_dz',
              'sad_tz',
-             'sad_qz']"
+             'sad_qz',
+             'cube']"
         docstring: |
           Type of initial guess for ground state orbitals.
           ``chk`` restarts a previous calculation which was dumped using the

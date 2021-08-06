@@ -23,7 +23,6 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <fstream>
 #include <iostream>
 #include <string>
 
@@ -34,8 +33,6 @@
 #include "mrenv.h"
 #include "parallel.h"
 #include "version.h"
-
-#include "utils/CUBEfunction.h"
 
 #include "chemistry/Molecule.h"
 
@@ -54,18 +51,6 @@ int main(int argc, char **argv) {
 
     const auto json_inp = mrenv::fetch_json(argc, argv);
 
-    // read CUBE_vector.json if it exists
-    std::vector<mrchem::CUBEfunction> CUBEVector;
-    if (json_inp["scf_calculation"]["initial_guess"]["type"] == "CUBE") {
-
-        json cube_inp;
-        std::ifstream ifs("CUBE_p_vector.json", std::ios_base::in);
-        ifs >> cube_inp;
-        ifs.close();
-
-        CUBEVector = driver::getCUBEFunction(cube_inp);
-    }
-
     mrenv::initialize(json_inp);
     const auto &mol_inp = json_inp["molecule"];
     const auto &scf_inp = json_inp["scf_calculation"];
@@ -73,7 +58,6 @@ int main(int argc, char **argv) {
 
     Timer timer;
     Molecule mol;
-
     driver::init_molecule(mol_inp, mol);
     auto scf_out = driver::scf::run(scf_inp, mol);
     json rsp_out = {};
