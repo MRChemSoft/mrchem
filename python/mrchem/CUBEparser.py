@@ -35,7 +35,6 @@ def write_cube_dict(file_dict):
             cube_list.append(parse_cube_file(cube_path))
         with open("CUBE_p_vector.json", "w") as fd:
             dump(cube_list, fd, indent=2)
-    return
 
 
 def parse_cube_file(cube_path):
