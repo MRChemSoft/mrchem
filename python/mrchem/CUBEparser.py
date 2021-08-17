@@ -24,81 +24,167 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-import re
+import input_parser.plumbing.pyparsing as pp
 from json import dump
 
 def write_cube_dict(file_dict):
-    cube_path_list = file_dict["CUBEfiles"]
-    if (len(cube_path_list) != 0):
-        cube_list= []
-        for cube_path in cube_path_list:
-            cube_list.append(parse_cube_file(cube_path))
-        with open("CUBE_p_vector.json", "w") as fd:
-            dump(cube_list, fd, indent=2)
+    all_path_list = sort_paths(file_dict["CUBEfiles"]) # this is a temporary fix until I have decided how to order the different files
+    all_cube_list = []
+    for path_list in all_path_list:
+        cube_list = []
+        if (len(path_list) != 0):
+            for path in path_list:
+                cube_list.append(parse_cube_file(path))
+        all_cube_lists.append(cube_list)
 
+    with open("CUBE_p_vector.json", "w") as fd:
+        dump(all_cube_list[0], fd, indent=2)
+
+    with open("CUBE_a_vector.json", "w") as fd:
+        dump(all_cube_list[1], fd, indent=2)
+
+    with open("CUBE_b_vector.json", "w") as fd:
+        dump(all_cube_list[2], fd, indent=2)
+
+
+def sort_paths(path_l):
+    path_p = []
+    path_a = []
+    path_b = []
+    if (len(path_l) != 0):
+        for path in path_l:
+            path_s = path.split("_")
+            if ("p" == path_s[1]):
+                path_p.append(path)
+            elif("a" == path_s[1]):
+                path_a.append(path)
+            elif("b" == path_s[1]):
+                path_b.append(path)
+            else:
+                raise ValueError("Wrong CUBE file name format")
+    return [path_p, path_a, path_b]
+
+
+#TODO do a sanity check on the naming of the files with the amount of orbitals they have, and that they have the necessary amount of info
 
 def parse_cube_file(cube_path):
-    # set up the regex to fetch all voxel values
-    voxel_values = re.compile("((-| )\w\.\d+(E-|E\+)\d+)")
+
+    """
+    Pyparsing CUBE file
+    Authors: Roberto Di Remigio & Gabriel Gerez
+
+    Parses a CUBE file following the standard outlined in https://h5cube-spec.readthedocs.io/en/latest/cubeformat.html.
+    There are two optional values in this standard, giving a set of 4 different ways of writing a CUBE file.
+
+    Parameters
+    ----------
+    cube_path: path to Cube file to be parsed
+
+    Returns
+    -------
+    a dictionary with information about which path the CUBE file was parsed from, the header of the CUBE file
+    and vectors detailing the individual function values for each function plotted.
+    """
+
+    # non-zero unsigned integer
+    nonzero_uint_t = pp.Word("123456789", pp.nums).setParseAction(pp.pyparsing_common.convertToInteger)
+    # non-zero signed integer
+    nonzero_int_t = pp.Word("+-123456789", pp.nums).setParseAction(lambda t: abs(int(t[0])))
+    # floating point numbers, can be in scientific notation
+    float_t = pp.pyparsing_common.sci_real
+
+    # NVAL token
+    nval_t = pp.Optional(~pp.LineEnd() + nonzero_uint_t, default=1)("NVAL")
+
+    # Cartesian coordinates
+    # it could be alternatively defined as: coords = pp.Group(float_t("x") + float_t("y") + float_t("z"))
+    coords = pp.Group(float_t * 3)
+
+    # row with molecular geometry
+    geom_field_t = pp.Group(nonzero_uint_t("ATOMIC_NUMBER") + float_t("CHARGE") + coords("POSITION"))
+
+    # volumetric data
+    voxel_t = pp.delimitedList(float_t, delim=pp.Empty())("DATA")
+
+
+    # specification of cube axes
+    def axis_spec_t(d):
+        return pp.Group(nonzero_uint_t("NVOXELS") + coords("VECTOR"))(f"{d.upper()}AXIS")
+
+    before_t = pp.Group(float_t * 3)("ORIGIN") + nval_t + axis_spec_t("X") + axis_spec_t("Y") + axis_spec_t("Z")
+    # the parse action flattens the list
+    after_t = pp.Optional(pp.countedArray(pp.pyparsing_common.integer))("DSET_IDS").setParseAction(lambda t: t[0] if len(t) != 0 else t)
+
+    # The molecular geometry is a variable-length list of `geom_field_t` tokens.
+    # We use a modified implementation of `pyparsing`'s `countedArray` to define
+    # the token for thte whole cubefile preamble, with:
+
+    #- `before_t`: the tokens to be matched _before_ the molecular geometry:
+    #  `NATOMS`, `ORIGIN`, `NVAL` (defaults to 1 if absent), and the cube axes (`XAXIS`, `YAXIS`, `ZAXIS`)
+    #- `after_t`: the tokens to be matched _after_ the molecular geometry: `DSET_IDS`, if present.
+
+    def preamble_t(pre, post):
+        expr = pp.Forward()
+
+        def count(s, l, t):
+            n = t[0]
+            expr << (geom_field_t * n)("GEOM")
+            return n
+
+        natoms_t = nonzero_int_t("NATOMS")
+        natoms_t.addParseAction(count, callDuringTry=True)
+
+        return natoms_t + pre + expr + post
+
+    cube_t = preamble_t(before_t, after_t) + voxel_t
 
     # parse the whole file and extract both all the values and the header
-    cube_list = []
-    header_list = []
     with open(cube_path, "r") as cube_file:
-        for line in cube_file:
-            matches = re.findall(voxel_values, line)
-            if (len(matches) == 0):
-                header_list.append(line)
-            else:
-                voxel_list = [float(match[0]) for match in matches]
-                cube_list.extend(voxel_list)
+        # we skip the first two lines as they are only comments and put the rest of the file in a single string
+        cube_str = "\n".join(cube_file.readlines()[2:])
+
+    parsed_cube = cube_t.parseString(cube_str).asDict()
+
+
     # start extracting the header values
-    # get comments
-    comments = header_list[:2]
+
 
     # get cube origin data
-    origin_line = header_list[2].split()
-    N_atoms =int(origin_line[0])
-    origin = list(map(float, origin_line[1:4]))
-
-    # get voxel axis data to construct a basis for the cube space.
-    N_steps = []
-    Voxel_axes = []
-    for line in header_list[3:6]:
-        ls = line.split()
-        N_steps.append(int(ls[0]))
-        Voxel_axes.append(list(map(float, ls[1:])))
-
-    # get the atom coordinates
-    Z_n = []
-    atom_charges = []
-    atom_coords = []
-    for line in header_list[6:6+abs(N_atoms)]:
-        ls = line.split()
-        Z_n.append(int(ls[0]))
-        atom_charges.append(float(ls[1]))
-        atom_coords.append(list(map(float, ls[2:])))
+    N_atoms = parsed_cube["NATOMS"]
+    origin = parsed_cube["ORIGIN"]
 
     # Set the amount of values depending on if the DSET_IDs were present or not
-    if (N_atoms < 0):
-    # fetch all DSET_IDs, of these, only the first value is necessary, as it tells me the amount of values per voxel point. the other values might be important in the future, so I am fetching everything.
-        DSETIDs = []
-        for line in header_list[6+abs(N_atoms):]:
-            DSETIDs.extend(list(map(int, line.split()[:])))
-
-        N_vals = DSETIDs[0]
-
+    if ("DSET_IDS" in parsed_cube.keys):
+        N_vals = len(parsed_cube["DSET_IDS"])
     else:
-        N_vals = int(origin_line[-1])
+        N_vals = parsed_cube["NVAL"]
+
+    # files are given as [phi,rho]_[p,a,b]_[rsp,scf]_#_[re,im]_[x,y].cube
+    #test that the file name makes sense
+    path_ids = cube_path.split("_")[3]
+    if ("-" in path_ids):
+        from_to = path_ids.split("-")
+        path_n_vals = from_to[1] - from_to[0] + 1 # we work as including the from and to, so 4-7 includes 4, 5, 6 and 7.
+        if (N_vals != path_n_vals):
+            raise ValueError("Different amount of orbitals in file and amount of orbitals specified in file name.")
+
+    # get voxel axis data to construct a basis for the cube space.
+    N_steps = [parsed_cube["XAXIS"]["NVOXELS"], parsed_cube["YAXIS"]["NVOXELS"], parsed_cube["ZAXIS"]["NVOXELS"]]
+    Voxel_axes = [parsed_cube["XAXIS"]["VECTOR"], parsed_cube["YAXIS"]["VECTOR"], parsed_cube["ZAXIS"]["VECTOR"]]
+
+    # get the atom coordinates
+    Z_n = [atom["ATOMIC_NUMBER"] for atom in parsed_cube["GEOM"]]
+    atom_charges = [atom["CHARGE"] for atom in parsed_cube["GEOM"]]
+    atom_coords = [atom["POSITION"] for atom in parsed_cube["GEOM"]]
 
     # construct the CUBE vector. Indexing is CUBE_vector[MO_ID][i*N_vals[1]*N_vals[2] + j*N_vals[2] + k] where i, j and k correspond to steps in the X, Y and Z voxel axes directions respectively.
-    CUBE_vector = [ [cube_list[i*N_steps[1]*N_steps[2]*N_vals + j*N_steps[2]*N_vals + k*N_vals + ID] for i in range(N_steps[0]) for j in range(N_steps[1]) for k in range(N_steps[2])]  for ID in range(N_vals)]
+    CUBE_vector = [ [parsed_cube["DATA"][i*N_steps[1]*N_steps[2]*N_vals + j*N_steps[2]*N_vals + k*N_vals + ID] for i in range(N_steps[0]) for j in range(N_steps[1]) for k in range(N_steps[2])]  for ID in range(N_vals)]
 
     cube_dict= {
             "CUBE_file": cube_path,
             "Header": {
                 "comments": comments[0]+comments[1],
-                "N_atoms": abs(N_atoms),
+                "N_atoms": N_atoms,
                 "origin": origin,
                 "N_steps": N_steps,
                 "Voxel_axes": Voxel_axes,
