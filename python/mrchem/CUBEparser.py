@@ -65,7 +65,7 @@ def sort_paths(path_l):
     return [path_p, path_a, path_b]
 
 
-#TODO do a sanity check on the naming of the files with the amount of orbitals they have, and that they have the necessary amount of info
+#TODO do a sanity check on the naming of the files
 
 def parse_cube_file(cube_path):
 
@@ -164,9 +164,12 @@ def parse_cube_file(cube_path):
     path_ids = cube_path.split("_")[3]
     if ("-" in path_ids):
         from_to = path_ids.split("-")
-        path_n_vals = from_to[1] - from_to[0] + 1 # we work as including the from and to, so 4-7 includes 4, 5, 6 and 7.
-        if (N_vals != path_n_vals):
+        orb_ids = list(range(from_to[0], (from_to[1]+1), 1))  # we work as including the from and to, so 4-7 includes 4, 5, 6 and 7.
+        if (N_vals != len(orb_ids)):
             raise ValueError("Different amount of orbitals in file and amount of orbitals specified in file name.")
+    else:
+        orb_ids = [float(path_ids)]
+
 
     # get voxel axis data to construct a basis for the cube space.
     N_steps = [parsed_cube["XAXIS"]["NVOXELS"], parsed_cube["YAXIS"]["NVOXELS"], parsed_cube["ZAXIS"]["NVOXELS"]]
@@ -193,6 +196,7 @@ def parse_cube_file(cube_path):
                 "atom_coords": atom_coords,
                 "N_vals": N_vals
             },
+            "ORB_IDS": orb_ids,
             "CUBE_data": CUBE_vector
     }
     return cube_dict
