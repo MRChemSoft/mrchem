@@ -6,6 +6,8 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ExchangePotentialD1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ExchangePotentialD2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/FockOperator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/FarFieldPotential.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/HartreePotential.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/XCPotential.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/XCPotentialD1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/XCPotentialD2.cpp
