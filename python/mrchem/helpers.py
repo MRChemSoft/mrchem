@@ -62,6 +62,8 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
     fock_dict["nuclear_operator"] = {
         "proj_prec": user_dict["Precisions"]["nuclear_prec"],
         "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
+        "rc": user_dict["Periodic"]["rc"],
+        "exp_prec": user_dict["Precisions"]["exp_prec"],
         "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
     }
 
@@ -85,6 +87,11 @@ def write_scf_fock(user_dict, mol_dict, wf_method, dft_funcs, origin):
         fock_dict["coulomb_operator"] = {
             "poisson_prec": user_dict["Precisions"]["poisson_prec"],
             "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
+        }
+
+    if wf_method in ['hartree', 'hf', 'dft']:
+        fock_dict["far_field_operator"] = {
+            "far_field": user_dict["Periodic"]["far_field"]
         }
 
     # Exchange
