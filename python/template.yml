@@ -42,11 +42,18 @@ sections:
           - '1.0e-10 < value < 1.0'
         docstring: |
           Precision parameter used in smoothing and projection of nuclear potential.
+      - name: exp_prec
+        type: float
+        default: 2.0
+        predicates:
+          - '1.0 < value < 1.0e10'
+        docstring: |
+          Precision parameter used in the far field potential
       - name: poisson_prec
         type: float
         default: "user['world_prec']"
         predicates:
-          - '1.0e-10 < value < 1.0'
+          - '1.0e-12 < value < 1.0'
         docstring: |
           Precision parameter used in construction of Poisson operators.
       - name: exchange_prec
@@ -223,6 +230,45 @@ sections:
         default: 'abgv_00'
         docstring: |
           Derivative used in paramagnetic spin-orbit operator.
+  - name: Periodic
+    docstring: |
+      Define periodic settings.
+    keywords:
+      - name: periodic
+        type: bool
+        default: false
+        docstring: |
+          Set to true if your system is periodic.
+      - name: far_field
+        type: bool
+        default: false
+        docstring: |
+          Set to true if you want to use the far field method.
+      - name: period
+        type: List[float]
+        default: [0.0, 0.0, 0.0]
+        docstring: |
+          Set the period of your system.
+      - name: rc
+        type: float
+        default: 1.0
+        docstring: |
+          Set rc.
+      - name: operator_cells
+        type: int
+        default: 2
+        docstring: |
+          Set the number of cells included in operator applications.
+      - name: operator_scale
+        type: int
+        default: 0
+        docstring: |
+          Set operator scale
+      - name: gaussian_stds
+        type: float
+        default: 3.0
+        docstring: |
+          Ensures a minimum of standard deviations of gaussians are included in periodic cells.
   - name: Molecule
     docstring: |
       Define molecule.

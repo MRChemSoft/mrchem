@@ -51,12 +51,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 namespace density {
 Density compute(double prec, Orbital phi, DensityType spin);
 void compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DensityType spin);
-void compute_local_XY(double prec,
-                      Density &rho,
-                      OrbitalVector &Phi,
-                      OrbitalVector &X,
-                      OrbitalVector &Y,
-                      DensityType spin);
+void compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin);
 double compute_occupation(Orbital &phi, DensityType dens_spin);
 } // namespace density
 
@@ -120,12 +115,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, DensityType
  *      and X/Y must be the same.
  *
  */
-void density::compute(double prec,
-                      Density &rho,
-                      OrbitalVector &Phi,
-                      OrbitalVector &X,
-                      OrbitalVector &Y,
-                      DensityType spin) {
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin) {
     int N_el = orbital::get_electron_number(Phi);
     double rel_prec = prec;        // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
     double abs_prec = prec / N_el; // prec for rho = sum_i rho_i
@@ -162,12 +152,7 @@ void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, Densi
 
 /** @brief Compute local density as the sum of own (MPI) orbitals
  */
-void density::compute_local(double prec,
-                            Density &rho,
-                            OrbitalVector &Phi,
-                            OrbitalVector &X,
-                            OrbitalVector &Y,
-                            DensityType spin) {
+void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin) {
     if (&X == &Y) {
         density::compute_local_X(prec, rho, Phi, X, spin);
     } else {
@@ -200,12 +185,7 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
     }
 }
 
-void density::compute_local_XY(double prec,
-                               Density &rho,
-                               OrbitalVector &Phi,
-                               OrbitalVector &X,
-                               OrbitalVector &Y,
-                               DensityType spin) {
+void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin) {
     int N_el = orbital::get_electron_number(Phi);
     double mult_prec = prec;       // prec for rho_i = |x_i><phi_i| + |phi_i><y_i|
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
@@ -237,6 +217,13 @@ void density::compute_local_XY(double prec,
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp) {
     if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+    auto periodic = (*MRA).getWorldBox().isPeriodic();
+    // if (periodic) {
+    //     auto period = (*MRA).getWorldBox().getScalingFactor();
+    //     for (auto &p : period) p *= 2.0;
+    //     auto stds = (*MRA).getStds();
+    //     dens_exp.makePeriodic(period, stds);
+    // }
     mrcpp::build_grid(rho.real(), dens_exp);
     mrcpp::project(prec, rho.real(), dens_exp);
 }

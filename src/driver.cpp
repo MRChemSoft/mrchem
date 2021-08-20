@@ -40,6 +40,7 @@
 
 #include "utils/MolPlotter.h"
 #include "utils/math_utils.h"
+#include "utils/periodic_utils.h"
 #include "utils/print_utils.h"
 
 #include "qmfunctions/Density.h"
@@ -57,9 +58,11 @@
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/SmearedNuclearOperator.h"
 
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
+#include "qmoperators/two_electron/FarFieldOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
@@ -928,6 +931,15 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     auto X_p = mol.getOrbitalsX_p();
     auto Y_p = mol.getOrbitalsY_p();
 
+    /// Periodic parameters
+    auto periodic = (*MRA).getWorldBox().isPeriodic();
+    auto period = (*MRA).getWorldBox().getScalingFactor()[0];
+    auto nucs_rc = mol.getNuclei();
+    auto rc = static_cast<double>(json_fock["nuclear_operator"]["rc"]);
+    auto far_field = json_fock["far_field_operator"]["far_field"];
+    /// Periodic parameters
+
+    if (rc < 0.0) rc = periodic::calc_rc(nucs_rc, period * 2.0);
     ///////////////////////////////////////////////////////////
     //////////////////   Kinetic Operator   ///////////////////
     ///////////////////////////////////////////////////////////
@@ -944,8 +956,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto proj_prec = json_fock["nuclear_operator"]["proj_prec"];
         auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"];
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"];
-        auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
-        F.getNuclearOperator() = V_p;
+        if (periodic and not far_field) {
+            auto V_p = std::make_shared<SmearedNuclearOperator>(nuclei, proj_prec, smooth_prec, rc, shared_memory);
+            F.getSmearedNuclearOperator() = V_p;
+        } else {
+            auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
+            F.getNuclearOperator() = V_p;
+        }
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////
@@ -954,15 +971,37 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto poisson_prec = json_fock["coulomb_operator"]["poisson_prec"];
         auto shared_memory = json_fock["coulomb_operator"]["shared_memory"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
-        if (order == 0) {
-            auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
-            F.getCoulombOperator() = J_p;
-        } else if (order == 1) {
-            auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
-            F.getCoulombOperator() = J_p;
+        if (periodic) {
+            if (not far_field) {
+                auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, nuclei, rc);
+                F.getCoulombOperator() = J_p;
+            } else {
+                auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
+                F.getCoulombOperator() = J_p;
+                F.getCoulombOperator()->getPotential()->setFarField(true);
+            }
         } else {
-            MSG_ABORT("Invalid perturbation order");
+            if (order == 0) {
+                auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
+                F.getCoulombOperator() = J_p;
+            } else if (order == 1) {
+                auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
+                F.getCoulombOperator() = J_p;
+            } else {
+                MSG_ABORT("Invalid perturbation order");
+            }
         }
+    }
+
+    /////////////////////////////////////////////////////////
+    ////////////////   Far-field Operator   /////////////////
+    /////////////////////////////////////////////////////////
+    if (periodic and far_field) {
+        auto poisson_prec = json_fock["coulomb_operator"]["poisson_prec"];
+        auto exp_prec = json_fock["nuclear_operator"]["exp_prec"];
+        auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
+        auto V_ff = std::make_shared<FarFieldOperator>(P_p, Phi_p, nuclei, exp_prec);
+        F.getFarFieldOperator() = V_ff;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Reaction Operator   ///////////////////

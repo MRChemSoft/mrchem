@@ -54,6 +54,15 @@ User input reference
  :Precisions: Define specific precision parameters. 
 
   :red:`Keywords`
+   :exp_prec: Precision parameter used in the far field potential 
+  
+    **Type** ``float``
+  
+    **Default** ``2.0``
+  
+    **Predicates**
+      - ``1.0 < value < 1.0e10``
+  
    :exchange_prec: Precision parameter used in construction of Exchange operators. Negative value means it will follow the dynamic precision in SCF. 
   
     **Type** ``float``
@@ -73,7 +82,7 @@ User input reference
     **Default** ``user['world_prec']``
   
     **Predicates**
-      - ``1.0e-10 < value < 1.0``
+      - ``1.0e-12 < value < 1.0``
   
    :nuclear_prec: Precision parameter used in smoothing and projection of nuclear potential. 
   
@@ -263,6 +272,51 @@ User input reference
     **Type** ``str``
   
     **Default** ``abgv_00``
+  
+ :Periodic: Define periodic settings. 
+
+  :red:`Keywords`
+   :periodic: Set to true if your system is periodic. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :far_field: Set to true if you want to use the far field method. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :period: Set the period of your system. 
+  
+    **Type** ``List[float]``
+  
+    **Default** ``[0.0, 0.0, 0.0]``
+  
+   :rc: Set rc. 
+  
+    **Type** ``float``
+  
+    **Default** ``1.0``
+  
+   :operator_cells: Set the number of cells included in operator applications. 
+  
+    **Type** ``int``
+  
+    **Default** ``2``
+  
+   :operator_scale: Set operator scale 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+   :gaussian_stds: Ensures a minimum of standard deviations of gaussians are included in periodic cells. 
+  
+    **Type** ``float``
+  
+    **Default** ``3.0``
   
  :Molecule: Define molecule. 
 

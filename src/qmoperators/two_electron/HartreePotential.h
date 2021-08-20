@@ -25,17 +25,25 @@
 
 #pragma once
 
-#include "chemistry_fwd.h"
-#include "qmfunctions/qmfunction_fwd.h"
+#include "CoulombPotential.h"
+#include "chemistry/Nucleus.h"
 
 namespace mrchem {
-namespace chemistry {
 
-double compute_nuclear_repulsion(const Nuclei &nucs);
-Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
-double get_total_charge(const Nuclei &nucs);
-Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
-double compute_nuclear_self_repulsion(const Nuclei &nucs, double alpha);
-Density compute_nuclear_density_smeared(double prec, Nuclei nucs, double rc, double period);
-} // namespace chemistry
+class HartreePotential final : public CoulombPotential {
+public:
+    HartreePotential(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, const Nuclei &nucs, const double &rc);
+    ~HartreePotential() override = default;
+
+    Density &getBSmear() { return this->b_smeared; }
+    double getRc() { return this->rc; }
+
+private:
+    Nuclei nuclei;
+    Density b_smeared{false};
+    const double rc;
+
+    void setupGlobalDensity(double prec);
+};
+
 } // namespace mrchem

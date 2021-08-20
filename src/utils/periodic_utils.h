@@ -24,18 +24,15 @@
  */
 
 #pragma once
-
-#include "chemistry_fwd.h"
-#include "qmfunctions/qmfunction_fwd.h"
+#include "chemistry/Nucleus.h"
+#include "utils/math_utils.h"
 
 namespace mrchem {
-namespace chemistry {
+namespace periodic {
 
-double compute_nuclear_repulsion(const Nuclei &nucs);
-Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
-double get_total_charge(const Nuclei &nucs);
-Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
-double compute_nuclear_self_repulsion(const Nuclei &nucs, double alpha);
-Density compute_nuclear_density_smeared(double prec, Nuclei nucs, double rc, double period);
-} // namespace chemistry
+std::array<double, 3> on_boundary(double period, mrcpp::Coord<3> coord);
+Nuclei periodify_nuclei(Nuclei nucs, double period, double shift = 1.0);
+Nuclei fix_boundary_charge(Nuclei nucs, double period);
+double calc_rc(Nuclei nucs, double period);
+} // namespace periodic
 } // namespace mrchem

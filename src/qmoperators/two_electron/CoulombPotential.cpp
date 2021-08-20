@@ -122,7 +122,14 @@ void CoulombPotential::setupGlobalPotential(double prec) {
 
     Timer timer;
     V.alloc(NUMBER::Real);
-    if (need_to_apply) mrcpp::apply(abs_prec, V.real(), P, rho.real());
+
+    if (need_to_apply) {
+        if (this->isFarField()) {
+            mrcpp::apply_near_field(abs_prec, V.real(), P, rho.real());
+        } else {
+            mrcpp::apply(abs_prec, V.real(), P, rho.real());
+        }
+    }
     mpi::share_function(V, 0, 22445, mpi::comm_share);
     print_utils::qmfunction(2, "Coulomb potential", V, timer);
 }

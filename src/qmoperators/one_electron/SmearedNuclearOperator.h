@@ -25,17 +25,19 @@
 
 #pragma once
 
-#include "chemistry_fwd.h"
-#include "qmfunctions/qmfunction_fwd.h"
+#include "tensor/RankZeroOperator.h"
 
 namespace mrchem {
-namespace chemistry {
 
-double compute_nuclear_repulsion(const Nuclei &nucs);
-Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
-double get_total_charge(const Nuclei &nucs);
-Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
-double compute_nuclear_self_repulsion(const Nuclei &nucs, double alpha);
-Density compute_nuclear_density_smeared(double prec, Nuclei nucs, double rc, double period);
-} // namespace chemistry
+class NuclearFunction;
+
+class SmearedNuclearOperator final : public RankZeroOperator {
+public:
+    SmearedNuclearOperator(Nuclei nucs, double proj_prec, double smooth_prec = -1.0, double rc = 1.0, bool mpi_share = false, std::shared_ptr<OrbitalVector> Phi = nullptr);
+
+private:
+    void setupLocalPotential(QMFunction &V_loc, const Nuclei &nucs, double proj_prec, double smooth_prec, double rc) const;
+    void allreducePotential(double prec, QMFunction &V_tot, QMFunction &V_loc) const;
+};
+
 } // namespace mrchem

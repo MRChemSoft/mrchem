@@ -30,9 +30,15 @@
 #include "CoulombPotential.h"
 #include "CoulombPotentialD1.h"
 #include "CoulombPotentialD2.h"
-#include "HartreePotential.h"
+#include "FarFieldPotential.h"
+#include "chemistry/chemistry_utils.h"
+#include "qmfunctions/density_utils.h"
+#include "qmfunctions/qmfunction_utils.h"
 
-/** @class CoulombOperator
+#include "MRCPP/MWFunctions"
+#include "MRCPP/MWOperators"
+
+/** @class getFarFieldOperator
  *
  * @brief Operator containing a single CoulombPotential
  *
@@ -42,48 +48,29 @@
 
 namespace mrchem {
 
-class CoulombOperator final : public RankZeroOperator {
+class FarFieldOperator final : public RankZeroOperator {
 public:
-    explicit CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, bool mpi_share = false) {
-        potential = std::make_shared<CoulombPotential>(P, nullptr, mpi_share);
+    FarFieldOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, const Nuclei &nucs, double exp_prec, bool mpi_share = false) {
+        potential = std::make_shared<FarFieldPotential>(P, Phi, nucs, exp_prec, mpi_share);
 
         // Invoke operator= to assign *this operator
         RankZeroOperator &J = (*this);
         J = potential;
-        J.name() = "J";
-    }
-    CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, bool mpi_share = false) {
-        potential = std::make_shared<CoulombPotentialD1>(P, Phi, mpi_share);
-
-        // Invoke operator= to assign *this operator
-        RankZeroOperator &J = (*this);
-        J = potential;
-        J.name() = "J";
-    }
-    CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false) {
-        potential = std::make_shared<CoulombPotentialD2>(P, Phi, X, Y, mpi_share);
-
-        // Invoke operator= to assign *this operator
-        RankZeroOperator &J = (*this);
-        J = potential;
-        J.name() = "J";
     }
 
-    CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, const Nuclei &nucs, const double &rc) {
-
-        potential = std::make_shared<HartreePotential>(P, Phi, nucs, rc);
-        RankZeroOperator &J = (*this);
-        J = potential;
-    }
-
-    ~CoulombOperator() override = default;
+    ~FarFieldOperator() override = default;
 
     auto &getPoisson() { return this->potential->getPoisson(); }
     auto &getDensity() { return this->potential->getDensity(); }
-    auto &getPotential() { return this->potential; }
+    const Nuclei &getNuclei() const { return this->potential->getNuclei(); }
+
+    double getNucPrec() { return this->potential->getNucPrec(); }
+
+    ComplexDouble trace(OrbitalVector &Phi) { return 0.5 * RankZeroOperator::trace(Phi); }
+    using RankZeroOperator::trace;
 
 private:
-    std::shared_ptr<CoulombPotential> potential{nullptr};
+    std::shared_ptr<FarFieldPotential> potential{nullptr};
 };
 
 } // namespace mrchem

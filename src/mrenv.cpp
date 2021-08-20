@@ -98,12 +98,22 @@ void mrenv::init_printer(const json &json_print) {
 
 void mrenv::init_mra(const json &json_mra) {
     // Initialize world box
-    int min_scale = json_mra["min_scale"];
-    int max_scale = json_mra["max_scale"];
-    auto corner = json_mra["corner"];
-    auto boxes = json_mra["boxes"];
-    mrcpp::BoundingBox<3> world(min_scale, corner, boxes);
+    auto min_scale = static_cast<int>(json_mra["min_scale"]);
+    auto max_scale = static_cast<int>(json_mra["max_scale"]);
+    auto corner = static_cast<std::array<int, 3>>(json_mra["corner"]);
+    auto boxes = static_cast<std::array<int, 3>>(json_mra["boxes"]);
 
+    // Periodic parameter
+    auto periodic = json_mra["periodic"];
+    auto far_field = json_mra["far_field"];
+    auto operator_cells = static_cast<int>(json_mra["operator_cells"]);
+    auto operator_scale = json_mra["operator_scale"];
+    auto sfac = static_cast<std::array<double, 3>>(json_mra["scaling_factor"]);
+    if (sfac != std::array<double, 3>{}) {
+        for (auto &s : sfac) s /= 2.0;
+    }
+
+    mrcpp::BoundingBox<3> world(min_scale, corner, boxes, sfac, periodic);
     // Initialize scaling basis
     auto order = json_mra["basis_order"];
     auto btype = json_mra["basis_type"];
@@ -122,6 +132,15 @@ void mrenv::init_mra(const json &json_mra) {
         MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
     } else {
         MSG_ABORT("Invalid basis type!");
+    }
+    // Set periodic MRA properties
+    if (periodic) {
+        if (operator_scale == 0) {
+            MRA->setPeriodicOperatorReach(2 * operator_cells + 2);
+            MRA->setPeriodicOperatorCutOff(2 * operator_cells + 1);
+        } else {
+            MRA->setOperatorScale(operator_scale);
+        }
     }
 }
 

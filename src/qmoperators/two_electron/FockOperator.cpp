@@ -28,6 +28,7 @@
 
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
+#include "FarFieldOperator.h"
 #include "FockOperator.h"
 #include "ReactionOperator.h"
 #include "XCOperator.h"
@@ -38,6 +39,7 @@
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/SmearedNuclearOperator.h"
 #include "utils/math_utils.h"
 
 using mrcpp::Printer;
@@ -45,7 +47,9 @@ using mrcpp::Timer;
 
 using KineticOperator_p = std::shared_ptr<mrchem::KineticOperator>;
 using NuclearOperator_p = std::shared_ptr<mrchem::NuclearOperator>;
+using SmearedNuclearOperator_p = std::shared_ptr<mrchem::SmearedNuclearOperator>;
 using CoulombOperator_p = std::shared_ptr<mrchem::CoulombOperator>;
+using FarFieldOperator_p = std::shared_ptr<mrchem::FarFieldOperator>;
 using ExchangeOperator_p = std::shared_ptr<mrchem::ExchangeOperator>;
 using XCOperator_p = std::shared_ptr<mrchem::XCOperator>;
 using ElectricFieldOperator_p = std::shared_ptr<mrchem::ElectricFieldOperator>;
@@ -68,7 +72,9 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  */
 FockOperator::FockOperator(KineticOperator_p t,
                            NuclearOperator_p v,
+                           SmearedNuclearOperator_p sv,
                            CoulombOperator_p j,
+                           FarFieldOperator_p f,
                            ExchangeOperator_p k,
                            XCOperator_p xc,
                            ElectricFieldOperator_p ext,
@@ -76,6 +82,7 @@ FockOperator::FockOperator(KineticOperator_p t,
         : kin(t)
         , nuc(v)
         , coul(j)
+        , ff(f)
         , ex(k)
         , xc(xc)
         , ext(ext)
@@ -91,7 +98,9 @@ void FockOperator::build(double exx) {
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
+    if (this->snuc != nullptr) this->V += (*this->snuc);
     if (this->coul != nullptr) this->V += (*this->coul);
+    if (this->ff != nullptr) this->V += (*this->ff);
     if (this->ex != nullptr) this->V -= this->exact_exchange * (*this->ex);
     if (this->xc != nullptr) this->V += (*this->xc);
     if (this->ext != nullptr) this->V += (*this->ext);
@@ -170,10 +179,17 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double Er_nuc = 0.0; // Nuclear reaction energy
     double Er_el = 0.0;  // Electronic reaction energy
     double Er_tot = 0.0; // Total reaction energy
+    double E_eeff = 0.0; // Far field contribution to the electronic energy
+    double E_nff = 0.0;  // Far field contribution to the nuclear energy
+
+    //// PERIODIC ENERGIES ////
+    double E_se = 0.0;
+    double E_ncor = 0.0;
 
     // Nuclear part
     if (this->nuc != nullptr) E_nn = chemistry::compute_nuclear_repulsion(nucs);
     if (this->ext != nullptr) E_next = -this->ext->trace(nucs).real();
+    if (this->ff != nullptr) E_nff = -0.5 * this->ff->trace(nucs).real();
 
     // Reaction potential part
     if (this->Ro != nullptr) {
@@ -184,14 +200,26 @@ SCFEnergy FockOperator::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     // Electronic part
     if (this->kin != nullptr) E_kin = this->kin->trace(Phi).real();
     if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
+    if (this->snuc != nullptr) E_en = this->snuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
+    if (this->ff != nullptr) E_eeff = this->ff->trace(Phi).real();
+
+    if (this->coul->getPotential()->getRc() > 0.0) {
+        E_nn = 0.0;
+        E_se = -0.5 * mrcpp::dot<3>(this->coul->getPotential()->getBSmear().real(), this->coul->getPotential()->real());
+        auto rc = this->coul->getPotential()->getRc();
+        if (rc <= 0.0) MSG_ABORT("RC has to be positive");
+        auto Ig = 10976.0 / (17875.0 * rc);
+        for (auto &nuc : nucs) E_ncor += 0.5 * nuc.getCharge() * nuc.getCharge() * (Ig - 12.0 / (5.0 * rc));
+    }
+
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
 
-    return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el};
+    return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el, E_nff, E_eeff, E_se, E_ncor};
 }
 
 ComplexMatrix FockOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
