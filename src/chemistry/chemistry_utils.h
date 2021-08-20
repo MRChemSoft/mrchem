@@ -34,6 +34,8 @@ namespace chemistry {
 double compute_nuclear_repulsion(const Nuclei &nucs);
 Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
 double get_total_charge(const Nuclei &nucs);
-
+Density compute_nuclear_density(double prec, const Nuclei &nucs, double alpha);
+double compute_nuclear_self_repulsion(const Nuclei &nucs, double alpha);
+Density compute_nuclear_density_smeared(double prec, Nuclei nucs, double rc, double period);
 } // namespace chemistry
 } // namespace mrchem
