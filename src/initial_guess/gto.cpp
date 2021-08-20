@@ -66,12 +66,7 @@ namespace mrchem {
  * Projects only the occupied orbitals of each spin.
  *
  */
-bool initial_guess::gto::setup(OrbitalVector &Phi,
-                               double prec,
-                               const std::string &bas_file,
-                               const std::string &mop_file,
-                               const std::string &moa_file,
-                               const std::string &mob_file) {
+bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, const std::string &bas_file, const std::string &mop_file, const std::string &moa_file, const std::string &mob_file) {
     if (Phi.size() == 0) return false;
 
     mrcpp::print::separator(0, '~');
@@ -115,10 +110,7 @@ bool initial_guess::gto::setup(OrbitalVector &Phi,
  * corresponding MW orbitals.
  *
  */
-void initial_guess::gto::project_mo(OrbitalVector &Phi,
-                                    double prec,
-                                    const std::string &bas_file,
-                                    const std::string &mo_file) {
+void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::string &bas_file, const std::string &mo_file) {
     if (Phi.size() == 0) return;
 
     Timer t_tot;
@@ -157,7 +149,16 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi,
         if (mpi::my_orb(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             Phi[i].alloc(NUMBER::Real);
+            auto periodic = (*MRA).getWorldBox().isPeriodic();
+            auto n_stds = (*MRA).getStds();
+            if (periodic) {
+                auto period = (*MRA).getWorldBox().getScalingFactor();
+                for (auto &p : period) p *= 2.0;
+                mo_i.makePeriodic(period, n_stds);
+            }
+            mrcpp::build_grid(Phi[i].real(), mo_i);
             mrcpp::project(prec, Phi[i].real(), mo_i);
+            Phi[i].real().normalize();
         }
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
@@ -207,10 +208,7 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const std::
     mrcpp::print::footer(0, timer, 2);
 }
 
-Density initial_guess::gto::project_density(double prec,
-                                            const Nucleus &nuc,
-                                            const std::string &bas_file,
-                                            const std::string &dens_file) {
+Density initial_guess::gto::project_density(double prec, const Nucleus &nuc, const std::string &bas_file, const std::string &dens_file) {
     // Setup AO basis
     gto_utils::Intgrl intgrl(bas_file);
     intgrl.getNucleus(0).setCoord(nuc.getCoord());
