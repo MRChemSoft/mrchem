@@ -48,15 +48,21 @@
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
-#include "qmoperators/one_electron/H_BB_dia.h"
-#include "qmoperators/one_electron/H_BM_dia.h"
-#include "qmoperators/one_electron/H_B_dip.h"
-#include "qmoperators/one_electron/H_E_quad.h"
-#include "qmoperators/one_electron/H_MB_dia.h"
-#include "qmoperators/one_electron/H_M_pso.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/ZoraKineticOperator.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
+
+#include "qmoperators/one_electron/H_BB_dia.h"
+#include "qmoperators/one_electron/H_BM_dia.h"
+#include "qmoperators/one_electron/H_B_dip.h"
+#include "qmoperators/one_electron/H_B_spin.h"
+#include "qmoperators/one_electron/H_E_dip.h"
+#include "qmoperators/one_electron/H_E_quad.h"
+#include "qmoperators/one_electron/H_MB_dia.h"
+#include "qmoperators/one_electron/H_M_fc.h"
+#include "qmoperators/one_electron/H_M_pso.h"
 
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
@@ -269,6 +275,13 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
+        
+        if (F.isZora()) {
+            auto light_speed = F.zora().light_speed;
+            solver.setZora(F.isZora());
+            solver.setLightSpeed(light_speed);
+        }
+        
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
     }
@@ -930,13 +943,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     auto Y_p = mol.getOrbitalsY_p();
 
     ///////////////////////////////////////////////////////////
-    //////////////////   Kinetic Operator   ///////////////////
+    ///////////////      Momentum Operator    /////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("kinetic_operator")) {
         auto kin_diff = json_fock["kinetic_operator"]["derivative"];
         auto D_p = driver::get_derivative(kin_diff);
-        auto T_p = std::make_shared<KineticOperator>(D_p);
-        F.getKineticOperator() = T_p;
+        auto P_p = std::make_shared<MomentumOperator>(D_p);
+        F.getMomentumOperator() = P_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
@@ -947,6 +960,26 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"];
         auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory);
         F.getNuclearOperator() = V_p;
+    }
+    ///////////////////////////////////////////////////////////
+    //////////////////   Kinetic Zora Operator   //////////////
+    ///////////////////////////////////////////////////////////
+    if (json_fock.contains("zora_operator")) {
+        double c = json_fock["zora_operator"]["light_speed"];
+        if (c <= 0.0) c = PHYSCONST::alpha_inv;
+        auto shared_memory = json_fock["zora_operator"]["shared_memory"];
+        auto zora_diff = json_fock["zora_operator"]["derivative"];
+        auto D_p = driver::get_derivative(zora_diff);
+        auto &V_nuc = static_cast<QMPotential &>(F.getNuclearOperator()->getRaw(0, 0));
+        auto Z_p = std::make_shared<ZoraOperator>(V_nuc, c, D_p, shared_memory);
+
+        std::shared_ptr<QMPotential> tmp = Z_p->sqKappa();
+        auto sqrt_Z_p = std::make_shared<RankZeroOperator>(tmp);
+
+        std::shared_ptr<RankZeroOperator> mod_Z_p = Z_p->divKappaOverSqKappa();
+        F.getZoraOperator() = Z_p;
+        F.getSqrtZora() = sqrt_Z_p;
+        F.getModZora() = mod_Z_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////

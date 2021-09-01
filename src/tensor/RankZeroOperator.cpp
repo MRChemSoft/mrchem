@@ -213,6 +213,25 @@ void RankZeroOperator::clear() {
     }
 }
 
+ComplexDouble RankZeroOperator::operator()(const mrcpp::Coord<3> &r) const {
+    const RankZeroOperator &O = *this;
+    ComplexDouble out = {0.0, 0.0};
+    for (int n = 0; n < O.size(); n++) {
+        ComplexDouble out_n = {1.0, 0.0};
+        for (auto O_nm : this->oper_exp[n]) {
+            if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
+            out_n *= O_nm->evalf(r);
+        }
+        out += out_n;
+    }
+    return out;
+}
+
+ComplexDouble RankZeroOperator::dagger(const mrcpp::Coord<3> &r) const {
+    const RankZeroOperator &O = *this;
+    return std::conj(O(r));
+}
+
 /** @brief apply operator expansion to orbital
  *
  * @param inp: orbital on which to apply

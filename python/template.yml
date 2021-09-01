@@ -223,6 +223,11 @@ sections:
         default: 'abgv_00'
         docstring: |
           Derivative used in paramagnetic spin-orbit operator.
+      - name: zora
+        type: str
+        default: 'abgv_00'
+        docstring: |
+          Derivative used ZORA potential.
   - name: Molecule
     docstring: |
       Define molecule.
@@ -289,6 +294,20 @@ sections:
         default: true
         docstring: |
           Use spin restricted wavefunction.
+      - name: zora
+        type: bool
+        default: false
+        docstring: |
+          Activate scalar relativistic SCF with the ZORA Hamiltonian.
+  - name: ZORA
+    docstring: |
+      Define required parameters for the ZORA Hamiltonian
+    keywords:
+      - name: light_speed
+        type: float
+        default: -1.0
+        docstring: |
+          Adjust speed of light.
   - name: DFT
     docstring: |
       Define the exchange-correlation functional in case of DFT.

@@ -27,13 +27,18 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "parallel.h"
-
 #include "HelmholtzVector.h"
+
+#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/one_electron/IdentityOperator.h"
+#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/NablaOperator.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
+#include "tensor/RankOneOperator.h"
 #include "tensor/RankZeroOperator.h"
+#include "tensor/tensor_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -107,7 +112,8 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
  * MPI: Output vector gets the same MPI distribution as input vector. Only
  *      local orbitals are computed.
  */
-OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const {
+
+OrbitalVector HelmholtzVector::apply(RankZeroOperator &O, OrbitalVector &Phi, OrbitalVector &Psi) const {
     Timer t_tot, t_lap;
     auto pprec = Printer::getPrecision();
     auto plevel = Printer::getPrintLevel();
@@ -119,10 +125,10 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
         if (not mpi::my_orb(out[i])) continue;
 
         t_lap.start();
-        Orbital Vphi_i = V(Phi[i]);
-        Vphi_i.add(1.0, Psi[i]);
-        Vphi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
-        out[i] = apply(i, Vphi_i);
+        Orbital Ophi_i = O(Phi[i]);
+        Ophi_i.add(1.0, Psi[i]);
+        Ophi_i.rescale(-1.0 / (2.0 * MATHCONST::pi));
+        out[i] = apply(i, Ophi_i);
 
         std::stringstream o_txt;
         o_txt << std::setw(4) << i;

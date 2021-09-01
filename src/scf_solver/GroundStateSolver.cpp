@@ -34,7 +34,7 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/two_electron/FockOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
@@ -180,6 +180,7 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     print_utils::text(0, "Helmholtz precision", o_helm.str());
     print_utils::text(0, "Energy threshold   ", o_thrs_p.str());
     print_utils::text(0, "Orbital threshold  ", o_thrs_o.str());
+    print_utils::text(0, "ZORA               ", (this->isZora) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 }
 
@@ -240,7 +241,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         printConvergenceHeader("Total energy");
         printConvergenceRow(0);
     }
-
+    
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -261,20 +262,28 @@ json GroundStateSolver::optimize(Molecule &mol, FockOperator &F) {
         }
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-
         // Setup argument
         Timer t_arg;
         mrcpp::print::header(2, "Computing Helmholtz argument");
+        
         ComplexMatrix L_mat = H.getLambdaMatrix();
         OrbitalVector Psi = orbital::rotate(Phi_n, L_mat - F_mat, orb_prec);
+        RankZeroOperator O = F.buildHelmholtzArgumentOperator(helm_prec);
+
         mrcpp::print::time(2, "Rotating orbitals", t_arg);
         mrcpp::print::footer(2, t_arg, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
         // Apply Helmholtz operator
-        OrbitalVector Phi_np1 = H.apply(F.potential(), Phi_n, Psi);
+        OrbitalVector Phi_np1;
+        Phi_np1 = H.apply(O, Phi_n, Psi);
+        
+        // Clear operators
+        O.clear();
         Psi.clear();
         F.clear();
+
+        // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
         // Compute orbital updates

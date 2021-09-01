@@ -25,34 +25,20 @@
 
 #pragma once
 
-#include "tensor/RankZeroOperator.h"
-
-#include "MomentumOperator.h"
-
-/** @class KineticOperator
- *
- * @brief Operator for kinetic energy
- *
- * This operator is constructed as the square of the more fundamental
- * MomentumOperator. The general base class functions for calculation of
- * expectation values are overwritten, as they can be improved due to
- * symmetry.
- *
- */
+#include "mrchem.h"
+#include "qmfunctions/qmfunction_fwd.h"
+#include "tensor/tensor_fwd.h"
 
 namespace mrchem {
+class MomentumOperator;
 
-class KineticOperator final : public RankZeroOperator {
-public:
-    explicit KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
-            : KineticOperator(MomentumOperator(D)) {}
-
-    explicit KineticOperator(MomentumOperator p) {
-        // Invoke operator= to assign *this operator
-        RankZeroOperator &t = (*this);
-        t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-        t.name() = "T";
-    }
-};
+namespace qmoperator {
+double calc_kinetic_trace(MomentumOperator &p, OrbitalVector &Phi);
+ComplexDouble calc_kinetic_trace(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &Phi);
+ComplexMatrix calc_kinetic_matrix(MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket);
+ComplexMatrix calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
+ComplexMatrix calc_kinetic_matrix_component_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
+ComplexMatrix calc_kinetic_matrix_component(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
+} // namespace qmoperator
 
 } // namespace mrchem

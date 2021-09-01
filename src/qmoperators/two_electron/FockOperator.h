@@ -26,6 +26,7 @@
 #pragma once
 
 #include "tensor/RankZeroOperator.h"
+#include "qmoperators/QMPotential.h"
 
 /** @class FockOperator
  *
@@ -40,7 +41,10 @@
 namespace mrchem {
 
 class SCFEnergy;
+class MomentumOperator;
 class KineticOperator;
+class ZoraKineticOperator;
+class ZoraOperator;
 class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
@@ -50,25 +54,25 @@ class ReactionOperator;
 
 class FockOperator final : public RankZeroOperator {
 public:
-    FockOperator(std::shared_ptr<KineticOperator> t = nullptr,
-                 std::shared_ptr<NuclearOperator> v = nullptr,
-                 std::shared_ptr<CoulombOperator> j = nullptr,
-                 std::shared_ptr<ExchangeOperator> k = nullptr,
-                 std::shared_ptr<XCOperator> xc = nullptr,
-                 std::shared_ptr<ElectricFieldOperator> ext = nullptr,
-                 std::shared_ptr<ReactionOperator> reo = nullptr);
-
+    bool isZora() const { return (this->vz != nullptr); }
+    ZoraOperator &zora() { return *this->vz; }
+    MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &kinetic() { return this->T; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
+    RankZeroOperator &sqrt_zora_pot() { return this->sqrt_zora; }
+    RankZeroOperator &mod_zora_pot() { return this->mod_zora; }
 
-    std::shared_ptr<KineticOperator> &getKineticOperator() { return this->kin; }
+    std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
+    std::shared_ptr<ZoraOperator> &getZoraOperator() { return this->vz; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
+    std::shared_ptr<RankZeroOperator> &getSqrtZora() { return this->sqrt_vz; }
+    std::shared_ptr<RankZeroOperator> &getModZora() { return this->mod_vz; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -81,22 +85,29 @@ public:
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
     ComplexMatrix dagger(OrbitalVector &bra, OrbitalVector &ket);
 
+    RankZeroOperator buildHelmholtzArgumentOperator(double prec);
+
     using RankZeroOperator::operator();
     using RankZeroOperator::dagger;
 
 private:
     double exact_exchange{1.0};
-    RankZeroOperator T;   ///< Total kinetic energy operator
-    RankZeroOperator V;   ///< Total potential energy operator
-    RankZeroOperator H_1; ///< Perturbation operators
+    RankZeroOperator T;       ///< Total kinetic energy operator
+    RankZeroOperator V;       ///< Total potential energy operator
+    RankZeroOperator H_1;     ///< Perturbation operators
+    RankZeroOperator sqrt_zora;
+    RankZeroOperator mod_zora;
 
-    std::shared_ptr<KineticOperator> kin;
-    std::shared_ptr<NuclearOperator> nuc;
-    std::shared_ptr<CoulombOperator> coul;
-    std::shared_ptr<ExchangeOperator> ex;
-    std::shared_ptr<XCOperator> xc;
-    std::shared_ptr<ElectricFieldOperator> ext; ///< Total external potential
-    std::shared_ptr<ReactionOperator> Ro;       ///< Reaction field operator
+    std::shared_ptr<MomentumOperator> mom{nullptr};
+    std::shared_ptr<ZoraOperator> vz{nullptr};
+    std::shared_ptr<NuclearOperator> nuc{nullptr};
+    std::shared_ptr<CoulombOperator> coul{nullptr};
+    std::shared_ptr<ExchangeOperator> ex{nullptr};
+    std::shared_ptr<XCOperator> xc{nullptr};
+    std::shared_ptr<ReactionOperator> Ro{nullptr};       ///< Reaction field operator
+    std::shared_ptr<ElectricFieldOperator> ext{nullptr}; ///< Total external potential
+    std::shared_ptr<RankZeroOperator> sqrt_vz{nullptr};
+    std::shared_ptr<RankZeroOperator> mod_vz{nullptr};
 };
 
 } // namespace mrchem

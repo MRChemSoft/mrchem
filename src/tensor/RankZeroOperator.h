@@ -77,6 +77,9 @@ public:
     void setup(double prec);
     void clear();
 
+    ComplexDouble operator()(const mrcpp::Coord<3> &r) const;
+    ComplexDouble dagger(const mrcpp::Coord<3> &r) const;
+
     Orbital operator()(Orbital inp);
     Orbital dagger(Orbital inp);
 
@@ -93,6 +96,7 @@ public:
     ComplexDouble trace(OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y);
     ComplexDouble trace(const Nuclei &nucs);
 
+    QMOperator &getRaw(int i, int j) { return *this->oper_exp[i][j]; }
     RankZeroOperator get(int i);
     RankZeroOperator get(int i, int j);
 

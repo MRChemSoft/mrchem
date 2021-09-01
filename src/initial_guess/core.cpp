@@ -41,8 +41,9 @@
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
 
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/one_electron/MomentumOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/qmoperator_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -103,7 +104,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     // Make Fock operator contributions
     t_lap.start();
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
-    KineticOperator T(D_p);
+    MomentumOperator p(D_p);
     NuclearOperator V(nucs, prec);
     if (plevel == 1) mrcpp::print::time(1, "Projecting nuclear potential", t_lap);
 
@@ -114,13 +115,13 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Psi);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
-    T.setup(prec);
+    p.setup(prec);
     V.setup(prec);
 
     // Compute Hamiltonian matrix
     t_lap.start();
     mrcpp::print::header(2, "Diagonalize Hamiltonian matrix");
-    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V);
+    ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
 
     // Rotate orbitals and fill electrons by Aufbau
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
@@ -131,7 +132,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
     for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
     V.clear();
-    T.clear();
+    p.clear();
 
     mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
@@ -254,10 +255,10 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
 }
 
-ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, KineticOperator &T, RankZeroOperator &V) {
+ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOperator &p, RankZeroOperator &V) {
     Timer t1;
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
-    ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(T, Phi, Phi);
+    ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(p, Phi, Phi);
     ComplexMatrix v_tilde = V(Phi, Phi);
     ComplexMatrix f_tilde = t_tilde + v_tilde;
     ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;

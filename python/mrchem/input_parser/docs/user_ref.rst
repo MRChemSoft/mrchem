@@ -264,6 +264,12 @@ User input reference
   
     **Default** ``abgv_00``
   
+   :zora: Derivative used ZORA potential. 
+  
+    **Type** ``str``
+  
+    **Default** ``abgv_55``
+  
  :Molecule: Define molecule. 
 
   :red:`Keywords`
@@ -304,6 +310,27 @@ User input reference
     **Type** ``bool``
   
     **Default** ``True``
+  
+   :zora: Activate scalar relativistic SCF with the ZORA Hamiltonian. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+ :ZORA: Define required parameters for the ZORA Hamiltonian 
+
+  :red:`Keywords`
+   :light_speed: Adjust speed of light. 
+  
+    **Type** ``float``
+  
+    **Default** ``-1.0``
+  
+   :dev_prefactors: Select which ZORA operators to include in Helmholtz evaluation. 1st element: (I - kappa) * T 2nd element: -0.5 * dot(dkappa, nabla) [0, 0]: Identical to NR calculation 
+  
+    **Type** ``List[int]``
+  
+    **Default** ``[1, 1]``
   
  :DFT: Define the exchange-correlation functional in case of DFT. 
 

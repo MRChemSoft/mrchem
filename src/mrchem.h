@@ -37,16 +37,17 @@
 namespace mrchem {
 
 namespace PHYSCONST {
-const double kJ      = 2625.49962;         // AU -> kJ/mol conversion factor
-const double kcal    =  627.509469;        // AU -> kcal/mol conversion factor
-const double eV      =   27.21138505;      // AU -> eV conversion factor
-const double JT_m2   =   78.9451185;       // AU -> 10^(-30) J/T^2 (SI magnetizability)
-const double Debye   =    2.54174623105;   // AU -> Debye conversion factor
-const double cm_m1   =    1.0e7 / 45.5640; // AU -> cm^(-1) frequency -> wavelenght
-const double alpha   =    7.2973525664;    // Fine structure constant
-const double g_e     =    2.0023193043618; // Free-electron g-value
-const double beta_e  =    0.5000000;       // Bohr magneton
-const double beta_N  =    0.0002723;       // Nuclear magneton
+const double kJ        = 2625.49962;         // AU -> kJ/mol conversion factor
+const double kcal      =  627.509469;        // AU -> kcal/mol conversion factor
+const double eV        =   27.21138505;      // AU -> eV conversion factor
+const double JT_m2     =   78.9451185;       // AU -> 10^(-30) J/T^2 (SI magnetizability)
+const double Debye     =    2.54174623105;   // AU -> Debye conversion factor
+const double cm_m1     =    1.0e7 / 45.5640; // AU -> cm^(-1) frequency -> wavelenght
+const double alpha     =    7.2973525664;    // Fine structure constant
+const double g_e       =    2.0023193043618; // Free-electron g-value
+const double beta_e    =    0.5000000;       // Bohr magneton
+const double beta_N    =    0.0002723;       // Nuclear magneton
+const double alpha_inv =  137.035999084;     // Inverse of the fine structure constant alpha
 } // namespace PHYSCONST
 
 namespace MATHCONST {

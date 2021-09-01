@@ -45,7 +45,8 @@ public:
 
     DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
 
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
+    OrbitalVector apply(RankZeroOperator &O, OrbitalVector &Phi, OrbitalVector &Psi) const;
+
     OrbitalVector operator()(OrbitalVector &Phi) const;
 
 private:

@@ -91,7 +91,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
-    KineticOperator T(D_p);
+    MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
     CoulombOperator J(P_p);
     XCOperator XC(mrdft_p);
@@ -116,14 +116,14 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
 
     mrcpp::print::header(2, "Building Fock operator");
     t_lap.start();
-    T.setup(prec);
+    p.setup(prec);
     V.setup(prec);
     mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
 
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
-    ComplexMatrix U = initial_guess::core::diagonalize(Psi, T, V);
+    ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
 
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
@@ -134,7 +134,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
     for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
     for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
-    T.clear();
+    p.clear();
     V.clear();
 
     mrcpp::print::footer(2, t_lap, 2);

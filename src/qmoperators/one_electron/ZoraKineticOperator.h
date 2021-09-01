@@ -28,30 +28,20 @@
 #include "tensor/RankZeroOperator.h"
 
 #include "MomentumOperator.h"
-
-/** @class KineticOperator
- *
- * @brief Operator for kinetic energy
- *
- * This operator is constructed as the square of the more fundamental
- * MomentumOperator. The general base class functions for calculation of
- * expectation values are overwritten, as they can be improved due to
- * symmetry.
- *
- */
+#include "ZoraOperator.h"
 
 namespace mrchem {
 
-class KineticOperator final : public RankZeroOperator {
+class ZoraKineticOperator final : public RankZeroOperator {
 public:
-    explicit KineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
-            : KineticOperator(MomentumOperator(D)) {}
+    ZoraKineticOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, ZoraOperator kappa)
+            : ZoraKineticOperator(MomentumOperator(D), kappa) {}
 
-    explicit KineticOperator(MomentumOperator p) {
+    ZoraKineticOperator(MomentumOperator p, ZoraOperator kappa) {
         // Invoke operator= to assign *this operator
         RankZeroOperator &t = (*this);
-        t = 0.5 * (p[0] * p[0] + p[1] * p[1] + p[2] * p[2]);
-        t.name() = "T";
+        t = 0.5 * (p[0] * kappa * p[0] + p[1] * kappa * p[1] + p[2] * kappa * p[2]);
+        t.name() = "T_zora";
     }
 };
 
