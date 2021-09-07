@@ -494,6 +494,12 @@ User input reference
   
     **Default** ``initial_guess/Y_b``
   
+   :CUBEfiles: List of paths for the CUBEfiles. can be only one or many. The file naming format is as follows (0)_(1)_(2)_(3)_(4).cube where:   - (0) must be phi, for orbitals, or rho, for densities.   - (1) must be p, a or b for paired, alpha or beta spin function respectively.   - (2) must be scf or rsp for a SCF calculation or response respectively.   - (3) must be an integer defining the function ID or an interval of the form a-b where we include a, a+1, ..., b-1, b functions.   - (4) re or im for real or imaginary parts of the function. 
+  
+    **Type** ``List[str]``
+  
+    **Default** ``[]``
+  
  :SCF: Includes parameters related to the ground state SCF orbital optimization. 
 
   :red:`Keywords`
@@ -561,7 +567,7 @@ User input reference
     **Default** ``sad_dz``
   
     **Predicates**
-      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz']``
+      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'cube']``
   
    :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint". 
   

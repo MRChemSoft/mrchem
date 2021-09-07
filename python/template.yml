@@ -462,6 +462,17 @@ sections:
         default: "initial_guess/Y_b"
         docstring: |
           File name for beta response orbitals, used with ``mw`` guess.
+      - name: CUBEfiles
+        type: List[str]
+        default: []
+        docstring: |
+          List of paths for the CUBEfiles. can be only one or many. The file naming format is as follows (0)_(1)_(2)_(3)_(4).cube where:
+            - (0) must be phi, for orbitals, or rho, for densities.
+            - (1) must be p, a or b for paired, alpha or beta spin function respectively.
+            - (2) must be scf or rsp for a SCF calculation or response respectively.
+            - (3) must be an integer defining the function ID or an interval of the form a-b where we include a, a+1, ..., b-1, b functions.
+            - (4) re or im for real or imaginary parts of the function.
+          
   - name: SCF
     docstring: |
       Includes parameters related to the ground state SCF orbital optimization.
@@ -533,7 +544,8 @@ sections:
              'sad_sz',
              'sad_dz',
              'sad_tz',
-             'sad_qz']"
+             'sad_qz',
+             'cube']"
         docstring: |
           Type of initial guess for ground state orbitals.
           ``chk`` restarts a previous calculation which was dumped using the

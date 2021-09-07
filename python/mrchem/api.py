@@ -26,6 +26,7 @@
 import math
 
 from .helpers import *
+from .CUBEparser import *
 from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
 
 

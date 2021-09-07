@@ -34,6 +34,7 @@
 
 #include "initial_guess/chk.h"
 #include "initial_guess/core.h"
+#include "initial_guess/cube.h"
 #include "initial_guess/gto.h"
 #include "initial_guess/mw.h"
 #include "initial_guess/sad.h"
@@ -309,6 +310,9 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto gto_bas = json_guess["file_basis"];
     auto file_chk = json_guess["file_chk"];
     auto restricted = json_guess["restricted"];
+    auto cube_p = json_guess["file_CUBE_p"];
+    // auto cube_a = json_guess["file_CUBE_a"]; // Add this later
+    // auto cube_b = json_guess["file_CUBE_b"]; // Add this later
 
     // Figure out number of electrons
     int mult = mol.getMultiplicity(); // multiplicity
@@ -344,6 +348,8 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = initial_guess::sad::setup(Phi, prec, nucs, zeta);
     } else if (type == "gto") {
         success = initial_guess::gto::setup(Phi, prec, gto_bas, gto_p, gto_a, gto_b);
+    } else if (type == "cube") {
+        success = initial_guess::cube::setup(Phi, prec, cube_p); //, cube_a, cube_b); //TODOmake it so there are more input types
     } else {
         MSG_ERROR("Invalid initial guess");
         success = false;
@@ -789,6 +795,7 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto mw_yb = json_guess["file_y_b"];
     auto file_chk_x = json_guess["file_chk_x"];
     auto file_chk_y = json_guess["file_chk_y"];
+    auto file_cube_p = json_guess["file_CUBE_p"];
 
     auto &Phi = mol.getOrbitals();
     auto &X = mol.getOrbitalsX();
@@ -800,6 +807,8 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
         success_x = initial_guess::chk::setup(X, file_chk_x);
     } else if (type == "mw") {
         success_x = initial_guess::mw::setup(X, prec, mw_xp, mw_xa, mw_xb);
+    } else if (type == "cube") {
+        success_x = initial_guess::cube::setup(X, prec, file_cube_p); //, mw_xa, mw_xb);
     } else if (type == "none") {
         mrcpp::print::separator(0, '~');
         print_utils::text(0, "Calculation     ", "Compute initial orbitals");

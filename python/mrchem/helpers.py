@@ -23,6 +23,8 @@
 # <https://mrchem.readthedocs.io/>
 #
 
+from .CUBEparser import *
+
 BOHR_2_METER = 5.29177210903e-11
 """Conversion from atomic units of length (Bohr) to meter (CODATA 2018)"""
 ANGSTROM_2_BOHR = 1e-10 / BOHR_2_METER
@@ -148,6 +150,10 @@ def write_scf_guess(user_dict, method_name):
             print("Invalid zeta:" + guess_suffix)
 
     file_dict = user_dict["Files"]
+
+    if (guess_type == 'cube'):
+        write_cube_dict(file_dict)
+
     guess_dict = {
         "zeta": zeta,
         "prec": guess_prec,
@@ -162,7 +168,11 @@ def write_scf_guess(user_dict, method_name):
         "file_gto_b": file_dict["guess_gto_b"],
         "file_phi_p": file_dict["guess_phi_p"] + "_scf",
         "file_phi_a": file_dict["guess_phi_a"] + "_scf",
-        "file_phi_b": file_dict["guess_phi_b"] + "_scf"
+        "file_phi_b": file_dict["guess_phi_b"] + "_scf",
+        "file_CUBE_p": "CUBE_p_vector.json",
+        "file_CUBE_a": "CUBE_a_vector.json",
+        "file_CUBE_b": "CUBE_b_vector.json"
+
     }
     return guess_dict
 
@@ -384,3 +394,5 @@ def parse_wf_method(user_dict):
         )
 
     return method_name, wf_method, dft_funcs
+
+

@@ -23,24 +23,27 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <nlohmann/json.hpp>
+#pragma once
+
+#include <string>
+
+#include "qmfunctions/qmfunction_fwd.h"
+
+/** @file cube.h
+ *
+ * @brief Module for generating initial guess from cube file
+ *
+ */
 
 namespace mrchem {
+namespace initial_guess {
+namespace cube {
 
-class Molecule;
-class CUBEfunction;
-namespace driver {
+bool setup(OrbitalVector &Phi, double prec,
+           const std::string &file_p); //,
+//           const std::string &file_a,
+//           const std::string &file_b);
 
-void init_molecule(const nlohmann::json &input, Molecule &mol);
-nlohmann::json print_properties(const Molecule &mol);
-std::vector<mrchem::CUBEfunction> getCUBEFunction(const nlohmann::json &json_inp);
-
-namespace scf {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace rsp {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-
-} // namespace driver
+} // namespace cube
+} // namespace initial_guess
 } // namespace mrchem
