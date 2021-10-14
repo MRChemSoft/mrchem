@@ -1,9 +1,9 @@
 version: 2
 
 variables:
-  ubuntu-1804: &ubuntu-1804
+  ubuntu-2004: &ubuntu-2004
     docker:
-      - image: quay.io/metamr/circleci_ubuntu-18.04:f969788
+      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-20.04:sha-343e011
         name: tsubame
         user: merzbow
     working_directory: ~/mrchem
@@ -12,7 +12,7 @@ variables:
       name: Configuring serial
       shell: /bin/bash
       command: |
-        python3 setup \
+        python setup \
           --type=release \
           --cxx=g++ \
           --prefix=$HOME/Software/MRChem
@@ -21,7 +21,7 @@ variables:
       name: Configuring OpenMP parallel
       shell: /bin/bash
       command: |
-        python3 setup \
+        python setup \
           --type=release \
           --cxx=g++ \
           --omp \
@@ -31,7 +31,7 @@ variables:
       name: Configuring MPI parallel
       shell: /bin/bash
       command: |
-        python3 setup \
+        python setup \
           --type=release \
           --cxx=mpicxx \
           --mpi \
@@ -52,14 +52,14 @@ variables:
 
 jobs:
   serial-py3:
-    <<: *ubuntu-1804
+    <<: *ubuntu-2004
     steps:
       - checkout
       - *configure-serial
       - *build
       - *tests
   omp-py3:
-    <<: *ubuntu-1804
+    <<: *ubuntu-2004
     environment:
       - OMP_NUM_THREADS: '2'
     steps:
@@ -68,7 +68,7 @@ jobs:
       - *build
       - *tests
   mpi-py3:
-    <<: *ubuntu-1804
+    <<: *ubuntu-2004
     steps:
       - checkout
       - *configure-mpi

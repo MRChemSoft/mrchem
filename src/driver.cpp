@@ -969,7 +969,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockOpera
     /////////////////   External Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("external_operator")) {
-        auto field = json_fock["external_operator"]["electric_field"];
+        auto field = json_fock["external_operator"]["electric_field"].get<std::array<double, 3>>();
         auto r_O = json_fock["external_operator"]["r_O"];
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;

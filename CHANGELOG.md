@@ -1,5 +1,16 @@
 # Change log
 
+## Version 1.0.2 2021-10-13
+
+### Changed
+
+- Updated MRCPP to v1.4.0
+- Updated Eigen to v3.4.0
+
+### Fixed
+
+- Compile error with Eigen-3.4 due to conversion std::array<double> -> Eigen::VectorXd
+
 ## Version 1.0.1 2020-12-04
 
 ### Changed

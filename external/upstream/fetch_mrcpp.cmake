@@ -1,4 +1,4 @@
-find_package(MRCPP CONFIG QUIET
+find_package(MRCPP 1.3 CONFIG QUIET
   NO_CMAKE_PATH
   NO_CMAKE_PACKAGE_REGISTRY
   NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
@@ -37,7 +37,7 @@ else()
   FetchContent_Declare(mrcpp_sources
     QUIET
     URL
-      https://github.com/MRChemSoft/mrcpp/archive/v1.3.6.tar.gz
+      https://github.com/MRChemSoft/mrcpp/archive/v1.4.0.tar.gz
     )
 
   FetchContent_GetProperties(mrcpp_sources)
