@@ -40,6 +40,12 @@ def write_cube_dict(user_dict):
     all_path_list.append(sort_paths(file_dict["guess_cube_p"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_a"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_b"]))
+    all_path_list.append(sort_paths(file_dict["guess_cube_x_p"]))
+    all_path_list.append(sort_paths(file_dict["guess_cube_x_a"]))
+    all_path_list.append(sort_paths(file_dict["guess_cube_x_b"]))
+    all_path_list.append(sort_paths(file_dict["guess_cube_y_p"]))
+    all_path_list.append(sort_paths(file_dict["guess_cube_y_a"]))
+    all_path_list.append(sort_paths(file_dict["guess_cube_y_b"]))
     all_cube_list = []
     for path_list in all_path_list:
         cube_list = []
@@ -50,6 +56,8 @@ def write_cube_dict(user_dict):
 
     vector_dir = file_dict["cube_vectors"]
 
+    # This is becoming silly
+    #TODO PLEASE translate this to loops
     for index, x_list in enumerate(all_cube_list):
         sorted_list = sorted(x_list, key=lambda d: d["ORB_IDS"])
         all_cube_list[index] = sorted_list
@@ -65,6 +73,24 @@ def write_cube_dict(user_dict):
 
     with open(f"{vector_dir}CUBE_b_vector.json", "w") as fd:
         dump(all_cube_list[2], fd, indent=2)
+
+    with open(f"{vector_dir}CUBE_x_p_vector.json", "w") as fd:
+        dump(all_cube_list[3], fd, indent=2)
+
+    with open(f"{vector_dir}CUBE_x_a_vector.json", "w") as fd:
+        dump(all_cube_list[4], fd, indent=2)
+
+    with open(f"{vector_dir}CUBE_x_b_vector.json", "w") as fd:
+        dump(all_cube_list[5], fd, indent=2)
+
+    with open(f"{vector_dir}CUBE_y_p_vector.json", "w") as fd:
+        dump(all_cube_list[6], fd, indent=2)
+
+    with open(f"{vector_dir}CUBE_y_a_vector.json", "w") as fd:
+        dump(all_cube_list[7], fd, indent=2)
+
+    with open(f"{vector_dir}CUBE_y_b_vector.json", "w") as fd:
+        dump(all_cube_list[8], fd, indent=2)
 
 
 def sort_paths(path):

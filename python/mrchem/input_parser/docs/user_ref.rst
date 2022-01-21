@@ -566,6 +566,42 @@ User input reference
   
     **Default** ``initial_guess/phi_b``
   
+   :guess_cube_x_p: File name for paired orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.cube 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/X_p``
+  
+   :guess_cube_x_a: File name for alpha orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_a>_rsp_idx_<0...Na>_<re/im>.cube 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/X_a``
+  
+   :guess_cube_x_b: File name for beta orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.cube 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/X_b``
+  
+   :guess_cube_y_p: File name for paired orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.cube 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/Y_p``
+  
+   :guess_cube_y_a: File name for alpha orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_a>_rsp_idx_<0...Na>_<re/im>.cube 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/Y_a``
+  
+   :guess_cube_y_b: File name for beta orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.cube 
+  
+    **Type** ``str``
+  
+    **Default** ``initial_guess/Y_b``
+  
    :cube_vectors: Directory where cube vectors are stored for mrchem calculation. 
   
     **Type** ``str``

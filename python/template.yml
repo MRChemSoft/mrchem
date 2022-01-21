@@ -519,6 +519,42 @@ sections:
         docstring: |
           File name for beta orbitals, used with ``cube`` guess.
           Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube
+      - name: guess_cube_x_p
+        type: str
+        default: "initial_guess/X_p"
+        docstring: |
+          File name for paired orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.cube
+      - name: guess_cube_x_a
+        type: str
+        default: "initial_guess/X_a"
+        docstring: |
+          File name for alpha orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_a>_rsp_idx_<0...Na>_<re/im>.cube
+      - name: guess_cube_x_b
+        type: str
+        default: "initial_guess/X_b"
+        docstring: |
+          File name for beta orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.cube
+      - name: guess_cube_y_p
+        type: str
+        default: "initial_guess/Y_p"
+        docstring: |
+          File name for paired orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.cube
+      - name: guess_cube_y_a
+        type: str
+        default: "initial_guess/Y_a"
+        docstring: |
+          File name for alpha orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_a>_rsp_idx_<0...Na>_<re/im>.cube
+      - name: guess_cube_y_b
+        type: str
+        default: "initial_guess/Y_b"
+        docstring: |
+          File name for beta orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.cube
       - name: cube_vectors
         type: str
         default: cube_vectors/

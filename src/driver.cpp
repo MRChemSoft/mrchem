@@ -839,6 +839,12 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto mw_yb = json_guess["file_y_b"];
     auto file_chk_x = json_guess["file_chk_x"];
     auto file_chk_y = json_guess["file_chk_y"];
+    auto cube_xp = json_guess["file_CUBE_x_p"];
+    auto cube_xa = json_guess["file_CUBE_x_a"];
+    auto cube_xb = json_guess["file_CUBE_x_b"];
+    auto cube_yp = json_guess["file_CUBE_y_p"];
+    auto cube_ya = json_guess["file_CUBE_y_a"];
+    auto cube_yb = json_guess["file_CUBE_y_b"];
 
     auto &Phi = mol.getOrbitals();
     auto &X = mol.getOrbitalsX();
@@ -850,6 +856,8 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
         success_x = initial_guess::chk::setup(X, file_chk_x);
     } else if (type == "mw") {
         success_x = initial_guess::mw::setup(X, prec, mw_xp, mw_xa, mw_xb);
+    } else if (type == "cube") {
+        success_x = initial_guess::cube::setup(X, prec, cube_xp, cube_xa, cube_xb);
     } else if (type == "none") {
         mrcpp::print::separator(0, '~');
         print_utils::text(0, "Calculation     ", "Compute initial orbitals");
@@ -867,6 +875,8 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
             success_y = initial_guess::chk::setup(Y, file_chk_y);
         } else if (type == "mw") {
             success_y = initial_guess::mw::setup(Y, prec, mw_yp, mw_ya, mw_yb);
+        } else if (type == "cube") {
+            success_y = initial_guess::cube::setup(Y, prec, cube_yp, cube_ya, cube_yb);
         } else if (type == "none") {
             mrcpp::print::separator(0, '~');
             print_utils::text(0, "Calculation     ", "Compute initial orbitals");
