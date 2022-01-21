@@ -173,8 +173,8 @@ void Bank::open() {
                 }
                 currentsize[account] -= block.second->BlockData.size() / 128; // converted into kB
                 totcurrentsize -= block.second->BlockData.size() / 128;       // converted into kB
-                block.second->BlockData.resize(0, 0);                         // NB: the matrix does not clear itself otherwise
-                //assert(currentsize[account] >= 0);
+                block.second->BlockData.resize(0, 0); // NB: the matrix does not clear itself otherwise
+                assert(currentsize[account] >= 0);
                 this->currentsize[account] = std::max(0ll, currentsize[account]);
                 toeraseVec.push_back(block.first);
             }
