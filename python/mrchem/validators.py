@@ -23,7 +23,6 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from importlib.machinery import WindowsRegistryFinder
 import math
 import itertools
 import re
