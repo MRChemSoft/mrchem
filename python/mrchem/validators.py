@@ -97,16 +97,6 @@ class MoleculeValidator:
         if self.do_translate:
             self.atomic_coords = self.translate_com_to_origin()
 
-    def write_mol(self):
-        """Return the mol dict used in the program input."""
-        return {
-            'multiplicity': self.mult,
-            'charge': self.charge,
-            'coords': self.get_coords_in_program_syntax(),
-            'cavity_coords': self.get_cavity_in_program_syntax(),
-            'cavity_width': self.cavity_width
-        }
-
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
         return [
