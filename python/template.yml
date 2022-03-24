@@ -240,6 +240,8 @@ sections:
       - name: multiplicity
         type: int
         default: 1
+        predicates: 
+          - "value > 0"
         docstring: |
           Spin multiplicity of molecule.
       - name: translate

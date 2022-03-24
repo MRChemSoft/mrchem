@@ -285,6 +285,9 @@ User input reference
   
     **Default** ``1``
   
+    **Predicates**
+      - ``value > 0``
+  
    :translate: Translate coordinates such that center of mass coincides with the global gauge origin. 
   
     **Type** ``bool``
