@@ -28,6 +28,7 @@ import math
 from .helpers import *
 from .CUBEparser import *
 from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
+from .validators import MoleculeValidator
 
 
 def translate_input(user_dict):
@@ -37,7 +38,7 @@ def translate_input(user_dict):
         origin = [ANGSTROM_2_BOHR * r for r in origin]
 
     # prepare bits and pieces
-    mol_dict = write_molecule(user_dict, origin)
+    mol_dict = MoleculeValidator(user_dict, origin).write_mol()
     mpi_dict = write_mpi(user_dict)
     mra_dict = write_mra(user_dict, mol_dict)
     scf_dict = write_scf_calculation(user_dict, origin)
