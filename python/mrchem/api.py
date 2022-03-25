@@ -25,8 +25,16 @@
 
 import math
 
-from .helpers import *
-from .CUBEparser import *
+from .helpers import (
+    write_scf_fock,
+    write_scf_guess,
+    write_scf_solver,
+    write_scf_properties,
+    write_scf_plot,
+    write_rsp_calc,
+    parse_wf_method
+)
+from .physical_constants import PhysicalConstants as PC
 from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
 
@@ -35,7 +43,7 @@ def translate_input(user_dict):
     # get the origin in the desired units of measure
     origin = user_dict["world_origin"]
     if user_dict["world_unit"] == "angstrom":
-        origin = [ANGSTROM_2_BOHR * r for r in origin]
+        origin = [PC.ANGSTROM_2_BOHR * r for r in origin]
 
     # prepare bits and pieces
     mol_dict = write_molecule(user_dict, origin)

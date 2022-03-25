@@ -23,13 +23,9 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from .CUBEparser import *
+from .physical_constants import PhysicalConstants as PC
+from .CUBEparser import write_cube_dict
 
-BOHR_2_METER = 5.29177210903e-11
-"""Conversion from atomic units of length (Bohr) to meter (CODATA 2018)"""
-ANGSTROM_2_BOHR = 1e-10 / BOHR_2_METER
-#ANGSTROM_2_BOHR = 1.889725989
-"""Conversion factor from Angstrom to Bohr"""
 # yapf: disable
 SHORTHAND_FUNCTIONALS = [
     'svwn3',
@@ -262,7 +258,7 @@ def write_scf_plot(user_dict):
         plot_dict["plotter"] = user_dict["Plotter"]
         if user_dict["world_unit"] == "angstrom":
             plot_dict["plotter"] = {
-                k: [ANGSTROM_2_BOHR * r for r in plot_dict["plotter"][k]]
+                k: [PC.ANGSTROM_2_BOHR * r for r in plot_dict["plotter"][k]]
                 for k in plot_dict["plotter"].keys()
             }
     return plot_dict
