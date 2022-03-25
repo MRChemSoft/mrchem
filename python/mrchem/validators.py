@@ -172,17 +172,22 @@ class MoleculeValidator:
         atom_with_symbol = line_start + zero_or_more_whitespace + symbol + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
         atom_with_number = line_start + zero_or_more_whitespace + integer + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
 
+        p_with_symbol = re.compile(atom_with_symbol)
+        p_with_number = re.compile(atom_with_number)
+
         # Parse coordinates
         coords = []
         labels = []
         bad_atoms = []
         for atom in self.coords_raw.strip().splitlines():
-            if m := re.match(atom_with_symbol, atom):
-                g = m.group()
+            match_symbol = p_with_symbol.match(atom)
+            match_number = p_with_number.match(atom)
+            if match_symbol:
+                g = match_symbol.group()
                 labels.append(g.split()[0].strip().lower())
                 coords.append([float(c.strip()) for c in g.split()[1:]])
-            elif m := re.match(atom_with_number, atom):
-                g = m.group()
+            elif match_number:
+                g = match_number.group()
                 Z = int(g.split()[0].strip())
                 labels.append(PeriodicTableByZ[Z].symbol.lower())
                 coords.append([float(c.strip()) for c in g.split()[1:]])
@@ -217,14 +222,17 @@ class MoleculeValidator:
 
         # Build regex
         valid_sphere = line_start + zero_or_more_whitespace + decimal + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
+        p = re.compile(valid_sphere)
 
         # Parse coordinates
         coords = []
         radii = []
         bad_spheres = []
+
         for sphere in self.spheres_raw.strip().splitlines():
-            if m := re.match(valid_sphere, sphere):
-                g = m.group()
+            match = p.match(sphere)
+            if match:
+                g = match.group()
                 radii.append(float(g.split()[-1].strip()))
                 coords.append([float(c.strip()) for c in g.split()[:-1]])
             else:
