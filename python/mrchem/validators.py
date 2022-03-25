@@ -250,8 +250,6 @@ class MoleculeValidator:
                 'Cavity radii cannot be negative'
             ))
 
-        # TODO: Check for cavity singularities?
-
         return radii, coords
 
     def check_for_nuclear_singularities(self):
