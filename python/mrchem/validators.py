@@ -224,7 +224,7 @@ class MoleculeValidator:
         valid_sphere = line_start + zero_or_more_whitespace + decimal + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
         p = re.compile(valid_sphere)
 
-        # Parse coordinates
+        # Parse spheres
         coords = []
         radii = []
         bad_spheres = []
