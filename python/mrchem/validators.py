@@ -32,9 +32,9 @@ from .periodictable import PeriodicTable, PeriodicTableByZ
 
 
 class MoleculeValidator:
-    """Validator for molecule input"""
+    """Sanity check routines for the user's Molecule section."""
 
-    # Thresholds used in validations
+    # Thresholds
     THRESHOLD_NUCLEAR_SINGULARITY_ERROR = 1.0e-6
     THRESHOLD_NUCLEAR_SINGULARITY_WARNING = 1.0e-3
 
@@ -59,6 +59,35 @@ class MoleculeValidator:
 
 
     def __init__(self, user_dict, origin):
+        """
+        Raises RunTimeError with helpful messages when invalid format
+        or unphysical input value are detected:
+
+        Atomic coordinates
+        - Correct XYZ format checked with regexes (both atomic symbols 
+          and numbers are valid atom identifiers, and can be used 
+          interchancably in the same input)
+        - Nuclear singularities
+        - Atomic symbols checked against periodic table 
+        
+        Cavity spheres
+        - Correct format checked with regexes
+        - Negative radii not allowed
+
+        Electrons, charge and multiplicity
+        - charge > Z not allowed
+        - n_unpaired > n_electrons not allowed
+        - multiplicity and n_electrons both odd/even not allowed
+        - restricted open-shell not allowed
+
+        Unit conversions
+        - convert to bohr if user specified angstrom
+
+        Parameters
+        ----------
+        user_dict: dict, dictionary of user input
+        origin: List[float], origin to be used in the calcuation
+        """
         self.user_dict = user_dict
         self.origin = origin
         self.unit = user_dict['world_unit']
@@ -76,8 +105,17 @@ class MoleculeValidator:
         self.cavity_width = self.cavity_dict['cavity_width']
         self.has_sphere_input = len(self.spheres_raw.strip().splitlines()) > 0
 
-        # Perform validations on input coordinates and cavity spheres
+        # Validate atomic coordinates
         self.atomic_symbols, self.atomic_coords = self.validate_atomic_coordinates()
+
+        # Translate center of mass if requested
+        # We must test for translation before validating the cavity, 
+        # in case the nuclear coordinates are to be used for the
+        # sphere centers
+        if self.do_translate:
+            self.atomic_coords = self.translate_com_to_origin()
+
+        # Validate cavity spheres
         self.cavity_radii, self.cavity_coords = self.validate_cavity()
 
         # Perform some sanity checks
@@ -90,11 +128,6 @@ class MoleculeValidator:
             self.cavity_coords = self.ang2bohr_array(self.cavity_coords)
             self.cavity_radii = self.ang2bohr_vector(self.cavity_radii)
             self.cavity_width *= ANGSTROM_2_BOHR
-
-        # Translate center of mass if requested
-        # TODO: Should cavity coords also be translated?
-        if self.do_translate:
-            self.atomic_coords = self.translate_com_to_origin()
 
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
@@ -132,12 +165,12 @@ class MoleculeValidator:
         symbol = r'[a-zA-Z]{1,3}'
         decimal = r'[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)'
         integer = r'[0-9]+'
-        atLeastOneWhitespace = r'[\s]+'
-        anyWhitespace = r'[\s]*'
+        one_or_more_whitespace = r'[\s]+'
+        zero_or_more_whitespace = r'[\s]*'
 
         # Build regex
-        atom_with_symbol = line_start + anyWhitespace + symbol + (atLeastOneWhitespace + decimal)*3 + anyWhitespace + line_end
-        atom_with_number = line_start + anyWhitespace + integer + (atLeastOneWhitespace + decimal)*3 + anyWhitespace + line_end
+        atom_with_symbol = line_start + zero_or_more_whitespace + symbol + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
+        atom_with_number = line_start + zero_or_more_whitespace + integer + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
 
         # Parse coordinates
         coords = []
@@ -163,10 +196,11 @@ class MoleculeValidator:
             ))
 
         # Check that the atomic symbols represent valid elements
-        if any([label not in PeriodicTable for label in labels]):
+        fltr = filter(lambda x: x not in PeriodicTable, labels)
+        if any(list(fltr)):
             newline = '\n'
             raise RuntimeError(self.ERROR_MESSAGE_ATOMIC_SYMBOLS(
-                f'One or more invalid atomic symbols:\n{newline.join(set(filter(lambda x: x not in PeriodicTable, labels)))}'
+                f'One or more invalid atomic symbols:\n{newline.join(set(fltr))}'
             ))
 
         return labels, coords
@@ -178,11 +212,11 @@ class MoleculeValidator:
         line_start = r'^'
         line_end = r'$'
         decimal = r'[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)'
-        atLeastOneWhitespace = r'[\s]+'
-        anyWhitespace = r'[\s]*'
+        one_or_more_whitespace = r'[\s]+'
+        zero_or_more_whitespace = r'[\s]*'
 
         # Build regex
-        valid_sphere = line_start + anyWhitespace + decimal + (atLeastOneWhitespace + decimal)*3 + anyWhitespace + line_end
+        valid_sphere = line_start + zero_or_more_whitespace + decimal + (one_or_more_whitespace + decimal)*3 + zero_or_more_whitespace + line_end
 
         # Parse coordinates
         coords = []
@@ -252,7 +286,7 @@ class MoleculeValidator:
         # Check for impossible charge
         if self.charge > Z:
             raise RuntimeError(self.ERROR_UNPHYSICAL_CHARGE(
-                f'The specified charge ({self.charge}) exceeds the nuclear charge ({Z})'
+                f'The specified charge ({self.charge}) cannot be larger than the nuclear charge ({Z})'
             ))
 
         # Check for unphysical multiplicity
