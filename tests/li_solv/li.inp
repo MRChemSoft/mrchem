@@ -1,47 +1,37 @@
-# vim:syntax=sh:
-world_prec = 1.0e-3               # Overall relative precision
-world_size = 5                    # Size of simulation box 2^n
-
-MPI {
-  numerically_exact = true        # Guarantee identical results in MPI
-}
-
-Molecule {
-  charge = 1
-$coords
-Li   0.0     0.0    0.0
-$end
-}
-
-WaveFunction {
-  method = pbe0                     # Wave function method (HF or DFT)
-}
-
-Environment {
-  run_environment = true
-  algorithm = scrf
-  kain = 5
-  max_iter = 100
-  convergence_criterion = dynamic
-  extrapolate_Vr = true
-
-  Cavity {
-    cavity_width = 0.5
-$spheres
-0.0  0.0  0.0  4.0
-$end
+{
+"world_prec": 1.0e-3,
+"world_size": 5,
+"MPI": {
+  "numerically_exact": true
+},
+"Molecule": {
+  "charge": 1,
+  "coords": "Li 0.0 0.0 0.0"
+},
+"WaveFunction": {
+  "method": "pbe0"
+},
+"Environment": {
+  "run_environment": true,
+  "algorithm": "scrf",
+  "kain": 5,
+  "max_iter": 100,
+  "convergence_criterion": "dynamic",
+  "extrapolate_Vr": true,
+  "Cavity": {
+    "cavity_width": 0.5,
+    "spheres": "0.0 0.0 0.0 4.0"
+  },
+  "Permittivity": {
+    "epsilon_in": 1.0,
+    "epsilon_out": 2.0,
+    "formulation": "exponential"
   }
-
-  Permittivity {
-    epsilon_in = 1.0
-    epsilon_out = 2.0
-    formulation = exponential
-  }
+},
+"SCF": {
+  "run": true,
+  "kain": 5,
+  "orbital_thrs": 1.0e-1,
+  "guess_type": "sad_dz"
 }
-
-SCF {
-  run = true
-  kain = 5
-  orbital_thrs = 1.0e-1
-  guess_type = sad_dz
 }
