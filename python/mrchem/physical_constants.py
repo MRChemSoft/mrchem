@@ -24,5 +24,7 @@
 #
 
 class PhysicalConstants:
+    """Simple class holding physical constants and conversion
+    factors used during the input parsing."""
     BOHR_2_METER = 5.29177210903e-11
     ANGSTROM_2_BOHR = 1.0e-10 / BOHR_2_METER
