@@ -24,6 +24,6 @@ filters = {
     ER_NUC: rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="li", filters=filters)
+ierr = run(options, input_file="li", filters=filters, extra_args=['--json'])
 
 sys.exit(ierr)

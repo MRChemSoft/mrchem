@@ -11,10 +11,10 @@
 ***                                                                     ***
 ***         VERSION            1.1.0-alpha                              ***
 ***                                                                     ***
-***         Git branch         rebase-zora                              ***
-***         Git commit hash    faecb83984c1d010ec90-dirty               ***
-***         Git commit author  Stig Rune Jensen                         ***
-***         Git commit date    Thu Mar 10 17:22:51 2022 +0100           ***
+***         Git branch         molecule-class-cleanup-input-parser          ***
+***         Git commit hash    d073311b4510a57f986e                     ***
+***         Git commit author  Anders Brakestad                         ***
+***         Git commit date    Mon Mar 28 13:46:33 2022 +0200           ***
 ***                                                                     ***
 ***         Contact: luca.frediani@uit.no                               ***
 ***                                                                     ***
@@ -46,14 +46,14 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 ---------------------------------------------------------------------------
 
- MRCPP version         : 1.4.1
+ MRCPP version         : 1.4.0-alpha
  Git branch            : HEAD
- Git commit hash       : 75d41879b1908a94a452
+ Git commit hash       : 2797a7a18efb69942a6e
  Git commit author     : Stig Rune Jensen
- Git commit date       : Thu Jan 6 11:38:53 2022 +0100
+ Git commit date       : Fri Mar 12 12:48:07 2021 +0100
 
- Linear algebra        : EIGEN v3.4.0
- Parallelization       : OpenMP (1 threads)
+ Linear algebra        : EIGEN v3.3.7
+ Parallelization       : NONE
 
 ---------------------------------------------------------------------------
 
@@ -133,6 +133,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Compute initial energy
  Method                  : DFT (PBE0)
+ Relativity              : None
  Precision               : 1.00000e-03
  Localization            : Off
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -178,6 +179,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Optimize ground state orbitals
  Method                  : DFT (PBE0)
+ Relativity              : None
  Checkpointing           : Off
  Max iterations          : 100
  KAIN solver             : 5
@@ -188,7 +190,6 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  Helmholtz precision     : Dynamic
  Energy threshold        : Off
  Orbital threshold       : 1.00000e-01
- ZORA potential          : None
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -196,7 +197,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  Iter           MO residual             Total energy                Update
 ---------------------------------------------------------------------------
     0          1.000000e+00          -7.222649094979         -7.222649e+00
-    1          6.009760e-02          -7.316874877310         -9.422578e-02
+    1          6.037085e-02          -7.320075664302         -9.742657e-02
 ---------------------------------------------------------------------------
                       SCF converged in 1 iterations!
 ===========================================================================
@@ -227,26 +228,26 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ===========================================================================
                          Molecular Energy (final)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  7.571525854088
- E-N energy              :            (au)                -16.477509554619
- Coulomb energy          :            (au)                  3.354625825770
- Exchange energy         :            (au)                 -0.419204037691
- X-C energy              :            (au)                 -1.285740005448
+ Kinetic energy          :            (au)                  7.584212118792
+ E-N energy              :            (au)                -16.491476051686
+ Coulomb energy          :            (au)                  3.357678874268
+ Exchange energy         :            (au)                 -0.419594145537
+ X-C energy              :            (au)                 -1.286849061623
  Ext. field (el)         :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
  N-N energy              :            (au)                  0.000000000000
  Ext. field (nuc)        :            (au)                  0.000000000000
- Tot. Reac. Energy       :            (au)                 -0.060572959409
- El. Reac. Energy        :            (au)                  0.121166394074
- Nuc. Reac. Energy       :            (au)                 -0.181739353484
+ Tot. Reac. Energy       :            (au)                 -0.064047398516
+ El. Reac. Energy        :            (au)                  0.128081335378
+ Nuc. Reac. Energy       :            (au)                 -0.192128733894
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -7.135135523826
- Nuclear energy          :            (au)                 -0.181739353484
+ Electronic energy       :            (au)                 -7.127946930408
+ Nuclear energy          :            (au)                 -0.192128733894
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -7.316874877310e+00
-                         :      (kcal/mol)             -4.591408269000e+03
-                         :        (kJ/mol)             -1.921045220996e+04
-                         :            (eV)             -1.991022996492e+02
+ Total energy            :            (au)             -7.320075664302e+00
+                         :      (kcal/mol)             -4.593416793146e+03
+                         :        (kJ/mol)             -1.921885587500e+04
+                         :            (eV)             -1.991893974965e+02
 ===========================================================================
 
 
@@ -255,9 +256,9 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -2.218888564195
+    0    2    p          :            (au)                 -2.210659505993
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -4.437777128389
+ Sum occupied            :            (au)                 -4.421319011986
 ===========================================================================
 
 
@@ -266,7 +267,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ---------------------------------------------------------------------------
  r_O                     :        0.000000        0.000000        0.000000
 ---------------------------------------------------------------------------
- Electronic vector       :       -0.000000       -0.000000       -0.000000
+ Electronic vector       :       -0.000000        0.000000       -0.000000
  Magnitude               :            (au)                        0.000000
                          :         (Debye)                        0.000000
 ---------------------------------------------------------------------------
@@ -286,7 +287,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  1m  5s                       ***
+***                       Wall time :  0h  0m 48s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            
