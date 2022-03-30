@@ -27,8 +27,10 @@ import math
 import itertools
 import re
 
-from .physical_constants import PhysicalConstants as PC
+from .physical_constants import MRChemPhysConstants
 from .periodictable import PeriodicTable, PeriodicTableByZ
+
+pc = MRChemPhysConstants()
 
 
 class MoleculeValidator:
@@ -127,7 +129,7 @@ class MoleculeValidator:
             self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
             self.cavity_coords = self.ang2bohr_array(self.cavity_coords)
             self.cavity_radii = self.ang2bohr_vector(self.cavity_radii)
-            self.cavity_width *= PC.ANGSTROM_2_BOHR
+            self.cavity_width *= pc.angstrom2bohrs
 
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
@@ -328,10 +330,10 @@ class MoleculeValidator:
     def ang2bohr_array(coords):
         """Helper function. Convert List[List[float]] from angstrom to bohr."""
         return [
-            [c * PC.ANGSTROM_2_BOHR for c in element] for element in coords
+            [c * pc.angstrom2bohrs for c in element] for element in coords
         ]
 
     @staticmethod
     def ang2bohr_vector(vec):
         """Helper function. Convert List[float] from angstrom to bohr"""
-        return [el * PC.ANGSTROM_2_BOHR for el in vec]
+        return [el * pc.angstrom2bohrs for el in vec]

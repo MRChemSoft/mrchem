@@ -23,8 +23,56 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-class PhysicalConstants:
-    """Simple class holding physical constants and conversion
-    factors used during the input parsing."""
-    BOHR_2_METER = 5.29177210903e-11
-    ANGSTROM_2_BOHR = 1.0e-10 / BOHR_2_METER
+from qcelemental.physical_constants.context import PhysicalConstantsContext
+from qcelemental.datum import Datum
+
+
+class MRChemPhysConstants(PhysicalConstantsContext):
+    """Wrapper over the PhysicalConstantsContext class from QCElemental.
+    Subclassing it here allows for some customization, and it ensures that
+    when imported the same CODATA source is used automatically (we use 2018).
+    
+    Notes:
+    - electron g factor        : CODATA: -2.00231930436256
+                                 MRChem:  2.0023193043618
+
+    - fine structure constant  : CODATA: 7.2973525693e-3
+                                 MRChem: 7.2973525664
+
+    - au -> wavenumbers        : CODATA: 219474.6313632
+                                 MRChem: 219471.5125976648
+
+    - hartree2simagnetizability: How derive this one?
+    """
+    def __init__(self, context="CODATA2018"):
+        super().__init__(context)
+
+        # Define custom shorthands. Each tuple is organized as follows (to be compatible with the Datum object):
+        # (callname, units, value, description)
+        customs = [
+            ('pi',                              '',       3.1415926535897932384,                                                                              'Pi'),
+            ('pi_sqrt',                         '',       1.7724538509055160273,                                                                              'Square root of pi'),
+            ('hartree2simagnetizability',       'J T^-2', 78.9451185,                                                                                         'Atomic units to J/T^2 (magnetizability)'),
+            ('atomic_unit_of_bohr_magneton',    '',       self.Bohr_magneton / self.atomic_unit_of_magnetizability / self.atomic_unit_of_mag_flux_density,    'Bohr magneton in atomic units'),
+            ('atomic_unit_of_nuclear_magneton', '',       self.nuclear_magneton / self.atomic_unit_of_magnetizability / self.atomic_unit_of_mag_flux_density, 'Nuclear magneton in atomic units'),
+            ('angstrom2bohrs',                  'Å',      1.0 / self.bohr2angstroms,                                                                           'Angstrom -> Bohr conversion factor')
+        ]
+
+        # Add aliases to internally stored constants and make them callable
+        for ident, units, value, comment in customs:
+            self.pc[ident.lower()] = Datum(ident, units, value, comment=comment)
+            self.__setattr__(ident, value)
+
+    def to_dict(self):
+        """Generate a dictionary storing the constants, which can be passed to the c++ program.
+        
+        The transtable is used to make the names Python-friendly."""
+        return {
+            qca.label.lower().translate(self._transtable): float(qca.data) for qca in self.pc.values()
+        }
+
+
+if __name__ == '__main__':
+    pc = MRChemPhysConstants()
+    for datum in pc.pc.values():
+        print(datum)

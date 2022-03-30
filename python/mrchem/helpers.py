@@ -23,8 +23,10 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from .physical_constants import PhysicalConstants as PC
+from .physical_constants import MRChemPhysConstants
 from .CUBEparser import write_cube_dict
+
+pc = MRChemPhysConstants()
 
 # yapf: disable
 SHORTHAND_FUNCTIONALS = [
@@ -258,7 +260,7 @@ def write_scf_plot(user_dict):
         plot_dict["plotter"] = user_dict["Plotter"]
         if user_dict["world_unit"] == "angstrom":
             plot_dict["plotter"] = {
-                k: [PC.ANGSTROM_2_BOHR * r for r in plot_dict["plotter"][k]]
+                k: [pc.angstrom2bohrs * r for r in plot_dict["plotter"][k]]
                 for k in plot_dict["plotter"].keys()
             }
     return plot_dict
