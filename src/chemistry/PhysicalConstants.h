@@ -31,12 +31,12 @@ namespace mrchem {
 
 class PhysicalConstants {
 public:
-    static PhysicalConstants* getInstance();
+    static PhysicalConstants *getInstance();
     void setConstants(const nlohmann::json &constants);
     double get(std::string name);
 
 private:
-    static PhysicalConstants* _instance;
+    static PhysicalConstants *_instance;
     PhysicalConstants();
     nlohmann::json _constants;
 };
