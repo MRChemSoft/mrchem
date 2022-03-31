@@ -24,11 +24,15 @@
  */
 #include "chemistry_utils.h"
 #include "Nucleus.h"
+#include "PhysicalConstants.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/density_utils.h"
 #include "utils/math_utils.h"
 #include <MRCPP/Gaussians>
+
 namespace mrchem {
+
+using pc = PhysicalConstants;
 
 /** @brief computes the repulsion self energy of a set of nuclei
  *
@@ -61,7 +65,7 @@ double chemistry::get_total_charge(const Nuclei &nucs) {
 }
 
 Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, double alpha) {
-    auto beta = std::pow(alpha / MATHCONST::pi, 3.0 / 2.0);
+    auto beta = std::pow(alpha / pc::getInstance()->get("pi"), 3.0 / 2.0);
     int nNucs = nucs.size();
     auto gauss = mrcpp::GaussExp<3>();
 

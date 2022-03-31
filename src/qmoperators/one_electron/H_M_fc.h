@@ -27,10 +27,14 @@
 
 #include "tensor/RankOneOperator.h"
 
+#include "chemistry/PhysicalConstants.h"
+
 #include "DeltaOperator.h"
 #include "H_B_spin.h"
 
 namespace mrchem {
+
+using pc = mrchem::PhysicalConstants;
 
 /** @class H_M_fc
  *
@@ -52,8 +56,8 @@ public:
             : H_M_fc(H_B_spin(), DeltaOperator(o, proj_prec, smooth_prec)) {}
 
     H_M_fc(H_B_spin s, DeltaOperator delta) {
-        const double coef = -(8.0 / 3.0) * MATHCONST::pi;
-        const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
+        const double coef = -(8.0 / 3.0) * pc::getInstance()->get("pi");
+        const double alpha_2 = pc::getInstance()->get("fine_structure_constant") * pc::getInstance()->get("fine_structure_constant") * 1000000.0;
 
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &h = (*this);

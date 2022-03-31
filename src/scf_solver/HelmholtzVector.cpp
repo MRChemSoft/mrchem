@@ -30,6 +30,7 @@
 #include "parallel.h"
 
 #include "HelmholtzVector.h"
+#include "chemistry/PhysicalConstants.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
@@ -40,6 +41,7 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
+using pc = mrchem::PhysicalConstants;
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 /** @brief HelmholtzVector constructor
@@ -148,13 +150,13 @@ Orbital HelmholtzVector::apply(int i, Orbital &phi) const {
     if (phi.hasReal()) {
         out.alloc(NUMBER::Real);
         mrcpp::apply(this->prec, out.real(), H, phi.real(), -1, true); // Absolute prec
-        out.real().rescale(-1.0 / (2.0 * MATHCONST::pi));
+        out.real().rescale(-1.0 / (2.0 * pc::getInstance()->get("pi")));
     }
     if (phi.hasImag()) {
         out.alloc(NUMBER::Imag);
         mrcpp::apply(this->prec, out.imag(), H, phi.imag(), -1, true); // Absolute prec
         double sign = (phi.conjugate()) ? -1.0 : 1.0;
-        out.imag().rescale(sign / (2.0 * MATHCONST::pi));
+        out.imag().rescale(sign / (2.0 * pc::getInstance()->get("pi")));
     }
     return out;
 }

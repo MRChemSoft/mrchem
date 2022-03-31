@@ -25,9 +25,12 @@
 
 #pragma once
 
+#include "chemistry/PhysicalConstants.h"
 #include "tensor/RankOneOperator.h"
 
 #include "SpinOperator.h"
+
+using pc = mrchem::PhysicalConstants;
 
 namespace mrchem {
 
@@ -51,13 +54,13 @@ public:
             : H_B_spin(SpinOperator()) {}
 
     explicit H_B_spin(SpinOperator s) {
-        const double g_e = PHYSCONST::g_e;
+        const double g_e = pc::getInstance()->get("electron_g_factor");
 
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &h = (*this);
-        h[0] = (-g_e / 2.0) * s[0];
-        h[1] = (-g_e / 2.0) * s[1];
-        h[2] = (-g_e / 2.0) * s[2];
+        h[0] = (g_e / 2.0) * s[0];
+        h[1] = (g_e / 2.0) * s[1];
+        h[2] = (g_e / 2.0) * s[2];
         h[0].name() = "h_B_spin[x]";
         h[1].name() = "h_B_spin[y]";
         h[2].name() = "h_B_spin[z]";

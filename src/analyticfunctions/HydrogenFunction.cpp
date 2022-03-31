@@ -26,8 +26,11 @@
 #include "MRCPP/Printer"
 
 #include "HydrogenFunction.h"
+#include "chemistry/PhysicalConstants.h"
 #include "mrchem.h"
 #include "utils/math_utils.h"
+
+using pc = mrchem::PhysicalConstants;
 
 namespace mrchem {
 
@@ -130,7 +133,7 @@ double AngularFunction::calcConstant() const {
     } else if (L == 3 and M == 5) { c = std::sqrt(105.0/4.0);
     } else if (L == 3 and M == 6) { c = std::sqrt(105.0/4.0);
     } else { NOT_IMPLEMENTED_ABORT; }
-    return c/(2.0*MATHCONST::sqrt_pi);
+    return c/(2.0*pc::getInstance()->get("pi_sqrt"));
 }
 // clang-format on
 

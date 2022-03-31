@@ -25,10 +25,13 @@
 
 #pragma once
 
+#include "chemistry/PhysicalConstants.h"
 #include "tensor/RankTwoOperator.h"
 
 #include "NuclearGradientOperator.h"
 #include "PositionOperator.h"
+
+using pc = mrchem::PhysicalConstants;
 
 namespace mrchem {
 
@@ -53,7 +56,7 @@ public:
             : H_BM_dia(PositionOperator(o), NuclearGradientOperator(1.0, k, proj_prec, smooth_prec)) {}
 
     H_BM_dia(PositionOperator r_o, NuclearGradientOperator r_rm3) {
-        const double alpha_2 = PHYSCONST::alpha * PHYSCONST::alpha;
+        const double alpha_2 = pc::getInstance()->get("fine_structure_constant") * pc::getInstance()->get("fine_structure_constant") * 1000000.0;
 
         RankZeroOperator &o_x = r_o[0];
         RankZeroOperator &o_y = r_o[1];

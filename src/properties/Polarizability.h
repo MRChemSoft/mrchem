@@ -27,10 +27,13 @@
 
 #include <nlohmann/json.hpp>
 
+#include "chemistry/PhysicalConstants.h"
 #include "mrchem.h"
 
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
+
+using pc = mrchem::PhysicalConstants;
 
 namespace mrchem {
 
@@ -50,7 +53,7 @@ public:
 
     void print(const std::string &id) const {
         auto w_au = getFrequency();
-        auto w_cm = PHYSCONST::cm_m1 * w_au;
+        auto w_cm = pc::getInstance()->get("hartree2wavenumbers") * w_au;
         auto dynamic = (w_au > mrcpp::MachineZero);
         auto l_nm = (dynamic) ? (1.0e7 / w_cm) : 0.0;
         auto iso_au = getTensor().trace() / 3.0;

@@ -29,10 +29,14 @@
 
 #include "tensor/RankZeroOperator.h"
 
+#include "chemistry/PhysicalConstants.h"
+
 #include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
 
 namespace mrchem {
+
+using pc = mrchem::PhysicalConstants;
 
 class DeltaOperator final : public RankZeroOperator {
 public:
@@ -47,7 +51,7 @@ public:
 
         // Define analytic potential
         double beta = 1.0 / smooth_prec;
-        double alpha = std::pow(beta / MATHCONST::pi, 3.0 / 2.0);
+        double alpha = std::pow(beta / pc::getInstance()->get("pi"), 3.0 / 2.0);
         mrcpp::GaussFunc<3> f(beta, alpha, o);
 
         // Project analytic potential
