@@ -42,6 +42,9 @@ class MRChemPhysConstants(PhysicalConstantsContext):
     - au -> wavenumbers        : CODATA: 219474.6313632
                                  MRChem: 219471.5125976648
 
+    - au -> debye              : CODATA: 2.5417464739297717
+                               : MRChem: 2.54174623105
+
     - hartree2simagnetizability: How derive this one?
     """
     def __init__(self, context="CODATA2018"):
@@ -73,6 +76,4 @@ class MRChemPhysConstants(PhysicalConstantsContext):
 
 
 if __name__ == '__main__':
-    pc = MRChemPhysConstants()
-    for datum in pc.pc.values():
-        print(datum)
+    pass

@@ -64,6 +64,7 @@ def translate_input(user_dict):
         "molecule": mol_dict,
         "scf_calculation": scf_dict,
         "rsp_calculations": rsp_dict,
+        "constants": pc.to_dict()
     }
     return program_dict
 
