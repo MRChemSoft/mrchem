@@ -29,17 +29,19 @@
 
 namespace mrchem {
 
-PhysicalConstants* PhysicalConstants::_instance = NULL;
+PhysicalConstants *PhysicalConstants::_instance = NULL;
 
-void PhysicalConstants::setConstants(const nlohmann::json &constants) { _constants = constants; }
-double PhysicalConstants::get(std::string name) { return _constants[name]; }
+void PhysicalConstants::setConstants(const nlohmann::json &constants) {
+    _constants = constants;
+}
+double PhysicalConstants::get(std::string name) {
+    return _constants[name];
+}
 
 PhysicalConstants::PhysicalConstants() {}
 
-PhysicalConstants* PhysicalConstants::getInstance() {
-    if (_instance == NULL) {
-        _instance = new PhysicalConstants();
-    }
+PhysicalConstants *PhysicalConstants::getInstance() {
+    if (_instance == NULL) { _instance = new PhysicalConstants(); }
     return _instance;
 }
 
