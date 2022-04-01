@@ -34,6 +34,8 @@ public:
     static PhysicalConstants *getInstance();
     void setConstants(const nlohmann::json &constants);
     double get(std::string name);
+    bool hasData{false};
+    nlohmann::json testConstants;
 
 private:
     static PhysicalConstants *_instance;

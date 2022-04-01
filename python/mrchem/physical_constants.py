@@ -31,21 +31,6 @@ class MRChemPhysConstants(PhysicalConstantsContext):
     """Wrapper over the PhysicalConstantsContext class from QCElemental.
     Subclassing it here allows for some customization, and it ensures that
     when imported the same CODATA source is used automatically (we use 2018).
-    
-    Notes:
-    - electron g factor        : CODATA: -2.00231930436256
-                                 MRChem:  2.0023193043618
-
-    - fine structure constant  : CODATA: 7.2973525693e-3
-                                 MRChem: 7.2973525664
-
-    - au -> wavenumbers        : CODATA: 219474.6313632
-                                 MRChem: 219471.5125976648
-
-    - au -> debye              : CODATA: 2.5417464739297717
-                               : MRChem: 2.54174623105
-
-    - hartree2simagnetizability: How derive this one?
     """
     def __init__(self, context="CODATA2018"):
         super().__init__(context)
@@ -74,6 +59,26 @@ class MRChemPhysConstants(PhysicalConstantsContext):
             qca.label.lower().translate(self._transtable): float(qca.data) for qca in self.pc.values()
         }
 
+    def print_subset_for_unit_tests(self, varname="testConstants"):
+        """Helper function for printing a subset of the constants."""
+        subset = [
+            "pi",
+            "pi_sqrt",
+            "electron_g_factor",
+            "fine_structure_constant",
+            "hartree2kJmol",
+            "hartree2kcalmol",
+            "hartree2ev",
+            "hartree2simagnetizability"
+        ]
+
+        content = [
+            f'{varname}["{c.lower()}"] = {self.__getattribute__(c)};' for c in subset
+        ]
+
+        print('\n'.join(content))
+
 
 if __name__ == '__main__':
-    pass
+    c = MRChemPhysConstants()
+    c.print_subset_for_unit_tests()
