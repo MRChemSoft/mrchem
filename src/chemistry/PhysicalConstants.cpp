@@ -44,14 +44,20 @@ double PhysicalConstants::get(std::string name) {
 }
 
 PhysicalConstants::PhysicalConstants() {
-    testConstants["pi"] = 3.141592653589793;
-    testConstants["pi_sqrt"] = 1.772453850905516;
+    testConstants["angstrom2bohrs"] = 1.8897261246257702;
+    testConstants["atomic_unit_of_bohr_magneton"] = 0.5000000000000764;
+    testConstants["atomic_unit_of_nuclear_magneton"] = 0.0002723085107443953;
+    testConstants["c_au"] = 137.035999084;
+    testConstants["dipmom_au2debye"] = 2.5417464739297717;
     testConstants["electron_g_factor"] = -2.00231930436256;
     testConstants["fine_structure_constant"] = 0.0072973525693;
-    testConstants["hartree2kjmol"] = 2625.4996394798254;
-    testConstants["hartree2kcalmol"] = 627.5094740630558;
     testConstants["hartree2ev"] = 27.211386245988;
+    testConstants["hartree2kJmol"] = 2625.4996394798254;
+    testConstants["hartree2kcalmol"] = 627.5094740630558;
     testConstants["hartree2simagnetizability"] = 78.9451185;
+    testConstants["hartree2wavenumbers"] = 219474.6313632;
+    testConstants["pi"] = 3.141592653589793;
+    testConstants["pi_sqrt"] = 1.7724538509055159;
 }
 
 PhysicalConstants *PhysicalConstants::getInstance() {
