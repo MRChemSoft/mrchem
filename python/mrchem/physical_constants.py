@@ -85,7 +85,7 @@ class MRChemPhysConstants(PhysicalConstantsContext):
         # Store our constants in a SimpleNamespace for dotted access in Python
         self.mrc = SimpleNamespace(**{})
         for ident, _, value, _ in sorted(mrchem_constants, key=lambda x: x[0]):
-            key = ident.translate(self._transtable)
+            key = ident.lower().translate(self._transtable)
             self.mrc.__setattr__(key, float(value))
 
     def print_constants_for_tests(self, varname='testConstants'):

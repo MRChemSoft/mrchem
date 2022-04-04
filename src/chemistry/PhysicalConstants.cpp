@@ -52,7 +52,7 @@ PhysicalConstants::PhysicalConstants() {
     testConstants["electron_g_factor"] = -2.00231930436256;
     testConstants["fine_structure_constant"] = 0.0072973525693;
     testConstants["hartree2ev"] = 27.211386245988;
-    testConstants["hartree2kJmol"] = 2625.4996394798254;
+    testConstants["hartree2kjmol"] = 2625.4996394798254;
     testConstants["hartree2kcalmol"] = 627.5094740630558;
     testConstants["hartree2simagnetizability"] = 78.9451185;
     testConstants["hartree2wavenumbers"] = 219474.6313632;
