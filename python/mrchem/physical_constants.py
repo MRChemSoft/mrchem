@@ -27,7 +27,6 @@ import math
 from types import SimpleNamespace
 
 from qcelemental.physical_constants.context import PhysicalConstantsContext
-from qcelemental.datum import Datum
 
 
 class MRChemPhysConstants(PhysicalConstantsContext):
