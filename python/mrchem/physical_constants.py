@@ -54,9 +54,9 @@ class MRChemPhysConstants(PhysicalConstantsContext):
         # We follow the QCElemental 4-tuple format
         # (callname: str, units: str, value: float, description: str)
         mrchem_constants = [
-            ('pi',                              '',       self.PI,                                                                              'Pi'),
-            ('pi_sqrt',                         '',       math.sqrt(self.PI),                                                                              'Square root of pi'),
-            ('hartree2simagnetizability',       'J T^-2', self.HARTREE2SIMAGNETIZABILITY,                                                                                         'Atomic units to J/T^2 (magnetizability)'),
+            ('pi',                              '',       self.PI,                                                                                            'Pi'),
+            ('pi_sqrt',                         '',       math.sqrt(self.PI),                                                                                 'Square root of pi'),
+            ('hartree2simagnetizability',       'J T^-2', self.HARTREE2SIMAGNETIZABILITY,                                                                     'Atomic units to J/T^2 (magnetizability)'),
             ('atomic_unit_of_bohr_magneton',    '',       self.Bohr_magneton / self.atomic_unit_of_magnetizability / self.atomic_unit_of_mag_flux_density,    'Bohr magneton in atomic units'),
             ('atomic_unit_of_nuclear_magneton', '',       self.nuclear_magneton / self.atomic_unit_of_magnetizability / self.atomic_unit_of_mag_flux_density, 'Nuclear magneton in atomic units'),
             ('angstrom2bohrs',                  'Å',      1.0 / self.bohr2angstroms,                                                                          'Angstrom -> Bohr conversion factor')
@@ -95,5 +95,4 @@ class MRChemPhysConstants(PhysicalConstantsContext):
             print(f'{varname}["{key}"] = {value};')
 
 if __name__ == '__main__':
-    c = MRChemPhysConstants()
-    c.print_constants_for_tests()
+     MRChemPhysConstants().print_constants_for_tests()
