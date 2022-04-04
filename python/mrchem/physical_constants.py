@@ -38,9 +38,10 @@ class MRChemPhysConstants(PhysicalConstantsContext):
     https://physics.nist.gov/cuu/Constants/Table/allascii.txt
     """
 
-    # Pi is not defined in QCElemental, so we store it internally here.
+    # Explicitly defined constants here
+    # (not present in qcelemental or cannot be derived)
     PI = 3.1415926535897932384
-    HARTREE2SIMAGNETIZABILITY = 78.9451185
+    HARTREE2SIMAGNETIZABILITY = 78.9451185  # TODO: We should be able to derive this one
 
     def __init__(self, context="CODATA2018"):
         """Here we extract those constants that we need to run any MRChem calculation.
