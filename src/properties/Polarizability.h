@@ -33,8 +33,6 @@
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
 
-using pc = mrchem::PhysicalConstants;
-
 namespace mrchem {
 
 // clang-format off
@@ -53,7 +51,7 @@ public:
 
     void print(const std::string &id) const {
         auto w_au = getFrequency();
-        auto w_cm = pc::getInstance()->get("hartree2wavenumbers") * w_au;
+        auto w_cm = PhysicalConstants::get("hartree2wavenumbers") * w_au;
         auto dynamic = (w_au > mrcpp::MachineZero);
         auto l_nm = (dynamic) ? (1.0e7 / w_cm) : 0.0;
         auto iso_au = getTensor().trace() / 3.0;

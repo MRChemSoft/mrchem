@@ -34,8 +34,6 @@
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
 
-using pc = mrchem::PhysicalConstants;
-
 namespace mrchem {
 
 // clang-format off
@@ -57,7 +55,7 @@ public:
 
     void print(const std::string &id) const {
         auto w_au = getFrequency();
-        auto w_cm = pc::getInstance()->get("hartree2wavenumbers") * w_au;
+        auto w_cm = PhysicalConstants::get("hartree2wavenumbers") * w_au;
         auto dynamic = (w_au > mrcpp::MachineZero);
         auto l_nm = (dynamic) ? (1.0e7 / w_cm) : 0.0;
 
@@ -66,9 +64,9 @@ public:
         auto iso_au_t = iso_au_d + iso_au_p;
 
         // SI units (J/T^2 10^{-30})
-        auto iso_si_t = iso_au_t * pc::getInstance()->get("hartree2simagnetizability");
-        auto iso_si_d = iso_au_d * pc::getInstance()->get("hartree2simagnetizability");
-        auto iso_si_p = iso_au_p * pc::getInstance()->get("hartree2simagnetizability");
+        auto iso_si_t = iso_au_t * PhysicalConstants::get("hartree2simagnetizability");
+        auto iso_si_d = iso_au_d * PhysicalConstants::get("hartree2simagnetizability");
+        auto iso_si_p = iso_au_p * PhysicalConstants::get("hartree2simagnetizability");
 
         mrcpp::print::header(0, "Magnetizability (" + id + ")");
         if (dynamic) print_utils::scalar(0, "Wavelength", l_nm, "(nm)");

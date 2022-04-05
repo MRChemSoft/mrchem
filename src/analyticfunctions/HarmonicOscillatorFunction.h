@@ -32,8 +32,6 @@
 
 #include "mrchem.h"
 
-using pc = mrchem::PhysicalConstants;
-
 namespace mrchem {
 
 class HarmonicOscillator1D final {
@@ -45,7 +43,7 @@ public:
 
     double operator()(double x) const {
         double ax = this->alpha * (x - this->origin);
-        double ap = std::sqrt(this->alpha / pc::getInstance()->get("pi_sqrt"));
+        double ap = std::sqrt(this->alpha / PhysicalConstants::get("pi_sqrt"));
         double N_nu = std::sqrt(N2(this->nu));
         return ap * N_nu * H(this->nu, ax) * exp(-ax * ax / 2.0);
     }

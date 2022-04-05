@@ -34,8 +34,6 @@
 
 namespace mrchem {
 
-using pc = mrchem::PhysicalConstants;
-
 /** @class H_M_fc
  *
  * @brief Fermi-Contact operator
@@ -56,8 +54,8 @@ public:
             : H_M_fc(H_B_spin(), DeltaOperator(o, proj_prec, smooth_prec)) {}
 
     H_M_fc(H_B_spin s, DeltaOperator delta) {
-        const double coef = -(8.0 / 3.0) * pc::getInstance()->get("pi");
-        const double alpha_2 = pc::getInstance()->get("fine_structure_constant") * pc::getInstance()->get("fine_structure_constant") * 1000000.0;
+        const double coef = -(8.0 / 3.0) * PhysicalConstants::get("pi");
+        const double alpha_2 = PhysicalConstants::get("fine_structure_constant") * PhysicalConstants::get("fine_structure_constant") * 1000000.0;
 
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &h = (*this);

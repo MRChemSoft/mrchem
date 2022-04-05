@@ -59,8 +59,7 @@ int main(int argc, char **argv) {
     const auto &con_inp = json_inp["constants"];
 
     // Instantiate the physical constants singleton
-    PhysicalConstants *PC = PhysicalConstants::getInstance();
-    PC->setConstants(con_inp);
+    PhysicalConstants::Initialize(con_inp);
 
     Timer timer;
     Molecule mol;

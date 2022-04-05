@@ -95,8 +95,6 @@ using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
 using PoissonOperator = mrcpp::PoissonOperator;
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 
-using pc = mrchem::PhysicalConstants;
-
 extern mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
 namespace mrchem {
@@ -985,7 +983,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
         auto c = json_fock["zora_operator"]["light_speed"];
-        if (c <= 0.0) c = pc::getInstance()->get("c_au");
+        if (c <= 0.0) c = PhysicalConstants::get("c_au");
         F.setLightSpeed(c);
 
         auto include_nuclear = json_fock["zora_operator"]["include_nuclear"];

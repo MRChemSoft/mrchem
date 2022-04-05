@@ -30,8 +30,6 @@
 #include "mrchem.h"
 #include "utils/math_utils.h"
 
-using pc = mrchem::PhysicalConstants;
-
 namespace mrchem {
 
 RadialFunction::RadialFunction(int n, int l, double Z)
@@ -133,7 +131,7 @@ double AngularFunction::calcConstant() const {
     } else if (L == 3 and M == 5) { c = std::sqrt(105.0/4.0);
     } else if (L == 3 and M == 6) { c = std::sqrt(105.0/4.0);
     } else { NOT_IMPLEMENTED_ABORT; }
-    return c/(2.0*pc::getInstance()->get("pi_sqrt"));
+    return c/(2.0*PhysicalConstants::get("pi_sqrt"));
 }
 // clang-format on
 

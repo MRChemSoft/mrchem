@@ -44,8 +44,6 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-using pc = mrchem::PhysicalConstants;
-
 SCRF::SCRF(Permittivity e,
            const Nuclei &N,
            PoissonOperator_p P,
@@ -117,7 +115,7 @@ void SCRF::computeGamma(QMFunction &potential, QMFunction &out_gamma) {
     auto d_V = mrcpp::gradient(*derivative, potential.real());
     resetQMFunction(out_gamma);
     mrcpp::dot(this->apply_prec, out_gamma.real(), d_V, this->d_cavity);
-    out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * pc::getInstance()->get("pi"))));
+    out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * PhysicalConstants::get("pi"))));
     mrcpp::clear(d_V, true);
 }
 

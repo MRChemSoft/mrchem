@@ -32,8 +32,6 @@
 
 #include "utils/print_utils.h"
 
-using pc = mrchem::PhysicalConstants;
-
 /** @class SCFEnergy
  *
  * @brief Simple POD container to hold the different contributions to the SCF energy.
@@ -72,9 +70,9 @@ public:
 
     void print(const std::string &id) const {
         auto E_au = E_nuc + E_el;
-        auto E_eV = E_au * pc::getInstance()->get("hartree2ev");
-        auto E_kJ = E_au * pc::getInstance()->get("hartree2kjmol");
-        auto E_kcal = E_au * pc::getInstance()->get("hartree2kcalmol");
+        auto E_eV = E_au * PhysicalConstants::get("hartree2ev");
+        auto E_kJ = E_au * PhysicalConstants::get("hartree2kjmol");
+        auto E_kcal = E_au * PhysicalConstants::get("hartree2kcalmol");
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
         mrcpp::print::header(0, "Molecular Energy (" + id + ")");

@@ -34,8 +34,6 @@
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
 
-using pc = mrchem::PhysicalConstants;
-
 namespace mrchem {
 
 // clang-format off
@@ -57,9 +55,9 @@ public:
         auto nuc_au = getNuclear().norm();
         auto tot_au = getTensor().norm();
 
-        auto el_db = el_au * pc::getInstance()->get("dipmom_au2debye");
-        auto nuc_db = nuc_au * pc::getInstance()->get("dipmom_au2debye");
-        auto tot_db = tot_au * pc::getInstance()->get("dipmom_au2debye");
+        auto el_db = el_au * PhysicalConstants::get("dipmom_au2debye");
+        auto nuc_db = nuc_au * PhysicalConstants::get("dipmom_au2debye");
+        auto tot_db = tot_au * PhysicalConstants::get("dipmom_au2debye");
 
         mrcpp::print::header(0, "Dipole Moment (" + id + ")");
         print_utils::coord(0, "r_O", getOrigin());

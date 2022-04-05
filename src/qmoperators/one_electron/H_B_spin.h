@@ -30,8 +30,6 @@
 
 #include "SpinOperator.h"
 
-using pc = mrchem::PhysicalConstants;
-
 namespace mrchem {
 
 /** @class H_B_spin
@@ -54,7 +52,7 @@ public:
             : H_B_spin(SpinOperator()) {}
 
     explicit H_B_spin(SpinOperator s) {
-        const double g_e = pc::getInstance()->get("electron_g_factor");
+        const double g_e = PhysicalConstants::get("electron_g_factor");
 
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &h = (*this);

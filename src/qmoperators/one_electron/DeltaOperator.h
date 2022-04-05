@@ -36,8 +36,6 @@
 
 namespace mrchem {
 
-using pc = mrchem::PhysicalConstants;
-
 class DeltaOperator final : public RankZeroOperator {
 public:
     /*! @brief DeltaOperator represents the Dirac delta function: delta|r - o|
@@ -51,7 +49,7 @@ public:
 
         // Define analytic potential
         double beta = 1.0 / smooth_prec;
-        double alpha = std::pow(beta / pc::getInstance()->get("pi"), 3.0 / 2.0);
+        double alpha = std::pow(beta / PhysicalConstants::get("pi"), 3.0 / 2.0);
         mrcpp::GaussFunc<3> f(beta, alpha, o);
 
         // Project analytic potential

@@ -28,8 +28,6 @@
 
 namespace mrchem {
 
-using pc = mrchem::PhysicalConstants;
-
 /** @brief Initializes the members of the class and constructs the analytical gradient vector of the Cavity. */
 Cavity::Cavity(std::vector<mrcpp::Coord<3>> &centers, std::vector<double> &radii, double width)
         : width(width)
@@ -70,7 +68,7 @@ auto gradCavity(const mrcpp::Coord<3> &r, int index, const std::vector<mrcpp::Co
         double Ci = 1.0 - Theta;
         C *= 1.0 - Ci;
 
-        double DCi = -(1.0 / (width * pc::getInstance()->get("pi_sqrt"))) * std::exp(-std::pow(s / width, 2.0)) * ds;
+        double DCi = -(1.0 / (width * PhysicalConstants::get("pi_sqrt"))) * std::exp(-std::pow(s / width, 2.0)) * ds;
 
         double numerator = DCi;
         double denominator = 1.0 - Ci;
