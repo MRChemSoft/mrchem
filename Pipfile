@@ -4,9 +4,9 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-qcelemental = ">=0.24.0"
 
 [dev-packages]
+qcelemental = "<= 0.24.0"
 Pygments = "*"
 recommonmark = "*"
 Sphinx = ">=2.0"
