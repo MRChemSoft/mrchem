@@ -96,4 +96,4 @@ class MRChemPhysConstants:
             print(f'{varname}["{key}"] = {value};')
 
 if __name__ == '__main__':
-     MRChemPhysConstants().print_constants_for_tests()
+    MRChemPhysConstants().print_constants_for_tests()
