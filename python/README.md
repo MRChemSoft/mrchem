@@ -15,12 +15,14 @@ user reference by copying the new `python/mrchem/input_parser/docs/user_ref.rst`
 To perform all three actions, run the script as follows:
 
 ``` bash
+cd python/mrchem
 $ python update_input_parser.py
 ```
 
 For a help message, run:
 
 ``` bash
+cd python/mrchem
 $ python update_input_parser.py -h
 ```
 
