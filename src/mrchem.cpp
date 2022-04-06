@@ -60,7 +60,6 @@ int main(int argc, char **argv) {
 
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
-    PhysicalConstants::hasData = false;
 
     Timer timer;
     Molecule mol;
