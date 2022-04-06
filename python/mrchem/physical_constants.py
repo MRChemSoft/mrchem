@@ -92,9 +92,9 @@ class MRChemPhysConstants:
 
     def print_constants_for_tests(self, varname='testConstants'):
         """Helper function for printing constants for copy/pasting into the c++ code.
-        We need to store the constants internally for the tests to pass."""
+        We need to store the constants internally for the unit tests to pass."""
         for name, _, value, _ in sorted(self.data, key=lambda x: x[0]):
-            print(f'{varname}["{name}"] = {value};')
+            print(f'{{\"{name}\", {value}}},')
 
 if __name__ == '__main__':
     MRChemPhysConstants().print_constants_for_tests()

@@ -26,12 +26,20 @@
 #pragma once
 #include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
+
 namespace mrchem {
 
 class PhysicalConstants {
 public:
-    static PhysicalConstants &Initialize(const nlohmann::json &constants);
-    static double get(const std::string &key) { return constants_[key]; }
+    static PhysicalConstants &Initialize(const json &constants);
+    static double get(const std::string &key) {
+        if (hasData) {
+            return constants_[key];
+        } else {
+            return testConstants[key];
+        }
+    }
 
     PhysicalConstants() = default;
     ~PhysicalConstants() = default;
@@ -41,9 +49,12 @@ public:
     PhysicalConstants &operator=(const PhysicalConstants &&) = delete;
     PhysicalConstants(PhysicalConstants &&) = delete;
 
+    static bool hasData;
+
 private:
-    PhysicalConstants(const nlohmann::json &constants) { constants_ = constants; }
-    static nlohmann::json constants_;
+    PhysicalConstants(const json &constants) { constants_ = constants; }
+    static json constants_;
+    static json testConstants;
 };
 
 } // namespace mrchem

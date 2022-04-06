@@ -26,11 +26,34 @@
 #include "PhysicalConstants.h"
 #include <nlohmann/json.hpp>
 
+using json = nlohmann::json;
+
 namespace mrchem {
 
-nlohmann::json PhysicalConstants::constants_ = nlohmann::json();
+bool PhysicalConstants::hasData = false;
+json PhysicalConstants::constants_ = json();
 
-PhysicalConstants &PhysicalConstants::Initialize(const nlohmann::json &constants) {
+// clang-format off
+json PhysicalConstants::testConstants = {
+    {"angstrom2bohrs", 1.8897261246257702},
+    {"atomic_unit_of_bohr_magneton", 0.5000000000000764},
+    {"atomic_unit_of_light_speed", 137.035999084},
+    {"atomic_unit_of_nuclear_magneton", 0.0002723085107443953},
+    {"dipmom_au2debye", 2.5417464739297717},
+    {"electron g factor", -2.00231930436256},
+    {"fine-structure constant", 0.0072973525693},
+    {"hartree2ev", 27.211386245988},
+    {"hartree2kcalmol", 627.5094740630558},
+    {"hartree2kjmol", 2625.4996394798254},
+    {"hartree2simagnetizability", 78.9451185},
+    {"hartree2wavenumbers", 219474.6313632},
+    {"pi", 3.141592653589793},
+    {"pi_sqrt", 1.7724538509055159}
+};
+// clang-format on
+
+PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
+    hasData = true;
     static PhysicalConstants obj(constants);
     return obj;
 }
