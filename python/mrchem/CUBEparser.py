@@ -28,12 +28,15 @@ import os
 from json import dump
 
 from .input_parser.plumbing import pyparsing as pp
-from.physical_constants import MRChemPhysConstants
 
-pc = MRChemPhysConstants()
+global pc
 
 
-def write_cube_dict(file_dict, world_unit):
+def write_cube_dict(user_dict):
+    file_dict = user_dict['Files']
+    world_unit = user_dict['world_unit']
+    pc = user_dict['Constants']
+
     all_path_list = []
     all_path_list.append(sort_paths(file_dict["guess_cube_p"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_a"]))
@@ -175,7 +178,7 @@ def parse_cube_file(cube_path, world_unit):
 
     # get cube origin data
     N_atoms = parsed_cube["NATOMS"]
-    origin = parsed_cube["ORIGIN"] if (world_unit == "bohr") else [p * pc.angstrom2bohrs for p in parsed_cube["ORIGIN"]]
+    origin = parsed_cube["ORIGIN"] if (world_unit == "bohr") else [p * pc['angstrom2bohrs'] for p in parsed_cube["ORIGIN"]]
 
     # Set the amount of values depending on if the DSET_IDs were present or not
     if (len(parsed_cube["DSET_IDS"]) != 0):
@@ -200,9 +203,9 @@ def parse_cube_file(cube_path, world_unit):
     if (world_unit == "bohr"):
         Voxel_axes = [parsed_cube["XAXIS"]["VECTOR"], parsed_cube["YAXIS"]["VECTOR"], parsed_cube["ZAXIS"]["VECTOR"]]
     else:
-        X_voxel = [p * pc.angstrom2bohrs for p in parsed_cube["XAXIS"]["VECTOR"]]
-        Y_voxel = [p * pc.angstrom2bohrs for p in parsed_cube["YAXIS"]["VECTOR"]]
-        Z_voxel = [p * pc.angstrom2bohrs for p in parsed_cube["ZAXIS"]["VECTOR"]]
+        X_voxel = [p * pc['angstrom2bohrs'] for p in parsed_cube["XAXIS"]["VECTOR"]]
+        Y_voxel = [p * pc['angstrom2bohrs'] for p in parsed_cube["YAXIS"]["VECTOR"]]
+        Z_voxel = [p * pc['angstrom2bohrs'] for p in parsed_cube["ZAXIS"]["VECTOR"]]
         Voxel_axes = [X_voxel, Y_voxel, Z_voxel]
 
     # get the atom coordinates
@@ -211,7 +214,7 @@ def parse_cube_file(cube_path, world_unit):
 
     Z_n = [atom["ATOMIC_NUMBER"] for atom in parsed_cube["GEOM"]]
     atom_charges = [atom["CHARGE"] for atom in parsed_cube["GEOM"]]
-    atom_coords = [atom["POSITION"] if (world_unit == "bohr") else [p * pc.angstrom2bohrsM_2_BOHR for p in atom["POSITION"]] for atom in parsed_cube["GEOM"]]
+    atom_coords = [atom["POSITION"] if (world_unit == "bohr") else [p * pc['angstrom2bohrs'] for p in atom["POSITION"]] for atom in parsed_cube["GEOM"]]
 
     # construct the CUBE vector. Indexing is CUBE_vector[MO_ID][i*N_vals[1]*N_vals[2] + j*N_vals[2] + k] where i, j and k correspond to steps in the X, Y and Z voxel axes directions respectively.
     CUBE_vector = []

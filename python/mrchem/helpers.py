@@ -23,10 +23,7 @@
 # <https://mrchem.readthedocs.io/>
 #
 
-from .physical_constants import MRChemPhysConstants
 from .CUBEparser import write_cube_dict
-
-pc = MRChemPhysConstants()
 
 # yapf: disable
 SHORTHAND_FUNCTIONALS = [
@@ -165,7 +162,7 @@ def write_scf_guess(user_dict, wf_dict):
     file_dict = user_dict["Files"]
 
     if (guess_type == 'cube'):
-        write_cube_dict(file_dict, user_dict["world_unit"])
+        write_cube_dict(user_dict)
 
     vector_dir = file_dict["cube_vectors"]
     guess_dict = {
@@ -260,7 +257,7 @@ def write_scf_plot(user_dict):
         plot_dict["plotter"] = user_dict["Plotter"]
         if user_dict["world_unit"] == "angstrom":
             plot_dict["plotter"] = {
-                k: [pc.angstrom2bohrs * r for r in plot_dict["plotter"][k]]
+                k: [user_dict['Constants']['angstrom2bohrs'] * r for r in plot_dict["plotter"][k]]
                 for k in plot_dict["plotter"].keys()
             }
     return plot_dict

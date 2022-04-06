@@ -9,4 +9,3 @@ dependencies:
   - ninja
   - nlohmann_json
   - xcfun
-  - qcelemental

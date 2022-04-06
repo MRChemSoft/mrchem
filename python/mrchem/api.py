@@ -34,18 +34,16 @@ from .helpers import (
     write_rsp_calc,
     parse_wf_method
 )
-from .physical_constants import MRChemPhysConstants
 from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
-
-pc = MRChemPhysConstants()
 
 
 def translate_input(user_dict):
     # get the origin in the desired units of measure
     origin = user_dict["world_origin"]
+    pc = user_dict['Constants']
     if user_dict["world_unit"] == "angstrom":
-        origin = [pc.angstrom2bohrs * r for r in origin]
+        origin = [pc['angstrom2bohrs'] * r for r in origin]
 
     # prepare bits and pieces
     mol_dict = write_molecule(user_dict, origin)

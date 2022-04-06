@@ -27,10 +27,7 @@ import math
 import itertools
 import re
 
-from .physical_constants import MRChemPhysConstants
 from .periodictable import PeriodicTable, PeriodicTableByZ
-
-pc = MRChemPhysConstants()
 
 
 class MoleculeValidator:
@@ -93,6 +90,7 @@ class MoleculeValidator:
         self.user_dict = user_dict
         self.origin = origin
         self.unit = user_dict['world_unit']
+        self.pc = user_dict['Constants']
 
         # Molecule related data
         self.user_mol = user_dict['Molecule']
@@ -129,7 +127,7 @@ class MoleculeValidator:
             self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
             self.cavity_coords = self.ang2bohr_array(self.cavity_coords)
             self.cavity_radii = self.ang2bohr_vector(self.cavity_radii)
-            self.cavity_width *= pc.angstrom2bohrs
+            self.cavity_width *= self.pc['angstrom2bohrs']
 
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
@@ -326,14 +324,12 @@ class MoleculeValidator:
         squared_deviations = [(a[i] - b[i])**2 for i in range(3)]
         return math.sqrt(sum(squared_deviations))
 
-    @staticmethod
-    def ang2bohr_array(coords):
-        """Helper function. Convert List[List[float]] from angstrom to bohr."""
+    def ang2bohr_array(self, coords):
+        """Convert List[List[float]] from angstrom to bohr."""
         return [
-            [c * pc.angstrom2bohrs for c in element] for element in coords
+            [c * self.pc['angstrom2bohrs'] for c in element] for element in coords
         ]
 
-    @staticmethod
-    def ang2bohr_vector(vec):
-        """Helper function. Convert List[float] from angstrom to bohr"""
-        return [el * pc.angstrom2bohrs for el in vec]
+    def ang2bohr_vector(self, vec):
+        """Convert List[float] from angstrom to bohr"""
+        return [el * self.pc['angstrom2bohrs'] for el in vec]
