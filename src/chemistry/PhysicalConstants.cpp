@@ -28,7 +28,7 @@
 
 namespace mrchem {
 
-nlohmann::json PhysicalConstants::constants_;
+nlohmann::json PhysicalConstants::constants_ = nlohmann::json();
 
 PhysicalConstants &PhysicalConstants::Initialize(const nlohmann::json &constants) {
     static PhysicalConstants obj(constants);

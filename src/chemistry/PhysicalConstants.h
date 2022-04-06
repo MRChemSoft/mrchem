@@ -43,7 +43,6 @@ public:
 
 private:
     PhysicalConstants(const nlohmann::json &constants) { constants_ = constants; }
-
     static nlohmann::json constants_;
 };
 
