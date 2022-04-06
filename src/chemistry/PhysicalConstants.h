@@ -31,9 +31,7 @@ namespace mrchem {
 class PhysicalConstants {
 public:
     static PhysicalConstants &Initialize(const nlohmann::json &constants);
-    static double get(const std::string &key) {
-        return constants_[key];
-    }
+    static double get(const std::string &key) { return constants_[key]; }
 
     PhysicalConstants() = default;
     ~PhysicalConstants() = default;
@@ -42,10 +40,9 @@ public:
     PhysicalConstants &operator=(const PhysicalConstants &) = delete;
     PhysicalConstants &operator=(const PhysicalConstants &&) = delete;
     PhysicalConstants(PhysicalConstants &&) = delete;
+
 private:
-    PhysicalConstants(const nlohmann::json &constants) {
-        constants_ = constants;
-    }
+    PhysicalConstants(const nlohmann::json &constants) { constants_ = constants; }
 
     static nlohmann::json constants_;
 };
