@@ -47,6 +47,8 @@ public:
     PhysicalConstants &operator=(const PhysicalConstants &&) = delete;
     PhysicalConstants(PhysicalConstants &&) = delete;
 
+    static bool hasData;
+
 private:
     PhysicalConstants(const nlohmann::json &constants) {
         constants_ = constants;
@@ -67,7 +69,6 @@ private:
     }
 
     static nlohmann::json constants_;
-    static const bool hasData{false};
     static nlohmann::json testConstants;
 };
 
