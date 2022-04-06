@@ -36,7 +36,7 @@ import argparse
 from physical_constants import MRChemPhysConstants
 
 root = Path.cwd().parent
-target = Path(__file__).parent.joinpath('input_parser')
+target = root.joinpath('mrchem', 'input_parser')
 
 yaml = YAML()
 
@@ -91,7 +91,13 @@ if __name__ == '__main__':
     parser.add_argument('-sT', '--skip-template', action='store_true', help="Do not update constants section in template.yml")
     parser.add_argument('-sP', '--skip-parselglossy', action='store_true', help='Do not update input parser with parselglossy')
     parser.add_argument('-sD', '--skip-doc', action='store_true', help='Do not update the user reference file')
+    parser.add_argument('-D', '--dryrun', action='store_true', help='Skip all actions')
     args = parser.parse_args()
+
+    if args.dryrun:
+        args.skip_template = True
+        args.skip_parselglossy = True
+        args.skip_doc = True
 
     if not args.skip_template:
         print(f'{"Updating template":20} ... ', end='')
