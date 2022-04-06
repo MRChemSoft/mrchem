@@ -52,16 +52,19 @@ class MRChemPhysConstants:
         self.nist = "https://physics.nist.gov/cuu/Constants/Table/allascii.txt"
         qce = PhysicalConstantsContext(context=self.context)
 
-        # Define new constants needed by MRChem
+        # Define new constants needed by MRChem (or rename existing ones)
         # We follow the QCElemental 4-tuple format
         # (callname: str, units: str, value: float, description: str)
-        mrchem_constants = [
+        self.data = [
+            # New ones
             ('pi',                              '',       self.PI,                                                                                         'Pi'),
             ('pi_sqrt',                         '',       math.sqrt(self.PI),                                                                              'Square root of pi'),
             ('hartree2simagnetizability',       'J T^-2', self.HARTREE2SIMAGNETIZABILITY,                                                                  'Atomic units to J/T^2 (magnetizability)'),
             ('atomic_unit_of_bohr_magneton',    '',       qce.Bohr_magneton / qce.atomic_unit_of_magnetizability / qce.atomic_unit_of_mag_flux_density,    'Bohr magneton in atomic units'),
             ('atomic_unit_of_nuclear_magneton', '',       qce.nuclear_magneton / qce.atomic_unit_of_magnetizability / qce.atomic_unit_of_mag_flux_density, 'Nuclear magneton in atomic units'),
-            ('angstrom2bohrs',                  'Å',      1.0 / qce.bohr2angstroms,                                                                        'Angstrom -> Bohr conversion factor')
+            ('angstrom2bohrs',                  'Å',      1.0 / qce.bohr2angstroms,                                                                        'Angstrom -> Bohr conversion factor'),
+            # Rename
+            ('atomic_unit_of_light_speed',      '',       qce.c_au,                                                                                         'Speed of light in atomic units')
         ]
 
         # Add the following pre-defined constants to our mrchem subset
@@ -73,7 +76,6 @@ class MRChemPhysConstants:
             "hartree2ev",
             "hartree2wavenumbers",
             "fine-structure constant",
-            "c_au",
             "electron g factor",
             "dipmom_au2debye"
         ]
@@ -81,19 +83,18 @@ class MRChemPhysConstants:
         # Append the data to our list of constants
         for name in names:
             datum = qce.get(name, return_tuple=True)
-            constant = (datum.label, datum.units, datum.data, datum.comment)
-            mrchem_constants.append(constant)
+            self.data.append((datum.label.lower(), datum.units, float(datum.data), datum.comment))
 
         # Set our constants to instance attributes
-        for ident, _, value, _ in sorted(mrchem_constants, key=lambda x: x[0]):
-            key = ident.lower().translate(qce._transtable)
+        for name, _, value, _ in self.data:
+            key = name.translate(qce._transtable)
             self.__setattr__(key, float(value))
 
     def print_constants_for_tests(self, varname='testConstants'):
         """Helper function for printing constants for copy/pasting into the c++ code.
         We need to store the constants internally for the tests to pass."""
-        for key, value in self.__dict__.items():
-            print(f'{varname}["{key}"] = {value};')
+        for name, _, value, _ in sorted(self.data, key=lambda x: x[0]):
+            print(f'{varname}["{name}"] = {value};')
 
 if __name__ == '__main__':
     MRChemPhysConstants().print_constants_for_tests()
