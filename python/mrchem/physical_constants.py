@@ -58,13 +58,6 @@ class MRChemPhysConstants:
         # Define our constants
         ########################
 
-        # pi
-        name = 'pi'
-        unit = ''
-        value = self.PI
-        docstring = f"| The number `pi` (unit: {unit})"
-        self.add_constant(name, unit, value, docstring)
-
         # Convert from au to SI units for magnetizability
         name = 'hartree2simagnetizability'
         unit = 'J T^-2'

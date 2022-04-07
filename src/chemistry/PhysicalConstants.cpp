@@ -45,8 +45,7 @@ json PhysicalConstants::testConstants = {
     {"hartree2kjmol", 2625.4996394798254},
     {"hartree2simagnetizability", 78.9451185},
     {"hartree2wavenumbers", 219474.6313632},
-    {"light_speed", 137.035999084},
-    {"pi", 3.141592653589793}
+    {"light_speed", 137.035999084}
 };
 // clang-format on
 

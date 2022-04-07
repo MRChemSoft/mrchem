@@ -54,7 +54,7 @@ public:
             : H_M_fc(H_B_spin(), DeltaOperator(o, proj_prec, smooth_prec)) {}
 
     H_M_fc(H_B_spin s, DeltaOperator delta) {
-        const double coef = -(8.0 / 3.0) * PhysicalConstants::get("pi");
+        const double coef = -(8.0 / 3.0) * mrcpp::pi;
         const double alpha_2 = PhysicalConstants::get("fine_structure_constant") * PhysicalConstants::get("fine_structure_constant") * 1000000.0;
 
         // Invoke operator= to assign *this operator

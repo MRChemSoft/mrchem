@@ -864,12 +864,6 @@ User input reference
  :Constants: Physical and mathematical constants used by MRChem
 
   :red:`Keywords`
-   :pi: | The number `pi` (unit: )
-  
-    **Type** ``float``
-  
-    **Default** ``3.141592653589793``
-  
    :hartree2simagnetizability: | Conversion factor for magnetizability from atomic units to SI units  (unit: J T^-2). Affected code: Printed value of the magnetizability property.
   
     **Type** ``float``

@@ -63,7 +63,7 @@ double chemistry::get_total_charge(const Nuclei &nucs) {
 }
 
 Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, double alpha) {
-    auto beta = std::pow(alpha / PhysicalConstants::get("pi"), 3.0 / 2.0);
+    auto beta = std::pow(alpha / mrcpp::pi, 3.0 / 2.0);
     int nNucs = nucs.size();
     auto gauss = mrcpp::GaussExp<3>();
 

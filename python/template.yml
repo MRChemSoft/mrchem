@@ -837,10 +837,6 @@ sections:
 - name: Constants
   docstring: Physical and mathematical constants used by MRChem
   keywords:
-  - name: pi
-    default: 3.141592653589793
-    type: float
-    docstring: '| The number `pi` (unit: )'
   - name: hartree2simagnetizability
     default: 78.9451185
     type: float
