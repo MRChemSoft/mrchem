@@ -53,16 +53,17 @@ def update_constants():
     constants = {
         "name": "Constants", 
         "docstring": "Physical and mathematical constants used by MRChem", 
-        "keywords": []
+        "keywords": [
+            {
+                "name": name,
+                "default": value,
+                "type": "float",
+                "docstring": docstring
+            } for name, _, value, docstring in pc.data
+        ]
         }
-    for name, unit, value, docstring in pc.data:
-        constants["keywords"].append({
-            "name": name,
-            "default": float(value),
-            "type": "float",
-            "docstring": f"{docstring} (unit: {unit})"
-        })
 
+    # Construct the full template file and dump
     new["sections"].append(constants)
     yaml.dump(new, f_template)
 
@@ -74,7 +75,7 @@ def run_parselglossy():
         'generate', 
         '--template', 'template.yml', 
         '--docfile', 'user_ref.rst', 
-        '--doc-header', '\"User input reference\"',
+        '--doc-header', 'User input reference',
         '--target', target
          ]
 

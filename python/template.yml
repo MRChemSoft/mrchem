@@ -845,60 +845,58 @@ sections:
   - name: pi
     default: 3.141592653589793
     type: float
-    docstring: "|\nThe number `pi` (unit: )"
+    docstring: '| The number `pi` (unit: )'
   - name: pi_sqrt
     default: 1.7724538509055159
     type: float
-    docstring: "|\nThe square root of `pi`  (unit: ). (unit: )"
+    docstring: '| The square root of `pi` (unit: ).'
   - name: hartree2simagnetizability
     default: 78.9451185
     type: float
-    docstring: "|\nConversion factor for magnetizability from atomic units to SI units\
-      \  (unit: J T^-2).\n        Affected code: Printed value of the magnetizability\
-      \ property. (unit: J T^-2)"
+    docstring: '| Conversion factor for magnetizability from atomic units to SI units  (unit:
+      J T^-2). Affected code: Printed value of the magnetizability property.'
   - name: light_speed
     default: 137.035999084
     type: float
-    docstring: "|\nSpeed of light in atomic units  (unit: au).\n        Affected code:\
-      \ Relativistic Hamiltonians (ZORA, etc.) (unit: au)"
+    docstring: '| Speed of light in atomic units  (unit: au). Affected code: Relativistic
+      Hamiltonians (ZORA, etc.)'
   - name: angstrom2bohrs
     default: 1.8897261246257702
     type: float
-    docstring: "|\nConversion factor for Cartesian coordinates from Angstrom to Bohr\
-      \  (unit: Å^-1).\n        Affected code: Parsing of input coordinates, printed\
-      \ coordinates (unit: Å^-1)"
+    docstring: '| Conversion factor for Cartesian coordinates from Angstrom to Bohr  (unit:
+      Å^-1). Affected code: Parsing of input coordinates, printed coordinates'
   - name: hartree2kjmol
     default: 2625.4996394798254
     type: float
-    docstring: "|\nConversion factor from Hartree to kJ/mol  (unit: kJ mol^-1).\n\
-      \        Affected code: Printed value of energies. (unit: kJ mol^-1)"
+    docstring: '| Conversion factor from Hartree to kJ/mol  (unit: kJ mol^-1). Affected
+      code: Printed value of energies.'
   - name: hartree2kcalmol
     default: 627.5094740630558
     type: float
-    docstring: "|\nConversion factor from Hartree to kcal/mol  (unit: kcal mol^-1).\n\
-      \        Affected code: Printed value of energies. (unit: kcal mol^-1)"
+    docstring: '| Conversion factor from Hartree to kcal/mol  (unit: kcal mol^-1).
+      Affected code: Printed value of energies.'
   - name: hartree2ev
     default: 27.211386245988
     type: float
-    docstring: "|\nConversion factor from Hartree to eV  (unit: ev).\n        Affected\
-      \ code: Printed value of energies. (unit: ev)"
+    docstring: '| Conversion factor from Hartree to eV  (unit: ev). Affected code:
+      Printed value of energies.'
   - name: hartree2wavenumbers
     default: 219474.6313632
     type: float
-    docstring: "|\nConversion factor from Hartree to wavenumbers (unit: cm^-1).\n\
-      \        Affected code: Printed value of frequencies. (unit: cm^-1)"
+    docstring: '| Conversion factor from Hartree to wavenumbers (unit: cm^-1). Affected
+      code: Printed value of frequencies.'
   - name: fine_structure_constant
     default: 0.0072973525693
     type: float
-    docstring: "|\nFine-structure constant in atomic units (unit: au).\n        Affected\
-      \ code: Certain magnetic interaction operators. (unit: au)"
+    docstring: '| Fine-structure constant in atomic units (unit: au). Affected code:
+      Certain magnetic interaction operators.'
   - name: electron_g_factor
     default: -2.00231930436256
     type: float
-    docstring: "|\nElectron g factor in atomic units (unit: au).\n        Affected\
-      \ code: Certain magnetic interaction operators. (unit: au)"
+    docstring: '| Electron g factor in atomic units (unit: au). Affected code: Certain
+      magnetic interaction operators.'
   - name: dipmom_au2debye
     default: 2.5417464739297717
     type: float
-    docstring: "|\nConversion factor for dipoles from atomic units to Debye (unit:\
-      \ ?).\n        Affected code: Printed value of dipole moments. (unit: ?)"
+    docstring: '| Conversion factor for dipoles from atomic units to Debye (unit:
+      ?). Affected code: Printed value of dipole moments.'
