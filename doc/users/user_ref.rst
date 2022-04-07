@@ -876,12 +876,6 @@ User input reference
   
     **Default** ``3.141592653589793``
   
-   :pi_sqrt: | The square root of `pi` (unit: ).
-  
-    **Type** ``float``
-  
-    **Default** ``1.7724538509055159``
-  
    :hartree2simagnetizability: | Conversion factor for magnetizability from atomic units to SI units  (unit: J T^-2). Affected code: Printed value of the magnetizability property.
   
     **Type** ``float``

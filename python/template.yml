@@ -846,10 +846,6 @@ sections:
     default: 3.141592653589793
     type: float
     docstring: '| The number `pi` (unit: )'
-  - name: pi_sqrt
-    default: 1.7724538509055159
-    type: float
-    docstring: '| The square root of `pi` (unit: ).'
   - name: hartree2simagnetizability
     default: 78.9451185
     type: float

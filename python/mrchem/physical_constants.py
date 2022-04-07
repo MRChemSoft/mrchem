@@ -65,13 +65,6 @@ class MRChemPhysConstants:
         docstring = f"| The number `pi` (unit: {unit})"
         self.add_constant(name, unit, value, docstring)
 
-        # Square root of pi
-        name = 'pi_sqrt'
-        unit = ''
-        value = math.sqrt(self.PI)
-        docstring = f"| The square root of `pi` (unit: {unit})."
-        self.add_constant(name, unit, value, docstring)
-
         # Convert from au to SI units for magnetizability
         name = 'hartree2simagnetizability'
         unit = 'J T^-2'

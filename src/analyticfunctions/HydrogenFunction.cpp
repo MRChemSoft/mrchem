@@ -114,6 +114,7 @@ double AngularFunction::evalf(const mrcpp::Coord<3> &r) const {
 // clang-format off
 double AngularFunction::calcConstant() const {
     double c = 0.0;
+    double sqrt_pi = std::sqrt(PhysicalConstants::get("pi"));
     if (L == 0 and M == 0) { c = std::sqrt(  1.0/1.0);
     } else if (L == 1 and M == 0) { c = std::sqrt(  3.0/1.0);
     } else if (L == 1 and M == 1) { c = std::sqrt(  3.0/1.0);
@@ -131,7 +132,7 @@ double AngularFunction::calcConstant() const {
     } else if (L == 3 and M == 5) { c = std::sqrt(105.0/4.0);
     } else if (L == 3 and M == 6) { c = std::sqrt(105.0/4.0);
     } else { NOT_IMPLEMENTED_ABORT; }
-    return c/(2.0*PhysicalConstants::get("pi_sqrt"));
+    return c/(2.0*sqrt_pi);
 }
 // clang-format on
 
