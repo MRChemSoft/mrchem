@@ -4,6 +4,6 @@
     "MPI": {"numerically_exact": true},
     "Molecule": {"coords": "He 0.0 0.0 0.0"},
     "WaveFunction": {"method": "lda", "relativity": "zora"},
-    "ZORA": {"light_speed": -1.0, "include_nuclear": true, "include_coulomb": true, "include_xc": true},
+    "ZORA": {"include_nuclear": true, "include_coulomb": true, "include_xc": true},
     "SCF": {"kain": 3, "max_iter": 10, "guess_type": "sad_gto"}
 }

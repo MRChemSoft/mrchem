@@ -53,7 +53,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
     # ZORA
     if user_dict["WaveFunction"]["relativity"].lower() == "zora":
         fock_dict["zora_operator"] = {
-            "light_speed": user_dict["ZORA"]["light_speed"],
+            "light_speed": user_dict["Constants"]["light_speed"],
             "derivative": user_dict["Derivatives"]["zora"],
             "include_nuclear": user_dict["ZORA"]["include_nuclear"],
             "include_coulomb": user_dict["ZORA"]["include_coulomb"],
@@ -214,7 +214,6 @@ def write_scf_solver(user_dict, wf_dict):
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
-        "light_speed": user_dict["ZORA"]["light_speed"],
         "proj_prec": user_dict["Precisions"]["nuclear_prec"],
         "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
         "shared_memory": user_dict["MPI"]["share_nuclear_potential"],
