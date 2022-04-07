@@ -870,85 +870,73 @@
  :Constants: Physical and mathematical constants used by MRChem
 
   :red:`Keywords`
-   :pi: Pi (unit: )
+   :pi: | The number `pi` (unit: )
   
     **Type** ``float``
   
     **Default** ``3.141592653589793``
   
-   :pi_sqrt: Square root of pi (unit: )
+   :pi_sqrt: | The square root of `pi`  (unit: ). (unit: )
   
     **Type** ``float``
   
     **Default** ``1.7724538509055159``
   
-   :hartree2simagnetizability: Atomic units to J/T^2 (magnetizability) (unit: J T^-2)
+   :hartree2simagnetizability: | Conversion factor for magnetizability from atomic units to SI units  (unit: J T^-2).         Affected code: Printed value of the magnetizability property. (unit: J T^-2)
   
     **Type** ``float``
   
     **Default** ``78.9451185``
   
-   :atomic_unit_of_bohr_magneton: Bohr magneton in atomic units (unit: )
-  
-    **Type** ``float``
-  
-    **Default** ``0.5000000000000764``
-  
-   :atomic_unit_of_nuclear_magneton: Nuclear magneton in atomic units (unit: )
-  
-    **Type** ``float``
-  
-    **Default** ``0.0002723085107443953``
-  
-   :angstrom2bohrs: Angstrom -> Bohr conversion factor (unit: Å)
-  
-    **Type** ``float``
-  
-    **Default** ``1.8897261246257702``
-  
-   :atomic_unit_of_light_speed: Speed of light in atomic units (unit: )
+   :light_speed: | Speed of light in atomic units  (unit: au).         Affected code: Relativistic Hamiltonians (ZORA, etc.) (unit: au)
   
     **Type** ``float``
   
     **Default** ``137.035999084``
   
-   :hartree2kjmol: Hartree to kilojoule mol$^{-1}$ conversion factor (unit: kJ mol^-1)
+   :angstrom2bohrs: | Conversion factor for Cartesian coordinates from Angstrom to Bohr  (unit: Å^-1).         Affected code: Parsing of input coordinates, printed coordinates (unit: Å^-1)
+  
+    **Type** ``float``
+  
+    **Default** ``1.8897261246257702``
+  
+   :hartree2kjmol: | Conversion factor from Hartree to kJ/mol  (unit: kJ mol^-1).         Affected code: Printed value of energies. (unit: kJ mol^-1)
   
     **Type** ``float``
   
     **Default** ``2625.4996394798254``
   
-   :hartree2kcalmol: Hartree to kcal mol$^{-1}$ conversion factor (unit: kcal mol^-1)
+   :hartree2kcalmol: | Conversion factor from Hartree to kcal/mol  (unit: kcal mol^-1).         Affected code: Printed value of energies. (unit: kcal mol^-1)
   
     **Type** ``float``
   
     **Default** ``627.5094740630558``
   
-   :hartree2ev: Hartree to eV conversion factor (unit: eV)
+   :hartree2ev: | Conversion factor from Hartree to eV  (unit: ev).         Affected code: Printed value of energies. (unit: ev)
   
     **Type** ``float``
   
     **Default** ``27.211386245988``
   
-   :hartree2wavenumbers: Hartree to cm$^{-1}$ conversion factor (unit: cm^-1)
+   :hartree2wavenumbers: | Conversion factor from Hartree to wavenumbers (unit: cm^-1).         Affected code: Printed value of frequencies. (unit: cm^-1)
   
     **Type** ``float``
   
     **Default** ``219474.6313632``
   
-   :fine-structure constant: uncertainty=0.000 000 0011 e-3 (unit: )
+   :fine_structure_constant: | Fine-structure constant in atomic units (unit: au).         Affected code: Certain magnetic interaction operators. (unit: au)
   
     **Type** ``float``
   
     **Default** ``0.0072973525693``
   
-   :electron g factor: uncertainty=0.000 000 000 000 35 (unit: )
+   :electron_g_factor: | Electron g factor in atomic units (unit: au).         Affected code: Certain magnetic interaction operators. (unit: au)
   
     **Type** ``float``
   
     **Default** ``-2.00231930436256``
   
-   :dipmom_au2debye: Atomic units to Debye conversion factor for dipoles (unit: ???)
+   :dipmom_au2debye: | Conversion factor for dipoles from atomic units to Debye (unit: ?).         Affected code: Printed value of dipole moments. (unit: ?)
   
     **Type** ``float``
   

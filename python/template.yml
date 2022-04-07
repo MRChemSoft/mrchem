@@ -845,56 +845,60 @@ sections:
   - name: pi
     default: 3.141592653589793
     type: float
-    docstring: 'Pi (unit: )'
+    docstring: "|\nThe number `pi` (unit: )"
   - name: pi_sqrt
     default: 1.7724538509055159
     type: float
-    docstring: 'Square root of pi (unit: )'
+    docstring: "|\nThe square root of `pi`  (unit: ). (unit: )"
   - name: hartree2simagnetizability
     default: 78.9451185
     type: float
-    docstring: 'Atomic units to J/T^2 (magnetizability) (unit: J T^-2)'
-  - name: atomic_unit_of_bohr_magneton
-    default: 0.5000000000000764
+    docstring: "|\nConversion factor for magnetizability from atomic units to SI units\
+      \  (unit: J T^-2).\n        Affected code: Printed value of the magnetizability\
+      \ property. (unit: J T^-2)"
+  - name: light_speed
+    default: 137.035999084
     type: float
-    docstring: 'Bohr magneton in atomic units (unit: )'
-  - name: atomic_unit_of_nuclear_magneton
-    default: 0.0002723085107443953
-    type: float
-    docstring: 'Nuclear magneton in atomic units (unit: )'
+    docstring: "|\nSpeed of light in atomic units  (unit: au).\n        Affected code:\
+      \ Relativistic Hamiltonians (ZORA, etc.) (unit: au)"
   - name: angstrom2bohrs
     default: 1.8897261246257702
     type: float
-    docstring: 'Angstrom -> Bohr conversion factor (unit: Å)'
-  - name: atomic_unit_of_light_speed
-    default: 137.035999084
-    type: float
-    docstring: 'Speed of light in atomic units (unit: )'
+    docstring: "|\nConversion factor for Cartesian coordinates from Angstrom to Bohr\
+      \  (unit: Å^-1).\n        Affected code: Parsing of input coordinates, printed\
+      \ coordinates (unit: Å^-1)"
   - name: hartree2kjmol
     default: 2625.4996394798254
     type: float
-    docstring: 'Hartree to kilojoule mol$^{-1}$ conversion factor (unit: kJ mol^-1)'
+    docstring: "|\nConversion factor from Hartree to kJ/mol  (unit: kJ mol^-1).\n\
+      \        Affected code: Printed value of energies. (unit: kJ mol^-1)"
   - name: hartree2kcalmol
     default: 627.5094740630558
     type: float
-    docstring: 'Hartree to kcal mol$^{-1}$ conversion factor (unit: kcal mol^-1)'
+    docstring: "|\nConversion factor from Hartree to kcal/mol  (unit: kcal mol^-1).\n\
+      \        Affected code: Printed value of energies. (unit: kcal mol^-1)"
   - name: hartree2ev
     default: 27.211386245988
     type: float
-    docstring: 'Hartree to eV conversion factor (unit: eV)'
+    docstring: "|\nConversion factor from Hartree to eV  (unit: ev).\n        Affected\
+      \ code: Printed value of energies. (unit: ev)"
   - name: hartree2wavenumbers
     default: 219474.6313632
     type: float
-    docstring: 'Hartree to cm$^{-1}$ conversion factor (unit: cm^-1)'
-  - name: fine-structure constant
+    docstring: "|\nConversion factor from Hartree to wavenumbers (unit: cm^-1).\n\
+      \        Affected code: Printed value of frequencies. (unit: cm^-1)"
+  - name: fine_structure_constant
     default: 0.0072973525693
     type: float
-    docstring: 'uncertainty=0.000 000 0011 e-3 (unit: )'
-  - name: electron g factor
+    docstring: "|\nFine-structure constant in atomic units (unit: au).\n        Affected\
+      \ code: Certain magnetic interaction operators. (unit: au)"
+  - name: electron_g_factor
     default: -2.00231930436256
     type: float
-    docstring: 'uncertainty=0.000 000 000 000 35 (unit: )'
+    docstring: "|\nElectron g factor in atomic units (unit: au).\n        Affected\
+      \ code: Certain magnetic interaction operators. (unit: au)"
   - name: dipmom_au2debye
     default: 2.5417464739297717
     type: float
-    docstring: 'Atomic units to Debye conversion factor for dipoles (unit: ???)'
+    docstring: "|\nConversion factor for dipoles from atomic units to Debye (unit:\
+      \ ?).\n        Affected code: Printed value of dipole moments. (unit: ?)"

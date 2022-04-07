@@ -982,8 +982,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     //////////////////////   Zora Operator   //////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
-        auto c = json_fock["zora_operator"]["light_speed"];
-        if (c <= 0.0) c = PhysicalConstants::get("atomic_unit_of_light_speed");
+        auto c = PhysicalConstants::get("light_speed");
         F.setLightSpeed(c);
 
         auto include_nuclear = json_fock["zora_operator"]["include_nuclear"];

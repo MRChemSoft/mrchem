@@ -24,6 +24,7 @@
 #
 
 import math
+from pydoc import doc
 from types import SimpleNamespace
 
 from qcelemental.physical_constants.context import PhysicalConstantsContext
@@ -50,45 +51,114 @@ class MRChemPhysConstants:
         """
         self.context = "CODATA2018"
         self.nist = "https://physics.nist.gov/cuu/Constants/Table/allascii.txt"
-        qce = PhysicalConstantsContext(context=self.context)
+        self.qce = PhysicalConstantsContext(context=self.context)
+        self.data = []
 
-        # Define new constants needed by MRChem (or rename existing ones)
-        # We follow the QCElemental 4-tuple format
-        # (callname: str, units: str, value: float, description: str)
-        self.data = [
-            # New ones
-            ('pi',                              '',       self.PI,                                                                                         'Pi'),
-            ('pi_sqrt',                         '',       math.sqrt(self.PI),                                                                              'Square root of pi'),
-            ('hartree2simagnetizability',       'J T^-2', self.HARTREE2SIMAGNETIZABILITY,                                                                  'Atomic units to J/T^2 (magnetizability)'),
-            ('atomic_unit_of_bohr_magneton',    '',       qce.Bohr_magneton / qce.atomic_unit_of_magnetizability / qce.atomic_unit_of_mag_flux_density,    'Bohr magneton in atomic units'),
-            ('atomic_unit_of_nuclear_magneton', '',       qce.nuclear_magneton / qce.atomic_unit_of_magnetizability / qce.atomic_unit_of_mag_flux_density, 'Nuclear magneton in atomic units'),
-            ('angstrom2bohrs',                  'Å',      1.0 / qce.bohr2angstroms,                                                                        'Angstrom -> Bohr conversion factor'),
-            # Rename
-            ('atomic_unit_of_light_speed',      '',       qce.c_au,                                                                                         'Speed of light in atomic units')
-        ]
+        ########################
+        # Define our constants
+        ########################
 
-        # Add the following pre-defined constants to our mrchem subset
-        # NOTE: when using the get method, we use the NIST access names
-        # which may contain spaces. See web page for reference.
-        names = [
-            "hartree2kJmol",
-            "hartree2kcalmol",
-            "hartree2ev",
-            "hartree2wavenumbers",
-            "fine-structure constant",
-            "electron g factor",
-            "dipmom_au2debye"
-        ]
+        # pi
+        name = 'pi'
+        unit = ''
+        value = self.PI
+        docstring = """|\nThe number `pi`"""
+        self.add_constant(name, unit, value, docstring)
 
-        # Append the data to our list of constants
-        for name in names:
-            datum = qce.get(name, return_tuple=True)
-            self.data.append((datum.label.lower(), datum.units, float(datum.data), datum.comment))
+        # Square root of pi
+        name = 'pi_sqrt'
+        unit = ''
+        value = math.sqrt(self.PI)
+        docstring = f"""|\nThe square root of `pi`  (unit: {unit})."""
+        self.add_constant(name, unit, value, docstring)
 
-        # Set our constants to instance attributes
+        # Convert from au to SI units for magnetizability
+        name = 'hartree2simagnetizability'
+        unit = 'J T^-2'
+        value = self.HARTREE2SIMAGNETIZABILITY
+        docstring = f"""|\nConversion factor for magnetizability from atomic units to SI units  (unit: {unit}).
+        Affected code: Printed value of the magnetizability property."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Speed of light in atomic units
+        name = 'light_speed'
+        unit = 'au'
+        value = self.qce.c_au
+        docstring = f"""|\nSpeed of light in atomic units  (unit: {unit}).
+        Affected code: Relativistic Hamiltonians (ZORA, etc.)"""
+        self.add_constant(name, unit, value, docstring)
+
+        # Convert from Angstrom to Bohr
+        name = 'angstrom2bohrs'
+        unit = 'Å^-1'
+        value = 1.0 / self.qce.bohr2angstroms
+        docstring = f"""|\nConversion factor for Cartesian coordinates from Angstrom to Bohr  (unit: {unit}).
+        Affected code: Parsing of input coordinates, printed coordinates"""
+        self.add_constant(name, unit, value, docstring)
+
+        # Convert from Hartree to kJ/mol
+        name = 'hartree2kjmol'
+        unit = 'kJ mol^-1'
+        value = self.qce.hartree2kJmol
+        docstring = f"""|\nConversion factor from Hartree to kJ/mol  (unit: {unit}).
+        Affected code: Printed value of energies."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Convert from Hartree to kcal/mol
+        name = 'hartree2kcalmol'
+        unit = 'kcal mol^-1'
+        value = self.qce.hartree2kcalmol
+        docstring = f"""|\nConversion factor from Hartree to kcal/mol  (unit: {unit}).
+        Affected code: Printed value of energies."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Convert from Hartree to eV
+        name = 'hartree2ev'
+        unit = 'ev'
+        value = self.qce.hartree2ev
+        docstring = f"""|\nConversion factor from Hartree to eV  (unit: {unit}).
+        Affected code: Printed value of energies."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Convert from Hartree to cm-1
+        name = 'hartree2wavenumbers'
+        unit = 'cm^-1'
+        value = self.qce.hartree2wavenumbers
+        docstring = f"""|\nConversion factor from Hartree to wavenumbers (unit: {unit}).
+        Affected code: Printed value of frequencies."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Fine-structure constant in atomic units
+        name = 'fine_structure_constant'
+        unit = 'au'
+        value = self.qce.fine_structure_constant
+        docstring = f"""|\nFine-structure constant in atomic units (unit: {unit}).
+        Affected code: Certain magnetic interaction operators."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Electron g factor in atomic units
+        name = 'electron_g_factor'
+        unit = 'au'
+        value = self.qce.electron_g_factor
+        docstring = f"""|\nElectron g factor in atomic units (unit: {unit}).
+        Affected code: Certain magnetic interaction operators."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Convert from atomic units to Debye
+        name = 'dipmom_au2debye'
+        unit = '?'
+        value = self.qce.dipmom_au2debye
+        docstring = f"""|\nConversion factor for dipoles from atomic units to Debye (unit: {unit}).
+        Affected code: Printed value of dipole moments."""
+        self.add_constant(name, unit, value, docstring)
+
+        # Set our constants to instance attributes for easy access
         for name, _, value, _ in self.data:
-            key = name.translate(qce._transtable)
-            self.__setattr__(key, float(value))
+            self.__setattr__(name.lower(), float(value))
+
+    def add_constant(self, name, unit, value, docstring):
+        """Add constant to `data` instance attribute."""
+        self.data.append((name, unit, value, docstring))
 
     def print_constants_for_tests(self, varname='testConstants'):
         """Helper function for printing constants for copy/pasting into the c++ code.

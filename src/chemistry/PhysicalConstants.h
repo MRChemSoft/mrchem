@@ -24,6 +24,7 @@
  */
 
 #pragma once
+#include "MRCPP/Printer"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -34,11 +35,13 @@ class PhysicalConstants {
 public:
     static PhysicalConstants &Initialize(const json &constants);
     static double get(const std::string &key) {
-        if (hasData) {
-            return constants_[key];
-        } else {
-            return testConstants[key];
-        }
+        try {
+            if (hasData) {
+                return constants_[key];
+            } else {
+                return testConstants[key];
+            }
+        } catch (...) { MSG_ABORT("Error getting constant with name: " + key); }
     }
 
     PhysicalConstants() = default;
