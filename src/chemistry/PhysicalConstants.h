@@ -44,6 +44,8 @@ public:
         } catch (...) { MSG_ABORT("Error getting constant with name: " + key); }
     }
 
+    static void Print(int plevel);
+
     PhysicalConstants() = default;
     ~PhysicalConstants() = default;
 

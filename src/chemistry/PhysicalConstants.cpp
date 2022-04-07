@@ -24,6 +24,7 @@
  */
 
 #include "PhysicalConstants.h"
+#include "MRCPP/Printer"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -53,6 +54,19 @@ PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
     hasData = true;
     static PhysicalConstants obj(constants);
     return obj;
+}
+
+void PhysicalConstants::Print(int plevel) {
+    int printThreshold = 0;
+    int w = (mrcpp::Printer::getWidth() - 1) / 2;
+    mrcpp::print::header(printThreshold, "Physical Constants (truncated precision)");
+    for (const auto &item : PhysicalConstants::constants_.items()) {
+        std::string key = item.key();
+        double val = item.value().get<double>();
+        std::string eq = (val < 0) ? " = " : " =  ";
+        if (plevel >= printThreshold) std::printf("%-*s%-1s%-.8e\n", w, key.c_str(), eq.c_str(), val);
+    }
+    mrcpp::print::separator(printThreshold, '=');
 }
 
 } // namespace mrchem
