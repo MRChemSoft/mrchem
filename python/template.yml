@@ -290,11 +290,6 @@ sections:
   docstring: |
     Define required parameters for the ZORA Hamiltonian.
   keywords:
-  - name: light_speed
-    type: float
-    default: -1.0
-    docstring: |
-      Adjust speed of light.
   - name: include_nuclear
     type: bool
     default: true

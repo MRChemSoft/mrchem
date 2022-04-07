@@ -326,12 +326,6 @@ User input reference
  :ZORA: Define required parameters for the ZORA Hamiltonian. 
 
   :red:`Keywords`
-   :light_speed: Adjust speed of light. 
-  
-    **Type** ``float``
-  
-    **Default** ``-1.0``
-  
    :include_nuclear: Include the nuclear potential ``V_nuc`` in the ZORA potential. 
   
     **Type** ``bool``
