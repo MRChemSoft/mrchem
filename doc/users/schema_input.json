@@ -263,5 +263,17 @@
         }
       }
     }
+  },
+  "constants": {                             # Physical constants used throughout MRChem
+    "angstrom2bohrs": float,                 # Conversion factor from Angstrom to Bohr
+    "dipmom_au2debye": float,                # Conversion factor from atomic units to Debye
+    "electron_g_factor": float,              # Electron g factor in atomic units
+    "fine_structure_constant": float,        # Fine-structure constant in atomic units
+    "hartree2ev": float,                     # Conversion factor from Hartree to eV
+    "hartree2kcalmol": float,                # Conversion factor from Hartree to kcal/mol
+    "hartree2kjmol": float,                  # Conversion factor from Hartree to kJ/mol
+    "hartree2simagnetizability": float,      # Conversion factor from Hartree to J T^-2
+    "hartree2wavenumbers": float,            # Conversion factor from Hartree to cm^-1
+    "light_speed": float                     # Speed of light in vacuo in atomic units
   }
 }
