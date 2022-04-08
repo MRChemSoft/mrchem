@@ -56,7 +56,7 @@ PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
 }
 
 void PhysicalConstants::Print(int plevel) {
-    int printThreshold = 0;
+    int printThreshold = 1;
     int w = (mrcpp::Printer::getWidth() - 1) / 2;
     mrcpp::print::header(printThreshold, "Physical Constants (truncated precision)");
     for (const auto &item : PhysicalConstants::constants_.items()) {
