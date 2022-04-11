@@ -212,7 +212,6 @@ def write_scf_solver(user_dict, wf_dict):
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
-        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
     }
     return solver_dict
 
