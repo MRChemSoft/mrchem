@@ -83,7 +83,7 @@ def main():
     # now that all keywords have sensible values,
     # we can translate user input into program input
     program_dict = {"input": translate_input(user_dict)}
-    program_dict["input"]["printer"]["file_name"] = inp_file.name
+    program_dict["input"]["printer"]["file_name"] = name
 
     with open(json_file, "w") as fd:
         fd.write(dumps(program_dict, indent=2))

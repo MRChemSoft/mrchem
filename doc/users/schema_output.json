@@ -37,7 +37,10 @@
       "E_xc": float,                         # DFT exchange-correlation energy
       "E_el": float,                         # Sum of electronic contributions
       "E_nuc": float,                        # Sum of nuclear contributions
-      "E_tot": float                         # Sum of all contributions
+      "E_tot": float,                        # Sum of all contributions
+      "Er_el": float,                        # Electronic reaction energy
+      "Er_nuc": float,                       # Nuclear reaction energy
+      "Er_tot": float                        # Sum of all reaction energy contributions
     },
     "dipole_moment": {                       # Collection of electric dipole moments
       id (string): {                         # Unique id: 'dip-${number}'
@@ -110,7 +113,10 @@
       "E_xc": float,                         # DFT exchange-correlation energy
       "E_el": float,                         # Sum of electronic contributions
       "E_nuc": float,                        # Sum of nuclear contributions
-      "E_tot": float                         # Sum of all contributions
+      "E_tot": float,                        # Sum of all contributions
+      "Er_el": float,                        # Electronic reaction energy
+      "Er_nuc": float,                       # Nuclear reaction energy
+      "Er_tot": float                        # Sum of all reaction energy contributions
     },
     "scf_solver": {                          # Details from SCF optimization
       "converged": bool,                     # Optimization converged
@@ -132,7 +138,10 @@
             "E_xc": float,                   # DFT exchange-correlation energy
             "E_el": float,                   # Sum of electronic contributions
             "E_nuc": float,                  # Sum of nuclear contributions
-            "E_tot": float                   # Sum of all contributions
+            "E_tot": float,                  # Sum of all contributions
+            "Er_el": float,                  # Electronic reaction energy
+            "Er_nuc": float,                 # Nuclear reaction energy
+            "Er_tot": float                  # Sum of all reaction energy contributions
           }
         }
       ]
