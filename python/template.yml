@@ -91,6 +91,11 @@ sections:
     - 50 < value < 100
     docstring: |
       Line width of printed output (in number of characters).
+  - name: print_constants
+    type: bool
+    default: false
+    docstring: |
+      Print table of physical constants used by MRChem.
 - name: Plotter
   docstring: |
     Give details regarding the density and orbital plots. Three types of

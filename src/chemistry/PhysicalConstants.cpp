@@ -55,17 +55,22 @@ PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
     return obj;
 }
 
-void PhysicalConstants::Print(int plevel) {
-    int printThreshold = 1;
-    int w = (mrcpp::Printer::getWidth() - 1) / 2;
-    mrcpp::print::header(printThreshold, "Physical Constants (truncated precision)");
+void PhysicalConstants::Print(int pprec) {
+    // Determine the length of the longest constant names
+    // to make the spacing adaptive
+    int w = 0;
+    for (const auto &item : PhysicalConstants::constants_.items()) {
+        if (item.key().length() > w) w = item.key().length() + 1;
+    }
+
+    mrcpp::print::header(0, "Physical Constants");
     for (const auto &item : PhysicalConstants::constants_.items()) {
         std::string key = item.key();
         double val = item.value().get<double>();
         std::string eq = (val < 0) ? " = " : " =  ";
-        if (plevel >= printThreshold) std::printf("%-*s%-1s%-.8e\n", w, key.c_str(), eq.c_str(), val);
+        std::printf("%-*s%-1s%-.*e\n", w, key.c_str(), eq.c_str(), val, pprec);
     }
-    mrcpp::print::separator(printThreshold, '=');
+    mrcpp::print::separator(0, '=');
 }
 
 } // namespace mrchem

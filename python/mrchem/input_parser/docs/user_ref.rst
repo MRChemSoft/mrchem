@@ -117,6 +117,12 @@ User input reference
     **Predicates**
       - ``50 < value < 100``
   
+   :print_constants: Print table of physical constants used by MRChem. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
  :Plotter: Give details regarding the density and orbital plots. Three types of plots are available, line, surface and cube, and the plotting ranges are defined by three vectors (A, B and C) and an origin (O): ``line``: plots on line spanned by A, starting from O. ``surf``: plots on surface spanned by A and B, starting from O. ``cube``: plots on volume spanned by A, B and C, starting from O. 
 
   :red:`Keywords`

@@ -60,7 +60,8 @@ int main(int argc, char **argv) {
 
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
-    PhysicalConstants::Print(json_inp["printer"]["print_level"]);
+    int print_prec = json_inp["printer"]["print_prec"];
+    if (json_inp["printer"]["print_constants"]) PhysicalConstants::Print(print_prec);
 
     Timer timer;
     Molecule mol;
