@@ -25,13 +25,14 @@
 
 #include "PhysicalConstants.h"
 #include "MRCPP/Printer"
+#include "utils/print_utils.h"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 
 namespace mrchem {
 
-bool PhysicalConstants::hasData = false;
+bool PhysicalConstants::initialized = false;
 json PhysicalConstants::constants_ = json();
 
 // clang-format off
@@ -50,7 +51,7 @@ json PhysicalConstants::testConstants = {
 // clang-format on
 
 PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
-    hasData = true;
+    initialized = true;
     static PhysicalConstants obj(constants);
     return obj;
 }
@@ -67,8 +68,7 @@ void PhysicalConstants::Print(int pprec) {
     for (const auto &item : PhysicalConstants::constants_.items()) {
         std::string key = item.key();
         double val = item.value().get<double>();
-        std::string eq = (val < 0) ? " = " : " =  ";
-        std::printf("%-*s%-1s%-.*e\n", w, key.c_str(), eq.c_str(), val, pprec);
+        print_utils::scalar(0, key, val, "", pprec, true);
     }
     mrcpp::print::separator(0, '=');
 }

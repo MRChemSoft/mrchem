@@ -36,7 +36,7 @@ public:
     static PhysicalConstants &Initialize(const json &constants);
     static double get(const std::string &key) {
         try {
-            if (hasData) {
+            if (initialized) {
                 return constants_[key];
             } else {
                 return testConstants[key];
@@ -54,7 +54,7 @@ public:
     PhysicalConstants &operator=(const PhysicalConstants &&) = delete;
     PhysicalConstants(PhysicalConstants &&) = delete;
 
-    static bool hasData;
+    static bool initialized;
 
 private:
     PhysicalConstants(const json &constants) { constants_ = constants; }
