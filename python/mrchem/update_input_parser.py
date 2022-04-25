@@ -39,6 +39,7 @@ root = Path.cwd().parent
 target = root.joinpath('mrchem', 'input_parser')
 
 yaml = YAML()
+yaml.indent(sequence=4, mapping=2, offset=2)
 
 def update_constants():
     pc = MRChemPhysConstants()
