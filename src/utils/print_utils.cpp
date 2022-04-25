@@ -149,7 +149,7 @@ void print_utils::coord(int level, const std::string &txt, const mrcpp::Coord<3>
 void print_utils::scalar(int level, const std::string &txt, double val, const std::string &unit, int p, bool s) {
     if (p < 0) p = Printer::getPrecision();
     int w0 = Printer::getWidth() - 2;
-    int w1 = w0 * 2 / 10;
+    int w1 = w0 * 2 / 9;
     int w2 = w0 - 3 * w1;
     int w3 = w2 - (txt.size() + 1);
 
