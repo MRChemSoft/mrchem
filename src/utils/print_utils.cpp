@@ -102,6 +102,33 @@ void print_utils::text(int level, const std::string &txt, const std::string &val
     println(level, o.str());
 }
 
+void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
+    // Determine longest name
+    int w = 0;
+    for (const auto &item : j.items()) {
+        if (item.key().size() > w) w = item.key().size();
+    }
+
+    // Print
+    for (const auto &item : j.items()) {
+        std::string key = item.key();
+        std::stringstream o_val;
+        o_val << item.value();
+        std::string val = o_val.str();
+
+        // Remove quotes from val and print
+        val.erase(std::remove(val.begin(), val.end(), '\"'), val.end());
+
+        // If right-align, determine how much to shift the vals
+        int shift = (ralign) ? Printer::getWidth() - w - val.size() - 3 : 0;
+
+        // Avoid runtime errors due to negative shifts caused by very long names
+        if (shift < 0) shift = 0;
+
+        std::printf("%-*s%-s%-s%-s\n", w, key.c_str(), " : ", std::string(shift, ' ').c_str(), val.c_str());
+    }
+}
+
 void print_utils::coord(int level, const std::string &txt, const mrcpp::Coord<3> &val, int p, bool s) {
     if (p < 0) p = Printer::getPrecision();
     int w0 = Printer::getWidth() - 2;

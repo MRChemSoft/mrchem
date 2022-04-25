@@ -56,21 +56,11 @@ PhysicalConstants &PhysicalConstants::Initialize(const json &constants) {
     return obj;
 }
 
-void PhysicalConstants::Print(int pprec) {
-    // Determine the length of the longest constant names
-    // to make the spacing adaptive
-    int w = 0;
-    for (const auto &item : PhysicalConstants::constants_.items()) {
-        if (item.key().length() > w) w = item.key().length() + 1;
-    }
-
+/** @brief Pretty print physical constants */
+void PhysicalConstants::Print() {
     mrcpp::print::header(0, "Physical Constants");
-    for (const auto &item : PhysicalConstants::constants_.items()) {
-        std::string key = item.key();
-        double val = item.value().get<double>();
-        print_utils::scalar(0, key, val, "", pprec, true);
-    }
-    mrcpp::print::separator(0, '=');
+    print_utils::json(0, constants_, true);
+    mrcpp::print::separator(0, '=', 2);
 }
 
 } // namespace mrchem

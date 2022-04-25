@@ -28,11 +28,14 @@
 #include "mrchem.h"
 #include "qmfunctions/qmfunction_fwd.h"
 
+#include <nlohmann/json.hpp>
+
 namespace mrchem {
 namespace print_utils {
 
 void headline(int level, const std::string &txt);
 void text(int level, const std::string &txt, const std::string &val);
+void json(int level, const nlohmann::json &j, bool ralign = false);
 void coord(int level, const std::string &txt, const mrcpp::Coord<3> &val, int p = -1, bool s = false);
 void scalar(int level, const std::string &txt, double val, const std::string &unit = "", int p = -1, bool s = false);
 void vector(int level, const std::string &txt, const DoubleVector &val, int p = -1, bool s = false);
