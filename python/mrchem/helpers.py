@@ -53,8 +53,6 @@ def write_scf_fock(user_dict, wf_dict, origin):
     # ZORA
     if user_dict["WaveFunction"]["relativity"].lower() == "zora":
         fock_dict["zora_operator"] = {
-            "light_speed": user_dict["Constants"]["light_speed"],
-            "derivative": user_dict["Derivatives"]["zora"],
             "include_nuclear": user_dict["ZORA"]["include_nuclear"],
             "include_coulomb": user_dict["ZORA"]["include_coulomb"],
             "include_xc": user_dict["ZORA"]["include_xc"]
