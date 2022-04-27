@@ -10,13 +10,15 @@
         "xyz": array[float]                  # Nuclear Cartesian coordinate
       }                                      
     ],                                       
-    "cavity_coords": array[                  # Array of solvation cavities
-      {                                      # (one entry per sphere)
-        "center": array[float],              # Cartesian coordinate of sphere center
-        "radius": float                      # Radius of cavity sphere
-      }                                      
-    ],                                       
-    "cavity_width": float                    # Width of cavity boundary
+    "cavity": {
+      "spheres": array[                      # Array of cavity spheres
+        {                                    # (one entry per sphere)
+          "center": array[float],            # Cartesian coordinate of sphere center
+          "radius": float                    # Radius of cavity sphere
+        }                                      
+      ],                                       
+      "width": float                         # Width of cavity boundary
+    }
   },                                         
   "mpi": {                                   # Section for MPI specification
     "bank_size": int,                        # Number of MPI ranks in memory bank
