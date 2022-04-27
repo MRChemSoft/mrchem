@@ -134,7 +134,7 @@ void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
         int colonPadding = 3;    // Two empty spaces around a single colon
 
         // Use standard spacing if longest name fits
-        if (w3 > lshift) lshift = w3 + frontEndPadding;
+        if (w2 > lshift) lshift = w2 - frontEndPadding;
 
         // Calculate the shift needed for right-aligning
         int rshift = (ralign) ? Printer::getWidth() - lshift - val.size() - frontEndPadding - colonPadding : 0;
