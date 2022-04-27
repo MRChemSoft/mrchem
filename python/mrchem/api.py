@@ -126,9 +126,12 @@ def write_molecule(user_dict, origin):
         "multiplicity": mol.mult,
         "charge": mol.charge,
         "coords": mol.get_coords_in_program_syntax(),
-        "cavity_coords": mol.get_cavity_in_program_syntax(),
-        "cavity_width": mol.cavity_width
     }
+    if user_dict["Environment"]["run_environment"]:
+        mol_dict["cavity"] = {
+            "spheres": mol.get_cavity_in_program_syntax(),
+            "width": mol.cavity_width,
+        }
 
     return mol_dict
 

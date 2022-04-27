@@ -141,15 +141,19 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
         auto xyz = coord["xyz"];
         nuclei.push_back(atom, xyz);
     }
-    std::vector<double> radii;
-    std::vector<mrcpp::Coord<3>> spheres;
-    for (const auto &coord : json_mol["cavity_coords"].get<json>()) {
-        radii.push_back(coord["radius"].get<double>());
-        spheres.push_back(coord["center"].get<mrcpp::Coord<3>>());
-    }
-    auto cavity_width = json_mol["cavity_width"].get<double>();
 
-    mol.initCavity(spheres, radii, cavity_width);
+    if (json_mol.contains("cavity")) {
+        auto json_cavity = json_mol["cavity"];
+        std::vector<double> radii;
+        std::vector<mrcpp::Coord<3>> coords;
+        for (const auto &sphere : json_cavity["spheres"]) {
+            radii.push_back(sphere["radius"]);
+            coords.push_back(sphere["center"]);
+        }
+        auto width = json_cavity["width"];
+
+        mol.initCavity(coords, radii, width);
+    }
     mol.printGeometry();
 }
 
