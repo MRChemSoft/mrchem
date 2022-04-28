@@ -382,6 +382,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {
         success = initial_guess::cube::setup(Phi, prec, cube_p, cube_a, cube_b);
+        orbital::normalize(Phi);
     } else {
         MSG_ERROR("Invalid initial guess");
         success = false;
@@ -840,9 +841,11 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto file_chk_x = json_guess["file_chk_x"];
     auto file_chk_y = json_guess["file_chk_y"];
     auto cube_xp = json_guess["file_CUBE_x_p"];
+    MSG_INFO("name of cube_vector" << cube_xp)
     auto cube_xa = json_guess["file_CUBE_x_a"];
     auto cube_xb = json_guess["file_CUBE_x_b"];
     auto cube_yp = json_guess["file_CUBE_y_p"];
+    MSG_INFO("name of cube_vector" << cube_yp)
     auto cube_ya = json_guess["file_CUBE_y_a"];
     auto cube_yb = json_guess["file_CUBE_y_b"];
 

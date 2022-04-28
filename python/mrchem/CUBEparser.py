@@ -40,7 +40,9 @@ def write_cube_dict(user_dict):
     all_path_list.append(sort_paths(file_dict["guess_cube_p"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_a"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_b"]))
+    print("sort x paired")
     all_path_list.append(sort_paths(file_dict["guess_cube_x_p"]))
+    print("after sort x paired")
     all_path_list.append(sort_paths(file_dict["guess_cube_x_a"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_x_b"]))
     all_path_list.append(sort_paths(file_dict["guess_cube_y_p"]))
@@ -51,6 +53,7 @@ def write_cube_dict(user_dict):
         cube_list = []
         if len(path_list) != 0:
             for path in path_list:
+                print(path)
                 cube_list.append(parse_cube_file(path, world_unit))
         all_cube_list.append(cube_list)
 
@@ -94,11 +97,13 @@ def write_cube_dict(user_dict):
 
 
 def sort_paths(path):
+    print(path, "in sort paths")
     path_l = []
     dir_path = "/".join(path.split("/")[:-1])
     directory = os.fsencode(dir_path)
     if os.path.isdir(dir_path):
         for file in os.listdir(directory):
+            print(file, "file in loop of sort_paths")
             filename = os.fsdecode(file)
             if (filename.startswith(path.split("/")[-1])) and (
                 filename.endswith(".cube")

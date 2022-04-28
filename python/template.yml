@@ -739,7 +739,11 @@ sections:
         type: str
         default: none
         predicates:
-          - value.lower() in ['none', 'chk', 'mw']
+          - "value.lower() in
+            ['none',
+             'chk',
+             'mw',
+             'cube']"
         docstring: |
           Type of initial guess for response.
           ``none`` will start from a zero guess for the response functions.

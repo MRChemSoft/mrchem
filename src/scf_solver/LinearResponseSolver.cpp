@@ -71,6 +71,10 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
     OrbitalVector &Phi_0 = mol.getOrbitals();
     OrbitalVector &X_n = mol.getOrbitalsX();
     OrbitalVector &Y_n = mol.getOrbitalsY();
+    MSG_INFO("size of X vector" << X_n.size());
+    MSG_INFO("0-th element of X vector" << orbital::get_norms(X_n));
+    MSG_INFO("size of Y vector" << Y_n.size());
+    MSG_INFO("0-th element of X vector" << orbital::get_norms(Y_n));
     ComplexMatrix &F_mat_0 = mol.getFockMatrix();
     ComplexMatrix F_mat_x = F_mat_0 + omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
     ComplexMatrix F_mat_y = F_mat_0 - omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
@@ -84,7 +88,15 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
     DoubleVector errors_y = DoubleVector::Zero(Phi_0.size());
 
     this->error.push_back(err_t);
-    this->property.push_back(0.0);
+    double orb_prec = adjustPrecision(err_o);
+    F_1.setup(orb_prec);
+    double prop = F_1.perturbation().trace(Phi_0, X_n, Y_n).real();
+    auto xx = orbital::get_squared_norms(X_n).sum();
+    auto yy = orbital::get_squared_norms(Y_n).sum();
+    MSG_INFO("XX -YY " << xx - yy);
+    MSG_INFO("xx " << xx);
+    MSG_INFO("yy " << yy);
+    this->property.push_back(prop);
 
     // Setup Helmholtz operators (fixed, based on unperturbed system)
     double helm_prec = getHelmholtzPrec();
@@ -111,7 +123,7 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
 
         // Initialize SCF cycle
         Timer t_scf, t_lap;
-        double orb_prec = adjustPrecision(err_o);
+        orb_prec = adjustPrecision(err_o);
 
         // Setup perturbed Fock operator (including V_1)
         F_1.setup(orb_prec);
@@ -221,7 +233,12 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
         // Compute property
         mrcpp::print::header(2, "Computing symmetric property");
         t_lap.start();
-        double prop = F_1.perturbation().trace(Phi_0, X_n, Y_n).real();
+        prop = F_1.perturbation().trace(Phi_0, X_n, Y_n).real();
+        auto xx = orbital::get_squared_norms(X_n).sum();
+        auto yy = orbital::get_squared_norms(Y_n).sum();
+        MSG_INFO("xx " << xx);
+        MSG_INFO("yy " << yy);
+        MSG_INFO("XX -YY " << xx - yy);
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing symmetric property", t_lap);
 

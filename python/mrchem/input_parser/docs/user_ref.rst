@@ -774,7 +774,7 @@ User input reference
     **Default** ``none``
   
     **Predicates**
-      - ``value.lower() in ['none', 'chk', 'mw']``
+      - ``value.lower() in ['none', 'chk', 'mw', 'cube']``
   
    :write_checkpoint: Write perturbed orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. 
   

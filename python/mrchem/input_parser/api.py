@@ -507,7 +507,8 @@ def stencil() -> JSONDict:
                                             'name': 'guess_type',
                                             'predicates': [   'value.lower() '
                                                               "in ['none', "
-                                                              "'chk', 'mw']"],
+                                                              "'chk', 'mw', "
+                                                              "'cube']"],
                                             'type': 'str'},
                                         {   'default': False,
                                             'name': 'write_checkpoint',

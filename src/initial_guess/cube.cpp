@@ -77,9 +77,13 @@ bool initial_guess::cube::setup(OrbitalVector &Phi, double prec, const std::stri
 
     // Project paired, alpha and beta separately
     auto success = true;
+    MSG_INFO("before projecting paired");
     success &= initial_guess::cube::project_mo(Phi, prec, file_p);
+    MSG_INFO("before projecting alpha");
     success &= initial_guess::cube::project_mo(Phi_a, prec, file_a);
+    MSG_INFO("before projecting beta");
     success &= initial_guess::cube::project_mo(Phi_b, prec, file_b);
+    MSG_INFO("after projecting beta");
 
     // Collect orbitals into one vector
     for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
@@ -108,28 +112,47 @@ bool initial_guess::cube::project_mo(OrbitalVector &Phi, double prec, const std:
     mrcpp::print::header(1, "CUBE Initial Guess");
     println(2, o_head.str());
     mrcpp::print::separator(2, '-');
-
+    MSG_INFO("inside project_mo");
     json cube_inp;
     std::ifstream ifs(mo_file, std::ios_base::in);
+    MSG_INFO(mo_file);
     ifs >> cube_inp;
     ifs.close();
-
-    auto CUBEVector = initial_guess::cube::getCUBEFunction(cube_inp);
-
+    // TODO there is no reason to create CUBEVector the json file should be iterated itself
+    // expect one function per cubefile.
+    std::cout << cube_inp[0]["Header"] << "\n";
+    MSG_INFO("after getCUBEFunction" << Phi.size());
     bool success = true;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
+        MSG_INFO("orbital" << i);
         if (mpi::my_orb(Phi[i])) {
-            CUBEfunction phi_i = CUBEVector[i];
+            MSG_INFO("orbital  inside if " << i);
+            auto Header = cube_inp[i]["Header"];
+            auto N_atoms = Header["N_atoms"];
+            auto origin = Header["origin"];
+            auto N_steps = Header["N_steps"];
+            auto Voxel_axes = Header["Voxel_axes"];
+            auto Z_n = Header["Z_n"];
+            auto atom_charges = Header["atom_charges"];
+            auto atom_coords = Header["atom_coords"];
+            auto N_vals = Header["N_vals"];
+            auto CUBE_data = cube_inp[i]["CUBE_data"][0];
+            CUBEfunction phi_i(N_atoms, N_vals, N_steps, origin, Voxel_axes, Z_n, CUBE_data, atom_charges, atom_coords);
+            MSG_INFO("orbital deref" << i);
             Phi[i].alloc(NUMBER::Real);
+            MSG_INFO("orbital.alloc  " << i);
             mrcpp::project(prec, Phi[i].real(), phi_i);
-            Phi[i].real().normalize();
+            MSG_INFO("orbital project " << i);
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;
             o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
             print_utils::qmfunction(1, o_txt.str(), Phi[i], t_i);
+            MSG_INFO("end of loop" << i);
         }
     }
+    MSG_INFO("after for loop");
+
     mpi::barrier(mpi::comm_orb);
     mrcpp::print::footer(1, t_tot, 2);
     return success;
