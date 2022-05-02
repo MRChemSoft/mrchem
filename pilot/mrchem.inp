@@ -1,20 +1,31 @@
 # vim:syntax=sh:
 
-rel_prec = 1.0e-5                 # Overall relative precision
+world_prec = 1.0e-5                 # Overall relative precision
 
 Printer {
   print_level = 0
   print_prec = 6
   print_width = 70
   print_mpi = false
-  print_input = false
 }
 
-MRA {
-  order = 7                       # Polynomial order
-  min_scale = -3                  # Root scale defines world size 2^{-scale}
-  max_scale = 20                  # Maximum refinement
-  corner = [-1, -1, -1 ]          # Translation of corner root box [x,y,z]
-  boxes = [ 2, 2, 2 ]             # Number of root boxes [x,y,z]
+WaveFunction {
+  method = HF                      # Wave function method (HF or DFT)
+  restricted = true
 }
 
+Molecule {
+$coords
+O    0.000000000000        0.000000000000        0.000000000000                         
+H    0.000000000000        0.740848095288        0.582094932012                         
+H    0.000000000000       -0.740848095288        0.582094932012
+$end
+}
+
+MPI {
+  numerically_exact = true
+}
+
+Basis {
+  type = interpolating
+}

@@ -31,6 +31,36 @@ keywords:
     docstring: |
       Global gauge origin of the calculation.
 sections:
+  - name: Precisions
+    docstring: |
+      Define specific precision parameters.
+    keywords:
+      - name: nuclear_prec
+        type: float
+        default: "user['world_prec']"
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in smoothing and projection of nuclear potential.
+      - name: poisson_prec
+        type: float
+        default: "user['world_prec']"
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in construction of Poisson operators.
+      - name: exchange_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Precision parameter used in construction of Exchange operators.
+          Negative value means it will follow the dynamic precision in SCF.
+      - name: helmholtz_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Precision parameter used in construction of Helmholtz operators.
+          Negative value means it will follow the dynamic precision in SCF.
   - name: Printer
     docstring: |
       Define variables for printed output.
@@ -61,6 +91,67 @@ sections:
           - '50 < value < 100'
         docstring: |
           Line width of printed output (in number of characters).
+  - name: Plotter
+    docstring: |
+      Give details regarding the density and orbital plots. Three types of
+      plots are available, line, surface and cube, and the plotting ranges
+      are defined by three vectors (A, B and C) and an origin (O):
+      ``line``: plots on line spanned by A, starting from O.
+      ``surf``: plots on surface spanned by A and B, starting from O.
+      ``cube``: plots on volume spanned by A, B and C, starting from O.
+    keywords:
+      - name: path
+        type: str
+        default: "plots"
+        predicates:
+          - "value[-1] != '/'"
+        docstring: |
+          File path to plot directory.
+      - name: type
+        type: str
+        default: "cube"
+        predicates:
+          - "value.lower() in ['line', 'surf', 'cube']"
+        docstring: |
+          Type of plot: line (1D), surface (2D) or cube (3D).
+      - name: points
+        type: List[int]
+        default: [20, 20, 20]
+        predicates:
+          - "all(p > 0 for p in value)"
+          - "not (user['Plotter']['type'] == 'line' and len(value) < 1)"
+          - "not (user['Plotter']['type'] == 'surf' and len(value) < 2)"
+          - "not (user['Plotter']['type'] == 'cube' and len(value) < 3)"
+        docstring: |
+          Number of points in each direction on the cube grid.
+      - name: O
+        type: List[float]
+        default: [0.0, 0.0, 0.0]
+        predicates:
+          - 'len(value) == 3'
+        docstring: |
+          Origin of plotting ranges.
+      - name: A
+        type: List[float]
+        default: [1.0, 0.0, 0.0]
+        predicates:
+          - 'len(value) == 3'
+        docstring: |
+          First boundary vector for plot.
+      - name: B
+        type: List[float]
+        default: [0.0, 1.0, 0.0]
+        predicates:
+          - 'len(value) == 3'
+        docstring: |
+          Second boundary vector for plot.
+      - name: C
+        type: List[float]
+        default: [0.0, 0.0, 1.0]
+        predicates:
+          - 'len(value) == 3'
+        docstring: |
+          Third boundary vector for plot.
   - name: MPI
     docstring: |
       Define MPI related parameters.
@@ -113,3 +204,659 @@ sections:
           - "value.lower() in ['interpolating', 'legendre']"
         docstring: |
           Polynomial type of multiwavelet basis.
+  - name: Derivatives
+    docstring: |
+      Define various derivative operators used in the code.
+    keywords:
+      - name: kinetic
+        type: str
+        default: 'abgv_55'
+        docstring: |
+          Derivative used in kinetic operator.
+      - name: h_b_dip
+        type: str
+        default: 'abgv_00'
+        docstring: |
+          Derivative used in magnetic dipole operator.
+      - name: h_m_pso
+        type: str
+        default: 'abgv_00'
+        docstring: |
+          Derivative used in paramagnetic spin-orbit operator.
+  - name: Molecule
+    docstring: |
+      Define molecule.
+    keywords:
+      - name: charge
+        type: int
+        default: 0
+        docstring: |
+          Total charge of molecule.
+      - name: multiplicity
+        type: int
+        default: 1
+        docstring: |
+          Spin multiplicity of molecule.
+      - name: translate
+        type: bool
+        default: false
+        docstring: |
+          Translate coordinates such that center of mass coincides with
+          the global gauge origin.
+      - name: coords
+        type: str
+        docstring: |
+          Coordinates in xyz format. Atoms can be given either using atom symbol or
+          atom number
+  - name: WaveFunction
+    docstring: |
+      Define the wavefunction method.
+    keywords:
+      - name: method
+        type: str
+        predicates:
+          - "value.lower() in
+             ['core',
+              'hartree',
+              'hf',
+              'hartreefock',
+              'hartree-fock',
+              'dft',
+              'lda',
+              'svwn3',
+              'svwn5',
+              'pbe',
+              'pbe0',
+              'bpw91',
+              'bp86',
+              'b3p86',
+              'b3p86-g',
+              'blyp',
+              'b3lyp',
+              'b3lyp-g',
+              'olyp',
+              'kt1',
+              'kt2',
+              'kt3']"
+        docstring: |
+          Wavefunction method. See predicates for valid methods. ``hf``,
+          ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda``
+          is an alias for ``svwn5``. You can set a non-standard DFT functional
+          (e.g. varying the amount of exact exchange) by choosing ``dft`` and
+          specifing the functional(s) in the ``DFT`` section below.
+      - name: restricted
+        type: bool
+        default: true
+        docstring: |
+          Use spin restricted wavefunction.
+  - name: DFT
+    docstring: |
+      Define the exchange-correlation functional in case of DFT.
+    keywords:
+      - name: spin
+        type: bool
+        default: "not(user['WaveFunction']['restricted'])"
+        docstring: |
+          Use spin separated density functionals.
+      - name: density_cutoff
+        type: float
+        default: 0.0
+        docstring: |
+          Hard cutoff for passing density values to XCFun.
+      - name: functionals
+        type: str
+        default: ' '
+        docstring: |
+          List of density functionals with numerical coefficient. E.g. for PBE0
+          ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun
+          documentation <https://xcfun.readthedocs.io/>_.
+  - name: Properties
+    docstring: |
+      Provide a list of properties to compute (total SCF energy and orbital
+      energies are always computed).
+    keywords:
+      - name: dipole_moment
+        type: bool
+        default: true
+        docstring: |
+          Compute dipole moment.
+      - name: quadrupole_moment
+        type: bool
+        default: false
+        docstring: |
+          Compute quadrupole moment. Note: Gauge origin dependent, should be
+          used with ``translate = true`` in Molecule.
+      - name: polarizability
+        type: bool
+        default: false
+        docstring: |
+          Compute polarizability tensor.
+      - name: magnetizability
+        type: bool
+        default: false
+        docstring: |
+          Compute magnetizability tensor.
+      - name: nmr_shielding
+        type: bool
+        default: false
+        docstring: |
+          Compute NMR shielding tensor.
+      - name: geometric_derivative
+        type: bool
+        default: false
+        docstring: |
+          Compute geometric derivative.
+      - name: plot_density
+        type: bool
+        default: false
+        docstring: |
+          Plot converged electron density.
+      - name: plot_orbitals
+        type: List[int]
+        default: []
+        docstring: |
+          Plot converged molecular orbitals from list of indices, negative index
+          plots all orbitals.
+  - name: ExternalFields
+    docstring: |
+      Define external electromagnetic fields.
+    keywords:
+      - name: electric_field
+        type: List[float]
+        default: []
+        predicates:
+          - 'len(value) == 0 or len(value) == 3'
+        docstring: |
+          Strength of external electric field.
+  - name: Polarizability
+    docstring: |
+      Give details regarding the polarizability calculation.
+    keywords:
+      - name: frequency
+        type: List[float]
+        default: [0.0]
+        docstring: |
+          List of external field frequencies.
+  - name: NMRShielding
+    docstring: |
+      Give details regarding the NMR shileding calculation.
+    keywords:
+      - name: nuclear_specific
+        type: bool
+        default: false
+        docstring: |
+          Use nuclear specific perturbation operator (h_m_pso).
+      - name: nucleus_k
+        type: List[int]
+        default: [-1]
+        docstring: |
+          List of nuclei to compute. Negative value computes all nuclei.
+  - name: Files
+    docstring: |
+      Defines file paths used for program input/output.
+      Note: all paths must be given in quotes if they contain slashes
+      "path/to/file".
+    keywords:
+      - name: guess_basis
+        type: str
+        default: "initial_guess/mrchem.bas"
+        docstring: |
+          File name for GTO basis set, used with ``gto`` guess.
+      - name: guess_gto_p
+        type: str
+        default: "initial_guess/mrchem.mop"
+        docstring: |
+          File name for paired orbitals, used with ``gto`` guess.
+      - name: guess_gto_a
+        type: str
+        default: "initial_guess/mrchem.moa"
+        docstring: |
+          File name for alpha orbitals, used with ``gto`` guess.
+      - name: guess_gto_b
+        type: str
+        default: "initial_guess/mrchem.mob"
+        docstring: |
+          File name for beta orbitals, used with ``gto`` guess.
+      - name: guess_phi_p
+        type: str
+        default: "initial_guess/phi_p"
+        docstring: |
+          File name for paired orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.mw
+      - name: guess_phi_a
+        type: str
+        default: "initial_guess/phi_a"
+        docstring: |
+          File name for alpha orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.mw
+      - name: guess_phi_b
+        type: str
+        default: "initial_guess/phi_b"
+        docstring: |
+          File name for beta orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.mw
+      - name: guess_x_p
+        type: str
+        default: "initial_guess/X_p"
+        docstring: |
+          File name for paired response orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.mw
+      - name: guess_x_a
+        type: str
+        default: "initial_guess/X_a"
+        docstring: |
+          File name for alpha response orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/x_a_rsp_idx_<0...Na>_<re/im>.mw
+      - name: guess_x_b
+        type: str
+        default: "initial_guess/X_b"
+        docstring: |
+          File name for beta response orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.mw
+      - name: guess_y_p
+        type: str
+        default: "initial_guess/Y_p"
+        docstring: |
+          File name for paired response orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.mw
+      - name: guess_y_a
+        type: str
+        default: "initial_guess/Y_a"
+        docstring: |
+          File name for alpha response orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/y_a_rsp_idx_<0...Na>_<re/im>.mw
+      - name: guess_y_b
+        type: str
+        default: "initial_guess/Y_b"
+        docstring: |
+          File name for beta response orbitals, used with ``mw`` guess.
+          Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.mw
+      - name: guess_cube_p
+        type: str
+        default: "initial_guess/phi_p"
+        docstring: |
+          File name for paired orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube
+      - name: guess_cube_a
+        type: str
+        default: "initial_guess/phi_a"
+        docstring: |
+          File name for alpha orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/phi_a>_scf_idx_<0...Na>_<re/im>.cube
+      - name: guess_cube_b
+        type: str
+        default: "initial_guess/phi_b"
+        docstring: |
+          File name for beta orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube
+      - name: guess_cube_x_p
+        type: str
+        default: "initial_guess/X_p"
+        docstring: |
+          File name for paired orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.cube
+      - name: guess_cube_x_a
+        type: str
+        default: "initial_guess/X_a"
+        docstring: |
+          File name for alpha orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_a>_rsp_idx_<0...Na>_<re/im>.cube
+      - name: guess_cube_x_b
+        type: str
+        default: "initial_guess/X_b"
+        docstring: |
+          File name for beta orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.cube
+      - name: guess_cube_y_p
+        type: str
+        default: "initial_guess/Y_p"
+        docstring: |
+          File name for paired orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.cube
+      - name: guess_cube_y_a
+        type: str
+        default: "initial_guess/Y_a"
+        docstring: |
+          File name for alpha orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_a>_rsp_idx_<0...Na>_<re/im>.cube
+      - name: guess_cube_y_b
+        type: str
+        default: "initial_guess/Y_b"
+        docstring: |
+          File name for beta orbitals, used with ``cube`` guess.
+          Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.cube
+      - name: cube_vectors
+        type: str
+        default: "cube_vectors/"
+        docstring: |
+          Directory where cube vectors are stored for mrchem calculation.
+          
+  - name: SCF
+    docstring: |
+      Includes parameters related to the ground state SCF orbital optimization.
+    keywords:
+      - name: run
+        type: bool
+        default: true
+        docstring: |
+          Run SCF solver. Otherwise properties are computed on the initial orbitals.
+      - name: max_iter
+        type: int
+        default: 100
+        docstring: |
+          Maximum number of SCF iterations.
+      - name: kain
+        type: int
+        default: 5
+        docstring: |
+          Length of KAIN iterative history.
+      - name: rotation
+        type: int
+        default: 0
+        docstring: |
+          Number of iterations between each diagonalization/localization.
+      - name: localize
+        type: bool
+        default: false
+        docstring: |
+          Use canonical or localized orbitals.
+      - name: orbital_thrs
+        type: float
+        default: "10 * user['world_prec']"
+        docstring: |
+          Convergence threshold for orbital residuals.
+      - name: energy_thrs
+        type: float
+        default: -1.0
+        docstring: |
+          Convergence threshold for SCF energy.
+      - name: guess_prec
+        type: float
+        default: 1.0e-3
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in construction of initial guess.
+      - name: start_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Incremental precision in SCF iterations, initial value.
+      - name: final_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Incremental precision in SCF iterations, final value.
+      - name: guess_type
+        type: str
+        default: 'sad_dz'
+        predicates:
+          - "value.lower() in
+            ['mw',
+             'chk',
+             'gto',
+             'core_sz',
+             'core_dz',
+             'core_tz',
+             'core_qz',
+             'sad_sz',
+             'sad_dz',
+             'sad_tz',
+             'sad_qz',
+             'cube']"
+        docstring: |
+          Type of initial guess for ground state orbitals.
+          ``chk`` restarts a previous calculation which was dumped using the
+          ``write_checkpoint`` keyword. This will load MRA and electron spin
+          configuration directly from the checkpoint files, which are thus
+          required to be identical in the two calculations.
+          ``mw`` will start from final orbitals in a previous calculation written
+          using the ``write_orbitals`` keyword. The orbitals will be re-projected
+          into the new computational setup, which means that the electron spin
+          configuration and MRA can be different in the two calculations.
+          ``gto`` reads precomputed GTO orbitals (requires extra non-standard
+          input files for basis set and MO coefficients).
+          ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO
+          basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic
+          Densities Hamiltonian, respectively.
+      - name: write_checkpoint
+        type: bool
+        default: false
+        docstring: |
+          Write orbitals to disk in each iteration, file name
+          ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial
+          guess in subsequent calculations. Note: must be given in quotes if
+          there are slashes in the path "path/to/checkpoint".
+      - name: path_checkpoint
+        type: str
+        default: "checkpoint"
+        predicates:
+          - "value[-1] != '/'"
+        docstring: |
+          Path to checkpoint files during SCF, used with ``write_checkpoint``
+          and ``chk`` guess.
+      - name: write_orbitals
+        type: bool
+        default: false
+        docstring: |
+          Write final orbitals to disk, file name
+          ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``.
+          Can be used as ``mw`` initial guess in subsequent calculations.
+      - name: path_orbitals
+        type: str
+        default: "orbitals"
+        predicates:
+          - "value[-1] != '/'"
+        docstring: |
+          Path to where converged orbitals will be written in connection with
+          the ``write_orbitals`` keyword. Note: must be given in quotes if
+          there are slashes in the path "path/to/orbitals".
+  - name: Response
+    docstring: |
+      Includes parameters related to the response SCF optimization.
+    keywords:
+      - name: run
+        type: List[bool]
+        default: [true, true, true]
+        docstring: |
+          In which Cartesian directions to run response solver.
+      - name: max_iter
+        type: int
+        default: 100
+        docstring: |
+          Maximum number of response iterations.
+      - name: kain
+        type: int
+        default: 5
+        docstring: |
+          Length of KAIN iterative history.
+      - name: localize
+        type: bool
+        default: "user['SCF']['localize']"
+        docstring: |
+          Use canonical or localized unperturbed orbitals.
+      - name: orbital_thrs
+        type: float
+        default: "10 * user['world_prec']"
+        docstring: |
+          Convergence threshold for orbital residuals.
+      - name: property_thrs
+        type: float
+        default: -1.0
+        docstring: |
+          Convergence threshold for symmetric property. Symmetric meaning the
+          property computed from the same operator as the response purturbation,
+          e.g. for external magnetic field the symmetric property corresponds to
+          the magnetizability (NMR shielding in non-symmetric, since one of the
+          operators is external magnetic field, while the other is nuclear
+          magnetic moment).
+      - name: start_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Incremental precision in SCF iterations, initial value.
+      - name: final_prec
+        type: float
+        default: -1.0
+        docstring: |
+          Incremental precision in SCF iterations, final value.
+      - name: guess_prec
+        type: float
+        default: 1.0e-3
+        predicates:
+          - '1.0e-10 < value < 1.0'
+        docstring: |
+          Precision parameter used in construction of initial guess.
+      - name: guess_type
+        type: str
+        default: 'none'
+        predicates:
+          - "value.lower() in
+            ['none',
+             'chk',
+             'mw',
+             'cube']"
+        docstring: |
+          Type of initial guess for response.
+          ``none`` will start from a zero guess for the response functions.
+          ``chk`` restarts a previous calculation which was dumped using the
+          ``write_checkpoint`` keyword.
+          ``mw`` will start from final orbitals in a previous calculation written
+          using the ``write_orbitals`` keyword. The orbitals will be re-projected
+          into the new computational setup.
+      - name: write_checkpoint
+        type: bool
+        default: false
+        docstring: |
+          Write perturbed orbitals to disk in each iteration, file name
+          ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. Can be used as ``chk``
+          initial guess in subsequent calculations.
+      - name: path_checkpoint
+        type: str
+        default: "checkpoint"
+        predicates:
+          - "value[-1] != '/'"
+        docstring: |
+          Path to checkpoint files during SCF, used with ``write_checkpoint``
+          and ``chk`` guess.
+      - name: write_orbitals
+        type: bool
+        default: false
+        docstring: |
+          Write final perturbed orbitals to disk, file name
+          ``<path_orbitals>/<X/Y>_<p/a/b>_rsp_<direction>_idx_<0..Np/Na/Nb>``.
+          Can be used as ``mw`` initial guess in subsequent calculations.
+      - name: path_orbitals
+        type: str
+        default: "orbitals"
+        predicates:
+          - "value[-1] != '/'"
+        docstring: |
+          Path to where converged orbitals will be written in connection with
+          the ``write_orbitals`` keyword.
+  - name: Environment
+    docstring: |
+      Includes parameters related to the computation of the reaction field
+      energy of a system in an environment.
+    keywords:
+      - name: max_iter
+        type: int
+        default: 100
+        docstring: |
+          Max number of iterations allowed in the nested procedure.
+      - name: run_environment
+        type: bool
+        default: false
+        docstring: |
+          Perform the reaction field calculation of the reaction potential of the
+          interaction between environment and molecule. 
+      - name: algorithm
+        type: str
+        default: "scrf"
+        predicates:
+            - "value.lower() in ['scrf']"
+        docstring: |
+          What algorithm to use for the reaction field
+          ``scrf`` runs a nested algorithm where the generalized Poisson
+          equation is solved iterativelly until self consistency wrt. the
+          convergence threshold.
+      - name: convergence_criterion
+        type: str
+        default: "dynamic"
+        predicates:
+          - "value.lower() in ['dynamic', 'static']"
+        docstring: |
+          Adjust the convergence threshold for the nested procedure.
+          ``dynamic`` Uses the absolute value of the latest orbital update as
+          convergence threshold. When the orbitals are close to convergence
+          (``mo_residual < world_prec*10``) the convergence threshold will be
+          equal to ``world_prec``.
+          ``static`` uses ``world_prec`` as convergence threshold.
+      - name: extrapolate_Vr
+        type: bool
+        default: true
+        docstring: |
+          Extrapolate on the reaction potential if true, or on the surface
+          charge distribution in the convergence acceleration.
+      - name: kain
+        type: int
+        default: "user['SCF']['kain']"
+        docstring: |
+          Number of previous reaction field iterates kept for convergence
+          acceleration during the nested precedure.
+      - name: density_type
+        type: str
+        default: "total"
+        predicates:
+          - "value.lower() in ['total', 'nuclear', 'electronic']"
+        docstring: |
+          What part of the total molecular charge density to use in the algorithm.
+          ``total`` uses the total charge density.
+          ``nuclear`` uses only the nuclear part of the total charge density.
+          ``electronic`` uses only the electronic part of the total charge density.
+    sections:
+      - name: Cavity
+        docstring: |
+          Define the interlocking spheres cavity.
+        keywords:
+          - name: spheres
+            type: str
+            default: ""
+            docstring: |
+              Coordinates and radii  of the spheres written as
+              $spheres
+              x_0    y_0    z_0    R_0
+              ...
+              x_N    y_N    z_N    R_N
+              $end
+              The units used are the same specified with the `world_unit` keyword.
+          - name: cavity_width
+            type: float
+            default: 0.2
+            docstring: |
+              Width of cavity boundary
+      - name: Permittivity
+        docstring: |
+          Parameters for the permittivity function.
+        keywords:
+          - name: epsilon_in
+            type: float
+            default: 1.0
+            docstring: |
+              Permittivity inside the cavity. 1.0 is the permittivity of free
+              space, anything other than this is undefined behaviour.
+          - name: epsilon_out
+            type: float
+            default: 2.0
+            docstring: |
+              Permittivity outside the cavity. This is characteristic of the
+              solvent used.
+          - name: formulation
+            type: str
+            default: "exponential"
+            predicates:
+              - "value.lower() in ['exponential']"
+            docstring: |
+              Formulation of the Permittivity function. Currently only the
+              exponential is used.
+              
