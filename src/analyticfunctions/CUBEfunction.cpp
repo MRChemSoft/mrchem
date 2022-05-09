@@ -33,7 +33,6 @@
 
 #include <Eigen/Core>
 #include <Eigen/StdVector>
-
 namespace mrchem {
 
 CUBEfunction::CUBEfunction(const int N_atoms,
@@ -54,7 +53,8 @@ CUBEfunction::CUBEfunction(const int N_atoms,
         , CUBE(cube)
         , atom_charges(atom_charges)
         , atom_coords(atom_coords) {
-    normalize_basis();
+    Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> voxel_axes(&Voxel_axes[0][0]);
+    basis = voxel_axes.transpose();
 }
 
 // Do a quadrature of the file
@@ -70,55 +70,56 @@ double CUBEfunction::evalf(const mrcpp::Coord<3> &r) const {
      * I then use these d_i, d_j and d_k coefficients as parameters in a trilinear interpolation.
      **/
 
+    double c;
     // perform NX_j \cdot r to find the indices i, j and k of the cubefile.
     Eigen::Map<const Eigen::Vector3d> r_vec(&r[0]);
     Eigen::Map<const Eigen::Vector3d> origin(&corner[0]);
-    Eigen::Vector3d coeff = normalized_basis * (r_vec - origin); // coefficients i, j and k in r = i*X + j*Y + k*Z
-    Eigen::Vector3d d_index;
-    Eigen::Vector3i index;
-    for (auto i = 0; i < 3; i++) {
-        index(i) = floor(coeff(i));       // nearest voxel point index that is lower than the point r
-        d_index(i) = coeff(i) - index(i); // deviation from the nearest voxel point thats lower that the point r, it always in the interval [0,1)
-    }
+    Eigen::Vector3d coeff = ((basis.inverse() * (r_vec - origin))); // coefficients i, j and k in r = i*X + j*Y + k*Z assuming basis is orthogonal
 
     // do the trilinear interpolation naively without loops or any logic (just plug in the equations)
-    // TODO use the linear system form
-    double c;
     // Do a sanity check on the point we are evaluating at is in the cube or not. If not return 0.
-    if ((coeff(0) > N_steps[0]) or (coeff(1) > N_steps[1]) or (coeff(2) > N_steps[2]) or (coeff(0) < 0) or (coeff(1) < 0) or (coeff(2) < 0)) {
-        // TODO use a decaying continuous function instead of just a jump to zero
+    std::vector<double> on_edge;
+    std::transform(coeff.cbegin(), coeff.cend(), N_steps.cbegin(), std::back_inserter(on_edge), [](const auto &ci, const auto &Ni) {
+        double di = ci - (Ni - 1.0);
+        return ((di <= -1.0 * (Ni - 1.0)) || (di >= 0.0));
+    });
+
+    if (std::any_of(on_edge.cbegin(), on_edge.cend(), [](const auto &ci) { return ci; })) {
         c = 0.0;
     } else {
-        auto c000 = CUBE[(index(0)) * N_steps[1] * N_steps[2] + (index(1)) * N_steps[2] + (index(2))];
-        auto c001 = CUBE[(index(0)) * N_steps[1] * N_steps[2] + (index(1)) * N_steps[2] + (1 + index(2))];
-        auto c010 = CUBE[(index(0)) * N_steps[1] * N_steps[2] + (1 + index(1)) * N_steps[2] + (index(2))];
-        auto c011 = CUBE[(index(0)) * N_steps[1] * N_steps[2] + (1 + index(1)) * N_steps[2] + (1 + index(2))];
-        auto c100 = CUBE[(1 + index(0)) * N_steps[1] * N_steps[2] + (index(1)) * N_steps[2] + (index(2))];
-        auto c101 = CUBE[(1 + index(0)) * N_steps[1] * N_steps[2] + (index(1)) * N_steps[2] + (1 + index(2))];
-        auto c110 = CUBE[(1 + index(0)) * N_steps[1] * N_steps[2] + (1 + index(1)) * N_steps[2] + (index(2))];
-        auto c111 = CUBE[(1 + index(0)) * N_steps[1] * N_steps[2] + (1 + index(1)) * N_steps[2] + (1 + index(2))];
 
-        auto c00 = c000 * (1 - d_index(0)) + c100 * d_index(0);
-        auto c01 = c001 * (1 - d_index(0)) + c101 * d_index(0);
-        auto c10 = c010 * (1 - d_index(0)) + c110 * d_index(0);
-        auto c11 = c011 * (1 - d_index(0)) + c111 * d_index(0);
+        auto idx0 = std::floor(coeff(0));
+        auto idx1 = std::floor(coeff(1));
+        auto idx2 = std::floor(coeff(2));
 
-        auto c0 = c00 * (1 - d_index(1)) + c10 * d_index(1);
-        auto c1 = c01 * (1 - d_index(1)) + c11 * d_index(1);
+        auto d_idx0 = coeff(0) - idx0;
+        auto d_idx1 = coeff(1) - idx1;
+        auto d_idx2 = coeff(2) - idx2;
 
-        c = c0 * (1 - d_index(2)) + c1 * d_index(2);
+        auto N_steps1 = N_steps.at(1);
+        auto N_steps2 = N_steps.at(2);
+
+        auto c000 = CUBE[(idx0)*N_steps1 * N_steps2 + (idx1)*N_steps2 + (idx2)];
+        auto c001 = CUBE[(idx0)*N_steps1 * N_steps2 + (idx1)*N_steps2 + (1 + idx2)];
+        auto c010 = CUBE[(idx0)*N_steps1 * N_steps2 + (1 + idx1) * N_steps2 + (idx2)];
+        auto c011 = CUBE[(idx0)*N_steps1 * N_steps2 + (1 + idx1) * N_steps2 + (1 + idx2)];
+        auto c100 = CUBE[(1 + idx0) * N_steps1 * N_steps2 + (idx1)*N_steps2 + (idx2)];
+        auto c101 = CUBE[(1 + idx0) * N_steps1 * N_steps2 + (idx1)*N_steps2 + (1 + idx2)];
+        auto c110 = CUBE[(1 + idx0) * N_steps1 * N_steps2 + (1 + idx1) * N_steps2 + (idx2)];
+        auto c111 = CUBE[(1 + idx0) * N_steps1 * N_steps2 + (1 + idx1) * N_steps2 + (1 + idx2)];
+
+        auto c00 = c000 * (1 - d_idx0) + c100 * d_idx0;
+        auto c01 = c001 * (1 - d_idx0) + c101 * d_idx0;
+        auto c10 = c010 * (1 - d_idx0) + c110 * d_idx0;
+        auto c11 = c011 * (1 - d_idx0) + c111 * d_idx0;
+
+        auto c0 = c00 * (1 - d_idx1) + c10 * d_idx1;
+        auto c1 = c01 * (1 - d_idx1) + c11 * d_idx1;
+
+        c = c0 * (1 - d_idx2) + c1 * d_idx2;
     }
 
     return c;
-}
-
-void CUBEfunction::normalize_basis() {
-    // This should work for a std::array<std::array<double,3>,3> where each axis is a row.
-    Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> basis(&voxel_axes[0][0]);
-    // normalize the basis as X_j/(X_j\cdot X_j) = NX_j
-    for (int i = 0; i < 3; i++) {
-        normalized_basis.row(i) = basis.row(i) / basis.row(i).squaredNorm(); // should set the new normalized matrix with normalized vectors.
-    }
 }
 
 } // namespace mrchem

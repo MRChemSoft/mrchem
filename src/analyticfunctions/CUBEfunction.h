@@ -54,6 +54,6 @@ protected:
     std::vector<double> atom_charges;
     std::vector<mrcpp::Coord<3>> atom_coords;
 
-    Eigen::Matrix3d normalized_basis; // multiply each row by its 1/norm^2
+    Eigen::Matrix3d basis; // multiply each row by its 1/norm^2
 };
 } // namespace mrchem
