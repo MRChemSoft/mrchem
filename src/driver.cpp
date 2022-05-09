@@ -42,6 +42,7 @@
 
 #include "utils/MolPlotter.h"
 #include "utils/math_utils.h"
+#include "utils/periodic_utils.h"
 #include "utils/print_utils.h"
 
 #include "qmfunctions/Density.h"
@@ -53,6 +54,7 @@
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/SmearedNuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
@@ -68,6 +70,7 @@
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/ExchangeOperator.h"
 #include "qmoperators/two_electron/FockBuilder.h"
+#include "qmoperators/two_electron/HartreeOperator.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
@@ -268,7 +271,8 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
-
+        auto helmholtz_root = json_scf["scf_solver"]["helmholtz_root"];
+        auto helmholtz_reach = json_scf["scf_solver"]["helmholtz_reach"];
         GroundStateSolver solver;
         solver.setHistory(kain);
         solver.setRotation(rotation);
@@ -279,6 +283,8 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setCheckpointFile(file_chk);
         solver.setMaxIterations(max_iter);
         solver.setHelmholtzPrec(helmholtz_prec);
+        solver.setHelmholtzRoot(helmholtz_root);
+        solver.setHelmholtzReach(helmholtz_reach);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
 
@@ -698,7 +704,6 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     Timer t_unpert;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Preparing unperturbed system");
-
     const auto &json_unpert = json_rsp["unperturbed"];
     const auto &unpert_fock = json_unpert["fock_operator"];
     auto unpert_loc = json_unpert["localize"];
@@ -719,6 +724,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
     if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
+    if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////
@@ -766,6 +772,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             auto orbital_thrs = json_comp["rsp_solver"]["orbital_thrs"];
             auto property_thrs = json_comp["rsp_solver"]["property_thrs"];
             auto helmholtz_prec = json_comp["rsp_solver"]["helmholtz_prec"];
+            auto helmholtz_root = json_comp["rsp_solver"]["helmholtz_root"];
+            auto helmholtz_reach = json_comp["rsp_solver"]["helmholtz_reach"];
 
             LinearResponseSolver solver(dynamic);
             solver.setHistory(kain);
@@ -774,6 +782,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             solver.setCheckpoint(checkpoint);
             solver.setCheckpointFile(file_chk_x, file_chk_y);
             solver.setHelmholtzPrec(helmholtz_prec);
+            solver.setHelmholtzRoot(helmholtz_root);
+            solver.setHelmholtzReach(helmholtz_reach);
             solver.setOrbitalPrec(start_prec, final_prec);
             solver.setThreshold(orbital_thrs, property_thrs);
             solver.setOrthPrec(orth_prec);
@@ -983,6 +993,17 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         F.getNuclearOperator() = V_p;
     }
     ///////////////////////////////////////////////////////////
+    //////////////////   Smeared Nuclear Operator   ///////////
+    ///////////////////////////////////////////////////////////
+    if (json_fock.contains("smeared_nuclear_operator")) {
+        auto proj_prec = json_fock["smeared_nuclear_operator"]["proj_prec"];
+        auto smooth_prec = json_fock["smeared_nuclear_operator"]["smooth_prec"];
+        auto max_rc = json_fock["smeared_nuclear_operator"]["rc"];
+        auto shared_memory = json_fock["smeared_nuclear_operator"]["shared_memory"];
+        auto V_p = std::make_shared<SmearedNuclearOperator>(nuclei, proj_prec, smooth_prec, max_rc, shared_memory);
+        F.getSmearedNuclearOperator() = V_p;
+    }
+    ///////////////////////////////////////////////////////////
     //////////////////////   Zora Operator   //////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("zora_operator")) {
@@ -1010,6 +1031,18 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         } else {
             MSG_ABORT("Invalid perturbation order");
         }
+    }
+    ///////////////////////////////////////////////////////////
+    //////////////////   Hartree Operator   ///////////////////
+    ///////////////////////////////////////////////////////////
+    if (json_fock.contains("hartree_operator")) {
+        auto poisson_prec = json_fock["hartree_operator"]["poisson_prec"];
+        auto operator_root = json_fock["hartree_operator"]["operator_root"];
+        auto operator_reach = json_fock["hartree_operator"]["operator_reach"];
+        auto max_rc = json_fock["hartree_operator"]["rc"];
+        auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec, operator_root, operator_reach);
+        auto H_p = std::make_shared<HartreeOperator>(P_p, Phi_p, nuclei, max_rc);
+        F.getHartreeOperator() = H_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Reaction Operator   ///////////////////

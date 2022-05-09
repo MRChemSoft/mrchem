@@ -55,6 +55,8 @@ public:
     void setThreshold(double orb, double prop);
     void setOrbitalPrec(double init, double final);
     void setHelmholtzPrec(double prec) { this->helmPrec = prec; }
+    void setHelmholtzRoot(double root) { this->helmRoot = root; }
+    void setHelmholtzReach(double reach) { this->helmReach = reach; }
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
     void setRelativityName(const std::string &name) { this->relativityName = name; }
@@ -66,6 +68,8 @@ protected:
     double orbThrs{-1.0};                ///< Convergence threshold for norm of orbital update
     double propThrs{-1.0};               ///< Convergence threshold for property
     double helmPrec{-1.0};               ///< Precision for construction of Helmholtz operators
+    int helmRoot{-100};                  ///< Scale for construction of Helmholtz operators
+    int helmReach{-1};                   ///< Reach for construction of Helmholtz operators
     double orbPrec[3]{-1.0, -1.0, -1.0}; ///< Dynamic precision: [current_prec, start_prec, end_prec]
     std::string methodName;              ///< Name of electronic structure method to appear in output
     std::string relativityName{"None"};  ///< Name of ZORA method
@@ -77,6 +81,8 @@ protected:
 
     double adjustPrecision(double error);
     double getHelmholtzPrec();
+    int getHelmholtzRoot() { return this->helmRoot; }
+    int getHelmholtzReach() { return this->helmReach; }
 
     double getUpdate(const std::vector<double> &vec, int i, bool absPrec) const;
     void printUpdate(int plevel, const std::string &txt, double P, double dP, double thrs) const;

@@ -23,6 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "MRCPP/functions/function_utils.h"
 #include <MRCPP/Gaussians>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
@@ -153,6 +154,11 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
             Phi[i].alloc(NUMBER::Real);
+            auto periodic = (*MRA).getWorldBox().isPeriodic();
+            if (periodic) {
+                auto period = (*MRA).getWorldBox().getScalingFactors();
+                mo_i.periodify(period);
+            }
             mrcpp::project(prec, Phi[i].real(), mo_i);
         }
         std::stringstream o_txt;

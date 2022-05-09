@@ -63,12 +63,12 @@ class MoleculeValidator:
         or unphysical input value are detected:
 
         Atomic coordinates
-        - Correct XYZ format checked with regexes (both atomic symbols 
-          and numbers are valid atom identifiers, and can be used 
+        - Correct XYZ format checked with regexes (both atomic symbols
+          and numbers are valid atom identifiers, and can be used
           interchancably in the same input)
         - Nuclear singularities
-        - Atomic symbols checked against periodic table 
-        
+        - Atomic symbols checked against periodic table
+
         Cavity spheres
         - Correct format checked with regexes
         - Negative radii not allowed
@@ -99,6 +99,11 @@ class MoleculeValidator:
         self.do_translate = self.user_mol['translate']
         self.coords_raw = self.user_mol['coords']
 
+        # Periodicity data
+        self.primitive_1 = user_dict["Periodic"]["primitive1"]
+        self.primitive_2 = user_dict["Periodic"]["primitive2"]
+        self.primitive_3 = user_dict["Periodic"]["primitive3"]
+
         # Cavity related data
         self.cavity_dict = user_dict['Environment']['Cavity']
         self.spheres_raw = self.cavity_dict['spheres']
@@ -109,7 +114,7 @@ class MoleculeValidator:
         self.atomic_symbols, self.atomic_coords = self.validate_atomic_coordinates()
 
         # Translate center of mass if requested
-        # We must test for translation before validating the cavity, 
+        # We must test for translation before validating the cavity,
         # in case the nuclear coordinates are to be used for the
         # sphere centers
         if self.do_translate:
@@ -210,6 +215,17 @@ class MoleculeValidator:
 
         return labels, coords
 
+    def calculate_max_rc(self):
+        """Calcuate max RC from molecule coodinates and a period"""
+        period = self.primitive_1[0]
+        calc_dist = lambda coord_0, coord_1 : sum(((r_0 - r_1)**2 for r_0, r_1 in zip(coord_0, coord_1)))**0.5
+        # Get list of all coorinates for atoms in all neighbooring the unit-cell
+        new_coords = ([coord[i] + period*x[i] for i in range(3)]
+                       for coord in self.atomic_coords
+                      for x in itertools.product(*[range(-1,2)]*3))
+        # Take the smallest distance between two atoms then multiply it by 0.49999
+        return 0.49999*min((calc_dist(c_i, b_i) for c_i in new_coords for b_i in new_coords
+                            if calc_dist(c_i, b_i) > 0.00001))
 
     def validate_cavity(self):
         """Parse the $spheres block and ensure correct formatting."""
@@ -277,7 +293,7 @@ class MoleculeValidator:
         if error_pairs:
             msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY('\n\n'.join(error_pairs))
             raise RuntimeError(msg)
-                
+
     def check_for_invalid_electronic_configuration(self):
         """Check that the number of electrons and spin multiplicity are compatible.
         Also check for restricted open-shell calculation."""
@@ -302,13 +318,13 @@ class MoleculeValidator:
                 ))
 
         # Check for invalid spin multiplicity
-        elif parity(n_electrons) == parity(self.mult): 
+        elif parity(n_electrons) == parity(self.mult):
             raise RuntimeError(self.ERROR_INCOMPATIBLE_MULTIPLICITY(
                 f"The specified multiplicity ({parity(self.mult)}) is not compatible with the number of electrons ({parity(n_electrons)})"
                 ))
 
         # Check for restricted open-shell
-        elif restricted and n_unpaired > 0: 
+        elif restricted and n_unpaired > 0:
             raise RuntimeError(self.ERROR_RESTRICTED_OPEN_SHELL)
 
     def translate_com_to_origin(self):

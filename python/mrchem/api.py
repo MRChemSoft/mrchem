@@ -78,12 +78,30 @@ def write_mpi(user_dict):
 
 def write_mra(user_dict, mol_dict):
     order = user_dict["Basis"]["order"]
+    periodic = user_dict["world_periodic"]
     if order < 0:
         # Set polynomial order based on world_prec
         prec = user_dict["world_prec"]
         order = int(math.ceil(-1.5 * math.log10(prec)))
 
     min_scale = -(user_dict["world_size"] - 1)
+
+
+    primitive1 = user_dict["Periodic"]["primitive1"]
+    primitive2 = user_dict["Periodic"]["primitive2"]
+    primitive3 = user_dict["Periodic"]["primitive3"]
+    if user_dict["world_unit"] == "angstrom":
+        primitive1 = [val*user_dict["Constants"]["angstrom2bohrs"] for val in primitive1]
+        primitive2 = [val*user_dict["Constants"]["angstrom2bohrs"] for val in primitive2]
+        primitive3 = [val*user_dict["Constants"]["angstrom2bohrs"] for val in primitive3]
+
+
+    #Check if primitive vectors create a diagonal matrix
+    assert sum(primitive1[1:] + primitive2[0:1] + primitive2[2:] + primitive3[:2]) == 0.0, "non-diagonal lattice"
+    assert primitive1[0] != 0.0, "zero on diagonal"
+    assert primitive2[1] != 0.0, "zero on diagonal"
+    assert primitive3[2] != 0.0, "zero on diagonal"
+
     if min_scale > 1:
         # Compute auto box
         max_coord = 0.0  # single (coord + Z) with largest abs value
@@ -110,6 +128,10 @@ def write_mra(user_dict, mol_dict):
         "corner": [-1, -1, -1],
         "min_scale": min_scale,
         "max_scale": max_scale,
+        "periodic": periodic,
+        "primitive1": primitive1,
+        "primitive2": primitive2,
+        "primitive3": primitive3,
     }
     return mra_dict
 

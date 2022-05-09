@@ -177,20 +177,29 @@ void Orbital::loadOrbital(const std::string &file) {
     if (f.is_open()) f.read((char *)&orb_data, sizeof(OrbitalData));
     f.close();
 
+    std::array<double, 3> sfac{func_data.sfac[0], func_data.sfac[1], func_data.sfac[2]};
     std::array<int, 3> corner{func_data.corner[0], func_data.corner[1], func_data.corner[2]};
     std::array<int, 3> boxes{func_data.boxes[0], func_data.boxes[1], func_data.boxes[2]};
-    mrcpp::BoundingBox<3> world(func_data.scale, corner, boxes);
+    // mrcpp::BoundingBox<3> world = mrcpp::BoundingBox<3>(func_data.scale, corner, boxes, sfac, func_data.periodic);
+    mrcpp::BoundingBox<3> *world = nullptr;
+
+    bool periodic = func_data.periodic;
+    if (periodic)
+        world = new mrcpp::BoundingBox<3>(sfac, periodic);
+    else
+        world = new mrcpp::BoundingBox<3>(func_data.scale, corner, boxes, sfac);
 
     mrcpp::MultiResolutionAnalysis<3> *mra = nullptr;
     if (func_data.type == mrcpp::Interpol) {
         mrcpp::InterpolatingBasis basis(func_data.order);
-        mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, func_data.depth);
+        mra = new mrcpp::MultiResolutionAnalysis<3>(*world, basis, func_data.depth);
     } else if (func_data.type == mrcpp::Legendre) {
         mrcpp::LegendreBasis basis(func_data.order);
-        mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, func_data.depth);
+        mra = new mrcpp::MultiResolutionAnalysis<3>(*world, basis, func_data.depth);
     } else {
         MSG_ABORT("Invalid basis type!");
     }
+    delete world;
 
     // reading real part
     if (func_data.real_size > 0) {

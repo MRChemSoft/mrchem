@@ -47,11 +47,14 @@ public:
                        double en = 0.0, double ee = 0.0,
                        double x = 0.0, double xc = 0.0,
                        double next = 0.0, double eext = 0.0,
-                       double rt = 0.0, double rn = 0.0, double re = 0.0) :
+                       double rt = 0.0, double rn = 0.0, double re = 0.0,
+                       double har = 0.0, double se = 0.0, double ncor = 0.0, double sen = 0.0) :
         E_kin(kin), E_nn(nn), E_en(en), E_ee(ee),
-          E_x(x), E_xc(xc), E_next(next), E_eext(eext), Er_tot(rt), Er_nuc(rn), Er_el(re) {
+        E_x(x), E_xc(xc), E_next(next), E_eext(eext),
+        Er_tot(rt), Er_nuc(rn), Er_el(re),
+        E_se(se), E_ncor(ncor), E_har(har), E_sen(sen) {
             E_nuc = E_nn + E_next + Er_nuc;
-            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + Er_el;
+            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + Er_el + E_se + E_ncor + E_har + E_sen;
         }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
@@ -67,6 +70,10 @@ public:
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
     double getReactionEnergy() const { return this->Er_tot; }
+    double getESEEnergy() const { return this->E_se; }
+    double getNCOREnergy() const { return this->E_ncor; }
+    double getHarEnergy() const { return this->E_har; }
+    double getESENnergy() const { return this->E_sen; }
 
     void print(const std::string &id) const {
         auto E_au = E_nuc + E_el;
@@ -88,6 +95,11 @@ public:
         print_utils::scalar(0, "Tot. Reac. Energy", Er_tot,  "(au)", pprec, false);
         print_utils::scalar(0, "El. Reac. Energy ", Er_el,  "(au)", pprec, false);
         print_utils::scalar(0, "Nuc. Reac. Energy", Er_nuc,  "(au)", pprec, false);
+        mrcpp::print::separator(0, '-');
+        print_utils::scalar(0, "E_se            ", E_se,   "(au)", pprec, false);
+        print_utils::scalar(0, "E_ncor          ", E_ncor,   "(au)", pprec, false);
+        print_utils::scalar(0, "E_har           ", E_har,   "(au)", pprec, false);
+        print_utils::scalar(0, "E_sen           ", E_sen,   "(au)", pprec, false);
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);
         print_utils::scalar(0, "Nuclear energy   ", E_nuc,  "(au)", pprec, false);
@@ -113,6 +125,10 @@ public:
             {"Er_tot", Er_tot},
             {"Er_el", Er_el},
             {"Er_nuc", Er_nuc},
+            {"E_se", E_se},
+            {"E_ncor", E_ncor},
+            {"E_har", E_har},
+            {"E_sen", E_sen},
             {"E_nuc", E_nuc},
             {"E_tot", E_nuc + E_el}
         };
@@ -133,6 +149,10 @@ private:
     double Er_tot{0.0};
     double Er_nuc{0.0};
     double Er_el{0.0};
+    double E_se{0.0};
+    double E_ncor{0.0};
+    double E_har{0.0};
+    double E_sen{0.0};
 };
 // clang-format on
 

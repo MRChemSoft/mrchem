@@ -254,14 +254,20 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Initialize SCF cycle
         Timer t_scf;
-        double orb_prec = adjustPrecision(err_o);
-        double helm_prec = getHelmholtzPrec();
+        auto orb_prec = adjustPrecision(err_o);
+        auto helm_prec = getHelmholtzPrec();
+        auto helm_root = getHelmholtzRoot();
+        auto helm_reach = getHelmholtzReach();
+        if (!(*MRA).getWorldBox().isPeriodic()) {
+            helm_root = MRA->getRootScale();
+            helm_reach = -10;
+        }
         if (nIter < 2) {
             if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
         }
         // Init Helmholtz operator
-        HelmholtzVector H(helm_prec, F_mat.real().diagonal());
+        HelmholtzVector H(helm_prec, helm_root, helm_reach, F_mat.real().diagonal());
         ComplexMatrix L_mat = H.getLambdaMatrix();
 
         // Apply Helmholtz operator

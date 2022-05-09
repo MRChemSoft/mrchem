@@ -98,11 +98,17 @@ void mrenv::init_printer(const json &json_print) {
 
 void mrenv::init_mra(const json &json_mra) {
     // Initialize world box
-    int min_scale = json_mra["min_scale"];
-    int max_scale = json_mra["max_scale"];
-    auto corner = json_mra["corner"];
-    auto boxes = json_mra["boxes"];
-    mrcpp::BoundingBox<3> world(min_scale, corner, boxes);
+    auto min_scale = static_cast<int>(json_mra["min_scale"]);
+    auto max_scale = static_cast<int>(json_mra["max_scale"]);
+    auto corner = static_cast<std::array<int, 3>>(json_mra["corner"]);
+    auto boxes = static_cast<std::array<int, 3>>(json_mra["boxes"]);
+
+    // Periodic parameters
+    auto periodic = static_cast<bool>(json_mra["periodic"]);
+    auto primitive_1 = static_cast<std::array<double, 3>>(json_mra["primitive1"]);
+    auto primitive_2 = static_cast<std::array<double, 3>>(json_mra["primitive2"]);
+    auto primitive_3 = static_cast<std::array<double, 3>>(json_mra["primitive3"]);
+    auto sfac = std::array<double, 3>({primitive_1[0], primitive_2[1], primitive_3[2]});
 
     // Initialize scaling basis
     auto order = json_mra["basis_order"];
@@ -113,16 +119,24 @@ void mrenv::init_mra(const json &json_mra) {
     if (max_scale > mrcpp::MaxScale) MSG_ABORT("Max scale too large");
     if (max_depth > mrcpp::MaxDepth) MSG_ABORT("Max depth too large");
 
+    mrcpp::BoundingBox<3> *world = nullptr;
+
+    if (periodic)
+        world = new mrcpp::BoundingBox<3>(sfac, periodic);
+    else
+        world = new mrcpp::BoundingBox<3>(min_scale, corner, boxes);
+
     // Initialize global MRA
     if (btype == "interpolating") {
         mrcpp::InterpolatingBasis basis(order);
-        MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
+        MRA = new mrcpp::MultiResolutionAnalysis<3>(*world, basis, max_depth);
     } else if (btype == "legendre") {
         mrcpp::LegendreBasis basis(order);
-        MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
+        MRA = new mrcpp::MultiResolutionAnalysis<3>(*world, basis, max_depth);
     } else {
         MSG_ABORT("Invalid basis type!");
     }
+    delete world;
 }
 
 void mrenv::init_mpi(const json &json_mpi) {

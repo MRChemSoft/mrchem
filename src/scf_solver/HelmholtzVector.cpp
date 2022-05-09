@@ -51,8 +51,10 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  * operators are constructed at this point, they are produced on-the-fly in
  * the application.
  */
-HelmholtzVector::HelmholtzVector(double pr, const DoubleVector &l)
-        : prec(pr) {
+HelmholtzVector::HelmholtzVector(double prec, int scale, int reach, const DoubleVector &l)
+        : prec(prec)
+        , scale(scale)
+        , reach(reach) {
     this->lambda = l;
     for (int i = 0; i < this->lambda.size(); i++) {
         if (this->lambda(i) > 0.0) this->lambda(i) = -0.5;
@@ -144,7 +146,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
 Orbital HelmholtzVector::apply(int i, Orbital &phi) const {
     ComplexDouble mu_i = std::sqrt(-2.0 * this->lambda(i));
     if (std::abs(mu_i.imag()) > mrcpp::MachineZero) MSG_ABORT("Mu cannot be complex");
-    mrcpp::HelmholtzOperator H(*MRA, mu_i.real(), this->prec);
+    mrcpp::HelmholtzOperator H(*MRA, mu_i.real(), this->prec, this->scale, this->reach);
 
     Orbital out = phi.paramCopy();
     if (phi.hasReal()) {

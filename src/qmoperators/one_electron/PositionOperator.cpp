@@ -23,38 +23,16 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#pragma once
-
-#include "mrchem.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "tensor/tensor_fwd.h"
-
-/** @class HelmholtzVector
- *
- * @brief Container of HelmholtzOperators for a corresponding OrbtialVector
- *
- * This class assigns one HelmholtzOperator to each orbital in an OrbitalVector.
- * The operators are produced on the fly based on a vector of lambda parameters.
- */
+#include "PositionOperator.h"
 
 namespace mrchem {
 
-class HelmholtzVector final {
-public:
-    HelmholtzVector(double prec, int scale, int reach, const DoubleVector &l);
-
-    DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
-
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
-    OrbitalVector operator()(OrbitalVector &Phi) const;
-
-private:
-    double prec;         ///< Precision for construction and application of Helmholtz operators
-    int scale;           ///< Scale for construction of Helmholtz operators
-    int reach;           ///< Reach for construction of Helmholtz operators
-    DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
-
-    Orbital apply(int i, Orbital &phi) const;
-};
+ComplexVector PositionOperator::trace(Density rho) {
+    ComplexVector mu = ComplexVector::Zero(3);
+    mu[0] = qmfunction::dot(*this->r[0], rho);
+    mu[1] = qmfunction::dot(*this->r[1], rho);
+    mu[2] = qmfunction::dot(*this->r[2], rho);
+    return mu;
+}
 
 } // namespace mrchem
