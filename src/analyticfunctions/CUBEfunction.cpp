@@ -78,6 +78,7 @@ double CUBEfunction::evalf(const mrcpp::Coord<3> &r) const {
 
     // do the trilinear interpolation naively without loops or any logic (just plug in the equations)
     // Do a sanity check on the point we are evaluating at is in the cube or not. If not return 0.
+    // this should be potentially done before any operations, to save time
     std::vector<double> on_edge;
     std::transform(coeff.cbegin(), coeff.cend(), N_steps.cbegin(), std::back_inserter(on_edge), [](const auto &ci, const auto &Ni) {
         double di = ci - (Ni - 1.0);
