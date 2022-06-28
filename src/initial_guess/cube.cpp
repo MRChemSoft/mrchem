@@ -77,7 +77,6 @@ bool initial_guess::cube::setup(OrbitalVector &Phi, double prec, const std::stri
 
     // Project paired, alpha and beta separately
     auto success = true;
-    MSG_INFO("before projecting paired");
     success &= initial_guess::cube::project_mo(Phi, prec, file_p);
     success &= initial_guess::cube::project_mo(Phi_a, prec, file_a);
     success &= initial_guess::cube::project_mo(Phi_b, prec, file_b);
