@@ -105,11 +105,11 @@ Official MRChem images can also be downloaded from the GitHub Container Registry
 
 Latest `master` version (here OpenMP variant):
 
-    $ singularity pull oras://ghcr.io/MRChemSoft/mrchem/mrchem-nompi:latest
+    $ singularity pull oras://ghcr.io/MRChemSoft/mrchem/mrchem_nompi:latest
 
 Tagged version (here MRChem-v1.0.2 using OpenMPI-v4.0):
 
-    $ singularity pull oras://ghcr.io/MRChemSoft/mrchem/mrchem-openmpi4.0:v1.0.2
+    $ singularity pull oras://ghcr.io/MRChemSoft/mrchem/mrchem_openmpi4.0:v1.0.2
 
 Note that the MPI image requires that a compatible MPI library is installed and
 available on the host. For information on how to launch the container:
