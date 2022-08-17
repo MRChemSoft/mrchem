@@ -576,8 +576,10 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
                 if (nodeidVec.size() > 0) pointerstodelete.push_back(dataVec);
                 int shift = 0;
                 for (int n = 0; n < nodeidVec.size(); n++) {
+                    if(nodeidVec[n] - max_ix<0){std::cout<<n<<" ERROR "<<nodeidVec[n]<<" "<<max_ix<<std::endl;}
                     assert(nodeidVec[n] - max_ix >= 0);                // unrotated nodes have been deleted
-                    assert(ix2coef.count(nodeidVec[n]) - max_ix == 0); // each nodeid treated once
+                    if(ix2coef.count(nodeidVec[n] - max_ix)!=0){std::cout<<n<<" ERRORix2 "<< ix2coef.count(nodeidVec[n])<<" "<<max_ix<<std::endl;}
+                    assert(ix2coef.count(nodeidVec[n] - max_ix) == 0); // each nodeid treated once
                     ix2coef[nodeidVec[n] - max_ix] = ix++;
                     csize = sizecoeffW;
                     if (parindexVec_ref[nodeidVec[n] - max_ix] < 0) csize = sizecoeff;

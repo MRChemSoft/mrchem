@@ -99,7 +99,7 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
         Phi = orbital::rotate(Phi, U);
 
         auto &dPhi = this->dOrbitals[i];
-        dPhi = orbital::rotate(Phi, U);
+        dPhi = orbital::rotate(dPhi, U);
     }
     for (int i = 0; i < nFock; i++) {
         auto &F = this->fock[i];
