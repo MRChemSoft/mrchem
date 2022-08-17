@@ -32,8 +32,14 @@
 import functools
 from typing import Any, List, Union
 
-# Import local copy
-from . import pyparsing as pp  # type: ignore
+try:
+    import pyparsing as pp
+    if pp.__version__.split(".")[0] < "3":
+       # Import local copy
+       from . import pyparsing as pp  # type: ignore
+except ImportError:
+    # Import local copy
+    from . import pyparsing as pp  # type: ignore
 
 
 TRUTHY = ["TRUE", "ON", "YES", "Y"]
