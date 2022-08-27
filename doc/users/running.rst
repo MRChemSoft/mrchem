@@ -176,6 +176,16 @@ The flags are optimized for OpenMPI (foss) library on Betzy.
   To tell MPI that it is should accept that the number of MPI processes times
   the number of threads is larger than the number of available cores.
 
+Alternativelly one can run in betzy with
+``~/my_path/to/mrchem --launcher='srun --cpu-bind=ldoms --distribution=cyclic:cyclic ' mw6``
+
+``--cpu-bind=ldoms``
+fill what this option does
+
+``--distribution=cyclic:cyclic``
+fill what this option does
+
+
 More examples can be found in the `mrchem-examples <https://github.com/MRChemSoft/mrchem-examples>`_
 repository on GitHub.
 
