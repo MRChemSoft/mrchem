@@ -71,6 +71,10 @@ void GroundStateSolver::printProperty() const {
     double E_1 = scf_1.getElectronicEnergy();
     double N_0 = scf_0.getNuclearEnergy();
     double N_1 = scf_1.getNuclearEnergy();
+    double E_eext_0 = scf_0.getElectronExternalEnergy();
+    double E_eext_1 = scf_1.getElectronExternalEnergy();
+    double E_next_0 = scf_0.getNuclearExternalEnergy();
+    double E_next_1 = scf_1.getNuclearExternalEnergy();
     double Er_0 = scf_0.getReactionEnergy();
     double Er_1 = scf_1.getReactionEnergy();
     double Er_el_0 = scf_0.getElectronReactionEnergy();
@@ -78,6 +82,9 @@ void GroundStateSolver::printProperty() const {
     double Er_nuc_0 = scf_0.getNuclearReactionEnergy();
     double Er_nuc_1 = scf_1.getNuclearReactionEnergy();
 
+
+    bool has_react = (std::abs(Er_el_1) > mrcpp::MachineZero) || (std::abs(Er_nuc_1) > mrcpp::MachineZero);
+    bool has_ext = (std::abs(E_eext_1) > mrcpp::MachineZero) || (std::abs(E_next_1) > mrcpp::MachineZero);
 
     int w0 = (Printer::getWidth() - 1);
     int w1 = 20;
@@ -100,10 +107,18 @@ void GroundStateSolver::printProperty() const {
     printUpdate(2, " Coulomb energy  ", J_1, J_1 - J_0, this->propThrs);
     printUpdate(2, " Exchange energy ", K_1, K_1 - K_0, this->propThrs);
     printUpdate(2, " X-C energy      ", XC_1, XC_1 - XC_0, this->propThrs);
-    mrcpp::print::separator(0, '-');
-    printUpdate(2, " Reaction energy (el)  ", Er_1, Er_1 - Er_0, this->propThrs);
-    printUpdate(2, " Reaction energy (nuc) ", Er_el_1, Er_el_1 - Er_el_0, this->propThrs);
-    printUpdate(2, " Reaction energy (tot) ", Er_nuc_1, Er_nuc_1 - Er_nuc_0, this->propThrs);
+    if (has_ext) {
+        mrcpp::print::separator(2, '-');
+        printUpdate(2, " External field (el)  ", E_eext_1, E_eext_1 - E_eext_0, this->propThrs);
+        printUpdate(2, " External field (nuc) ", E_next_1, E_next_1 - E_next_0, this->propThrs);
+        printUpdate(2, " External field (tot) ", (E_eext_1 + E_next_1), (E_eext_1 + E_next_1) - (E_eext_0 + E_next_0), this->propThrs);
+    }
+    if (has_react) {
+        mrcpp::print::separator(2, '-');
+        printUpdate(2, " Reaction energy (el) ", Er_el_1, Er_el_1 - Er_el_0, this->propThrs);
+        printUpdate(2, " Reaction energy (nuc) ", Er_nuc_1, Er_nuc_1 - Er_nuc_0, this->propThrs);
+        printUpdate(2, " Reaction energy (tot)  ", Er_1, Er_1 - Er_0, this->propThrs);
+    }
     mrcpp::print::separator(2, '-');
     printUpdate(2, " Electronic energy", E_1, E_1 - E_0, this->propThrs);
     printUpdate(2, " Nuclear energy   ", N_1, N_1 - N_0, this->propThrs);
