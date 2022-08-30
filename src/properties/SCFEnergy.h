@@ -67,6 +67,8 @@ public:
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
     double getReactionEnergy() const { return this->Er_tot; }
+    double getElectronReactionEnergy() const { return this->Er_el; }
+    double getNuclearReactionEnergy() const { return this->Er_nuc; }
 
     void print(const std::string &id) const {
         auto E_au = E_nuc + E_el;

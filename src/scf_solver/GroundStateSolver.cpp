@@ -73,6 +73,11 @@ void GroundStateSolver::printProperty() const {
     double N_1 = scf_1.getNuclearEnergy();
     double Er_0 = scf_0.getReactionEnergy();
     double Er_1 = scf_1.getReactionEnergy();
+    double Er_el_0 = scf_0.getElectronReactionEnergy();
+    double Er_el_1 = scf_1.getElectronReactionEnergy();
+    double Er_nuc_0 = scf_0.getNuclearReactionEnergy();
+    double Er_nuc_1 = scf_1.getNuclearReactionEnergy();
+
 
     int w0 = (Printer::getWidth() - 1);
     int w1 = 20;
@@ -95,7 +100,10 @@ void GroundStateSolver::printProperty() const {
     printUpdate(2, " Coulomb energy  ", J_1, J_1 - J_0, this->propThrs);
     printUpdate(2, " Exchange energy ", K_1, K_1 - K_0, this->propThrs);
     printUpdate(2, " X-C energy      ", XC_1, XC_1 - XC_0, this->propThrs);
-    printUpdate(2, "Reaction energy      ", Er_1, Er_1 - Er_0, this->propThrs);
+    mrcpp::print::separator(0, '-');
+    printUpdate(2, " Reaction energy (el)  ", Er_1, Er_1 - Er_0, this->propThrs);
+    printUpdate(2, " Reaction energy (nuc) ", Er_el_1, Er_el_1 - Er_el_0, this->propThrs);
+    printUpdate(2, " Reaction energy (tot) ", Er_nuc_1, Er_nuc_1 - Er_nuc_0, this->propThrs);
     mrcpp::print::separator(2, '-');
     printUpdate(2, " Electronic energy", E_1, E_1 - E_0, this->propThrs);
     printUpdate(2, " Nuclear energy   ", N_1, N_1 - N_0, this->propThrs);
