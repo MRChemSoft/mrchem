@@ -148,7 +148,7 @@ double SCFSolver::getUpdate(const std::vector<double> &vec, int i, bool absPrec)
 void SCFSolver::printUpdate(int plevel, const std::string &txt, double P, double dP, double thrs) const {
     int pprec = Printer::getPrecision();
     int w0 = (Printer::getWidth() - 1);
-    int w1 = 20;
+    int w1 = 25;
     int w2 = w0 / 3;
     int w3 = 8;
     int w4 = w0 - w1 - w2 - w3;
