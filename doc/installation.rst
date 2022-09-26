@@ -6,8 +6,8 @@ Installation
 Build prerequisites
 -------------------
 
-- Python-3.6 (or later)
-- CMake-3.12 (or later)
+- Python-3.7 (or later)
+- CMake-3.14 (or later)
 - GNU-5.4 or Intel-17 (or later) compilers (C++14 standard)
 
 .. hint::
@@ -23,8 +23,8 @@ C++ dependencies
 The MRChem program depends on the following C++ libraries:
 
 - Input handling: `nlohmann/json-3.6  <https://github.com/nlohmann/json>`_
-- Multiwavelets: `MRCPP-1.3  <https://github.com/MRChemSoft/mrcpp>`_
-- Linear algebra: `Eigen-3.3  <https://gitlab.com/libeigen/eigen>`_
+- Multiwavelets: `MRCPP-1.4  <https://github.com/MRChemSoft/mrcpp>`_
+- Linear algebra: `Eigen-3.4  <https://gitlab.com/libeigen/eigen>`_
 - DFT functionals: `XCFun-2.0  <https://github.com/dftlibs/xcfun>`_
 
 All these dependencies will be downloaded automatically at configure time by

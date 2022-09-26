@@ -19,7 +19,7 @@ in numerical computations, and the MultiResolution Chemistry (MRChem) program
 that uses the functionalities of MRCPP for computational chemistry applications.
 
 The code is being developed at the `Hylleraas Centre for Quantum Molecular
-Sciences <http://www.ctcc.no/>`_ at
+Sciences <https://www.mn.uio.no/hylleraas/english/>`_ at
 `UiT - The Arctic University of Norway <http://en.uit.no>`_.
 
 --------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ Sciences <http://www.ctcc.no/>`_ at
 The code is under active development, and the latest stable releases as well as
 development versions can be found on `GitHub <https://github.com/MRChemSoft/mrchem>`_.
 
-Features in MRChem-1.0.0:
+Features in MRChem-1.1:
 -------------------------
 
 * Wave functions:
@@ -40,6 +40,8 @@ Features in MRChem-1.0.0:
         - Unrestricted
     + Explicit external fields
         - Electric field
+    + Solvent effects
+        - Cavity-free PCM
 * Properties:
     + Ground state energy
     + Dipole moment
@@ -50,10 +52,10 @@ Features in MRChem-1.0.0:
     + Geometric derivative
 * Parallel implementation:
     + Shared memory (OpenMP): ~20 cores
-    + Distributed memory (MPI): ~100 procs
-    + Hybrid scheme (MPI + OpenMP): ~1000 cores
+    + Distributed memory (MPI): ~1000 procs
+    + Hybrid scheme (MPI + OpenMP): ~10 000 cores
 * Current size limitations:
-    + ~200 orbitals on ~50 medium-memory (64GB) compute nodes
+    + ~2000 orbitals on ~100 high-end compute nodes (128 core/256GiB mem)
     + ~100 orbitals on a single high-memory (1TB) compute node
 
 Upcoming features:
@@ -62,7 +64,6 @@ Upcoming features:
 * Wave functions:
     + Meta-GGAs
     + ZORA Hamiltonian
-    + Solvent effects
     + Periodic Boundary Conditions
     + External magnetic field
 * Properties:
@@ -73,9 +74,8 @@ Upcoming features:
     + Hyperpolarizability
     + Geometry optimization
 * Performance:
-    + Improved parallel scalability
-    + Improved exact exchange performance
-    + More efficient memory distribution
+    + Reduced memory footprint
+    + Improved DFT scaling and performance
 
 
 .. toctree::

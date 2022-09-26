@@ -409,8 +409,7 @@ Several types of initial guess are available:
  - ``core`` and ``sad`` requires no further input and computes guesses from
    scratch.
  - ``chk`` and ``mw`` require input files from previous MW calculations.
- - ``gto`` requires non-standard Gaussian-type orbital input files,
-   and is thus not fully supported.
+ - ``cube`` requires input files computed from other sources.
 
 The ``core`` and ``sad`` guesses are computed by diagonalizing the Hamiltonian
 matrix using a Core or Superposition of Atomic Densities (SAD) Hamiltonian,
@@ -419,6 +418,16 @@ respectively. The matrix is constructed in a small AO basis with a given
 bases are hydrogenic orbitals of single ``sz``, double ``dz``, triple ``tz``
 and quadruple ``qz`` zeta size.
 
+The SAD guess can also be computed in a small GTO basis (3-21G), using the guess
+type ``sad_gto``. In this case another input keyword ``guess_screen`` becomes active
+for screening in the MW projection of the Gaussians. The screening value is given in
+standard deviations. Such screening will greatly improve the efficiency of the guess
+for large systems. It is, however, not recommended to reduce the value much below
+10 StdDevs, as this will have the *opposite* effect on efficiency due to introduction
+of discontinuities at the cutoff point, which leads to higher grid refinement.
+``sad_gto`` is usually the preferred guess both for accuracy and efficiency, and
+is thus the default choice.
+
 The ``core`` and ``sad`` guesses are fully specified with the following keywords
 (defaults shown):
 
@@ -426,7 +435,8 @@ The ``core`` and ``sad`` guesses are fully specified with the following keywords
 
     SCF {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = sad_dz                   # Type of inital guess (chk, mw, gto, core, sad)
+      guess_type = sad_gto                  # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
+      guess_screen = 12.0                   # Number of StdDev before a GTO is set to zero (sad_gto)
     }
 
 Checkpointing
@@ -449,7 +459,7 @@ chk`` in the subsequent calculation:
 .. code-block:: bash
 
     SCF {
-      guess_type = chk                      # Type of inital guess (chk, mw, gto, core, sad)
+      guess_type = chk                      # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 In this case the ``path_checkpoint`` must be the same as the previous
@@ -477,7 +487,7 @@ calculations using the ``guess_type = mw`` initial guess:
 
     SCF {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = mw                       # Type of inital guess (chk, mw, gto, core, sad)
+      guess_type = mw                       # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 Here the orbitals will be re-projected onto the current MW basis with precision
@@ -640,7 +650,7 @@ calculations using the ``guess_type = mw`` initial guess:
 
     Response {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = mw                       # Type of inital guess (chk, mw, gto, core, sad)
+      guess_type = mw                       # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 Here the orbitals will be re-projected onto the current MW basis with precision

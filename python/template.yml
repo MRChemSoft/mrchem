@@ -592,7 +592,7 @@ sections:
           Incremental precision in SCF iterations, final value.
       - name: guess_type
         type: str
-        default: sad_dz
+        default: sad_gto
         predicates:
           - value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz',
             'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']
