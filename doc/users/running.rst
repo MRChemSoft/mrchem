@@ -148,8 +148,8 @@ to be at least 4*4 = 16 (it is by default set, correctly, to one third of total
 MPI size, i.e. 4*12/3=16).
 It would also be possible to set 16 tasks per node, and set the bank size
 parameter accordingly to 8*4=32.
-The flags are optimized for OpenMPI (foss) library on Betzy. (note that H2O is 
-a very small  molecule for such setupS!)
+The flags are optimized for the OpenMPI (foss) library on Betzy (note that H2O is
+a very small molecule for such setup!).
 
 .. literalinclude:: betzy_example.job
 
@@ -177,15 +177,26 @@ a very small  molecule for such setupS!)
   To tell MPI that it is should accept that the number of MPI processes times
   the number of threads is larger than the number of available cores.
 
-Alternativelly one can run using the slurm worload manager and explicit masks as: 
-``~/my_path/to/mrchem --launcher='srun --cpu-bind=mask_cpu:0xFFFE00000000,0xFFFE000000000000000000000000,0xFFFE000000000000,0xFFFE0000000000000000000000000000,0xFFFE,0xFFFE0000000000000000,0xFFFE0000,0xFFFE00000000000000000000,0x10000,0x100000000000000000000,0x100000000,0x1000000000000000000000000 --distribution=cyclic:cyclic ' h2o``
+**Advanced option**:
+Alternatively one can get full control of task placement using the Slurm workload
+manager by replacing ``mpirun`` with ``srun`` and setting explicit CPU masks as::
+
+    ~/my_path/to/mrchem --launcher='srun --cpu-bind=mask_cpu:0xFFFE00000000, \\
+    0xFFFE000000000000000000000000,0xFFFE000000000000,0xFFFE0000000000000000000000000000, \\
+    0xFFFE,0xFFFE0000000000000000,0xFFFE0000,0xFFFE00000000000000000000,0x10000, \\
+    0x100000000000000000000,0x100000000,0x1000000000000000000000000 \\
+    --distribution=cyclic:cyclic' h2o
 
 ``--cpu-bind=mask_cpu:0xFFFE00000000,0xFFFE000000000000000000000000,...``
-give the core (or cpu) masks the process have access to. 0x means that the number is in hexadecimal. For example ``0xFFFE00000000`` is ``111111111111111000000000000000000000000000000000`` in binary, meaning that the first process can not use the first 33 cores, then it can use the cores from position 34 up to position 48, and nothing else.
+give the core (or cpu) masks the process have access to. 0x means that the number
+is in hexadecimal. For example ``0xFFFE00000000`` is
+``111111111111111000000000000000000000000000000000`` in binary, meaning that the
+first process can not use the first 33 cores, then it can use the cores from position
+34 up to position 48, and nothing else.
 
 ``--distribution=cyclic:cyclic``
-The first cyclic will put the first rank on the first node, the second rank on the second node etc. The second cyclic distribute the ranks withing the nodes.
-
+The first cyclic will put the first rank on the first node, the second rank on the
+second node etc. The second cyclic distribute the ranks withing the nodes.
 
 More examples can be found in the `mrchem-examples <https://github.com/MRChemSoft/mrchem-examples>`_
 repository on GitHub.
