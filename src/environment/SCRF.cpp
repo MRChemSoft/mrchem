@@ -216,6 +216,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
         printConvergenceRow(iter, norm, update, t_iter.elapsed());
         iter++;
     }
+    if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter-1 << " iterations, residual " << update);
     mrcpp::print::separator(3, '-');
     this->dVr_n.real().clear();
     this->dVr_n.real().setZero();
