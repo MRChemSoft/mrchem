@@ -65,7 +65,7 @@ SCRF::SCRF(Permittivity e,
         , history(kain_hist)
         , apply_prec(orb_prec)
         , conv_thrs(1.0)
-        , mo_residual(-1.0)
+        , mo_residual(1.0)
         , epsilon(e)
         , rho_nuc(false)
         , rho_ext(false)
