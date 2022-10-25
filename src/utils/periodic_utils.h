@@ -24,37 +24,14 @@
  */
 
 #pragma once
-
-#include "mrchem.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "tensor/tensor_fwd.h"
-
-/** @class HelmholtzVector
- *
- * @brief Container of HelmholtzOperators for a corresponding OrbtialVector
- *
- * This class assigns one HelmholtzOperator to each orbital in an OrbitalVector.
- * The operators are produced on the fly based on a vector of lambda parameters.
- */
+#include "chemistry/Nucleus.h"
+#include "utils/math_utils.h"
 
 namespace mrchem {
+namespace periodic {
 
-class HelmholtzVector final {
-public:
-    HelmholtzVector(double prec, int scale, int reach, const DoubleVector &l);
-
-    DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
-
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
-    OrbitalVector operator()(OrbitalVector &Phi) const;
-
-private:
-    double prec;         ///< Precision for construction and application of Helmholtz operators
-    int scale;           ///< Scale for construction of Helmholtz operators
-    int reach;           ///< Reach for construction of Helmholtz operators
-    DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
-
-    Orbital apply(int i, Orbital &phi) const;
-};
-
+std::array<double, 3> on_boundary(double period, mrcpp::Coord<3> coord);
+Nuclei periodify_nuclei(Nuclei nucs, double period, double shift = 1.0);
+Nuclei fix_boundary_charge(Nuclei nucs, double period);
+} // namespace periodic
 } // namespace mrchem

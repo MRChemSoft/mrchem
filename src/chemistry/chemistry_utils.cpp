@@ -22,12 +22,16 @@
  * For information on the complete list of contributors to MRChem, see:
  * <https://mrchem.readthedocs.io/>
  */
+
 #include "chemistry_utils.h"
 #include "Nucleus.h"
 #include "PhysicalConstants.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/density_utils.h"
+#include "qmoperators/one_electron/H_E_dip.h"
 #include "utils/math_utils.h"
+#include "utils/periodic_utils.h"
+
 #include <MRCPP/Gaussians>
 
 namespace mrchem {
@@ -62,20 +66,70 @@ double chemistry::get_total_charge(const Nuclei &nucs) {
     return charge;
 }
 
+/** @breif computes the nuclear density as a sum of narrow Gaussians */
 Density chemistry::compute_nuclear_density(double prec, const Nuclei &nucs, double alpha) {
     auto beta = std::pow(alpha / mrcpp::pi, 3.0 / 2.0);
-    int nNucs = nucs.size();
     auto gauss = mrcpp::GaussExp<3>();
-
-    for (int i = 0; i < nNucs; i++) {
-        const Nucleus &nuc_i = nucs[i];
-        const double Z_i = nuc_i.getCharge();
-        const mrcpp::Coord<3> &R_i = nuc_i.getCoord();
-        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta * Z_i, R_i, {0, 0, 0});
+    for (auto i = 0; i < nucs.size(); i++) {
+        const auto &nuc_i = nucs[i];
+        const auto Z_i = nuc_i.getCharge();
+        const auto &R_i = nuc_i.getCoord();
+        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta * Z_i, R_i);
         gauss.append(gauss_f);
+    }
+
+    if ((*MRA).getWorldBox().isPeriodic()) {
+        auto period = (*MRA).getWorldBox().getBoxLengths();
+        gauss.periodify(period);
     }
     Density rho(false);
     density::compute(prec, rho, gauss);
     return rho;
 }
+Density chemistry::compute_nuclear_density_smeared(double prec, Nuclei nucs, double rc, double period) {
+    Density rho(false);
+    if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+
+    nucs = periodic::periodify_nuclei(nucs, period);
+
+    auto b_smear = [nucs, rc](const mrcpp::Coord<3> &r) -> double {
+        auto g_rc = 0.0;
+        for (auto &nuc : nucs) {
+            auto R = math_utils::calc_distance(r, nuc.getCoord());
+            auto g_i = 0.0;
+            if (R <= rc and R >= 0) { g_i = -21.0 * std::pow((R - rc), 3.0) * (6.0 * R * R + 3.0 * R * rc + rc * rc) / (5.0 * mrcpp::pi * std::pow(rc, 8.0)); }
+            g_rc += g_i * nuc.getCharge();
+        }
+        return g_rc;
+    };
+
+    // We make fictisious gaussians to build a grid, this makes our project
+    // find b_smeared.
+    auto beta = 1.0e4; // Beta seems magical, but it's fine since we only need it to build a grid.
+    auto alpha = std::pow(beta / mrcpp::pi, 3.0 / 2.0);
+    mrcpp::GaussExp<3> f_exp;
+    for (auto &nuc : nucs) {
+        auto g_func = mrcpp::GaussFunc<3>(beta, alpha, nuc.getCoord());
+        f_exp.append(g_func);
+    }
+
+    mrcpp::build_grid(rho.real(), f_exp);
+    mrcpp::project<3>(prec, rho.real(), b_smear);
+    return rho;
+}
+/** @breif computes the nuclear density as a sum of narrow Gaussians */
+double chemistry::compute_nuclear_self_repulsion(const Nuclei &nucs, double alpha) {
+    auto beta = std::pow(alpha / MATHCONST::pi, 3.0 / 2.0);
+
+    auto self_rep = 0.0;
+    for (auto i = 0; i < nucs.size(); i++) {
+        const auto &nuc_i = nucs[i];
+        const auto Z_i = nuc_i.getCharge();
+        const auto &R_i = nuc_i.getCoord();
+        auto gauss_f = mrcpp::GaussFunc<3>(alpha, beta, R_i);
+        self_rep += Z_i * Z_i * gauss_f.calcCoulombEnergy(gauss_f);
+    }
+    return self_rep;
+}
+
 } // namespace mrchem

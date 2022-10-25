@@ -30,6 +30,7 @@
 
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
+#include "HartreeOperator.h"
 #include "ReactionOperator.h"
 #include "XCOperator.h"
 #include "chemistry/chemistry_utils.h"
@@ -41,6 +42,7 @@
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NablaOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/one_electron/SmearedNuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/qmoperator_utils.h"
 #include "utils/math_utils.h"
@@ -58,7 +60,9 @@ void FockBuilder::build(double exx) {
 
     this->V = RankZeroOperator();
     if (this->nuc != nullptr) this->V += (*this->nuc);
+    if (this->snuc != nullptr) this->V += (*this->snuc);
     if (this->coul != nullptr) this->V += (*this->coul);
+    if (this->har != nullptr) this->V += (*this->har);
     if (this->ex != nullptr) this->V -= this->exact_exchange * (*this->ex);
     if (this->xc != nullptr) this->V += (*this->xc);
     if (this->ext != nullptr) this->V += (*this->ext);
@@ -143,6 +147,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double E_kin = 0.0;  // Kinetic energy
     double E_nn = 0.0;   // Nuclear repulsion
     double E_en = 0.0;   // Nuclear-electronic interaction
+    double E_sen = 0.0;  // Nuclear-electronic interaction
     double E_ee = 0.0;   // Electronic repulsion
     double E_x = 0.0;    // Exact Exchange
     double E_xc = 0.0;   // Exchange and Correlation
@@ -152,6 +157,12 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double Er_el = 0.0;  // Electronic reaction energy
     double Er_tot = 0.0; // Total reaction energy
 
+    //// PERIODIC ENERGIES ////
+    double E_har = 0.0;
+    if (this->har != nullptr) E_har = 0.5 * this->har->trace(Phi).real();
+
+    double E_se = 0.0;
+    double E_ncor = 0.0;
     // Nuclear part
     if (this->nuc != nullptr) E_nn = chemistry::compute_nuclear_repulsion(nucs);
     if (this->ext != nullptr) E_next = -this->ext->trace(nucs).real();
@@ -172,14 +183,25 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     // Electronic part
     if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
+    if (this->snuc != nullptr) E_sen = this->snuc->trace(Phi).real();
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
+
+    if (this->har != nullptr) {
+        E_nn = 0.0;
+        E_se = -0.5 * mrcpp::dot<3>(this->har->getPotential()->getBSmear().real(), this->har->getPotential()->real());
+        auto rc = this->har->getPotential()->getRc();
+        if (rc <= 0.0) MSG_ABORT("RC has to be positive");
+        auto Ig = 10976.0 / (17875.0 * rc);
+        for (auto &nuc : nucs) E_ncor += 0.5 * nuc.getCharge() * nuc.getCharge() * (Ig - 12.0 / (5.0 * rc));
+    }
+
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
 
-    return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el};
+    return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el, E_har, E_se, E_ncor, E_sen};
 }
 
 ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {

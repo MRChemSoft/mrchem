@@ -39,6 +39,8 @@ struct FunctionData {
     int depth{0};
     int boxes[3] = {0, 0, 0};
     int corner[3] = {0, 0, 0};
+    bool periodic{false};
+    double sfac[3] = {0.0, 0.0, 0.0};
     int real_size{0};
     int imag_size{0};
     bool is_shared{false};
@@ -96,9 +98,13 @@ private:
         this->func_data.order = mra.getOrder();
         this->func_data.depth = mra.getMaxDepth();
         this->func_data.scale = box.getScale();
+        this->func_data.periodic = box.isPeriodic();
         this->func_data.boxes[0] = box.size(0);
         this->func_data.boxes[1] = box.size(1);
         this->func_data.boxes[2] = box.size(2);
+        this->func_data.sfac[0] = box.getScalingFactor(0);
+        this->func_data.sfac[1] = box.getScalingFactor(1);
+        this->func_data.sfac[2] = box.getScalingFactor(2);
         this->func_data.corner[0] = box.getCornerIndex().getTranslation(0);
         this->func_data.corner[1] = box.getCornerIndex().getTranslation(1);
         this->func_data.corner[2] = box.getCornerIndex().getTranslation(2);

@@ -47,7 +47,9 @@ class KineticOperator;
 class ZoraKineticOperator;
 class ZoraOperator;
 class NuclearOperator;
+class SmearedNuclearOperator;
 class CoulombOperator;
+class HartreeOperator;
 class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
@@ -61,7 +63,9 @@ public:
 
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
+    std::shared_ptr<SmearedNuclearOperator> &getSmearedNuclearOperator() { return this->snuc; }
     std::shared_ptr<CoulombOperator> &getCoulombOperator() { return this->coul; }
+    std::shared_ptr<HartreeOperator> &getHartreeOperator() { return this->har; }
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
@@ -98,7 +102,9 @@ private:
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
+    std::shared_ptr<SmearedNuclearOperator> snuc{nullptr};
     std::shared_ptr<CoulombOperator> coul{nullptr};
+    std::shared_ptr<HartreeOperator> har{nullptr};
     std::shared_ptr<ExchangeOperator> ex{nullptr};
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};       // Reaction field operator

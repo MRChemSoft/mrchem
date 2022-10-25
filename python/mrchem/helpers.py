@@ -24,6 +24,7 @@
 #
 
 from .CUBEparser import write_cube_dict
+from .validators import MoleculeValidator
 
 # yapf: disable
 SHORTHAND_FUNCTIONALS = [
@@ -50,6 +51,33 @@ SHORTHAND_FUNCTIONALS = [
 def write_scf_fock(user_dict, wf_dict, origin):
     fock_dict = {}
 
+
+    # Momentum
+    fock_dict["kinetic_operator"] = {
+        "derivative": user_dict["Derivatives"]["kinetic"]
+    }
+
+    # Nuclear
+    if (not user_dict["world_periodic"]):
+        fock_dict["nuclear_operator"] = {
+            "proj_prec": user_dict["Precisions"]["nuclear_prec"],
+            "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
+            "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
+        }
+
+    # Smeared Nuclear
+    if (user_dict["world_periodic"]):
+        fock_dict["smeared_nuclear_operator"] = {
+            "proj_prec": user_dict["Precisions"]["nuclear_prec"],
+            "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
+            "shared_memory": user_dict["MPI"]["share_nuclear_potential"],
+            "rc": user_dict["Periodic"]["rc"]
+        }
+        if (fock_dict["smeared_nuclear_operator"]["rc"] < 0.0):
+            mol = MoleculeValidator(user_dict, origin)
+            max_rc = mol.calculate_max_rc()
+            fock_dict["smeared_nuclear_operator"]["rc"] = max_rc
+
     # ZORA
     if user_dict["WaveFunction"]["relativity"].lower() == "zora":
         fock_dict["zora_operator"] = {
@@ -58,18 +86,27 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "include_xc": user_dict["ZORA"]["include_xc"]
         }
 
-    # Kinetic
-    fock_dict["kinetic_operator"] = {
-        "derivative": user_dict["Derivatives"]["kinetic"]
-    }
+    # Coulomb
+    if (not user_dict["world_periodic"]):
+        if wf_dict["method_type"] in ['hartree', 'hf', 'dft']:
+            fock_dict["coulomb_operator"] = {
+                "poisson_prec": user_dict["Precisions"]["poisson_prec"],
+                "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
+            }
 
-
-    # Nuclear
-    fock_dict["nuclear_operator"] = {
-        "proj_prec": user_dict["Precisions"]["nuclear_prec"],
-        "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
-        "shared_memory": user_dict["MPI"]["share_nuclear_potential"]
-    }
+    # Hartree
+    if (user_dict["world_periodic"]):
+        if wf_dict["method_type"] in ['hartree', 'hf', 'dft']:
+            fock_dict["hartree_operator"] = {
+                "poisson_prec": user_dict["Precisions"]["poisson_prec"],
+                "operator_root": user_dict["Periodic"]["operator_root"],
+                "operator_reach": user_dict["Periodic"]["operator_reach"],
+                "rc": user_dict["Periodic"]["rc"]
+            }
+            if (fock_dict["hartree_operator"]["rc"] < 0.0 and user_dict["Periodic"]["periodic"]):
+                mol = MoleculeValidator(user_dict, origin)
+                max_rc = mol.calculate_max_rc()
+                fock_dict["hartree_operator"]["rc"] = max_rc
 
     # Reaction
     if user_dict["Environment"]["run_environment"]:
@@ -85,20 +122,6 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "accelerate_Vr": user_dict["Environment"]["extrapolate_Vr"],
             "density_type": user_dict["Environment"]["density_type"]
     }
-
-    # Coulomb
-    if wf_dict["method_type"] in ['hartree', 'hf', 'dft']:
-        fock_dict["coulomb_operator"] = {
-            "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-            "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
-        }
-
-    # Exchange
-    if wf_dict["method_type"] in ['hf', 'dft']:
-        fock_dict["exchange_operator"] = {
-            "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-            "exchange_prec": user_dict["Precisions"]["exchange_prec"]
-        }
 
     # Exchange-Correlation
     if wf_dict["method_type"] in ['dft']:
@@ -118,6 +141,13 @@ def write_scf_fock(user_dict, wf_dict, origin):
                 "cutoff": user_dict["DFT"]["density_cutoff"],
                 "functionals": func_dict
             }
+        }
+
+    # Exchange
+    if wf_dict["method_type"] in ['hf', 'dft']:
+        fock_dict["exchange_operator"] = {
+            "poisson_prec": user_dict["Precisions"]["poisson_prec"],
+            "exchange_prec": user_dict["Precisions"]["exchange_prec"]
         }
 
     # External electric field
@@ -209,7 +239,9 @@ def write_scf_solver(user_dict, wf_dict):
         "final_prec": final_prec,
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
-        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"]
+        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
+        "helmholtz_root": user_dict["Periodic"]["operator_root"],
+        "helmholtz_reach": user_dict["Periodic"]["operator_reach"]
     }
     return solver_dict
 
@@ -316,8 +348,10 @@ def write_rsp_fock(user_dict, wf_dict):
     if wf_dict["method_type"] in ['hartree', 'hf', 'dft']:
         fock_dict["coulomb_operator"] = {
             "poisson_prec": user_dict["Precisions"]["poisson_prec"],
-            "shared_memory": user_dict["MPI"]["share_coulomb_potential"]
+            "shared_memory": user_dict["MPI"]["share_coulomb_potential"],
+            "periodic": False
         }
+    assert user_dict["Periodic"]["periodic"] == False, "RSP calculations must be non-periodic"
 
     # Exchange
     if wf_dict["method_type"] in ['hf', 'dft']:
@@ -371,6 +405,8 @@ def write_rsp_solver(user_dict, wf_dict, d):
         "orbital_thrs": user_dict["Response"]["orbital_thrs"],
         "property_thrs": user_dict["Response"]["property_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
+        "helmholtz_root": user_dict["Periodic"]["operator_reach"],
+        "helmholtz_reach": user_dict["Periodic"]["operator_root"],
         "orth_prec": 1.0e-14
     }
     return solver_dict

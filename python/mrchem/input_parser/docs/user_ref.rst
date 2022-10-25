@@ -23,6 +23,12 @@ User input reference
   **Predicates**
     - ``1.0e-10 < value < 1.0``
 
+ :world_periodic: Periodic specifyer 
+
+  **Type** ``bool``
+
+  **Default** ``False``
+
  :world_size: Total size of computational domain given as 2**(``world_size``). Always cubic and symmetric around the origin. Negative value means it will be computed from the molecular geometry. 
 
   **Type** ``int``
@@ -51,6 +57,66 @@ User input reference
     - ``len(value) == 3``
 
 :red:`Sections`
+ :Periodic: Define specific periodic parameters. 
+
+  :red:`Keywords`
+   :primitive1: primitive 1 vector. 
+  
+    **Type** ``List[float]``
+  
+    **Default** ``[1.0, 0.0, 0.0]``
+  
+    **Predicates**
+      - ``len(value) == 3``
+  
+   :primitive2: primitive 2 vector. 
+  
+    **Type** ``List[float]``
+  
+    **Default** ``[0.0, 1.0, 0.0]``
+  
+    **Predicates**
+      - ``len(value) == 3``
+  
+   :primitive3: primitive 3 vector. 
+  
+    **Type** ``List[float]``
+  
+    **Default** ``[0.0, 0.0, 1.0]``
+  
+    **Predicates**
+      - ``len(value) == 3``
+  
+   :operator_root: operator_root 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+    **Predicates**
+      - ``value <= 0``
+  
+   :operator_reach: operator_reach 
+  
+    **Type** ``int``
+  
+    **Default** ``1``
+  
+    **Predicates**
+      - ``1 <= value``
+  
+   :rc: Localization parameter regularization of total density. 
+  
+    **Type** ``float``
+  
+    **Default** ``-1.0``
+  
+   :periodic: Is the world periodic 
+  
+    **Type** ``bool``
+  
+    **Default** ``user['world_periodic']``
+  
  :Precisions: Define specific precision parameters. 
 
   :red:`Keywords`
@@ -782,7 +848,7 @@ User input reference
   
     **Default** ``100``
   
-   :run_environment: Perform the reaction field calculation of the reaction potential of the interaction between environment and molecule.  
+   :run_environment: Perform the reaction field calculation of the reaction potential of the interaction between environment and molecule. 
   
     **Type** ``bool``
   

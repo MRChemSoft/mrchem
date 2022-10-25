@@ -217,6 +217,11 @@ void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, Or
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp) {
     if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+    auto periodic = (*MRA).getWorldBox().isPeriodic();
+    if (periodic) {
+        auto period = (*MRA).getWorldBox().getBoxLengths();
+        dens_exp.periodify(period);
+    }
     mrcpp::build_grid(rho.real(), dens_exp);
     mrcpp::project(prec, rho.real(), dens_exp);
 }

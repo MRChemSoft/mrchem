@@ -25,36 +25,19 @@
 
 #pragma once
 
-#include "mrchem.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "tensor/tensor_fwd.h"
-
-/** @class HelmholtzVector
- *
- * @brief Container of HelmholtzOperators for a corresponding OrbtialVector
- *
- * This class assigns one HelmholtzOperator to each orbital in an OrbitalVector.
- * The operators are produced on the fly based on a vector of lambda parameters.
- */
+#include "tensor/RankZeroOperator.h"
 
 namespace mrchem {
 
-class HelmholtzVector final {
+// class NuclearFunction;
+
+class SmearedNuclearOperator final : public RankZeroOperator {
 public:
-    HelmholtzVector(double prec, int scale, int reach, const DoubleVector &l);
-
-    DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
-
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
-    OrbitalVector operator()(OrbitalVector &Phi) const;
+    SmearedNuclearOperator(Nuclei nucs, double proj_prec, double smooth_prec = -1.0, double rc = 1.0, bool mpi_share = false, std::shared_ptr<OrbitalVector> Phi = nullptr);
 
 private:
-    double prec;         ///< Precision for construction and application of Helmholtz operators
-    int scale;           ///< Scale for construction of Helmholtz operators
-    int reach;           ///< Reach for construction of Helmholtz operators
-    DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
-
-    Orbital apply(int i, Orbital &phi) const;
+    void setupLocalPotential(QMFunction &V_loc, const Nuclei &nucs, double proj_prec, double smooth_prec, double rc) const;
+    void allreducePotential(double prec, QMFunction &V_tot, QMFunction &V_loc) const;
 };
 
 } // namespace mrchem

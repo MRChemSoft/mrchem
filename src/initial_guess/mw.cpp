@@ -78,6 +78,10 @@ bool initial_guess::mw::setup(OrbitalVector &Phi, double prec, const std::string
     for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
     for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
 
+    // If the world is periodic we need to normalize the MW guess
+    if ((*MRA).getWorldBox().isPeriodic())
+        for (auto &phi : Phi) phi.real().normalize();
+
     return success;
 }
 

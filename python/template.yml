@@ -5,6 +5,11 @@ keywords:
       - 1.0e-10 < value < 1.0
     docstring: |
       Overall relative precision in the calculation.
+  - name: world_periodic
+    type: bool
+    default: false
+    docstring: |
+      Periodic specifyer
   - name: world_size
     type: int
     default: -1
@@ -31,6 +36,55 @@ keywords:
     docstring: |
       Global gauge origin of the calculation.
 sections:
+  - name: Periodic
+    docstring: |
+      Define specific periodic parameters.
+    keywords:
+      - name: periodic
+        type: bool
+        default: user['world_periodic']
+        docstring: |
+          Is the world periodic
+      - name: primitive1
+        type: List[float]
+        default: [1.0, 0.0, 0.0]
+        predicates:
+          - len(value) == 3
+        docstring: |
+          primitive 1 vector.
+      - name: primitive2
+        type: List[float]
+        default: [0.0, 1.0, 0.0]
+        predicates:
+          - len(value) == 3
+        docstring: |
+          primitive 2 vector.
+      - name: primitive3
+        type: List[float]
+        default: [0.0, 0.0, 1.0]
+        predicates:
+          - len(value) == 3
+        docstring: |
+          primitive 3 vector.
+      - name: operator_root
+        type: int
+        default: 0
+        predicates:
+          - value <= 0
+        docstring: |
+          operator_root
+      - name: operator_reach
+        type: int
+        default: 1
+        predicates:
+          - 1 <= value
+        docstring: |
+          operator_reach
+      - name: rc
+        type: float
+        default: -1.0
+        docstring: |
+          Localization parameter regularization of total density.
   - name: Precisions
     docstring: |
       Define specific precision parameters.
@@ -748,7 +802,7 @@ sections:
         default: false
         docstring: |
           Perform the reaction field calculation of the reaction potential of the
-          interaction between environment and molecule. 
+          interaction between environment and molecule.
       - name: algorithm
         type: str
         default: scrf

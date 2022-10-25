@@ -25,36 +25,40 @@
 
 #pragma once
 
-#include "mrchem.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "tensor/tensor_fwd.h"
-
-/** @class HelmholtzVector
- *
- * @brief Container of HelmholtzOperators for a corresponding OrbtialVector
- *
- * This class assigns one HelmholtzOperator to each orbital in an OrbitalVector.
- * The operators are produced on the fly based on a vector of lambda parameters.
- */
+#include "chemistry/Nucleus.h"
+#include "qmfunctions/Density.h"
+#include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 
-class HelmholtzVector final {
+class HartreePotential final : public QMPotential {
 public:
-    HelmholtzVector(double prec, int scale, int reach, const DoubleVector &l);
+    HartreePotential(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, const Nuclei &nucs, const double &rc);
+    ~HartreePotential() override = default;
 
-    DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
+    friend class HartreeOperator;
 
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
-    OrbitalVector operator()(OrbitalVector &Phi) const;
+    Density &getBSmear() { return this->b_smeared; }
+    double getRc() { return this->rc; }
 
 private:
-    double prec;         ///< Precision for construction and application of Helmholtz operators
-    int scale;           ///< Scale for construction of Helmholtz operators
-    int reach;           ///< Reach for construction of Helmholtz operators
-    DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
+    Density density;                                 ///< Ground-state electron density
+    std::shared_ptr<OrbitalVector> orbitals;         ///< Unperturbed orbitals defining the ground-state electron density
+    std::shared_ptr<mrcpp::PoissonOperator> poisson; ///< Operator used to compute the potential
+    Density b_smeared{false};
+    Nuclei nuclei;
+    double rc;
 
-    Orbital apply(int i, Orbital &phi) const;
+    auto &getPoisson() { return this->poisson; }
+    auto &getDensity() { return this->density; }
+
+    bool hasDensity() const { return (this->density.squaredNorm() < 0.0) ? false : true; }
+
+    void setup(double prec) override;
+    void clear() override;
+
+    void setupDensity(double prec);
+    void setupPotential(double prec);
 };
 
 } // namespace mrchem

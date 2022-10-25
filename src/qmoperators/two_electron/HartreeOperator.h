@@ -25,36 +25,36 @@
 
 #pragma once
 
-#include "mrchem.h"
-#include "qmfunctions/qmfunction_fwd.h"
-#include "tensor/tensor_fwd.h"
+#include "HartreePotential.h"
+#include "tensor/RankZeroOperator.h"
 
-/** @class HelmholtzVector
+/** @class CoulombOperator
  *
- * @brief Container of HelmholtzOperators for a corresponding OrbtialVector
+ * @brief Operator containing a single CoulombPotential
  *
- * This class assigns one HelmholtzOperator to each orbital in an OrbitalVector.
- * The operators are produced on the fly based on a vector of lambda parameters.
+ * This class is a simple TensorOperator realization of @class CoulombPotential.
+ *
  */
 
 namespace mrchem {
 
-class HelmholtzVector final {
+class HartreeOperator final : public RankZeroOperator {
 public:
-    HelmholtzVector(double prec, int scale, int reach, const DoubleVector &l);
+    HartreeOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, const Nuclei &nucs, const double &rc) {
 
-    DoubleMatrix getLambdaMatrix() const { return this->lambda.asDiagonal(); }
+        potential = std::make_shared<HartreePotential>(P, Phi, nucs, rc);
+        RankZeroOperator &J = (*this);
+        J = potential;
+    }
 
-    OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
-    OrbitalVector operator()(OrbitalVector &Phi) const;
+    ~HartreeOperator() override = default;
+
+    auto &getPoisson() { return this->potential->getPoisson(); }
+    auto &getDensity() { return this->potential->getDensity(); }
+    auto &getPotential() { return this->potential; }
 
 private:
-    double prec;         ///< Precision for construction and application of Helmholtz operators
-    int scale;           ///< Scale for construction of Helmholtz operators
-    int reach;           ///< Reach for construction of Helmholtz operators
-    DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
-
-    Orbital apply(int i, Orbital &phi) const;
+    std::shared_ptr<HartreePotential> potential{nullptr};
 };
 
 } // namespace mrchem

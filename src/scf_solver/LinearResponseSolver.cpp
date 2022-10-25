@@ -87,9 +87,15 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
     this->property.push_back(0.0);
 
     // Setup Helmholtz operators (fixed, based on unperturbed system)
-    double helm_prec = getHelmholtzPrec();
-    HelmholtzVector H_x(helm_prec, F_mat_x.real().diagonal());
-    HelmholtzVector H_y(helm_prec, F_mat_y.real().diagonal());
+    auto helm_prec = getHelmholtzPrec();
+    auto helm_root = getHelmholtzRoot();
+    auto helm_reach = getHelmholtzReach();
+    if (!(*MRA).getWorldBox().isPeriodic()) {
+        helm_root = MRA->getRootScale();
+        helm_reach = -10;
+    }
+    HelmholtzVector H_x(helm_prec, helm_root, helm_reach, F_mat_x.real().diagonal());
+    HelmholtzVector H_y(helm_prec, helm_root, helm_reach, F_mat_y.real().diagonal());
     ComplexMatrix L_mat_x = H_x.getLambdaMatrix();
     ComplexMatrix L_mat_y = H_y.getLambdaMatrix();
 
