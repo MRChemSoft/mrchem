@@ -53,8 +53,9 @@ def write_cube_vectors(user_dict):
                 cube_list, key=lambda d: d["ORB_IDS"]
             )  # This might not work with multiple functions per cubefile
             vector_file = vector_dir / f"CUBE_{data_type}_vector.json"
-            with vector_file.open(mode="w") as fd:
-                fd.write(dumps(cube_list, indent=2))
+            if len(cube_list) != 0:
+                with vector_file.open(mode="w") as fd:
+                    fd.write(dumps(cube_list, indent=2))
 
 
 def get_paths(path):
