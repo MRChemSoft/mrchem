@@ -26,9 +26,9 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include "ExcitedStatesSolver.h"
 #include "HelmholtzVector.h"
 #include "KAIN.h"
-#include "ExcitedStatesSolver.h"
 
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
@@ -59,7 +59,7 @@ namespace mrchem {
  *     d) Compute KAIN updates
  *  4) Compute property
  *  5) Check for convergence
- * 
+ *
  *  Only one state is optimized for now. random guess might help to get more states out
  *
  */
@@ -73,10 +73,10 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     OrbitalVector &Phi_0 = mol.getOrbitals();
     OrbitalVector &X_n = mol.getOrbitalsX();
     OrbitalVector &Y_n = mol.getOrbitalsY();
-    ComplexMatrix &F_mat_0 = mol.getFockMatrix(); 
+    ComplexMatrix &F_mat_0 = mol.getFockMatrix();
 
     RankZeroOperator V_0 = F_0.potential();
-    RankZeroOperator V_1 = F_1.potential();  
+    RankZeroOperator V_1 = F_1.potential();
 
     double err_o = 1.0;
     double err_t = 1.0;
@@ -88,19 +88,16 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     F_0.setup(orb_prec);
     F_1.setup(orb_prec);
 
-
     DoubleVector errors_x = DoubleVector::Zero(Phi_0.size());
     DoubleVector errors_y = DoubleVector::Zero(Phi_0.size());
 
-
     /* compute initial omega */
-    auto omega_n = computeOmega( Phi_0, X_n, Y_n, F_0, F_1, F_mat_0);
-
-    printParameters(omega_n, F_1.perturbation().name());  
+    auto omega_n = computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0);
+    this->property.push_back(omega_n);
+    printParameters(omega_n, F_1.perturbation().name());
 
     ComplexMatrix F_mat_x = F_mat_0 + omega_n * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
     ComplexMatrix F_mat_y = F_mat_0 - omega_n * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
-
 
     // Setup Helmholtz operators (fixed, based on unperturbed system)
     double helm_prec = getHelmholtzPrec();
@@ -172,7 +169,6 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             // Prepare for next iteration
             X_n = orbital::add(1.0, X_n, 1.0, dX_n);
 
-
             // Save checkpoint file
             if (this->checkpoint) orbital::save_orbitals(X_n, this->chkFileX);
         }
@@ -221,14 +217,12 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             if (this->checkpoint) orbital::save_orbitals(Y_n, this->chkFileY);
         }
 
-
-
         // Compute property
         mrcpp::print::header(2, "Computing ferquency");
         t_lap.start();
-        auto omega_np1 = computeOmega( Phi_0, X_n, Y_n, F_0, F_1, F_mat_0);
-        auto domega_n = omega_np1 - omega_n;  // open for other methods to get the frequency update
-        omega_n += domega_n; 
+        auto omega_np1 = computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0);
+        auto domega_n = omega_np1 - omega_n; // open for other methods to get the frequency update
+        omega_n += domega_n;
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing frequency", t_lap);
 
@@ -275,18 +269,18 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     return json_out;
 }
 /** @brief consider only diagonals of the A and S matrices, firt for single state. myabe only ok for tda */
-double ExcitedStatesSolver::computeOmega( OrbitalVector &Phi_0, OrbitalVector &X_n, OrbitalVector &Y_n, FockBuilder &F_0, FockBuilder &F_1, const ComplexMatrix &F_mat_0) {
-    auto f_0_bb = F_0(X_n, X_n);   // expectation value of the x orbitals with the unperturbed fock operator creates a Nocc x Nocc matrix
-    auto x_t_x = orbital::dot(X_n, X_n);  // each i-th element is \langle x_i | x_i \rangle
-    auto eps = F_mat_0.diagonal(); // orbital energies for the fround state orbitals
-    auto e_x_t_x = eps.dot(x_t_x); // computes \sum_i \varepsilon_i \langle x_i | x_i \rangle
-    
-    RankZeroOperator V_1 = F_1.potential();  // perturbed potential
+double ExcitedStatesSolver::computeOmega(OrbitalVector &Phi_0, OrbitalVector &X_n, OrbitalVector &Y_n, FockBuilder &F_0, FockBuilder &F_1, const ComplexMatrix &F_mat_0) {
+    auto f_0_bb = F_0(X_n, X_n);         // expectation value of the x orbitals with the unperturbed fock operator creates a Nocc x Nocc matrix
+    auto x_t_x = orbital::dot(X_n, X_n); // each i-th element is \langle x_i | x_i \rangle
+    auto eps = F_mat_0.diagonal();       // orbital energies for the fround state orbitals
+    auto e_x_t_x = eps.dot(x_t_x);       // computes \sum_i \varepsilon_i \langle x_i | x_i \rangle
+
+    RankZeroOperator V_1 = F_1.potential(); // perturbed potential
     OrbitalVector Psi_1 = V_1(Phi_0);
     orbital::orthogonalize(this->orth_prec, Psi_1, Phi_0);
     auto f_1_b_0 = orbital::dot(X_n, Psi_1);
 
-    auto omega = ((f_0_bb.trace() + f_1_b_0.sum() - e_x_t_x)/x_t_x.sum()).real(); // this is incorrect as we need to get the double values out
+    auto omega = ((f_0_bb.trace() + f_1_b_0.sum() - e_x_t_x) / x_t_x.sum()).real(); // this is incorrect as we need to get the double values out
     return omega;
 }
 
@@ -303,7 +297,7 @@ void ExcitedStatesSolver::printProperty() const {
     int w3 = 8;
     int w4 = w0 - w1 - w2 - w3;
 
-    std::stringstream o_head;   
+    std::stringstream o_head;
     o_head << std::setw(w1) << " ";
     o_head << std::setw(w2) << "Value";
     o_head << std::setw(w4) << "Update";
