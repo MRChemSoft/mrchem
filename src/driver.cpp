@@ -74,6 +74,7 @@
 #include "scf_solver/GroundStateSolver.h"
 #include "scf_solver/KAIN.h"
 #include "scf_solver/LinearResponseSolver.h"
+#include "scf_solver/ExcitedStatesSolver.h"
 
 #include "environment/Cavity.h"
 #include "environment/Permittivity.h"
@@ -740,7 +741,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     //////////////   Preparing Perturbed System   /////////////
     ///////////////////////////////////////////////////////////
 
-    auto omega = json_rsp["frequency"];
+    //auto omega = json_rsp["frequency"];
     auto dynamic = json_rsp["dynamic"];
     mol.initPerturbedOrbitals(dynamic);
 
@@ -751,7 +752,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     const auto &json_pert = json_rsp["perturbation"];
     auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
     json_out["perturbation"] = json_pert["operator"];
-    json_out["frequency"] = omega;
+    //json_out["frequency"] = omega;
     json_out["components"] = {};
     for (auto d = 0; d < 3; d++) {
         json comp_out = {};
@@ -783,7 +784,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             auto property_thrs = json_comp["rsp_solver"]["property_thrs"];
             auto helmholtz_prec = json_comp["rsp_solver"]["helmholtz_prec"];
 
-            LinearResponseSolver solver(dynamic);
+            // LinearResponseSolver solver(dynamic);
+            ExcitedStatesSolver solver(dynamic);
             solver.setHistory(kain);
             solver.setMethodName(method);
             solver.setMaxIterations(max_iter);
@@ -794,7 +796,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             solver.setThreshold(orbital_thrs, property_thrs);
             solver.setOrthPrec(orth_prec);
 
-            comp_out["rsp_solver"] = solver.optimize(omega, mol, F_0, F_1);
+            comp_out["rsp_solver"] = solver.optimize(mol, F_0, F_1);
             json_out["success"] = comp_out["rsp_solver"]["converged"];
         }
 
