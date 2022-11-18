@@ -128,10 +128,10 @@ bool SCFSolver::checkConvergence(double err_o, double err_p) const {
  * Returns the difference between the i-th and (i-1)-th entry of the convergence vector.
  */
 double SCFSolver::getUpdate(const std::vector<double> &vec, int i, bool absPrec) const {
-    if (i < 1 or i > vec.size()) MSG_ERROR("Invalid argument");
-    double E_i = vec[i - 1];
+    if (i < 0 or i > vec.size()) MSG_ERROR("Invalid argument");
+    double E_i = vec[i];
     double E_im1 = 0.0;
-    if (i > 1) { E_im1 = vec[i - 2]; }
+    if (i >= 1) { E_im1 = vec[i - 1]; }
     double E_diff = E_i - E_im1;
     if (not absPrec and std::abs(E_i) > mrcpp::MachineZero) { E_diff *= 1.0 / E_i; }
     return E_diff;
@@ -250,10 +250,10 @@ void SCFSolver::printConvergenceRow(int i) const {
 
     auto residual = this->error[i];
     auto property = this->property[i];
-    auto update = getUpdate(this->property, i + 1, true);
+    auto update = getUpdate(this->property, i, true);
 
     std::stringstream o_txt;
-    o_txt << std::setw(w1) << i;
+    o_txt << std::setw(w1) << i + 1;
     o_txt << std::setw(w2) << std::setprecision(pprec) << std::scientific << residual;
     o_txt << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << property;
     o_txt << std::setw(w2) << std::setprecision(pprec) << std::scientific << update;

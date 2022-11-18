@@ -55,7 +55,7 @@ HelmholtzVector::HelmholtzVector(double pr, const DoubleVector &l)
         : prec(pr) {
     this->lambda = l;
     for (int i = 0; i < this->lambda.size(); i++) {
-        if (this->lambda(i) > 0.0) this->lambda(i) = -0.5;
+        if (this->lambda(i) > 0.0) this->lambda(i) = -0.15;
     }
 }
 

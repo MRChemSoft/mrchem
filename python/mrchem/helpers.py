@@ -288,7 +288,7 @@ def write_rsp_calc(omega, user_dict, origin):
 
     rsp_calc = {}
     rsp_calc["frequency"] = omega
-    rsp_calc["dynamic"] = omega > 1.0e-12
+    rsp_calc["dynamic"] = omega > 1.0e-12 #TODO this shouldn't be like this 
     rsp_calc["fock_operator"] = write_rsp_fock(user_dict, wf_dict)
     rsp_calc["unperturbed"] = {
         "precision": user_dict["world_prec"],

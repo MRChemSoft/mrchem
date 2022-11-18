@@ -57,7 +57,8 @@ protected:
     std::string chkFileX; ///< Name of checkpoint file
     std::string chkFileY; ///< Name of checkpoint file
 
-    double computeOmega( OrbitalVector &Phi_0, OrbitalVector &X_n, OrbitalVector &Y_n, FockBuilder &F_0, FockBuilder &F_1, const ComplexMatrix &F_mat_0);
+    double computeOmega(OrbitalVector &Phi_0, OrbitalVector &X, FockBuilder &F_0, RankZeroOperator &V_1);
+    double updateOmega(OrbitalVector &X_n, OrbitalVector &X_np1);
     void printProperty() const;
     void printParameters(double omega, const std::string &oper) const;
 };

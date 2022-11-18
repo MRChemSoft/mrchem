@@ -54,7 +54,7 @@ ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P, OrbitalVector_p Ph
         : ExchangePotential(P, Phi, prec)
         , orbitals_x(X)
         , orbitals_y(Y) {
-    if (X == Y) useOnlyX = true;
+    if (X == Y) doTDA = true;
 }
 
 /** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */
@@ -127,13 +127,15 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital ex_xip = phi_p.paramCopy();
-            Orbital ex_iyp = phi_p.paramCopy();
             calcExchange_kij(precf, x_i, phi_i, phi_p, ex_xip);
-            calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
             func_vec.push_back(ex_xip);
-            func_vec.push_back(ex_iyp);
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            if (not doTDA) {
+                Orbital ex_iyp = phi_p.paramCopy();
+                calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
+                func_vec.push_back(ex_iyp);
+                coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            }
         }
         if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
         if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
@@ -186,13 +188,15 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital ex_ixp = phi_p.paramCopy();
-            Orbital ex_yip = phi_p.paramCopy();
             calcExchange_kij(precf, phi_i, x_i, phi_p, ex_ixp);
-            calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
             func_vec.push_back(ex_ixp);
-            func_vec.push_back(ex_yip);
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            if (not doTDA) {
+                Orbital ex_yip = phi_p.paramCopy();
+                calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
+                func_vec.push_back(ex_yip);
+                coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            }
         }
         if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
         if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
