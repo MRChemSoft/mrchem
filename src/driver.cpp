@@ -759,18 +759,18 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     const auto &json_comp = json_rsp["components"][2];
     //    F_1.perturbation() = h_1[d];
 
-        ///////////////////////////////////////////////////////////
-        ///////////////   Setting Up Initial Guess   //////////////
-        ///////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////
+    ///////////////   Setting Up Initial Guess   //////////////
+    ///////////////////////////////////////////////////////////
 
-        const auto &json_guess = json_comp["initial_guess"];
-        json_out["success"] = rsp::guess_orbitals(json_guess, mol);
+    const auto &json_guess = json_comp["initial_guess"];
+    json_out["success"] = rsp::guess_orbitals(json_guess, mol);
 
-        ///////////////////////////////////////////////////////////
-        /////////////   Optimizing Perturbed Orbitals  ////////////
-        ///////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////
+    /////////////   Optimizing Perturbed Orbitals  ////////////
+    ///////////////////////////////////////////////////////////
 
-        if (json_comp.contains("rsp_solver")) {
+    if (json_comp.contains("rsp_solver")) {
         auto kain = json_comp["rsp_solver"]["kain"];
         auto method = json_comp["rsp_solver"]["method"];
         auto max_iter = json_comp["rsp_solver"]["max_iter"];
@@ -798,7 +798,6 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
 
         comp_out["rsp_solver"] = solver.optimize(mol, F_0, F_1);
         json_out["success"] = comp_out["rsp_solver"]["converged"];
-        }
 
         ///////////////////////////////////////////////////////////
         ////////////   Compute Response Properties   //////////////
