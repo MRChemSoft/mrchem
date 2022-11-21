@@ -105,6 +105,7 @@ DerivativeOperator_p get_derivative(const std::string &name);
 template <int I> RankOneOperator<I> get_operator(const std::string &name, const json &json_oper);
 template <int I, int J> RankTwoOperator<I, J> get_operator(const std::string &name, const json &json_oper);
 void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order);
+void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order, int states);
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
@@ -117,8 +118,11 @@ void plot_quantities(const json &input, Molecule &mol);
 
 namespace rsp {
 bool guess_orbitals(const json &input, Molecule &mol);
+bool guess_orbitals(const json &json_guess, Molecule &mol, int state);
 void write_orbitals(const json &input, Molecule &mol, bool dynamic);
+void write_orbitals(const json &input, Molecule &mol, bool dynamic, int state);
 void calc_properties(const json &input, Molecule &mol, int dir, double omega);
+void calc_properties(const json &input, Molecule &mol, int dir, double omega, int state);
 } // namespace rsp
 
 } // namespace driver
@@ -745,12 +749,18 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     auto dynamic = false; // json_rsp["dynamic"];
     mol.initPerturbedOrbitals(dynamic);
 
-    FockBuilder F_1;
-    const auto &json_fock_1 = json_rsp["fock_operator"];
-    driver::build_fock_operator(json_fock_1, mol, F_1, 1);
+    auto N_states = 1;
+
+    std::vector<FockBuilder> F_1_vec; // make into a matrix for the eigenvalue problem
+    const auto &json_fock = json_rsp["fock_operator"];
+    for (auto i = 0; i < N_states; i++) {
+        FockBuilder F_1;
+        driver::build_fock_operator(json_fock, mol, F_1, 1, i);
+        F_1_vec.push_back(F_1);
+    }
 
     const auto &json_pert = json_rsp["perturbation"];
-    auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
+    // auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
     json_out["perturbation"] = json_pert["operator"];
     // json_out["frequency"] = omega;
     json_out["components"] = {};
@@ -764,7 +774,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     ///////////////////////////////////////////////////////////
 
     const auto &json_guess = json_comp["initial_guess"];
-    json_out["success"] = rsp::guess_orbitals(json_guess, mol);
+    for (auto i = 0; i < N_states; i++) { json_out["success"] = rsp::guess_orbitals(json_guess, mol, i); }
 
     ///////////////////////////////////////////////////////////
     /////////////   Optimizing Perturbed Orbitals  ////////////
@@ -785,7 +795,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         auto helmholtz_prec = json_comp["rsp_solver"]["helmholtz_prec"];
 
         // LinearResponseSolver solver(dynamic);
-        ExcitedStatesSolver solver(dynamic);
+        ExcitedStatesSolver solver(dynamic, N_states);
         solver.setHistory(kain);
         solver.setMethodName(method);
         solver.setMaxIterations(max_iter);
@@ -796,7 +806,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         solver.setThreshold(orbital_thrs, property_thrs);
         solver.setOrthPrec(orth_prec);
 
-        comp_out["rsp_solver"] = solver.optimize(mol, F_0, F_1);
+        comp_out["rsp_solver"] = solver.optimize(mol, F_0, F_1_vec);
         json_out["success"] = comp_out["rsp_solver"]["converged"];
 
         ///////////////////////////////////////////////////////////
@@ -814,8 +824,10 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     //}
     F_0.clear();
     mpi::barrier(mpi::comm_orb);
-    mol.getOrbitalsX_p().reset(); // Release shared_ptr
-    mol.getOrbitalsY_p().reset(); // Release shared_ptr
+    for (auto i = 0; i < N_states; i++) {
+        mol.getOrbitalsX_p(0).reset(); // Release shared_ptr
+        mol.getOrbitalsY_p(0).reset(); // Release shared_ptr
+    }
 
     return json_out;
 }
@@ -831,6 +843,10 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
  * This function expects the "initial_guess" subsection of the input.
  */
 bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
+    return driver::rsp::guess_orbitals(json_guess, mol, 0);
+}
+
+bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol, int state) {
     auto type = json_guess["type"];
     auto prec = json_guess["prec"];
     auto mw_xp = json_guess["file_x_p"];
@@ -849,8 +865,8 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_yb = json_guess["file_CUBE_y_b"];
 
     auto &Phi = mol.getOrbitals();
-    auto &X = mol.getOrbitalsX();
-    auto &Y = mol.getOrbitalsY();
+    auto &X = *(mol.getOrbitalsX())[state];
+    auto &Y = *(mol.getOrbitalsY())[state];
 
     auto success_x = false;
     X = orbital::param_copy(Phi);
@@ -894,12 +910,16 @@ bool driver::rsp::guess_orbitals(const json &json_guess, Molecule &mol) {
 }
 
 void driver::rsp::write_orbitals(const json &json_orbs, Molecule &mol, bool dynamic) {
-    auto &X = mol.getOrbitalsX();
+    driver::rsp::write_orbitals(json_orbs, mol, dynamic, 0);
+}
+
+void driver::rsp::write_orbitals(const json &json_orbs, Molecule &mol, bool dynamic, int state) {
+    auto &X = *((mol.getOrbitalsX())[state]);
     orbital::save_orbitals(X, json_orbs["file_x_p"], SPIN::Paired);
     orbital::save_orbitals(X, json_orbs["file_x_a"], SPIN::Alpha);
     orbital::save_orbitals(X, json_orbs["file_x_b"], SPIN::Beta);
     if (dynamic) {
-        auto &Y = mol.getOrbitalsY();
+        auto &Y = *((mol.getOrbitalsY())[state]);
         orbital::save_orbitals(Y, json_orbs["file_y_p"], SPIN::Paired);
         orbital::save_orbitals(Y, json_orbs["file_y_a"], SPIN::Alpha);
         orbital::save_orbitals(Y, json_orbs["file_y_b"], SPIN::Beta);
@@ -912,13 +932,17 @@ void driver::rsp::write_orbitals(const json &json_orbs, Molecule &mol, bool dyna
  * input section, and will compute all properties which are present in this input.
  */
 void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir, double omega) {
+    driver::rsp::calc_properties(json_prop, mol, dir, omega, 0);
+}
+
+void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir, double omega, int state) {
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Computing linear response properties");
 
     auto &Phi = mol.getOrbitals();
-    auto &X = mol.getOrbitalsX();
-    auto &Y = mol.getOrbitalsY();
+    auto &X = *((mol.getOrbitalsX())[state]);
+    auto &Y = *((mol.getOrbitalsY())[state]);
 
     if (json_prop.contains("polarizability")) {
         t_lap.start();
@@ -986,10 +1010,14 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
  * perturbation order of the operators.
  */
 void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order) {
+    driver::build_fock_operator(json_fock, mol, F, order, 0);
+}
+
+void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, int state) {
     auto &nuclei = mol.getNuclei();
     auto Phi_p = mol.getOrbitals_p();
-    auto X_p = mol.getOrbitalsX_p();
-    auto Y_p = mol.getOrbitalsY_p();
+    auto X_p = mol.getOrbitalsX_p(state);
+    auto Y_p = mol.getOrbitalsY_p(state);
 
     ///////////////////////////////////////////////////////////
     ///////////////      Momentum Operator    /////////////////

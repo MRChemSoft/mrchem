@@ -23,6 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <memory>
 #include <vector>
 
 #pragma once
@@ -53,6 +54,7 @@ using QMFunctionVector = std::vector<QMFunction>;
 class Orbital;
 using OrbitalChunk = std::vector<std::tuple<int, Orbital>>;
 using OrbitalVector = std::vector<Orbital>;
+using NStatesVector = std::vector<std::shared_ptr<OrbitalVector>>;
 
 class Density;
 

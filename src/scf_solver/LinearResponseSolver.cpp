@@ -69,8 +69,8 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
     KAIN kain_x(this->history);
     KAIN kain_y(this->history);
     OrbitalVector &Phi_0 = mol.getOrbitals();
-    OrbitalVector &X_n = mol.getOrbitalsX();
-    OrbitalVector &Y_n = mol.getOrbitalsY();
+    OrbitalVector &X_n = *((mol.getOrbitalsX())[0]);
+    OrbitalVector &Y_n = *((mol.getOrbitalsY())[0]);
     ComplexMatrix &F_mat_0 = mol.getFockMatrix();
     ComplexMatrix F_mat_x = F_mat_0 + omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
     ComplexMatrix F_mat_y = F_mat_0 - omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());

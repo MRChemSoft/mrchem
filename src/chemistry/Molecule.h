@@ -98,8 +98,8 @@ public:
     const auto &getFockMatrix() const { return this->fock_matrix; }
 
     auto getOrbitals_p() const { return this->orbitals_0; }
-    auto getOrbitalsX_p() const { return this->orbitals_x; }
-    auto getOrbitalsY_p() const { return this->orbitals_y; }
+    auto getOrbitalsX_p(int state) const { return ((*(this->orbitals_x))[state]); }
+    auto getOrbitalsY_p(int state) const { return ((*(this->orbitals_y))[state]); }
     auto getCavity_p() const { return this->cavity; }
 
     nlohmann::json json() const;
@@ -134,8 +134,8 @@ protected:
 
     std::shared_ptr<Cavity> cavity{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_0{std::make_shared<OrbitalVector>()};
-    std::shared_ptr<OrbitalVector> orbitals_x{nullptr};
-    std::shared_ptr<OrbitalVector> orbitals_y{nullptr};
+    std::shared_ptr<NStatesVector> orbitals_x{nullptr};
+    std::shared_ptr<NStatesVector> orbitals_y{nullptr};
 
     // Properties
     SCFEnergy energy{};

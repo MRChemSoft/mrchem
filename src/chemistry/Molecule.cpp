@@ -75,10 +75,10 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
 
 void Molecule::initPerturbedOrbitals(bool dynamic) {
     if (dynamic) {
-        this->orbitals_x = std::make_shared<OrbitalVector>();
-        this->orbitals_y = std::make_shared<OrbitalVector>();
+        this->orbitals_x = std::make_shared<NStatesVector>();
+        this->orbitals_y = std::make_shared<NStatesVector>();
     } else {
-        this->orbitals_x = std::make_shared<OrbitalVector>();
+        this->orbitals_x = std::make_shared<NStatesVector>();
         this->orbitals_y = this->orbitals_x;
     }
 }

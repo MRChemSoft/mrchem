@@ -40,11 +40,12 @@ class FockBuilder;
 
 class ExcitedStatesSolver final : public SCFSolver {
 public:
-    explicit ExcitedStatesSolver(bool dyn = false)
-            : dynamic(dyn) {}
+    explicit ExcitedStatesSolver(bool dyn = false, int N_states = 1)
+            : dynamic(dyn)
+            , n_states(N_states) {}
     ~ExcitedStatesSolver() override = default;
 
-    nlohmann::json optimize(Molecule &mol, FockBuilder &F_0, FockBuilder &F_1);
+    nlohmann::json optimize(Molecule &mol, FockBuilder &F_0, std::vector<FockBuilder> &F_1_vec);
     void setOrthPrec(double prec) { this->orth_prec = prec; }
     void setCheckpointFile(const std::string &file_x, const std::string &file_y) {
         this->chkFileX = file_x;
@@ -53,11 +54,12 @@ public:
 
 protected:
     const bool dynamic;
+    const int n_states;
     double orth_prec{mrcpp::MachineZero};
     std::string chkFileX; ///< Name of checkpoint file
     std::string chkFileY; ///< Name of checkpoint file
 
-    double computeOmega(OrbitalVector &Phi_0, OrbitalVector &X, FockBuilder &F_0, RankZeroOperator &V_1);
+    double computeOmega(OrbitalVector &Phi_0, OrbitalVector &X, FockBuilder &F_0, RankZeroOperator &V_1, ComplexMatrix &F_mat_0);
     double updateOmega(OrbitalVector &X_n, OrbitalVector &X_np1);
     void printProperty() const;
     void printParameters(double omega, const std::string &oper) const;
