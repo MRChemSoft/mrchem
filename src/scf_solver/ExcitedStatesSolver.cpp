@@ -118,13 +118,13 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
 
     std::vector<double> omega_n;
     std::vector<double> domega_n;
-    auto one_omega_n = computeOmega(Phi_0, X_n, F_0, V_1);
+    auto one_omega_n = computeOmega(Phi_0, *(X_n_vec[0]), F_0, V_1_vec[0], F_mat_0);
     auto one_domega_n = omega_n;
     omega_n.push_back(one_omega_n); // trial energies for now
-    omega_n.push_back(one_omega_n+0.01);
+    omega_n.push_back(one_omega_n + 0.01);
 
     domega_n.push_back(one_omega_n);
-    domega_n.push_back(one_omega_n+0.01);
+    domega_n.push_back(one_omega_n + 0.01);
 
     // auto omega_n = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0);
 
@@ -178,14 +178,14 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
                 mrcpp::print::footer(2, t_arg, 2);
                 if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
-            // Apply Helmholtz operators
-            OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
-            Psi.clear();
-            // Projecting (1 - rho_0)X
-            mrcpp::print::header(2, "Projecting occupied space");
-            t_lap.start();
-            orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
-            orbital::orthogonalize(this->orth_prec, X_np1);
+                // Apply Helmholtz operators
+                OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
+                Psi.clear();
+                // Projecting (1 - rho_0)X
+                mrcpp::print::header(2, "Projecting occupied space");
+                t_lap.start();
+                orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
+                orbital::orthogonalize(this->orth_prec, X_np1);
 
                 mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
                 mrcpp::print::footer(2, t_lap, 2);
@@ -197,21 +197,21 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
                 if (update_omega) { domega_n[i] = updateOmega(X_n, X_np1); }
                 errors_x = orbital::get_norms(dX_n);
 
-            // Compute KAIN update:
-            kain_x.accelerate(orb_prec, X_n, dX_n);
+                // Compute KAIN update:
+                kain_x.accelerate(orb_prec, X_n, dX_n);
 
-            if (use_harrison) {
-                auto V_0_x = V_0(X_n);
-                auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
-                X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
-                domega_n = -orbital::dot(left_hand, dX_n).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
-            }
+                if (use_harrison) {
+                    auto V_0_x = V_0(X_n);
+                    auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
+                    X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
+                    domega_n[i] = -orbital::dot(left_hand, dX_n).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
+                }
 
-            Psi.clear();
+                Psi.clear();
 
-            // Prepare for next iteration
-            X_n = orbital::add(1.0, X_n, 1.0, dX_n);
-            // orbital::orthogonalize(this->orth_prec, X_n);
+                // Prepare for next iteration
+                X_n = orbital::add(1.0, X_n, 1.0, dX_n);
+                // orbital::orthogonalize(this->orth_prec, X_n);
 
                 // Setup perturbed Fock operator (including V_1)
                 V_1.clear();
