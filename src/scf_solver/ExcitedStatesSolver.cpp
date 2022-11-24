@@ -81,9 +81,9 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
     RankZeroOperator V_0 = F_0.potential();
     RankZeroOperator V_1 = F_1.potential();
-    
-    bool use_harrison = false;  // use harrison´s update scheme for the excitation energies
-    bool update_omega = false;  // use Kottmann´s update scheme for the excitation energies
+
+    bool use_harrison = false; // use harrison´s update scheme for the excitation energies
+    bool update_omega = false; // use Kottmann´s update scheme for the excitation energies
 
     double err_o = 1.0;
     double err_t = 1.0;
@@ -157,11 +157,11 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
             // Apply Helmholtz operators
             OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
-           
+
             // Projecting (1 - rho_0)X
             mrcpp::print::header(2, "Projecting occupied space");
             t_lap.start();
-            
+
             orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
             orbital::orthogonalize(this->orth_prec, X_np1);
 
@@ -172,25 +172,20 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             // orbital::orthogonalize(this->orth_prec, X_np1); // X_n orbitals should be orthogonal wrt. each other
             // before next iteration, maybe do this before kain acceleration
             // Compute update and errors
-            
-            if (update_omega) {
-                domega_n = updateOmega(X_n, X_np1);
-            }
+
+            if (update_omega) { domega_n = updateOmega(X_n, X_np1); }
 
             OrbitalVector dX_n = orbital::add(1.0, X_np1, -1.0, X_n);
             errors_x = orbital::get_norms(dX_n);
 
-           
-            
             // Compute KAIN update:
             kain_x.accelerate(orb_prec, X_n, dX_n);
-            
 
             if (use_harrison) {
                 auto V_0_x = V_0(X_n);
                 auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
                 X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
-                domega_n = - orbital::dot(left_hand, dX_n).sum().real()/orbital::dot(X_np1, X_np1).sum().real();
+                domega_n = -orbital::dot(left_hand, dX_n).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
             }
 
             Psi.clear();
@@ -200,7 +195,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             // orbital::orthogonalize(this->orth_prec, X_n);
 
             // Setup perturbed Fock operator (including V_1)
-            V_1.setup(orb_prec); 
+            V_1.setup(orb_prec);
 
             // Compute omega
             mrcpp::print::header(2, "Computing frequency update");
