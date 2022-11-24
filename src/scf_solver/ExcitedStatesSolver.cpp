@@ -337,9 +337,9 @@ double ExcitedStatesSolver::computeOmega(OrbitalVector &Phi, OrbitalVector &X, F
     std::cout << "vector of <x_i|x_i>: " << xi_t_xi_vec << "\n";
     auto ei_vec = F_0(Phi, Phi).diagonal(); // could probably append X to Phi_0 for this and then remove them after the computation
     std::cout << "vector of e_i = <phi_i|F_0|phi_i>: " << ei_vec << "\n";
-    auto sum_ei_xi_t_xi = ei_vec.dot(xi_t_xi_vec);
+    auto sum_ei_xi_t_xi = ei_vec.dot(xi_t_xi_vec).real();
     std::cout << "sum_i e_i <x_i|x_i>: " << sum_ei_xi_t_xi << "\n";
-    auto xi_t_F_0_xi_vec = F_0(X, X).diagonal();
+    auto xi_t_F_0_xi_vec = F_0(X, X).trace().real();
     std::cout << " vector of <x_i|F_0|x_i>: " << xi_t_F_0_xi_vec << "\n";
     OrbitalVector Psi = V_1(Phi);
     std::cout << " Psi: " << Psi[0].integrate().real() << "\n";
@@ -370,17 +370,17 @@ double ExcitedStatesSolver::computeOmega(OrbitalVector &Phi, OrbitalVector &X, F
     /* auto xi_t_Q_Psi_vec_manual = orbital::dot(X, Q_Psi_vec);
     std::cout << " manual XQPsi: " << xi_t_Q_Psi_vec_manual << "\n"; */
 
-    auto xi_t_Q_Psi_vec = orbital::dot(X, Psi);
+    auto xi_t_Q_Psi_vec = orbital::dot(X, Psi).sum().real();
     std::cout << " XQPsi: " << xi_t_Q_Psi_vec << "\n";
 
-    auto F_rr = xi_t_F_0_xi_vec.sum() + xi_t_Q_Psi_vec.sum();
+    auto F_rr = xi_t_F_0_xi_vec + xi_t_Q_Psi_vec;
     std::cout << "F_rr  " << F_rr << "\n";
-    auto X_dot_X = xi_t_xi_vec.sum();
+    auto X_dot_X = xi_t_xi_vec.sum().real();
     std::cout << "X_dot_X  " << X_dot_X << "\n";
     auto omega = (F_rr - sum_ei_xi_t_xi) / X_dot_X;
     std::cout << "calculated omega: " << omega << "\n";
 
-    return omega.real();
+    return omega;
 }
 
 double ExcitedStatesSolver::updateOmega(OrbitalVector &X_n, OrbitalVector &X_np1) {
