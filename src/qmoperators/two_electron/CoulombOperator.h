@@ -61,7 +61,6 @@ public:
     }
     CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false) {
         potential = std::make_shared<CoulombPotentialD2>(P, Phi, X, Y, mpi_share);
-
         // Invoke operator= to assign *this operator
         RankZeroOperator &J = (*this);
         J = potential;

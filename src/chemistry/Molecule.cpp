@@ -73,13 +73,21 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
     readCoordinateString(coord_str);
 }
 
-void Molecule::initPerturbedOrbitals(bool dynamic) {
-    if (dynamic) {
+void Molecule::initPerturbedOrbitals(bool dynamic, int n_states) {
+
+    for (auto i = 0; i < n_states; i++) {
         this->orbitals_x = std::make_shared<NStatesVector>();
         this->orbitals_y = std::make_shared<NStatesVector>();
-    } else {
-        this->orbitals_x = std::make_shared<NStatesVector>();
-        this->orbitals_y = this->orbitals_x;
+        if (dynamic) {
+            auto orbital_x = std::make_shared<OrbitalVector>();
+            auto orbital_y = std::make_shared<OrbitalVector>();
+            (*(this->orbitals_x)).push_back(orbital_x);
+            (*(this->orbitals_y)).push_back(orbital_y);
+        } else {
+            auto orbital_x = std::make_shared<OrbitalVector>();
+            (*(this->orbitals_x)).push_back(orbital_x);
+            (*(this->orbitals_y)).push_back(orbital_x);
+        }
     }
 }
 

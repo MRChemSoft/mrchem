@@ -98,8 +98,8 @@ public:
     const auto &getFockMatrix() const { return this->fock_matrix; }
 
     auto getOrbitals_p() const { return this->orbitals_0; }
-    auto getOrbitalsX_p(int state) const { return ((*(this->orbitals_x))[state]); }
-    auto getOrbitalsY_p(int state) const { return ((*(this->orbitals_y))[state]); }
+    auto getOrbitalsX_p() const { return this->orbitals_x; }
+    auto getOrbitalsY_p() const { return this->orbitals_y; }
     auto getCavity_p() const { return this->cavity; }
 
     nlohmann::json json() const;
@@ -107,7 +107,7 @@ public:
     void printEnergies(const std::string &txt) const;
     void printProperties() const;
 
-    void initPerturbedOrbitals(bool dynamic);
+    void initPerturbedOrbitals(bool dynamic, int n_states = 1);
     void initCavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, const std::vector<double> &alphas, const std::vector<double> &betas, const std::vector<double> &sigmas);
 
     SCFEnergy &getSCFEnergy() { return this->energy; }

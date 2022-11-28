@@ -234,19 +234,15 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
 json driver::scf::run(const json &json_scf, Molecule &mol) {
     // print_utils::headline(0, "Computing Ground State Wavefunction");
     json json_out = {{"success", true}};
-
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
-
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
     FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
     driver::build_fock_operator(json_fock, mol, F, 0);
-
     // Pre-compute internal exchange contributions
     if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
-
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
@@ -259,7 +255,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         json_out["success"] = false;
         return json_out;
     }
-
     ///////////////////////////////////////////////////////////
     //////////   Optimizing Ground State Orbitals  ////////////
     ///////////////////////////////////////////////////////////
@@ -283,7 +278,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
-
         GroundStateSolver solver;
         solver.setHistory(kain);
         solver.setRotation(rotation);
@@ -306,13 +300,11 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////   Computing Ground State Properties   //////////
     ///////////////////////////////////////////////////////////
-
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol);
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
-
     return json_out;
 }
 
@@ -740,16 +732,14 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
     if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
-
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////
     ///////////////////////////////////////////////////////////
+    auto N_states = 1;
 
     // auto omega = json_rsp["frequency"];
     auto dynamic = false; // json_rsp["dynamic"];
-    mol.initPerturbedOrbitals(dynamic);
-
-    auto N_states = 1;
+    mol.initPerturbedOrbitals(dynamic, N_states);
 
     std::vector<FockBuilder> F_1_vec; // make into a matrix for the eigenvalue problem
     const auto &json_fock = json_rsp["fock_operator"];
@@ -758,7 +748,6 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         driver::build_fock_operator(json_fock, mol, F_1, 1, i);
         F_1_vec.push_back(F_1);
     }
-
     const auto &json_pert = json_rsp["perturbation"];
     // auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
     json_out["perturbation"] = json_pert["operator"];
@@ -772,7 +761,6 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
-
     const auto &json_guess = json_comp["initial_guess"];
     for (auto i = 0; i < N_states; i++) { json_out["success"] = rsp::guess_orbitals(json_guess, mol, i); }
 
@@ -825,8 +813,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     F_0.clear();
     mpi::barrier(mpi::comm_orb);
     for (auto i = 0; i < N_states; i++) {
-        mol.getOrbitalsX_p(0).reset(); // Release shared_ptr
-        mol.getOrbitalsY_p(0).reset(); // Release shared_ptr
+        (*(mol.getOrbitalsX_p()))[i].reset(); // Release shared_ptr
+        (*(mol.getOrbitalsY_p()))[i].reset(); // Release shared_ptr
     }
 
     return json_out;
@@ -1014,10 +1002,12 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 }
 
 void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, int state) {
+
     auto &nuclei = mol.getNuclei();
+
     auto Phi_p = mol.getOrbitals_p();
-    auto X_p = mol.getOrbitalsX_p(state);
-    auto Y_p = mol.getOrbitalsY_p(state);
+    auto X_p = mol.getOrbitalsX_p();
+    auto Y_p = mol.getOrbitalsY_p();
 
     ///////////////////////////////////////////////////////////
     ///////////////      Momentum Operator    /////////////////
@@ -1061,7 +1051,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
             F.getCoulombOperator() = J_p;
         } else if (order == 1) {
-            auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
+            auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, (*(X_p))[state], (*(Y_p))[state], shared_memory);
             F.getCoulombOperator() = J_p;
         } else {
             MSG_ABORT("Invalid perturbation order");
@@ -1071,7 +1061,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     //////////////////   Reaction Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("reaction_operator")) {
-
         // preparing Reaction Operator
         auto poisson_prec = json_fock["reaction_operator"]["poisson_prec"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
@@ -1123,7 +1112,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, shared_memory);
             F.getXCOperator() = XC_p;
         } else if (order == 1) {
-            auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, X_p, Y_p, shared_memory);
+            auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, (*(X_p))[state], (*(Y_p))[state], shared_memory);
             F.getXCOperator() = XC_p;
         } else {
             MSG_ABORT("Invalid perturbation order");
@@ -1140,7 +1129,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         } else {
-            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
+            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, (*(X_p))[state], (*(Y_p))[state], exchange_prec);
             F.getExchangeOperator() = K_p;
         }
     }
