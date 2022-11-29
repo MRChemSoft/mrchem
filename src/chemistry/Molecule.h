@@ -86,20 +86,20 @@ public:
 
     auto &getNuclei() { return this->nuclei; }
     auto &getOrbitals() { return *this->orbitals_0; }
-    auto &getOrbitalsX() { return *this->orbitals_x; }
-    auto &getOrbitalsY() { return *this->orbitals_y; }
+    auto &getOrbitalsX(int state = 0) { return *(this->orbitals_x[state]); }
+    auto &getOrbitalsY(int state = 0) { return *(this->orbitals_y[state]); }
     auto &getCavity() { return *this->cavity; }
     auto &getFockMatrix() { return this->fock_matrix; }
 
     const auto &getNuclei() const { return this->nuclei; }
     const auto &getOrbitals() const { return *this->orbitals_0; }
-    const auto &getOrbitalsX() const { return *this->orbitals_x; }
-    const auto &getOrbitalsY() const { return *this->orbitals_y; }
+    const auto &getOrbitalsX(int state = 0) const { return *(this->orbitals_x[state]); }
+    const auto &getOrbitalsY(int state = 0) const { return *(this->orbitals_y[state]); }
     const auto &getFockMatrix() const { return this->fock_matrix; }
 
     auto getOrbitals_p() const { return this->orbitals_0; }
-    auto getOrbitalsX_p() const { return this->orbitals_x; }
-    auto getOrbitalsY_p() const { return this->orbitals_y; }
+    auto getOrbitalsX_p(int state = 0) const { return this->orbitals_x[state]; }
+    auto getOrbitalsY_p(int state = 0) const { return this->orbitals_y[state]; }
     auto getCavity_p() const { return this->cavity; }
 
     nlohmann::json json() const;
@@ -134,8 +134,8 @@ protected:
 
     std::shared_ptr<Cavity> cavity{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_0{std::make_shared<OrbitalVector>()};
-    std::shared_ptr<NStatesVector> orbitals_x{nullptr};
-    std::shared_ptr<NStatesVector> orbitals_y{nullptr};
+    NStatesVector orbitals_x;
+    NStatesVector orbitals_y;
 
     // Properties
     SCFEnergy energy{};

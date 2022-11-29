@@ -67,7 +67,7 @@ namespace mrchem {
  *  Only one state is optimized for now. random guess might help to get more states out
  *
  */
-json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<FockBuilder> &F_1_vec) {
+json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder &F_1, int state) {
     Timer t_tot;
     json json_out;
     double err_o = 1.0;
@@ -78,21 +78,18 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
     KAIN kain_y(this->history);
     OrbitalVector &Phi_0 = mol.getOrbitals();
 
-    NStatesVector &X_n_vec = mol.getOrbitalsX();
+    OrbitalVector &X_n = mol.getOrbitalsX(state);
 
     ComplexMatrix &F_mat_0 = mol.getFockMatrix();
 
     RankZeroOperator V_0 = F_0.potential();
-    std::vector<RankZeroOperator> V_1_vec;
     bool use_harrison = false; // use harrison´s update scheme for the excitation energies
     bool update_omega = false; // use Kottmann´s update scheme for the excitation energies
 
     double orb_prec = adjustPrecision(err_o);
-    for (auto i = 0; i < n_states; i++) { // so much repeated code
-        RankZeroOperator V_1 = F_1_vec[i].potential();
-        V_1_vec.push_back(V_1);
-        V_1.setup(orb_prec);
-    }
+
+    RankZeroOperator V_1 = F_1.potential();
+    V_1.setup(orb_prec);
 
     this->error.push_back(err_t);
 
@@ -102,10 +99,9 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
     DoubleVector errors_y = DoubleVector::Zero(Phi_0.size());
 
     // orthogonalize all orbitals wrt. the ground state and each other.
-    for (auto i = 0; i < n_states; i++) {
-        orbital::orthogonalize(this->orth_prec, *(X_n_vec[i]), Phi_0);
-        orbital::orthogonalize(this->orth_prec, *(X_n_vec[i]));
-    }
+
+    orbital::orthogonalize(this->orth_prec, X_n, Phi_0);
+    orbital::orthogonalize(this->orth_prec, X_n);
     // orbital::orthogonalize(this->orth_prec, Y_n, Phi_0);
     // orbital::orthogonalize(this->orth_prec, Y_n);
 
@@ -116,23 +112,14 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
 
     // compute initial omega
 
-    std::vector<double> omega_n;
-    std::vector<double> domega_n;
-    auto one_omega_n = computeOmega(Phi_0, *(X_n_vec[0]), F_0, V_1_vec[0], F_mat_0);
-    auto one_domega_n = omega_n;
-    omega_n.push_back(one_omega_n); // trial energies for now
-    omega_n.push_back(one_omega_n + 0.01);
+    double omega_n = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0);
+    double domega_n = omega_n;
 
-    domega_n.push_back(one_omega_n);
-    domega_n.push_back(one_omega_n + 0.01);
+    this->property.push_back(omega_n);
 
-    // auto omega_n = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0);
-
-    this->property.push_back(omega_n[0]);
-
-    printParameters(omega_n[0], F_1_vec[0].perturbation().name()); // have to change a bit this here
+    printParameters(omega_n, F_1.perturbation().name()); // have to change a bit this here
     if (plevel < 1) {
-        printConvergenceHeader("State 1 energy");
+        printConvergenceHeader("Excited state energy");
         if (plevel < 1) printConvergenceRow(0);
     }
 
@@ -147,132 +134,124 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
         double orb_prec = adjustPrecision(err_o);
         double helm_prec = getHelmholtzPrec();
 
-        std::vector<HelmholtzVector> H_x_vec;
-        for (auto i = 0; i < n_states; i++) {
-            ComplexMatrix F_mat_x = F_mat_0 + omega_n[0] * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
+        ComplexMatrix F_mat_x = F_mat_0 + omega_n * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
 
-            // Setup Helmholtz operators (fixed, based on unperturbed system)
-            HelmholtzVector H_x(helm_prec, F_mat_x.real().diagonal());
-            H_x_vec.push_back(H_x);
+        // Setup Helmholtz operators (fixed, based on unperturbed system)
+        HelmholtzVector H_x(helm_prec, F_mat_x.real().diagonal());
+        auto dot_of_X = orbital::dot(X_n, X_n).sum();
 
-            auto dot_of_X = orbital::dot(*(X_n_vec[i]), *(X_n_vec[i])).sum();
-            std::cout << __FILE__ << " " << __LINE__ << ": som of the dot product <x_i|x_i>: " << dot_of_X << "\n";
+        RankZeroOperator V_1 = F_1.potential();
 
-            OrbitalVector &X_n = *(X_n_vec[i]);
-            RankZeroOperator V_1 = F_1_vec[i].potential();
+        if (dynamic and plevel == 1) mrcpp::print::separator(1, '-');
 
-            if (dynamic and plevel == 1) mrcpp::print::separator(1, '-');
+        { // Iterate X orbitals
+            // Compute argument: psi_i = sum_i F_0*x_j + (1 - rho_0)V_1(phi_i)
+            Timer t_arg;
+            mrcpp::print::header(2, "Computing Helmholtz argument");
+            t_lap.start();
+            V_1.setup(orb_prec);
+            OrbitalVector Psi = V_1(Phi_0);
+            mrcpp::print::time(2, "Applying V_1", t_lap);
+            t_lap.start();
+            orbital::orthogonalize(this->orth_prec, Psi, Phi_0);
+            mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
-            { // Iterate X orbitals
-                // Compute argument: psi_i = sum_i F_0*x_j + (1 - rho_0)V_1(phi_i)
-                Timer t_arg;
-                mrcpp::print::header(2, "Computing Helmholtz argument");
-                t_lap.start();
-                V_1.setup(orb_prec);
-                OrbitalVector Psi = V_1(Phi_0);
-                mrcpp::print::time(2, "Applying V_1", t_lap);
-                t_lap.start();
-                orbital::orthogonalize(this->orth_prec, Psi, Phi_0);
-                mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+            mrcpp::print::footer(2, t_arg, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
 
-                mrcpp::print::footer(2, t_arg, 2);
-                if (plevel == 1) mrcpp::print::time(1, "Computing Helmholtz argument", t_arg);
+            // Apply Helmholtz operators
+            OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
+            Psi.clear();
+            // Projecting (1 - rho_0)X
+            mrcpp::print::header(2, "Projecting occupied space");
+            t_lap.start();
+            orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
+            orbital::orthogonalize(this->orth_prec, X_np1);
 
-                // Apply Helmholtz operators
-                OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
-                Psi.clear();
-                // Projecting (1 - rho_0)X
-                mrcpp::print::header(2, "Projecting occupied space");
-                t_lap.start();
-                orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
-                orbital::orthogonalize(this->orth_prec, X_np1);
+            mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
+            mrcpp::print::footer(2, t_lap, 2);
 
-                mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
-                mrcpp::print::footer(2, t_lap, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
 
-                if (plevel == 1) mrcpp::print::time(1, "Projecting occupied space", t_lap);
+            // Compute update and errors
+            OrbitalVector dX_n = orbital::add(1.0, X_np1, -1.0, X_n);
+            if (update_omega) { domega_n = updateOmega(X_n, X_np1); }
+            errors_x = orbital::get_norms(dX_n);
 
-                // Compute update and errors
-                OrbitalVector dX_n = orbital::add(1.0, X_np1, -1.0, X_n);
-                if (update_omega) { domega_n[i] = updateOmega(X_n, X_np1); }
-                errors_x = orbital::get_norms(dX_n);
+            // Compute KAIN update:
+            kain_x.accelerate(orb_prec, X_n, dX_n);
 
-                // Compute KAIN update:
-                kain_x.accelerate(orb_prec, X_n, dX_n);
-
-                if (use_harrison) {
-                    auto V_0_x = V_0(X_n);
-                    auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
-                    X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
-                    domega_n[i] = -orbital::dot(left_hand, dX_n).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
-                }
-
-                Psi.clear();
-
-                // Prepare for next iteration
-                X_n = orbital::add(1.0, X_n, 1.0, dX_n);
-                // orbital::orthogonalize(this->orth_prec, X_n);
-
-                // Setup perturbed Fock operator (including V_1)
-                V_1.clear();
-                V_1.setup(orb_prec); // do the x orbitals being uodated change this? it obviously should, but check
-
-                // Compute omega
-                mrcpp::print::header(2, "Computing frequency update");
-                t_lap.start();
-
-                auto omega_np1 = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0); /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */
-                domega_n[i] = omega_np1 - omega_n[i];                         // maybe I should do this before normalization
-                omega_n[i] += domega_n[i];
-                mrcpp::print::footer(2, t_lap, 2);
-                if (plevel == 1) mrcpp::print::time(1, "Computing frequency update", t_lap);
-                this->property.push_back(omega_n[0]);
-                X_np1.clear();
-
-                // Save checkpoint file
-                if (this->checkpoint) orbital::save_orbitals(X_n, this->chkFileX);
+            if (use_harrison) {
+                auto V_0_x = V_0(X_n);
+                auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
+                X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
+                domega_n = -orbital::dot(left_hand, dX_n).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
             }
 
-            // Compute errors
-            err_o = std::max(errors_x.maxCoeff(), errors_y.maxCoeff());
-            err_t = std::sqrt(errors_x.dot(errors_x) + errors_y.dot(errors_y));
-            json_cycle["mo_residual"] = err_t;
-            // Collect convergence data
-            this->error.push_back(err_t);
-            double err_w = domega_n[0];
-            converged = checkConvergence(err_o, err_w);
-            json_cycle["frequency"] = omega_n;
-            json_cycle["frequency_update"] = err_w;
+            Psi.clear();
 
-            // Finalize SCF cycle
-            if (plevel < 1) printConvergenceRow(nIter + 1);
-            printOrbitals(orbital::get_norms(X_n), errors_x, X_n, 1);
-            mrcpp::print::separator(1, '-');
-            printResidual(err_t, converged);
-            mrcpp::print::separator(2, '=', 2);
-            printProperty();
-            printMemory();
-            t_scf.stop();
-            json_cycle["wall_time"] = t_scf.elapsed();
-            mrcpp::print::footer(1, t_scf, 2, '#');
-            mrcpp::print::separator(2, ' ', 2);
-            json_out["cycles"].push_back(json_cycle);
-            if (converged) {
-                mrcpp::print::header(2, "Computing frequency");
-                t_lap.start();
-                omega_n[i] = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0); /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */
-                mrcpp::print::footer(2, t_lap, 2);
-                if (plevel == 1) mrcpp::print::time(1, "Computing frequency", t_lap);
-                this->property.push_back(omega_n[0]);
-                V_1.clear();
-                break;
-            }
-            // Clear perturbed Fock operator
+            // Prepare for next iteration
+            X_n = orbital::add(1.0, X_n, 1.0, dX_n);
+            // orbital::orthogonalize(this->orth_prec, X_n);
+
+            // Setup perturbed Fock operator (including V_1)
             V_1.clear();
+            V_1.setup(orb_prec); // do the x orbitals being uodated change this? it obviously should, but check
+
+            // Compute omega
+            mrcpp::print::header(2, "Computing frequency update");
+            t_lap.start();
+
+            auto omega_np1 = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0); /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */
+            domega_n = omega_np1 - omega_n;                               // maybe I should do this before normalization
+            omega_n += domega_n;
+            mrcpp::print::footer(2, t_lap, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Computing frequency update", t_lap);
+            this->property.push_back(omega_n);
+            X_np1.clear();
+
+            // Save checkpoint file
+            if (this->checkpoint) orbital::save_orbitals(X_n, this->chkFileX);
         }
+
+        // Compute errors
+        err_o = std::max(errors_x.maxCoeff(), errors_y.maxCoeff());
+        err_t = std::sqrt(errors_x.dot(errors_x) + errors_y.dot(errors_y));
+        json_cycle["mo_residual"] = err_t;
+        // Collect convergence data
+        this->error.push_back(err_t);
+        double err_w = domega_n;
+        converged = checkConvergence(err_o, err_w);
+        json_cycle["frequency"] = omega_n;
+        json_cycle["frequency_update"] = err_w;
+
+        // Finalize SCF cycle
+        if (plevel < 1) printConvergenceRow(nIter + 1);
+        printOrbitals(orbital::get_norms(X_n), errors_x, X_n, 1);
+        mrcpp::print::separator(1, '-');
+        printResidual(err_t, converged);
+        mrcpp::print::separator(2, '=', 2);
+        printProperty();
+        printMemory();
+        t_scf.stop();
+        json_cycle["wall_time"] = t_scf.elapsed();
+        mrcpp::print::footer(1, t_scf, 2, '#');
+        mrcpp::print::separator(2, ' ', 2);
+        json_out["cycles"].push_back(json_cycle);
+        if (converged) {
+            mrcpp::print::header(2, "Computing frequency");
+            t_lap.start();
+            omega_n = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0); /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */
+            mrcpp::print::footer(2, t_lap, 2);
+            if (plevel == 1) mrcpp::print::time(1, "Computing frequency", t_lap);
+            this->property.push_back(omega_n);
+            V_1.clear();
+            break;
+        }
+        // Clear perturbed Fock operator
+        V_1.clear();
     }
     // Compute property
-
     printConvergence(converged, "Excited states");
     reset();
     json_out["frequency"] = omega_n;
@@ -283,88 +262,20 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, std::vector<
 
 /** @brief consider only diagonals of the A and S matrices, first for single state. maybe only ok for tda */
 double ExcitedStatesSolver::computeOmega(OrbitalVector &Phi, OrbitalVector &X, FockBuilder &F_0, RankZeroOperator &V_1, ComplexMatrix &F_mat_0) {
-    /*
-    std::cout << "diagonal of F_mat_0 " << F_mat_0.diagonal() << "\n";
-    auto &p_op = F_0.momentum();
-    auto V_0 = F_0.potential();
-
-
-    auto sum_x_T_x = qmoperator::calc_kinetic_trace(p_op, X_n);
-
-    auto V_0_x = V_0(X_n);
-    auto sum_x_V_0_x = orbital::dot(X_n, V_0_x).sum();
-    auto sum_f_0_bb = sum_x_T_x + sum_x_V_0_x;
-    auto f_0_bb = F_0(X_n, X_n);         // expectation value of the x orbitals with the unperturbed fock operator creates a Nocc x Nocc matrix
-
-    auto f_0_ii = F_0(Phi_0, Phi_0);
-    std::cout << "f_0_ii " << f_0_ii << "\n";
-     std::cout << "f_0_bb " << f_0_bb << "\n";
-    std::cout << "size of X_n " << X_n.size() << "\n";
-    auto x_t_x = orbital::dot(X_n, X_n); // each i-th element is \langle x_i | x_i \rangle
-    auto e_x_t_x = F_mat_0.diagonal().dot(x_t_x);       // orbital energies for the fround state orbitals
-    RankZeroOperator V_1 = F_1.potential(); // perturbed potential
-    OrbitalVector Psi = V_1(Phi_0);
-    orbital::orthogonalize(this->orth_prec, Psi, Phi_0);
-    auto f_1_b_0 = orbital::dot(X_n, Psi);
-
-    std::cout << "diagonal of F_mat_0 " << F_mat_0.diagonal() << "\n";
-    std::cout << "trace of f_0_bb " << f_0_bb.trace() << "\n";
-    std::cout << "sum_f_0_bb " << sum_f_0_bb << "\n";
-    std::cout << "sum of f_1_b_0 " << f_1_b_0.sum() << "\n";
-    std::cout << "e_x_t_x " << e_x_t_x << "\n";
-    std::cout << "x_t_x " << x_t_x << "\n";
-
-    auto omega = ((sum_f_0_bb + f_1_b_0.sum() - e_x_t_x) / x_t_x.sum()).real();
-    std::cout << __FILE__ << __LINE__ << " digonal of fock matrix " << F_mat_0.diagonal() << "\n";
-    std::cout << "omega  " << omega << "\n"; */
     // complexvector containing all terms <x_i|x_i>
-    MSG_INFO("\ncomputing omega\n")
     auto xi_t_xi_vec = orbital::dot(X, X);
-    std::cout << "vector of <x_i|x_i>: " << xi_t_xi_vec << "\n";
     auto ei_vec = F_mat_0.diagonal(); // could probably append X to Phi_0 for this and then remove them after the computation
-    std::cout << "vector of e_i = <phi_i|F_0|phi_i>: " << ei_vec << "\n";
     auto sum_ei_xi_t_xi = ei_vec.dot(xi_t_xi_vec).real();
-    std::cout << "sum_i e_i <x_i|x_i>: " << sum_ei_xi_t_xi << "\n";
     auto xi_t_F_0_xi_vec = F_0(X, X).trace().real();
-    std::cout << " vector of <x_i|F_0|x_i>: " << xi_t_F_0_xi_vec << "\n";
     OrbitalVector Psi = V_1(Phi);
-    std::cout << " Psi: " << Psi[0].integrate().real() << "\n";
-    /* OrbitalVector Q_Psi_vec;
-    for (auto i = 0; i < Phi.size(); i++){
-        std::cout << "start " << i <<"-th loop\n";
-        std::vector<ComplexDouble> coef_vec;
-        QMFunctionVector func_vec;
-        for (auto j = 0; j < Phi.size(); j++){
-            std::cout << "start " << j <<"-th loop\n";
-            // compute |phi_j><phi_j|psi_i>
-            auto A_ji = orbital::dot(Phi[j], Psi[i]);
-            func_vec.push_back(Phi[i]);
-            coef_vec.push_back( A_ji.real());
-        }
-        Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-        Orbital P_Psi_i;
-        qmfunction::linear_combination(P_Psi_i, coefs, func_vec, 0.00001);
-        Orbital QPsi_i;
-        qmfunction::add(QPsi_i, 1.0, Psi[i], -1.0, P_Psi_i, 0.00001);
-        Q_Psi_vec.push_back(QPsi_i);
-    }
-    std::cout << " manual QPsi: " << Q_Psi_vec[0].integrate().real() << "\n";*/
 
     orbital::orthogonalize(this->orth_prec, Psi, Phi);
-    std::cout << " QPsi: " << Psi[0].integrate().real() << "\n";
-
-    /* auto xi_t_Q_Psi_vec_manual = orbital::dot(X, Q_Psi_vec);
-    std::cout << " manual XQPsi: " << xi_t_Q_Psi_vec_manual << "\n"; */
 
     auto xi_t_Q_Psi_vec = orbital::dot(X, Psi).sum().real();
-    std::cout << " XQPsi: " << xi_t_Q_Psi_vec << "\n";
 
     auto F_rr = xi_t_F_0_xi_vec + xi_t_Q_Psi_vec;
-    std::cout << "F_rr  " << F_rr << "\n";
     auto X_dot_X = xi_t_xi_vec.sum().real();
-    std::cout << "X_dot_X  " << X_dot_X << "\n";
     auto omega = (F_rr - sum_ei_xi_t_xi) / X_dot_X;
-    std::cout << "calculated omega: " << omega << "\n";
 
     return omega;
 }
