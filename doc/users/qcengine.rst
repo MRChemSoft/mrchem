@@ -74,6 +74,7 @@ Note that:
 #. The computation is described using a Python dictionary.
 #. The ``driver`` selects the kind of calculation you want to run with MRChem.
    Available drivers are:
+
    - ``energy``, for single-point energy calculations.
    - ``gradient``, for evaluation of the molecular gradient at a given geometry.
    - ``properties``, for the calculation of molecular properties.
