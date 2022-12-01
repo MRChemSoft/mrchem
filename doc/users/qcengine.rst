@@ -99,7 +99,7 @@ be inspected in Python as:
 
 .. code-block:: python
 
-   mrchem_json_out = ret.extras["output"]
+   mrchem_json_out = ret.extras["raw_output"]["output"]
 
 You can also configure the computational resources to use to run your MRChem
 calculation. For example, to use 20 OpenMP threads:
