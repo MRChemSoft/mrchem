@@ -40,4 +40,5 @@ in more detail in the sections below.
    running
    user_inp
    user_ref
+   qcengine
    program_json
