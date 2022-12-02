@@ -5,7 +5,7 @@ Running MRChem with QCEngine
 MRChem >=1.0 can be used as a computational engine with the `QCEngine
 <http://docs.qcarchive.molssi.org/projects/qcengine/>`_ program executor.
 QCEngine can be useful for running calculations on large sets of molecules and input parameters.
-The results are collected in standardised `QCSchema format
+The results are collected in standardised `QCScheme format
 <http://molssi-qc-schema.readthedocs.io/en/latest/index.html#>`_, which makes it
 easy to build post-processing pipelines and store data according to Findability,
 Accessibility, Interoperability, and Reuse (FAIR) of digital assets principles.
@@ -20,12 +20,20 @@ using the precompiled version:
 
 .. code-block:: bash
 
-   conda create -n mrchem-qcng mrchem qcelemental geometric optking pip -c conda-forge
+   conda create -n mrchem-qcng mrchem qcengine qcelemental geometric optking pip -c conda-forge
    conda activate mrchem-qcng
    python -m pip install -U pyberny
 
 It is also possible to use your own installation of MRChem: just make sure that
 the installation folder is in your ``PATH``.
+
+
+.. note::
+
+   If you want to use the precompiled, MPI-parallel version of MRChem with
+   OpenMPI, install ``mrchem=*=*openmpi*`` insted of just ``mrchem``.
+   A binary package compiled against MPICH is also available:
+   ``mrchem=*=*mpich*``.
 
 
 Single compute
@@ -73,10 +81,11 @@ Note that:
    <http://docs.qcarchive.molssi.org/projects/qcelemental/en/latest/>`_ object.
 #. The computation is described using a Python dictionary.
 #. The ``driver`` selects the kind of calculation you want to run with MRChem.
-   Available drivers are:
+   Available drivers are: 
 
    - ``energy``, for single-point energy calculations.
-   - ``gradient``, for evaluation of the molecular gradient at a given geometry.
+   - ``gradient``, for evaluation of the molecular gradient at a given
+     geometry.
    - ``properties``, for the calculation of molecular properties.
 #. The ``model`` selects the wavefunction: ``HF`` for Hartree-Fock and any of
    the DFT functionals known to MRChem for a corresponding DFT calculation.
@@ -89,7 +98,7 @@ Once you have a dictionary defining your computation, you can run it with:
 
    ret = qcng.compute(computation, "mrchem")
 
-You can reuses the same dictionary with *multiple* computational engine, *e.g.*
+You can reuse the same dictionary with *multiple* computational engine, *e.g.*
 other quantum chemistry programs that are recognized as executors by QCEngine.
 The return value from the ``compute`` function contains all data produced
 during the calculation in QCSchema format including, for example, the execution
@@ -100,15 +109,99 @@ be inspected in Python as:
 
    mrchem_json_out = ret.extras["raw_output"]["output"]
 
-You can also configure the computational resources to use to run your MRChem
-calculation. For example, to use 20 OpenMP threads:
+The full, human-readable input is saved as the ``stdout`` property of the
+object returned by ``compute``.
+
+Parallelism
+~~~~~~~~~~~
+
+QCEngine allows you to exploit available parallel hardware.
+For example, to use 20 OpenMP threads in your MRChem calculation you would
+provide an additional task configuration dictionary as a ``task_config``
+argument to ``compute``:
 
 .. code-block:: python
 
    ret = qcng.compute(
-           computation,
+           computation, 
            "mrchem",
-           task_config={"ncores": 20})
+           task_config={"ncores": 20}) 
+
+You can inspect how the job was launched by printing out the ``provenance`` dictionary:
+
+.. code-block:: python
+
+   print(ret.extras["raw_output"]["output"]["provenance"])
+
+.. code-block:: bash
+
+   {
+    "creator": "MRChem",
+    "mpi_processes": 1,
+    "routine": "/home/roberto/miniconda3/envs/mrchem-qcng/bin/mrchem.x",
+    "total_cores": 1,
+    "version": "1.1.0",
+    "ncores": 12,
+    "nnodes": 1,
+    "ranks_per_node": 1,
+    "cores_per_rank": 12,
+    "total_ranks": 1
+   }
+
+   
+It is also possible to run MPI-parallel and hybrid MPI+OpenMP jobs. Assuming
+that you installed the MPICH version of the MRChem MPI-parallel Conda package,
+the basic ``task_config`` argument to ``compute`` would look like:
+
+.. code-block:: python
+
+   task = {
+     "nnodes": 1,  # number of nodes
+     "ncores": 12,  # number of cores per task on each node
+     "cores_per_rank": 6,  # number of cores per MPI rank
+     "use_mpiexec": True,  # launch with MPI
+     "mpiexec_command": "mpiexec -n {total_ranks}",  # the invocation of MPI
+   }
+
+This task configuration will launch a MPI job with 2 ranks on a single node.
+Each rank has access to 6 cores for OpenMP parallelization. The ``provenance``
+dictionary now shows:
+
+.. code-block:: bash
+
+   {
+    "creator": "MRChem",
+    "mpi_processes": 2,
+    "routine": "mpiexec -n 2 /home/roberto/miniconda3/envs/mrchem-qcng/bin/mrchem.x",
+    "total_cores": 12,
+    "version": "1.1.0",
+    "ncores": 12,
+    "nnodes": 1,
+    "ranks_per_node": 2,
+    "cores_per_rank": 6,
+    "total_ranks": 2
+   }
+
+
+The ``mpiexec_command`` is a string that will be interpolated to provide the
+exact invocation. In the above example, MRChem will be run with:
+
+.. code-block:: bash
+
+   mpiexec -n 2 /home/roberto/miniconda3/envs/mrchem-qcng/bin/mrchem.x
+
+The following interpolation parameters are understood by QCEngine when creating
+the MPI invocation:
+
+- ``{nnodes}``: number of nodes.
+- ``{cores_per_rank}``: number of cores to use for each MPI rank.
+- ``{ranks_per_node}``: number of MPI ranks per node. Computed as ``ncores // cores_per_rank``.
+- ``{total_ranks}``: total number of MPI ranks. Computed as ``nnodes * ranks_per_node``.
+
+More complex MPI invocations are possible by setting the appropriate
+``mpiexec_command`` in the task configuration. For usage with a scheduler, such
+as SLURM, you should refer to the documentation of your computing cluster and
+the documentation of QCEngine.
 
 
 Geometry optimizations
@@ -135,7 +228,7 @@ as optimization driver, but `pyberny
 
    mol =  qcel.models.Molecule(
        geometry=[
-           [ 0.29127930, 3.00875625, 0.20308515],
+           [ 0.29127930, 3.00875625, 0.20308515], 
            [-1.21253048, 1.95820900, 0.10303324],
            [ 0.10002049, 4.24958115,-1.10222079]
        ],
