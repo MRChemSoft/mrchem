@@ -362,7 +362,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_out["cycles"].push_back(json_cycle);
         if (converged) break;
     }
-    std::cout << __FILE__ << " " << __LINE__ << " orbital energy " << F_mat.diagonal() << "\n";
 
     F.clear();
     mpi::barrier(mpi::comm_orb);

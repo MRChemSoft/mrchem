@@ -29,7 +29,7 @@ from pathlib import Path
 from .input_parser.plumbing import pyparsing as pp
 
 
-def parse_files(user_dict, direction=None):
+def parse_files(user_dict, direction=None, state=None):
 
     file_dict = user_dict["Files"]
     world_unit = user_dict["world_unit"]
@@ -37,12 +37,16 @@ def parse_files(user_dict, direction=None):
     vector_dir = Path(file_dict["cube_vectors"])
 
     cube_guess_dict = {k: v for k, v in file_dict.items() if "guess_cube" in k}
-
+    
     found = False
     for key, val in cube_guess_dict.items():
         if (direction is not None):
-            data_type = "_".join(key.split("_")[2:]) + f"_{direction:d}"
-            path_list = _get_paths(Path(val), rsp=True, direction=direction)
+            data_type = "_".join(key.split("_")[2:]) + f"_rsp_{direction:d}"
+            path_list = _get_paths(Path(val), direction=direction)
+        elif (state is not None):
+            data_type = "_".join(key.split("_")[2:]) + f"_exc_{state:d}"
+            path_list = _get_paths(Path(val), state=state)
+            print(path_list)
         else:
             data_type = "_".join(key.split("_")[2:])
             path_list = _get_paths(Path(val))
@@ -70,14 +74,20 @@ def _write_cube_vectors(path_list, data_type, world_unit, pc, vector_dir):
         cube_list, key=lambda d: d["ORB_IDS"]
     )  # This might not work with multiple functions per cubefile
     vector_file = vector_dir / f"CUBE_{data_type}_vector.json"
+    print(vector_file)
     if len(cube_list) != 0:
         with vector_file.open(mode="w") as fd:
             fd.write(dumps(cube_list, indent=2))
 
 
-def _get_paths(path, rsp=False, direction=None):
+def _get_paths(path, direction=None, state=None):
     directory = path.parent
-    prefix = path.name if (not rsp) else f"{path.name}_rsp_{direction:d}"
+    if (direction is not None):
+        prefix = f"{path.name}_rsp_{direction:d}"
+    elif (state is not None):
+        prefix = f"{path.name}_exc_{state:d}"
+    else:
+        prefix = path.name
 
     if directory.is_dir():
         path_l = [file.resolve() for file in directory.glob(f"{prefix}*.cube")]

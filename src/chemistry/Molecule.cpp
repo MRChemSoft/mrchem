@@ -74,14 +74,24 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
 }
 
 void Molecule::initPerturbedOrbitals(bool dynamic, int n_states) {
+    MSG_INFO("");
     this->orbitals_x.reserve(n_states);
+    MSG_INFO("");
     this->orbitals_y.reserve(n_states);
+    MSG_INFO("");
+    std::cout << "numver of states to initialize" << n_states << "\n";
     for (auto i = 0; i < n_states; i++) {
+        MSG_INFO("");
         this->orbitals_x[i] = std::make_shared<OrbitalVector>();
+        MSG_INFO("");
         if (dynamic) {
+            MSG_INFO("");
             this->orbitals_y[i] = std::make_shared<OrbitalVector>();
+            MSG_INFO("");
         } else {
+            MSG_INFO("");
             this->orbitals_y[i] = this->orbitals_x[i];
+            MSG_INFO("");
         }
     }
 }
