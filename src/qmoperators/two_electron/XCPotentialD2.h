@@ -52,11 +52,17 @@ namespace mrchem {
 
 class XCPotentialD2 final : public XCPotential {
 public:
-    XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_shared = false);
+    XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F,
+                  std::shared_ptr<OrbitalVector> Phi,
+                  std::shared_ptr<OrbitalVector> X,
+                  std::shared_ptr<OrbitalVector> Y,
+                  bool mpi_shared = false,
+                  bool run_tda = false);
 
 private:
     std::shared_ptr<OrbitalVector> orbitals_x; ///< 1st external set of perturbed orbitals used to build the density
     std::shared_ptr<OrbitalVector> orbitals_y; ///< 2nd external set of perturbed orbitals used to build the density
+    bool run_tda;
 
     mrcpp::FunctionTreeVector<3> setupDensities(double prec, mrcpp::FunctionTree<3> &grid);
 };

@@ -51,8 +51,13 @@ public:
         XC = potential;
         XC.name() = "V_xc";
     }
-    XCOperator(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_shared = false) {
-        potential = std::make_shared<XCPotentialD2>(F, Phi, X, Y, mpi_shared);
+    XCOperator(std::unique_ptr<mrdft::MRDFT> &F,
+               std::shared_ptr<OrbitalVector> Phi,
+               std::shared_ptr<OrbitalVector> X,
+               std::shared_ptr<OrbitalVector> Y,
+               bool mpi_shared = false,
+               bool run_tda = false) {
+        potential = std::make_shared<XCPotentialD2>(F, Phi, X, Y, mpi_shared, run_tda);
 
         // Invoke operator= to assign *this operator
         RankZeroOperator &XC = (*this);

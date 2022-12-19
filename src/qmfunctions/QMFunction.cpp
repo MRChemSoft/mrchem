@@ -77,15 +77,28 @@ void QMFunction::alloc(int type, mrcpp::MultiResolutionAnalysis<3> *mra) {
 }
 
 void QMFunction::free(int type) {
+    MSG_INFO("");
     if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (hasReal()) delete this->func_ptr->re;
+        MSG_INFO("");
+        if (hasReal()) {
+            std::cout << "has real \n";
+            delete this->func_ptr->re;
+            MSG_INFO("");
+        }
+        MSG_INFO("");
         this->func_ptr->re = nullptr;
+        MSG_INFO("");
         if (this->func_ptr->shared_mem_re) this->func_ptr->shared_mem_re->clear();
+        MSG_INFO("");
     }
     if (type == NUMBER::Imag or type == NUMBER::Total) {
+        MSG_INFO("");
         if (hasImag()) delete this->func_ptr->im;
+        MSG_INFO("");
         this->func_ptr->im = nullptr;
+        MSG_INFO("");
         if (this->func_ptr->shared_mem_im) this->func_ptr->shared_mem_im->clear();
+        MSG_INFO("");
     }
 }
 

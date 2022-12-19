@@ -105,7 +105,7 @@ DerivativeOperator_p get_derivative(const std::string &name);
 template <int I> RankOneOperator<I> get_operator(const std::string &name, const json &json_oper);
 template <int I, int J> RankTwoOperator<I, J> get_operator(const std::string &name, const json &json_oper);
 void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order);
-void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order, int states);
+void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order, int states, bool run_tda = false);
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
@@ -699,11 +699,14 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
  * vector of the input.
  */
 json driver::rsp::run(const json &json_rsp, Molecule &mol) {
-    print_utils::headline(0, "Computing Linear Response Wavefunction");
+    auto run_exc = json_rsp.contains("states");
+    if (not run_exc) {
+        print_utils::headline(0, "Computing Linear Response Wavefunction");
+    } else {
+        print_utils::headline(0, "Optimizing Transition Orbitals and Frequencies");
+    }
     json json_out = {{"success", true}};
-
     if (json_rsp.contains("properties")) driver::init_properties(json_rsp["properties"], mol);
-
     ///////////////////////////////////////////////////////////
     /////////////   Preparing Unperturbed System   ////////////
     ///////////////////////////////////////////////////////////
@@ -725,40 +728,108 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     } else {
         orbital::diagonalize(unpert_prec, Phi, F_mat);
     }
-
     FockBuilder F_0;
     driver::build_fock_operator(unpert_fock, mol, F_0, 0);
     F_0.setup(unpert_prec);
     if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
     if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
+
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////
     ///////////////////////////////////////////////////////////
-    auto N_states = 3;
-
-    // auto omega = json_rsp["frequency"];
-    auto dynamic = false; // json_rsp["dynamic"];
-    mol.initPerturbedOrbitals(dynamic, N_states);
+    double omega;
+    auto dynamic = false;
+    auto run_tda = false;
+    auto iter_var = 0;
+    RankOneOperator<3> h_1;
+    if (not run_exc) {
+        omega = json_rsp["frequency"];
+        dynamic = json_rsp["dynamic"];
+        iter_var = json_rsp["components"].size();
+        mol.initPerturbedOrbitals(dynamic, 1);
+        const auto &json_pert = json_rsp["perturbation"];
+        auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
+        json_out["perturbation"] = json_pert["operator"];
+        json_out["frequency"] = omega;
+        json_out["components"] = {};
+    } else if (run_exc) {
+        run_tda = json_rsp["run_tda"];
+        iter_var = json_rsp["states"].size();
+        mol.initPerturbedOrbitals(dynamic, iter_var);
+    } else {
+        MSG_ERROR("Response calculation badly initialized. No components or excited states")
+    }
 
     const auto &json_fock = json_rsp["fock_operator"];
-    for (auto i = 0; i < N_states; i++) {
+    for (auto i = 0; i < iter_var; i++) {
         FockBuilder F_1;
-        driver::build_fock_operator(json_fock, mol, F_1, 1, i);
+        if (run_exc) {
+            driver::build_fock_operator(json_fock, mol, F_1, 1, i, run_tda);
+        } else {
+            driver::build_fock_operator(json_fock, mol, F_1, 1);
+        }
 
         json comp_out = {};
-        const auto &json_comp = json_rsp["components"][i];
-        //    F_1.perturbation() = h_1[d];
+        const auto &json_comp = not run_exc ? json_rsp["components"][i] : json_rsp["states"][i];
+        if (not run_exc) { F_1.perturbation() = h_1[i]; }
 
         ///////////////////////////////////////////////////////////
         ///////////////   Setting Up Initial Guess   //////////////
         ///////////////////////////////////////////////////////////
         const auto &json_guess = json_comp["initial_guess"];
-        json_out["success"] = rsp::guess_orbitals(json_guess, mol, i);
+        if (run_exc) {
+            json_out["success"] = rsp::guess_orbitals(json_guess, mol, i);
+        } else {
+            json_out["success"] = rsp::guess_orbitals(json_guess, mol);
+        }
+
         ///////////////////////////////////////////////////////////
         /////////////   Optimizing Perturbed Orbitals  ////////////
         ///////////////////////////////////////////////////////////
-        if (json_comp.contains("rsp_solver")) {
+        if (json_comp.contains("exc_solver")) {
+            auto kain = json_comp["exc_solver"]["kain"];
+            auto method = json_comp["exc_solver"]["method"];
+            auto max_iter = json_comp["exc_solver"]["max_iter"];
+            auto file_chk_x = json_comp["exc_solver"]["file_chk_x"];
+            auto file_chk_y = json_comp["exc_solver"]["file_chk_y"];
+            auto checkpoint = json_comp["exc_solver"]["checkpoint"];
+            auto orth_prec = json_comp["exc_solver"]["orth_prec"];
+            auto start_prec = json_comp["exc_solver"]["start_prec"];
+            auto final_prec = json_comp["exc_solver"]["final_prec"];
+            auto orbital_thrs = json_comp["exc_solver"]["orbital_thrs"];
+            auto property_thrs = json_comp["exc_solver"]["property_thrs"];
+            auto helmholtz_prec = json_comp["exc_solver"]["helmholtz_prec"];
+
+            ExcitedStatesSolver solver(run_tda);
+            MSG_INFO("");
+            solver.setHistory(kain);
+            solver.setMethodName(method);
+            solver.setMaxIterations(max_iter);
+            solver.setCheckpoint(checkpoint);
+            solver.setCheckpointFile(file_chk_x, file_chk_y);
+            solver.setHelmholtzPrec(helmholtz_prec);
+            solver.setOrbitalPrec(start_prec, final_prec);
+            solver.setThreshold(orbital_thrs, property_thrs);
+            solver.setOrthPrec(orth_prec);
+            MSG_INFO("");
+            comp_out["exc_solver"] = solver.optimize(mol, F_0, F_1, i);
+            MSG_INFO("");
+            json_out["success"] = comp_out["exc_solver"]["converged"];
+            MSG_INFO("");
+            if (json_out["success"]) {
+                if (json_comp.contains("write_orbitals")) rsp::write_orbitals(json_comp["write_orbitals"], mol, dynamic);
+                if (json_rsp.contains("properties")) rsp::calc_properties(json_rsp["properties"], mol, 2, json_rsp["frequency"], i);
+            }
+            MSG_INFO("");
+            mol.getOrbitalsX(i).clear(); // Clear orbital vector
+            MSG_INFO("");
+            mol.getOrbitalsY(i).clear(); // Clear orbital vector
+            MSG_INFO("");
+            json_out["states"].push_back(comp_out);
+            MSG_INFO("");
+
+        } else if (json_comp.contains("rsp_solver")) {
             auto kain = json_comp["rsp_solver"]["kain"];
             auto method = json_comp["rsp_solver"]["method"];
             auto max_iter = json_comp["rsp_solver"]["max_iter"];
@@ -772,8 +843,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             auto property_thrs = json_comp["rsp_solver"]["property_thrs"];
             auto helmholtz_prec = json_comp["rsp_solver"]["helmholtz_prec"];
 
-            // LinearResponseSolver solver(dynamic);
-            ExcitedStatesSolver solver(dynamic);
+            LinearResponseSolver solver(dynamic);
             solver.setHistory(kain);
             solver.setMethodName(method);
             solver.setMaxIterations(max_iter);
@@ -783,7 +853,8 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             solver.setOrbitalPrec(start_prec, final_prec);
             solver.setThreshold(orbital_thrs, property_thrs);
             solver.setOrthPrec(orth_prec);
-            comp_out["rsp_solver"] = solver.optimize(mol, F_0, F_1, i);
+
+            comp_out["rsp_solver"] = solver.optimize(omega, mol, F_0, F_1);
             json_out["success"] = comp_out["rsp_solver"]["converged"];
 
             ///////////////////////////////////////////////////////////
@@ -794,17 +865,29 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
                 if (json_comp.contains("write_orbitals")) rsp::write_orbitals(json_comp["write_orbitals"], mol, dynamic);
                 if (json_rsp.contains("properties")) rsp::calc_properties(json_rsp["properties"], mol, 2, json_rsp["frequency"], i);
             }
-            mol.getOrbitalsX(i).clear(); // Clear orbital vector
-            mol.getOrbitalsY(i).clear(); // Clear orbital vector
+            mol.getOrbitalsX(0).clear(); // Clear orbital vector
+            mol.getOrbitalsY(0).clear(); // Clear orbital vector
             json_out["components"].push_back(comp_out);
         }
+        MSG_INFO("");
     }
-    //}
+    MSG_INFO("");
     F_0.clear();
+    MSG_INFO("");
     mpi::barrier(mpi::comm_orb);
-    for (auto i = 0; i < N_states; i++) {
-        mol.getOrbitalsX_p(i).reset(); // Release shared_ptr
-        mol.getOrbitalsY_p(i).reset(); // Release shared_ptr
+    MSG_INFO("");
+    if (run_exc) {
+        MSG_INFO("");
+        for (auto i = 0; i < iter_var; i++) {
+            MSG_INFO("");
+            mol.getOrbitalsX_p(i).reset(); // Release shared_ptr
+            MSG_INFO("");
+            mol.getOrbitalsY_p(i).reset(); // Release shared_ptr
+            MSG_INFO("");
+        }
+    } else {
+        mol.getOrbitalsX_p(0).reset(); // Release shared_ptr
+        mol.getOrbitalsY_p(0).reset(); // Release shared_ptr
     }
 
     return json_out;
@@ -988,10 +1071,10 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
  * perturbation order of the operators.
  */
 void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order) {
-    driver::build_fock_operator(json_fock, mol, F, order, 0);
+    driver::build_fock_operator(json_fock, mol, F, order, 0, false);
 }
 
-void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, int state) {
+void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, int state, bool run_tda) {
 
     auto &nuclei = mol.getNuclei();
 
@@ -1041,7 +1124,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
             F.getCoulombOperator() = J_p;
         } else if (order == 1) {
-            auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
+            auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory, run_tda);
             F.getCoulombOperator() = J_p;
         } else {
             MSG_ABORT("Invalid perturbation order");
@@ -1102,7 +1185,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, shared_memory);
             F.getXCOperator() = XC_p;
         } else if (order == 1) {
-            auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, X_p, Y_p, shared_memory);
+            auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, X_p, Y_p, shared_memory, run_tda);
             F.getXCOperator() = XC_p;
         } else {
             MSG_ABORT("Invalid perturbation order");
@@ -1119,7 +1202,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         } else {
-            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
+            auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec, run_tda);
             F.getExchangeOperator() = K_p;
         }
     }

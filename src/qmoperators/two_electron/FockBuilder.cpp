@@ -112,14 +112,20 @@ void FockBuilder::setup(double prec) {
  * to the state after construction. The operator can now be reused after another setup.
  */
 void FockBuilder::clear() {
+    MSG_INFO("");
     if (this->mom != nullptr) this->momentum().clear();
+    MSG_INFO("");
     this->potential().clear();
+    MSG_INFO("");
     this->perturbation().clear();
+    MSG_INFO("");
     if (isZora()) {
+        MSG_INFO("");
         this->kappa->clear();
         this->kappa_inv->clear();
         this->zora_base.clear();
     }
+    MSG_INFO("");
 }
 
 /** @brief rotate orbitals of two-electron operators

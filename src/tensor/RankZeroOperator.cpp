@@ -208,8 +208,18 @@ void RankZeroOperator::setup(double prec) {
 /** @brief run clear on all operators in the expansion
  */
 void RankZeroOperator::clear() {
+    MSG_INFO(" ");
+    std::cout << "length of the operator vector: " << this->oper_exp.size() << "\n";
+    std::cout << "name of operator: " << this->name() << "\n";
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) { i[j]->clear(); }
+        MSG_INFO(" ");
+        for (int j = 0; j < i.size(); j++) {
+            MSG_INFO(" ");
+            std::cout << "\t j? " << j << "\n";
+            i[j]->clear();
+            MSG_INFO(" ");
+        }
+        MSG_INFO(" ");
     }
 }
 

@@ -52,7 +52,12 @@ namespace mrchem {
 
 class ExchangePotentialD2 final : public ExchangePotential {
 public:
-    ExchangePotentialD2(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, double prec);
+    ExchangePotentialD2(std::shared_ptr<mrcpp::PoissonOperator> P,
+                        std::shared_ptr<OrbitalVector> Phi,
+                        std::shared_ptr<OrbitalVector> X,
+                        std::shared_ptr<OrbitalVector> Y,
+                        double prec,
+                        bool run_tda = false);
     ~ExchangePotentialD2() override = default;
 
     friend class ExchangeOperator;

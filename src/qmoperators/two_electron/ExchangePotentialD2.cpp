@@ -50,11 +50,11 @@ namespace mrchem {
  * @param[in] P Poisson operator (does not take ownership)
  * @param[in] Phi vector of orbitals which define the exchange operator
  */
-ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P, OrbitalVector_p Phi, OrbitalVector_p X, OrbitalVector_p Y, double prec)
+ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P, OrbitalVector_p Phi, OrbitalVector_p X, OrbitalVector_p Y, double prec, bool run_tda)
         : ExchangePotential(P, Phi, prec)
         , orbitals_x(X)
         , orbitals_y(Y) {
-    if (X == Y) doTDA = true;
+    if (X == Y or run_tda) doTDA = true;
 }
 
 /** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */

@@ -29,7 +29,7 @@ from pathlib import Path
 from .input_parser.plumbing import pyparsing as pp
 
 
-def parse_files(user_dict, direction=None):
+def parse_files(user_dict, direction=None, state=None):
 
     file_dict = user_dict["Files"]
     world_unit = user_dict["world_unit"]
@@ -43,6 +43,9 @@ def parse_files(user_dict, direction=None):
         if (direction is not None):
             data_type = "_".join(key.split("_")[2:]) + f"_{direction:d}"
             path_list = _get_paths(Path(val), rsp=True, direction=direction)
+        elif (state is not None):
+            data_type = "_".join(key.split("_")[2:]) + f"_{state:d}"
+            path_list = _get_paths(Path(val), exc=True, state=state) 
         else:
             data_type = "_".join(key.split("_")[2:])
             path_list = _get_paths(Path(val))
@@ -75,9 +78,9 @@ def _write_cube_vectors(path_list, data_type, world_unit, pc, vector_dir):
             fd.write(dumps(cube_list, indent=2))
 
 
-def _get_paths(path, rsp=False, direction=None):
+def _get_paths(path, rsp=False, exc=False, direction=None, state=None):
     directory = path.parent
-    prefix = path.name if (not rsp) else f"{path.name}_rsp_{direction:d}"
+    prefix = path.name if (not rsp) else f"{path.name}_rsp_{direction:d}" if (not exc) else f"{path.name}_exc_{state:d}"
 
     if directory.is_dir():
         path_l = [file.resolve() for file in directory.glob(f"{prefix}*.cube")]

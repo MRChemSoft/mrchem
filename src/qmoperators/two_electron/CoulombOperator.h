@@ -59,8 +59,13 @@ public:
         J = potential;
         J.name() = "J";
     }
-    CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false) {
-        potential = std::make_shared<CoulombPotentialD2>(P, Phi, X, Y, mpi_share);
+    CoulombOperator(std::shared_ptr<mrcpp::PoissonOperator> P,
+                    std::shared_ptr<OrbitalVector> Phi,
+                    std::shared_ptr<OrbitalVector> X,
+                    std::shared_ptr<OrbitalVector> Y,
+                    bool mpi_share = false,
+                    bool run_tda = false) {
+        potential = std::make_shared<CoulombPotentialD2>(P, Phi, X, Y, mpi_share, run_tda);
         // Invoke operator= to assign *this operator
         RankZeroOperator &J = (*this);
         J = potential;

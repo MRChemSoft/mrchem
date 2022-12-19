@@ -287,8 +287,8 @@ def write_rsp_calc(omega, user_dict, origin):
     file_dict = user_dict["Files"]
 
     rsp_calc = {}
-    rsp_calc["frequency"] = omega
-    rsp_calc["dynamic"] = omega > 1.0e-12 #TODO this shouldn't be like this 
+    rsp_calc["frequency"] = omega 
+    rsp_calc["dynamic"] = omega > 1.0e-12
     rsp_calc["fock_operator"] = write_rsp_fock(user_dict, wf_dict)
     rsp_calc["unperturbed"] = {
         "precision": user_dict["world_prec"],
@@ -323,7 +323,7 @@ def write_rsp_calc(omega, user_dict, origin):
                 # adjust guess precision if checkpoint files are present
                 program_guess_prec = user_dict["world_prec"]
         elif user_guess_type == "cube":
-            found = parse_files(user_dict, dir)
+            found = parse_files(user_dict, direction=dir)
             if not found:
                 print(
                     f"No CUBE guess found in any of the 'initial_guess' sub-folders for direction {dir:d}, falling back to zero initial guess"
@@ -367,6 +367,97 @@ def write_rsp_calc(omega, user_dict, origin):
     return rsp_calc
 
 
+def write_exc_calc(user_dict, origin):
+    wf_dict = parse_wf_method(user_dict)
+    if not wf_dict["relativity_name"] in ["None", "Off"]:
+        raise RuntimeError(
+            "Linear response not available: " + wf_dict["relativity_name"]
+        )
+    
+    rsp_dict = user_dict["Response"]
+    exc_dict = user_dict["ExcitedStates"]
+    file_dict = user_dict["Files"]
+
+    exc_calc = {}
+    exc_calc["run_tda"] = exc_dict["run_tda"]
+    exc_calc["fock_operator"] = write_rsp_fock(user_dict, wf_dict)
+    exc_calc["unperturbed"] = {
+        "precision": user_dict["world_prec"],
+        "localize": rsp_dict["localize"],
+        "fock_operator": write_scf_fock(user_dict, wf_dict, origin),
+    }
+
+    guess_str = rsp_dict["guess_type"].lower()
+    user_guess_type = guess_str.split("_")[0]
+    user_guess_prec = rsp_dict["guess_prec"]
+
+    vector_dir = file_dict["cube_vectors"]
+
+    exc_calc["states"] = []
+    for r in range(exc_dict["n_states"]):
+
+        exc_state = {}
+
+        program_guess_type = user_guess_type
+        program_guess_prec = user_guess_prec
+
+        # check that initial guess files exist
+        if user_guess_type == "chk":
+            chk_X = Path(f"{rsp_dict['path_checkpoint']}/X_exc_{r:d}")
+            chk_Y = Path(f"{rsp_dict['path_checkpoint']}/Y_exc_{r:d}")
+            if not (chk_X.is_file() and chk_Y.is_file()):
+                print(
+                    f"No checkpoint guess found in {rsp_dict['path_checkpoint']} for direction {r:d}, falling back to zero initial guess"
+                )
+                program_guess_type = "none"
+            else:
+                # adjust guess precision if checkpoint files are present
+                program_guess_prec = user_dict["world_prec"]
+        elif user_guess_type == "cube":
+            found = parse_files(user_dict, state=r)
+            if not found:
+                print(
+                    f"No CUBE guess found in any of the 'initial_guess' sub-folders for direction {r:d}, falling back to zero initial guess"
+                )
+                program_guess_type = "none"
+        else:
+            # do no checks on other types of guess
+            pass
+
+        exc_state["initial_guess"] = {
+            "prec": program_guess_prec,
+            "type": program_guess_type,
+            "file_chk_x": f"{rsp_dict['path_checkpoint']}/X_exc_{r:d}",
+            "file_chk_y": f"{rsp_dict['path_checkpoint']}/Y_exc_{r:d}",
+            "file_x_p": f"{file_dict['guess_x_p']}_exc_{r:d}",
+            "file_x_a": f"{file_dict['guess_x_a']}_exc_{r:d}",
+            "file_x_b": f"{file_dict['guess_x_b']}_exc_{r:d}",
+            "file_y_p": f"{file_dict['guess_y_p']}_exc_{r:d}",
+            "file_y_a": f"{file_dict['guess_y_a']}_exc_{r:d}",
+            "file_y_b": f"{file_dict['guess_y_b']}_exc_{r:d}",
+            "file_CUBE_x_p": f"{vector_dir}CUBE_x_p_exc_{r:d}_vector.json",
+            "file_CUBE_x_a": f"{vector_dir}CUBE_x_a_exc_{r:d}_vector.json",
+            "file_CUBE_x_b": f"{vector_dir}CUBE_x_b_exc_{r:d}_vector.json",
+            "file_CUBE_y_p": f"{vector_dir}CUBE_y_p_exc_{r:d}_vector.json",
+            "file_CUBE_y_a": f"{vector_dir}CUBE_y_a_exc_{r:d}_vector.json",
+            "file_CUBE_y_b": f"{vector_dir}CUBE_y_b_exc_{r:d}_vector.json",
+        }
+        if rsp_dict["write_orbitals"]:
+            path_orbitals = rsp_dict["path_orbitals"]
+            exc_state["write_orbitals"] = {
+                "file_x_p": f"{path_orbitals}/X_p_exc_{r:d}",
+                "file_x_a": f"{path_orbitals}/X_a_exc_{r:d}",
+                "file_x_b": f"{path_orbitals}/X_b_exc_{r:d}",
+                "file_y_p": f"{path_orbitals}/Y_p_exc_{r:d}",
+                "file_y_a": f"{path_orbitals}/Y_a_exc_{r:d}",
+                "file_y_b": f"{path_orbitals}/Y_b_exc_{r:d}",
+            }
+
+        exc_state["exc_solver"] = write_rsp_solver(user_dict, wf_dict, r)
+        exc_calc["states"].append(exc_state)
+    return exc_calc
+
+
 def write_rsp_fock(user_dict, wf_dict):
     fock_dict = {}
 
@@ -387,7 +478,7 @@ def write_rsp_fock(user_dict, wf_dict):
     # Exchange-Correlation
     if wf_dict["method_type"] in ["dft"]:
         func_dict = []
-        for line in wf_dict["dft_funcs"].split("\n"):
+        for line in wf_dict["dft_funcs"].split("\n" ):
             sp = line.split()
             if len(sp) > 0:
                 func = sp[0].lower()
@@ -406,6 +497,32 @@ def write_rsp_fock(user_dict, wf_dict):
 
     return fock_dict
 
+
+def write_exc_solver(user_dict, wf_dict, d):
+    # Response precisions and thresholds
+    start_prec = user_dict["Response"]["start_prec"]
+    final_prec = user_dict["Response"]["final_prec"]
+    if final_prec < 0.0:
+        final_prec = user_dict["world_prec"]
+    if start_prec < 0.0:
+        start_prec = final_prec
+
+    rsp_dict = user_dict["Response"]
+    solver_dict = {
+        "method": wf_dict["method_name"],
+        "kain": exc_dict["kain"],
+        "max_iter": exc_dict["max_iter"],
+        "file_chk_x": rsp_dict["path_checkpoint"] + "/X_exc_" + str(d),
+        "file_chk_y": rsp_dict["path_checkpoint"] + "/Y_exc_" + str(d),
+        "checkpoint": rsp_dict["write_checkpoint"],
+        "start_prec": start_prec,
+        "final_prec": final_prec,
+        "orbital_thrs": user_dict["Response"]["orbital_thrs"],
+        "property_thrs": user_dict["Response"]["property_thrs"],
+        "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
+        "orth_prec": 1.0e-14,
+    }
+    return solver_dict
 
 def write_rsp_solver(user_dict, wf_dict, d):
     # Response precisions and thresholds

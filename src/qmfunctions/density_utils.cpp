@@ -50,7 +50,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 namespace density {
 Density compute(double prec, Orbital phi, DensityType spin);
-void compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DensityType spin);
+void compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DensityType spin, bool run_tda);
 void compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin);
 double compute_occupation(Orbital &phi, DensityType dens_spin);
 } // namespace density
@@ -115,15 +115,15 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, DensityType
  *      and X/Y must be the same.
  *
  */
-void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin) {
+void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin, bool run_tda) {
     int N_el = orbital::get_electron_number(Phi);
     double rel_prec = prec;        // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
     double abs_prec = prec / N_el; // prec for rho = sum_i rho_i
 
     // LUCA: rho_loc should get the "general" grid in order to make sure all densities are available on the same grid.
     Density rho_loc(false);
-    if (&X == &Y) {
-        density::compute_local_X(rel_prec, rho_loc, Phi, X, spin);
+    if (&X == &Y or run_tda) {
+        density::compute_local_X(rel_prec, rho_loc, Phi, X, spin, run_tda);
     } else {
         density::compute_local_XY(rel_prec, rho_loc, Phi, X, Y, spin);
     }
@@ -152,15 +152,15 @@ void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, Densi
 
 /** @brief Compute local density as the sum of own (MPI) orbitals
  */
-void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin) {
-    if (&X == &Y) {
-        density::compute_local_X(prec, rho, Phi, X, spin);
+void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin, bool run_tda) {
+    if ((&X == &Y or run_tda)) {
+        density::compute_local_X(prec, rho, Phi, X, spin, run_tda);
     } else {
         density::compute_local_XY(prec, rho, Phi, X, Y, spin);
     }
 }
 
-void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DensityType spin) {
+void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DensityType spin, bool run_tda) {
     int N_el = orbital::get_electron_number(Phi);
     double mult_prec = prec;       // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
@@ -179,7 +179,12 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
 
             Density rho_i(false);
             qmfunction::multiply_real(rho_i, X[i], Phi[i], mult_prec);
-            rho.add(1.0 * occ, rho_i); // should only be one for tda else 2.0 for standard
+            if (run_tda) {
+                rho.add(1.0 * occ, rho_i); // should only be one for tda else 2.0 for standard
+            } else {
+                rho.add(2.0 * occ, rho_i); // should only be one for tda else 2.0 for standard
+            }
+
             rho.crop(add_prec);
         }
     }

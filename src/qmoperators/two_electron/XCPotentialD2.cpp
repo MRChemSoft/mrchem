@@ -41,10 +41,11 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-XCPotentialD2::XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_shared)
+XCPotentialD2::XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_shared, bool run_tda)
         : XCPotential(F, Phi, mpi_shared)
         , orbitals_x(X)
-        , orbitals_y(Y) {
+        , orbitals_y(Y)
+        , run_tda(run_tda) {
     densities.push_back(Density(false)); // rho_0 total
     densities.push_back(Density(false)); // rho_0 alpha
     densities.push_back(Density(false)); // rho_0 beta
@@ -89,7 +90,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
             if (not rho.hasReal()) {
                 rho.alloc(NUMBER::Real);
                 mrcpp::copy_grid(rho.real(), grid);
-                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Total);
+                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Total, this->run_tda);
             }
             print_utils::qmfunction(3, "Compute rho_1", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
@@ -123,7 +124,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
             if (not rho.hasReal()) {
                 rho.alloc(NUMBER::Real);
                 mrcpp::copy_grid(rho.real(), grid);
-                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Alpha);
+                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Alpha, this->run_tda);
             }
             print_utils::qmfunction(3, "Compute rho_1 (alpha)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
@@ -134,7 +135,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::F
             if (not rho.hasReal()) {
                 rho.alloc(NUMBER::Real);
                 mrcpp::copy_grid(rho.real(), grid);
-                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Beta);
+                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Beta, this->run_tda);
             }
             print_utils::qmfunction(3, "Compute rho_1 (beta)", rho, timer);
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
