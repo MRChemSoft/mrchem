@@ -101,13 +101,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    MSG_INFO("");
-    QMFunction::free(NUMBER::Total); // delete FunctionTree pointers
-    MSG_INFO("");
+    QMFunction::free(NUMBER::Total);   // delete FunctionTree pointers
     this->density.free(NUMBER::Total); // delete FunctionTree pointers
-    MSG_INFO("");
-    clearApplyPrec(); // apply_prec = -1
-    MSG_INFO("");
+    clearApplyPrec();                  // apply_prec = -1
 }
 
 /** @brief compute Coulomb potential

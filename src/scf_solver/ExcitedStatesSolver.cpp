@@ -79,6 +79,8 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     OrbitalVector &Phi_0 = mol.getOrbitals();
 
     OrbitalVector &X_n = mol.getOrbitalsX(state);
+    MSG_INFO("testing size of NStatevector ");
+    std::cout << "size of states vector " << mol.getStatesX().size() << "\n";
 
     ComplexMatrix &F_mat_0 = mol.getFockMatrix();
 
@@ -122,7 +124,6 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
         printConvergenceHeader("Excited state energy");
         if (plevel < 1) printConvergenceRow(0);
     }
-
     for (auto nIter = 0; (nIter < this->maxIter) or (this->maxIter < 0); nIter++) {
         json json_cycle;
         std::stringstream o_header;
@@ -161,7 +162,6 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
             // Apply Helmholtz operators
             OrbitalVector X_np1 = H_x.apply(V_0, X_n, Psi);
-            Psi.clear();
             // Projecting (1 - rho_0)X
             mrcpp::print::header(2, "Projecting occupied space");
             t_lap.start();

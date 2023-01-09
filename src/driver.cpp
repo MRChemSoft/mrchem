@@ -738,7 +738,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////
     ///////////////////////////////////////////////////////////
-    double omega;
+    double omega = 0.0;
     auto dynamic = false;
     auto run_tda = false;
     auto iter_var = 0;
@@ -754,6 +754,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         json_out["frequency"] = omega;
         json_out["components"] = {};
     } else if (run_exc) {
+
         run_tda = json_rsp["run_tda"];
         iter_var = json_rsp["states"].size();
         mol.initPerturbedOrbitals(dynamic, iter_var);
@@ -802,7 +803,6 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             auto helmholtz_prec = json_comp["exc_solver"]["helmholtz_prec"];
 
             ExcitedStatesSolver solver(run_tda);
-            MSG_INFO("");
             solver.setHistory(kain);
             solver.setMethodName(method);
             solver.setMaxIterations(max_iter);
@@ -812,22 +812,15 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             solver.setOrbitalPrec(start_prec, final_prec);
             solver.setThreshold(orbital_thrs, property_thrs);
             solver.setOrthPrec(orth_prec);
-            MSG_INFO("");
             comp_out["exc_solver"] = solver.optimize(mol, F_0, F_1, i);
-            MSG_INFO("");
             json_out["success"] = comp_out["exc_solver"]["converged"];
-            MSG_INFO("");
             if (json_out["success"]) {
                 if (json_comp.contains("write_orbitals")) rsp::write_orbitals(json_comp["write_orbitals"], mol, dynamic);
                 if (json_rsp.contains("properties")) rsp::calc_properties(json_rsp["properties"], mol, 2, json_rsp["frequency"], i);
             }
-            MSG_INFO("");
             mol.getOrbitalsX(i).clear(); // Clear orbital vector
-            MSG_INFO("");
             mol.getOrbitalsY(i).clear(); // Clear orbital vector
-            MSG_INFO("");
             json_out["states"].push_back(comp_out);
-            MSG_INFO("");
 
         } else if (json_comp.contains("rsp_solver")) {
             auto kain = json_comp["rsp_solver"]["kain"];
@@ -869,21 +862,14 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             mol.getOrbitalsY(0).clear(); // Clear orbital vector
             json_out["components"].push_back(comp_out);
         }
-        MSG_INFO("");
     }
-    MSG_INFO("");
+
     F_0.clear();
-    MSG_INFO("");
     mpi::barrier(mpi::comm_orb);
-    MSG_INFO("");
     if (run_exc) {
-        MSG_INFO("");
         for (auto i = 0; i < iter_var; i++) {
-            MSG_INFO("");
             mol.getOrbitalsX_p(i).reset(); // Release shared_ptr
-            MSG_INFO("");
             mol.getOrbitalsY_p(i).reset(); // Release shared_ptr
-            MSG_INFO("");
         }
     } else {
         mol.getOrbitalsX_p(0).reset(); // Release shared_ptr

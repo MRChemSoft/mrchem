@@ -179,6 +179,7 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
 
             Density rho_i(false);
             qmfunction::multiply_real(rho_i, X[i], Phi[i], mult_prec);
+            std::cout << "run tda = " << run_tda << "\n";
             if (run_tda) {
                 rho.add(1.0 * occ, rho_i); // should only be one for tda else 2.0 for standard
             } else {
