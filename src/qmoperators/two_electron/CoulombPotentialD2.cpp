@@ -39,9 +39,8 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-CoulombPotentialD2::CoulombPotentialD2(PoissonOperator_p P, OrbitalVector_p Phi, OrbitalVector_p X, OrbitalVector_p Y, bool mpi_share, bool tda)
+CoulombPotentialD2::CoulombPotentialD2(PoissonOperator_p P, OrbitalVector_p Phi, OrbitalVector_p X, OrbitalVector_p Y, bool mpi_share)
         : CoulombPotential(P, Phi, mpi_share)
-        , tda(tda)
         , orbitals_x(X)
         , orbitals_y(Y) {}
 
@@ -57,7 +56,7 @@ void CoulombPotentialD2::setupGlobalDensity(double prec) {
     OrbitalVector &Y = *this->orbitals_y;
 
     Timer timer;
-    density::compute(prec, rho, Phi, X, Y, DensityType::Total, tda);
+    density::compute(prec, rho, Phi, X, Y, DensityType::Total);
     print_utils::qmfunction(3, "Compute global density", rho, timer);
 }
 
@@ -73,7 +72,7 @@ void CoulombPotentialD2::setupLocalDensity(double prec) {
     OrbitalVector &Y = *this->orbitals_y;
 
     Timer timer;
-    density::compute_local(prec, rho, Phi, X, Y, DensityType::Total, tda);
+    density::compute_local(prec, rho, Phi, X, Y, DensityType::Total);
     print_utils::qmfunction(3, "Compute local density", rho, timer);
 }
 

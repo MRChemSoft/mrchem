@@ -34,10 +34,6 @@ from typing import Any, List, Union
 
 try:
     import pyparsing as pp
-
-    if pp.__version__.split(".")[0] < "3":
-        # Import local copy
-        from . import pyparsing as pp  # type: ignore
 except ImportError:
     # Import local copy
     from . import pyparsing as pp  # type: ignore

@@ -55,13 +55,8 @@ public:
         K.name() = "K";
     }
 
-    ExchangeOperator(std::shared_ptr<mrcpp::PoissonOperator> P,
-                     std::shared_ptr<OrbitalVector> Phi,
-                     std::shared_ptr<OrbitalVector> X,
-                     std::shared_ptr<OrbitalVector> Y,
-                     double exchange_prec = -1.0,
-                     bool tda = false) {
-        exchange = std::make_shared<ExchangePotentialD2>(P, Phi, X, Y, exchange_prec, tda);
+    ExchangeOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, double exchange_prec = -1.0) {
+        exchange = std::make_shared<ExchangePotentialD2>(P, Phi, X, Y, exchange_prec);
 
         // Invoke operator= to assign *this operator
         RankZeroOperator &K = (*this);
