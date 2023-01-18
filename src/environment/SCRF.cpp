@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -48,16 +48,7 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-SCRF::SCRF(Permittivity e,
-           const Nuclei &N,
-           PoissonOperator_p P,
-           DerivativeOperator_p D,
-           double orb_prec,
-           int kain_hist,
-           int max_iter,
-           bool acc_pot,
-           bool dyn_thrs,
-           std::string density_type)
+SCRF::SCRF(Permittivity e, const Nuclei &N, PoissonOperator_p P, DerivativeOperator_p D, double orb_prec, int kain_hist, int max_iter, bool acc_pot, bool dyn_thrs, std::string density_type)
         : accelerate_Vr(acc_pot)
         , dynamic_thrs(dyn_thrs)
         , density_type(density_type)
@@ -216,7 +207,7 @@ void SCRF::nestedSCRF(QMFunction V_vac) {
         printConvergenceRow(iter, norm, update, t_iter.elapsed());
         iter++;
     }
-    if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter-1 << " iterations, residual " << update);
+    if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
     mrcpp::print::separator(3, '-');
     this->dVr_n.real().clear();
     this->dVr_n.real().setZero();

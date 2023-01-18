@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -576,9 +576,9 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
                 if (nodeidVec.size() > 0) pointerstodelete.push_back(dataVec);
                 int shift = 0;
                 for (int n = 0; n < nodeidVec.size(); n++) {
-                    if(nodeidVec[n] - max_ix<0){std::cout<<n<<" ERROR "<<nodeidVec[n]<<" "<<max_ix<<std::endl;}
-                    assert(nodeidVec[n] - max_ix >= 0);                // unrotated nodes have been deleted
-                    if(ix2coef.count(nodeidVec[n] - max_ix)!=0){std::cout<<n<<" ERRORix2 "<< ix2coef.count(nodeidVec[n])<<" "<<max_ix<<std::endl;}
+                    if (nodeidVec[n] - max_ix < 0) { std::cout << n << " ERROR " << nodeidVec[n] << " " << max_ix << std::endl; }
+                    assert(nodeidVec[n] - max_ix >= 0); // unrotated nodes have been deleted
+                    if (ix2coef.count(nodeidVec[n] - max_ix) != 0) { std::cout << n << " ERRORix2 " << ix2coef.count(nodeidVec[n]) << " " << max_ix << std::endl; }
                     assert(ix2coef.count(nodeidVec[n] - max_ix) == 0); // each nodeid treated once
                     ix2coef[nodeidVec[n] - max_ix] = ix++;
                     csize = sizecoeffW;

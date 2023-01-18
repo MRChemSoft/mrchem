@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -65,8 +65,8 @@ void Permittivity::printParameters() const {
     std::stringstream o_head;
     o_head << std::setw(w1) << "N";
     o_head << std::setw(w2) << "R_0";
-    o_head << std::setw(w3+1) << "Alpha";
-    o_head << std::setw(w3-1) << "Beta";
+    o_head << std::setw(w3 + 1) << "Alpha";
+    o_head << std::setw(w3 - 1) << "Beta";
     o_head << std::setw(w3) << "Sigma";
     o_head << std::setw(w5) << "Radius";
     o_head << std::setw(w4) << "x";
@@ -98,7 +98,7 @@ void Permittivity::printParameters() const {
         o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << alpha;
         o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << beta;
         o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << sigma << "  ->";
-        o_coord << std::setw(w5-4) << std::setprecision(4) << std::fixed << r;
+        o_coord << std::setw(w5 - 4) << std::setprecision(4) << std::fixed << r;
         o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << x;
         o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << y;
         o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << z;

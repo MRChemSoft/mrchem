@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -56,7 +56,6 @@ CUBEfunction::CUBEfunction(const int N_atoms,
         , atom_coords(atom_coords) {
     Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> voxel_axes(&Voxel_axes[0][0]);
     inv_basis = voxel_axes.transpose().inverse();
-    
 }
 
 // Do a quadrature of the file
