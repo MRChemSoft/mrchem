@@ -700,7 +700,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
  */
 json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     auto run_exc = json_rsp.contains("states");
-    if (not run_exc) {
+    if (!run_exc) {
         print_utils::headline(0, "Computing Linear Response Wavefunction");
     } else {
         print_utils::headline(0, "Optimizing Transition Orbitals and Frequencies");
@@ -743,13 +743,13 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     auto run_tda = false;
     auto iter_var = 0;
     RankOneOperator<3> h_1;
-    if (not run_exc) {
+    if ( !run_exc) {
         omega = json_rsp["frequency"];
         dynamic = json_rsp["dynamic"];
         iter_var = json_rsp["components"].size();
         mol.initPerturbedOrbitals(dynamic, 1);
         const auto &json_pert = json_rsp["perturbation"];
-        auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
+        h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
         json_out["perturbation"] = json_pert["operator"];
         json_out["frequency"] = omega;
         json_out["components"] = {};
@@ -761,19 +761,19 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     } else {
         MSG_ERROR("Response calculation badly initialized. No components or excited states")
     }
+    FockBuilder F_1;
+    const auto &json_fock_1 = json_rsp["fock_operator"];
+    driver::build_fock_operator(json_fock_1, mol, F_1, 1);
 
-    const auto &json_fock = json_rsp["fock_operator"];
     for (auto i = 0; i < iter_var; i++) {
-        FockBuilder F_1;
         if (run_exc) {
-            driver::build_fock_operator(json_fock, mol, F_1, 1, i, run_tda);
-        } else {
-            driver::build_fock_operator(json_fock, mol, F_1, 1);
+            F_1.clear();
+            driver::build_fock_operator(json_fock_1, mol, F_1, 1, i, run_tda);
         }
 
         json comp_out = {};
-        const auto &json_comp = not run_exc ? json_rsp["components"][i] : json_rsp["states"][i];
-        if (not run_exc) { F_1.perturbation() = h_1[i]; }
+        const auto &json_comp = !run_exc ? json_rsp["components"][i] : json_rsp["states"][i];
+        if (!run_exc) { F_1.perturbation() = h_1[i]; }
 
         ///////////////////////////////////////////////////////////
         ///////////////   Setting Up Initial Guess   //////////////
@@ -814,9 +814,24 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             solver.setOrthPrec(orth_prec);
             comp_out["exc_solver"] = solver.optimize(mol, F_0, F_1, i);
             json_out["success"] = comp_out["exc_solver"]["converged"];
+            //TODO implement write orbitals for the excited states and property calculations.
             if (json_out["success"]) {
                 if (json_comp.contains("write_orbitals")) rsp::write_orbitals(json_comp["write_orbitals"], mol, dynamic);
-                if (json_rsp.contains("properties")) rsp::calc_properties(json_rsp["properties"], mol, 2, json_rsp["frequency"], i);
+                Timer t_lap;
+                t_lap.start();
+                mrcpp::print::header(2, "Excitation energy");
+                double w_au = comp_out["exc_solver"]["frequency"];
+                auto w_cm = PhysicalConstants::get("hartree2wavenumbers") * w_au;
+                auto l_nm = (1.0e7 / w_cm);
+
+                mrcpp::print::header(0, "Exciation energy (state " + std::to_string(i+1) + ")");
+                print_utils::scalar(0, "Wavelength", l_nm, "(nm)");
+                print_utils::scalar(0, "Frequency", w_au, "(au)");
+                print_utils::scalar(0, "         ", w_cm, "(cm-1)");
+                mrcpp::print::separator(0, '-');
+                mrcpp::print::separator(0, '=', 2);
+                mrcpp::print::footer(2, t_lap, 2);
+
             }
             mol.getOrbitalsX(i).clear(); // Clear orbital vector
             mol.getOrbitalsY(i).clear(); // Clear orbital vector
@@ -853,17 +868,15 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
             ///////////////////////////////////////////////////////////
             ////////////   Compute Response Properties   //////////////
             ///////////////////////////////////////////////////////////
-
             if (json_out["success"]) {
                 if (json_comp.contains("write_orbitals")) rsp::write_orbitals(json_comp["write_orbitals"], mol, dynamic);
-                if (json_rsp.contains("properties")) rsp::calc_properties(json_rsp["properties"], mol, 2, json_rsp["frequency"], i);
+                if (json_rsp.contains("properties")) rsp::calc_properties(json_rsp["properties"], mol, i, json_rsp["frequency"]);
             }
             mol.getOrbitalsX(0).clear(); // Clear orbital vector
             mol.getOrbitalsY(0).clear(); // Clear orbital vector
             json_out["components"].push_back(comp_out);
         }
     }
-
     F_0.clear();
     mpi::barrier(mpi::comm_orb);
     if (run_exc) {
@@ -1041,6 +1054,7 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "NMR shielding (para)", t_lap);
     }
+    
 
     if (json_prop.contains("hyperpolarizability")) MSG_ERROR("Hyperpolarizability not implemented");
     if (json_prop.contains("geometric_derivative")) MSG_ERROR("Geometric derivative not implemented");

@@ -68,6 +68,8 @@ namespace mrchem {
  *
  */
 json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder &F_1, int state) {
+    // should start with a "computing frequency initial guess" , probably should do it in driver.cpp
+    
     Timer t_tot;
     json json_out;
     double err_o = 1.0;
@@ -79,8 +81,6 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     OrbitalVector &Phi_0 = mol.getOrbitals();
 
     OrbitalVector &X_n = mol.getOrbitalsX(state);
-    MSG_INFO("testing size of NStatevector ");
-    std::cout << "size of states vector " << mol.getStatesX().size() << "\n";
 
     ComplexMatrix &F_mat_0 = mol.getFockMatrix();
 
@@ -257,6 +257,9 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     json_out["frequency"] = omega_n;
     json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;
+    auto &omega_vec = mol.getExcitationEnergies().getOmega();
+    omega_vec.push_back(omega_n);
+
     return json_out;
 }
 
@@ -308,22 +311,17 @@ void ExcitedStatesSolver::printProperty() const {
 
     mrcpp::print::separator(2, '=');
     println(2, o_head.str());
-    mrcpp::print::separator(2, '-');
 
-    printUpdate(1, " frequency", prop_1, prop_1 - prop_0, this->propThrs);
+    printUpdate(1, " Frequency", prop_1, prop_1 - prop_0, this->propThrs);
     mrcpp::print::separator(2, '=', 2);
 }
 
 void ExcitedStatesSolver::printParameters(double omega, const std::string &oper) const {
     std::stringstream o_calc;
-    o_calc << "Optimize linear response orbitals";
+    o_calc << "Optimize Transition Orbitals and Frequencies";
 
     std::stringstream o_omega;
-    if (this->dynamic) {
-        o_omega << std::setprecision(5) << std::fixed << omega << " au";
-    } else {
-        o_omega << "Static field";
-    }
+    o_omega << std::setprecision(5) << std::fixed << omega << " au";
 
     std::stringstream o_kain;
     if (this->history > 0) {
@@ -365,8 +363,7 @@ void ExcitedStatesSolver::printParameters(double omega, const std::string &oper)
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation        ", o_calc.str());
-    print_utils::text(0, "Frequency          ", o_omega.str());
-    print_utils::text(0, "Perturbation       ", oper);
+    print_utils::text(0, "Guess frequency    ", o_omega.str());
     print_utils::text(0, "Method             ", this->methodName);
     print_utils::text(0, "Relativity         ", this->relativityName);
     print_utils::text(0, "Checkpointing      ", (this->checkpoint) ? "On" : "Off");

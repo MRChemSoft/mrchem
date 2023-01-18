@@ -167,7 +167,6 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
 
     if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-    auto x_t_x = orbital::dot(X, X); // each i-th element is \langle x_i | x_i \rangle
     // Compute local density from own orbitals
     rho.real().setZero();
     for (int i = 0; i < Phi.size(); i++) {
@@ -179,7 +178,6 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
 
             Density rho_i(false);
             qmfunction::multiply_real(rho_i, X[i], Phi[i], mult_prec);
-            std::cout << "run tda = " << run_tda << "\n";
             if (run_tda) {
                 rho.add(1.0 * occ, rho_i); // should only be one for tda else 2.0 for standard
             } else {

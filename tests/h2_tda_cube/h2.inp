@@ -1,0 +1,40 @@
+{
+    "world_prec": 0.00001,
+    "world_size": 8,
+    "MPI": {
+        "numerically_exact": true
+    },
+    "Molecule": {
+        "coords": "H      0.0000 0.0000   0.0000\nH      0.0000 0.0000    1.4\n"
+    },
+    "WaveFunction": {
+        "method": "HF",
+        "restricted": true
+    },
+    "Basis" : {
+        "type" : "Interpolating",                  
+        "order" : 7                             
+    },
+    "SCF": {
+        "run": false,
+        "guess_type": "mw",
+        "kain": 5,
+        "guess_prec": 0.0001
+
+    },
+    "Properties":{
+        "excited_states": true
+    },
+    "ExcitedStates": {
+        "n_states": 2,
+        "run_tda": true,
+        "kain":5,
+        "max_iter":100
+    },
+    "Response": {
+        "orbital_thrs": 0.0001,
+        "property_thrs": 0.0001, 
+        "guess_type": "cube",
+        "guess_prec": 0.001
+    }
+}

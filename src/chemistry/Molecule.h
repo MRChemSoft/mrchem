@@ -47,6 +47,7 @@
 #include "properties/Magnetizability.h"
 #include "properties/NMRShielding.h"
 #include "properties/OrbitalEnergies.h"
+#include "properties/ExcitationEnergies.h"
 #include "properties/Polarizability.h"
 #include "properties/QuadrupoleMoment.h"
 #include "properties/SCFEnergy.h"
@@ -101,6 +102,8 @@ public:
     auto getOrbitalsX_p(int state = 0) const { return this->orbitals_x[state]; }
     auto getOrbitalsY_p(int state = 0) const { return this->orbitals_y[state]; }
     auto getCavity_p() const { return this->cavity; }
+    auto getStatesX() const { return this->orbitals_x; }
+    auto getStatesY() const { return this->orbitals_y; }
 
     nlohmann::json json() const;
     void printGeometry() const;
@@ -112,6 +115,7 @@ public:
 
     SCFEnergy &getSCFEnergy() { return this->energy; }
     OrbitalEnergies &getOrbitalEnergies() { return this->epsilon; }
+    ExcitationEnergies &getExcitationEnergies() { return this->omega; }
     DipoleMoment &getDipoleMoment(const std::string &id) { return this->dipole.at(id); }
     QuadrupoleMoment &getQuadrupoleMoment(const std::string &id) { return this->quadrupole.at(id); }
     Polarizability &getPolarizability(const std::string &id) { return this->polarizability.at(id); }
@@ -140,6 +144,7 @@ protected:
     // Properties
     SCFEnergy energy{};
     OrbitalEnergies epsilon{};
+    ExcitationEnergies omega{};
     PropertyMap<DipoleMoment> dipole{};
     PropertyMap<QuadrupoleMoment> quadrupole{};
     PropertyMap<Polarizability> polarizability{};

@@ -344,12 +344,12 @@ def write_rsp_calc(omega, user_dict, origin):
             "file_y_p": f"{file_dict['guess_y_p']}_rsp_{dir:d}",
             "file_y_a": f"{file_dict['guess_y_a']}_rsp_{dir:d}",
             "file_y_b": f"{file_dict['guess_y_b']}_rsp_{dir:d}",
-            "file_CUBE_x_p": f"{vector_dir}CUBE_x_p_{dir:d}_vector.json",
-            "file_CUBE_x_a": f"{vector_dir}CUBE_x_a_{dir:d}_vector.json",
-            "file_CUBE_x_b": f"{vector_dir}CUBE_x_b_{dir:d}_vector.json",
-            "file_CUBE_y_p": f"{vector_dir}CUBE_y_p_{dir:d}_vector.json",
-            "file_CUBE_y_a": f"{vector_dir}CUBE_y_a_{dir:d}_vector.json",
-            "file_CUBE_y_b": f"{vector_dir}CUBE_y_b_{dir:d}_vector.json",
+            "file_CUBE_x_p": f"{vector_dir}CUBE_x_p_rsp_{dir:d}_vector.json",
+            "file_CUBE_x_a": f"{vector_dir}CUBE_x_a_rsp_{dir:d}_vector.json",
+            "file_CUBE_x_b": f"{vector_dir}CUBE_x_b_rsp_{dir:d}_vector.json",
+            "file_CUBE_y_p": f"{vector_dir}CUBE_y_p_rsp_{dir:d}_vector.json",
+            "file_CUBE_y_a": f"{vector_dir}CUBE_y_a_rsp_{dir:d}_vector.json",
+            "file_CUBE_y_b": f"{vector_dir}CUBE_y_b_rsp_{dir:d}_vector.json",
         }
         if rsp_dict["write_orbitals"]:
             path_orbitals = rsp_dict["path_orbitals"]
@@ -395,7 +395,6 @@ def write_exc_calc(user_dict, origin):
 
     exc_calc["states"] = []
     for r in range(exc_dict["n_states"]):
-
         exc_state = {}
 
         program_guess_type = user_guess_type
@@ -478,7 +477,7 @@ def write_rsp_fock(user_dict, wf_dict):
     # Exchange-Correlation
     if wf_dict["method_type"] in ["dft"]:
         func_dict = []
-        for line in wf_dict["dft_funcs"].split("\n" ):
+        for line in wf_dict["dft_funcs"].split("\n"):
             sp = line.split()
             if len(sp) > 0:
                 func = sp[0].lower()

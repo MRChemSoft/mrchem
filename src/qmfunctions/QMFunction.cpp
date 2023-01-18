@@ -78,7 +78,7 @@ void QMFunction::alloc(int type, mrcpp::MultiResolutionAnalysis<3> *mra) {
 
 void QMFunction::free(int type) {
     if (type == NUMBER::Real or type == NUMBER::Total) {
-        if (this->hasReal()) { delete this->func_ptr->re; }
+        if (hasReal()) delete this->func_ptr->re;
         this->func_ptr->re = nullptr;
         if (this->func_ptr->shared_mem_re) this->func_ptr->shared_mem_re->clear();
     }

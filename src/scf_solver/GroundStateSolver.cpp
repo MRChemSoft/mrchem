@@ -82,6 +82,7 @@ void GroundStateSolver::printProperty() const {
     double Er_nuc_0 = scf_0.getNuclearReactionEnergy();
     double Er_nuc_1 = scf_1.getNuclearReactionEnergy();
 
+
     bool has_react = (std::abs(Er_el_1) > mrcpp::MachineZero) || (std::abs(Er_nuc_1) > mrcpp::MachineZero);
     bool has_ext = (std::abs(E_eext_1) > mrcpp::MachineZero) || (std::abs(E_next_1) > mrcpp::MachineZero);
 
@@ -265,22 +266,26 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     this->property.push_back(E_n.getTotalEnergy());
 
     auto plevel = Printer::getPrintLevel();
-    if (plevel < 1) { printConvergenceHeader("Total energy"); }
+    if (plevel < 1) {
+        printConvergenceHeader("Total energy");
+        printConvergenceRow(0);
+    }
 
+    int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
-    for (auto nIter = 0; (nIter < this->maxIter) or (this->maxIter < 0); nIter++) {
+    while (nIter++ < this->maxIter or this->maxIter < 0) {
         json json_cycle;
         std::stringstream o_header;
         o_header << "SCF cycle " << nIter;
         mrcpp::print::header(1, o_header.str(), 0, '#');
         mrcpp::print::separator(2, ' ', 1);
-        if (plevel < 1) printConvergenceRow(nIter);
+
         // Initialize SCF cycle
         Timer t_scf;
         double orb_prec = adjustPrecision(err_o);
         double helm_prec = getHelmholtzPrec();
-        if (nIter < 1) {
+        if (nIter < 2) {
             if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
         }
@@ -347,7 +352,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         if (this->checkpoint) orbital::save_orbitals(Phi_n, this->chkFile);
 
         // Finalize SCF cycle
-
+        if (plevel < 1) printConvergenceRow(nIter);
         printOrbitals(F_mat.real().diagonal(), errors, Phi_n, 0);
         mrcpp::print::separator(1, '-');
         printResidual(err_t, converged);
@@ -362,7 +367,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_out["cycles"].push_back(json_cycle);
         if (converged) break;
     }
-    std::cout << __FILE__ << " " << __LINE__ << " orbital energy " << F_mat.diagonal() << "\n";
 
     F.clear();
     mpi::barrier(mpi::comm_orb);
@@ -394,11 +398,11 @@ bool GroundStateSolver::needLocalization(int nIter, bool converged) const {
     bool loc = false;
     if (not this->localize) {
         loc = false;
-    } else if (nIter <= 1 or converged) {
+    } else if (nIter <= 2 or converged) {
         loc = true;
     } else if (this->rotation == 0) {
         loc = false;
-    } else if (nIter % this->rotation == this->rotation - 1) {
+    } else if (nIter % this->rotation == 0) {
         loc = true;
     }
     return loc;
@@ -415,11 +419,11 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
     bool diag = false;
     if (this->localize) {
         diag = false;
-    } else if (nIter <= 1 or converged) {
+    } else if (nIter <= 2 or converged) {
         diag = true;
     } else if (this->rotation == 0) {
         diag = false;
-    } else if (nIter % this->rotation == this->rotation - 1) {
+    } else if (nIter % this->rotation == 0) {
         diag = true;
     }
     return diag;

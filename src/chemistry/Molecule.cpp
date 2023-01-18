@@ -74,19 +74,9 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
 }
 
 void Molecule::initPerturbedOrbitals(bool dynamic, int n_states) {
-    MSG_INFO("before reserving the size of the vectors");
-    std::cout << "size of state_vector to initialize " << n_states << "\n";
-    // this->orbitals_x.reserve(n_states);
-    // this->orbitals_y.reserve(n_states);
-    // MSG_INFO("after reserving the size of the vectors");
-    std::cout << "size of state_vector after reserving " << this->orbitals_x.size() << "\n";
-    MSG_INFO("before loop to add vector pointers to nstate vecotr ");
     for (auto i = 0; i < n_states; i++) {
         auto orbital_x = std::make_shared<OrbitalVector>();
-        std::cout << "in the loop \n";
         this->orbitals_x.push_back(orbital_x);
-        // this->orbitals_x[i] =  std::make_shared<OrbitalVector>();
-        std::cout << "size of state_vector to initialize " << this->orbitals_x.size() << "\n";
         if (dynamic) {
             auto orbital_y = std::make_shared<OrbitalVector>();
             this->orbitals_y.push_back(orbital_y);
@@ -94,7 +84,6 @@ void Molecule::initPerturbedOrbitals(bool dynamic, int n_states) {
             this->orbitals_y.push_back(orbital_x);
         }
     }
-    std::cout << "size of state_vector after loop " << this->orbitals_x.size() << "\n";
 }
 
 /** @brief Return number of electrons */
@@ -225,6 +214,7 @@ void Molecule::printGeometry() const {
 void Molecule::printEnergies(const std::string &txt) const {
     energy.print(txt);
     epsilon.print(txt);
+    if (txt == "final") omega.print(txt);
 }
 
 /** @brief Pretty output of molecular properties
@@ -258,6 +248,7 @@ nlohmann::json Molecule::json() const {
 
     json_out["scf_energy"] = energy.json();
     json_out["orbital_energies"] = epsilon.json();
+    json_out["excitation_energies"] = omega.json();
     if (not dipole.empty()) json_out["dipole_moment"] = {};
     if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
     if (not polarizability.empty()) json_out["polarizability"] = {};

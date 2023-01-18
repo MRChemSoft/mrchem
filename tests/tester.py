@@ -60,6 +60,8 @@ def POLARIZABILITY(frequency):
     return ("output", "properties", "polarizability", f"pol-{frequency:.6f}",
             "tensor")
 
+def EXCITAION_ENERGY(state):
+    return ("output", "properties", "excitation_energies", f"state-{state}")
 
 def GEOMETRIC_DERIVATIVE(index, comp):
     return ("output", "properties", "geometric_derivative", f"geom-{index}", comp)
