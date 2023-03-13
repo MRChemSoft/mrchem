@@ -33,5 +33,6 @@ class Magnetizability;
 class NMRShielding;
 class Polarizability;
 class OrbitalEnergies;
+class ExcitationEnergies;
 
 } // namespace mrchem

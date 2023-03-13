@@ -50,12 +50,11 @@ namespace mrchem {
  * @param[in] P Poisson operator (does not take ownership)
  * @param[in] Phi vector of orbitals which define the exchange operator
  */
-ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P, OrbitalVector_p Phi, OrbitalVector_p X, OrbitalVector_p Y, double prec)
+ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P, OrbitalVector_p Phi, OrbitalVector_p X, OrbitalVector_p Y, double prec, bool run_tda)
         : ExchangePotential(P, Phi, prec)
+        , doTDA(run_tda)
         , orbitals_x(X)
-        , orbitals_y(Y) {
-    if (X == Y) useOnlyX = true;
-}
+        , orbitals_y(Y) { }
 
 /** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */
 void ExchangePotentialD2::setupBank() {
@@ -101,12 +100,11 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
         MSG_ERROR("Uninitialized operator");
         return phi_p.paramCopy();
     }
-
     Timer timer;
     OrbitalVector &Phi = *this->orbitals;
     OrbitalVector &X = *this->orbitals_x;
     OrbitalVector &Y = *this->orbitals_y;
-
+    
     double prec = this->apply_prec;
     // use fixed exchange_prec if set explicitly, otherwise use setup prec
     double precf = (this->exchange_prec > 0.0) ? this->exchange_prec : prec;
@@ -127,19 +125,22 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital ex_xip = phi_p.paramCopy();
-            Orbital ex_iyp = phi_p.paramCopy();
             calcExchange_kij(precf, x_i, phi_i, phi_p, ex_xip);
-            calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
             func_vec.push_back(ex_xip);
-            func_vec.push_back(ex_iyp);
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            if (!doTDA) {
+                Orbital ex_iyp = phi_p.paramCopy();
+                calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
+                func_vec.push_back(ex_iyp);
+                coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            }
+            
         }
         if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
         if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
         if (not mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
     }
-
+    
     // compute out_p = sum_i c_i*(ex_xip + ex_iyp)
     Orbital out_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
@@ -186,13 +187,15 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital ex_ixp = phi_p.paramCopy();
-            Orbital ex_yip = phi_p.paramCopy();
             calcExchange_kij(precf, phi_i, x_i, phi_p, ex_ixp);
-            calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
             func_vec.push_back(ex_ixp);
-            func_vec.push_back(ex_yip);
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            if (!doTDA) {
+                Orbital ex_yip = phi_p.paramCopy();
+                calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
+                func_vec.push_back(ex_yip);
+                coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            }
         }
         if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
         if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);

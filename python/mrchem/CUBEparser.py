@@ -29,7 +29,7 @@ from pathlib import Path
 from .input_parser.plumbing import pyparsing as pp
 
 
-def parse_files(user_dict, direction=None):
+def parse_files(user_dict, direction=None, state=None):
 
     file_dict = user_dict["Files"]
     world_unit = user_dict["world_unit"]
@@ -41,12 +41,15 @@ def parse_files(user_dict, direction=None):
     found = False
     for key, val in cube_guess_dict.items():
         if (direction is not None):
-            data_type = "_".join(key.split("_")[2:]) + f"_{direction:d}"
+            data_type = "_".join(key.split("_")[2:]) + f"_rsp_{direction:d}"
             path_list = _get_paths(Path(val), rsp=True, direction=direction)
+        elif (state is not None):
+            data_type = "_".join(key.split("_")[2:]) + f"_exc_{state:d}"
+            path_list = _get_paths(Path(val), exc=True, state=state)
         else:
             data_type = "_".join(key.split("_")[2:])
             path_list = _get_paths(Path(val))
-
+        
         if path_list:
             found = found or True
             _write_cube_vectors(path_list, data_type, world_unit, pc, vector_dir)
@@ -58,7 +61,6 @@ def parse_files(user_dict, direction=None):
 
 def _write_cube_vectors(path_list, data_type, world_unit, pc, vector_dir):
     cube_list = []
-
     if not vector_dir.is_dir():
         vector_dir.mkdir()
 
@@ -75,15 +77,19 @@ def _write_cube_vectors(path_list, data_type, world_unit, pc, vector_dir):
             fd.write(dumps(cube_list, indent=2))
 
 
-def _get_paths(path, rsp=False, direction=None):
+def _get_paths(path, rsp=False, exc=False, direction=None, state=None):
     directory = path.parent
-    prefix = path.name if (not rsp) else f"{path.name}_rsp_{direction:d}"
+    prefix = path.name
+    if (rsp):
+        prefix = f"{path.name}_rsp_{direction:d}"
+    elif (exc):
+        prefix = f"{path.name}_exc_{state:d}"
+
 
     if directory.is_dir():
         path_l = [file.resolve() for file in directory.glob(f"{prefix}*.cube")]
     else:
         path_l = []
-
     return path_l
 
 

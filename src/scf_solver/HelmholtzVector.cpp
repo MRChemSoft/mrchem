@@ -55,7 +55,8 @@ HelmholtzVector::HelmholtzVector(double pr, const DoubleVector &l)
         : prec(pr) {
     this->lambda = l;
     for (int i = 0; i < this->lambda.size(); i++) {
-        if (this->lambda(i) > 0.0) this->lambda(i) = -0.5;
+        std::cout << "lambda: " << lambda(i) << "\n";
+        if (this->lambda(i) > 0.0) this->lambda(i) = -0.15; // should be -0.15 for excited states, as resetting this to -0.5 kills the transition orbitals.
     }
 }
 

@@ -73,13 +73,16 @@ Molecule::Molecule(const std::vector<std::string> &coord_str, int c, int m)
     readCoordinateString(coord_str);
 }
 
-void Molecule::initPerturbedOrbitals(bool dynamic) {
-    if (dynamic) {
-        this->orbitals_x = std::make_shared<OrbitalVector>();
-        this->orbitals_y = std::make_shared<OrbitalVector>();
-    } else {
-        this->orbitals_x = std::make_shared<OrbitalVector>();
-        this->orbitals_y = this->orbitals_x;
+void Molecule::initPerturbedOrbitals(bool dynamic, int n_states) {
+    for (auto i = 0; i < n_states; i++) {
+        auto orbital_x = std::make_shared<OrbitalVector>();
+        this->orbitals_x.push_back(orbital_x);
+        if (dynamic) {
+            auto orbital_y = std::make_shared<OrbitalVector>();
+            this->orbitals_y.push_back(orbital_y);
+        } else {
+            this->orbitals_y.push_back(orbital_x);
+        }
     }
 }
 
@@ -211,6 +214,7 @@ void Molecule::printGeometry() const {
 void Molecule::printEnergies(const std::string &txt) const {
     energy.print(txt);
     epsilon.print(txt);
+    if (txt == "final") omega.print(txt);
 }
 
 /** @brief Pretty output of molecular properties
@@ -244,6 +248,7 @@ nlohmann::json Molecule::json() const {
 
     json_out["scf_energy"] = energy.json();
     json_out["orbital_energies"] = epsilon.json();
+    json_out["excitation_energies"] = omega.json();
     if (not dipole.empty()) json_out["dipole_moment"] = {};
     if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
     if (not polarizability.empty()) json_out["polarizability"] = {};

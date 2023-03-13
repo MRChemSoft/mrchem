@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+
 #
 # MRChem, a numerical real-space code for molecular electronic structure
 # calculations within the self-consistent field (SCF) approximations of quantum

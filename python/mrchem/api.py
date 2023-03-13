@@ -32,6 +32,7 @@ from .helpers import (
     write_scf_properties,
     write_scf_plot,
     write_rsp_calc,
+    write_exc_calc,
     parse_wf_method,
 )
 from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
@@ -179,8 +180,8 @@ def write_rsp_calculations(user_dict, mol_dict, origin):
     run_pol = user_dict["Properties"]["polarizability"]
     run_mag = user_dict["Properties"]["magnetizability"]
     run_nmr = user_dict["Properties"]["nmr_shielding"]
+    run_exc = user_dict["Properties"]["excited_states"]
     nuc_spec = user_dict["NMRShielding"]["nuclear_specific"]
-
     if run_pol:
         for omega in user_dict["Polarizability"]["frequency"]:
             freq_key = f"{omega:6f}"
@@ -268,5 +269,8 @@ def write_rsp_calculations(user_dict, mol_dict, origin):
                 }
                 rsp_key = "nuc_mag-" + atom_key
                 rsp_dict[rsp_key] = rsp_calc
+    
+    if run_exc:
+        rsp_dict["excited_states"] = write_exc_calc(user_dict, origin)
 
     return rsp_dict

@@ -291,7 +291,6 @@ sections:
           including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section.
           ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence
           over keywords in the ``ZORA`` section).
-
       - name: environment
         type: str
         default: none
@@ -371,6 +370,11 @@ sections:
         default: false
         docstring: |
           Compute NMR shielding tensor.
+      - name: excited_states
+        type: bool
+        default: false
+        docstring: |
+          Compute excited states.
       - name: geometric_derivative
         type: bool
         default: false
@@ -398,6 +402,30 @@ sections:
           - len(value) == 0 or len(value) == 3
         docstring: |
           Strength of external electric field.
+  - name: ExcitedStates
+    docstring: |
+      Give details regarding the excited states calculation.
+    keywords:
+      - name: n_states
+        type: int
+        default: 1
+        docstring: |
+          Amount of states to solve for in the excited state solver.
+      - name: run_tda
+        type: bool
+        default: false
+        docstring: |
+          What approximation to use to solve for the excited states.
+      - name: kain
+        type: int
+        default: 5
+        docstring: |
+          Length of KAIN iterative history.
+      - name: max_iter
+        type: int
+        default: 100
+        docstring: |
+          Maximum number of SCF iterations.
   - name: Polarizability
     docstring: |
       Give details regarding the polarizability calculation.
@@ -452,130 +480,141 @@ sections:
         default: initial_guess/phi_p
         docstring: |
           File name for paired orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.mw
+          Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.mw``
       - name: guess_phi_a
         type: str
         default: initial_guess/phi_a
         docstring: |
           File name for alpha orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.mw
+          Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.mw``
       - name: guess_phi_b
         type: str
         default: initial_guess/phi_b
         docstring: |
           File name for beta orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.mw
+          Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.mw``
       - name: guess_x_p
         type: str
         default: initial_guess/X_p
         docstring: |
           File name for paired response orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.mw
+          Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.mw``
       - name: guess_x_a
         type: str
         default: initial_guess/X_a
         docstring: |
           File name for alpha response orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/x_a_rsp_idx_<0...Na>_<re/im>.mw
+          Expected path is ``<path_orbitals>/x_a_rsp_idx_<0...Na>_<re/im>.mw``
       - name: guess_x_b
         type: str
         default: initial_guess/X_b
         docstring: |
           File name for beta response orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.mw
+          Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.mw``
       - name: guess_y_p
         type: str
         default: initial_guess/Y_p
         docstring: |
           File name for paired response orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.mw
+          Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.mw``
       - name: guess_y_a
         type: str
         default: initial_guess/Y_a
         docstring: |
           File name for alpha response orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/y_a_rsp_idx_<0...Na>_<re/im>.mw
+          Expected path is ``<path_orbitals>/y_a_rsp_idx_<0...Na>_<re/im>.mw``
       - name: guess_y_b
         type: str
         default: initial_guess/Y_b
         docstring: |
           File name for beta response orbitals, used with ``mw`` guess.
-          Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.mw
+          Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.mw``
       - name: guess_cube_p
         type: str
         default: initial_guess/phi_p
         docstring: |
           File name for paired orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube
-          where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube``
+          where ``Np`` is the number of orbitals and `re/im` denote real or imaginary parts.
       - name: guess_cube_a
         type: str
         default: initial_guess/phi_a
         docstring: |
           File name for alpha orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.cube
-          where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.cube``
+          where ``Np`` is the number of orbitals and `re/im` denote real or imaginary parts.
       - name: guess_cube_b
         type: str
         default: initial_guess/phi_b
         docstring: |
           File name for beta orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube
-          where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube``
+          where ``Np`` is the number of orbitals and `re/im` denote real or imaginary parts.
       - name: guess_cube_x_p
         type: str
         default: initial_guess/x_p
         docstring: |
           File name for paired response orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/x_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube
-          where `0,1,2` indicate the index of the components of the response vectors.
-          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/x_p_<rsp,exc>_<0,1,2,...,N>_<0...Np>_<re/im>.cube``
+          This can be an initial guess for two types of calculations, `exc`for excited states and `rsp` for a response calculation.
+          If ``exc`` is used, the second set of variables ``1,2,...,N`` indicates which state this is a guess for.
+          If ``rsp`` is used, the second set of variables ``1,2,...,N`` indicates the component of the response vectors. 
+          ``Np`` is the number of orbitals and ``re/im`` denote real or imaginary parts.
       - name: guess_cube_x_a
         type: str
         default: initial_guess/x_a
         docstring: |
           File name for alpha response orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/x_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube
-          where `0,1,2` indicate the index of the components of the response vectors.
-          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/x_a_<rsp,exc>_<0,1,2,...,N>_<0...Na>_<re/im>.cube``
+          This can be an initial guess for two types of calculations, `exc`for excited states and `rsp` for a response calculation.
+          If ``exc`` is used, the second set of variables ``1,2,...,N`` indicates which state this is a guess for.
+          If ``rsp`` is used, the second set of variables ``1,2,...,N`` indicates the component of the response vectors. 
+          ``Np`` is the number of orbitals and ``re/im`` denote real or imaginary parts.
       - name: guess_cube_x_b
         type: str
         default: initial_guess/x_b
         docstring: |
           File name for beta response orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/x_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube
-          where `0,1,2` indicate the index of the components of the response vectors.
-          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/x_b_<rsp,exc>_<0,1,2,...,N>_<0...Nb>_<re/im>.cube``
+          This can be an initial guess for two types of calculations, `exc`for excited states and `rsp` for a response calculation.
+          If ``exc`` is used, the second set of variables ``1,2,...,N`` indicates which state this is a guess for.
+          If ``rsp`` is used, the second set of variables ``1,2,...,N`` indicates the component of the response vectors. 
+          ``Np`` is the number of orbitals and ``re/im`` denote real or imaginary parts.
       - name: guess_cube_y_p
         type: str
         default: initial_guess/y_p
         docstring: |
           File name for paired response orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/y_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube
-          where `0,1,2` indicate the index of the components of the response vectors.
-          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/y_p_<rsp,exc>_<0,1,2,...,N>_<0...Np>_<re/im>.cube``
+          This can be an initial guess for two types of calculations, `exc`for excited states and `rsp` for a response calculation.
+          If ``exc`` is used, the second set of variables ``1,2,...,N`` indicates which state this is a guess for.
+          If ``rsp`` is used, the second set of variables ``1,2,...,N`` indicates the component of the response vectors. 
+          ``Np`` is the number of orbitals and ``re/im`` denote real or imaginary parts.
       - name: guess_cube_y_a
         type: str
         default: initial_guess/y_a
         docstring: |
           File name for alpha response orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/y_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube
-          where `0,1,2` indicate the index of the components of the response vectors.
-          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/y_a_<rsp,exc>_<0,1,2,...,N>_<0...Na>_<re/im>.cube``
+          This can be an initial guess for two types of calculations, `exc`for excited states and `rsp` for a response calculation.
+          If ``exc`` is used, the second set of variables ``1,2,...,N`` indicates which state this is a guess for.
+          If ``rsp`` is used, the second set of variables ``1,2,...,N`` indicates the component of the response vectors. 
+          ``Np`` is the number of orbitals and ``re/im`` denote real or imaginary parts.
       - name: guess_cube_y_b
         type: str
         default: initial_guess/y_b
         docstring: |
           File name for beta response orbitals, used with ``cube`` guess.
-          Expected path is ``<path_orbitals>/y_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube
-          where `0,1,2` indicate the index of the components of the response vectors.
-          `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
+          Expected path is ``<path_orbitals>/y_b_<rsp,exc>_<0,1,2,...,N>_<0...Nb>_<re/im>.cube``
+          This can be an initial guess for two types of calculations, `exc`for excited states and `rsp` for a response calculation.
+          If ``exc`` is used, the second set of variables ``1,2,...,N`` indicates which state this is a guess for.
+          If ``rsp`` is used, the second set of variables ``1,2,...,N`` indicates the component of the response vectors. 
+          ``Np`` is the number of orbitals and ``re/im`` denote real or imaginary parts.
       - name: cube_vectors
         type: str
         default: cube_vectors/
         docstring: |
           Directory where cube vectors are stored for mrchem calculation.
-
   - name: SCF
     docstring: |
       Includes parameters related to the ground state SCF orbital optimization.
@@ -764,6 +803,7 @@ sections:
           ``mw`` will start from final orbitals in a previous calculation written
           using the ``write_orbitals`` keyword. The orbitals will be re-projected
           into the new computational setup.
+          ``cube`` will start from orbitals saved in cubefiles from external calculations.
       - name: write_checkpoint
         type: bool
         default: false
