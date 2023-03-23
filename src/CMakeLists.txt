@@ -12,6 +12,7 @@ target_compile_definitions(mrchem
   PUBLIC
     $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:MRCHEM_HAS_OMP>
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MRCHEM_HAS_MPI>
+    H5_USE_EIGEN
   )
 
 target_include_directories(mrchem
@@ -47,6 +48,7 @@ target_link_libraries(mrchem
     XCFun::xcfun
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json
+    HighFive
     $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:OpenMP::OpenMP_CXX>
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MPI::MPI_CXX>
   )

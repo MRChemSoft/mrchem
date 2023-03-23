@@ -575,6 +575,11 @@ sections:
         default: cube_vectors/
         docstring: |
           Directory where cube vectors are stored for mrchem calculation.
+      - name: hdf5
+        type: str
+        default: initial_guess/guess.h5
+        docstring: |
+          File name for the HDF5 guess.
 
   - name: SCF
     docstring: |
@@ -646,7 +651,8 @@ sections:
         default: sad_gto
         predicates:
           - value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz',
-            'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']
+            'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube',
+            'hdf5']
         docstring: |
           Type of initial guess for ground state orbitals.
           ``chk`` restarts a previous calculation which was dumped using the
@@ -663,6 +669,7 @@ sections:
           basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic
           Densities Hamiltonian, respectively.
           ``cube`` will start from orbitals saved in cubefiles from external calculations.
+          ``hdf5`` will start from orbital data saved in HDF5 format from a GTO calculation.
       - name: write_checkpoint
         type: bool
         default: false

@@ -24,34 +24,45 @@
  */
 
 #pragma once
+
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
 
 class CUBEfunction final : public mrcpp::RepresentableFunction<3> {
 public:
-    CUBEfunction(const int N_atoms,
-                 const int N_vals,
-                 const std::array<int, 3> N_steps,
-                 const mrcpp::Coord<3> origin,
-                 const std::array<mrcpp::Coord<3>, 3> Voxel_axes,
-                 std::vector<int> Z_n,
-                 std::vector<double> cube,
-                 std::vector<double> atom_charges,
-                 std::vector<mrcpp::Coord<3>> atom_coords);
+    /**
+     * @param[in] N_steps size 3 array of the number of steps in each voxel axis. 0 is the X_axis, 1 is the Y_axis and 2 is the Z_axis
+     * @param[in] origin
+     * @param[in] Voxel_axes size 3x3 matrix of the voxel axes, first index denotes which voxel, second denotes stepsize on each cartesian coordinate
+     * @param[in] cube flattened volumetric data. Indexing here works as  [x_step*N_steps[1]*N_steps[2] + y_step*N_steps[2] + z_step].
+     */
+    CUBEfunction(const Eigen::Vector3i &N_steps, const Eigen::Vector3d &origin, const Eigen::Matrix3d &Voxel_axes, const Eigen::VectorXd &cube)
+            : N_steps(N_steps)
+            , origin(origin)
+            , inv_basis(Voxel_axes.inverse())
+            , CUBE(cube) {}
+
+    /**
+     * @param[in] N_steps size 3 array of the number of steps in each voxel axis. 0 is the X_axis, 1 is the Y_axis and 2 is the Z_axis
+     * @param[in] origin
+     * @param[in] Voxel_axes size 3x3 matrix of the voxel axes, first index denotes which voxel, second denotes stepsize on each cartesian coordinate
+     * @param[in] cube flattened volumetric data. Indexing here works as  [x_step*N_steps[1]*N_steps[2] + y_step*N_steps[2] + z_step].
+     */
+    CUBEfunction(const std::array<int, 3> &N_steps, const mrcpp::Coord<3> &origin, const std::array<mrcpp::Coord<3>, 3> &Voxel_axes, const std::vector<double> &cube)
+            : N_steps(N_steps.data())
+            , origin(origin.data())
+            , CUBE(Eigen::Map<const Eigen::VectorXd>(cube.data(), cube.size())) {
+        Eigen::Map<const Eigen::Matrix<double, 3, 3, Eigen::RowMajor>> voxel_axes(&Voxel_axes[0][0]);
+        inv_basis = voxel_axes.transpose().inverse();
+    }
+
     double evalf(const mrcpp::Coord<3> &r) const override;
 
 protected:
-    int N_atoms;
-    int N_val;
-    std::array<int, 3> N_steps; // size 3 array of the number of steps in each voxel axis. 0 is the X_axis, 1 is the Y_axis and 2 is the Z_axis
-    mrcpp::Coord<3> corner;
-    std::array<mrcpp::Coord<3>, 3> voxel_axes; // size 3x3 matrix of the voxel axes, first index denotes which voxel, second denotes stepsize on each cartesian coordinate
-    std::vector<int> atom_numbers;
-    std::vector<double> CUBE; // indexing here works as  [x_step*N_steps[1]*N_steps[2] + y_step*N_steps[2] + z_step].
-    std::vector<double> atom_charges;
-    std::vector<mrcpp::Coord<3>> atom_coords;
-
-    Eigen::Matrix3d inv_basis; // multiply each row by its 1/norm^2
+    Eigen::Vector3i N_steps;
+    Eigen::Vector3d origin;
+    Eigen::Matrix3d inv_basis;
+    Eigen::VectorXd CUBE;
 };
 } // namespace mrchem

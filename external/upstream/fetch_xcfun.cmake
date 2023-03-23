@@ -11,6 +11,7 @@ else()
   include(FetchContent)
   FetchContent_Declare(xcfun_sources
     QUIET
+    DOWNLOAD_EXTRACT_TIMESTAMP ON
     URL
       https://github.com/dftlibs/xcfun/archive/v2.1.0.tar.gz
     )

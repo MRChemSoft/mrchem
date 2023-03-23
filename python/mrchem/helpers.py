@@ -173,6 +173,14 @@ def write_scf_guess(user_dict, wf_dict):
             )
             guess_type = "sad_gto"
 
+    if guess_type == "hdf5":
+        fpath = Path(file_dict["hdf5"])
+        if not fpath.is_file():
+            print(
+                f"No HDF5 guess found in any of the 'initial_guess' sub-folders, falling back to 'sad_gto' initial guess"
+            )
+            guess_type = "sad_gto"
+
     vector_dir = file_dict["cube_vectors"]
     guess_dict = {
         "zeta": zeta,
@@ -196,6 +204,7 @@ def write_scf_guess(user_dict, wf_dict):
         "file_CUBE_p": f"{vector_dir}CUBE_p_vector.json",
         "file_CUBE_a": f"{vector_dir}CUBE_a_vector.json",
         "file_CUBE_b": f"{vector_dir}CUBE_b_vector.json",
+        "file_HDF5": file_dict["hdf5"],
     }
     return guess_dict
 

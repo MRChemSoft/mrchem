@@ -382,6 +382,8 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {
         success = initial_guess::cube::setup(Phi, prec, cube_p, cube_a, cube_b);
+    } else if (type == "hdf5") {
+        success = initial_guess::hdf5::setup(Phi, prec, json_guess["file_HDF5"]);
     } else {
         MSG_ERROR("Invalid initial guess");
         success = false;
