@@ -179,7 +179,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             errors_x = orbital::get_norms(dX_n);
 
             // Compute KAIN update:
-            kain_x.accelerate(orb_prec, X_n, dX_n);
+            //kain_x.accelerate(orb_prec, X_n, dX_n);
 
             if (use_harrison) {
                 auto V_0_x = V_0(X_n);
@@ -193,8 +193,8 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             // Prepare for next iteration
             X_n = orbital::add(1.0, X_n, 1.0, dX_n);
             // orbital::orthogonalize(this->orth_prec, X_n);
-            orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
-            orbital::orthogonalize(this->orth_prec, X_np1);
+            //orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
+            //orbital::orthogonalize(this->orth_prec, X_np1);
 
             // Setup perturbed Fock operator (including V_1)
             V_1.clear();
@@ -282,8 +282,8 @@ double ExcitedStatesSolver::computeOmega(OrbitalVector &Phi, OrbitalVector &X, F
     auto F_rr = xi_t_F_0_xi_vec + xi_t_Q_Psi_vec;
     auto X_dot_X = xi_t_xi_vec.sum().real();
     auto omega = (F_rr - sum_ei_xi_t_xi) / (X_dot_X);
-
-    return omega;
+    std::cout << "omega: " << omega << "\n";
+    return omega; // 0.14949144; //
 }
 
 double ExcitedStatesSolver::updateOmega(OrbitalVector &X_n, OrbitalVector &X_np1) {
