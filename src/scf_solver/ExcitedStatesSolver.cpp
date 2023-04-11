@@ -179,7 +179,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             errors_x = orbital::get_norms(dX_n);
 
             // Compute KAIN update:
-            //kain_x.accelerate(orb_prec, X_n, dX_n);
+            // kain_x.accelerate(orb_prec, X_n, dX_n);
 
             if (use_harrison) {
                 auto V_0_x = V_0(X_n);
@@ -193,8 +193,8 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             // Prepare for next iteration
             X_n = orbital::add(1.0, X_n, 1.0, dX_n);
             // orbital::orthogonalize(this->orth_prec, X_n);
-            //orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
-            //orbital::orthogonalize(this->orth_prec, X_np1);
+            // orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
+            // orbital::orthogonalize(this->orth_prec, X_np1);
 
             // Setup perturbed Fock operator (including V_1)
             V_1.clear();
@@ -205,8 +205,8 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             t_lap.start();
 
             auto omega_np1 = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0);
-                /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */ // 0.14949144; // hardcoded excitation energy value, from veloxchem calculation.
-            domega_n = omega_np1 - omega_n;                              // maybe I should do this before normalization
+            /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */ // 0.14949144; // hardcoded excitation energy value, from veloxchem calculation.
+            domega_n = omega_np1 - omega_n;                          // maybe I should do this before normalization
             omega_n += domega_n;
             mrcpp::print::footer(2, t_lap, 2);
             if (plevel == 1) mrcpp::print::time(1, "Computing frequency update", t_lap);
