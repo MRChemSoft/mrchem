@@ -1093,6 +1093,22 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         // initialize SCRF object
         auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
 
+        if (json_fock["reaction_operator"].contains("Poisson_Boltzmann")) {
+            double ion_radius = json_fock["reaction_operator"]["Poisson_Boltzmann"]["ion_radius"];
+            auto kappa_o = json_fock["reaction_operator"]["Poisson_Boltzmann"]["kappa_out"];
+
+            auto width_ion = json_fock["reaction_operator"]["Poisson_Boltzmann"]["ion_width"];
+            auto radii_0 = cavity_p->getOriginalRadii();
+            auto radii_ion = std::vector<double>(radii_0.size());
+
+            for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
+            auto cavity_centers = cavity_p->getCoordinates();
+            auto cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
+            auto dhscreening = std::make_shared<DHScreening>(*cavity_ion, kappa_o, formulation);
+            dhscreening->printParameters();
+            scrf_p->setDHScreening(*dhscreening);
+        }
+
         // initialize reaction potential object
         auto V_R = [&] {
             if (order == 0) {

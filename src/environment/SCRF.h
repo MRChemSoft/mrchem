@@ -31,6 +31,7 @@
 #include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
 
+#include "DHScreening.h"
 #include "Permittivity.h"
 #include "qmfunctions/Density.h"
 
@@ -85,6 +86,7 @@ private:
     double mo_residual{1.0};
 
     Permittivity epsilon;
+    DHScreening kappa;
 
     Density rho_nuc; // As of right now, this is the biggest memory hog.
     // Alternative could be to precompute its contributions, as a potential is not as heavy as a density (maybe)
@@ -97,6 +99,7 @@ private:
 
     void computeDensities(const Density &rho_el, Density &rho_out);
     void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
+    void computePBTerm(mrcpp::ComplexFunction &V_tot);
 
     mrcpp::ComplexFunction solvePoissonEquation(const mrcpp::ComplexFunction &ingamma, const Density &rho_el);
 

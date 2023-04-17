@@ -78,6 +78,7 @@ public:
 
         bool has_ext = (std::abs(E_eext) > mrcpp::MachineZero) || (std::abs(E_next) > mrcpp::MachineZero);
         bool has_react = (std::abs(Er_el) > mrcpp::MachineZero) || (std::abs(Er_nuc) > mrcpp::MachineZero);
+        std::cout << "reaction operator is non-zero: " << has_react << std::endl;
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
         mrcpp::print::header(0, "Molecular Energy (" + id + ")");

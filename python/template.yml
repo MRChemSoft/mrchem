@@ -844,6 +844,11 @@ sections:
               ``total`` uses the total charge density.
               ``nuclear`` uses only the nuclear part of the total charge density.
               ``electronic`` uses only the electronic part of the total charge density.
+          - name: run_pb
+            type: bool
+            default: false
+            docstring: |
+              Run the Poisson-Boltzmann equation.
       - name: Cavity
         docstring: |
           Define the interlocking spheres cavity.
@@ -970,12 +975,34 @@ sections:
                   Whether to use the nonequilibrium formulation of response,
                   *i.e.* use the dynamic permittivity for the calculation of the
                   response reaction field. Defaults to false.
+      - name: D_H_screening
+        docstring: |
+          Parameters for the debye-huckel screening factor
+        keywords:
+          - name: kappa_out
+            type: float
+            default: 1.0
+            docstring: |
+              Value of the debye-Huckel screening factor outside of a designated radius.
+              This value represents the electrolyte strength in the solvent.
+          - name: ion_radius
+            type: float
+            default: 0.0
+            docstring: |
+              Amount with which the vdw-radius of the atoms will be increased.
+              The screening factor will have an area of effect that is often going
+              to be larger than the vdw-cavity, but centered in the same atoms.
+          - name: ion_width
+            type: float
+            default: 0.2
+            docstring: |
+              Width of the transition between the solute and the ion accessible part.
   - name: GeometryOptimizer
     docstring: |
       Includes parameters related to the internal geometry optimization using the
       SQNM (Stabilized Quasi-Newton Method) for noisy PES. Geometry optimizations require accurate forces.
       Consider setting world_prec to 1e-5 to 1e-7.
-      Convergence issues can usually be solved by increasing the precision of the SCF calculation. If that does 
+      Convergence issues can usually be solved by increasing the precision of the SCF calculation. If that does
       not work, try setting the initial step size manually.
     keywords:
       - name: run

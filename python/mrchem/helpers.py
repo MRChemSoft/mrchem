@@ -128,7 +128,7 @@ def _reaction_operator_handler(user_dict, rsp=False):
     else:
         density_type = 2
 
-    return {
+    reo_dict = {
         "poisson_prec": user_dict["world_prec"],
         "kain": user_dict["PCM"]["SCRF"]["kain"],
         "max_iter": user_dict["PCM"]["SCRF"]["max_iter"],
@@ -143,6 +143,14 @@ def _reaction_operator_handler(user_dict, rsp=False):
         ],
         "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
     }
+    if user_dict["PCM"]["SCRF"]["run_pb"]:
+        reo_dict["Poisson_Boltzmann"] = {
+            "kappa_out": user_dict["PCM"]["D_H_screening"]["kappa_out"],
+            "ion_radius": user_dict["PCM"]["D_H_screening"]["ion_radius"],
+            "ion_width": user_dict["PCM"]["D_H_screening"]["ion_width"],
+        }
+
+    return reo_dict
 
 
 def write_scf_guess(user_dict, wf_dict):
