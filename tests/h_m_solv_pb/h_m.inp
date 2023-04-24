@@ -4,36 +4,37 @@
 "MPI": {
   "numerically_exact": true
 },
+"Printer": {
+  "print_level" : 3                       
+},
 "Molecule": {
-  "charge": 1,
-  "coords": "Li 0.0 0.0 0.0"
+  "charge": -1,
+  "coords": "H 0.0 0.0 0.0"
 },
 "WaveFunction": {
   "method": "pbe0",
-  "environment": "pcm"
+  "environment": "pcm_pb"
 },
 "PCM": {
   "SCRF": {
     "kain": 5,
     "max_iter": 100,
     "dynamic_thrs": false,
-    "optimizer": "potential",
-    "run_pb": true
+    "optimizer": "potential"
   },
   "Cavity": {
-    "spheres": "0 4.0 1.0 0.0 0.5"
+    "spheres": "0 2.645616384 1.0 0.0 0.2"
   },
   "Permittivity": {
     "epsilon_in": 1.0,
-    "epsilon_out": 2.0,
+    "epsilon_out": 78.4,
     "formulation": "exponential"
   },
-  "Debye-Huckel_screening": {
-    "kappa_out": 2.0,
-    "ion_radius": 3.5,
-    "ion_width": 3.0
+  "D_H_screening": {
+    "kappa_out": 0.08703573174337145,
+    "ion_radius": 0.0,
+    "ion_width": 0.2
   }
-  
 },
 "SCF": {
   "run": false,

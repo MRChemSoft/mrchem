@@ -329,14 +329,14 @@ User input reference
     **Predicates**
       - ``value.lower() in ['none', 'zora', 'nzora']``
 
-   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options.
+   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively.
 
     **Type** ``str``
 
     **Default** ``none``
 
     **Predicates**
-      - ``value.lower() in ['none', 'pcm']``
+      - ``value.lower() in ['none', 'pcm', 'pcm_pb', 'pcm_lpb']``
 
    :nuclear_model: Type of nucleus model. Point-like (numerical smoothing): HFYGB (default), parabola or minimal. Finite models (physical smoothing): Gaussian or Homogeneous sphere Finite models are derived from nuclear RMS radius, Visscher (1997)
 
@@ -854,12 +854,6 @@ User input reference
         **Predicates**
           - ``value.lower() in ['total', 'nuclear', 'electronic']``
 
-       :run_pb: Run the Poisson-Boltzmann equation.
-
-        **Type** ``bool``
-
-        **Default** ``False``
-
        :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure.
 
         **Type** ``int``
@@ -962,6 +956,16 @@ User input reference
         **Type** ``float``
 
         **Default** ``0.2``
+
+       :formulation: formulation of the debye-huckel screening factor. Currently only the variable factor is implemented. ``variable``: implement the screening functions as  k = (1-C_ion)k_out
+
+        **Type** ``str``
+
+        **Default** ``variable``
+
+        **Predicates**
+          - ``value.lower() in ['variable']``
+
 
 
  :GeometryOptimizer: Includes parameters related to the internal geometry optimization using the SQNM (Stabilized Quasi-Newton Method) for noisy PES.

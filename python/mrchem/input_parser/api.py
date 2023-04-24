@@ -300,7 +300,9 @@ def stencil() -> JSONDict:
                                             'name': 'environment',
                                             'predicates': [   'value.lower() '
                                                               "in ['none', "
-                                                              "'pcm']"],
+                                                              "'pcm', "
+                                                              "'pcm_pb', "
+                                                              "'pcm_lpb']"],
                                             'type': 'str'},
                                         {   'default': 'point_like',
                                             'name': 'nuclear_model',
@@ -580,9 +582,6 @@ def stencil() -> JSONDict:
                                                                                   "'nuclear', "
                                                                                   "'electronic']"],
                                                                 'type': 'str'},
-                                                            {   'default': False,
-                                                                'name': 'run_pb',
-                                                                'type': 'bool'},
                                                             {   'default': "user['SCF']['kain']",
                                                                 'name': 'kain',
                                                                 'type': 'int'}],
@@ -635,7 +634,13 @@ def stencil() -> JSONDict:
                                                                 'type': 'float'},
                                                             {   'default': 0.2,
                                                                 'name': 'ion_width',
-                                                                'type': 'float'}],
+                                                                'type': 'float'},
+                                                            {   'default': 'variable',
+                                                                'name': 'formulation',
+                                                                'predicates': [   'value.lower() '
+                                                                                  'in '
+                                                                                  "['variable']"],
+                                                                'type': 'str'}],
                                             'name': 'D_H_screening'}]},
                     {   'keywords': [   {   'default': False,
                                             'name': 'run',

@@ -72,7 +72,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
     }
 
     # Reaction
-    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+    if user_dict["WaveFunction"]["environment"].lower() != "none":
         fock_dict["reaction_operator"] = _reaction_operator_handler(user_dict)
 
     # Coulomb
@@ -128,6 +128,7 @@ def _reaction_operator_handler(user_dict, rsp=False):
     else:
         density_type = 2
 
+    # reaction field operator settings common to all continuum models
     reo_dict = {
         "poisson_prec": user_dict["world_prec"],
         "kain": user_dict["PCM"]["SCRF"]["kain"],
@@ -143,11 +144,16 @@ def _reaction_operator_handler(user_dict, rsp=False):
         ],
         "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
     }
-    if user_dict["PCM"]["SCRF"]["run_pb"]:
+
+    # ionic solvent continuum model
+    ionic_model = user_dict["WaveFunction"]["environment"].lower().split("_")[-1]
+    if ionic_model in ("pb", "lpb"):
         reo_dict["Poisson_Boltzmann"] = {
             "kappa_out": user_dict["PCM"]["D_H_screening"]["kappa_out"],
             "ion_radius": user_dict["PCM"]["D_H_screening"]["ion_radius"],
             "ion_width": user_dict["PCM"]["D_H_screening"]["ion_width"],
+            "formulation": user_dict["PCM"]["D_H_screening"]["formulation"],
+            "solver_type": "standard" if ionic_model == "pb" else "linearized",
         }
 
     return reo_dict
@@ -430,7 +436,7 @@ def write_rsp_fock(user_dict, wf_dict):
         }
 
     # Reaction
-    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+    if user_dict["WaveFunction"]["environment"].lower() != "none":
         fock_dict["reaction_operator"] = _reaction_operator_handler(user_dict, rsp=True)
 
     return fock_dict

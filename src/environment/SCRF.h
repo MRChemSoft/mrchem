@@ -59,6 +59,7 @@ public:
     ~SCRF();
 
     double setConvergenceThreshold(double prec);
+    void setSolverType(bool linear_pb) { this->do_linear_pb = linear_pb; }
 
     Permittivity &getPermittivity() { return this->epsilon; }
 
@@ -77,6 +78,7 @@ protected:
 
 private:
     bool dynamic_thrs;
+    bool do_linear_pb;
     SCRFDensityType density_type;
 
     int max_iter;

@@ -23,15 +23,15 @@
               0.0,
               0.0
             ],
-            "radius": 4.0,
-            "sigma": 0.5
+            "radius": 2.645616384,
+            "sigma": 0.2
           }
         ]
       },
-      "charge": 1,
+      "charge": -1,
       "coords": [
         {
-          "atom": "li",
+          "atom": "h",
           "xyz": [
             0.0,
             0.0,
@@ -63,9 +63,9 @@
       "min_scale": -4
     },
     "printer": {
-      "file_name": "li",
+      "file_name": "h_m",
       "print_constants": false,
-      "print_level": 0,
+      "print_level": 3,
       "print_mpi": false,
       "print_prec": 6,
       "print_width": 75
@@ -90,15 +90,15 @@
           "smooth_prec": 0.001
         },
         "reaction_operator": {
-          "Poisson-Boltzmann": {
-            "ion_radius": 3.5,
-            "ion_width": 3.0,
-            "kappa_out": 2.0
+          "Poisson_Boltzmann": {
+            "ion_radius": 0.0,
+            "ion_width": 0.2,
+            "kappa_out": 0.08703573174337145
           },
           "density_type": "total",
           "dynamic_thrs": false,
           "epsilon_in": 1.0,
-          "epsilon_out": 2.0,
+          "epsilon_out": 78.4,
           "formulation": "exponential",
           "kain": 5,
           "max_iter": 100,
@@ -166,10 +166,10 @@
         0.0,
         0.0
       ],
-      "charge": 1,
+      "charge": -1,
       "dipole_moment": {
         "dip-1": {
-          "magnitude": 7.200810476200884e-14,
+          "magnitude": 2.3539491906502725e-14,
           "r_O": [
             0.0,
             0.0,
@@ -194,7 +194,7 @@
       },
       "geometry": [
         {
-          "symbol": "Li",
+          "symbol": "H",
           "xyz": [
             0.0,
             0.0,
@@ -205,7 +205,7 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -2.332093141176125
+          -0.13549443073239137
         ],
         "occupation": [
           2.0
@@ -213,23 +213,23 @@
         "spin": [
           "p"
         ],
-        "sum_occupied": -4.66418628235225
+        "sum_occupied": -0.27098886146478274
       },
       "scf_energy": {
-        "E_ee": 3.332799383894316,
+        "E_ee": 1.1624625387710408,
         "E_eext": 0.0,
-        "E_el": -7.222649094979322,
-        "E_en": -16.53075528769531,
-        "E_kin": 7.675564301900215,
+        "E_el": -0.7993851610044418,
+        "E_en": -1.9022728636357937,
+        "E_kin": 0.9101762609295533,
         "E_next": 0.0,
         "E_nn": 0.0,
-        "E_nuc": 0.0,
-        "E_tot": -7.222649094979322,
-        "E_x": -0.4164844953175982,
-        "E_xc": -1.283772997760944,
-        "Er_el": 0.0,
-        "Er_nuc": 0.0,
-        "Er_tot": 0.0
+        "E_nuc": 0.18332124709525038,
+        "E_tot": -0.6160639139091915,
+        "E_x": -0.14530552826383097,
+        "E_xc": -0.4707032075500684,
+        "Er_el": -0.3537423612553428,
+        "Er_nuc": 0.18332124709525038,
+        "Er_tot": -0.1704211141600922
       }
     },
     "provenance": {
@@ -243,20 +243,20 @@
     "rsp_calculations": null,
     "scf_calculation": {
       "initial_energy": {
-        "E_ee": 3.332799383894316,
+        "E_ee": 1.1624625387710408,
         "E_eext": 0.0,
-        "E_el": -7.222649094979322,
-        "E_en": -16.53075528769531,
-        "E_kin": 7.675564301900215,
+        "E_el": -0.7993851610044418,
+        "E_en": -1.9022728636357937,
+        "E_kin": 0.9101762609295533,
         "E_next": 0.0,
         "E_nn": 0.0,
-        "E_nuc": 0.0,
-        "E_tot": -7.222649094979322,
-        "E_x": -0.4164844953175982,
-        "E_xc": -1.283772997760944,
-        "Er_el": 0.0,
-        "Er_nuc": 0.0,
-        "Er_tot": 0.0
+        "E_nuc": 0.18332124709525038,
+        "E_tot": -0.6160639139091915,
+        "E_x": -0.14530552826383097,
+        "E_xc": -0.4707032075500684,
+        "Er_el": -0.3537423612553428,
+        "Er_nuc": 0.18332124709525038,
+        "Er_tot": -0.1704211141600922
       },
       "success": true
     },

@@ -1098,15 +1098,20 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto kappa_o = json_fock["reaction_operator"]["Poisson_Boltzmann"]["kappa_out"];
 
             auto width_ion = json_fock["reaction_operator"]["Poisson_Boltzmann"]["ion_width"];
+            auto kformulation = json_fock["reaction_operator"]["Poisson_Boltzmann"]["formulation"];
+            auto solver_type = json_fock["reaction_operator"]["Poisson_Boltzmann"]["solver_type"];
             auto radii_0 = cavity_p->getOriginalRadii();
             auto radii_ion = std::vector<double>(radii_0.size());
 
             for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
             auto cavity_centers = cavity_p->getCoordinates();
             auto cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
-            auto dhscreening = std::make_shared<DHScreening>(*cavity_ion, kappa_o, formulation);
-            dhscreening->printParameters();
-            scrf_p->setDHScreening(*dhscreening);
+            DHScreening dhscreening(*cavity_ion, kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we have
+                                                                         // 4 different parametrizations, not all implemented yet.
+            dhscreening.printParameters();
+            auto scrf_temp_p = std::make_unique<SCRF>(dielectric_func, dhscreening, nuclei, P_p, D_p, poisson_prec, kain, max_iter, accelerate_pot, dynamic_thrs, density_type);
+            scrf_temp_p->setSolverType((solver_type == "linearized"));
+            scrf_p.reset(scrf_temp_p.release());
         }
 
         // initialize reaction potential object

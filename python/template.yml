@@ -295,10 +295,11 @@ sections:
         type: str
         default: none
         predicates:
-          - value.lower() in ['none', 'pcm']
+          - value.lower() in ['none', 'pcm', 'pcm_pb', 'pcm_lpb']
         docstring: |
           Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model,
-          which will activate the ``PCM`` input section for further parametrization options.
+          which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the
+          Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively.
       - name: nuclear_model
         type: str
         default: point_like
@@ -844,11 +845,6 @@ sections:
               ``total`` uses the total charge density.
               ``nuclear`` uses only the nuclear part of the total charge density.
               ``electronic`` uses only the electronic part of the total charge density.
-          - name: run_pb
-            type: bool
-            default: false
-            docstring: |
-              Run the Poisson-Boltzmann equation.
       - name: Cavity
         docstring: |
           Define the interlocking spheres cavity.
@@ -997,6 +993,14 @@ sections:
             default: 0.2
             docstring: |
               Width of the transition between the solute and the ion accessible part.
+          - name: formulation
+            type: str
+            default: variable
+            predicates:
+              - value.lower() in ['variable']
+            docstring: |
+              formulation of the debye-huckel screening factor. Currently only the variable factor is implemented.
+              ``variable``: implement the screening functions as  k = (1-C_ion)k_out
   - name: GeometryOptimizer
     docstring: |
       Includes parameters related to the internal geometry optimization using the

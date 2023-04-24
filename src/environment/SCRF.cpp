@@ -118,14 +118,18 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     mrcpp::clear(d_V, true);
 }
 
-// this is not very efficient, but it works hopefully
 void SCRF::computePBTerm(mrcpp::ComplexFunction &V_tot) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
-    auto sinh_V = [this, V_tot](const mrcpp::Coord<3> &r) {
-        double V = V_tot.real().evalf(r);
-        return (1.0 / (4.0 * mrcpp::pi)) * std::sinh(V) * this->kappa.evalf(r);
-    };
-
-    mrcpp::cplxfunc::project(this->pbe_term, sinh_V, NUMBER::Real, this->apply_prec);
+    if (this->do_linear_pb) {
+        resetComplexFunction(this->pbe_term);
+        mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, V_tot, this->apply_prec);
+    } else {
+        auto sinh_f = [](const double &V) { return (1.0 / (4.0 * mrcpp::pi)) * std::sinh(V); };
+        resetComplexFunction(this->pbe_term);
+        mrcpp::ComplexFunction sinhV;
+        sinhV.alloc(NUMBER::Real);
+        mrcpp::map(this->apply_prec, sinhV.real(), V_tot.real(), sinh_f);
+        mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, sinhV, this->apply_prec);
+    }
 }
 
 mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma, const Density &rho_el) {
