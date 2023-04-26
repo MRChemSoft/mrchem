@@ -45,9 +45,7 @@ void DHScreening::printParameters() const {
     auto coords = this->cavity_ion.getCoordinates();
     auto radii = this->cavity_ion.getRadii();
     auto radii_0 = this->cavity_ion.getOriginalRadii();
-    auto alphas = this->cavity_ion.getRadiiScalings();
     auto sigmas = this->cavity_ion.getWidths();
-    auto betas = this->cavity_ion.getWidthScalings();
 
     // Set widths
     auto w0 = mrcpp::Printer::getWidth() - 1;
@@ -61,8 +59,6 @@ void DHScreening::printParameters() const {
     std::stringstream o_head;
     o_head << std::setw(w1) << "N";
     o_head << std::setw(w2) << "R_0";
-    o_head << std::setw(w3 + 1) << "Alpha";
-    o_head << std::setw(w3 - 1) << "Beta";
     o_head << std::setw(w3) << "Sigma";
     o_head << std::setw(w5) << "Radius";
     o_head << std::setw(w4) << "x";
@@ -84,15 +80,11 @@ void DHScreening::printParameters() const {
         auto z = coord[2];
         auto r = radii[i];
         auto r_0 = radii_0[i];
-        auto alpha = alphas[i];
-        auto beta = betas[i];
         auto sigma = sigmas[i];
 
         std::stringstream o_coord;
         o_coord << std::setw(w1) << i;
         o_coord << std::setw(w2) << std::setprecision(4) << std::fixed << r_0;
-        o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << alpha;
-        o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << beta;
         o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << sigma << "  ->";
         o_coord << std::setw(w5 - 4) << std::setprecision(4) << std::fixed << r;
         o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << x;

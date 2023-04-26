@@ -118,16 +118,20 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     mrcpp::clear(d_V, true);
 }
 
-void SCRF::computePBTerm(mrcpp::ComplexFunction &V_tot) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
+void SCRF::computePBTerm(mrcpp::ComplexFunction &V_tot,
+                         double salt_factor) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
     if (this->do_linear_pb) {
         resetComplexFunction(this->pbe_term);
         mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, V_tot, this->apply_prec);
+        this->pbe_term.rescale(salt_factor);
+
     } else {
-        auto sinh_f = [](const double &V) { return (1.0 / (4.0 * mrcpp::pi)) * std::sinh(V); };
+        auto sinh_f = [salt_factor](const double &V) { return (salt_factor / (4.0 * mrcpp::pi)) * std::sinh(V); };
         resetComplexFunction(this->pbe_term);
         mrcpp::ComplexFunction sinhV;
         sinhV.alloc(NUMBER::Real);
-        mrcpp::map(this->apply_prec, sinhV.real(), V_tot.real(), sinh_f);
+        mrcpp::map(this->apply_prec / 100, sinhV.real(), V_tot.real(), sinh_f);
+
         mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, sinhV, this->apply_prec);
     }
 }
@@ -179,10 +183,11 @@ void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, const Density &rho_el
     kain.setLocalPrintLevel(10);
 
     mrcpp::print::separator(3, '-');
-
-    double update = 10.0, norm = 1.0;
-    int iter = 1;
-    while (update >= this->conv_thrs && iter <= max_iter) {
+    auto update = 10.0, norm = 1.0;
+    auto salt_factor = 0.0;
+    auto iter = 1;
+    for (; iter <= max_iter; iter++) {
+        std::cout << "salt factor: " << salt_factor << std::endl;
         Timer t_iter;
         // solve the poisson equation
         mrcpp::ComplexFunction V_tot;
@@ -211,7 +216,20 @@ void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, const Density &rho_el
         Vr_np1.free(NUMBER::Real);
 
         printConvergenceRow(iter, norm, update, t_iter.elapsed());
-        iter++;
+
+        // compute new PB term
+        if (this->kappa.norm() != -1.0) {
+            if ((update < this->conv_thrs) && (std::abs(salt_factor - 1.0) <= mrcpp::MachineZero)) break;
+            if ((update <= this->conv_thrs * 10) && (salt_factor - 0.9 <= mrcpp::MachineZero)) { // if the update is small enough, increase the salt factor
+                salt_factor += 0.1;
+                std::cout << "updating salt factor to: " << salt_factor << std::endl;
+            }
+            computePBTerm(V_tot, salt_factor);
+
+        } else {
+            std::cout << "update " << update << " convergence threshold " << this->conv_thrs << std::endl;
+            if (update < this->conv_thrs) break;
+        }
     }
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
     mrcpp::print::separator(3, '-');

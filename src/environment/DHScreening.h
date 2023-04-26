@@ -52,8 +52,6 @@ public:
      */
     DHScreening(const Cavity cavity_ion, double kappa_out, std::string formulation);
 
-    DHScreening(){};
-
     /** @brief Evaluates DHScreening at a point in 3D space with respect to the state of #inverse.
      *  @param r coordinates of a 3D point in space.
      *  @return \f$\frac{1}{\epsilon(\mathbf{r})}\f$ if #inverse is true, and \f$ \epsilon(\mathbf{r})\f$ if #inverse is
@@ -81,7 +79,7 @@ public:
 
 private:
     double kappa_out;        //!< Dielectric constant describing the permittivity of the solvent.
-    std::string formulation; //!< Formulation of the permittivity function, only exponential is used as of now.
+    std::string formulation; //!< Formulation of the DHScreening function. Only linear variable is used now.
     Cavity cavity_ion;       //!< A Cavity class instance.
 };
 

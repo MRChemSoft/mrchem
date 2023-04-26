@@ -148,8 +148,11 @@ def _reaction_operator_handler(user_dict, rsp=False):
     # ionic solvent continuum model
     ionic_model = user_dict["WaveFunction"]["environment"].lower().split("_")[-1]
     if ionic_model in ("pb", "lpb"):
+        permittivity = user_dict["PCM"]["Permittivity"]["epsilon_out"]["static"]
+        ionic_strength = user_dict["PCM"]["D_H_screening"]["ion_strength"]
+        kappa_out = compute_kappa(user_dict["Constants"], permittivity, ionic_strength)
         reo_dict["Poisson_Boltzmann"] = {
-            "kappa_out": user_dict["PCM"]["D_H_screening"]["kappa_out"],
+            "kappa_out": kappa_out,
             "ion_radius": user_dict["PCM"]["D_H_screening"]["ion_radius"],
             "ion_width": user_dict["PCM"]["D_H_screening"]["ion_width"],
             "formulation": user_dict["PCM"]["D_H_screening"]["formulation"],
@@ -561,3 +564,20 @@ def parse_wf_method(user_dict):
         "dft_funcs": dft_funcs,
     }
     return wf_dict
+
+
+def compute_kappa(constants, eps, I):
+    kb = constants["boltzmann_constant"]
+    e = constants["elementary_charge"]
+    e_0 = constants["e0"]
+    N_a = constants["N_a"]
+    m2au = constants["meter2bohr"]
+    T = 298.15
+
+    numerator = e_0 * eps * kb * T
+    denominator = 2.0 * (e**2) * N_a * 1000.0 * I
+
+    debye_length = ((numerator / denominator) ** (1.0 / 2.0)) * m2au
+    kappa = 1.0 / debye_length
+
+    return kappa

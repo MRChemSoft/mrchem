@@ -1,11 +1,8 @@
 {
-"world_prec": 1.0e-3,
+"world_prec": 1.0e-4,
 "world_size": 5,
 "MPI": {
   "numerically_exact": true
-},
-"Printer": {
-  "print_level" : 3                       
 },
 "Molecule": {
   "charge": -1,
@@ -17,7 +14,7 @@
 },
 "PCM": {
   "SCRF": {
-    "kain": 5,
+    "kain": 6,
     "max_iter": 100,
     "dynamic_thrs": false,
     "optimizer": "potential"
@@ -31,7 +28,7 @@
     "formulation": "exponential"
   },
   "D_H_screening": {
-    "kappa_out": 0.08703573174337145,
+    "ion_strength": 0.25,
     "ion_radius": 0.0,
     "ion_width": 0.2
   }

@@ -939,7 +939,7 @@ User input reference
    :D_H_screening: Parameters for the debye-huckel screening factor
 
       :red:`Keywords`
-       :kappa_out: Value of the debye-Huckel screening factor outside of a designated radius. This value represents the electrolyte strength in the solvent.
+       :ion_strength: Ionic strength of the electrolyte in mol/L. This represents the concentration of the ions in the bulk solvent.
 
         **Type** ``float``
 
@@ -1081,6 +1081,36 @@ User input reference
     **Type** ``float``
 
     **Default** ``2.5417464739297717``
+
+   :boltzmann_constant: | Boltzmann constant in (unit: J K^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+
+    **Type** ``float``
+
+    **Default** ``1.380649e-23``
+
+   :elementary_charge: | Elementary charge in (unit: C). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+
+    **Type** ``float``
+
+    **Default** ``1.602176634e-19``
+
+   :e0: | Permittivity of free space (unit: F m^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+
+    **Type** ``float``
+
+    **Default** ``8.8541878128e-12``
+
+   :N_a: | Avogadro constant (unit: mol^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+
+    **Type** ``float``
+
+    **Default** ``6.02214076e+23``
+
+   :meter2bohr: | conversion factor from meter to Bohr radius (unit: m^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+
+    **Type** ``float``
+
+    **Default** ``18897261246.2577``
 
  :Elements: list of elements with data
 

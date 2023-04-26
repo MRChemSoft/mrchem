@@ -131,6 +131,41 @@ class MRChemPhysConstants:
         docstring = f"| Conversion factor for dipoles from atomic units to Debye (unit: {unit}). Affected code: Printed value of dipole moments."
         self.add_constant(name, unit, value, docstring)
 
+        # Boltzmann constant in J K^{-1}
+        name = "boltzmann_constant"
+        unit = "J K^-1"
+        value = self.qce.kb
+        docstring = f"| Boltzmann constant in (unit: {unit}). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation."
+        self.add_constant(name, unit, value, docstring)
+
+        # elementary charge in C
+        name = "elementary_charge"
+        unit = "C"
+        value = self.qce.get("elementary charge")
+        docstring = f"| Elementary charge in (unit: {unit}). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation."
+        self.add_constant(name, unit, value, docstring)
+
+        # Permittivity of free space in F m^-1
+        name = "e0"
+        unit = "F m^-1"
+        value = self.qce.e0
+        docstring = f"| Permittivity of free space (unit: {unit}). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation."
+        self.add_constant(name, unit, value, docstring)
+
+        # Avogadro constant in mol^-1
+        name = "N_a"
+        unit = "mol^-1"
+        value = self.qce.na
+        docstring = f"| Avogadro constant (unit: {unit}). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation."
+        self.add_constant(name, unit, value, docstring)
+
+        # meter to Bohr radius
+        name = "meter2bohr"
+        unit = "m^-1"
+        value = 1 / self.qce.bohr2m
+        docstring = f"| conversion factor from meter to Bohr radius (unit: {unit}). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation."
+        self.add_constant(name, unit, value, docstring)
+
         # Set our constants to instance attributes for easy access
         for name, _, value, _ in self.data:
             self.__setattr__(name.lower(), float(value))

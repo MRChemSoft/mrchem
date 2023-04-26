@@ -975,12 +975,11 @@ sections:
         docstring: |
           Parameters for the debye-huckel screening factor
         keywords:
-          - name: kappa_out
+          - name: ion_strength
             type: float
             default: 1.0
             docstring: |
-              Value of the debye-Huckel screening factor outside of a designated radius.
-              This value represents the electrolyte strength in the solvent.
+              Ionic strength of the electrolyte in mol/L. This represents the concentration of the ions in the bulk solvent.
           - name: ion_radius
             type: float
             default: 0.0
@@ -1116,6 +1115,32 @@ sections:
         type: float
         docstring: '| Conversion factor for dipoles from atomic units to Debye (unit:
           ?). Affected code: Printed value of dipole moments.'
+      - name: boltzmann_constant
+        default: 1.380649e-23
+        type: float
+        docstring: '| Boltzmann constant in (unit: J K^-1). Affected code: Value of
+          the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.'
+      - name: elementary_charge
+        default: 1.602176634e-19
+        type: float
+        docstring: '| Elementary charge in (unit: C). Affected code: Value of the
+          Debye-Huckel screening parameter in the Poisson-Boltzmann equation.'
+      - name: e0
+        default: 8.8541878128e-12
+        type: float
+        docstring: '| Permittivity of free space (unit: F m^-1). Affected code: Value
+          of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.'
+      - name: N_a
+        default: 6.02214076e+23
+        type: float
+        docstring: '| Avogadro constant (unit: mol^-1). Affected code: Value of the
+          Debye-Huckel screening parameter in the Poisson-Boltzmann equation.'
+      - name: meter2bohr
+        default: 18897261246.2577
+        type: float
+        docstring: '| conversion factor from meter to Bohr radius (unit: m^-1). Affected
+          code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann
+          equation.'
   - name: Elements
     sections:
       - name: h
