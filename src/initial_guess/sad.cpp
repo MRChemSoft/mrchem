@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -24,13 +24,13 @@
  */
 
 #include <MRCPP/MWOperators>
+#include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 #include <MRCPP/utils/details.h>
 
 #include "core.h"
 #include "gto.h"
-#include "parallel.h"
 #include "sad.h"
 
 #include "chemistry/Nucleus.h"
@@ -40,7 +40,6 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
@@ -79,6 +78,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
+    plevel=1;
     if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
 
     // Make Fock operator contributions
@@ -106,7 +106,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     // Compute XC density
     Density &rho_xc = XC.getDensity(DensityType::Total);
-    qmfunction::deep_copy(rho_xc, rho_j);
+    mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
     // Project AO basis of hydrogen functions
@@ -159,6 +159,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
+    plevel=1;
     if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
 
     // Make Fock operator contributions
@@ -171,7 +172,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
-
     MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
     CoulombOperator J(P_p);
@@ -186,7 +186,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     // Compute XC density
     Density &rho_xc = XC.getDensity(DensityType::Total);
-    qmfunction::deep_copy(rho_xc, rho_j);
+    mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
     // Project AO basis of hydrogen functions
@@ -241,7 +241,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
-    auto crop_prec = (mpi::numerically_exact) ? -1.0 : prec;
+    auto crop_prec = (mrcpp::mpi::numerically_exact) ? -1.0 : prec;
     std::string sad_path;
     for (auto n : {sad_basis_source_dir(), sad_basis_install_dir()}) {
         auto trimmed = print_utils::rtrim_copy(n);
@@ -260,7 +260,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     auto N_nucs = nucs.size();
     DoubleVector charges = DoubleVector::Zero(2 * N_nucs);
     for (int k = 0; k < N_nucs; k++) {
-        if (mpi::orb_rank != k % mpi::orb_size) continue;
+        if (mrcpp::mpi::wrk_rank != k % mrcpp::mpi::wrk_size) continue;
 
         const std::string &sym = nucs[k].getElement().getSymbol();
         std::stringstream o_bas, o_dens;
@@ -275,9 +275,8 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         charges[N_nucs + k] = rho_k.integrate().real();
     }
     t_loc.stop();
-
     Timer t_com;
-    mpi::allreduce_vector(charges, mpi::comm_orb);
+    mrcpp::mpi::allreduce_vector(charges, mrcpp::mpi::comm_wrk);
     density::allreduce_density(prec, rho_tot, rho_loc);
     t_com.stop();
 

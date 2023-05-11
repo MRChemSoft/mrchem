@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -29,7 +29,6 @@
 #include <MRCPP/Printer>
 
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "analyticfunctions/HarmonicOscillatorFunction.h"
 #include "qmfunctions/Orbital.h"
@@ -54,11 +53,11 @@ TEST_CASE("Operator composition", "[operator_composition]") {
     Phi.push_back(Orbital{SPIN::Alpha});
     Phi.push_back(Orbital{SPIN::Alpha});
     Phi.push_back(Orbital{SPIN::Alpha});
-    mpi::distribute(Phi);
+    Phi.distribute();
     for (int i = 0; i < 3; i++) {
         int nu[3] = {i, 0, 0};
         HarmonicOscillatorFunction f(nu);
-        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     SECTION("identity operator") {
@@ -496,7 +495,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(gradV[2].size(0) == 1);
 
             gradV.setup(prec);
-            if (mpi::my_orb(Phi[0])) {
+            if (mrcpp::mpi::my_orb(Phi[0])) {
                 OrbitalVector dPhi_0 = gradV(Phi[0]);
                 REQUIRE(dPhi_0.size() == 3);
                 REQUIRE(dPhi_0[0].norm() == Approx(1.0).epsilon(thrs));

@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,11 +28,9 @@
 #include "MRCPP/Timer"
 
 #include "ExchangePotentialD2.h"
-#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -59,23 +57,23 @@ ExchangePotentialD2::ExchangePotentialD2(PoissonOperator_p P, OrbitalVector_p Ph
 
 /** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */
 void ExchangePotentialD2::setupBank() {
-    if (mpi::bank_size < 1) return;
+    if (mrcpp::mpi::bank_size < 1) return;
 
     Timer timer;
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     OrbitalVector &Phi = *this->orbitals;
     for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) PhiBank.put_orb(i, Phi[i]);
+        if (mrcpp::mpi::my_orb(Phi[i])) PhiBank.put_func(i, Phi[i]);
     }
     OrbitalVector &X = *this->orbitals_x;
     for (int i = 0; i < X.size(); i++) {
-        if (mpi::my_orb(X[i])) XBank.put_orb(i, X[i]);
+        if (mrcpp::mpi::my_orb(X[i])) XBank.put_func(i, X[i]);
     }
     OrbitalVector &Y = *this->orbitals_y;
     for (int i = 0; i < Y.size(); i++) {
-        if (mpi::my_orb(Y[i])) YBank.put_orb(i, Y[i]);
+        if (mrcpp::mpi::my_orb(Y[i])) YBank.put_func(i, Y[i]);
     }
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::time(3, "Setting up exchange bank", timer);
 }
 
@@ -113,16 +111,16 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
     // adjust precision since we sum over orbitals
     precf /= std::sqrt(1 * Phi.size());
 
-    QMFunctionVector func_vec;
+    std::vector<mrcpp::ComplexFunction> func_vec;
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
         Orbital &x_i = X[i];
         Orbital &y_i = Y[i];
 
-        if (not mpi::my_orb(phi_i)) PhiBank.get_orb(i, phi_i, 1);
-        if (not mpi::my_orb(x_i)) XBank.get_orb(i, x_i, 1);
-        if (not mpi::my_orb(y_i)) YBank.get_orb(i, y_i, 1);
+        if (not mrcpp::mpi::my_orb(phi_i)) PhiBank.get_func(i, phi_i, 1);
+        if (not mrcpp::mpi::my_orb(x_i)) XBank.get_func(i, x_i, 1);
+        if (not mrcpp::mpi::my_orb(y_i)) YBank.get_func(i, y_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
@@ -135,15 +133,15 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
         }
-        if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
-        if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
-        if (not mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
     }
 
     // compute out_p = sum_i c_i*(ex_xip + ex_iyp)
     Orbital out_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    qmfunction::linear_combination(out_p, coefs, func_vec, prec);
+    mrcpp::cplxfunc::linear_combination(out_p, coefs, func_vec, prec);
     print_utils::qmfunction(4, "Applied exchange", out_p, timer);
     return out_p;
 }
@@ -172,16 +170,16 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
     // adjust precision since we sum over orbitals
     precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
 
-    QMFunctionVector func_vec;
+    std::vector<mrcpp::ComplexFunction> func_vec;
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
         Orbital &x_i = X[i];
         Orbital &y_i = Y[i];
 
-        if (not mpi::my_orb(phi_i)) PhiBank.get_orb(i, phi_i, 1);
-        if (not mpi::my_orb(x_i)) XBank.get_orb(i, x_i, 1);
-        if (not mpi::my_orb(y_i)) YBank.get_orb(i, y_i, 1);
+        if (not mrcpp::mpi::my_orb(phi_i)) PhiBank.get_func(i, phi_i, 1);
+        if (not mrcpp::mpi::my_orb(x_i)) XBank.get_func(i, x_i, 1);
+        if (not mrcpp::mpi::my_orb(y_i)) YBank.get_func(i, y_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
@@ -194,15 +192,15 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
             coef_vec.push_back(spin_fac / phi_i.squaredNorm());
         }
-        if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
-        if (not mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
-        if (not mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
     }
 
     // compute ex_p = sum_i c_i*(ex_ixp + ex_yip)
     Orbital ex_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    qmfunction::linear_combination(ex_p, coefs, func_vec, prec);
+    mrcpp::cplxfunc::linear_combination(ex_p, coefs, func_vec, prec);
     print_utils::qmfunction(4, "Applied exchange", ex_p, timer);
     return ex_p;
 }

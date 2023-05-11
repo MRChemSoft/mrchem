@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -26,11 +26,9 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 
 using namespace mrchem;
@@ -54,8 +52,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
 
     SECTION("apply") {
         Orbital phi(SPIN::Paired);
-        qmfunction::project(phi, f, NUMBER::Real, prec);
-        qmfunction::project(phi, g, NUMBER::Imag, prec);
+        mrcpp::cplxfunc::project(phi, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(phi, g, NUMBER::Imag, prec);
 
         IdentityOperator I;
         I.setup(prec);
@@ -70,10 +68,10 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         OrbitalVector Phi;
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.push_back(Orbital(SPIN::Paired));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
-        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], g, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], g, NUMBER::Imag, prec);
         normalize(Phi);
 
         IdentityOperator I;
@@ -98,8 +96,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
 
     SECTION("expectation value") {
         Orbital phi(SPIN::Paired);
-        qmfunction::project(phi, f, NUMBER::Real, prec);
-        qmfunction::project(phi, g, NUMBER::Imag, prec);
+        mrcpp::cplxfunc::project(phi, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(phi, g, NUMBER::Imag, prec);
 
         IdentityOperator I;
         I.setup(prec);
@@ -114,10 +112,10 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         OrbitalVector Phi;
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.push_back(Orbital(SPIN::Paired));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
-        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f, NUMBER::Imag, prec);
-        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], g, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], g, NUMBER::Imag, prec);
 
         IdentityOperator I;
         I.setup(prec);

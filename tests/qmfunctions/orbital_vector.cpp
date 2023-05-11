@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -26,10 +26,8 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "utils/math_utils.h"
 
 using namespace mrchem;
@@ -99,7 +97,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.push_back(Orbital(SPIN::Beta));
         Phi.push_back(Orbital(SPIN::Beta));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
         OrbitalVector Phi_p = disjoin(Phi, SPIN::Paired);
         OrbitalVector Phi_a = disjoin(Phi, SPIN::Alpha);
@@ -130,10 +128,9 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         OrbitalVector Phi;
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.push_back(Orbital(SPIN::Alpha));
-        mpi::distribute(Phi);
-
-        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], f2, NUMBER::Imag, prec);
+        Phi.distribute();
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f1, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], f2, NUMBER::Imag, prec);
         normalize(Phi);
 
         SECTION("copy constructor") {
@@ -199,14 +196,14 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         OrbitalVector Phi;
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.push_back(Orbital(SPIN::Alpha));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
         DoubleVector norms1 = get_norms(Phi);
         REQUIRE(norms1[0] == Approx(-1.0));
         REQUIRE(norms1[1] == Approx(-1.0));
 
-        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], f2, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f1, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], f2, NUMBER::Real, prec);
 
         DoubleVector norms2 = get_norms(Phi);
         REQUIRE(norms2[0] > 0.0);
@@ -236,12 +233,12 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         Phi.push_back(Orbital(SPIN::Alpha));
         Phi.push_back(Orbital(SPIN::Alpha));
         Phi.push_back(Orbital(SPIN::Beta));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
-        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], f2, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[2])) qmfunction::project(Phi[2], f3, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[3])) qmfunction::project(Phi[3], f4, NUMBER::Real, prec);
+        if (true or mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f1, NUMBER::Real, prec);
+        if (true or mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], f2, NUMBER::Real, prec);
+        if (true or mrcpp::mpi::my_orb(Phi[2])) mrcpp::cplxfunc::project(Phi[2], f3, NUMBER::Real, prec);
+        if (true or mrcpp::mpi::my_orb(Phi[3])) mrcpp::cplxfunc::project(Phi[3], f4, NUMBER::Real, prec);
 
         // Complex phase rotation
         for (int n = 0; n < Phi.size(); n++) {
@@ -277,6 +274,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         SECTION("Gram-Schmidt orthonormalize") {
             orthogonalize(prec, Phi);
             normalize(Phi);
+
             ComplexMatrix S = calc_overlap_matrix(Phi);
             for (int i = 0; i < S.rows(); i++) {
                 for (int j = 0; j < S.cols(); j++) {
@@ -290,10 +288,10 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
             OrbitalVector Psi;
             Psi.push_back(Orbital(SPIN::Alpha));
             Psi.push_back(Orbital(SPIN::Beta));
-            mpi::distribute(Psi);
+            Psi.distribute();
 
-            if (mpi::my_orb(Psi[0])) qmfunction::project(Psi[0], f5, NUMBER::Real, prec);
-            if (mpi::my_orb(Psi[1])) qmfunction::project(Psi[1], f6, NUMBER::Real, prec);
+            if (mrcpp::mpi::my_orb(Psi[0])) mrcpp::cplxfunc::project(Psi[0], f5, NUMBER::Real, prec);
+            if (mrcpp::mpi::my_orb(Psi[1])) mrcpp::cplxfunc::project(Psi[1], f6, NUMBER::Real, prec);
 
             orthogonalize(prec, Phi);
             orthogonalize(prec, Psi, Phi);
@@ -309,16 +307,16 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
         OrbitalVector Phi;
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.push_back(Orbital(SPIN::Paired));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
-        if (mpi::my_orb(Phi[0])) {
-            qmfunction::project(Phi[0], f1, NUMBER::Real, prec);
-            qmfunction::project(Phi[0], f2, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[0])) {
+            mrcpp::cplxfunc::project(Phi[0], f1, NUMBER::Real, prec);
+            mrcpp::cplxfunc::project(Phi[0], f2, NUMBER::Imag, prec);
         }
 
-        if (mpi::my_orb(Phi[1])) {
-            qmfunction::project(Phi[1], f3, NUMBER::Real, prec);
-            qmfunction::project(Phi[1], f4, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[1])) {
+            mrcpp::cplxfunc::project(Phi[1], f3, NUMBER::Real, prec);
+            mrcpp::cplxfunc::project(Phi[1], f4, NUMBER::Imag, prec);
         }
 
         orthogonalize(prec, Phi);

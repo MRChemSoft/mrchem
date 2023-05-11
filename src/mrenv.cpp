@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -26,10 +26,10 @@
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
 #include <fstream>
+#include "MRCPP/utils/parallel.h"
 
 #include "mrchem.h"
 #include "mrenv.h"
-#include "parallel.h"
 #include "utils/print_utils.h"
 #include "version.h"
 
@@ -88,9 +88,9 @@ void mrenv::init_printer(const json &json_print) {
     auto print_mpi = json_print["print_mpi"];
     auto fname = json_print["file_name"].get<std::string>();
     if (print_mpi) {
-        Printer::init(print_level, mpi::world_rank, mpi::world_size, fname.c_str());
+        Printer::init(print_level, mrcpp::mpi::world_rank, mrcpp::mpi::world_size, fname.c_str());
     } else {
-        Printer::init(print_level, mpi::world_rank, mpi::world_size);
+        Printer::init(print_level, mrcpp::mpi::world_rank, mrcpp::mpi::world_size);
     }
     Printer::setPrecision(print_prec);
     Printer::setWidth(print_width);
@@ -123,13 +123,14 @@ void mrenv::init_mra(const json &json_mra) {
     } else {
         MSG_ABORT("Invalid basis type!");
     }
+    mrcpp::cplxfunc::SetdefaultMRA(MRA);
 }
 
 void mrenv::init_mpi(const json &json_mpi) {
-    mpi::numerically_exact = json_mpi["numerically_exact"];
-    mpi::shared_memory_size = json_mpi["shared_memory_size"];
-    mpi::bank_size = json_mpi["bank_size"];
-    mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
+    mrcpp::mpi::numerically_exact = json_mpi["numerically_exact"];
+    mrcpp::mpi::shared_memory_size = json_mpi["shared_memory_size"];
+    mrcpp::mpi::bank_size = json_mpi["bank_size"];
+    mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 
 void mrenv::print_header() {
@@ -159,8 +160,8 @@ void mrenv::print_header() {
     o_date << std::string(std::max(0, txt_width - date_len), ' ');
 
     std::stringstream o_bank;
-    if (mpi::bank_size > 0) {
-        o_bank << "(" << mpi::tot_bank_size << " bank)";
+    if (mrcpp::mpi::bank_size > 0) {
+        o_bank << "(" << mrcpp::mpi::tot_bank_size << " bank)";
     } else {
         o_bank << "(no bank)";
     }
@@ -193,9 +194,9 @@ void mrenv::print_header() {
     println(0, pre_str << "                                                  " << post_str);
     mrcpp::print::separator(0, '*', 1);
     mrcpp::print::separator(0, '-', 1);
-    print_utils::scalar(0, "MPI processes  ", mpi::world_size, o_bank.str(), 0, false);
-    print_utils::scalar(0, "OpenMP threads ", omp::n_threads, "", 0, false);
-    print_utils::scalar(0, "Total cores    ", (mpi::world_size - mpi::tot_bank_size) * omp::n_threads + mpi::tot_bank_size, "", 0, false);
+    print_utils::scalar(0, "MPI processes  ", mrcpp::mpi::world_size, o_bank.str(), 0, false);
+    print_utils::scalar(0, "OpenMP threads ", mrcpp::omp::n_threads, "", 0, false);
+    print_utils::scalar(0, "Total cores    ", (mrcpp::mpi::world_size - mrcpp::mpi::tot_bank_size) * mrcpp::omp::n_threads + mrcpp::mpi::tot_bank_size, "", 0, false);
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
     printout(0, xcfun_splash());
@@ -241,7 +242,7 @@ void mrenv::dump_json(const json &json_inp, const json &json_out) {
     json_tot["output"] = json_out;
 
     const auto file_name = detail::remove_extension(json_inp["printer"]["file_name"].get<std::string>());
-    if (mpi::grand_master()) {
+    if (mrcpp::mpi::grand_master()) {
         std::ofstream ofs;
         ofs.open(file_name + ".json", std::ios::out);
         ofs << json_tot.dump(2) << std::endl;

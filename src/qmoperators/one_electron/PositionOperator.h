@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -25,9 +25,10 @@
 
 #pragma once
 
+#include <MRCPP/MWFunctions>
+
 #include "tensor/RankOneOperator.h"
 
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
 
 namespace mrchem {
@@ -48,9 +49,9 @@ public:
         auto r_z = std::make_shared<QMPotential>(1);
 
         // Project analytic potential (exact on root scale, thus no prec)
-        qmfunction::project(*r_x, f_x, NUMBER::Real, -1.0);
-        qmfunction::project(*r_y, f_y, NUMBER::Real, -1.0);
-        qmfunction::project(*r_z, f_z, NUMBER::Real, -1.0);
+        mrcpp::cplxfunc::project(*r_x, f_x, NUMBER::Real, -1.0);
+        mrcpp::cplxfunc::project(*r_y, f_y, NUMBER::Real, -1.0);
+        mrcpp::cplxfunc::project(*r_z, f_z, NUMBER::Real, -1.0);
 
         // Invoke operator= to assign *this operator
         RankOneOperator &r = (*this);

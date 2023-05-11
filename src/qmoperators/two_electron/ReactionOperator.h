@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -60,13 +60,13 @@ public:
     std::shared_ptr<ReactionPotential> getPotential() { return this->potential; }
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }
 
-    QMFunction &getCurrentReactionPotential() { return this->potential->getCurrentReactionPotential(); }
-    QMFunction &getPreviousReactionPotential() { return this->potential->getPreviousReactionPotential(); }
-    QMFunction &getCurrentDifferenceReactionPotential() { return this->potential->getCurrentDifferenceReactionPotential(); }
+    mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->potential->getCurrentReactionPotential(); }
+    mrcpp::ComplexFunction &getPreviousReactionPotential() { return this->potential->getPreviousReactionPotential(); }
+    mrcpp::ComplexFunction &getCurrentDifferenceReactionPotential() { return this->potential->getCurrentDifferenceReactionPotential(); }
 
-    QMFunction &getCurrentGamma() { return this->potential->getCurrentGamma(); }
-    QMFunction &getPreviousGamma() { return this->potential->getPreviousGamma(); }
-    QMFunction &getCurrentDifferenceGamma() { return this->potential->getCurrentDifferenceGamma(); }
+    mrcpp::ComplexFunction &getCurrentGamma() { return this->potential->getCurrentGamma(); }
+    mrcpp::ComplexFunction &getPreviousGamma() { return this->potential->getPreviousGamma(); }
+    mrcpp::ComplexFunction &getCurrentDifferenceGamma() { return this->potential->getCurrentDifferenceGamma(); }
 
 private:
     std::shared_ptr<ReactionPotential> potential{nullptr};

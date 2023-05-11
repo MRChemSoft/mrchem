@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,7 +28,6 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMPotential.h"
 #include "utils/print_utils.h"
 
@@ -42,7 +41,7 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
     double two_cc = 2.0 * c * c;
 
     auto k = std::make_shared<QMPotential>(1);
-    qmfunction::deep_copy(*k, vz);
+    mrcpp::cplxfunc::deep_copy(*k, vz);
 
     if (k->hasImag()) MSG_ERROR("Inverse of complex function");
     if (k->hasReal()) {

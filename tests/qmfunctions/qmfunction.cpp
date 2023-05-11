@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -25,10 +25,8 @@
 
 #include "catch.hpp"
 
+#include "MRCPP/Parallel"
 #include "mrchem.h"
-#include "parallel.h"
-#include "qmfunctions/QMFunction.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 using namespace mrchem;
 using MATHCONST::pi;
@@ -49,11 +47,11 @@ TEST_CASE("QMFunction", "[qmfunction]") {
     const double prec = 1.0e-3;
 
     SECTION("copy non-shared function") {
-        QMFunction func_1(false);
-        qmfunction::project(func_1, f, NUMBER::Real, prec);
+        mrcpp::ComplexFunction func_1(false);
+        mrcpp::cplxfunc::project(func_1, f, NUMBER::Real, prec);
 
         SECTION("copy constructor") {
-            QMFunction func_2(func_1);
+            mrcpp::ComplexFunction func_2(func_1);
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
@@ -61,7 +59,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("default constructor plus assignment") {
-            QMFunction func_2;
+            mrcpp::ComplexFunction func_2;
             func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
@@ -70,7 +68,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("assigment constructor") {
-            QMFunction func_2 = func_1;
+            mrcpp::ComplexFunction func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
@@ -78,29 +76,32 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("deep copy to non-shared") {
-            QMFunction func_2(false);
-            qmfunction::deep_copy(func_2, func_1);
+            mrcpp::ComplexFunction func_2(false);
+            mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() != &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
+#ifdef MRCHEM_HAS_MPI
         SECTION("deep copy to shared") {
-            QMFunction func_2(true);
-            qmfunction::deep_copy(func_2, func_1);
+            mrcpp::ComplexFunction func_2(true);
+            mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(&func_2.real() != &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
+#endif
     }
 
+#ifdef MRCHEM_HAS_MPI
     SECTION("copy shared function") {
-        QMFunction func_1(true);
-        qmfunction::project(func_1, f, NUMBER::Real, prec);
-        qmfunction::project(func_1, g, NUMBER::Imag, prec);
+        mrcpp::ComplexFunction func_1(true);
+        mrcpp::cplxfunc::project(func_1, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(func_1, g, NUMBER::Imag, prec);
 
         SECTION("copy constructor") {
-            QMFunction func_2(func_1);
+            mrcpp::ComplexFunction func_2(func_1);
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
@@ -108,7 +109,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("default constructor plus assignment") {
-            QMFunction func_2;
+            mrcpp::ComplexFunction func_2;
             func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
@@ -117,7 +118,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("assigment constructor") {
-            QMFunction func_2 = func_1;
+            mrcpp::ComplexFunction func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
@@ -125,8 +126,8 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("deep copy to non-shared") {
-            QMFunction func_2(false);
-            qmfunction::deep_copy(func_2, func_1);
+            mrcpp::ComplexFunction func_2(false);
+            mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(not func_2.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
@@ -134,19 +135,20 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         }
 
         SECTION("deep copy to shared") {
-            QMFunction func_2(true);
-            qmfunction::deep_copy(func_2, func_1);
+            mrcpp::ComplexFunction func_2(true);
+            mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(func_2.isShared() == func_1.isShared());
             REQUIRE(func_2.norm() == Approx(func_1.norm()));
             REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
             REQUIRE(func_2.integrate().imag() == Approx(func_1.integrate().imag()));
         }
     }
+#endif
 
     SECTION("rescale non-shared function") {
-        QMFunction func(false);
-        qmfunction::project(func, f, NUMBER::Real, prec);
-        qmfunction::project(func, g, NUMBER::Imag, prec);
+        mrcpp::ComplexFunction func(false);
+        mrcpp::cplxfunc::project(func, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(func, g, NUMBER::Imag, prec);
 
         const double ref_norm = func.norm();
         const double f_int = func.real().integrate();
@@ -174,10 +176,11 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             REQUIRE(func.imag().integrate() == Approx(im * f_int + re * g_int));
         }
     }
+#ifdef MRCHEM_HAS_MPI
     SECTION("rescale shared function") {
-        QMFunction func(true);
-        qmfunction::project(func, g, NUMBER::Real, prec);
-        qmfunction::project(func, f, NUMBER::Imag, prec);
+        mrcpp::ComplexFunction func(true);
+        mrcpp::cplxfunc::project(func, g, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(func, f, NUMBER::Imag, prec);
 
         const double ref_norm = func.norm();
         const double f_int = func.real().integrate();
@@ -192,7 +195,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("imaginary unit") {
             ComplexDouble i(0.0, 1.0);
             func.rescale(i);
-            mpi::barrier(mpi::comm_share);
+            mrcpp::mpi::barrier(mrcpp::mpi::comm_share);
             REQUIRE(func.norm() == Approx(ref_norm));
             REQUIRE(func.real().integrate() == Approx(-g_int));
             REQUIRE(func.imag().integrate() == Approx(f_int));
@@ -209,78 +212,83 @@ TEST_CASE("QMFunction", "[qmfunction]") {
     }
 
     SECTION("add shared function") {
-        QMFunction f_re(false);
-        QMFunction f_im(true);
-        qmfunction::project(f_re, f, NUMBER::Real, prec);
-        qmfunction::project(f_im, f, NUMBER::Imag, prec);
+        mrcpp::ComplexFunction f_re(false);
+        mrcpp::ComplexFunction f_im(true);
+        mrcpp::cplxfunc::project(f_re, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(f_im, f, NUMBER::Imag, prec);
 
         SECTION("into non-shared function") {
             ComplexDouble c(0.5, 0.5);
-            QMFunction func_h(false);
+            mrcpp::ComplexFunction func_h(false);
             SECTION("with complex scalar") {
-                qmfunction::add(func_h, c, f_re, c, f_im, -1.0);
+                mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im, -1.0);
                 REQUIRE(func_h.integrate().real() == Approx(0.0));
                 REQUIRE(func_h.integrate().imag() == Approx(f_im.integrate().imag()));
             }
             SECTION("with function conjugate") {
-                qmfunction::add(func_h, c, f_re, c, f_im.dagger(), -1.0);
+                mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im.dagger(), -1.0);
                 REQUIRE(func_h.integrate().real() == Approx(f_re.integrate().real()));
                 REQUIRE(func_h.integrate().imag() == Approx(0.0));
             }
         }
         SECTION("into shared function") {
             ComplexDouble c(0.5, 0.5);
-            QMFunction func_h(true);
+            mrcpp::ComplexFunction func_h(true);
             SECTION("with complex scalar") {
-                qmfunction::add(func_h, c, f_re, c, f_im, -1.0);
+                mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im, -1.0);
                 REQUIRE(func_h.integrate().real() == Approx(0.0));
                 REQUIRE(func_h.integrate().imag() == Approx(f_im.integrate().imag()));
             }
             SECTION("with function conjugate") {
-                qmfunction::add(func_h, c, f_re, c, f_im.dagger(), -1.0);
+                mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im.dagger(), -1.0);
                 REQUIRE(func_h.integrate().real() == Approx(f_re.integrate().real()));
                 REQUIRE(func_h.integrate().imag() == Approx(0.0));
             }
         }
     }
+#endif
 
     SECTION("multiply non-shared function") {
-        QMFunction func_1(false);
-        qmfunction::project(func_1, f, NUMBER::Real, prec);
-        qmfunction::project(func_1, g, NUMBER::Imag, prec);
+        mrcpp::ComplexFunction func_1(false);
+        mrcpp::cplxfunc::project(func_1, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(func_1, g, NUMBER::Imag, prec);
 
         SECTION("into non-shared function") {
-            QMFunction func_2(false);
-            qmfunction::multiply(func_2, func_1, func_1.dagger(), -1.0);
+            mrcpp::ComplexFunction func_2(false);
+            mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
             REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
             REQUIRE(func_2.integrate().imag() == Approx(0.0));
         }
+#ifdef MRCHEM_HAS_MPI
         SECTION("into shared function") {
-            QMFunction func_2(true);
-            qmfunction::multiply(func_2, func_1, func_1.dagger(), -1.0);
+            mrcpp::ComplexFunction func_2(true);
+            mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
             REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
             REQUIRE(func_2.integrate().imag() == Approx(0.0));
         }
+#endif
     }
 
+#ifdef MRCHEM_HAS_MPI
     SECTION("multiply shared function") {
-        QMFunction func_1(true);
-        qmfunction::project(func_1, f, NUMBER::Real, prec);
-        qmfunction::project(func_1, g, NUMBER::Imag, prec);
+        mrcpp::ComplexFunction func_1(true);
+        mrcpp::cplxfunc::project(func_1, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(func_1, g, NUMBER::Imag, prec);
 
         SECTION("into non-shared function") {
-            QMFunction func_2(false);
-            qmfunction::multiply(func_2, func_1, func_1.dagger(), -1.0);
+            mrcpp::ComplexFunction func_2(false);
+            mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
             REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
             REQUIRE(func_2.integrate().imag() == Approx(0.0));
         }
         SECTION("into shared function") {
-            QMFunction func_2(true);
-            qmfunction::multiply(func_2, func_1, func_1.dagger(), -1.0);
+            mrcpp::ComplexFunction func_2(true);
+            mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
             REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
             REQUIRE(func_2.integrate().imag() == Approx(0.0));
         }
     }
+#endif
 }
 
 } // namespace qmfunction_tests

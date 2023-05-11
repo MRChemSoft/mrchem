@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "analyticfunctions/NuclearFunction.h"
 #include "tensor/RankZeroOperator.h"
 
 namespace mrchem {
@@ -35,16 +36,18 @@ class NuclearOperator final : public RankZeroOperator {
 public:
     NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false);
     NuclearOperator(const Nuclei &nucs, double proj_prec, bool mpi_share, int nuc_model);
-
+  
+    Nuclei nucs;
+    NuclearFunction Nuc_func;      // The analytic function of the potential
+    mrcpp::ComplexFunction V_func; // The MW Function representation of the potential
 private:
-    void setupLocalPotential(NuclearFunction &f_loc, const Nuclei &nucs, double smooth_prec) const;
-    void allreducePotential(double prec, QMFunction &V_tot, QMFunction &V_loc) const;
+    void setupLocalPotential(NuclearFunction &f_loc, const Nuclei &nucs, double smooth_prec, bool print = true) const;
+    void allreducePotential(double prec, mrcpp::ComplexFunction &V_tot, mrcpp::ComplexFunction &V_loc) const;
 
     void projectHFYGB(const Nuclei &nucs, double proj_prec, bool mpi_share);
     void projectHomogeneusSphere(const Nuclei &nucs, double proj_prec, bool mpi_share);
     void projectGaussian(const Nuclei &nucs, double proj_prec, bool mpi_share);
     void applyGaussian(const Nuclei &nucs, double proj_prec, double apply_prec, double exponent, bool mpi_share);
-
 };
 
 } // namespace mrchem

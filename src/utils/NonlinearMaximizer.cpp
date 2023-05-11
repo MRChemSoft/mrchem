@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,7 +28,6 @@
 #include "MRCPP/Printer"
 #include <MRCPP/Timer>
 
-#include "parallel.h"
 #include "utils/NonlinearMaximizer.h"
 
 using mrcpp::Timer;
@@ -73,15 +72,15 @@ int NonlinearMaximizer::maximize() {
     // value_functional is what should be maximized (i.e. the sum of <i R i>^2 for orbitals)
     value_functional = this->functional();
     value_functional_old = value_functional;
-    if (print > 10 and mpi::orb_rank == 0) cout << "size " << N2h << endl;
+    if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "size " << N2h << endl;
     gradient_norm = this->make_gradient() / value_functional / N2h; // make the first gradient matrix
 
-    if (print > 100 and mpi::orb_rank == 0) cout << "gradient " << gradient << endl;
+    if (print > 100 and mrcpp::mpi::wrk_rank == 0) cout << "gradient " << gradient << endl;
 
     // Start of iterations
     for (iter = 1; iter < maxIter + 1 && !converged; iter++) {
         int lastICG = 0;
-        if (print > 5 and mpi::orb_rank == 0) cout << " iteration  " << iter << endl;
+        if (print > 5 and mrcpp::mpi::wrk_rank == 0) cout << " iteration  " << iter << endl;
         dcount = 0;
         for (i = 0; i < N2h; i++) { eiVal(i) = this->get_hessian(i, i); }
 
@@ -101,12 +100,12 @@ int NonlinearMaximizer::maximize() {
 
         diag = DoubleVector::Constant(N2h, -mu);
         diag += eiVal; // shifted eigenvalues of Hessian
-        if (print > 100 and mpi::orb_rank == 0) { cout << "mu and The shifted eigenvalues of H are: " << mu << " h= " << h << "  " << diag << endl; }
-        if (print > 10 and mpi::orb_rank == 0) cout << "largest eigenvalues of H: " << maxEiVal << endl;
+        if (print > 100 and mrcpp::mpi::wrk_rank == 0) { cout << "mu and The shifted eigenvalues of H are: " << mu << " h= " << h << "  " << diag << endl; }
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "largest eigenvalues of H: " << maxEiVal << endl;
 
         for (i = 0; i < N2h; i++) { step(i) = -this->gradient(i) / diag(i); }
 
-        if (print > 100 and mpi::orb_rank == 0) cout << "step: " << step << endl;
+        if (print > 100 and mrcpp::mpi::wrk_rank == 0) cout << "step: " << step << endl;
         direction = 0.0;
         old_norm = 0.0;
         new_norm = 0.0;
@@ -124,14 +123,14 @@ int NonlinearMaximizer::maximize() {
             if (direction > 0.98) acc_fac = 2.0;
             if (direction > 0.99) acc_fac = 5.0;
             if (direction > 0.995) acc_fac = 10.0;
-            if (print > 10 and mpi::orb_rank == 0) cout << " acceleration: " << acc_fac << endl;
+            if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << " acceleration: " << acc_fac << endl;
             step *= acc_fac;
         }
         step_norm2 = step.transpose() * step;
         first_order = this->gradient.transpose() * step;
         second_order = 0.0; // step.transpose()*this->hessian*step;
         for (i = 0; i < N2h; i++) { second_order += step(i) * step(i) * eiVal(i); }
-        if (print > 10 and mpi::orb_rank == 0) cout << " gradient magnitude: " << first_order * first_order / step_norm2 << endl;
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << " gradient magnitude: " << first_order * first_order / step_norm2 << endl;
 
         // Newton step when all eigenvalues are <0, and gradient/h sufficiently small
         newton_step = 0;
@@ -140,7 +139,7 @@ int NonlinearMaximizer::maximize() {
             N_newton_step++;
             if (N_newton_step > 5) threshold = 1.0e-11;
             if ((N_newton_step > 2 && (step_norm2 < 1.E-3 || newton_step_exact == 1))) {
-                if (print > 10 and mpi::orb_rank == 0) cout << "Taking Newton step  " << endl;
+                if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "Taking Newton step  " << endl;
                 newton_step_exact = 1;
                 mu_Newton *= 0.2; // level shift for positive and zero eigenvalues
                 DoubleVector r(N2h), Ap(N2h), p(N2h), z(N2h), err(N2h), precond(N2h);
@@ -186,7 +185,7 @@ int NonlinearMaximizer::maximize() {
                             for (int j = 0; j < N2h; j++) { ss += this->get_hessian(i, j) * step(j); }
                             ee += (ss + this->gradient(i)) * (ss + this->gradient(i));
                         }
-                        if (mpi::orb_rank == 0) cout << iCG << " error this iteration " << std::sqrt(ee) << endl;
+                        if (mrcpp::mpi::wrk_rank == 0) cout << iCG << " error this iteration " << std::sqrt(ee) << endl;
                     }
                     lastICG = iCG;
                 }
@@ -199,7 +198,7 @@ int NonlinearMaximizer::maximize() {
                 mu_Newton = mu_Newton_init;
             }
 
-            if (print == 20 and mpi::orb_rank == 0) cout << endl << " 2nd  " << second_order << " fi*fi/d  " << x << " s g " << step.transpose() * gradient << endl;
+            if (print == 20 and mrcpp::mpi::wrk_rank == 0) cout << endl << " 2nd  " << second_order << " fi*fi/d  " << x << " s g " << step.transpose() * gradient << endl;
         } else {
             N_newton_step = 0;
             newton_step_exact = 0;
@@ -207,7 +206,7 @@ int NonlinearMaximizer::maximize() {
         }
 
         //    if(print==2){cout<<setw(22)<< step_norm2;}
-        if (print > 100 and mpi::orb_rank == 0) {
+        if (print > 100 and mrcpp::mpi::wrk_rank == 0) {
             cout << "step : ";
             for (i = 0; i < N2h; i++) { cout << " " << step(i); }
             cout << endl;
@@ -215,16 +214,16 @@ int NonlinearMaximizer::maximize() {
 
         expected_change = first_order + 0.5 * second_order;
 
-        if (print > 10 and mpi::orb_rank == 0) cout << "step size  " << std::sqrt(step_norm2) << endl;
-        if (print > 10 and mpi::orb_rank == 0) cout << "expected first, second order and total change in r*r  ";
-        if (print > 10 and mpi::orb_rank == 0) cout << first_order << " " << 0.5 * second_order << " " << expected_change << endl;
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "step size  " << std::sqrt(step_norm2) << endl;
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "expected first, second order and total change in r*r  ";
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << first_order << " " << 0.5 * second_order << " " << expected_change << endl;
 
         t_step.resume();
         this->do_step(step);
         t_step.stop();
         value_functional = this->functional();
         valdiff = value_functional - value_functional_old;
-        if (print > 10 and mpi::orb_rank == 0) cout << " r*r  " << value_functional << " change in r*r  " << valdiff << endl;
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << " r*r  " << value_functional << " change in r*r  " << valdiff << endl;
 
         // relative_change is the size of  second order change compared to actual change
         // = 0 if no higher order contributions
@@ -284,8 +283,8 @@ int NonlinearMaximizer::maximize() {
             }
             if (h < 1.E-8) h = 1.E-8;
         }
-        if (print > 10 and mpi::orb_rank == 0) cout << "trust radius set  to " << h << " test: " << relative_change << " mu: " << mu << " maxeival: " << maxEiVal << endl;
-        if (print > 10 and mpi::orb_rank == 0) cout << "gradient norm " << gradient_norm << endl;
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "trust radius set  to " << h << " test: " << relative_change << " mu: " << mu << " maxeival: " << maxEiVal << endl;
+        if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "gradient norm " << gradient_norm << endl;
 
         if (gradient_norm < threshold && maxEiVal < 10 * std::sqrt(std::abs(threshold))) {
             // finished
@@ -293,7 +292,7 @@ int NonlinearMaximizer::maximize() {
         }
         if (print == 2 && !wrongstep) { cout << setw(10) << dcount; }
         if (print == 2) cout << endl;
-        //        if (mpi::orb_rank == 0) std::cout<<std::scientific<<"iteration "<<iter<<" Newton
+        //        if (mrcpp::mpi::wrk_rank == 0) std::cout<<std::scientific<<"iteration "<<iter<<" Newton
         //        "<<newton_step_exact<<" "<<lastICG<<" Time sofar " << (int)((float)t_tot.elapsed() * 1000) << " ms
         //        "<<" Time hessian " <<(int)((float)t_hess.elapsed() * 1000) << " Time dostep "
         //        <<(int)((float)t_step.elapsed() * 1000) << " gradient " << gradient_norm<< " trust r " << h << "
@@ -302,7 +301,7 @@ int NonlinearMaximizer::maximize() {
 
     } // iterations
 
-    if (print > 15 and mpi::orb_rank == 0) {
+    if (print > 15 and mrcpp::mpi::wrk_rank == 0) {
         cout << "Exact Hessian (upper left corner)" << endl;
         for (int i = 0; i < 20 and i < N2h; i++) {
             for (int j = 0; j < 20 and j < N2h; j++) { printf(" %8.5f", this->get_hessian(i, j)); }

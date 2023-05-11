@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -29,7 +29,6 @@
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
 
@@ -39,7 +38,7 @@ namespace mrchem {
 Orbital QMIdentity::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
     Orbital out = inp.paramCopy();
-    qmfunction::deep_copy(out, inp);
+    mrcpp::cplxfunc::deep_copy(out, inp);
     return out;
 }
 

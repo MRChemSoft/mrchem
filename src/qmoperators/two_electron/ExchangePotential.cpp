@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,11 +28,9 @@
 #include "MRCPP/Timer"
 
 #include "ExchangePotential.h"
-#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -61,7 +59,7 @@ ExchangePotential::ExchangePotential(PoissonOperator_p P, OrbitalVector_p Phi, d
  */
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
-    this->exchange = orbital::rotate(this->exchange, U, this->apply_prec);
+    mrcpp::mpifuncvec::rotate(this->exchange, U, this->apply_prec);
 
     // NOTE: The following MPI point is currently NOT implemented!
     //
@@ -122,7 +120,7 @@ void ExchangePotential::setup(double prec) {
     mrcpp::print::header(3, "Building Exchange operator");
     mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
     mrcpp::print::separator(3, '-');
-    if (mpi::world_size > 1 and mpi::bank_size < 1) MSG_ABORT("MPI bank required!");
+    if (mrcpp::mpi::world_size > 1 and mrcpp::mpi::bank_size < 1) MSG_ABORT("MPI bank required!");
     setApplyPrec(prec);
     setupBank();
     if (this->pre_compute) setupInternal(prec);
@@ -174,7 +172,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     // the result is expected to be negligible
     Timer timer_ij;
     Orbital rho_ij = phi_i.paramCopy();
-    qmfunction::multiply(rho_ij, phi_i.dagger(), phi_j, prec_m1, true, true);
+    mrcpp::cplxfunc::multiply(rho_ij, phi_i.dagger(), phi_j, prec_m1, true, true);
     timer_ij.stop();
     if (rho_ij.norm() < prec) return;
 
@@ -212,7 +210,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
 
     // compute out_kij = phi_k * V_ij
     Timer timer_kij;
-    qmfunction::multiply(out_kij, phi_k, V_ij, prec_m2, true, true);
+    mrcpp::cplxfunc::multiply(out_kij, phi_k, V_ij, prec_m2, true, true);
     auto N_kij = out_kij.getNNodes(NUMBER::Total);
     auto norm_kij = out_kij.norm();
     timer_kij.stop();
@@ -222,7 +220,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     auto N_jji = 0;
     auto norm_jji = 0.0;
     if (out_jji != nullptr) {
-        qmfunction::multiply(*out_jji, phi_j, V_ij.dagger(), prec_m2, true, true);
+        mrcpp::cplxfunc::multiply(*out_jji, phi_j, V_ij.dagger(), prec_m2, true, true);
         N_jji = out_jji->getNNodes(NUMBER::Total);
         norm_jji = out_jji->norm();
     }

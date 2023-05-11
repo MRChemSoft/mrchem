@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,11 +27,9 @@
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "mrchem.h"
-#include "parallel.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 using namespace mrchem;
 
@@ -45,21 +43,20 @@ TEST_CASE("Density", "[density]") {
         OrbitalVector Phi;
         for (int i = 0; i < 5; i++) Phi.push_back(Orbital(SPIN::Alpha));
         for (int i = 0; i < 2; i++) Phi.push_back(Orbital(SPIN::Beta));
-        mpi::distribute(Phi);
+        Phi.distribute();
 
         HydrogenFunction s1(1, 0, 0);
         HydrogenFunction s2(2, 0, 0);
         HydrogenFunction px(2, 1, 0);
         HydrogenFunction py(2, 1, 1);
         HydrogenFunction pz(2, 1, 2);
-
-        if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], s1, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[1])) qmfunction::project(Phi[1], s2, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[2])) qmfunction::project(Phi[2], px, NUMBER::Imag, prec);
-        if (mpi::my_orb(Phi[3])) qmfunction::project(Phi[3], py, NUMBER::Imag, prec);
-        if (mpi::my_orb(Phi[4])) qmfunction::project(Phi[4], pz, NUMBER::Imag, prec);
-        if (mpi::my_orb(Phi[5])) qmfunction::project(Phi[5], s1, NUMBER::Real, prec);
-        if (mpi::my_orb(Phi[6])) qmfunction::project(Phi[6], s1, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], s1, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[1])) mrcpp::cplxfunc::project(Phi[1], s2, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[2])) mrcpp::cplxfunc::project(Phi[2], px, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[3])) mrcpp::cplxfunc::project(Phi[3], py, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[4])) mrcpp::cplxfunc::project(Phi[4], pz, NUMBER::Imag, prec);
+        if (mrcpp::mpi::my_orb(Phi[5])) mrcpp::cplxfunc::project(Phi[5], s1, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[6])) mrcpp::cplxfunc::project(Phi[6], s1, NUMBER::Real, prec);
 
         SECTION("non-shared memory total/spin density") {
             Density rho_t(false);

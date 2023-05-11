@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,11 +28,9 @@
 #include "MRCPP/Timer"
 
 #include "ExchangePotentialD1.h"
-#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::Printer;
@@ -56,14 +54,14 @@ ExchangePotentialD1::ExchangePotentialD1(PoissonOperator_p P, OrbitalVector_p Ph
 
 /** @brief Save all orbitals in Bank, so that they can be accessed asynchronously */
 void ExchangePotentialD1::setupBank() {
-    if (mpi::bank_size < 1) return;
+    if (mrcpp::mpi::bank_size < 1) return;
     Timer timer;
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     OrbitalVector &Phi = *this->orbitals;
     for (int i = 0; i < Phi.size(); i++) {
-        if (mpi::my_orb(Phi[i])) PhiBank.put_orb(i, Phi[i]);
+        if (mrcpp::mpi::my_orb(i)) PhiBank.put_func(i, Phi[i]);
     }
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::time(3, "Setting up exchange bank", timer);
 }
 
@@ -112,7 +110,7 @@ Orbital ExchangePotentialD1::apply(Orbital phi_p) {
     }
     int i = testInternal(phi_p);
     if (i < 0) {
-        if (not mpi::my_orb(phi_p)) {
+        if (not mrcpp::mpi::my_orb(phi_p)) {
             MSG_WARN("Not computing exchange contributions that are not mine");
             return out_p;
         }
@@ -148,20 +146,22 @@ void ExchangePotentialD1::setupInternal(double prec) {
 
     OrbitalVector &Ex = this->exchange;
     OrbitalVector &Phi = *this->orbitals;
-    BankAccount ExBank;
+    mrcpp::BankAccount ExBank;
     int N = Phi.size();
     // use fixed exchange_prec if set explicitly, otherwise use setup prec
     double precf = (this->exchange_prec > 0.0) ? this->exchange_prec : prec;
-    prec = mpi::numerically_exact ? -1.0 : prec;
+    prec = mrcpp::mpi::numerically_exact ? -1.0 : prec;
     precf /= std::sqrt(1 * Phi.size());
     // Initialize this->exchange and compute own diagonal elements
     Timer t_diag;
+    int i = 0;
     for (auto &phi_i : Phi) {
-        Orbital ex_iii = phi_i.paramCopy();
+        Orbital ex_iii(phi_i.spin(), phi_i.occ(), phi_i.getRank());
         t_calc.resume();
-        if (mpi::my_orb(phi_i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
+        if (mrcpp::mpi::my_orb(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
         t_calc.stop();
         Ex.push_back(ex_iii);
+        i++;
     }
     t_diag.stop();
 
@@ -177,7 +177,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     // We use symmetry: each pair (i,j) must be used once only. Only j<i
     // Divide into square blocks, with the diagonal blocks taken at the end (because they are faster to compute)
     int block_size; // NB: block_size*block_size intermediate exchange results are stored temporarily
-    block_size = std::min(16, std::max(2, static_cast<int>(std::sqrt(N * N / (14 * orb_size)))));
+    block_size = std::min(16, std::max(2, static_cast<int>(std::sqrt(N * N / (14 * mrcpp::mpi::wrk_size)))));
 
     int iblocks = (N + block_size - 1) / block_size;
     int ntasksmax = ((iblocks - 1) * iblocks) / 2 + iblocks * (block_size * (block_size - 1) / 2);
@@ -237,7 +237,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     assert(task <= ntasksmax);
     int ntasks = task;
 
-    TaskManager tasksMaster(ntasks);
+    mrcpp::TaskManager tasksMaster(ntasks);
     while (true) {
         task = tasksMaster.next_task();
         if (task < 0) break;
@@ -250,8 +250,8 @@ void ExchangePotentialD1::setupInternal(double prec) {
             Orbital phi_i;
 
             t_orb.resume();
-            if (bank_size > 0) {
-                PhiBank.get_orb(iorb, phi_i, 1); // fetch also own orbitals (simpler for clean up, and they are few)
+            if (mrcpp::mpi::bank_size > 0) {
+                PhiBank.get_func(iorb, phi_i, 1); // fetch also own orbitals (simpler for clean up, and they are few)
                 iorb_vec.push_back(phi_i);
             } else {
                 iorb_vec.push_back(Phi[iorb]);
@@ -263,12 +263,12 @@ void ExchangePotentialD1::setupInternal(double prec) {
             int jorb = jtasks[task][j];
             Orbital phi_j;
             t_orb.resume();
-            if (bank_size > 0)
-                PhiBank.get_orb(jorb, phi_j, 1);
-            else
+            if (mrcpp::mpi::bank_size > 0) {
+                PhiBank.get_func(jorb, phi_j, 1);
+            } else
                 phi_j = Phi[jorb];
             t_orb.stop();
-            QMFunctionVector iijfunc_vec;
+            std::vector<mrcpp::ComplexFunction> iijfunc_vec;
             ComplexVector coef_vec(N);
             for (int i = 0; i < iorb_vec.size(); i++) {
                 int iorb = itasks[task][i];
@@ -284,10 +284,10 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_calc.stop();
                 if (ex_iij.norm() > prec) coef_vec[iijfunc_vec.size()] = j_fac;
                 t_snd.resume();
-                if (bank_size > 0) {
+                if (mrcpp::mpi::bank_size > 0) {
                     // store ex_jji
                     if (ex_iij.norm() > prec) iijfunc_vec.push_back(ex_iij);
-                    if (ex_jji.norm() > prec) ExBank.put_orb(iorb + jorb * N, ex_jji);
+                    if (ex_jji.norm() > prec) ExBank.put_func(iorb + jorb * N, ex_jji);
                     if (ex_jji.norm() > prec) tasksMaster.put_readytask(iorb, jorb);
                 } else {
                     Ex[iorb].add(j_fac, ex_jji);
@@ -303,7 +303,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             for (int iorb : iVec) {
                 t_get.resume();
                 Orbital ex_rcv;
-                int found = ExBank.get_orb_del(jorb + iorb * N, ex_rcv);
+                int found = ExBank.get_func_del(jorb + iorb * N, ex_rcv);
                 t_get.stop();
                 if (not found) MSG_ERROR("Exchange not found");
                 double j_fac = getSpinFactor(ex_rcv, phi_j);
@@ -311,10 +311,10 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 iijfunc_vec.push_back(ex_rcv);
             }
             // add all contributions to ex_j,
-            if (bank_size > 0 and iijfunc_vec.size() > 0) {
+            if (mrcpp::mpi::bank_size > 0 and iijfunc_vec.size() > 0) {
                 Orbital ex_j = phi_j.paramCopy();
                 t_add.resume();
-                qmfunction::linear_combination(ex_j, coef_vec, iijfunc_vec, prec);
+                mrcpp::cplxfunc::linear_combination(ex_j, coef_vec, iijfunc_vec, prec);
                 t_add.stop();
                 // ex_j is sent to Bank
                 if (ex_j.hasReal() or ex_j.hasImag()) {
@@ -323,7 +323,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                     ex_j.crop(prec);
                     if (ex_j.norm() > prec) {
                         if (i0 < 0) MSG_ERROR("no exchange contributions?");
-                        ExBank.put_orb(jorb + (i0 + N) * N, ex_j);
+                        ExBank.put_func(jorb + (i0 + N) * N, ex_j);
                         tasksMaster.put_readytask(jorb, i0 + N);
                     }
                     t_snd.stop();
@@ -338,13 +338,13 @@ void ExchangePotentialD1::setupInternal(double prec) {
 
     // wait until all exchanges pieces are computed and stored in Bank
     t_wait.resume();
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     t_wait.stop();
 
     for (int j = 0; j < N; j++) {
-        if (not mpi::my_orb(Phi[j]) or bank_size == 0) continue; // fetch only own j
+        if (not mrcpp::mpi::my_orb(j) or mrcpp::mpi::bank_size == 0) continue; // fetch only own j
         std::vector<int> iVec = tasksMaster.get_readytask(j, 1);
-        QMFunctionVector iijfunc_vec;
+        std::vector<mrcpp::ComplexFunction> iijfunc_vec;
         ComplexVector coef_vec(N);
         int tot = 0;
         int totmax = 2 * block_size;
@@ -352,7 +352,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             if (i < 0) continue;
             t_get.resume();
             Orbital ex_rcv;
-            int found = ExBank.get_orb_del(j + i * N, ex_rcv);
+            int found = ExBank.get_func_del(j + i * N, ex_rcv);
             t_get.stop();
             double j_fac = getSpinFactor(ex_rcv, Phi[j]);
             coef_vec[iijfunc_vec.size()] = j_fac;
@@ -363,7 +363,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 // we sum the contributions so far before fetching new ones
                 t_add.resume();
                 auto tmp_j = Ex[j].paramCopy();
-                qmfunction::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
+                mrcpp::cplxfunc::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
                 Ex[j].add(1.0, tmp_j);
                 tmp_j.free(NUMBER::Total);
                 for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free(NUMBER::Total);
@@ -376,7 +376,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
         if (iijfunc_vec.size() > 0) {
             t_add.resume();
             auto tmp_j = Ex[j].paramCopy();
-            qmfunction::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
+            mrcpp::cplxfunc::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
             Ex[j].add(1.0, tmp_j);
             tmp_j.free(NUMBER::Total);
             for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free(NUMBER::Total);
@@ -419,11 +419,11 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
     // adjust precision since we sum over orbitals
     precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
 
-    QMFunctionVector func_vec;
+    std::vector<mrcpp::ComplexFunction> func_vec;
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
         Orbital &phi_i = Phi[i];
-        if (not mpi::my_orb(phi_i)) PhiBank.get_orb(i, phi_i, 1);
+        if (not mrcpp::mpi::my_orb(i)) PhiBank.get_func(i, phi_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
@@ -433,13 +433,13 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
             func_vec.push_back(ex_iip);
         }
 
-        if (not mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_orb(i)) phi_i.free(NUMBER::Total);
     }
 
     // compute ex_p = sum_i c_i*ex_iip
     Orbital ex_p = phi_p.paramCopy();
     Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    qmfunction::linear_combination(ex_p, coefs, func_vec, prec);
+    mrcpp::cplxfunc::linear_combination(ex_p, coefs, func_vec, prec);
     print_utils::qmfunction(4, "Applied exchange", ex_p, timer);
     return ex_p;
 }

@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,11 +27,11 @@
 #include <string>
 
 #include <MRCPP/Timer>
+#include <MRCPP/Parallel>
 
 #include "driver.h"
 #include "mrchem.h"
 #include "mrenv.h"
-#include "parallel.h"
 #include "version.h"
 
 #include "chemistry/Molecule.h"
@@ -70,7 +70,7 @@ int main(int argc, char **argv) {
     if (scf_out["success"]) {
         for (auto &i : rsp_inp.items()) rsp_out[i.key()] = driver::rsp::run(i.value(), mol);
     }
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     json json_out;
     // Name and version of the output schema
     json_out["schema_name"] = "mrchem_output";
@@ -78,9 +78,9 @@ int main(int argc, char **argv) {
     // Provenance
     json_out["provenance"] = {{"creator", "MRChem"},
                               {"version", program_version()},
-                              {"nthreads", omp::n_threads},
-                              {"mpi_processes", mpi::world_size},
-                              {"total_cores", mpi::world_size * omp::n_threads},
+                              {"nthreads", mrcpp::omp::n_threads},
+                              {"mpi_processes", mrcpp::mpi::world_size},
+                              {"total_cores", mrcpp::mpi::world_size * mrcpp::omp::n_threads},
                               {"routine", "mrchem.x"}};
     // Computed values
     json_out["scf_calculation"] = scf_out;
@@ -91,6 +91,6 @@ int main(int argc, char **argv) {
     mrenv::finalize(timer.elapsed());
     mrenv::dump_json(json_inp, json_out);
 
-    mpi::finalize();
+    mrcpp::mpi::finalize();
     return EXIT_SUCCESS;
 }

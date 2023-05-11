@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -32,6 +32,7 @@
 #include "ExchangeOperator.h"
 #include "ReactionOperator.h"
 #include "XCOperator.h"
+#include "analyticfunctions/NuclearFunction.h"
 #include "chemistry/chemistry_utils.h"
 #include "properties/SCFEnergy.h"
 #include "qmfunctions/Orbital.h"
@@ -74,12 +75,14 @@ void FockBuilder::build(double exx) {
  */
 void FockBuilder::setup(double prec) {
     Timer t_tot;
+
     auto plevel = Printer::getPrintLevel();
     if (plevel == 2) {
         mrcpp::print::header(2, "Building Fock operator");
         mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
         mrcpp::print::separator(2, '-');
     }
+    this->prec = prec;
     if (this->mom != nullptr) this->momentum().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
@@ -179,7 +182,10 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Electronic part
-    if (this->nuc != nullptr) E_en = this->nuc->trace(Phi).real();
+    if (this->nuc != nullptr) {
+        E_en = this->nuc->trace(Phi).real();
+    }
+
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
@@ -255,13 +261,14 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     Timer t_2;
     OrbitalVector termTwo = V(Phi);
+
     mrcpp::print::time(2, "Computing potential term", t_2);
 
     // Compute transformed orbitals scaled by diagonal Fock elements
     Timer t_3;
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
     for (int i = 0; i < epsPhi.size(); i++) {
-        if (not mpi::my_orb(epsPhi[i])) continue;
+        if (not mrcpp::mpi::my_orb(epsPhi[i])) continue;
         epsPhi[i].rescale(eps[i] / two_cc);
     }
     OrbitalVector termThree = operThree(epsPhi);
@@ -276,7 +283,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     Timer t_add;
     OrbitalVector arg = orbital::deep_copy(termOne);
     for (int i = 0; i < arg.size(); i++) {
-        if (not mpi::my_orb(arg[i])) continue;
+        if (not mrcpp::mpi::my_orb(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
         arg[i].add(1.0, Psi[i]);
@@ -300,13 +307,14 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, Orbita
     // Compute OrbitalVectors
     Timer t_pot;
     OrbitalVector termOne = V(Phi);
+
     mrcpp::print::time(2, "Computing potential term", t_pot);
 
     // Add up all the terms
     Timer t_add;
     OrbitalVector out = orbital::deep_copy(termOne);
     for (int i = 0; i < out.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_orb(out[i])) continue;
         out[i].add(1.0, Psi[i]);
     };
     mrcpp::print::time(2, "Adding contributions", t_add);

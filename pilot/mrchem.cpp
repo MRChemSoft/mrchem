@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,10 +27,10 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include "MRCPP/Parallel"
 
 #include "mrchem.h"
 #include "mrenv.h"
-#include "parallel.h"
 
 // Initializing global variables
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
@@ -40,7 +40,7 @@ using Timer = mrcpp::Timer;
 using namespace mrchem;
 
 int main(int argc, char **argv) {
-    mpi::initialize();
+    mrcpp::mpi::initialize();
     const auto json_inp = mrenv::fetch_json(argc, argv);
     mrenv::initialize(json_inp);
 
@@ -53,6 +53,6 @@ int main(int argc, char **argv) {
     double wt = timer.elapsed();
 
     mrenv::finalize(wt);
-    mpi::finalize();
+    mrcpp::mpi::finalize();
     return EXIT_SUCCESS;
 }

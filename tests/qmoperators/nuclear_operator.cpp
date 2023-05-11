@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,13 +28,11 @@
 #include "MRCPP/MWOperators"
 
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 
 using namespace mrchem;
@@ -64,11 +62,11 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
             }
         }
     }
-    mpi::distribute(Phi);
+    Phi.distribute();
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     // reference values for hydrogen eigenfunctions
@@ -93,7 +91,7 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
-        if (mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_orb(Phi[0])) {
             REQUIRE(V_00.real() == Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -105,7 +103,7 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
         OrbitalVector VPhi = V(Phi);
         for (int i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
-            if (mpi::my_orb(Phi[i])) {
+            if (mrcpp::mpi::my_orb(Phi[i])) {
                 REQUIRE(V_ii.real() == Approx(E_P(i)).epsilon(prec));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
@@ -116,7 +114,7 @@ TEST_CASE("NuclearOperator", "[nuclear_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
-        if (mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_orb(Phi[0])) {
             REQUIRE(V_00.real() == Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {

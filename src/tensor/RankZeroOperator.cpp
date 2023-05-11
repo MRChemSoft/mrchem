@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -25,14 +25,13 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <MRCPP/Parallel>
 
 #include "RankZeroOperator.h"
 
 #include "chemistry/Nucleus.h"
-#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "utils/print_utils.h"
 
 using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
@@ -201,7 +200,8 @@ RankZeroOperator &RankZeroOperator::operator-=(const RankZeroOperator &O) {
  */
 void RankZeroOperator::setup(double prec) {
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) { i[j]->setup(prec); }
+        for (int j = 0; j < i.size(); j++) {
+            i[j]->setup(prec); }
     }
 }
 
@@ -241,17 +241,17 @@ ComplexDouble RankZeroOperator::dagger(const mrcpp::Coord<3> &r) const {
  * is added upp with the corresponding coefficient.
  */
 Orbital RankZeroOperator::operator()(Orbital inp) {
-    if (not mpi::my_orb(inp)) return inp.paramCopy();
+    if (not mrcpp::mpi::my_orb(inp)) return inp.paramCopy();
 
     RankZeroOperator &O = *this;
-    QMFunctionVector func_vec;
+    std::vector<mrcpp::ComplexFunction> func_vec;
     ComplexVector coef_vec = getCoefVector();
     for (int n = 0; n < O.size(); n++) {
         Orbital out_n = O.applyOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
     Orbital out = inp.paramCopy();
-    qmfunction::linear_combination(out, coef_vec, func_vec, -1.0);
+    mrcpp::cplxfunc::linear_combination(out, coef_vec, func_vec, -1.0);
     return out;
 }
 
@@ -262,17 +262,17 @@ Orbital RankZeroOperator::operator()(Orbital inp) {
  * NOT IMPLEMENTED
  */
 Orbital RankZeroOperator::dagger(Orbital inp) {
-    if (not mpi::my_orb(inp)) return inp.paramCopy();
+    if (not mrcpp::mpi::my_orb(inp)) return inp.paramCopy();
 
     RankZeroOperator &O = *this;
-    QMFunctionVector func_vec;
+    std::vector<mrcpp::ComplexFunction> func_vec;
     ComplexVector coef_vec = getCoefVector();
     for (int n = 0; n < O.size(); n++) {
         Orbital out_n = O.daggerOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
     Orbital out = inp.paramCopy();
-    qmfunction::linear_combination(out, coef_vec, func_vec, -1.0);
+    mrcpp::cplxfunc::linear_combination(out, coef_vec, func_vec, -1.0);
     return out;
 }
 
@@ -470,7 +470,7 @@ ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
  */
 Orbital RankZeroOperator::applyOperTerm(int n, Orbital inp) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
-    if (not mpi::my_orb(inp)) return inp.paramCopy();
+    if (not mrcpp::mpi::my_orb(inp)) return inp.paramCopy();
 
     Orbital out = inp;
     for (auto O_nm : this->oper_exp[n]) {
@@ -482,7 +482,7 @@ Orbital RankZeroOperator::applyOperTerm(int n, Orbital inp) {
 
 Orbital RankZeroOperator::daggerOperTerm(int n, Orbital inp) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
-    if (not mpi::my_orb(inp)) return inp.paramCopy();
+    if (not mrcpp::mpi::my_orb(inp)) return inp.paramCopy();
 
     Orbital out = inp;
     for (int i = this->oper_exp[n].size() - 1; i >= 0; i--) {

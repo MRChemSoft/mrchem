@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -23,37 +23,11 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-/*
- * Mrchem, a numerical real-space code for molecular electronic structure
- * calculations within the self-consistent field (SCF) approximations of quantum
- * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
- *
- * This file is part of MRChem.
- *
- * MRChem is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * MRChem is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
- *
- * For information on the complete list of contributors to MRChem, see:
- * <https://mrchem.readthedocs.io/>
- */
-
+#include "MRCPP/Parallel"
 #include "MRCPP/Printer"
 
 #include "Orbital.h"
 #include "OrbitalIterator.h"
-#include "parallel.h"
-#include "utils/Bank.h"
 
 namespace mrchem {
 
@@ -64,14 +38,14 @@ OrbitalIterator::OrbitalIterator(OrbitalVector &Phi, bool sym)
         , sent_counter(0)
         , orbitals(&Phi) {
     // Find and save the orbitals each rank owns
-    int my_mpi_rank = mpi::orb_rank;
-    for (int impi = 0; impi < mpi::orb_size; impi++) {
+    int my_mpi_rank = mrcpp::mpi::wrk_rank;
+    for (int impi = 0; impi < mrcpp::mpi::wrk_size; impi++) {
         std::vector<int> orb_ix;
         for (int i = 0; i < this->orbitals->size(); i++) {
             Orbital &phi_i = (*this->orbitals)[i];
-            int phi_rank = phi_i.rankID();
-            if (phi_rank == impi) orb_ix.push_back(i);
-            if (impi == my_mpi_rank and phi_rank < 0) orb_ix.push_back(i);
+            int phi_rank = phi_i.getRank();
+            if (mrcpp::mpi::my_orb(i)) orb_ix.push_back(i);
+            // if (impi == my_mpi_rank and phi_rank < 0) orb_ix.push_back(i);
         }
         this->orb_ix_map.push_back(orb_ix);
     }
@@ -86,7 +60,7 @@ OrbitalIterator::OrbitalIterator(OrbitalVector &Phi, bool sym)
 //     there may be several calls to "next" for the same iter in case max_recv<0,
 //     or double iterations for symmetric treatment.
 bool OrbitalIterator::next(int max_recv) {
-    mpi::free_foreign(*this->orbitals); // delete foreign orbitals
+    mrcpp::mpi::free_foreign(*this->orbitals); // delete foreign orbitals
     // NB: for now we completely delete orbitals at each iteration. Could reuse the memory in next iteration.
     this->received_orbital_index.clear();
     this->received_orbitals.clear();
@@ -94,7 +68,7 @@ bool OrbitalIterator::next(int max_recv) {
     this->sent_orbital_mpirank.clear();
     this->rcv_step.clear();
 
-    if (this->iter >= mpi::orb_size) {
+    if (this->iter >= mrcpp::mpi::wrk_size) {
         // We have talked to all MPIs -> return
         this->iter = 0;
         return false;
@@ -107,8 +81,8 @@ bool OrbitalIterator::next(int max_recv) {
     //   - other_rank increases by one for each iteration, modulo size
     // Each MPI pair will be treated exactly once at the end of the iteration process
 
-    int my_rank = mpi::orb_rank;
-    int max_rank = mpi::orb_size;
+    int my_rank = mrcpp::mpi::wrk_rank;
+    int max_rank = mrcpp::mpi::wrk_size;
     int received = 0;                                // number of new received orbitals this call
     int sent = 0;                                    // number of new sent orbitals this call
     int maxget = max_recv;                           // max number of orbitals to receive
@@ -118,7 +92,7 @@ bool OrbitalIterator::next(int max_recv) {
     if (this->symmetric) nstep = 2; // one iteration is receive, one iteration is send
 
     for (int step = 0; step < nstep; step++) {
-        if (this->iter >= mpi::orb_size) break; // last iteration is completed
+        if (this->iter >= mrcpp::mpi::wrk_size) break; // last iteration is completed
 
         bool IamReceiver = true; // default, both send and receive
         bool IamSender = true;   // default, both send and receive
@@ -165,7 +139,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[my_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::send_orbital(phi_i, other_rank, tag);
+                    mrcpp::mpi::send_function(phi_i, other_rank, tag);
                     this->sent_orbital_index.push_back(orb_ix);
                     this->sent_orbital_mpirank.push_back(other_rank);
                     this->sent_counter++; // total to other_rank
@@ -176,7 +150,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[other_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::recv_orbital(phi_i, other_rank, tag);
+                    mrcpp::mpi::recv_function(phi_i, other_rank, tag);
                     this->received_orbital_index.push_back(orb_ix);
                     this->received_orbitals.push_back(phi_i);
                     this->rcv_step.push_back(step);
@@ -189,7 +163,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[other_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::recv_orbital(phi_i, other_rank, tag);
+                    mrcpp::mpi::recv_function(phi_i, other_rank, tag);
                     this->received_orbital_index.push_back(orb_ix);
                     this->received_orbitals.push_back(phi_i);
                     this->rcv_step.push_back(step);
@@ -201,7 +175,7 @@ bool OrbitalIterator::next(int max_recv) {
                     int tag = this->orbitals->size() * this->iter + i;
                     int orb_ix = this->orb_ix_map[my_rank][i];
                     Orbital &phi_i = (*this->orbitals)[orb_ix];
-                    mpi::send_orbital(phi_i, other_rank, tag);
+                    mrcpp::mpi::send_function(phi_i, other_rank, tag);
                     this->sent_orbital_index.push_back(orb_ix);
                     this->sent_orbital_mpirank.push_back(other_rank);
                     this->sent_counter++; // total to other_rank
@@ -223,7 +197,7 @@ bool OrbitalIterator::next(int max_recv) {
 
 // Receive all the orbitals from Bank
 bool OrbitalIterator::bank_next(int max_recv) {
-    mpi::free_foreign(*this->orbitals); // delete foreign orbitals
+    mrcpp::mpi::free_foreign(*this->orbitals); // delete foreign orbitals
     // NB: for now we completely delete orbitals at each iteration. Could reuse the memory in next iteration.
     this->received_orbital_index.clear();
     this->received_orbitals.clear();
@@ -235,8 +209,8 @@ bool OrbitalIterator::bank_next(int max_recv) {
         return false;
     }
 
-    int my_rank = mpi::orb_rank;
-    int max_rank = mpi::orb_size;
+    int my_rank = mrcpp::mpi::wrk_rank;
+    int max_rank = mrcpp::mpi::wrk_size;
     int received = 0;  // number of new received orbitals this call
     int recv_size = 1; // number of orbitals to receive per iteration
 
@@ -244,8 +218,8 @@ bool OrbitalIterator::bank_next(int max_recv) {
         // send all my orbitals to bank
         for (int i = 0; i < this->orbitals->size(); i++) {
             Orbital &phi_i = (*this->orbitals)[i];
-            if (not mpi::my_orb(phi_i)) continue;
-            orbBank.put_orb(i, phi_i);
+            if (not mrcpp::mpi::my_orb(i)) continue;
+            orbBank.put_func(i, phi_i);
         }
     }
 
@@ -254,7 +228,7 @@ bool OrbitalIterator::bank_next(int max_recv) {
         int tag = i;
         int orb_ix = this->received_counter;
         Orbital &phi_i = (*this->orbitals)[orb_ix];
-        orbBank.get_orb(orb_ix, phi_i);
+        orbBank.get_func(orb_ix, phi_i);
         this->received_orbital_index.push_back(orb_ix);
         this->received_orbitals.push_back(phi_i);
         this->received_counter++; // total

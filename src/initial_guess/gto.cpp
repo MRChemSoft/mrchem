@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -26,9 +26,9 @@
 #include <MRCPP/Gaussians>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <MRCPP/Parallel>
 
 #include "gto.h"
-#include "parallel.h"
 
 #include "utils/gto_utils/Intgrl.h"
 #include "utils/gto_utils/OrbitalExp.h"
@@ -40,7 +40,6 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 using mrcpp::GaussExp;
 using mrcpp::Printer;
@@ -149,7 +148,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     Timer t3;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mpi::my_orb(Phi[i])) {
+        if (mrcpp::mpi::my_orb(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
             Phi[i].alloc(NUMBER::Real);
@@ -160,7 +159,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
         o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
     }
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::separator(2, '-');
     mrcpp::print::time(1, "Reading AO basis", t1);
     mrcpp::print::time(1, "Reading MO matrix", t2);
@@ -222,11 +221,10 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         for (int i = 0; i < gto_exp.size(); i++) {
             Timer t_i;
             Phi.push_back(Orbital(SPIN::Paired));
-            Phi.back().setRankID(Phi.size() % mpi::orb_size);
             GaussExp<3> ao_i = gto_exp.getAO(i);
             ao_i.calcScreening(screen);
-            if (mpi::my_orb(Phi.back())) {
-                qmfunction::project(Phi.back(), ao_i, NUMBER::Real, prec);
+            if (mrcpp::mpi::my_orb(Phi.back())) {
+                mrcpp::cplxfunc::project(Phi.back(), ao_i, NUMBER::Real, prec);
                 if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
             }
 
@@ -240,7 +238,7 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
             print_utils::qmfunction(2, o_txt.str(), Phi.back(), t_i);
         }
     }
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     timer.stop();
     mrcpp::print::footer(2, timer, 2);
 }

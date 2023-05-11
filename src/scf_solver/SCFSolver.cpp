@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -287,9 +287,9 @@ void SCFSolver::printConvergence(bool converged, const std::string &txt) const {
 }
 
 void SCFSolver::printMemory() const {
-    DoubleVector mem_vec = DoubleVector::Zero(mpi::orb_size);
-    mem_vec(mpi::orb_rank) = static_cast<double>(mrcpp::details::get_memory_usage());
-    mpi::allreduce_vector(mem_vec, mpi::comm_orb);
+    DoubleVector mem_vec = DoubleVector::Zero(mrcpp::mpi::wrk_size);
+    mem_vec(mrcpp::mpi::wrk_rank) = static_cast<double>(mrcpp::details::get_memory_usage());
+    mrcpp::mpi::allreduce_vector(mem_vec, mrcpp::mpi::comm_wrk);
 
     std::string mem_unit = "(kB)";
     if (mem_vec.maxCoeff() > 512.0) {
@@ -304,15 +304,15 @@ void SCFSolver::printMemory() const {
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::separator(1, '-');
     mrcpp::print::header(2, "Memory usage");
-    mrcpp::print::value(1, "Total memory current process", mem_vec(mpi::orb_rank), mem_unit, 2, false);
+    mrcpp::print::value(1, "Total memory current process", mem_vec(mrcpp::mpi::wrk_rank), mem_unit, 2, false);
     mrcpp::print::value(2, "Maximum memory process", mem_vec.maxCoeff(), mem_unit, 2, false);
     mrcpp::print::value(2, "Minimum memory process", mem_vec.minCoeff(), mem_unit, 2, false);
     mrcpp::print::value(2, "Average memory process", mem_vec.mean(), mem_unit, 2, false);
-    if (mpi::bank_size > 0 and mpi::grand_master()) {
+    if (mrcpp::mpi::bank_size > 0 and mrcpp::mpi::grand_master()) {
         if (mem_unit == "(GB)") {
-            mrcpp::print::value(1, "Maximum data in bank", (double)dataBank.get_maxtotalsize() / 1024, mem_unit, 2, false);
+            mrcpp::print::value(1, "Maximum data in bank", (double)mrcpp::dataBank.get_maxtotalsize() / 1024, mem_unit, 2, false);
         } else {
-            mrcpp::print::value(1, "Maximum data in bank", (double)dataBank.get_maxtotalsize(), "(MB)", 2, false);
+            mrcpp::print::value(1, "Maximum data in bank", (double)mrcpp::dataBank.get_maxtotalsize(), "(MB)", 2, false);
         }
     }
     mrcpp::print::separator(2, '=', 2);

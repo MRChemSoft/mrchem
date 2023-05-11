@@ -2,7 +2,6 @@
 add_library(mrchem
   OBJECT
     driver.cpp
-    parallel.cpp
     mrenv.cpp
   )
 
@@ -25,7 +24,6 @@ list(APPEND _public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/driver.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mrchem.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mrenv.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/parallel.h
   ${PROJECT_BINARY_DIR}/config.h
   ${PROJECT_BINARY_DIR}/version.h
   )

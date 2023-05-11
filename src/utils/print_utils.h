@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -41,7 +41,7 @@ void coord(int level, const std::string &txt, const mrcpp::Coord<3> &val, int p 
 void scalar(int level, const std::string &txt, double val, const std::string &unit = "", int p = -1, bool s = false);
 void vector(int level, const std::string &txt, const DoubleVector &val, int p = -1, bool s = false);
 void matrix(int level, const std::string &txt, const DoubleMatrix &val, int p = -1, bool s = false);
-void qmfunction(int level, const std::string &txt, const QMFunction &func, mrcpp::Timer &t);
+void qmfunction(int level, const std::string &txt, const mrcpp::ComplexFunction &func, mrcpp::Timer &t);
 std::string dbl_to_str(double d, int p, bool sci);
 std::vector<double> eigen_to_vector(const DoubleVector &inp, double thrs);
 std::vector<double> eigen_to_vector(const DoubleMatrix &inpm, double thrs);

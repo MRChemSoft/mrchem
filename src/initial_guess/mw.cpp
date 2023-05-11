@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,7 +28,6 @@
 #include <MRCPP/Timer>
 
 #include "mw.h"
-#include "parallel.h"
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
@@ -105,12 +104,12 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
     bool success = true;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mpi::my_orb(Phi[i])) {
+        if (mrcpp::mpi::my_orb(Phi[i])) {
             std::stringstream orbname;
             orbname << mo_file << "_idx_" << i;
 
             Orbital phi_i;
-            phi_i.loadOrbital(orbname.str());
+            orbital::loadOrbital(orbname.str(), phi_i);
             if (phi_i.squaredNorm() < 0.0) {
                 MSG_ERROR("Guess orbital not found: " << orbname.str());
                 success &= false;
@@ -133,7 +132,7 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
             print_utils::qmfunction(1, o_txt.str(), Phi[i], t_i);
         }
     }
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::footer(1, t_tot, 2);
     return success;
 }

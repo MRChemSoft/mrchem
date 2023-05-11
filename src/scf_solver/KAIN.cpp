@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -23,15 +23,13 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-
-#include "parallel.h"
 
 #include "KAIN.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -63,20 +61,17 @@ void KAIN::setupLinearSystem() {
 
         auto &phi_m = this->orbitals[nHistory][n];
         auto &fPhi_m = this->dOrbitals[nHistory][n];
-        if (mpi::my_orb(phi_m)) {
-            if (not mpi::my_orb(fPhi_m)) MSG_ABORT("MPI rank mismatch: fPhi_m");
+        if (mrcpp::mpi::my_orb(phi_m)) {
 
             for (int i = 0; i < nHistory; i++) {
                 auto &phi_i = this->orbitals[i][n];
-                if (not mpi::my_orb(phi_i)) MSG_ABORT("MPI rank mismatch: phi_i");
                 auto dPhi_im = phi_m.paramCopy();
-                qmfunction::add(dPhi_im, 1.0, phi_i, -1.0, phi_m, -1.0);
+                mrcpp::cplxfunc::add(dPhi_im, 1.0, phi_i, -1.0, phi_m, -1.0);
 
                 for (int j = 0; j < nHistory; j++) {
                     auto &fPhi_j = this->dOrbitals[j][n];
-                    if (not mpi::my_orb(fPhi_j)) MSG_ABORT("MPI rank mismatch: fPhi_j");
                     auto dfPhi_jm = fPhi_m.paramCopy();
-                    qmfunction::add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, -1.0);
+                    mrcpp::cplxfunc::add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, -1.0);
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
@@ -91,8 +86,8 @@ void KAIN::setupLinearSystem() {
     }
 
     for (int i = 0; i < nOrbitals; i++) {
-        mpi::allreduce_matrix(A_matrices[i], mpi::comm_orb);
-        mpi::allreduce_vector(b_vectors[i], mpi::comm_orb);
+        mrcpp::mpi::allreduce_matrix(A_matrices[i], mrcpp::mpi::comm_wrk);
+        mrcpp::mpi::allreduce_vector(b_vectors[i], mrcpp::mpi::comm_wrk);
     }
 
     // Fock matrix is treated as a whole using the Frobenius inner product
@@ -141,9 +136,9 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
     int m = 0;
     for (int n = 0; n < nOrbitals; n++) {
         if (this->sepOrbitals) m = n;
-        if (mpi::my_orb(Phi[n])) {
+        if (mrcpp::mpi::my_orb(Phi[n])) {
             std::vector<ComplexDouble> totCoefs;
-            QMFunctionVector totOrbs;
+            std::vector<mrcpp::ComplexFunction> totOrbs;
 
             auto &phi_m = this->orbitals[nHistory][n];
             auto &fPhi_m = this->dOrbitals[nHistory][n];
@@ -155,16 +150,14 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             // (but not the orbitals themselves).
             for (int j = 0; j < nHistory; j++) {
                 ComplexVector partCoefs(4);
-                QMFunctionVector partOrbs;
+                std::vector<mrcpp::ComplexFunction> partOrbs;
 
                 partCoefs(0) = {1.0, 0.0};
                 auto &phi_j = this->orbitals[j][n];
-                if (not mpi::my_orb(phi_j)) MSG_ABORT("MPI rank mismatch: phi_j");
                 partOrbs.push_back(phi_j);
 
                 partCoefs(1) = {1.0, 0.0};
                 auto &fPhi_j = this->dOrbitals[j][n];
-                if (not mpi::my_orb(fPhi_j)) MSG_ABORT("MPI rank mismatch: fPhi_j");
                 partOrbs.push_back(fPhi_j);
 
                 partCoefs(2) = {-1.0, 0.0};
@@ -174,7 +167,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
                 partOrbs.push_back(fPhi_m);
 
                 auto partStep = phi_m.paramCopy();
-                qmfunction::linear_combination(partStep, partCoefs, partOrbs, prec);
+                mrcpp::cplxfunc::linear_combination(partStep, partCoefs, partOrbs, prec);
 
                 auto c_j = this->c[m](j);
                 totCoefs.push_back(c_j);
@@ -186,7 +179,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             for (int i = 0; i < totCoefs.size(); i++) coefsVec(i) = totCoefs[i];
 
             dPhi[n] = Phi[n].paramCopy();
-            qmfunction::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
+            mrcpp::cplxfunc::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
         }
     }
 

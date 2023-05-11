@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -26,8 +26,8 @@
 #define CATCH_CONFIG_RUNNER
 #include "catch.hpp"
 
+#include "MRCPP/Parallel"
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "utils/print_utils.h"
 
@@ -42,16 +42,16 @@ void finalize_mra();
 int main(int argc, char *argv[]) {
     // global setup
     initialize_mra();
-    mrchem::mpi::bank_size = 1;            // Will be set to zero if world_size == 1
-    mrchem::mpi::numerically_exact = true; // Required for MPI invariant results
-    mrchem::mpi::initialize();
+    mrcpp::mpi::bank_size = 1;            // Will be set to zero if world_size == 1
+    mrcpp::mpi::numerically_exact = true; // Required for MPI invariant results
+    mrcpp::mpi::initialize();
 
     // print MPI info
-    mrcpp::Printer::init(0, mrchem::mpi::world_rank, mrchem::mpi::world_size);
+    mrcpp::Printer::init(0, mrcpp::mpi::world_rank, mrcpp::mpi::world_size);
     mrcpp::print::separator(0, '-');
-    mrchem::print_utils::scalar(0, "MPI processes  ", mrchem::mpi::world_size, "(" + std::to_string(mrchem::mpi::bank_size) + " bank)", 0, false);
-    mrchem::print_utils::scalar(0, "OpenMP threads ", mrchem::omp::n_threads, "", 0, false);
-    mrchem::print_utils::scalar(0, "Total cores    ", mrchem::mpi::world_size * mrchem::omp::n_threads, "", 0, false);
+    mrchem::print_utils::scalar(0, "MPI processes  ", mrcpp::mpi::world_size, "(" + std::to_string(mrcpp::mpi::bank_size) + " bank)", 0, false);
+    mrchem::print_utils::scalar(0, "OpenMP threads ", mrcpp::omp::n_threads, "", 0, false);
+    mrchem::print_utils::scalar(0, "Total cores    ", mrcpp::mpi::world_size * mrcpp::omp::n_threads, "", 0, false);
     mrcpp::print::separator(0, '-');
 
     // run tests
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
 
     // global cleanup
     finalize_mra();
-    mrchem::mpi::finalize();
+    mrcpp::mpi::finalize();
     return (result < 0xff ? result : 0xff);
 }
 
@@ -80,6 +80,7 @@ void initialize_mra() {
 
     // Constructing global MRA
     mrchem::MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
+    mrcpp::cplxfunc::SetdefaultMRA(mrchem::MRA);
 }
 
 void finalize_mra() {

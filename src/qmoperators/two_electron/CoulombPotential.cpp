@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,7 +27,6 @@
 #include "MRCPP/MWOperators"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "parallel.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
@@ -81,14 +80,14 @@ void CoulombPotential::setup(double prec) {
     mrcpp::print::separator(3, '-');
     if (hasDensity()) {
         setupGlobalPotential(prec);
-    } else if (mpi::numerically_exact) {
+    } else if (mrcpp::mpi::numerically_exact) {
         setupGlobalDensity(prec);
         setupGlobalPotential(prec);
     } else {
         // Keep each local contribution a bit
         // more precise than strictly necessary
         setupLocalDensity(0.1 * prec);
-        QMFunction V = setupLocalPotential(0.1 * prec);
+        mrcpp::ComplexFunction V = setupLocalPotential(0.1 * prec);
         allreducePotential(0.1 * prec, V);
     }
     if (plevel == 2) print_utils::qmfunction(2, "Coulomb operator", *this, timer);
@@ -101,9 +100,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    QMFunction::free(NUMBER::Total);   // delete FunctionTree pointers
-    this->density.free(NUMBER::Total); // delete FunctionTree pointers
-    clearApplyPrec();                  // apply_prec = -1
+    mrcpp::ComplexFunction::free(NUMBER::Total); // delete FunctionTree pointers
+    this->density.free(NUMBER::Total);           // delete FunctionTree pointers
+    clearApplyPrec();                            // apply_prec = -1
 }
 
 /** @brief compute Coulomb potential
@@ -117,20 +116,20 @@ void CoulombPotential::setupGlobalPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
-    QMFunction &V = *this;
-    QMFunction &rho = this->density;
+    mrcpp::ComplexFunction &V = *this;
+    mrcpp::ComplexFunction &rho = this->density;
 
     if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
     if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
 
     // Adjust precision by system size
     double abs_prec = prec / rho.norm();
-    bool need_to_apply = not(V.isShared()) or mpi::share_master();
+    bool need_to_apply = not(V.isShared()) or mrcpp::mpi::share_master();
 
     Timer timer;
     V.alloc(NUMBER::Real);
     if (need_to_apply) mrcpp::apply(abs_prec, V.real(), P, rho.real());
-    mpi::share_function(V, 0, 22445, mpi::comm_share);
+    mrcpp::mpi::share_function(V, 0, 22445, mrcpp::mpi::comm_share);
     print_utils::qmfunction(3, "Compute global potential", V, timer);
 }
 
@@ -141,18 +140,18 @@ void CoulombPotential::setupGlobalPotential(double prec) {
  * This will compute the Coulomb potential by application o the Poisson operator
  * to the precomputed electron density.
  */
-QMFunction CoulombPotential::setupLocalPotential(double prec) {
+mrcpp::ComplexFunction CoulombPotential::setupLocalPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
     OrbitalVector &Phi = *this->orbitals;
-    QMFunction &rho = this->density;
+    mrcpp::ComplexFunction &rho = this->density;
 
     // Adjust precision by system size
     double abs_prec = prec / orbital::get_electron_number(Phi);
 
     Timer timer;
-    QMFunction V(false);
+    mrcpp::ComplexFunction V(false);
     V.alloc(NUMBER::Real);
     mrcpp::apply(abs_prec, V.real(), P, rho.real());
     print_utils::qmfunction(3, "Compute local potential", V, timer);
@@ -160,32 +159,32 @@ QMFunction CoulombPotential::setupLocalPotential(double prec) {
     return V;
 }
 
-void CoulombPotential::allreducePotential(double prec, QMFunction &V_loc) {
+void CoulombPotential::allreducePotential(double prec, mrcpp::ComplexFunction &V_loc) {
     Timer t_com;
 
-    QMFunction &V_tot = *this;
+    mrcpp::ComplexFunction &V_tot = *this;
     OrbitalVector &Phi = *this->orbitals;
 
     double abs_prec = prec / orbital::get_electron_number(Phi);
 
     // Add up local contributions into the grand master
-    mpi::reduce_function(abs_prec, V_loc, mpi::comm_orb);
+    mrcpp::mpi::reduce_function(abs_prec, V_loc, mrcpp::mpi::comm_wrk);
 
     if (not V_tot.hasReal()) V_tot.alloc(NUMBER::Real);
     if (V_tot.isShared()) {
         int tag = 3141;
         // MPI grand master distributes to shared masters
-        mpi::broadcast_function(V_loc, mpi::comm_sh_group);
-        if (mpi::share_master()) {
+        mrcpp::mpi::broadcast_function(V_loc, mrcpp::mpi::comm_sh_group);
+        if (mrcpp::mpi::share_master()) {
             // MPI shared masters copies the function into final memory
             mrcpp::copy_grid(V_tot.real(), V_loc.real());
             mrcpp::copy_func(V_tot.real(), V_loc.real());
         }
         // MPI share masters distributes to their sharing ranks
-        mpi::share_function(V_tot, 0, tag, mpi::comm_share);
+        mrcpp::mpi::share_function(V_tot, 0, tag, mrcpp::mpi::comm_share);
     } else {
         // MPI grand master distributes to all ranks
-        mpi::broadcast_function(V_loc, mpi::comm_orb);
+        mrcpp::mpi::broadcast_function(V_loc, mrcpp::mpi::comm_wrk);
         // All MPI ranks copies the function into final memory
         mrcpp::copy_grid(V_tot.real(), V_loc.real());
         mrcpp::copy_func(V_tot.real(), V_loc.real());

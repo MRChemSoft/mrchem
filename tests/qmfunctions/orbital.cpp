@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,7 +28,6 @@
 #include "mrchem.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 using namespace mrchem;
 
@@ -50,7 +49,7 @@ TEST_CASE("Orbital", "[orbital]") {
 
     SECTION("copy orbital") {
         Orbital phi_1(SPIN::Paired);
-        qmfunction::project(phi_1, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(phi_1, f, NUMBER::Real, prec);
 
         SECTION("copy constructor") {
             Orbital phi_2(phi_1);
@@ -82,7 +81,7 @@ TEST_CASE("Orbital", "[orbital]") {
 
         SECTION("deep copy") {
             Orbital phi_2(SPIN::Alpha);
-            qmfunction::deep_copy(phi_2, phi_1);
+            mrcpp::cplxfunc::deep_copy(phi_2, phi_1);
             REQUIRE(phi_2.occ() != phi_1.occ());
             REQUIRE(phi_2.spin() != phi_1.spin());
             REQUIRE(phi_2.norm() == phi_1.norm());
@@ -104,8 +103,8 @@ TEST_CASE("Orbital", "[orbital]") {
         Orbital phi(SPIN::Paired);
         REQUIRE(phi.norm() == Approx(-1.0));
 
-        qmfunction::project(phi, f, NUMBER::Real, prec);
-        qmfunction::project(phi, g, NUMBER::Imag, prec);
+        mrcpp::cplxfunc::project(phi, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(phi, g, NUMBER::Imag, prec);
         REQUIRE(phi.norm() > 1.0);
 
         orbital::normalize(phi);
@@ -114,11 +113,11 @@ TEST_CASE("Orbital", "[orbital]") {
 
     SECTION("orthogonalize") {
         Orbital phi_1(SPIN::Alpha);
-        qmfunction::project(phi_1, f, NUMBER::Real, prec);
+        mrcpp::cplxfunc::project(phi_1, f, NUMBER::Real, prec);
 
         WHEN("orbitals have different spins") {
             Orbital phi_2(SPIN::Beta);
-            qmfunction::project(phi_2, g, NUMBER::Imag, prec);
+            mrcpp::cplxfunc::project(phi_2, g, NUMBER::Imag, prec);
 
             THEN("their overlap is zero") {
                 ComplexDouble S = orbital::dot(phi_1, phi_2);
@@ -129,7 +128,7 @@ TEST_CASE("Orbital", "[orbital]") {
 
         WHEN("orbitals have the same spin") {
             Orbital phi_2(SPIN::Alpha);
-            qmfunction::project(phi_2, g, NUMBER::Imag, prec);
+            mrcpp::cplxfunc::project(phi_2, g, NUMBER::Imag, prec);
 
             THEN("their overlap is non-zero") {
                 ComplexDouble S1 = orbital::dot(phi_1, phi_2);

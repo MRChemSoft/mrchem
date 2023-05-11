@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -33,7 +33,6 @@
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
@@ -81,7 +80,6 @@ void GroundStateSolver::printProperty() const {
     double Er_el_1 = scf_1.getElectronReactionEnergy();
     double Er_nuc_0 = scf_0.getNuclearReactionEnergy();
     double Er_nuc_1 = scf_1.getNuclearReactionEnergy();
-
 
     bool has_react = (std::abs(Er_el_1) > mrcpp::MachineZero) || (std::abs(Er_nuc_1) > mrcpp::MachineZero);
     bool has_ext = (std::abs(E_eext_1) > mrcpp::MachineZero) || (std::abs(E_next_1) > mrcpp::MachineZero);
@@ -289,6 +287,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
         }
+
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
         ComplexMatrix L_mat = H.getLambdaMatrix();
@@ -369,7 +368,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     }
 
     F.clear();
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
 
     printConvergence(converged, "Total energy");
     reset();

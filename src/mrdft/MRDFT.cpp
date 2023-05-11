@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,10 +27,10 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 #include <MRCPP/trees/FunctionNode.h>
+#include <MRCPP/Parallel>
 
 #include "Functional.h"
 #include "MRDFT.h"
-#include "utils/Bank.h"
 #include "xc_utils.h"
 
 namespace mrdft {
@@ -82,12 +82,11 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
 
     // divide nNodes into parts assigned to each MPI rank
     int nNodes = grid().size();
-    int n_start = (mrchem::mpi::orb_rank * nNodes) / mrchem::mpi::orb_size;
-    int n_end = ((mrchem::mpi::orb_rank + 1) * nNodes) / mrchem::mpi::orb_size;
+    int n_start = (mrcpp::mpi::wrk_rank * nNodes) / mrcpp::mpi::wrk_size;
+    int n_end = ((mrcpp::mpi::wrk_rank + 1) * nNodes) / mrcpp::mpi::wrk_size;
     std::vector<Eigen::MatrixXd> ctrOutDataVec(n_end - n_start);
-
     mrcpp::FunctionTreeVector<3> ctrOutVec;
-    if (mrchem::mpi::orb_size == 1) ctrOutVec = grid().generate(nOutCtr);
+    if (mrcpp::mpi::wrk_size == 1) ctrOutVec = grid().generate(nOutCtr);
 
 #pragma omp parallel
     {
@@ -101,7 +100,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
             auto ctrInpData = xc_utils::compress_nodes(ctrInpNodes);
             auto ctrOutData = functional().contract(xcOutData, ctrInpData);
 
-            if (mrchem::mpi::orb_size > 1) {
+            if (mrcpp::mpi::wrk_size > 1) {
                 // store the results temporarily
                 ctrOutDataVec[n - n_start] = std::move(ctrOutData);
             } else {
@@ -116,11 +115,11 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     mrcpp::clear(xcInpVec, false);
     mrcpp::clear(ctrInpVec, false);
 
-    if (mrchem::mpi::orb_size > 1) {
+    if (mrcpp::mpi::wrk_size > 1) {
         // each MPI process has only a part of the results
 
         ctrOutVec = grid().generate(nOutCtr);
-        mrchem::BankAccount ctrOutBank; // to put the ctrOutDataVec;
+        mrcpp::BankAccount ctrOutBank; // to put the ctrOutDataVec;
 
         // note that mpi cannot run in multiple omp threads
         int size = nOutCtr * nCoefs;
@@ -132,7 +131,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
             auto ctrOutNodes = xc_utils::fetch_nodes(n, ctrOutVec);
             xc_utils::expand_nodes(ctrOutNodes, ctrOutData);
         }
-    }
+  }
 
     // Reconstruct raw xcfun output functions
     /*

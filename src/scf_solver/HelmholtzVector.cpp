@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,13 +27,10 @@
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
 
-#include "parallel.h"
-
 #include "HelmholtzVector.h"
 #include "chemistry/PhysicalConstants.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "tensor/RankZeroOperator.h"
 #include "utils/print_utils.h"
 
@@ -78,7 +75,7 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
     int pprec = Printer::getPrecision();
     OrbitalVector out = orbital::param_copy(Phi);
     for (int i = 0; i < Phi.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_orb(out[i])) continue;
 
         t_lap.start();
         out[i] = apply(i, Phi[i]);
@@ -117,7 +114,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
 
     OrbitalVector out = orbital::param_copy(Phi);
     for (int i = 0; i < Phi.size(); i++) {
-        if (not mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_orb(out[i])) continue;
 
         t_lap.start();
         Orbital Vphi_i = V(Phi[i]);

@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -24,11 +24,11 @@
  */
 
 #include <MRCPP/MWOperators>
+#include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
 #include "core.h"
-#include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Nucleus.h"
@@ -39,7 +39,6 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 #include "qmoperators/one_electron/MomentumOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
@@ -99,6 +98,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
 
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
+    plevel = 1;
     if (plevel == 1) mrcpp::print::header(1, "Core-Hamiltonian Initial Guess");
 
     // Make Fock operator contributions
@@ -125,6 +125,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     // Rotate orbitals and fill electrons by Aufbau
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
+
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
@@ -201,11 +202,10 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
             for (int m = 0; m < M; m++) {
                 Timer t_i;
                 HydrogenFunction h_func(n, l, m, Z, R);
-
                 Phi.push_back(Orbital(SPIN::Paired));
-                Phi.back().setRankID(Phi.size() % mpi::orb_size);
-                if (mpi::my_orb(Phi.back())) {
-                    qmfunction::project(Phi.back(), h_func, NUMBER::Real, prec);
+                Phi.back().setRank(Phi.size() - 1);
+                if (mrcpp::mpi::my_orb(Phi.back())) {
+                    mrcpp::cplxfunc::project(Phi.back(), h_func, NUMBER::Real, prec);
                     if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
                 }
 
@@ -228,13 +228,19 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
     Timer t_tot;
 
     // To get MPI invariant results we cannot crop until all terms are added
-    auto part_prec = (mpi::numerically_exact) ? -1.0 : prec;
+    auto part_prec = (mrcpp::mpi::numerically_exact) ? -1.0 : prec;
 
     OrbitalIterator iter(Phi);
-    while (iter.next()) {
+    while (true) {
+        // for some unknown reason, iter.next() does not work here for the parallel version
+        if (mrcpp::mpi::wrk_size == 1) {
+            if (iter.next() < 1) break;
+        } else {
+            if (iter.bank_next() < 1) break;
+        }
         for (auto j = 0; j < Psi.size(); j++) {
-            if (not mpi::my_orb(Psi[j])) continue;
-            QMFunctionVector func_vec;
+            if (not mrcpp::mpi::my_orb(j)) continue;
+            std::vector<mrcpp::ComplexFunction> func_vec;
             ComplexVector coef_vec(iter.get_size());
             for (auto i = 0; i < iter.get_size(); i++) {
                 auto idx_i = iter.idx(i);
@@ -243,12 +249,12 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
                 func_vec.push_back(recv_i);
             }
             auto tmp_j = Psi[j].paramCopy();
-            qmfunction::linear_combination(tmp_j, coef_vec, func_vec, part_prec);
+            mrcpp::cplxfunc::linear_combination(tmp_j, coef_vec, func_vec, part_prec);
             Psi[j].add(1.0, tmp_j); // In place addition
             Psi[j].crop(part_prec);
         }
     }
-    if (mpi::numerically_exact)
+    if (mrcpp::mpi::numerically_exact)
         for (auto &psi : Psi) psi.crop(prec);
 
     mrcpp::print::time(1, "Rotating orbitals", t_tot);

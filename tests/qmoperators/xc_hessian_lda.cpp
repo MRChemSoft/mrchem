@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,13 +28,11 @@
 #include "MRCPP/MWOperators"
 
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
 #include "mrdft/Factory.h"
@@ -75,11 +73,11 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
     ms.push_back(0);
     Phi.push_back(Orbital(SPIN::Paired));
 
-    mpi::distribute(Phi);
+    Phi.distribute();
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     std::vector<int> ns_x;
@@ -97,11 +95,11 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
     ms_x.push_back(1);
     Phi_x.push_back(Orbital(SPIN::Paired));
 
-    mpi::distribute(Phi_x);
+    Phi_x.distribute();
 
     for (int i = 0; i < Phi_x.size(); i++) {
         HydrogenFunction f(ns_x[i], ls_x[i], ms_x[i]);
-        if (mpi::my_orb(Phi_x[i])) qmfunction::project(Phi_x[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi_x[i])) mrcpp::cplxfunc::project(Phi_x[i], f, NUMBER::Real, prec);
     }
 
     int i = 0;
@@ -116,7 +114,7 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
-        if (mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_orb(Phi[0])) {
             REQUIRE(V_00.real() == Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -128,7 +126,7 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
         OrbitalVector VPhi = V(Phi);
         for (int i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
-            if (mpi::my_orb(Phi[i])) {
+            if (mrcpp::mpi::my_orb(Phi[i])) {
                 REQUIRE(V_ii.real() == Approx(E_P(i, i)).epsilon(thrs));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
@@ -139,7 +137,7 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
-        if (mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_orb(Phi[0])) {
             REQUIRE(V_00.real() == Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {

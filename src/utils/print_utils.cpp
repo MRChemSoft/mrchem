@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -33,8 +33,6 @@
 #include <MRCPP/Timer>
 
 #include "print_utils.h"
-
-#include "qmfunctions/QMFunction.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -245,7 +243,7 @@ void print_utils::matrix(int level, const std::string &txt, const DoubleMatrix &
     printout(level, o.str());
 }
 
-void print_utils::qmfunction(int level, const std::string &txt, const QMFunction &func, mrcpp::Timer &timer) {
+void print_utils::qmfunction(int level, const std::string &txt, const mrcpp::ComplexFunction &func, mrcpp::Timer &timer) {
     auto nodes = func.getNNodes(NUMBER::Total);
     auto memory = func.getSizeNodes(NUMBER::Total);
     auto time = timer.elapsed();

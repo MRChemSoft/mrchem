@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -30,7 +30,6 @@
 #include "ExchangePotential.h"
 
 #include "qmfunctions/qmfunction_fwd.h"
-#include "utils/Bank.h"
 
 namespace mrchem {
 
@@ -58,9 +57,9 @@ public:
     friend class ExchangeOperator;
 
 private:
-    BankAccount PhiBank; // to put the Orbitals
-    BankAccount XBank;
-    BankAccount YBank;
+    mrcpp::BankAccount PhiBank; // to put the Orbitals
+    mrcpp::BankAccount XBank;
+    mrcpp::BankAccount YBank;
     bool useOnlyX;                             ///< true if X and Y are the same set of orbitals
     std::shared_ptr<OrbitalVector> orbitals_x; ///< first set of perturbed orbitals defining the exchange operator
     std::shared_ptr<OrbitalVector> orbitals_y; ///< second set of perturbed orbitals defining the exchange operator

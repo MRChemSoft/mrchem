@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -28,8 +28,6 @@
 
 #include "ReactionPotential.h"
 
-#include "qmfunctions/qmfunction_utils.h"
-
 using SCRF_p = std::unique_ptr<mrchem::SCRF>;
 using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
@@ -52,7 +50,7 @@ void ReactionPotential::setup(double prec) {
     mrcpp::print::value(3, "Threshold", thrs, "(abs)", 5);
     mrcpp::print::separator(3, '-');
     auto potential = this->helper->setup(prec, this->Phi);
-    qmfunction::deep_copy(*this, potential);
+    mrcpp::cplxfunc::deep_copy(*this, potential);
     if (plevel == 2) print_utils::qmfunction(2, "Reaction operator", *this, timer);
     mrcpp::print::footer(3, timer, 2);
 }

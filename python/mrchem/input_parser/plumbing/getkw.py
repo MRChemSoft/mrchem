@@ -43,6 +43,9 @@ from .atoms import (
 
 try:
     import pyparsing as pp
+    if pp.__version__.split(".")[0] < "3":
+       # Import local copy
+       from . import pyparsing as pp  # type: ignore
 except ImportError:
     # Import local copy
     from . import pyparsing as pp  # type: ignore
@@ -128,4 +131,3 @@ def parse_string_to_dict(lexer: "pp.ParserElement", s: str) -> JSONDict:
     if flatten_list(tokens_list) != flatten_list(dict_to_list(tokens_dict)):
         raise ParselglossyError("A keyword is repeated. Please check your input.")
     return tokens_dict
-

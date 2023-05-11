@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -33,7 +33,6 @@
 #include <MRCPP/MWOperators>
 
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Element.h"
@@ -44,7 +43,6 @@
 #include "environment/SCRF.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
 using namespace mrchem;
@@ -81,11 +79,11 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto Phi_p = std::make_shared<OrbitalVector>();
     auto &Phi = *Phi_p;
     Phi.push_back(Orbital(SPIN::Paired));
-    mpi::distribute(Phi);
+    Phi.distribute();
 
     // project analytic 1s orbital
     HydrogenFunction f(1, 0, 0);
-    if (mpi::my_orb(Phi[0])) qmfunction::project(Phi[0], f, NUMBER::Real, prec);
+    if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Real, prec);
 
     int kain = 4;
     auto scrf_p = std::make_unique<SCRF>(dielectric_func, molecule, P_p, D_p, prec, kain, 100, true, false, "total");

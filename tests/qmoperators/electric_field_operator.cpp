@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -26,13 +26,11 @@
 #include "catch.hpp"
 
 #include "mrchem.h"
-#include "parallel.h"
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Nucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
 
 using namespace mrchem;
@@ -77,18 +75,18 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
 
     // setting up the orbitals
     for (int i = 0; i < nFuncs; i++) Phi.push_back(Orbital(SPIN::Paired));
-    mpi::distribute(Phi);
+    Phi.distribute();
 
     for (int i = 0; i < nFuncs; i++) {
         HydrogenFunction f(std::get<0>(qn[i]), std::get<1>(qn[i]), std::get<2>(qn[i]), 1.0, o);
-        if (mpi::my_orb(Phi[i])) qmfunction::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
     }
 
     SECTION("apply") {
         // update ref based on MPI
         for (int i = 0; i < nFuncs; i++) {
             for (int j = 0; j < nFuncs; j++) {
-                if (not(mpi::my_orb(Phi[i])) or not(mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
+                if (not(mrcpp::mpi::my_orb(Phi[i])) or not(mrcpp::mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
             }
         }
 
@@ -109,7 +107,7 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
         // update ref based on MPI
         for (int i = 0; i < nFuncs; i++) {
             for (int j = 0; j < nFuncs; j++) {
-                if (not(mpi::my_orb(Phi[i])) or not(mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
+                if (not(mrcpp::mpi::my_orb(Phi[i])) or not(mrcpp::mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
             }
         }
 
@@ -123,7 +121,7 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble X_00 = EF(Phi[0], Phi[0]);
-        if (mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_orb(Phi[0])) {
             REQUIRE(X_00.real() == Approx(ref(0, 0)));
         } else {
             REQUIRE(X_00.real() == Approx(0.0).margin(thrs));
@@ -156,17 +154,17 @@ TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
     OrbitalVector Phi;
     Phi.push_back(Orbital(SPIN::Paired));
     Phi.push_back(Orbital(SPIN::Paired));
-    mpi::distribute(Phi);
+    Phi.distribute();
 
     // Setting up the 1s orbital on H
     HydrogenFunction sh(1, 0, 0, 1.0, {1.0, 0.0, 0.0});
     Orbital &phi_h = Phi[0];
-    if (mpi::my_orb(phi_h)) qmfunction::project(phi_h, sh, NUMBER::Real, prec);
+    if (mrcpp::mpi::my_orb(phi_h)) mrcpp::cplxfunc::project(phi_h, sh, NUMBER::Real, prec);
 
     // Setting up the 1s orbital on Li
     HydrogenFunction sli(1, 0, 0, 3.0, {-1.0, 0.0, 0.0});
     Orbital &phi_li = Phi[1];
-    if (mpi::my_orb(phi_li)) qmfunction::project(phi_li, sli, NUMBER::Real, prec);
+    if (mrcpp::mpi::my_orb(phi_li)) mrcpp::cplxfunc::project(phi_li, sli, NUMBER::Real, prec);
 
     SECTION("energy in the external field") {
         double E_ext = EF.trace(Phi).real();

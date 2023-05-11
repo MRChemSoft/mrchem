@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -229,7 +229,6 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
 json driver::scf::run(const json &json_scf, Molecule &mol) {
     // print_utils::headline(0, "Computing Ground State Wavefunction");
     json json_out = {{"success", true}};
-
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
 
     ///////////////////////////////////////////////////////////
@@ -365,7 +364,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired));
     for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
     for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
-    mpi::distribute(Phi);
+    Phi.distribute();
 
     auto success = true;
     if (type == "chk") {
@@ -387,7 +386,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = false;
     }
     for (const auto &phi_i : Phi) {
-        double err = (mpi::my_orb(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        double err = (mrcpp::mpi::my_orb(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
         if (err > 0.01) MSG_WARN("MO not normalized!");
     }
 
@@ -420,16 +419,16 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto &Phi = mol.getOrbitals();
     auto &nucs = mol.getNuclei();
     auto &F_mat = mol.getFockMatrix();
+    Phi.distribute();
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
     if (localize) orbital::localize(prec, Phi, F_mat);
+    else orbital::diagonalize(prec, Phi, F_mat);
 
     F.setup(prec);
-
     F_mat = F(Phi, Phi);
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     F.clear();
 
-    if (not localize) orbital::diagonalize(prec, Phi, F_mat);
     if (plevel == 1) mrcpp::print::footer(1, t_scf, 2);
 
     Timer t_eps;
@@ -439,7 +438,6 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     eps.getEpsilon() = orbital::calc_eigenvalues(Phi, F_mat);
     eps.getSpin() = orbital::get_spins(Phi);
     mrcpp::print::footer(1, t_eps, 2);
-
     mol.printEnergies("initial");
     return true;
 }
@@ -657,7 +655,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         if (orb_idx[0] < 0) {
             // Plotting ALL orbitals
             for (auto i = 0; i < Phi.size(); i++) {
-                if (not mpi::my_orb(Phi[i])) continue;
+                if (not mrcpp::mpi::my_orb(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
                 name << path << "/phi_" << Phi[i].printSpin() << "_scf_idx_" << i;
@@ -669,7 +667,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         } else {
             // Plotting some orbitals
             for (auto &i : orb_idx) {
-                if (not mpi::my_orb(Phi[i])) continue;
+                if (not mrcpp::mpi::my_orb(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
                 auto sp = 'u';
@@ -811,7 +809,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
         json_out["components"].push_back(comp_out);
     }
     F_0.clear();
-    mpi::barrier(mpi::comm_orb);
+    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mol.getOrbitalsX_p().reset(); // Release shared_ptr
     mol.getOrbitalsY_p().reset(); // Release shared_ptr
 

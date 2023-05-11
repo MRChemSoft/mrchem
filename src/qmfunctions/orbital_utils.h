@@ -2,7 +2,7 @@
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2022 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
  *
  * This file is part of MRChem.
  *
@@ -27,7 +27,6 @@
 
 #include "mrchem.h"
 #include "qmfunction_fwd.h"
-#include "utils/Bank.h"
 
 namespace mrchem {
 namespace orbital {
@@ -41,7 +40,8 @@ ComplexDouble dot(Orbital bra, Orbital ket);
 ComplexVector dot(OrbitalVector &Bra, OrbitalVector &Ket);
 ComplexDouble node_norm_dot(Orbital bra, Orbital ket, bool exact);
 
-void normalize(Orbital &phi);
+void normalize(Orbital phi);
+OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 void orthogonalize(double prec, Orbital &phi, Orbital psi);
 
 OrbitalVector add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec = -1.0);
@@ -56,7 +56,7 @@ OrbitalVector disjoin(OrbitalVector &Phi, int spin);
 void save_orbitals(OrbitalVector &Phi, const std::string &file, int spin = -1);
 OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
 
-void save_nodes(OrbitalVector Phi, mrcpp::FunctionTree<3> &refTree, BankAccount &nodes);
+void save_nodes(OrbitalVector Phi, mrcpp::FunctionTree<3> &refTree, mrcpp::BankAccount &nodes);
 
 void normalize(OrbitalVector &Phi);
 void orthogonalize(double prec, OrbitalVector &Phi);
@@ -97,6 +97,9 @@ ComplexVector get_integrals(const OrbitalVector &Phi);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
+void saveOrbital(const std::string &file, Orbital& orb);
+void loadOrbital(const std::string &file, Orbital& orb);
+ //char printSpin(const Orbital& orb);
 
 } // namespace orbital
 } // namespace mrchem
