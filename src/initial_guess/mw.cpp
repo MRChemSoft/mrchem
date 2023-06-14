@@ -52,7 +52,7 @@ bool initial_guess::mw::setup(OrbitalVector &Phi, double prec, const std::string
     print_utils::text(0, "Calculation   ", "Compute initial orbitals");
     print_utils::text(0, "Method        ", "Project MW molecular orbitals");
     print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
-    if (orbital::size_singly(Phi)) {
+    if (! orbital::size_doubly(Phi)) {
         print_utils::text(0, "Restricted    ", "False");
         print_utils::text(0, "MO alpha file ", file_a);
         print_utils::text(0, "MO beta file  ", file_b);
