@@ -72,7 +72,7 @@ int size_paired(const OrbitalVector &Phi);
 int size_alpha(const OrbitalVector &Phi);
 int size_beta(const OrbitalVector &Phi);
 int get_multiplicity(const OrbitalVector &Phi);
-int get_electron_number(const OrbitalVector &Phi, int spin = SPIN::Paired);
+double get_electron_number(const OrbitalVector &Phi, int spin = SPIN::Paired);
 int start_index(const OrbitalVector &Phi, int spin);
 int get_n_nodes(const OrbitalVector &Phi, bool avg = false);
 int get_size_nodes(const OrbitalVector &Phi, bool avg = false);
