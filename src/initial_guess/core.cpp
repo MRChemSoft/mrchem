@@ -90,7 +90,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize Core Hamiltonian matrix");
     print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
-    print_utils::text(0, "Restricted  ", (orbital::size_singly(Phi)) ? "False" : "True");
+    print_utils::text(0, "Restricted  ", (orbital::size_doubly(Phi)) ? "True" : "False");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);

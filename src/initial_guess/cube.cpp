@@ -60,7 +60,7 @@ bool initial_guess::cube::setup(OrbitalVector &Phi, double prec, const std::stri
     print_utils::text(0, "Calculation   ", "Compute initial orbitals");
     print_utils::text(0, "Method        ", "Project cube file molecular orbitals");
     print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
-    if (orbital::size_singly(Phi)) {
+    if (! orbital::size_doubly(Phi)) {
         print_utils::text(0, "Restricted    ", "False");
         print_utils::text(0, "MO alpha file ", file_a);
         print_utils::text(0, "MO beta file  ", file_b);

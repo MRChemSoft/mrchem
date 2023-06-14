@@ -63,7 +63,8 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
     if (Phi.size() == 0) return false;
-    auto restricted = (orbital::size_singly(Phi)) ? false : true;
+
+    auto restricted = (orbital::size_doubly(Phi)) ? true : false;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize SAD Hamiltonian");
@@ -141,7 +142,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
     if (Phi.size() == 0) return false;
-    auto restricted = (orbital::size_singly(Phi)) ? false : true;
+
+    auto restricted = (orbital::size_doubly(Phi)) ? true : false;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize SAD Hamiltonian");

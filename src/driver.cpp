@@ -388,7 +388,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     
     // Modify the occupancies, e.g. to introduce a core hole for DeltaSCF calculations of core binding energies
     // To be converted to input variables of some form, as well as modifying the names to be less tied to core states
-    bool core_hole = false;
+    bool core_hole = true;
     IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
     DoubleVector core_occupancies;    // the occupancies associated with those orbitals
     int nCH;                          // the number of components of each of these vectors
@@ -399,7 +399,6 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
       
       // The variables below should eventually come from an input file in some form
       if (restricted){
-        // NB doesn't currently work as restricted input keyword is overwritten
         // In this case we have on average lost half an electron from each spin channel
         // So the input for e.g. a hole in the lowest state would look like this
         nCH = 1;
@@ -411,14 +410,14 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
       
       else{
         // Genuine unrestricted case, where the hole is in the lowest core state in the alpha channel only
-        nCH = 1;
+        /*nCH = 1;
         core_orbitals = IntVector::Zero(nCH);
         core_occupancies = DoubleVector::Zero(nCH);
         core_orbitals(0) = 0;
-        core_occupancies(0) = 0;
+        core_occupancies(0) = 0;*/
         
-        // Equivalent to the restricted case for a hole in the lowest core state (workaround for the fact that restricted isn't currently working)
-        /*nCH = 2;
+        // Equivalent to the restricted case for a hole in the lowest core state
+        nCH = 2;
         core_orbitals = IntVector::Zero(nCH);
         core_occupancies = DoubleVector::Zero(nCH);
         // First lose half an electron for alpha
@@ -426,7 +425,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         core_occupancies(0) = 0.5;
         // Then the same for beta
         core_orbitals(1) = Na;
-        core_occupancies(1) = 0.5;*/
+        core_occupancies(1) = 0.5;
       }
     
       // Use the inputs to modify the occs vector
@@ -757,7 +756,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         rho.free();
         mrcpp::print::time(1, fname, t_lap);
 
-        if (orbital::size_singly(Phi) > 0) {
+        if (orbital::size_doubly(Phi) == 0) {
             t_lap.start();
             fname = path + "/rho_s";
             density::compute(-1.0, rho, Phi, DensityType::Spin);
