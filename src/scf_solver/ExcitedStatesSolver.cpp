@@ -279,21 +279,21 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     const mrcpp::Coord<3> o = {0.0, 0.0, 0.0};
     H_E_dip mu(o);
 
-    double expectation_value = 0.0;
+    ComplexVector expectation_values_l(3);
+    expectation_values_l.setZero();
     for (auto i = 0; i < X_n.size(); i++) {
-        mu.setup(this->orbThrs);
+        mu.setup(this->orbThrs / 100);
         auto phi_i = Phi_0[i];
         auto x_i = X_n[i];
 
         auto mu_phi_i = mu(phi_i);
         mu.clear();
 
-        for (auto j = 0; j < mu_phi_i.size(); j++) {
-            auto x_mu_phi_ij = qmfunction::dot(x_i, mu_phi_i[j]);
-            expectation_value += (x_mu_phi_ij * x_mu_phi_ij).real();
-        }
+        for (auto j = 0; j < mu_phi_i.size(); j++) { expectation_values_l[j] += qmfunction::dot(x_i, mu_phi_i[j]); }
     }
-    auto f_l = (4.0 / 3.0) * omega_n * expectation_value;
+    auto square_of_exp_val_l = expectation_values_l.dot(expectation_values_l);
+    std::cout << "|sum_i <x_i|mu|phi_i>|^2: " << square_of_exp_val_l << "\n";
+    auto f_l = (2.0 / 3.0) * omega_n * expectation_values_l.dot(expectation_values_l);
 
     if (plevel == 1) mrcpp::print::time(1, "Computing transition moment (l)", t_mom_l);
     std::cout << "transition moment (l): " << f_l << "\n";
@@ -305,24 +305,24 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     D = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
     MomentumOperator p(D);
 
-    expectation_value = 0.0;
+    ComplexVector expectation_values_v(3);
+    expectation_values_v.setZero();
     for (auto i = 0; i < X_n.size(); i++) {
-        p.setup(this->orbThrs);
+        p.setup(this->orbThrs / 100);
         auto phi_i = Phi_0[i];
         auto x_i = X_n[i];
 
         auto p_phi_i = p(phi_i);
         p.clear();
 
-        for (auto j = 0; j < p_phi_i.size(); j++) {
-            auto x_p_phi_ij = qmfunction::dot(x_i, p_phi_i[j]);
-            expectation_value += (x_p_phi_ij * x_p_phi_ij).real();
-        }
+        for (auto j = 0; j < p_phi_i.size(); j++) { expectation_values_v[j] += qmfunction::dot(x_i, p_phi_i[j]); }
     }
-    auto f_v = 4.0 / (3.0 * omega_n) * expectation_value;
+    auto square_of_exp_val_v = expectation_values_v.dot(expectation_values_v);
+    std::cout << "|sum_i <x_i|v|phi_i>|^2: " << square_of_exp_val_v << "\n";
+    auto f_v = (2.0 / (3.0 * omega_n)) * expectation_values_v.dot(expectation_values_v);
 
-    if (plevel == 1) mrcpp::print::time(1, "Computing transition moment (l)", t_mom_l);
-    std::cout << "transition moment (l): " << f_v << "\n";
+    if (plevel == 1) mrcpp::print::time(1, "Computing transition moment (v)", t_mom_v);
+    std::cout << "transition moment (v): " << f_v << "\n";
 
     mrcpp::print::footer(1, t_mom_v, 1);
 
