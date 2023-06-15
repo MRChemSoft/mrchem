@@ -793,6 +793,13 @@ void orbital::normalize(Orbital &phi) {
     phi.rescale(1.0 / phi.norm());
 }
 
+/** @brief rescale all orbitals in the set */
+void orbital::rescale(OrbitalVector &Phi, double scale) {
+    mpi::free_foreign(Phi);
+    for (auto &phi_i : Phi)
+        if (mpi::my_orb(phi_i)) phi_i.rescale(scale);
+}
+
 /** @brief Normalize all orbitals in the set */
 void orbital::normalize(OrbitalVector &Phi) {
     mpi::free_foreign(Phi);

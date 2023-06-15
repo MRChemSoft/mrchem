@@ -23,6 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
@@ -34,6 +35,8 @@
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_utils.h"
+#include "qmoperators/one_electron/H_E_dip.h"
+#include "qmoperators/one_electron/MomentumOperator.h"
 #include "qmoperators/qmoperator_utils.h"
 #include "qmoperators/two_electron/FockBuilder.h"
 #include "utils/print_utils.h"
@@ -45,8 +48,10 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 using nlohmann::json;
 
+using DerivativeOperator = mrcpp::DerivativeOperator<3>;
+using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
 namespace mrchem {
-
+extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 /** @brief Run orbital optimization
  *
  * Optimize orbitals until convergence thresholds are met. This algorithm iterates
@@ -100,12 +105,13 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     DoubleVector errors_x = DoubleVector::Zero(Phi_0.size());
     DoubleVector errors_y = DoubleVector::Zero(Phi_0.size());
 
-    // orthogonalize all orbitals wrt. the ground state and each other.
-
+    // orthogonalize all orbitals wrt. the ground state.
     orbital::orthogonalize(this->orth_prec, X_n, Phi_0);
-    orbital::orthogonalize(this->orth_prec, X_n);
+    std::cout << "norms of members of X_n: " << orbital::get_norms(X_n) << "\n";
+    // normalize orbitalvectors.
+    orbital::rescale(X_n, 1 / orbital::get_norms(X_n).sum());
+    std::cout << "norm of X_n: " << orbital::get_norms(X_n) << "\n";
     // orbital::orthogonalize(this->orth_prec, Y_n, Phi_0);
-    // orbital::orthogonalize(this->orth_prec, Y_n);
 
     auto plevel = Printer::getPrintLevel();
 
@@ -165,8 +171,16 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             // Projecting (1 - rho_0)X
             mrcpp::print::header(2, "Projecting occupied space");
             t_lap.start();
+
+            auto V_0_x = V_0(X_n);
+            auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
+            // X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
+            auto right_hand = orbital::add(1.0, X_n, -1.0, X_np1);
+            domega_n = -orbital::dot(left_hand, right_hand).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
+
             orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
-            orbital::orthogonalize(this->orth_prec, X_np1);
+            orbital::rescale(X_np1, 1 / orbital::get_norms(X_np1).sum());
+            // orbital::normalize(X_np1);
 
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
             mrcpp::print::footer(2, t_lap, 2);
@@ -179,22 +193,15 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
             errors_x = orbital::get_norms(dX_n);
 
             // Compute KAIN update:
-            // kain_x.accelerate(orb_prec, X_n, dX_n);
-
-            if (use_harrison) {
-                auto V_0_x = V_0(X_n);
-                auto left_hand = orbital::add(1.0, V_0_x, 1.0, Psi);
-                X_np1 = orbital::add(1.0, X_n, 1.0, dX_n);
-                domega_n = -orbital::dot(left_hand, dX_n).sum().real() / orbital::dot(X_np1, X_np1).sum().real();
-            }
+            kain_x.accelerate(orb_prec, X_n, dX_n);
 
             Psi.clear();
 
             // Prepare for next iteration
             X_n = orbital::add(1.0, X_n, 1.0, dX_n);
-            // orbital::orthogonalize(this->orth_prec, X_n);
-            // orbital::orthogonalize(this->orth_prec, X_np1, Phi_0);
-            // orbital::orthogonalize(this->orth_prec, X_np1);
+
+            orbital::orthogonalize(this->orth_prec, X_n, Phi_0);
+            orbital::rescale(X_n, 1 / orbital::get_norms(X_n).sum());
 
             // Setup perturbed Fock operator (including V_1)
             V_1.clear();
@@ -206,7 +213,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
             auto omega_np1 = computeOmega(Phi_0, X_n, F_0, V_1, F_mat_0);
             /*  computeOmega(Phi_0, X_n, Y_n, F_0, F_1, F_mat_0); */ // 0.14949144; // hardcoded excitation energy value, from veloxchem calculation.
-            domega_n = omega_np1 - omega_n;                          // maybe I should do this before normalization
+            // domega_n = omega_np1 - omega_n;                          // maybe I should do this before normalization
             omega_n += domega_n;
             mrcpp::print::footer(2, t_lap, 2);
             if (plevel == 1) mrcpp::print::time(1, "Computing frequency update", t_lap);
@@ -263,6 +270,61 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
     json_out["converged"] = converged;
     auto &omega_vec = mol.getExcitationEnergies().getOmega();
     omega_vec.push_back(omega_n);
+
+    mrcpp::print::header(1, "Computing transition moments");
+    mrcpp::print::separator(1, '=', 1);
+    Timer t_mom_l, t_mom_v;
+    t_mom_l.start();
+
+    const mrcpp::Coord<3> o = {0.0, 0.0, 0.0};
+    H_E_dip mu(o);
+
+    double expectation_value = 0.0;
+    for (auto i = 0; i < X_n.size(); i++) {
+        mu.setup(this->orbThrs);
+        auto phi_i = Phi_0[i];
+        auto x_i = X_n[i];
+
+        auto mu_phi_i = mu(phi_i);
+        mu.clear();
+
+        for (auto j = 0; j < mu_phi_i.size(); j++) {
+            auto x_mu_phi_ij = qmfunction::dot(x_i, mu_phi_i[j]);
+            expectation_value += (x_mu_phi_ij * x_mu_phi_ij).real();
+        }
+    }
+    auto f_l = (4.0 / 3.0) * omega_n * expectation_value;
+
+    if (plevel == 1) mrcpp::print::time(1, "Computing transition moment (l)", t_mom_l);
+    std::cout << "transition moment (l): " << f_l << "\n";
+
+    mrcpp::print::footer(1, t_mom_l, 1);
+
+    t_mom_v.start();
+    DerivativeOperator_p D = nullptr;
+    D = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
+    MomentumOperator p(D);
+
+    expectation_value = 0.0;
+    for (auto i = 0; i < X_n.size(); i++) {
+        p.setup(this->orbThrs);
+        auto phi_i = Phi_0[i];
+        auto x_i = X_n[i];
+
+        auto p_phi_i = p(phi_i);
+        p.clear();
+
+        for (auto j = 0; j < p_phi_i.size(); j++) {
+            auto x_p_phi_ij = qmfunction::dot(x_i, p_phi_i[j]);
+            expectation_value += (x_p_phi_ij * x_p_phi_ij).real();
+        }
+    }
+    auto f_v = 4.0 / (3.0 * omega_n) * expectation_value;
+
+    if (plevel == 1) mrcpp::print::time(1, "Computing transition moment (l)", t_mom_l);
+    std::cout << "transition moment (l): " << f_v << "\n";
+
+    mrcpp::print::footer(1, t_mom_v, 1);
 
     return json_out;
 }

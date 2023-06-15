@@ -59,6 +59,7 @@ OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
 void save_nodes(OrbitalVector Phi, mrcpp::FunctionTree<3> &refTree, BankAccount &nodes);
 
 void normalize(OrbitalVector &Phi);
+void rescale(OrbitalVector &Phi, double scale);
 void orthogonalize(double prec, OrbitalVector &Phi);
 void orthogonalize(double prec, OrbitalVector &Phi, OrbitalVector &Psi);
 
