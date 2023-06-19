@@ -291,6 +291,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
         for (auto j = 0; j < mu_phi_i.size(); j++) { expectation_values_l[j] += qmfunction::dot(x_i, mu_phi_i[j]); }
     }
+    std::cout << "expectation_values_l: " << expectation_values_l << "\n";
     auto square_of_exp_val_l = expectation_values_l.dot(expectation_values_l);
     std::cout << "|sum_i <x_i|mu|phi_i>|^2: " << square_of_exp_val_l << "\n";
     auto f_l = (2.0 / 3.0) * omega_n * expectation_values_l.dot(expectation_values_l);
@@ -317,6 +318,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
         for (auto j = 0; j < p_phi_i.size(); j++) { expectation_values_v[j] += qmfunction::dot(x_i, p_phi_i[j]); }
     }
+    std::cout << "expectation_values_v: " << expectation_values_v << "\n";
     auto square_of_exp_val_v = expectation_values_v.dot(expectation_values_v);
     std::cout << "|sum_i <x_i|v|phi_i>|^2: " << square_of_exp_val_v << "\n";
     auto f_v = (2.0 / (3.0 * omega_n)) * expectation_values_v.dot(expectation_values_v);

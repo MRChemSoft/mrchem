@@ -263,8 +263,8 @@
         }
       },
       "excitation_energies": {
-        "state-1": 0.46814789980337057,
-        "state-2": 0.47798185348703426
+        "state-1": 0.46814789970678633,
+        "state-2": 0.4779818529147906
       },
       "geometry": [
         {
@@ -287,7 +287,7 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -0.5947842934625274
+          -0.5947842934625275
         ],
         "occupation": [
           2.0
@@ -295,7 +295,7 @@
         "spin": [
           "p"
         ],
-        "sum_occupied": -1.1895685869250547
+        "sum_occupied": -1.189568586925055
       },
       "scf_energy": {
         "E_ee": 1.3169740976622437,
@@ -317,9 +317,9 @@
     "provenance": {
       "creator": "MRChem",
       "mpi_processes": 1,
-      "nthreads": 36,
+      "nthreads": 12,
       "routine": "mrchem.x",
-      "total_cores": 36,
+      "total_cores": 12,
       "version": "1.2.0-alpha"
     },
     "rsp_calculations": {
@@ -330,44 +330,50 @@
               "converged": true,
               "cycles": [
                 {
-                  "frequency": 0.46818063363743406,
-                  "frequency_update": -0.0027488435910707487,
-                  "mo_residual": 0.01891605780124631,
-                  "wall_time": 2.483328623
+                  "frequency": 0.4680733695359897,
+                  "frequency_update": -0.002675797282664091,
+                  "mo_residual": 0.015178477625362365,
+                  "wall_time": 2.821485847
                 },
                 {
-                  "frequency": 0.46815897463769857,
-                  "frequency_update": -2.1658999735496565e-05,
-                  "mo_residual": 0.004398391427829538,
-                  "wall_time": 3.135665478
+                  "frequency": 0.46816525231414075,
+                  "frequency_update": 9.188277815105199e-05,
+                  "mo_residual": 0.004012904019254963,
+                  "wall_time": 3.487011511
                 },
                 {
-                  "frequency": 0.46815043733891754,
-                  "frequency_update": -8.5372987810306e-06,
-                  "mo_residual": 0.0022687537176325407,
-                  "wall_time": 3.413425175
+                  "frequency": 0.4681535082786089,
+                  "frequency_update": -1.1744035531832701e-05,
+                  "mo_residual": 0.0015299093865147385,
+                  "wall_time": 3.942137068
                 },
                 {
-                  "frequency": 0.46814808747683473,
-                  "frequency_update": -2.3498620828066308e-06,
-                  "mo_residual": 0.0012591698265178217,
-                  "wall_time": 3.49208684
+                  "frequency": 0.4681492657665278,
+                  "frequency_update": -4.242512081072008e-06,
+                  "mo_residual": 0.0009206768553892323,
+                  "wall_time": 4.064693883
                 },
                 {
-                  "frequency": 0.4681479046836517,
-                  "frequency_update": -1.8279318303449088e-07,
-                  "mo_residual": 0.0002924887299506004,
-                  "wall_time": 3.684507502
+                  "frequency": 0.468147960978517,
+                  "frequency_update": -1.3047880108011686e-06,
+                  "mo_residual": 0.00030283676112130293,
+                  "wall_time": 4.277915232
                 },
                 {
-                  "frequency": 0.46814789980337057,
-                  "frequency_update": -4.880281123664787e-09,
-                  "mo_residual": 9.2479455427704e-05,
-                  "wall_time": 3.67550207
+                  "frequency": 0.46814788442602323,
+                  "frequency_update": -7.655249377393928e-08,
+                  "mo_residual": 0.00014420905359179283,
+                  "wall_time": 4.220650592
+                },
+                {
+                  "frequency": 0.4681478728254819,
+                  "frequency_update": -1.1600541311045877e-08,
+                  "mo_residual": 2.1680682348272383e-05,
+                  "wall_time": 4.267482502
                 }
               ],
-              "frequency": 0.46814789980337057,
-              "wall_time": 21.794138141
+              "frequency": 0.46814789970678633,
+              "wall_time": 28.862562872
             }
           },
           {
@@ -375,44 +381,44 @@
               "converged": true,
               "cycles": [
                 {
-                  "frequency": 0.478019376059328,
-                  "frequency_update": -0.002578957366675405,
-                  "mo_residual": 0.03730052607643635,
-                  "wall_time": 2.754913854
+                  "frequency": 0.4775863445407528,
+                  "frequency_update": -0.002962388527007097,
+                  "mo_residual": 0.03000070617647022,
+                  "wall_time": 3.175314421
                 },
                 {
-                  "frequency": 0.4779856801198373,
-                  "frequency_update": -3.3695939490707705e-05,
-                  "mo_residual": 0.010218073097048468,
-                  "wall_time": 3.313607226
+                  "frequency": 0.47799890538491724,
+                  "frequency_update": 0.0004125608441644359,
+                  "mo_residual": 0.00994573163767513,
+                  "wall_time": 3.743217163
                 },
                 {
-                  "frequency": 0.4779824540646557,
-                  "frequency_update": -3.226055181548837e-06,
-                  "mo_residual": 0.003013382011179116,
-                  "wall_time": 3.587167591
+                  "frequency": 0.47798399484243775,
+                  "frequency_update": -1.4910542479503866e-05,
+                  "mo_residual": 0.0024449143473683848,
+                  "wall_time": 4.240644596
                 },
                 {
-                  "frequency": 0.47798191200486223,
-                  "frequency_update": -5.420597934957527e-07,
-                  "mo_residual": 0.001026263280301664,
-                  "wall_time": 3.7179219
+                  "frequency": 0.4779825580299588,
+                  "frequency_update": -1.4368124789184066e-06,
+                  "mo_residual": 0.0010094270570627638,
+                  "wall_time": 4.371797421
                 },
                 {
-                  "frequency": 0.47798186008736415,
-                  "frequency_update": -5.1917498078424273e-08,
-                  "mo_residual": 0.00027722811339788605,
-                  "wall_time": 3.937174099
+                  "frequency": 0.47798221606969626,
+                  "frequency_update": -3.419602625774552e-07,
+                  "mo_residual": 0.00028982345067479363,
+                  "wall_time": 4.574536821
                 },
                 {
-                  "frequency": 0.47798185348703426,
-                  "frequency_update": -6.600329893746704e-09,
-                  "mo_residual": 8.777551041455796e-05,
-                  "wall_time": 3.979247447
+                  "frequency": 0.47798217874419624,
+                  "frequency_update": -3.732550004034321e-08,
+                  "mo_residual": 9.013335085724499e-05,
+                  "wall_time": 4.575448086
                 }
               ],
-              "frequency": 0.47798185348703426,
-              "wall_time": 23.331933032
+              "frequency": 0.4779818529147906,
+              "wall_time": 26.588227421
             }
           }
         ],
