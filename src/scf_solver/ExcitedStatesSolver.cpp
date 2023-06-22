@@ -205,6 +205,7 @@ json ExcitedStatesSolver::optimize(Molecule &mol, FockBuilder &F_0, FockBuilder 
 
             // Setup perturbed Fock operator (including V_1)
             V_1.clear();
+            std::cout << "orb_prec: " << orb_prec << "\n";
             V_1.setup(orb_prec); // do the x orbitals being uodated change this? it obviously should, but check
 
             // Compute omega
