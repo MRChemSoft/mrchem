@@ -95,7 +95,7 @@ void SCRF::setDCavity() {
     d_cavity.push_back(std::make_tuple(1.0, dx_cavity));
     d_cavity.push_back(std::make_tuple(1.0, dy_cavity));
     d_cavity.push_back(std::make_tuple(1.0, dz_cavity));
-    mrcpp::project<3>(this->apply_prec / 100, this->d_cavity, this->epsilon.getGradVector());
+    // mrcpp::project<3>(this->apply_prec / 100, this->d_cavity, this->epsilon.getGradVector());
 }
 
 void SCRF::computeDensities(OrbitalVector &Phi) {
@@ -115,11 +115,24 @@ void SCRF::computeDensities(OrbitalVector &Phi) {
 }
 
 void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
-    auto d_V = mrcpp::gradient(*derivative, potential.real());
+
+    auto d_V = mrcpp::gradient(*derivative, potential.real()); // FunctionTreeVector
     resetComplexFunction(out_gamma);
-    mrcpp::dot(this->apply_prec, out_gamma.real(), d_V, this->d_cavity);
+
+    for (int d = 0; d < 3; d++) {
+        mrcpp::AnalyticFunction<3> d_cav(this->epsilon.getGradVector()[d]);
+        mrcpp::ComplexFunction cplxfunc_prod;
+        mrcpp::cplxfunc::multiply(cplxfunc_prod, get_func(d_V, d), d_cav, this->apply_prec, 1);
+        // add result into out_gamma
+        if (d == 0) {
+            mrcpp::cplxfunc::deep_copy(out_gamma, cplxfunc_prod);
+        } else {
+            out_gamma.add(1.0, cplxfunc_prod);
+        }
+    }
+
     out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * mrcpp::pi)));
-    mrcpp::clear(d_V, true);
+    // crashes? mrcpp::clear(d_V, true);
 }
 
 mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma) {
@@ -133,8 +146,10 @@ mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &
 
     this->epsilon.flipFunction(true);
     mrcpp::cplxfunc::project(eps_inv, this->epsilon, NUMBER::Real, this->apply_prec / 100);
-    this->epsilon.flipFunction(false);
     mrcpp::cplxfunc::multiply(first_term, this->rho_tot, eps_inv, this->apply_prec);
+    // Use directly? mrcpp::cplxfunc::multiply(first_term, this->rho_tot, this->epsilon, this->apply_prec);
+    this->epsilon.flipFunction(false);
+
     mrcpp::cplxfunc::add(rho_eff, 1.0, first_term, -1.0, this->rho_tot, -1.0);
 
     mrcpp::cplxfunc::add(Poisson_func, 1.0, in_gamma, 1.0, rho_eff, -1.0);
@@ -209,8 +224,8 @@ void SCRF::nestedSCRF(mrcpp::ComplexFunction V_vac) {
     }
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
     mrcpp::print::separator(3, '-');
-    this->dVr_n.real().clear();
-    this->dVr_n.real().setZero();
+    if (this->dVr_n.hasReal()) this->dVr_n.real().clear();
+    if (this->dVr_n.hasReal()) this->dVr_n.real().setZero();
     this->dgamma_n.real().clear();
     this->dgamma_n.real().setZero();
     kain.clear();
