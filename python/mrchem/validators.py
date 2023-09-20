@@ -30,6 +30,7 @@ from copy import deepcopy
 
 from .periodictable import PeriodicTable, PeriodicTableByZ
 
+import qcelemental as qcel
 
 class MoleculeValidator:
     """Sanity check routines for the user's Molecule section."""
@@ -305,6 +306,8 @@ class MoleculeValidator:
           are **always** applied. If special behavior is desired, then it needs to
           be requested *explicitly* in the input.
         """
+        context = qcel.VanderWaalsRadii("MANTINA2009")
+        
         # Regex components
         integer = r"[0-9]+"
         decimal = r"[+-]?[0-9]+\.?[0-9]*|\.[0-9]+"
@@ -318,9 +321,10 @@ class MoleculeValidator:
 
         # the centers of the spheres are the same as the atoms
         if self.cavity_mode == "atoms":
+            
             coords = deepcopy(self.atomic_coords)
             radii = [
-                PeriodicTable[label.lower()].radius for label in self.atomic_symbols
+                qcel.vdwradii.get(label.lower()) for label in self.atomic_symbols
             ]
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
@@ -331,6 +335,12 @@ class MoleculeValidator:
             alphas = []
             betas = []
             sigmas = []
+
+        for i, label in enumerate(self.atomic_symbols):
+            if (label.lower() == "h"):
+                alphas[i] = 1.2
+            else:
+                continue
 
         # Parse spheres
         bad_spheres = []
