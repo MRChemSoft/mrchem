@@ -329,6 +329,13 @@ class MoleculeValidator:
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)
+            
+            aa2bohr = qcel.constants.conversion_factor("angstrom", "bohr")
+            for i, label in enumerate(self.atomic_symbols):
+                if (label.lower() == "h"):
+                    radii[i] = 1.2*aa2bohr
+                else:
+                    continue
         else:
             coords = []
             radii = []
@@ -336,11 +343,6 @@ class MoleculeValidator:
             betas = []
             sigmas = []
 
-        for i, label in enumerate(self.atomic_symbols):
-            if (label.lower() == "h"):
-                alphas[i] = 1.2
-            else:
-                continue
 
         # Parse spheres
         bad_spheres = []
