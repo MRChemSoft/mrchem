@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-qcelemental = 0.26.0
+
 [dev-packages]
 qcelemental = 0.26.0
 Pygments = "*"
