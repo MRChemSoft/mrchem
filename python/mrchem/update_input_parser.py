@@ -82,37 +82,54 @@ def update_periodic_table():
         "sections": [
             section
             for section in template["sections"]
-            if section["name"] != "Constants"
+            if section["name"] != "Elements"
         ],
     }
     
     # Build new Periodic table Section
-    Elements = {"sections": [], "docstring": "list of elements with data"}
-    for ele, vals in pt.PeriodicTableByName().items():
+    Elements = {"name":"Elements", "sections": [], "docstring": "list of elements with data"}
+    for ele, vals in pt.PeriodicTableByName.items():
+        if ((ele.lower() == "none") or ((ele.lower() == "x") or (ele.lower() == "q"))):
+            continue
+        elif (ele.lower() == "no"):
+            #FIXME this is a hack to get around the fact that "no" is a reserved keyword in YAML
+            name = '"no"' 
+            symbol = '"No"'
+        else:
+            name = str(ele)
+            symbol = vals[4]
+        
         context = qcel.VanderWaalsRadii("MANTINA2009")
         aa2bohr = qcel.constants.conversion_factor("angstrom", "bohr")
+        
         if (ele.lower() == "h"):
             radius = 1.2*aa2bohr
         else:   
-            radius = qcel.vdwradii.get(ele)
-        element_dict = {"name": ele, 
-         "keywords":[
-             {"name": "vdw-radius", "default": radius, "docstring": "radius of element"},
-             {"name": "covalent", "default": ele[1], "docstring": "covalent value element"},
-             {"name": "Z", "default": vals[2], "docstring": "z-value of element"},
-             {"name": "mass", "default": ele[3], "docstring": "mass of element"},
-             {"name": "symbol", "default": ele[4], "docstring": "symbol of element"},
-             {"name": "bpt", "default": ele[5], "docstring": "bpt of element"},
-             {"name": "mpt", "default": ele[6], "docstring": "mpt of element"},
-             {"name": "density", "default": ele[7], "docstring": "density of element"},
-             {"name": "volume", "default": ele[8], "docstring": "volume of element"},
-             {"name": "name", "default": ele[9], "docstring": "name of element"},
-             {"name": "debye", "default": ele[10], "docstring": "debye of element"},
-             {"name": "a", "default": ele[11], "docstring": "a of element"},
-             {"name": "crystal", "default": ele[12], "docstring": "crystal of element"},
-             {"name": "cpera", "default": ele[13], "docstring": "cpera of element"},
-             {"name": "conf", "default": ele[14], "docstring": "conf of element"},
-             {"name": "r_rms", "default": ele[15], "docstring": "r_rms of element"}]
+            try:
+                radius = qcel.vdwradii.get(ele)
+            except:
+                #FIXME this is a hack for the elements which have no radius data in the mantina set
+                radius = vals[0]
+        
+        element_dict = {"name": name,
+                        "docstring": "data of element",
+                        "keywords":[
+             {"name": "vdw-radius", "default": radius,   "docstring": "radius of element",      "type": "float"},
+             {"name": "covalent",   "default": vals[1],  "docstring": "covalent value element", "type":"float" },
+             {"name": "Z",          "default": vals[2],  "docstring": "z-value of element",     "type":"int"   },
+             {"name": "mass",       "default": vals[3],  "docstring": "mass of element",        "type":"float" },
+             {"name": "symbol",     "default": symbol,  "docstring": "symbol of element",      "type":"str"   },
+             {"name": "bpt",        "default": vals[5],  "docstring": "bpt of element",         "type":"float" },
+             {"name": "mpt",        "default": vals[6],  "docstring": "mpt of element",         "type":"float" },
+             {"name": "density",    "default": vals[7],  "docstring": "density of element",     "type":"float" },
+             {"name": "volume",     "default": vals[8],  "docstring": "volume of element",      "type":"float" },
+             {"name": "name",       "default": str(vals[9]),  "docstring": "name of element",        "type":"str"   },
+             {"name": "debye",      "default": vals[10], "docstring": "debye of element",       "type":"float" },
+             {"name": "a",          "default": vals[11], "docstring": "a of element",           "type":"float" },
+             {"name": "crystal",    "default": str(vals[12]), "docstring": "crystal of element",     "type":"str"   },
+             {"name": "cpera",      "default": vals[13], "docstring": "cpera of element",       "type":"float" },
+             {"name": "conf",       "default": str(vals[14]), "docstring": "conf of element",        "type":"str"   },
+             {"name": "r_rms",      "default": float(vals[15]), "docstring": "r_rms of element",       "type":"float" }]
          }
         Elements["sections"].append(element_dict)
          
@@ -180,6 +197,7 @@ if __name__ == "__main__":
     if not args.skip_template:
         print(f'{"Updating template":20} ... ', end="")
         update_constants()
+        update_periodic_table()
         print("done")
 
     if not args.skip_parselglossy:
