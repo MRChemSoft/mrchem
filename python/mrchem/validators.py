@@ -30,7 +30,6 @@ from copy import deepcopy
 
 from .periodictable import PeriodicTable, PeriodicTableByZ
 
-import qcelemental as qcel
 
 class MoleculeValidator:
     """Sanity check routines for the user's Molecule section."""
@@ -306,7 +305,6 @@ class MoleculeValidator:
           are **always** applied. If special behavior is desired, then it needs to
           be requested *explicitly* in the input.
         """
-        context = qcel.VanderWaalsRadii("MANTINA2009")
         
         # Regex components
         integer = r"[0-9]+"
@@ -330,12 +328,6 @@ class MoleculeValidator:
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)
             
-            aa2bohr = qcel.constants.conversion_factor("angstrom", "bohr")
-            for i, label in enumerate(self.atomic_symbols):
-                if (label.lower() == "h"):
-                    radii[i] = 1.2*aa2bohr
-                else:
-                    continue
         else:
             coords = []
             radii = []

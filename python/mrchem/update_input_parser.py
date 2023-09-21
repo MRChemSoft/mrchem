@@ -34,6 +34,8 @@ import shutil
 import argparse
 
 from physical_constants import MRChemPhysConstants
+import qcelemental as qcel
+import periodictable as pt
 
 root = Path.cwd().parent
 target = root.joinpath("mrchem", "input_parser")
@@ -69,6 +71,56 @@ def update_constants():
     # Construct the full template file and dump
     new["sections"].append(constants)
     yaml.dump(new, f_template)
+
+
+def update_periodic_table():
+    f_template = root.joinpath("template.yml")
+    template = yaml.load(f_template)
+    
+    new = {
+        "keywords": template["keywords"],
+        "sections": [
+            section
+            for section in template["sections"]
+            if section["name"] != "Constants"
+        ],
+    }
+    
+    # Build new Periodic table Section
+    Elements = {"sections": [], "docstring": "list of elements with data"}
+    for ele, vals in pt.PeriodicTableByName().items():
+        context = qcel.VanderWaalsRadii("MANTINA2009")
+        aa2bohr = qcel.constants.conversion_factor("angstrom", "bohr")
+        if (ele.lower() == "h"):
+            radius = 1.2*aa2bohr
+        else:   
+            radius = qcel.vdwradii.get(ele)
+        element_dict = {"name": ele, 
+         "keywords":[
+             {"name": "vdw-radius", "default": radius, "docstring": "radius of element"},
+             {"name": "covalent", "default": ele[1], "docstring": "covalent value element"},
+             {"name": "Z", "default": vals[2], "docstring": "z-value of element"},
+             {"name": "mass", "default": ele[3], "docstring": "mass of element"},
+             {"name": "symbol", "default": ele[4], "docstring": "symbol of element"},
+             {"name": "bpt", "default": ele[5], "docstring": "bpt of element"},
+             {"name": "mpt", "default": ele[6], "docstring": "mpt of element"},
+             {"name": "density", "default": ele[7], "docstring": "density of element"},
+             {"name": "volume", "default": ele[8], "docstring": "volume of element"},
+             {"name": "name", "default": ele[9], "docstring": "name of element"},
+             {"name": "debye", "default": ele[10], "docstring": "debye of element"},
+             {"name": "a", "default": ele[11], "docstring": "a of element"},
+             {"name": "crystal", "default": ele[12], "docstring": "crystal of element"},
+             {"name": "cpera", "default": ele[13], "docstring": "cpera of element"},
+             {"name": "conf", "default": ele[14], "docstring": "conf of element"},
+             {"name": "r_rms", "default": ele[15], "docstring": "r_rms of element"}]
+         }
+        Elements["sections"].append(element_dict)
+         
+
+    # Construct the full template file and dump
+    new["sections"].append(Elements)
+    yaml.dump(new, f_template)
+    
 
 
 def run_parselglossy():
