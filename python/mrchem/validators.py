@@ -52,9 +52,7 @@ class MoleculeValidator:
     ERROR_MESSAGE_CAVITY_COORDINATES = (
         lambda self, details: f"ABORT: INVALID CAVITY COORDINATES: {details}"
     )
-    ERROR_MESSAGE_CAVITY_RADII = (
-        lambda self, details: f"ABORT: INVALID CAVITY RADII: {details}"
-    )
+    ERROR_MESSAGE_CAVITY_RADII = lambda self, details: f"ABORT: INVALID CAVITY RADII: {details}"
     ERROR_MESSAGE_CAVITY_ALPHAS = (
         lambda self, details: f"ABORT: INVALID CAVITY SCALING FACTORS: {details}"
     )
@@ -72,9 +70,7 @@ class MoleculeValidator:
     ERROR_UNPHYSICAL_MULTIPLICITY = (
         lambda self, details: f"ABORT: UNPHYSICAL MULTIPLICITY: {details}"
     )
-    ERROR_UNPHYSICAL_CHARGE = (
-        lambda self, details: f"ABORT: UNPHYSICAL CHARGE: {details}"
-    )
+    ERROR_UNPHYSICAL_CHARGE = lambda self, details: f"ABORT: UNPHYSICAL CHARGE: {details}"
 
     ERROR_RESTRICTED_OPEN_SHELL = "ABORT: Restricted open-shell not implemented"
 
@@ -129,7 +125,11 @@ class MoleculeValidator:
         self.cavity_sigma = self.cavity_dict["sigma"]
 
         # Validate atomic coordinates
-        self.atomic_symbols, self.atomic_coords, self.atomic_rms = self.validate_atomic_coordinates()
+        (
+            self.atomic_symbols,
+            self.atomic_coords,
+            self.atomic_rms,
+        ) = self.validate_atomic_coordinates()
         self.n_atoms = len(self.atomic_coords)
 
         # Translate center of mass if requested
@@ -230,7 +230,7 @@ class MoleculeValidator:
                 g = match_symbol.group()
                 symbol = g.split()[0].strip().lower()
                 labels.append(symbol)
-                radii.append(float (PeriodicTable[symbol].r_rms))
+                radii.append(float(PeriodicTable[symbol].r_rms))
                 coords.append([float(c.strip()) for c in g.split()[1:]])
             elif match_number:
                 g = match_number.group()
@@ -305,7 +305,7 @@ class MoleculeValidator:
           are **always** applied. If special behavior is desired, then it needs to
           be requested *explicitly* in the input.
         """
-        
+
         # Regex components
         integer = r"[0-9]+"
         decimal = r"[+-]?[0-9]+\.?[0-9]*|\.[0-9]+"
@@ -319,25 +319,33 @@ class MoleculeValidator:
 
         # the centers of the spheres are the same as the atoms
         if self.cavity_mode == "atoms":
-            
-            def radiusNotFound(x): # This raises an exception in the list comprehension if the radius is not valid.
-                raise ValueError("The vdw-radius of element {x} is not defined in the mantina set".format(x))
-            
-            
+
+            def radiusNotFound(x):
+                # This raises an exception in the list comprehension if the radius is not valid.
+                raise ValueError(
+                    "The vdw-radius of element {x} is not defined in the mantina set".format(x)
+                )
+
             coords = deepcopy(self.atomic_coords)
-            # fetches mantina radii from the template.yml file for each atom x. If the radius is negative, it means it is not defined in the mantina set and it raises an exception.
-            radii = [self.user_dict["Elements"][x.lower()]["vdw-radius"] if (self.user_dict["Elements"][x.lower()]["vdw-radius"] > 0.0) else radiusNotFound(x) for x in self.atomic_symbols ]
+            # fetches mantina radii from the template.yml file for each atom x.
+            # If the radius is negative, it means it is not defined in the
+            # mantina set and it raises an exception.
+            radii = [
+                self.user_dict["Elements"][x.lower()]["vdw-radius"]
+                if (self.user_dict["Elements"][x.lower()]["vdw-radius"] > 0.0)
+                else radiusNotFound(x)
+                for x in self.atomic_symbols
+            ]
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)
-            
+
         else:
             coords = []
             radii = []
             alphas = []
             betas = []
             sigmas = []
-
 
         # Parse spheres
         bad_spheres = []
@@ -402,11 +410,7 @@ class MoleculeValidator:
                     )
                 )
                 betas.append(
-                    (
-                        float(q_match.group("beta"))
-                        if q_match.group("beta")
-                        else self.cavity_beta
-                    )
+                    (float(q_match.group("beta")) if q_match.group("beta") else self.cavity_beta)
                 )
                 sigmas.append(
                     (
@@ -427,9 +431,7 @@ class MoleculeValidator:
             )
 
         # Check for negative or zero radii
-        invalid_radii = {
-            i: r for i, r in enumerate(radii) if ((r < 0) or math.isclose(r, 0.0))
-        }
+        invalid_radii = {i: r for i, r in enumerate(radii) if ((r < 0) or math.isclose(r, 0.0))}
         if invalid_radii:
             invalid = "\n".join(
                 [f"Sphere {i} has invalid radius {r}" for i, r in invalid_radii.items()]
@@ -441,15 +443,10 @@ class MoleculeValidator:
             )
 
         # Check for negative or zero scaling factors
-        invalid_alphas = {
-            i: a for i, a in enumerate(alphas) if ((a < 0) or math.isclose(a, 0.0))
-        }
+        invalid_alphas = {i: a for i, a in enumerate(alphas) if ((a < 0) or math.isclose(a, 0.0))}
         if invalid_alphas:
             invalid = "\n".join(
-                [
-                    f"Sphere {i} has invalid radius {a}"
-                    for i, a in invalid_alphas.items()
-                ]
+                [f"Sphere {i} has invalid radius {a}" for i, a in invalid_alphas.items()]
             )
             raise RuntimeError(
                 self.ERROR_MESSAGE_CAVITY_ALPHAS(
