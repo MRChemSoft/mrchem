@@ -320,11 +320,7 @@ class MoleculeValidator:
         # the centers of the spheres are the same as the atoms
         if self.cavity_mode == "atoms":
             coords = deepcopy(self.atomic_coords)
-            radii = []
-            for label in self.atomic_symbols:
-                radius = self.user_dict["Elements"][label.lower()]["vdw-radius"]
-                radii.append(radius)
-            
+            radii = [self.user_dict["Elements"][x.lower()]["vdw-radius"] for x in self.atomic_symbols]
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)
