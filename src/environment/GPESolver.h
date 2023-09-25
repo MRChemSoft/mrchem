@@ -43,23 +43,23 @@ class ReactionPotentialD2;
 
 enum class SCRFDensityType : int { TOTAL = 0, ELECTRONIC = 1, NUCLEAR = 2 };
 
-/** @class SCRF
+/** @class GPESolver
  *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
  */
-class SCRF final {
+class GPESolver {
 public:
-    SCRF(const Permittivity &e,
+    GPESolver(const Permittivity &e,
          const Density &rho_nuc,
          std::shared_ptr<mrcpp::PoissonOperator> P,
          std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
          int kain_hist,
          int max_iter,
          bool dyn_thrs,
-         SCRFDensityType density_type);
-    ~SCRF();
+         const std::string &density_type);
+    ~GPESolver();
 
     double setConvergenceThreshold(double prec);
-    void setSolverType(bool linear_pb) { this->do_linear_pb = linear_pb; }
+    void setStaticSalt();
 
     Permittivity &getPermittivity() { return this->epsilon; }
 
@@ -67,18 +67,16 @@ public:
 
     auto computeEnergies(const Density &rho_el) -> std::tuple<double, double>;
 
+    void clear();
+
     auto getDensityType() const -> SCRFDensityType { return this->density_type; }
 
     friend class ReactionPotential;
     friend class ReactionPotentialD1;
     friend class ReactionPotentialD2;
 
-protected:
-    void clear();
-
 private:
     bool dynamic_thrs;
-    bool do_linear_pb;
     SCRFDensityType density_type;
 
     int max_iter;
@@ -107,8 +105,8 @@ private:
 
     void accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFunction &func, KAIN &kain);
 
-    void nestedSCRF(const mrcpp::ComplexFunction &V_vac, const Density &rho_el);
-    mrcpp::ComplexFunction &setup(double prec, const Density &rho_el);
+    void runMicroiterations(const mrcpp::ComplexFunction &V_vac, const Density &rho_el);
+    mrcpp::ComplexFunction &solveEquation(double prec, const Density &rho_el);
 
     void resetComplexFunction(mrcpp::ComplexFunction &function);
 

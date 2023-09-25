@@ -45,7 +45,9 @@ void DHScreening::printParameters() const {
     auto coords = this->cavity_ion.getCoordinates();
     auto radii = this->cavity_ion.getRadii();
     auto radii_0 = this->cavity_ion.getOriginalRadii();
+    auto alphas = this->cavity_ion.getRadiiScalings();
     auto sigmas = this->cavity_ion.getWidths();
+    auto betas = this->cavity_ion.getWidthScalings();
 
     // Set widths
     auto w0 = mrcpp::Printer::getWidth() - 1;

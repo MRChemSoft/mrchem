@@ -40,8 +40,8 @@
 #include "chemistry/PeriodicTable.h"
 #include "chemistry/chemistry_utils.h"
 #include "environment/Cavity.h"
+#include "environment/GPESolver.h"
 #include "environment/Permittivity.h"
-#include "environment/SCRF.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
@@ -90,7 +90,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
 
     int kain = 4;
-    auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, 100, false, SCRFDensityType::TOTAL);
+    auto scrf_p = std::make_unique<GPESolver>(dielectric_func, rho_nuc, P_p, D_p, kain, 100, false, SCRFDensityType::TOTAL);
 
     auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
     Reo->setup(prec);

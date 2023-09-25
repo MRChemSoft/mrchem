@@ -26,14 +26,14 @@
 #pragma once
 
 #include "ReactionPotential.h"
-#include "environment/SCRF.h"
+#include "environment/GPESolver.h"
 
 namespace mrchem {
 
 class ReactionPotentialD1 final : public ReactionPotential {
 public:
-    ReactionPotentialD1(std::unique_ptr<SCRF> scrf, std::shared_ptr<mrchem::OrbitalVector> Phi, bool mpi_share = false)
-            : ReactionPotential(std::move(scrf), Phi, mpi_share) {}
+    ReactionPotentialD1(std::unique_ptr<GPESolver> gpesolver, std::shared_ptr<mrchem::OrbitalVector> Phi, bool mpi_share = false)
+            : ReactionPotential(std::move(gpesolver), Phi, mpi_share) {}
 
 private:
     mrcpp::ComplexFunction &computePotential(double prec) const override;

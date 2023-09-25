@@ -25,21 +25,36 @@
 
 #pragma once
 
-#include "ReactionPotential.h"
-#include "environment/GPESolver.h"
+#include "DHScreening.h"
+#include "PBESolver.h"
+#include "Permittivity.h"
+#include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
 
 namespace mrchem {
-class ReactionPotentialD2 final : public ReactionPotential {
+/** @class LPBESolver
+ *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
+ */
+class Nuclei;
+class KAIN;
+class LPBESolver final : public PBESolver {
 public:
-    ReactionPotentialD2(std::unique_ptr<GPESolver> gpesolver, std::shared_ptr<mrchem::OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false)
-            : ReactionPotential(std::move(gpesolver), Phi, mpi_share)
-            , orbitals_x(X)
-            , orbitals_y(Y) {}
+    LPBESolver(Permittivity e,
+               DHScreening kappa,
+               const Nuclei &N,
+               std::shared_ptr<mrcpp::PoissonOperator> P,
+               std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
+               double orb_prec,
+               int kain_hist,
+               int max_iter,
+               bool acc_pot,
+               bool dyn_thrs,
+               std::string density_type)
+            : PBESolver(e, kappa, N, P, D, orb_prec, kain_hist, max_iter, acc_pot, dyn_thrs, density_type) {}
 
-private:
-    std::shared_ptr<OrbitalVector> orbitals_x; ///< Perturbed orbitals
-    std::shared_ptr<OrbitalVector> orbitals_y; ///< Perturbed orbitals
+    friend class ReactionPotential;
 
-    mrcpp::ComplexFunction &computePotential(double prec) const override;
+protected:
+    void computePBTerm(mrcpp::ComplexFunction &V_tot, double salt_factor);
 };
 } // namespace mrchem

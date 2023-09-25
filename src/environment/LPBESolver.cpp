@@ -23,23 +23,37 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#pragma once
+#include "LPBESolver.h"
 
-#include "ReactionPotential.h"
-#include "environment/GPESolver.h"
+#include <MRCPP/MWFunctions>
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+
+#include "chemistry/PhysicalConstants.h"
+#include "chemistry/chemistry_utils.h"
+#include "qmfunctions/density_utils.h"
+#include "qmoperators/two_electron/ReactionPotential.h"
+#include "scf_solver/KAIN.h"
+#include "utils/print_utils.h"
+
+#include <nlohmann/json.hpp>
+
+using mrcpp::Printer;
+using mrcpp::Timer;
+
+using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
+using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
+using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
-class ReactionPotentialD2 final : public ReactionPotential {
-public:
-    ReactionPotentialD2(std::unique_ptr<GPESolver> gpesolver, std::shared_ptr<mrchem::OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false)
-            : ReactionPotential(std::move(gpesolver), Phi, mpi_share)
-            , orbitals_x(X)
-            , orbitals_y(Y) {}
 
-private:
-    std::shared_ptr<OrbitalVector> orbitals_x; ///< Perturbed orbitals
-    std::shared_ptr<OrbitalVector> orbitals_y; ///< Perturbed orbitals
+// TODO separate this for the linear and non-linear solver
+void LPBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot,
+                               double salt_factor) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
+    resetComplexFunction(this->pbe_term);
+    mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, V_tot, this->apply_prec);
+    this->pbe_term.rescale(salt_factor);
+}
 
-    mrcpp::ComplexFunction &computePotential(double prec) const override;
-};
 } // namespace mrchem
