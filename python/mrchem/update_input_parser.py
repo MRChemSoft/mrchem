@@ -26,16 +26,16 @@
 #
 
 
-from pathlib import Path
-from ruamel.yaml import YAML
-import subprocess
+import argparse
 import os
 import shutil
-import argparse
+import subprocess
+from pathlib import Path
 
-from physical_constants import MRChemPhysConstants
-import qcelemental as qcel
 import periodictable as pt
+import qcelemental as qcel
+from physical_constants import MRChemPhysConstants
+from ruamel.yaml import YAML
 
 root = Path.cwd().parent
 target = root.joinpath("mrchem", "input_parser")
