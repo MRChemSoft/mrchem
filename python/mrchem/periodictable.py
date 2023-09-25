@@ -445,20 +445,20 @@ PeriodicTable = OrderedDict({
         '0.0', '0.0', '104', '-257.0', 'Rf', '0.0', '0.0', '0.0', '0.0',
         'Rutherfordium', '0.0', '0.00', '', '0.00', '4-5s', '1.1173204420E-04'
     ]),
-    'ha':
+    'db':
     Element([
-        '0.0', '0.0', '105', '-262.0', 'Ha', '0.0', '0.0', '0.0', '0.0',
-        'Hahnium', '0.0', '0.00', '', '0.00', '40s', '1.1186082063E-04'
+        '0.0', '0.0', '105', '-262.0', 'Db', '0.0', '0.0', '0.0', '0.0',
+        'Dubnium', '0.0', '0.00', '', '0.00', '40s', '1.1186082063E-04'
     ]),
-    'sq':
+    'sg':
     Element([
-        '0.0', '0.0', '106', '-263.0', 'Sq', '0.0', '0.0', '0.0', '0.0',
+        '0.0', '0.0', '106', '-263.0', 'Sg', '0.0', '0.0', '0.0', '0.0',
         'Seaborgium', '0.0', '0.00', '', '0.00', '0.9s', '1.1198926979E-04'
     ]),
-    'ns':
+    'bh':
     Element([
-        '0.0', '0.0', '107', '-262.0', 'Ns', '0.0', '0.0', '0.0', '0.0',
-        'Nielsbohrium', '0.0', '0.00', '', '0.00', '2ms', '1.1186082063E-04'
+        '0.0', '0.0', '107', '-262.0', 'Bh', '0.0', '0.0', '0.0', '0.0',
+        'Bohrium', '0.0', '0.00', '', '0.00', '2ms', '1.1186082063E-04'
     ]),
     'hs':
     Element([
@@ -715,7 +715,7 @@ PeriodicTableByZ = OrderedDict(
         61: PeriodicTableByName["pm"],
         108: PeriodicTableByName["hs"],
         67: PeriodicTableByName["ho"],
-        105: PeriodicTableByName["ha"],
+        105: PeriodicTableByName["db"],
         72: PeriodicTableByName["hf"],
         80: PeriodicTableByName["hg"],
         2: PeriodicTableByName["he"],
@@ -746,14 +746,14 @@ PeriodicTableByZ = OrderedDict(
         10: PeriodicTableByName["ne"],
         99: PeriodicTableByName["es"],
         93: PeriodicTableByName["np"],
-        107: PeriodicTableByName["ns"],
+        107: PeriodicTableByName["bh"],
         87: PeriodicTableByName["fr"],
         21: PeriodicTableByName["sc"],
         26: PeriodicTableByName["fe"],
         100: PeriodicTableByName["fm"],
         53: PeriodicTableByName["i"],
         38: PeriodicTableByName["sr"],
-        106: PeriodicTableByName["sq"],
+        106: PeriodicTableByName["sg"],
         0: PeriodicTableByName["q"],
         36: PeriodicTableByName["kr"],
         14: PeriodicTableByName["si"],

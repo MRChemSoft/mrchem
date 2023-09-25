@@ -1009,7 +1009,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.2676713505493935
+            default: 1.2
             docstring: radius of element
             type: float
           - name: covalent
@@ -1076,7 +1076,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.6456165756409593
+            default: 1.4
             docstring: radius of element
             type: float
           - name: covalent
@@ -1143,7 +1143,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.420404287078669
+            default: 1.81
             docstring: radius of element
             type: float
           - name: covalent
@@ -1210,7 +1210,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.891280971950477
+            default: 1.53
             docstring: radius of element
             type: float
           - name: covalent
@@ -1277,7 +1277,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.62827416087903
+            default: 1.92
             docstring: radius of element
             type: float
           - name: covalent
@@ -1344,7 +1344,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.212534413278308
+            default: 1.7
             docstring: radius of element
             type: float
           - name: covalent
@@ -1411,7 +1411,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.9290754944596338
+            default: 1.55
             docstring: radius of element
             type: float
           - name: covalent
@@ -1478,7 +1478,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.8723837106958987
+            default: 1.52
             docstring: radius of element
             type: float
           - name: covalent
@@ -1545,7 +1545,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.7778974044230074
+            default: 1.47
             docstring: radius of element
             type: float
           - name: covalent
@@ -1612,7 +1612,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.9101782332050554
+            default: 1.54
             docstring: radius of element
             type: float
           - name: covalent
@@ -1679,7 +1679,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 4.28967830478927
+            default: 2.27
             docstring: radius of element
             type: float
           - name: covalent
@@ -1746,7 +1746,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.269226197042043
+            default: 1.73
             docstring: radius of element
             type: float
           - name: covalent
@@ -1813,7 +1813,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.477096070842404
+            default: 1.84
             docstring: radius of element
             type: float
           - name: covalent
@@ -1880,7 +1880,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.9684248634614394
+            default: 2.1
             docstring: radius of element
             type: float
           - name: covalent
@@ -1947,7 +1947,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.401507025824091
+            default: 1.8
             docstring: radius of element
             type: float
           - name: covalent
@@ -2014,7 +2014,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.401507025824091
+            default: 1.8
             docstring: radius of element
             type: float
           - name: covalent
@@ -2081,7 +2081,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.307020719551199
+            default: 1.75
             docstring: radius of element
             type: float
           - name: covalent
@@ -2148,7 +2148,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.552685115860717
+            default: 1.88
             docstring: radius of element
             type: float
           - name: covalent
@@ -2215,7 +2215,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 5.196746845009027
+            default: 2.75
             docstring: radius of element
             type: float
           - name: covalent
@@ -2282,7 +2282,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 4.365267349807583
+            default: 2.31
             docstring: radius of element
             type: float
           - name: covalent
@@ -2349,7 +2349,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.09
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2416,7 +2416,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2483,7 +2483,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.92
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2550,7 +2550,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.85
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2617,7 +2617,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.79
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2684,7 +2684,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.72
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2751,7 +2751,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.67
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2818,7 +2818,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.62
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2885,7 +2885,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.57
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -2952,7 +2952,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.53
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3019,7 +3019,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.533787854606139
+            default: 1.87
             docstring: radius of element
             type: float
           - name: covalent
@@ -3086,7 +3086,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.9873221247160173
+            default: 2.11
             docstring: radius of element
             type: float
           - name: covalent
@@ -3153,7 +3153,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.4959933320969823
+            default: 1.85
             docstring: radius of element
             type: float
           - name: covalent
@@ -3220,7 +3220,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.590479638369873
+            default: 1.9
             docstring: radius of element
             type: float
           - name: covalent
@@ -3287,7 +3287,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.4581988095878256
+            default: 1.83
             docstring: radius of element
             type: float
           - name: covalent
@@ -3354,7 +3354,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.817246773424813
+            default: 2.02
             docstring: radius of element
             type: float
           - name: covalent
@@ -3421,7 +3421,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 5.725870160137219
+            default: 3.03
             docstring: radius of element
             type: float
           - name: covalent
@@ -3488,7 +3488,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 4.705418052389993
+            default: 2.49
             docstring: radius of element
             type: float
           - name: covalent
@@ -3555,7 +3555,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.27
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3622,7 +3622,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.16
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3689,7 +3689,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.09
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3756,7 +3756,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.01
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3823,7 +3823,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.95
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3890,7 +3890,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.89
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -3957,7 +3957,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.83
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4024,7 +4024,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.79
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4091,7 +4091,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.75
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4158,7 +4158,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.71
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4225,7 +4225,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.6471714221336082
+            default: 1.93
             docstring: radius of element
             type: float
           - name: covalent
@@ -4292,7 +4292,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 4.100705692243487
+            default: 2.17
             docstring: radius of element
             type: float
           - name: covalent
@@ -4359,7 +4359,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.892835818443126
+            default: 2.06
             docstring: radius of element
             type: float
           - name: covalent
@@ -4426,7 +4426,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.892835818443126
+            default: 2.06
             docstring: radius of element
             type: float
           - name: covalent
@@ -4493,7 +4493,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.7416577284064996
+            default: 1.98
             docstring: radius of element
             type: float
           - name: covalent
@@ -4560,7 +4560,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 4.081808430988909
+            default: 2.16
             docstring: radius of element
             type: float
           - name: covalent
@@ -4627,7 +4627,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 6.481760610320351
+            default: 3.43
             docstring: radius of element
             type: float
           - name: covalent
@@ -4694,7 +4694,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 5.06446601622698
+            default: 2.68
             docstring: radius of element
             type: float
           - name: covalent
@@ -4761,7 +4761,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.74
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4828,7 +4828,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.16
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4895,7 +4895,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.09
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -4962,7 +4962,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.02
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5029,7 +5029,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.97
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5096,7 +5096,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.92
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5163,7 +5163,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.87
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5230,7 +5230,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.83
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5297,7 +5297,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.79
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5364,7 +5364,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 1.76
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -5431,7 +5431,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.7038632058973433
+            default: 1.96
             docstring: radius of element
             type: float
           - name: covalent
@@ -5498,7 +5498,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.817246773424813
+            default: 2.02
             docstring: radius of element
             type: float
           - name: covalent
@@ -5565,7 +5565,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.911733079697704
+            default: 2.07
             docstring: radius of element
             type: float
           - name: covalent
@@ -5632,7 +5632,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.722760467151921
+            default: 1.97
             docstring: radius of element
             type: float
           - name: covalent
@@ -5699,7 +5699,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.817246773424813
+            default: 2.02
             docstring: radius of element
             type: float
           - name: covalent
@@ -5766,7 +5766,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 4.1573974760072225
+            default: 2.2
             docstring: radius of element
             type: float
           - name: covalent
@@ -5833,7 +5833,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 6.576246916593242
+            default: 3.48
             docstring: radius of element
             type: float
           - name: covalent
@@ -5900,7 +5900,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 5.347924935045654
+            default: 2.83
             docstring: radius of element
             type: float
           - name: covalent
@@ -5967,7 +5967,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.2
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6034,7 +6034,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6097,11 +6097,11 @@ sections:
             default: 0.0001117320442
             docstring: r_rms of element
             type: float
-      - name: ha
+      - name: db
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6117,7 +6117,7 @@ sections:
             docstring: mass of element
             type: float
           - name: symbol
-            default: Ha
+            default: Db
             docstring: symbol of element
             type: str
           - name: bpt
@@ -6137,7 +6137,7 @@ sections:
             docstring: volume of element
             type: float
           - name: name
-            default: Hahnium
+            default: Dubnium
             docstring: name of element
             type: str
           - name: debye
@@ -6164,11 +6164,11 @@ sections:
             default: 0.00011186082063
             docstring: r_rms of element
             type: float
-      - name: sq
+      - name: sg
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6184,7 +6184,7 @@ sections:
             docstring: mass of element
             type: float
           - name: symbol
-            default: Sq
+            default: Sg
             docstring: symbol of element
             type: str
           - name: bpt
@@ -6231,11 +6231,11 @@ sections:
             default: 0.00011198926979
             docstring: r_rms of element
             type: float
-      - name: ns
+      - name: bh
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6251,7 +6251,7 @@ sections:
             docstring: mass of element
             type: float
           - name: symbol
-            default: Ns
+            default: Bh
             docstring: symbol of element
             type: str
           - name: bpt
@@ -6271,7 +6271,7 @@ sections:
             docstring: volume of element
             type: float
           - name: name
-            default: Nielsbohrium
+            default: Bohrium
             docstring: name of element
             type: str
           - name: debye
@@ -6302,7 +6302,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6369,7 +6369,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6436,7 +6436,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6503,7 +6503,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6570,7 +6570,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 0.0
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6637,7 +6637,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.7
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6704,7 +6704,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.67
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6771,7 +6771,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.64
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6838,7 +6838,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.62
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6905,7 +6905,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.59
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -6972,7 +6972,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.56
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7039,7 +7039,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.54
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7106,7 +7106,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.51
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7173,7 +7173,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.49
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7240,7 +7240,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.47
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7307,7 +7307,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.45
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7374,7 +7374,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.42
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7441,7 +7441,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.4
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7508,7 +7508,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.25
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7575,7 +7575,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.16
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7642,7 +7642,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.14
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7709,7 +7709,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.11
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7776,7 +7776,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.08
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7843,7 +7843,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.05
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7910,7 +7910,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 3.02
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -7977,7 +7977,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.99
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8044,7 +8044,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.97
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8111,7 +8111,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.95
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8178,7 +8178,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.92
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8245,7 +8245,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.9
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8312,7 +8312,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.87
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8379,7 +8379,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.85
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent
@@ -8446,7 +8446,7 @@ sections:
         docstring: data of element
         keywords:
           - name: vdw-radius
-            default: 2.82
+            default: -1.0
             docstring: radius of element
             type: float
           - name: covalent

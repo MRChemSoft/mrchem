@@ -1002,7 +1002,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.2676713505493935``
+        **Default** ``1.2``
       
        :covalent: covalent value element
       
@@ -1101,7 +1101,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.6456165756409593``
+        **Default** ``1.4``
       
        :covalent: covalent value element
       
@@ -1200,7 +1200,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.420404287078669``
+        **Default** ``1.81``
       
        :covalent: covalent value element
       
@@ -1299,7 +1299,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.891280971950477``
+        **Default** ``1.53``
       
        :covalent: covalent value element
       
@@ -1398,7 +1398,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.62827416087903``
+        **Default** ``1.92``
       
        :covalent: covalent value element
       
@@ -1497,7 +1497,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.212534413278308``
+        **Default** ``1.7``
       
        :covalent: covalent value element
       
@@ -1596,7 +1596,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.9290754944596338``
+        **Default** ``1.55``
       
        :covalent: covalent value element
       
@@ -1695,7 +1695,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.8723837106958987``
+        **Default** ``1.52``
       
        :covalent: covalent value element
       
@@ -1794,7 +1794,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.7778974044230074``
+        **Default** ``1.47``
       
        :covalent: covalent value element
       
@@ -1893,7 +1893,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.9101782332050554``
+        **Default** ``1.54``
       
        :covalent: covalent value element
       
@@ -1992,7 +1992,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``4.28967830478927``
+        **Default** ``2.27``
       
        :covalent: covalent value element
       
@@ -2091,7 +2091,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.269226197042043``
+        **Default** ``1.73``
       
        :covalent: covalent value element
       
@@ -2190,7 +2190,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.477096070842404``
+        **Default** ``1.84``
       
        :covalent: covalent value element
       
@@ -2289,7 +2289,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.9684248634614394``
+        **Default** ``2.1``
       
        :covalent: covalent value element
       
@@ -2388,7 +2388,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.401507025824091``
+        **Default** ``1.8``
       
        :covalent: covalent value element
       
@@ -2487,7 +2487,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.401507025824091``
+        **Default** ``1.8``
       
        :covalent: covalent value element
       
@@ -2586,7 +2586,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.307020719551199``
+        **Default** ``1.75``
       
        :covalent: covalent value element
       
@@ -2685,7 +2685,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.552685115860717``
+        **Default** ``1.88``
       
        :covalent: covalent value element
       
@@ -2784,7 +2784,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``5.196746845009027``
+        **Default** ``2.75``
       
        :covalent: covalent value element
       
@@ -2883,7 +2883,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``4.365267349807583``
+        **Default** ``2.31``
       
        :covalent: covalent value element
       
@@ -2982,7 +2982,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.09``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3081,7 +3081,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3180,7 +3180,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.92``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3279,7 +3279,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.85``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3378,7 +3378,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.79``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3477,7 +3477,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.72``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3576,7 +3576,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.67``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3675,7 +3675,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.62``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3774,7 +3774,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.57``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3873,7 +3873,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.53``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -3972,7 +3972,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.533787854606139``
+        **Default** ``1.87``
       
        :covalent: covalent value element
       
@@ -4071,7 +4071,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.9873221247160173``
+        **Default** ``2.11``
       
        :covalent: covalent value element
       
@@ -4170,7 +4170,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.4959933320969823``
+        **Default** ``1.85``
       
        :covalent: covalent value element
       
@@ -4269,7 +4269,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.590479638369873``
+        **Default** ``1.9``
       
        :covalent: covalent value element
       
@@ -4368,7 +4368,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.4581988095878256``
+        **Default** ``1.83``
       
        :covalent: covalent value element
       
@@ -4467,7 +4467,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.817246773424813``
+        **Default** ``2.02``
       
        :covalent: covalent value element
       
@@ -4566,7 +4566,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``5.725870160137219``
+        **Default** ``3.03``
       
        :covalent: covalent value element
       
@@ -4665,7 +4665,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``4.705418052389993``
+        **Default** ``2.49``
       
        :covalent: covalent value element
       
@@ -4764,7 +4764,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.27``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -4863,7 +4863,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.16``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -4962,7 +4962,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.09``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5061,7 +5061,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.01``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5160,7 +5160,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.95``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5259,7 +5259,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.89``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5358,7 +5358,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.83``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5457,7 +5457,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.79``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5556,7 +5556,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.75``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5655,7 +5655,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.71``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -5754,7 +5754,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.6471714221336082``
+        **Default** ``1.93``
       
        :covalent: covalent value element
       
@@ -5853,7 +5853,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``4.100705692243487``
+        **Default** ``2.17``
       
        :covalent: covalent value element
       
@@ -5952,7 +5952,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.892835818443126``
+        **Default** ``2.06``
       
        :covalent: covalent value element
       
@@ -6051,7 +6051,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.892835818443126``
+        **Default** ``2.06``
       
        :covalent: covalent value element
       
@@ -6150,7 +6150,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.7416577284064996``
+        **Default** ``1.98``
       
        :covalent: covalent value element
       
@@ -6249,7 +6249,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``4.081808430988909``
+        **Default** ``2.16``
       
        :covalent: covalent value element
       
@@ -6348,7 +6348,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``6.481760610320351``
+        **Default** ``3.43``
       
        :covalent: covalent value element
       
@@ -6447,7 +6447,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``5.06446601622698``
+        **Default** ``2.68``
       
        :covalent: covalent value element
       
@@ -6546,7 +6546,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.74``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -6645,7 +6645,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.16``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -6744,7 +6744,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.09``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -6843,7 +6843,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.02``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -6942,7 +6942,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.97``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -7041,7 +7041,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.92``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -7140,7 +7140,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.87``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -7239,7 +7239,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.83``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -7338,7 +7338,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.79``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -7437,7 +7437,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``1.76``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -7536,7 +7536,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.7038632058973433``
+        **Default** ``1.96``
       
        :covalent: covalent value element
       
@@ -7635,7 +7635,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.817246773424813``
+        **Default** ``2.02``
       
        :covalent: covalent value element
       
@@ -7734,7 +7734,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.911733079697704``
+        **Default** ``2.07``
       
        :covalent: covalent value element
       
@@ -7833,7 +7833,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.722760467151921``
+        **Default** ``1.97``
       
        :covalent: covalent value element
       
@@ -7932,7 +7932,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.817246773424813``
+        **Default** ``2.02``
       
        :covalent: covalent value element
       
@@ -8031,7 +8031,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``4.1573974760072225``
+        **Default** ``2.2``
       
        :covalent: covalent value element
       
@@ -8130,7 +8130,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``6.576246916593242``
+        **Default** ``3.48``
       
        :covalent: covalent value element
       
@@ -8229,7 +8229,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``5.347924935045654``
+        **Default** ``2.83``
       
        :covalent: covalent value element
       
@@ -8328,7 +8328,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.2``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -8427,7 +8427,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -8519,14 +8519,14 @@ User input reference
       
         **Default** ``0.0001117320442``
       
-   :ha: data of element
+   :db: data of element
   
       :red:`Keywords`
        :vdw-radius: radius of element
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -8550,7 +8550,7 @@ User input reference
       
         **Type** ``str``
       
-        **Default** ``Ha``
+        **Default** ``Db``
       
        :bpt: bpt of element
       
@@ -8580,7 +8580,7 @@ User input reference
       
         **Type** ``str``
       
-        **Default** ``Hahnium``
+        **Default** ``Dubnium``
       
        :debye: debye of element
       
@@ -8618,14 +8618,14 @@ User input reference
       
         **Default** ``0.00011186082063``
       
-   :sq: data of element
+   :sg: data of element
   
       :red:`Keywords`
        :vdw-radius: radius of element
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -8649,7 +8649,7 @@ User input reference
       
         **Type** ``str``
       
-        **Default** ``Sq``
+        **Default** ``Sg``
       
        :bpt: bpt of element
       
@@ -8717,14 +8717,14 @@ User input reference
       
         **Default** ``0.00011198926979``
       
-   :ns: data of element
+   :bh: data of element
   
       :red:`Keywords`
        :vdw-radius: radius of element
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -8748,7 +8748,7 @@ User input reference
       
         **Type** ``str``
       
-        **Default** ``Ns``
+        **Default** ``Bh``
       
        :bpt: bpt of element
       
@@ -8778,7 +8778,7 @@ User input reference
       
         **Type** ``str``
       
-        **Default** ``Nielsbohrium``
+        **Default** ``Bohrium``
       
        :debye: debye of element
       
@@ -8823,7 +8823,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -8922,7 +8922,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9021,7 +9021,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9120,7 +9120,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9219,7 +9219,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``0.0``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9318,7 +9318,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.7``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9417,7 +9417,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.67``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9516,7 +9516,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.64``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9615,7 +9615,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.62``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9714,7 +9714,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.59``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9813,7 +9813,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.56``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -9912,7 +9912,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.54``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10011,7 +10011,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.51``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10110,7 +10110,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.49``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10209,7 +10209,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.47``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10308,7 +10308,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.45``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10407,7 +10407,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.42``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10506,7 +10506,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.4``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10605,7 +10605,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.25``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10704,7 +10704,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.16``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10803,7 +10803,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.14``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -10902,7 +10902,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.11``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11001,7 +11001,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.08``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11100,7 +11100,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.05``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11199,7 +11199,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``3.02``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11298,7 +11298,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.99``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11397,7 +11397,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.97``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11496,7 +11496,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.95``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11595,7 +11595,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.92``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11694,7 +11694,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.9``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11793,7 +11793,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.87``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11892,7 +11892,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.85``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       
@@ -11991,7 +11991,7 @@ User input reference
       
         **Type** ``float``
       
-        **Default** ``2.82``
+        **Default** ``-1.0``
       
        :covalent: covalent value element
       

@@ -319,8 +319,14 @@ class MoleculeValidator:
 
         # the centers of the spheres are the same as the atoms
         if self.cavity_mode == "atoms":
+            
+            def radiusNotFound(x): # This raises an exception in the list comprehension if the radius is not valid.
+                raise ValueError("The vdw-radius of element {x} is not defined in the mantina set".format(x))
+            
+            
             coords = deepcopy(self.atomic_coords)
-            radii = [self.user_dict["Elements"][x.lower()]["vdw-radius"] for x in self.atomic_symbols]
+            # fetches mantina radii from the template.yml file for each atom x. If the radius is negative, it means it is not defined in the mantina set and it raises an exception.
+            radii = [self.user_dict["Elements"][x.lower()]["vdw-radius"] if (self.user_dict["Elements"][x.lower()]["vdw-radius"] > 0.0) else radiusNotFound(x) for x in self.atomic_symbols ]
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)

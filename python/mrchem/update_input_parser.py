@@ -100,16 +100,11 @@ def update_periodic_table():
             symbol = vals[4]
         
         context = qcel.VanderWaalsRadii("MANTINA2009")
-        aa2bohr = qcel.constants.conversion_factor("angstrom", "bohr")
         
         if (ele.lower() == "h"):
-            radius = 1.2*aa2bohr
+            radius = 1.2
         else:   
-            try:
-                radius = qcel.vdwradii.get(ele)
-            except:
-                #FIXME this is a hack for the elements which have no radius data in the mantina set
-                radius = vals[0]
+            radius = qcel.vdwradii.get(ele, units='angstrom', missing=-1.0)
         
         element_dict = {"name": name,
                         "docstring": "data of element",
