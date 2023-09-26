@@ -96,6 +96,7 @@ def update_periodic_table():
         context = qcel.VanderWaalsRadii("MANTINA2009")
 
         if ele.lower() == "h":
+           # these vdw radii are used with a continuum solvation model and 1.2 AA for hydrogen is more appropriate than the default
             radius = 1.2
         else:
             radius = qcel.vdwradii.get(ele, units="angstrom", missing=-1.0)
