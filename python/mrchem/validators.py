@@ -52,7 +52,9 @@ class MoleculeValidator:
     ERROR_MESSAGE_CAVITY_COORDINATES = (
         lambda self, details: f"ABORT: INVALID CAVITY COORDINATES: {details}"
     )
-    ERROR_MESSAGE_CAVITY_RADII = lambda self, details: f"ABORT: INVALID CAVITY RADII: {details}"
+    ERROR_MESSAGE_CAVITY_RADII = (
+        lambda self, details: f"ABORT: INVALID CAVITY RADII: {details}"
+    )
     ERROR_MESSAGE_CAVITY_ALPHAS = (
         lambda self, details: f"ABORT: INVALID CAVITY SCALING FACTORS: {details}"
     )
@@ -70,7 +72,9 @@ class MoleculeValidator:
     ERROR_UNPHYSICAL_MULTIPLICITY = (
         lambda self, details: f"ABORT: UNPHYSICAL MULTIPLICITY: {details}"
     )
-    ERROR_UNPHYSICAL_CHARGE = lambda self, details: f"ABORT: UNPHYSICAL CHARGE: {details}"
+    ERROR_UNPHYSICAL_CHARGE = (
+        lambda self, details: f"ABORT: UNPHYSICAL CHARGE: {details}"
+    )
 
     ERROR_RESTRICTED_OPEN_SHELL = "ABORT: Restricted open-shell not implemented"
 
@@ -163,7 +167,9 @@ class MoleculeValidator:
         """Convert nuclear coordinates from JSON syntax to program syntax."""
         return [
             {"atom": label, "xyz": coord, "r_rms": rms}
-            for label, coord, rms in zip(self.atomic_symbols, self.atomic_coords, self.atomic_rms)
+            for label, coord, rms in zip(
+                self.atomic_symbols, self.atomic_coords, self.atomic_rms
+            )
         ]
 
     def get_cavity_in_program_syntax(self):
@@ -217,7 +223,9 @@ class MoleculeValidator:
         p_with_symbol = re.compile(atom_with_symbol)
         p_with_number = re.compile(atom_with_number)
 
-        lines = [x.strip() for x in self.coords_raw.strip().splitlines() if x != ""]
+        lines = [
+            x.strip() for x in self.coords_raw.strip().splitlines() if x != ""
+        ]
         # Parse coordinates
         coords = []
         labels = []
@@ -323,7 +331,7 @@ class MoleculeValidator:
             def radiusNotFound(x):
                 # This raises an exception in the list comprehension if the radius is not valid.
                 raise ValueError(
-                    "The vdw-radius of element {x} is not defined in the mantina set".format(x)
+                    f"The vdw-radius of element {x} is not defined in the mantina set"
                 )
 
             coords = deepcopy(self.atomic_coords)
@@ -350,7 +358,9 @@ class MoleculeValidator:
         # Parse spheres
         bad_spheres = []
 
-        lines = [x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""]
+        lines = [
+            x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""
+        ]
         for sphere in lines:
             p_match = p.match(sphere)
             q_match = q.match(sphere)
@@ -410,7 +420,11 @@ class MoleculeValidator:
                     )
                 )
                 betas.append(
-                    (float(q_match.group("beta")) if q_match.group("beta") else self.cavity_beta)
+                    (
+                        float(q_match.group("beta"))
+                        if q_match.group("beta")
+                        else self.cavity_beta
+                    )
                 )
                 sigmas.append(
                     (
@@ -431,10 +445,17 @@ class MoleculeValidator:
             )
 
         # Check for negative or zero radii
-        invalid_radii = {i: r for i, r in enumerate(radii) if ((r < 0) or math.isclose(r, 0.0))}
+        invalid_radii = {
+            i: r
+            for i, r in enumerate(radii)
+            if ((r < 0) or math.isclose(r, 0.0))
+        }
         if invalid_radii:
             invalid = "\n".join(
-                [f"Sphere {i} has invalid radius {r}" for i, r in invalid_radii.items()]
+                [
+                    f"Sphere {i} has invalid radius {r}"
+                    for i, r in invalid_radii.items()
+                ]
             )
             raise RuntimeError(
                 self.ERROR_MESSAGE_CAVITY_RADII(
@@ -443,10 +464,17 @@ class MoleculeValidator:
             )
 
         # Check for negative or zero scaling factors
-        invalid_alphas = {i: a for i, a in enumerate(alphas) if ((a < 0) or math.isclose(a, 0.0))}
+        invalid_alphas = {
+            i: a
+            for i, a in enumerate(alphas)
+            if ((a < 0) or math.isclose(a, 0.0))
+        }
         if invalid_alphas:
             invalid = "\n".join(
-                [f"Sphere {i} has invalid radius {a}" for i, a in invalid_alphas.items()]
+                [
+                    f"Sphere {i} has invalid radius {a}"
+                    for i, a in invalid_alphas.items()
+                ]
             )
             raise RuntimeError(
                 self.ERROR_MESSAGE_CAVITY_ALPHAS(
@@ -477,11 +505,15 @@ class MoleculeValidator:
 
         # Print warnings and raise exception if necessary
         if warning_pairs:
-            msg = self.WARNING_MESSAGE_NUCLEAR_SINGULARITY("\n\n".join(warning_pairs))
+            msg = self.WARNING_MESSAGE_NUCLEAR_SINGULARITY(
+                "\n\n".join(warning_pairs)
+            )
             print(msg)
 
         if error_pairs:
-            msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY("\n\n".join(error_pairs))
+            msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY(
+                "\n\n".join(error_pairs)
+            )
             raise RuntimeError(msg)
 
     def check_for_invalid_electronic_configuration(self):
@@ -525,7 +557,9 @@ class MoleculeValidator:
 
     def translate_com_to_origin(self):
         """Translate center of mass to the origin (in-place)."""
-        masses = [PeriodicTable[label.lower()].mass for label in self.atomic_symbols]
+        masses = [
+            PeriodicTable[label.lower()].mass for label in self.atomic_symbols
+        ]
         M = sum(masses)
 
         # Compute center of mass
@@ -550,7 +584,10 @@ class MoleculeValidator:
 
     def ang2bohr_array(self, coords):
         """Convert List[List[float]] from angstrom to bohr."""
-        return [[c * self.pc["angstrom2bohrs"] for c in element] for element in coords]
+        return [
+            [c * self.pc["angstrom2bohrs"] for c in element]
+            for element in coords
+        ]
 
     def ang2bohr_vector(self, vec):
         """Convert List[float] from angstrom to bohr"""

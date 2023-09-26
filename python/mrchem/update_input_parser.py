@@ -52,7 +52,9 @@ def update_constants():
     new = {
         "keywords": template["keywords"],
         "sections": [
-            section for section in template["sections"] if section["name"] != "Constants"
+            section
+            for section in template["sections"]
+            if section["name"] != "Constants"
         ],
     }
 
@@ -77,11 +79,17 @@ def update_periodic_table():
 
     new = {
         "keywords": template["keywords"],
-        "sections": [section for section in template["sections"] if section["name"] != "Elements"],
+        "sections": [
+            section for section in template["sections"] if section["name"] != "Elements"
+        ],
     }
 
     # Build new Periodic table Section
-    Elements = {"name": "Elements", "sections": [], "docstring": "list of elements with data"}
+    Elements = {
+        "name": "Elements",
+        "sections": [],
+        "docstring": "list of elements with data",
+    }
     for ele, vals in pt.PeriodicTableByName.items():
         if (ele.lower() == "none") or ((ele.lower() == "x") or (ele.lower() == "q")):
             continue
@@ -170,7 +178,12 @@ def update_periodic_table():
                     "docstring": "debye of element",
                     "type": "float",
                 },
-                {"name": "a", "default": vals[11], "docstring": "a of element", "type": "float"},
+                {
+                    "name": "a",
+                    "default": vals[11],
+                    "docstring": "a of element",
+                    "type": "float",
+                },
                 {
                     "name": "crystal",
                     "default": str(vals[12]),
