@@ -26,6 +26,7 @@
 #pragma once
 
 #include "Cavity.h"
+#include "ShiftFunction.h"
 #include "utils/print_utils.h"
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Printer>
@@ -46,7 +47,7 @@ namespace mrchem {
 
 class Cavity;
 
-class Permittivity final : public mrcpp::RepresentableFunction<3> {
+class Permittivity final : public ShiftFunction {
 public:
     /** @brief Standard constructor. Initializes the #cavity, #epsilon_in and #epsilon_out with the input parameters.
      *  @param cavity interlocking spheres of Cavity class.
@@ -64,42 +65,14 @@ public:
      */
     double evalf(const mrcpp::Coord<3> &r) const override;
 
-    /** @brief Changes the value of #inverse. */
     void flipFunction(bool is_inverse) { this->inverse = is_inverse; }
-
-    /** @brief Returns the current state of #inverse. */
     auto isInverse() const { return this->inverse; }
 
-    /** @brief Calls the Cavity::getCoordinates() method of the #cavity instance. */
-    auto getCoordinates() const { return this->cavity.getCoordinates(); }
-
-    /** @brief Calls the Cavity::getRadii() method of the #cavity instance. */
-    auto getRadii() const { return this->cavity.getRadii(); }
-
-    /** @brief Calls the Cavity::getGradVector() method of the #cavity instance. */
-    auto getGradVector() const { return this->cavity.getGradVector(); }
-
-    /** @brief Returns the value of #epsilon_in. */
-    auto getEpsIn() const { return this->epsilon_in; }
-
-    /** @brief Returns the value of #epsilon_out. */
-    auto getEpsOut() const { return this->epsilon_out; }
-
-    /** @brief Returns the cavity */
-    Cavity getCavity() const { return this->cavity; }
-
-    /** @brief Returns the formulation */
-    std::string getFormulation() const { return this->formulation; }
-
-    /** @brief Print parameters */
-    void printParameters() const;
+    void printHeader() const;
 
 private:
-    bool inverse = false;    //!< State of #evalf
-    double epsilon_in;       //!< Dielectric constant describing the permittivity of free space.
-    double epsilon_out;      //!< Dielectric constant describing the permittivity of the solvent.
-    std::string formulation; //!< Formulation of the permittivity function, only exponential is used as of now.
-    Cavity cavity;           //!< A Cavity class instance.
+    bool inverse = false; //!< State of #evalf. When this is false, evalf returns the standard value, but when it is true,
+                          //!< evalf returns 1/epsilon.
 };
 
 } // namespace mrchem

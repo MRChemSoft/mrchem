@@ -1,0 +1,85 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include "Cavity.h"
+#include "utils/print_utils.h"
+#include <MRCPP/MWFunctions>
+#include <MRCPP/Printer>
+
+namespace mrchem {
+/** @class ShiftFunction
+ *
+ * @brief ShiftFunction function related to a Cavity function.
+ * The ShiftFunction class represents the following equation
+ * \f[
+ *   S(\mathbf{r}) = \begin{cases} S_{in} & \text{if } \mathbf{r} inside C \\
+ *                     S_{out} & \text{if } \mathbf{r} outside C
+ * \end{cases}
+ * \f]
+ * where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$ C \f$ is the #cavity function,
+ * and \f$S_{in}\f$ and \f$ S_{out} \f$ are the values of the function inside and outside the #cavity respectively.
+ */
+
+class Cavity;
+
+class ShiftFunction : public mrcpp::RepresentableFunction<3> {
+public:
+    /** @brief Standard constructor. Initializes the #cavity, #in and #out with the input parameters.
+     *  @param cavity interlocking spheres of Cavity class.
+     *  @param epsilon_in permittivity inside the #cavity.
+     *  @param epsilon_out permittivity outside the #cavity.
+     * available as of now.
+     */
+    ShiftFunction(const Cavity cavity, double val_in, double val_out);
+
+    /** @brief Evaluates ShiftFunction at a point in 3D space.
+     *  @param r coordinates of a 3D point in space.
+     *  @return double type value at the point.
+     */
+    double evalf(const mrcpp::Coord<3> &r) const override;
+
+    auto getCoordinates() const { return this->cavity.getCoordinates(); }
+    auto getRadii() const { return this->cavity.getRadii(); }
+    auto getGradVector() const { return this->cavity.getGradVector(); }
+    auto getValueIn() const { return this->in; }
+    auto getValueOut() const { return this->out; }
+
+    auto getFormulation() const { return this->formulation; }
+
+    Cavity getCavity() const { return this->cavity; }
+
+    void printParameters() const;
+    void printHeader() const;
+
+protected:
+    double in;                            //!< Value of the function inside the #cavity.
+    double out;                           //!< value of the function outside the #cavity.
+    std::string formulation = "standard"; //!< Formula/equation/algorithm used for shifting values.
+    Cavity cavity;                        //!< A Cavity class instance.
+};
+
+} // namespace mrchem
