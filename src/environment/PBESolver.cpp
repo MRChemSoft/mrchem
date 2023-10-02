@@ -48,43 +48,54 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-PBESolver::PBESolver(Permittivity e,
-                     DHScreening k,
-                     const Nuclei &N,
-                     PoissonOperator_p P,
-                     DerivativeOperator_p D,
-                     double orb_prec,
+PBESolver::PBESolver(const Permittivity &e,
+                     const DHScreening &k,
+                     const Density &rho_nuc,
+                     std::shared_ptr<mrcpp::PoissonOperator> P,
+                     std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
                      int kain_hist,
                      int max_iter,
-                     bool acc_pot,
                      bool dyn_thrs,
-                     std::string density_type)
-        : GPESolver(e, N, P, D, orb_prec, kain_hist, max_iter, acc_pot, dyn_thrs, density_type)
-        , do_static_salt(false)
-        , kappa(false) {
-    mrcpp::cplxfunc::project(this->kappa, k, NUMBER::Real, this->apply_prec);
-}
+                     const std::string &density_type)
+        : GPESolver(e, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type)
+        , kappa(k) {}
 
-void PBESolver::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
-    auto d_V = mrcpp::gradient(*derivative, potential.real());
-    resetComplexFunction(out_gamma);
-    mrcpp::dot(this->apply_prec, out_gamma.real(), d_V, this->d_cavity);
-    out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * mrcpp::pi)));
-    mrcpp::clear(d_V, true);
-    computePBTerm(potential, 1.0);
-    mrcpp::cplxfunc::add(out_gamma, 1.0, out_gamma, -1.0, this->pbe_term, -1.0); // this adds the PB term to the gamma
-}
-
-// TODO separate this for the linear and non-linear solver
-void PBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot,
-                              double salt_factor) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
+void PBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) {
+    // create a lambda function for the sinh(V) term and multiply it with kappa and salt factor to get the PB term
     auto sinh_f = [salt_factor](const double &V) { return (salt_factor / (4.0 * mrcpp::pi)) * std::sinh(V); };
-    resetComplexFunction(this->pbe_term);
+    resetComplexFunction(pb_term);
     mrcpp::ComplexFunction sinhV;
     sinhV.alloc(NUMBER::Real);
     mrcpp::map(this->apply_prec / 100, sinhV.real(), V_tot.real(), sinh_f);
 
-    mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, sinhV, this->apply_prec);
+    mrcpp::cplxfunc::multiply(pb_term, this->kappa, sinhV, this->apply_prec);
+}
+
+void PBESolver::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
+
+    auto d_V = mrcpp::gradient(*derivative, potential.real()); // FunctionTreeVector
+    resetComplexFunction(out_gamma);
+
+    for (int d = 0; d < 3; d++) {
+        mrcpp::AnalyticFunction<3> d_cav(this->epsilon.getGradVector()[d]);
+        mrcpp::ComplexFunction cplxfunc_prod;
+        mrcpp::cplxfunc::multiply(cplxfunc_prod, get_func(d_V, d), d_cav, this->apply_prec, 1);
+        // add result into out_gamma
+        if (d == 0) {
+            mrcpp::cplxfunc::deep_copy(out_gamma, cplxfunc_prod);
+        } else {
+            out_gamma.add(1.0, cplxfunc_prod);
+        }
+    }
+
+    out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * mrcpp::pi)));
+    mrcpp::clear(d_V, true);
+
+    // add PB term
+    mrcpp::ComplexFunction pb_term;
+    auto salt_factor = 1.0; // placeholder for now, want to change it wrt to convergence in future
+    computePBTerm(potential, salt_factor, pb_term);
+    out_gamma.add(-1.0, pb_term);
 }
 
 } // namespace mrchem

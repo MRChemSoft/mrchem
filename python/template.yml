@@ -973,7 +973,7 @@ sections:
                   response reaction field. Defaults to false.
       - name: D_H_screening
         docstring: |
-          Parameters for the debye-huckel screening factor
+          Parameters for the Debye-Huckel screening factor
         keywords:
           - name: ion_strength
             type: float

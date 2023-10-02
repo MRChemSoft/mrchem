@@ -59,7 +59,6 @@ public:
     ~GPESolver();
 
     double setConvergenceThreshold(double prec);
-    void setStaticSalt();
 
     Permittivity &getPermittivity() { return this->epsilon; }
 
@@ -86,11 +85,14 @@ private:
     double mo_residual{1.0};
 
     Permittivity epsilon;
-    DHScreening kappa;
 
     Density rho_nuc; // As of right now, this is the biggest memory hog.
     // Alternative could be to precompute its contributions, as a potential is not as heavy as a density (maybe)
     // another one could be to define a representable function which only has the exact analytical form of the nuclear contribution.
+    // Since we already have \nabla^2 V_nuc = -4*pi*rho_nuc (nuclear potential) we could use this as a way to bypass computing rho_nuc at all
+    // Same with the coulomb potential, which is basically what is left from V_vac after subtracting V_nuc. in one way we could just precompute both and
+    // just iterate through V_R only. Only issue here is (1 -1\varepsilon)/\varepsilon * \rho_nuc as I am not sure how to represent this as an analytitcal function,
+    // maybe after applying the Poisson operator?
 
     mrcpp::ComplexFunction Vr_n;
 
@@ -98,8 +100,7 @@ private:
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
 
     void computeDensities(const Density &rho_el, Density &rho_out);
-    void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
-    void computePBTerm(mrcpp::ComplexFunction &V_tot);
+    virtual void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
 
     mrcpp::ComplexFunction solvePoissonEquation(const mrcpp::ComplexFunction &ingamma, const Density &rho_el);
 

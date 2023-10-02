@@ -166,9 +166,9 @@ void GPESolver::runMicroIterations(const mrcpp::ComplexFunction &V_vac, const De
 
     mrcpp::print::separator(3, '-');
     auto update = 10.0, norm = 1.0;
-    auto salt_factor = 0.0;
+
     auto iter = 1;
-    for (; iter <= max_iter; iter++) {
+    while (update >= this->conv_thrs && iter <= max_iter) {
         Timer t_iter;
         // solve the poisson equation
         mrcpp::ComplexFunction V_tot;
@@ -256,7 +256,7 @@ mrcpp::ComplexFunction &SCRF::iterateEquation(double prec, const Density &rho_el
     // update the potential/gamma before doing anything with them
 
     Timer t_scrf;
-    nestedSCRF(V_vac, rho_el);
+    runMicroIterations(V_vac, rho_el);
     print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
     return this->Vr_n;
 }
@@ -291,7 +291,7 @@ void GPESolver::printParameters() const {
 
     nlohmann::json data = {
         {"Method                ", "GPE Solver"},
-        {"Optimizer             ", "Potential"},
+        {"Density               ", this->density_type},
         {"Max iterations        ", max_iter},
         {"KAIN solver           ", o_kain.str()},
         {"Density type          ", density_type},

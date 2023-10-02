@@ -37,6 +37,7 @@
       "coords": [
         {
           "atom": "h",
+          "r_rms": 2.6569547399e-05,
           "xyz": [
             0.0,
             0.0,
@@ -90,27 +91,26 @@
           "derivative": "abgv_55"
         },
         "nuclear_operator": {
+          "nuclear_model": "point_like",
           "proj_prec": 0.0001,
           "shared_memory": false,
           "smooth_prec": 0.0001
         },
         "reaction_operator": {
-          "Poisson_Boltzmann": {
-            "formulation": "variable",
-            "ion_radius": 0.0,
-            "ion_width": 0.2,
-            "kappa_out": 0.12308228023176634,
-            "solver_type": "standard"
-          },
+          "DHS-formulation": "variable",
           "density_type": "total",
           "dynamic_thrs": false,
           "epsilon_in": 1.0,
           "epsilon_out": 78.4,
           "formulation": "exponential",
+          "ion_radius": 0.0,
+          "ion_width": 0.2,
           "kain": 6,
+          "kappa_out": 0.08703231499578493,
           "max_iter": 100,
           "optimizer": "potential",
-          "poisson_prec": 0.0001
+          "poisson_prec": 0.0001,
+          "solver_type": "Poisson-Boltzmann"
         },
         "xc_operator": {
           "shared_memory": false,
@@ -146,8 +146,8 @@
         "relativity": "None",
         "restricted": true,
         "screen": 12.0,
-        "type": "sad",
-        "zeta": 2
+        "type": "sad_gto",
+        "zeta": 0
       },
       "properties": {
         "dipole_moment": {
@@ -176,7 +176,7 @@
       "charge": -1,
       "dipole_moment": {
         "dip-1": {
-          "magnitude": 7.710581487532769e-13,
+          "magnitude": 8.178389190662256e-13,
           "r_O": [
             0.0,
             0.0,
@@ -212,7 +212,7 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -0.171971928226332
+          0.1290941786439686
         ],
         "occupation": [
           2.0
@@ -220,50 +220,50 @@
         "spin": [
           "p"
         ],
-        "sum_occupied": -0.343943856452664
+        "sum_occupied": 0.2581883572879372
       },
       "scf_energy": {
-        "E_ee": 1.162377364520002,
+        "E_ee": 1.2202803481939726,
         "E_eext": 0.0,
-        "E_el": -0.8356257197935565,
-        "E_en": -1.9004786200458028,
-        "E_kin": 0.9083261513154404,
+        "E_el": -0.5390891099372306,
+        "E_en": -1.9145538948639573,
+        "E_kin": 0.9258603759485265,
         "E_next": 0.0,
         "E_nn": 0.0,
-        "E_nuc": 0.1982834771964295,
-        "E_tot": -0.637342242597127,
-        "E_x": -0.14529540793504403,
-        "E_xc": -0.4702184715679499,
-        "Er_el": -0.3903367360802021,
-        "Er_nuc": 0.1982834771964295,
-        "Er_tot": -0.1920532588837726
+        "E_nuc": 0.06716715447320754,
+        "E_tot": -0.47192195546402305,
+        "E_x": -0.15252084470528898,
+        "E_xc": -0.4885331476130986,
+        "Er_el": -0.12962194689738485,
+        "Er_nuc": 0.06716715447320754,
+        "Er_tot": -0.06245479242417761
       }
     },
     "provenance": {
       "creator": "MRChem",
       "mpi_processes": 1,
-      "nthreads": 12,
+      "nthreads": 8,
       "routine": "mrchem.x",
-      "total_cores": 12,
+      "total_cores": 8,
       "version": "1.2.0-alpha"
     },
     "rsp_calculations": null,
     "scf_calculation": {
       "initial_energy": {
-        "E_ee": 1.162377364520002,
+        "E_ee": 1.2202803481939726,
         "E_eext": 0.0,
-        "E_el": -0.8356257197935565,
-        "E_en": -1.9004786200458028,
-        "E_kin": 0.9083261513154404,
+        "E_el": -0.5390891099372306,
+        "E_en": -1.9145538948639573,
+        "E_kin": 0.9258603759485265,
         "E_next": 0.0,
         "E_nn": 0.0,
-        "E_nuc": 0.1982834771964295,
-        "E_tot": -0.637342242597127,
-        "E_x": -0.14529540793504403,
-        "E_xc": -0.4702184715679499,
-        "Er_el": -0.3903367360802021,
-        "Er_nuc": 0.1982834771964295,
-        "Er_tot": -0.1920532588837726
+        "E_nuc": 0.06716715447320754,
+        "E_tot": -0.47192195546402305,
+        "E_x": -0.15252084470528898,
+        "E_xc": -0.4885331476130986,
+        "Er_el": -0.12962194689738485,
+        "Er_nuc": 0.06716715447320754,
+        "Er_tot": -0.06245479242417761
       },
       "success": true
     },

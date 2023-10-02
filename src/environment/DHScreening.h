@@ -50,7 +50,7 @@ public:
      *  @param formulation Decides which formulation of the #DHScreening function to implement, only continuous screening function available
      * available as of now.
      */
-    DHScreening(const Cavity cavity_ion, double kappa_out, std::string formulation);
+    DHScreening(const Cavity & cavity_ion, double kappa_out, const std::string & formulation);
 
     /** @brief Evaluates DHScreening at a point in 3D space with respect to the state of #inverse.
      *  @param r coordinates of a 3D point in space.

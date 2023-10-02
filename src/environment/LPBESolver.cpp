@@ -49,11 +49,10 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 namespace mrchem {
 
 // TODO separate this for the linear and non-linear solver
-void LPBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot,
-                               double salt_factor) { // make a lambda function which evaluates std::sinh(V_tot) and multiplies it with this->kappa for the poisson-boltzmann equation
-    resetComplexFunction(this->pbe_term);
-    mrcpp::cplxfunc::multiply(this->pbe_term, this->kappa, V_tot, this->apply_prec);
-    this->pbe_term.rescale(salt_factor);
+void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) {
+    resetComplexFunction(pb_term);
+    mrcpp::cplxfunc::multiply(pb_term, this->kappa, V_tot, this->apply_prec);
+    pbe_term.rescale(salt_factor);
 }
 
 } // namespace mrchem

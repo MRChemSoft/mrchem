@@ -12,9 +12,9 @@
 ***         VERSION            1.2.0-alpha                              ***
 ***                                                                     ***
 ***         Git branch         pb-solvation                             ***
-***         Git commit hash    1899766578f61c326cf7-dirty               ***
+***         Git commit hash    0608bccb3e71737b2169                     ***
 ***         Git commit author  Gabriel Gerez                            ***
-***         Git commit date    Fri May 26 14:14:51 2023 +0200           ***
+***         Git commit date    Tue Oct 3 15:39:21 2023 +0200            ***
 ***                                                                     ***
 ***         Contact: luca.frediani@uit.no                               ***
 ***                                                                     ***
@@ -29,8 +29,8 @@
 ---------------------------------------------------------------------------
 
  MPI processes           :       (no bank)                               1
- OpenMP threads          :                                              12
- Total cores             :                                              12
+ OpenMP threads          :                                               8
+ Total cores             :                                               8
                                                                            
 ---------------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  Git commit date       : Tue Feb 21 15:21:15 2023 +0100
 
  Linear algebra        : EIGEN v3.4.0
- Parallelization       : OpenMP (12 threads)
+ Parallelization       : OpenMP (8 threads)
 
 ---------------------------------------------------------------------------
 
@@ -113,9 +113,9 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ===========================================================================
               Square of the Debye-Huckel screening parameter
 ---------------------------------------------------------------------------
- Formulation             :                                        variable
+ Formulation             :                                     exponential
  Screening function value:            (in)                        0.000000
-                         :           (out)                        0.123082
+                         :           (out)                        0.087032
 ---------------------------------------------------------------------------
     N      R_0 Sigma      Radius         x         y         z
 ---------------------------------------------------------------------------
@@ -123,7 +123,6 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ===========================================================================
 
 
-Setting kappa
                                                                            
 ***************************************************************************
 ***                                                                     ***
@@ -139,8 +138,7 @@ Setting kappa
  Screening               : 1.20000e+01 StdDev
  Restricted              : True
  Functional              : LDA (SVWN5)
- AO basis                : Hydrogenic orbitals
- Zeta quality            : 2
+ AO basis                : 3-21G
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
@@ -153,7 +151,7 @@ Setting kappa
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                            Norm
 ---------------------------------------------------------------------------
-    0    2    p          :                              1.000000000000e+00
+    0    2    p          :                              9.999999944384e-01
 ===========================================================================
 
 
@@ -168,128 +166,27 @@ Setting kappa
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-apply prec 1.000000e-03
-conv thrs 1.000000e-03
-difference between them 0.000000e+00
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-salt factor: 0.000000e+00
-Solving PB equation
-updating salt factor to: 1.000000e-01
-salt factor: 1.000000e-01
-Solving PB equation
-salt factor: 1.000000e-01
-Solving PB equation
-salt factor: 1.000000e-01
-Solving PB equation
-updating salt factor to: 2.000000e-01
-salt factor: 2.000000e-01
-Solving PB equation
-salt factor: 2.000000e-01
-Solving PB equation
-salt factor: 2.000000e-01
-Solving PB equation
-updating salt factor to: 3.000000e-01
-salt factor: 3.000000e-01
-Solving PB equation
-salt factor: 3.000000e-01
-Solving PB equation
-salt factor: 3.000000e-01
-Solving PB equation
-salt factor: 3.000000e-01
-Solving PB equation
-salt factor: 3.000000e-01
-Solving PB equation
-salt factor: 3.000000e-01
-Solving PB equation
-salt factor: 3.000000e-01
-Solving PB equation
-updating salt factor to: 4.000000e-01
-salt factor: 4.000000e-01
-Solving PB equation
-salt factor: 4.000000e-01
-Solving PB equation
-salt factor: 4.000000e-01
-Solving PB equation
-updating salt factor to: 5.000000e-01
-salt factor: 5.000000e-01
-Solving PB equation
-salt factor: 5.000000e-01
-Solving PB equation
-salt factor: 5.000000e-01
-Solving PB equation
-salt factor: 5.000000e-01
-Solving PB equation
-updating salt factor to: 6.000000e-01
-salt factor: 6.000000e-01
-Solving PB equation
-updating salt factor to: 7.000000e-01
-salt factor: 7.000000e-01
-Solving PB equation
-updating salt factor to: 8.000000e-01
-salt factor: 8.000000e-01
-Solving PB equation
-updating salt factor to: 9.000000e-01
-salt factor: 9.000000e-01
-Solving PB equation
-salt factor: 9.000000e-01
-Solving PB equation
-salt factor: 9.000000e-01
-Solving PB equation
-updating salt factor to: 1.000000e+00
-salt factor: 1.000000e+00
-Solving PB equation
-salt factor: 1.000000e+00
-Solving PB equation
-salt factor: 1.000000e+00
-Solving PB equation
-salt factor: 1.000000e+00
-Solving PB equation
-salt factor: 1.000000e+00
-Solving PB equation
-salt factor: 1.000000e+00
-Solving PB equation
-salt factor: 1.000000e+00
-Solving PB equation
 ===========================================================================
                         Molecular Energy (initial)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  0.908326151315
- E-N energy              :            (au)                 -1.900478620046
- Coulomb energy          :            (au)                  1.162377364520
- Exchange energy         :            (au)                 -0.145295407935
- X-C energy              :            (au)                 -0.470218471568
+ Kinetic energy          :            (au)                  0.925860375949
+ E-N energy              :            (au)                 -1.914553894864
+ Coulomb energy          :            (au)                  1.220280348194
+ Exchange energy         :            (au)                 -0.152520844705
+ X-C energy              :            (au)                 -0.488533147613
  N-N energy              :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Reaction energy (el)    :            (au)                 -0.390336736080
- Reaction energy (nuc)   :            (au)                  0.198283477196
- Reaction energy (tot)   :            (au)                 -0.192053258884
+ Reaction energy (el)    :            (au)                 -0.129621946897
+ Reaction energy (nuc)   :            (au)                  0.067167154473
+ Reaction energy (tot)   :            (au)                 -0.062454792424
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -0.835625719794
- Nuclear energy          :            (au)                  0.198283477196
+ Electronic energy       :            (au)                 -0.539089109937
+ Nuclear energy          :            (au)                  0.067167154473
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -6.373422425971e-01
-                         :      (kcal/mol)             -3.999382954503e+02
-                         :        (kJ/mol)             -1.673341828164e+03
-                         :            (eV)             -1.734296593419e+01
+ Total energy            :            (au)             -4.719219554640e-01
+                         :      (kcal/mol)             -2.961354980720e+02
+                         :        (kJ/mol)             -1.239030923933e+03
+                         :            (eV)             -1.284165060809e+01
 ===========================================================================
 
 
@@ -298,9 +195,9 @@ Solving PB equation
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.171971928226
+    0    2    p          :            (au)                  0.129094178644
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.343943856453
+ Sum occupied            :            (au)                  0.258188357288
 ===========================================================================
 
 
@@ -329,24 +226,24 @@ Solving PB equation
 ===========================================================================
                          Molecular Energy (final)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  0.908326151315
- E-N energy              :            (au)                 -1.900478620046
- Coulomb energy          :            (au)                  1.162377364520
- Exchange energy         :            (au)                 -0.145295407935
- X-C energy              :            (au)                 -0.470218471568
+ Kinetic energy          :            (au)                  0.925860375949
+ E-N energy              :            (au)                 -1.914553894864
+ Coulomb energy          :            (au)                  1.220280348194
+ Exchange energy         :            (au)                 -0.152520844705
+ X-C energy              :            (au)                 -0.488533147613
  N-N energy              :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Reaction energy (el)    :            (au)                 -0.390336736080
- Reaction energy (nuc)   :            (au)                  0.198283477196
- Reaction energy (tot)   :            (au)                 -0.192053258884
+ Reaction energy (el)    :            (au)                 -0.129621946897
+ Reaction energy (nuc)   :            (au)                  0.067167154473
+ Reaction energy (tot)   :            (au)                 -0.062454792424
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -0.835625719794
- Nuclear energy          :            (au)                  0.198283477196
+ Electronic energy       :            (au)                 -0.539089109937
+ Nuclear energy          :            (au)                  0.067167154473
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -6.373422425971e-01
-                         :      (kcal/mol)             -3.999382954503e+02
-                         :        (kJ/mol)             -1.673341828164e+03
-                         :            (eV)             -1.734296593419e+01
+ Total energy            :            (au)             -4.719219554640e-01
+                         :      (kcal/mol)             -2.961354980720e+02
+                         :        (kJ/mol)             -1.239030923933e+03
+                         :            (eV)             -1.284165060809e+01
 ===========================================================================
 
 
@@ -355,9 +252,9 @@ Solving PB equation
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.171971928226
+    0    2    p          :            (au)                  0.129094178644
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.343943856453
+ Sum occupied            :            (au)                  0.258188357288
 ===========================================================================
 
 
@@ -366,7 +263,7 @@ Solving PB equation
 ---------------------------------------------------------------------------
  r_O                     :        0.000000        0.000000        0.000000
 ---------------------------------------------------------------------------
- Electronic vector       :        0.000000        0.000000        0.000000
+ Electronic vector       :       -0.000000        0.000000        0.000000
  Magnitude               :            (au)                        0.000000
                          :         (Debye)                        0.000000
 ---------------------------------------------------------------------------
@@ -386,7 +283,7 @@ Solving PB equation
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  0m 19s                       ***
+***                       Wall time :  0h  0m  6s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            

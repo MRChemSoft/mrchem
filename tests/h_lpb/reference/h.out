@@ -12,9 +12,9 @@
 ***         VERSION            1.2.0-alpha                              ***
 ***                                                                     ***
 ***         Git branch         pb-solvation                             ***
-***         Git commit hash    87690746857de4f327e7-dirty               ***
+***         Git commit hash    0608bccb3e71737b2169                     ***
 ***         Git commit author  Gabriel Gerez                            ***
-***         Git commit date    Fri May 26 14:12:29 2023 +0200           ***
+***         Git commit date    Tue Oct 3 15:39:21 2023 +0200            ***
 ***                                                                     ***
 ***         Contact: luca.frediani@uit.no                               ***
 ***                                                                     ***
@@ -29,8 +29,8 @@
 ---------------------------------------------------------------------------
 
  MPI processes           :       (no bank)                               1
- OpenMP threads          :                                              12
- Total cores             :                                              12
+ OpenMP threads          :                                               8
+ Total cores             :                                               8
                                                                            
 ---------------------------------------------------------------------------
 
@@ -53,7 +53,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  Git commit date       : Tue Feb 21 15:21:15 2023 +0100
 
  Linear algebra        : EIGEN v3.4.0
- Parallelization       : OpenMP (12 threads)
+ Parallelization       : OpenMP (8 threads)
 
 ---------------------------------------------------------------------------
 
@@ -98,20 +98,6 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 
 ===========================================================================
-                       Projecting nuclear potential
----------------------------------------------------------------------------
-    N    Atom                       Charge       Precision       Smoothing
----------------------------------------------------------------------------
-    0       H                 1.000000e+00    1.000000e-04    7.576985e-03
----------------------------------------------------------------------------
- Local potential                   776 nds        16.25 MB        0.03 sec
- Allreduce potential               712 nds        14.91 MB        3.71  ms
----------------------------------------------------------------------------
-                         Wall time: 3.29735e-02 sec
-===========================================================================
-
-
-===========================================================================
                              Solvation Cavity
 ---------------------------------------------------------------------------
  Formulation             :                                     exponential
@@ -127,7 +113,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ===========================================================================
               Square of the Debye-Huckel screening parameter
 ---------------------------------------------------------------------------
- Formulation             :                                        variable
+ Formulation             :                                     exponential
  Screening function value:            (in)                        0.000000
                          :           (out)                        0.087032
 ---------------------------------------------------------------------------
@@ -137,7 +123,6 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ===========================================================================
 
 
-Setting kappa
                                                                            
 ***************************************************************************
 ***                                                                     ***
@@ -153,110 +138,8 @@ Setting kappa
  Screening               : 1.20000e+01 StdDev
  Restricted              : True
  Functional              : LDA (SVWN5)
- AO basis                : Hydrogenic orbitals
- Zeta quality            : 2
+ AO basis                : 3-21G
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-===========================================================================
-                             SAD Initial Guess
----------------------------------------------------------------------------
-===========================================================================
-                       Projecting nuclear potential
----------------------------------------------------------------------------
-    N    Atom                       Charge       Precision       Smoothing
----------------------------------------------------------------------------
-    0       H                 1.000000e+00    1.000000e-03    1.632412e-02
----------------------------------------------------------------------------
- Local potential                   776 nds        16.25 MB        0.02 sec
- Allreduce potential               584 nds        12.23 MB        1.85  ms
----------------------------------------------------------------------------
-                         Wall time: 1.88313e-02 sec
-===========================================================================
-
-
- Projecting nuclear potential               (sec)              5.58691e-02
-===========================================================================
-                          Projecting GTO density
----------------------------------------------------------------------------
-    N    Atom                       Nuclear charge         Electron charge
----------------------------------------------------------------------------
-    0       H                       1.000000000000          0.999996305692
----------------------------------------------------------------------------
- Total charge                       1.000000000000          0.999996305692
----------------------------------------------------------------------------
- Local density                     264 nds         5.53 MB        0.08 sec
- Allreduce density                 264 nds         5.53 MB        1.07  ms
----------------------------------------------------------------------------
-                         Wall time: 8.12206e-02 sec
-===========================================================================
-
-
- Projecting GTO density                     (sec)              8.20361e-02
-===========================================================================
-                          Projecting Hydrogen AOs
----------------------------------------------------------------------------
-    n         Atom  Label            Nodes            Size            Time
----------------------------------------------------------------------------
-    0            H     1s          200 nds         4.19 MB        4.95  ms
-    1            H     2s          136 nds         2.85 MB        3.53  ms
-    2            H     2p           72 nds         1.51 MB        1.96  ms
-    3            H     2p           72 nds         1.51 MB        1.69  ms
-    4            H     2p           72 nds         1.51 MB        1.36  ms
----------------------------------------------------------------------------
-                         Wall time: 1.35491e-02 sec
-===========================================================================
-
-
- Projecting Hydrogen AOs                    (sec)              1.35582e-02
-===========================================================================
-                         Building Coulomb operator
----------------------------------------------------------------------------
- Precision                                  (rel)              1.00000e-03
----------------------------------------------------------------------------
- Compute global potential            8 nds       171.00 kB        0.02 sec
----------------------------------------------------------------------------
-                         Wall time: 1.71210e-02 sec
-===========================================================================
-
-
-===========================================================================
-                           Building XC operator
----------------------------------------------------------------------------
- Precision                                  (rel)              1.00000e-03
----------------------------------------------------------------------------
- Compute rho                       264 nds         5.53 MB        0.00  ms
- Preprocess input                  264 nds         5.53 MB        0.20  ms
- Evaluate functional               528 nds        11.05 MB        0.03 sec
- Postprocess potential             528 nds        11.05 MB        0.40  ms
----------------------------------------------------------------------------
-                         Wall time: 3.54088e-02 sec
-===========================================================================
-
-
- Building Fock operator                     (sec)              5.25505e-02
-===========================================================================
-                         Diagonalizing Fock matrix
----------------------------------------------------------------------------
- Computing overlap matrix                   (sec)              5.52849e-04
- Computing Lowdin matrix                    (sec)              8.72000e-07
----------------------------------------------------------------------------
- <i|p[x]p[x]|j>                    552 nds        11.55 MB        4.80  ms
- <i|p[y]p[y]|j>                    552 nds        11.55 MB        4.79  ms
- <i|p[z]p[z]|j>                    552 nds        11.55 MB        4.74  ms
- <i|V_nuc + J + V_xc|j>            872 nds        18.25 MB        0.08 sec
----------------------------------------------------------------------------
- Computing Fock matrix                      (sec)              9.58439e-02
- Diagonalizing Fock matrix                  (sec)              1.16100e-05
- Rotating orbitals                          (sec)              3.21155e-03
----------------------------------------------------------------------------
-                         Wall time: 3.03188e-01 sec
-===========================================================================
-
-
----------------------------------------------------------------------------
-                         Wall time: 3.03196e-01 sec
-===========================================================================
 
 
 ===========================================================================
@@ -268,10 +151,7 @@ Setting kappa
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                            Norm
 ---------------------------------------------------------------------------
-    0    2    p          :                              1.000000000000e+00
----------------------------------------------------------------------------
- Total MO nodes          :                                             200
- Total MO memory         :            (MB)                            4.19
+    0    2    p          :                              9.999999944384e-01
 ===========================================================================
 
 
@@ -287,451 +167,26 @@ Setting kappa
 
 
 ===========================================================================
-                         Digonalizing Fock matrix
----------------------------------------------------------------------------
- Computing overlap matrix                   (sec)              2.18135e-04
- Computing Lowdin matrix                    (sec)              7.28000e-07
- Diagonalizing matrix                       (sec)              2.92700e-06
- Rotating orbitals                          (sec)              2.62629e-03
----------------------------------------------------------------------------
-                         Wall time: 2.87146e-03 sec
-===========================================================================
-
-
-===========================================================================
-                         Building Coulomb operator
----------------------------------------------------------------------------
- Precision                                  (rel)              1.00000e-03
----------------------------------------------------------------------------
- Compute global density            264 nds         5.53 MB        7.89  ms
- Compute global potential            8 nds       171.00 kB        0.02 sec
----------------------------------------------------------------------------
-                         Wall time: 3.03393e-02 sec
-===========================================================================
-
-
-===========================================================================
-                        Building Exchange operator
----------------------------------------------------------------------------
- Precision                                  (rel)              1.00000e-03
----------------------------------------------------------------------------
- Time receiving orbitals                    (sec)              0.00000e+00
- Time receiving exchanges                   (sec)              0.00000e+00
- Time sending exchanges                     (sec)              0.00000e+00
- Time adding exchanges                      (sec)              0.00000e+00
- Time waiting for others                    (sec)              1.18500e-06
- Time computing exchanges                   (sec)              3.38335e-02
----------------------------------------------------------------------------
- Time diagonal terms                        (sec)              3.38360e-02
- Time off-diagonal terms                    (sec)              6.10200e-06
----------------------------------------------------------------------------
- Average exchange term             200 nds         4.19 MB        0.03 sec
----------------------------------------------------------------------------
-                         Wall time: 3.39399e-02 sec
-===========================================================================
-
-
-===========================================================================
-                           Building XC operator
----------------------------------------------------------------------------
- Precision                                  (rel)              1.00000e-03
----------------------------------------------------------------------------
- Compute rho                       264 nds         5.53 MB        0.01 sec
- Preprocess input                 1056 nds        22.11 MB        3.78  ms
- Evaluate functional              1320 nds        27.63 MB        0.17 sec
- Postprocess potential             528 nds        11.05 MB        6.59  ms
----------------------------------------------------------------------------
-                         Wall time: 1.92852e-01 sec
-===========================================================================
-
-
-===========================================================================
-                        Building Reaction operator
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- Density type            : total 
- Dynamic threshold       : Off 
- KAIN solver             : 6 
- Max iterations          : 100 
- Method                  : SCRF 
- Optimizer               : Potential 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
- Precision                                  (rel)              1.00000e-03
- Threshold                                  (abs)              1.00000e-03
----------------------------------------------------------------------------
- Vacuum density                    584 nds        12.23 MB        0.01 sec
- Vacuum potential                  392 nds         8.21 MB        0.28 sec
-apply prec 1.000000e-03
-conv thrs 1.000000e-03
-difference between them 0.000000e+00
- Initial gamma                    1480 nds        30.98 MB        0.44 sec
----------------------------------------------------------------------------
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   1 :             4.937077698614e+01    1.004303e+02        0.32 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   2 :             9.860142893360e+01    1.479719e+02        0.32 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   3 :             7.602733200113e+01    8.009948e+01        0.32 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   4 :             4.849294747083e+00    4.121288e+00        0.38 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   5 :             1.488426650848e+01    4.118592e-01        0.28 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   6 :             1.882569842679e+01    1.103868e+00        0.34 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   7 :             1.402820080106e+01    4.920938e-02        0.37 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   8 :             1.648179617284e+01    1.027560e+00        0.35 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter   9 :             1.695199380371e+01    1.823545e-01        0.34 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter  10 :             1.681487609790e+01    1.383349e-01        0.35 sec
-salt factor: 0.000000e+00
-Solving PB equation
- Iter  11 :             1.697774257334e+01    2.157339e-03        0.35 sec
-updating salt factor to: 1.000000e-01
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  12 :             1.431181935063e+01    5.788946e-02        0.41 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  13 :             9.921876827004e+00    3.333679e-02        0.40 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  14 :             7.284017508623e+00    3.772405e-01        0.40 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  15 :             8.202228629763e+00    1.427399e+00        0.41 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  16 :             1.106557081760e+01    1.130958e+00        0.35 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  17 :             1.441526058233e+01    1.836603e+00        0.40 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  18 :             1.463046536941e+01    1.208973e-01        0.35 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  19 :             1.740035876589e+01    3.063512e-01        0.35 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  20 :             1.783283878027e+01    7.916088e-01        0.35 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  21 :             1.612539954333e+01    9.798100e-01        0.39 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  22 :             1.510148848267e+01    5.439786e-02        0.36 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  23 :             1.559325822148e+01    1.467921e-01        0.36 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  24 :             1.550190629190e+01    5.046715e-01        0.35 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  25 :             1.601286920350e+01    2.819368e-01        0.34 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  26 :             1.585429049446e+01    3.075565e-02        0.34 sec
-salt factor: 1.000000e-01
-Solving PB equation
- Iter  27 :             1.584299083027e+01    2.875382e-03        0.35 sec
-updating salt factor to: 2.000000e-01
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  28 :             1.475607665466e+01    4.001040e-02        0.40 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  29 :             1.036061975297e+01    4.035558e-02        0.38 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  30 :             1.483833174096e+01    4.155072e-02        0.40 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  31 :             1.047302711315e+01    4.350199e-02        0.38 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  32 :             1.483069872543e+01    5.378087e-02        0.42 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  33 :             1.029742571157e+01    9.056701e-01        0.41 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  34 :             1.170319261250e+01    4.069187e-02        0.36 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  35 :             1.625467511984e+01    6.696207e-02        0.36 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  36 :             1.448937326040e+01    2.805890e-01        0.36 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  37 :             1.557009860880e+01    3.345986e-01        0.36 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  38 :             1.364238328394e+01    6.810551e-02        0.35 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  39 :             1.547029800633e+01    7.022009e-02        0.35 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  40 :             1.531403057958e+01    6.602390e-02        0.35 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  41 :             1.531760082441e+01    1.281888e-02        0.35 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  42 :             1.570088197107e+01    1.345227e-02        0.35 sec
-salt factor: 2.000000e-01
-Solving PB equation
- Iter  43 :             1.553251057990e+01    3.311904e-03        0.35 sec
-updating salt factor to: 3.000000e-01
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  44 :             1.486173877988e+01    3.994081e-02        0.40 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  45 :             1.048388273079e+01    3.994618e-02        0.39 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  46 :             1.486072028647e+01    4.090294e-02        0.46 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  47 :             1.046042328438e+01    4.048485e-02        0.39 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  48 :             1.491052808012e+01    4.165140e-02        0.42 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  49 :             1.041235621797e+01    8.672490e-01        0.41 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  50 :             1.525586373185e+01    2.328619e-01        0.36 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  51 :             1.683755293874e+01    1.195528e-01        0.36 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  52 :             1.777978719194e+01    6.231045e-02        0.35 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  53 :             1.827832227463e+01    4.180560e+00        0.40 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  54 :             8.216363684762e+01    3.821208e+00        0.39 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  55 :             1.485600104189e+01    1.375829e-02        0.35 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  56 :             1.599054231100e+01    2.733024e-01        0.39 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  57 :             1.604040949333e+01    6.084574e-02        0.36 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  58 :             1.509257483663e+01    1.776894e-02        0.36 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  59 :             1.543568913605e+01    2.664879e-02        0.37 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  60 :             1.540026235657e+01    2.920269e-01        0.35 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  61 :             1.524692820604e+01    2.338441e-01        0.38 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  62 :             1.542677720531e+01    5.928366e-02        0.35 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  63 :             1.517851347090e+01    3.851664e-02        0.35 sec
-salt factor: 3.000000e-01
-Solving PB equation
- Iter  64 :             1.540580056508e+01    1.221372e-03        0.36 sec
-updating salt factor to: 4.000000e-01
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  65 :             1.490338986834e+01    3.617153e-02        0.41 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  66 :             1.068940105627e+01    3.937396e-02        0.39 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  67 :             1.492472257863e+01    4.179250e-02        0.41 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  68 :             1.064442007897e+01    4.171339e-02        0.38 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  69 :             1.498355401815e+01    4.033543e-01        0.40 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  70 :             1.243858951735e+01    2.462977e-01        0.37 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  71 :             1.050165484655e+01    2.373481e-01        0.37 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  72 :             1.574625046495e+01    3.020219e-01        0.36 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  73 :             1.409552001610e+01    2.314465e-02        0.35 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  74 :             1.482536466807e+01    6.730283e-02        0.35 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  75 :             1.803372594922e+01    8.910385e-02        0.38 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  76 :             1.538071426934e+01    5.222373e-02        0.37 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  77 :             1.527213521864e+01    8.470978e-02        0.39 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  78 :             1.502319803776e+01    1.584347e-02        0.36 sec
-salt factor: 4.000000e-01
-Solving PB equation
- Iter  79 :             1.526883203046e+01    7.405301e-03        0.36 sec
-updating salt factor to: 5.000000e-01
-salt factor: 5.000000e-01
-Solving PB equation
- Iter  80 :             1.489762093879e+01    3.100715e-02        0.41 sec
-salt factor: 5.000000e-01
-Solving PB equation
- Iter  81 :             1.113651246474e+01    3.108544e-02        0.40 sec
-salt factor: 5.000000e-01
-Solving PB equation
- Iter  82 :             1.491634210034e+01    2.483801e-02        0.41 sec
-salt factor: 5.000000e-01
-Solving PB equation
- Iter  83 :             1.204763001523e+01    3.447493e-02        0.39 sec
-salt factor: 5.000000e-01
-Solving PB equation
- Iter  84 :             1.489465800855e+01    1.102553e-03        0.40 sec
-updating salt factor to: 6.000000e-01
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  85 :             1.455656163791e+01    6.751204e-01        0.41 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  86 :             1.644139437436e+01    2.212917e-01        0.38 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  87 :             2.422023933773e+01    2.320619e-01        0.38 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  88 :             1.523860359424e+01    7.817793e-02        0.37 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  89 :             1.579667568663e+01    5.722827e-02        0.35 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  90 :             1.691384082313e+01    1.001709e-02        0.36 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  91 :             1.690341708173e+01    3.775086e-01        0.35 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  92 :             1.266247680034e+01    1.677655e-01        0.35 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  93 :             1.467255051582e+01    1.320286e-01        0.40 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  94 :             9.239850692114e+00    7.359365e-02        0.40 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  95 :             1.389759509432e+01    1.741563e-02        0.35 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  96 :             1.691486324289e+01    2.513735e-02        0.35 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  97 :             1.603878838250e+01    1.475142e-02        0.36 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  98 :             1.518745108622e+01    2.075642e-02        0.36 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter  99 :             1.538145498252e+01    3.040588e-01        0.35 sec
-salt factor: 6.000000e-01
-Solving PB equation
- Iter 100 :             1.416685152990e+01    2.802113e-01        0.41 sec
-Reaction potential failed to converge after 100 iterations, residual 2.802113e-01
----------------------------------------------------------------------------
- Reaction potential                456 nds         9.55 MB       38.06 sec
----------------------------------------------------------------------------
-                         Wall time: 3.87794e+01 sec
-===========================================================================
-
-
-===========================================================================
-                           Computing Fock matrix
----------------------------------------------------------------------------
- <i|p[x]p[x]|j>                    328 nds         6.87 MB        3.70  ms
- <i|p[y]p[y]|j>                    328 nds         6.87 MB        3.50  ms
- <i|p[z]p[z]|j>                    328 nds         6.87 MB        3.50  ms
- <i|V_nuc + J - K + V_xc - V_r|j>         264 nds         5.53 MB        0.03 sec
----------------------------------------------------------------------------
-                         Wall time: 3.85889e-02 sec
-===========================================================================
-
-
-===========================================================================
-                        Computing molecular energy
----------------------------------------------------------------------------
- Trace V_nuc(rho)                  264 nds         5.53 MB        8.73  ms
- Trace J(rho)                      200 nds         4.19 MB        6.71  ms
- Trace K(rho)                      200 nds         4.19 MB        1.05  ms
----------------------------------------------------------------------------
-                         Wall time: 3.12988e-02 sec
-===========================================================================
-
-
-===========================================================================
-                        Computing orbital energies
----------------------------------------------------------------------------
- Diagonalize Fock matrix                    (sec)              2.58800e-06
----------------------------------------------------------------------------
-                         Wall time: 1.38010e-05 sec
-===========================================================================
-
-
-===========================================================================
                         Molecular Energy (initial)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  0.908326151315
- E-N energy              :            (au)                 -1.900478620046
- Coulomb energy          :            (au)                  1.162377364520
- Exchange energy         :            (au)                 -0.145295407935
- X-C energy              :            (au)                 -0.470218471568
+ Kinetic energy          :            (au)                  0.925860375949
+ E-N energy              :            (au)                 -1.914553894864
+ Coulomb energy          :            (au)                  1.220280348194
+ Exchange energy         :            (au)                 -0.152520844705
+ X-C energy              :            (au)                 -0.488533147613
  N-N energy              :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Reaction energy (el)    :            (au)                 -0.378673571245
- Reaction energy (nuc)   :            (au)                  0.195178133853
- Reaction energy (tot)   :            (au)                 -0.183495437392
+ Reaction energy (el)    :            (au)                 -0.209429537998
+ Reaction energy (nuc)   :            (au)                  0.107543701769
+ Reaction energy (tot)   :            (au)                 -0.101885836229
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -0.823962554958
- Nuclear energy          :            (au)                  0.195178133853
+ Electronic energy       :            (au)                 -0.618896701038
+ Nuclear energy          :            (au)                  0.107543701769
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -6.287844211055e-01
-                         :      (kcal/mol)             -3.945681813870e+02
-                         :        (kJ/mol)             -1.650873270923e+03
-                         :            (eV)             -1.711009574816e+01
+ Total energy            :            (au)             -5.113529992692e-01
+                         :      (kcal/mol)             -3.208788516320e+02
+                         :        (kJ/mol)             -1.342557115228e+03
+                         :            (eV)             -1.391462397116e+01
 ===========================================================================
 
 
@@ -740,23 +195,9 @@ Reaction potential failed to converge after 100 iterations, residual 2.802113e-0
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.160308762785
+    0    2    p          :            (au)                  0.049286586663
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.320617525571
-===========================================================================
-
-
-===========================================================================
-                          Computing dipole moment
----------------------------------------------------------------------------
- Trace h_E_dip[x](nucs)              0 nds         0.00 kB        0.01  ms
- Trace h_E_dip[y](nucs)              0 nds         0.00 kB        0.01  ms
- Trace h_E_dip[z](nucs)              0 nds         0.00 kB        0.01  ms
- Trace h_E_dip[x](rho)             200 nds         4.19 MB        6.60  ms
- Trace h_E_dip[y](rho)             200 nds         4.19 MB        6.55  ms
- Trace h_E_dip[z](rho)             200 nds         4.19 MB        6.54  ms
----------------------------------------------------------------------------
-                         Wall time: 2.02277e-02 sec
+ Sum occupied            :            (au)                  0.098573173326
 ===========================================================================
 
 
@@ -785,24 +226,24 @@ Reaction potential failed to converge after 100 iterations, residual 2.802113e-0
 ===========================================================================
                          Molecular Energy (final)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  0.908326151315
- E-N energy              :            (au)                 -1.900478620046
- Coulomb energy          :            (au)                  1.162377364520
- Exchange energy         :            (au)                 -0.145295407935
- X-C energy              :            (au)                 -0.470218471568
+ Kinetic energy          :            (au)                  0.925860375949
+ E-N energy              :            (au)                 -1.914553894864
+ Coulomb energy          :            (au)                  1.220280348194
+ Exchange energy         :            (au)                 -0.152520844705
+ X-C energy              :            (au)                 -0.488533147613
  N-N energy              :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Reaction energy (el)    :            (au)                 -0.378673571245
- Reaction energy (nuc)   :            (au)                  0.195178133853
- Reaction energy (tot)   :            (au)                 -0.183495437392
+ Reaction energy (el)    :            (au)                 -0.209429537998
+ Reaction energy (nuc)   :            (au)                  0.107543701769
+ Reaction energy (tot)   :            (au)                 -0.101885836229
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -0.823962554958
- Nuclear energy          :            (au)                  0.195178133853
+ Electronic energy       :            (au)                 -0.618896701038
+ Nuclear energy          :            (au)                  0.107543701769
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -6.287844211055e-01
-                         :      (kcal/mol)             -3.945681813870e+02
-                         :        (kJ/mol)             -1.650873270923e+03
-                         :            (eV)             -1.711009574816e+01
+ Total energy            :            (au)             -5.113529992692e-01
+                         :      (kcal/mol)             -3.208788516320e+02
+                         :        (kJ/mol)             -1.342557115228e+03
+                         :            (eV)             -1.391462397116e+01
 ===========================================================================
 
 
@@ -811,9 +252,9 @@ Reaction potential failed to converge after 100 iterations, residual 2.802113e-0
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.160308762785
+    0    2    p          :            (au)                  0.049286586663
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.320617525571
+ Sum occupied            :            (au)                  0.098573173326
 ===========================================================================
 
 
@@ -822,7 +263,7 @@ Reaction potential failed to converge after 100 iterations, residual 2.802113e-0
 ---------------------------------------------------------------------------
  r_O                     :        0.000000        0.000000        0.000000
 ---------------------------------------------------------------------------
- Electronic vector       :        0.000000        0.000000        0.000000
+ Electronic vector       :       -0.000000       -0.000000        0.000000
  Magnitude               :            (au)                        0.000000
                          :         (Debye)                        0.000000
 ---------------------------------------------------------------------------
@@ -842,7 +283,7 @@ Reaction potential failed to converge after 100 iterations, residual 2.802113e-0
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  0m 41s                       ***
+***                       Wall time :  0h  0m  6s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            

@@ -29,7 +29,7 @@
 
 namespace mrchem {
 
-DHScreening::DHScreening(const mrchem::Cavity cavity_ion, double kappa_out, std::string formulation)
+DHScreening::DHScreening(const mrchem::Cavity &cavity_ion, double kappa_out, const std::string &formulation)
         : kappa_out(kappa_out)
         , formulation(formulation)
         , cavity_ion(cavity_ion) {}

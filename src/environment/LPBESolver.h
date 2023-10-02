@@ -39,22 +39,20 @@ class Nuclei;
 class KAIN;
 class LPBESolver final : public PBESolver {
 public:
-    LPBESolver(Permittivity e,
-               DHScreening kappa,
-               const Nuclei &N,
+    LPBESolver(const Permittivity &e,
+               const DHScreening &k,
+               const Density &rho_nuc,
                std::shared_ptr<mrcpp::PoissonOperator> P,
                std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-               double orb_prec,
                int kain_hist,
                int max_iter,
-               bool acc_pot,
                bool dyn_thrs,
-               std::string density_type)
+               const std::string &density_type)
             : PBESolver(e, kappa, N, P, D, orb_prec, kain_hist, max_iter, acc_pot, dyn_thrs, density_type) {}
 
     friend class ReactionPotential;
 
 protected:
-    void computePBTerm(mrcpp::ComplexFunction &V_tot, double salt_factor);
+    void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) override;
 };
 } // namespace mrchem

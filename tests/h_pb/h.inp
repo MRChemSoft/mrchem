@@ -35,6 +35,6 @@
 },
 "SCF": {
   "run": false,
-  "guess_type": "sad_dz"
+  "guess_type": "sad_gto"
 }
 }

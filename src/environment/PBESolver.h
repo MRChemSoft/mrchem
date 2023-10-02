@@ -39,35 +39,27 @@ class Nuclei;
 class KAIN;
 class PBESolver : public GPESolver {
 public:
-    PBESolver(Permittivity e,
-              DHScreening kappa,
-              const Nuclei &N,
+    PBESolver(const Permittivity &e,
+              const DHScreening &k,
+              const Density &rho_nuc,
               std::shared_ptr<mrcpp::PoissonOperator> P,
               std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-              double orb_prec,
               int kain_hist,
               int max_iter,
-              bool acc_pot,
               bool dyn_thrs,
-              std::string density_type);
-
-    void setStaticSalt(bool do_static) { do_static_salt = do_static; }
+              const std::string &density_type);
 
     friend class ReactionPotential;
 
 protected:
-    bool do_static_salt;
-
-    mrcpp::ComplexFunction kappa;
-    mrcpp::ComplexFunction pbe_term;
-
-    void setKappa(DHScreening k);
+    DHScreening kappa;
+    mrcpp::ComplexFunction rho_ext;
 
     // FIXME ComputeGamma should not be computing the PB term.
     //  THe PB term is actually an approximation for an external density, so
     //  it should be computed in the computedensities function or in the
     //  solvePoissonEquation function.
-    void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
-    void computePBTerm(mrcpp::ComplexFunction &V_tot, double salt_factor);
+    void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) override;
+    virtual void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term);
 };
 } // namespace mrchem
