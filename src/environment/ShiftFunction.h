@@ -73,7 +73,7 @@ public:
     Cavity getCavity() const { return this->cavity; }
 
     void printParameters() const;
-    void printHeader() const;
+    virtual void printHeader() const;
 
 protected:
     double in;                            //!< Value of the function inside the #cavity.

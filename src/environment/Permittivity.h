@@ -68,7 +68,7 @@ public:
     void flipFunction(bool is_inverse) { this->inverse = is_inverse; }
     auto isInverse() const { return this->inverse; }
 
-    void printHeader() const;
+    void printHeader() const override;
 
 private:
     bool inverse = false; //!< State of #evalf. When this is false, evalf returns the standard value, but when it is true,
