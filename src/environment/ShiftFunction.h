@@ -56,12 +56,6 @@ public:
      */
     ShiftFunction(const Cavity cavity, double val_in, double val_out);
 
-    /** @brief Evaluates ShiftFunction at a point in 3D space.
-     *  @param r coordinates of a 3D point in space.
-     *  @return double type value at the point.
-     */
-    double evalf(const mrcpp::Coord<3> &r) const override;
-
     auto getCoordinates() const { return this->cavity.getCoordinates(); }
     auto getRadii() const { return this->cavity.getRadii(); }
     auto getGradVector() const { return this->cavity.getGradVector(); }

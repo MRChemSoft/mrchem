@@ -34,11 +34,6 @@ ShiftFunction::ShiftFunction(const mrchem::Cavity cavity, double val_in, double 
         , out(val_out)
         , cavity(cavity) {}
 
-double ShiftFunction::evalf(const mrcpp::Coord<3> &r) const {
-    auto C = cavity.evalf(r);
-    return this->in * C + this->out * (1 - C);
-}
-
 void ShiftFunction::printParameters() const {
     // Collect relevant quantities
     auto coords = this->cavity.getCoordinates();
