@@ -31,10 +31,10 @@
 #include <MRCPP/Printer>
 
 namespace mrchem {
-/** @class ShiftFunction
+/** @class StepFunction
  *
- * @brief ShiftFunction function related to a Cavity function.
- * The ShiftFunction class represents the following equation
+ * @brief StepFunction function related to a Cavity function.
+ * The StepFunction class represents the following equation
  * \f[
  *   S(\mathbf{r}) = \begin{cases} S_{in} & \text{if } \mathbf{r} inside C \\
  *                     S_{out} & \text{if } \mathbf{r} outside C
@@ -46,7 +46,7 @@ namespace mrchem {
 
 class Cavity;
 
-class ShiftFunction : public mrcpp::RepresentableFunction<3> {
+class StepFunction : public mrcpp::RepresentableFunction<3> {
 public:
     /** @brief Standard constructor. Initializes the #cavity, #in and #out with the input parameters.
      *  @param cavity interlocking spheres of Cavity class.
@@ -54,7 +54,7 @@ public:
      *  @param epsilon_out permittivity outside the #cavity.
      * available as of now.
      */
-    ShiftFunction(const Cavity cavity, double val_in, double val_out);
+    StepFunction(const Cavity cavity, double val_in, double val_out);
 
     auto getCoordinates() const { return this->cavity.getCoordinates(); }
     auto getRadii() const { return this->cavity.getRadii(); }

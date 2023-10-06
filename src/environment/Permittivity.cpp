@@ -30,7 +30,7 @@
 namespace mrchem {
 
 Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, double epsilon_out, std::string formulation)
-        : ShiftFunction(cavity, epsilon_in, epsilon_out) {}
+        : StepFunction(cavity, epsilon_in, epsilon_out) {}
 
 double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
     auto epsilon = this->in * std::exp(std::log(this->out / this->in) * (1 - this->cavity.evalf(r)));

@@ -26,7 +26,7 @@
 #pragma once
 
 #include "Cavity.h"
-#include "ShiftFunction.h"
+#include "StepFunction.h"
 #include "utils/print_utils.h"
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Printer>
@@ -47,7 +47,7 @@ namespace mrchem {
 
 class Cavity;
 
-class Permittivity final : public ShiftFunction {
+class Permittivity final : public StepFunction {
 public:
     /** @brief Standard constructor. Initializes the #cavity, #epsilon_in and #epsilon_out with the input parameters.
      *  @param cavity interlocking spheres of Cavity class.

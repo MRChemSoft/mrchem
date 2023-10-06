@@ -23,18 +23,18 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "ShiftFunction.h"
+#include "StepFunction.h"
 #include "Cavity.h"
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
 
-ShiftFunction::ShiftFunction(const mrchem::Cavity cavity, double val_in, double val_out)
+StepFunction::StepFunction(const mrchem::Cavity cavity, double val_in, double val_out)
         : in(val_in)
         , out(val_out)
         , cavity(cavity) {}
 
-void ShiftFunction::printParameters() const {
+void StepFunction::printParameters() const {
     // Collect relevant quantities
     auto coords = this->cavity.getCoordinates();
     auto radii = this->cavity.getRadii();
@@ -94,7 +94,7 @@ void ShiftFunction::printParameters() const {
     mrcpp::print::separator(0, '=', 2);
 }
 
-void ShiftFunction::printHeader() const {
+void StepFunction::printHeader() const {
     mrcpp::print::header(0, "Shift Function of Cavity values");
     print_utils::text(0, "Formulation", getFormulation(), true);
     print_utils::scalar(0, "Value inside Cavity", getValueIn(), "(in)", 6);
