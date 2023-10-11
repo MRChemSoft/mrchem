@@ -52,6 +52,7 @@ class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
 class ReactionOperator;
+class ConfinementOperator;
 
 class FockBuilder final {
 public:
@@ -66,6 +67,7 @@ public:
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
+    std::shared_ptr<ConfinementOperator> &getConfinementOperator() { return this->Co; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -107,6 +109,7 @@ private:
     std::shared_ptr<ElectricFieldOperator> ext{nullptr}; // Total external potential
     std::shared_ptr<ZoraOperator> kappa{nullptr};
     std::shared_ptr<ZoraOperator> kappa_inv{nullptr};
+    std::shared_ptr<ConfinementOperator> Co{nullptr};
 
     std::shared_ptr<QMPotential> collectZoraBasePotential();
     OrbitalVector buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);

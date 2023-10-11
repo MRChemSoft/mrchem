@@ -54,6 +54,7 @@
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/one_electron/ConfinementOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
@@ -1122,6 +1123,15 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto r_O = json_fock["external_operator"]["r_O"];
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
+    }
+    ///////////////////////////////////////////////////////////
+    ///////////////   Confinement Potential   /////////////////
+    ///////////////////////////////////////////////////////////
+    if (json_fock.contains("confinement potential")) {
+      auto r_0 = json_fock["confinement potential"]["r_0"];
+      auto N = json_fock["confinement potential"]["N"];
+      auto V_N = std::make_shared<ConfinementOperator>(r_0, N);
+      F.getConfinementOperator() = V_N;
     }
     F.build(exx);
 }
