@@ -1127,9 +1127,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     ///////////////   Confinement Potential   /////////////////
     ///////////////////////////////////////////////////////////
-    if (json_fock.contains("confinement potential")) {
-      auto r_0 = json_fock["confinement potential"]["r_0"];
-      auto N = json_fock["confinement potential"]["N"];
+    if (json_fock.contains("confinement_operator")) {
+      auto r_0 = json_fock["confinement_operator"]["r_0"];
+      auto N = json_fock["confinement_operator"]["N"];
       auto V_N = std::make_shared<ConfinementOperator>(r_0, N);
       F.getConfinementOperator() = V_N;
     }
