@@ -126,6 +126,13 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "r_O": origin,
         }
 
+    # Confinement Potential
+    if len(user_dict["ConfinementPotential"]) > 0:
+        fock_dict["confinement potential"] = {
+            "r_0": user_dict["ConfinementPotential"]["radius"],
+            "N": user_dict["ConfinementPotential"]["stiffness"],
+        }
+
     return fock_dict
 
 
