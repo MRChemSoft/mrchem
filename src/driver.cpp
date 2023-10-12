@@ -269,6 +269,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto relativity = json_scf["scf_solver"]["relativity"];
         auto environment = json_scf["scf_solver"]["environment"];
         auto external_field = json_scf["scf_solver"]["external_field"];
+	auto confinement_potential = json_scf["scf_solver"]["confinement_potential"];
         auto max_iter = json_scf["scf_solver"]["max_iter"];
         auto rotation = json_scf["scf_solver"]["rotation"];
         auto localize = json_scf["scf_solver"]["localize"];
@@ -288,6 +289,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
+	solver.setConfinementPotentialName(confinement_potential);
         solver.setCheckpoint(checkpoint);
         solver.setCheckpointFile(file_chk);
         solver.setMaxIterations(max_iter);
@@ -402,16 +404,18 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto relativity = json_guess["relativity"];
     auto environment = json_guess["environment"];
     auto external_field = json_guess["external_field"];
+    auto confinement_potential = json_guess["confinement_potential"];
     auto localize = json_guess["localize"];
 
     mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation    ", "Compute initial energy");
-    print_utils::text(0, "Method         ", method);
-    print_utils::text(0, "Relativity     ", relativity);
-    print_utils::text(0, "Environment    ", environment);
-    print_utils::text(0, "External fields", external_field);
-    print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
-    print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
+    print_utils::text(0, "Calculation          ", "Compute initial energy");
+    print_utils::text(0, "Method               ", method);
+    print_utils::text(0, "Relativity           ", relativity);
+    print_utils::text(0, "Environment          ", environment);
+    print_utils::text(0, "External fields      ", external_field);
+    print_utils::text(0, "Confinement potential", confinement_potential);
+    print_utils::text(0, "Precision            ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Localization         ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 
     Timer t_scf;

@@ -80,6 +80,7 @@ public:
 
         bool has_ext = (std::abs(E_eext) > mrcpp::MachineZero) || (std::abs(E_next) > mrcpp::MachineZero);
         bool has_react = (std::abs(Er_el) > mrcpp::MachineZero) || (std::abs(Er_nuc) > mrcpp::MachineZero);
+	bool has_conf = (std::abs(E_cp) > mrcpp::MachineZero);
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
         mrcpp::print::header(0, "Molecular Energy (" + id + ")");
@@ -101,6 +102,10 @@ public:
             print_utils::scalar(0, "Reaction energy (nuc) ", Er_nuc,  "(au)", pprec, false);
             print_utils::scalar(0, "Reaction energy (tot) ", Er_tot,  "(au)", pprec, false);
         }
+	if (has_conf) {
+	    mrcpp::print::separator(0, '-');
+	    print_utils::scalar(0, "Confinement potential ", E_cp, "(au)", pprec, false);
+	}
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);
         print_utils::scalar(0, "Nuclear energy   ", E_nuc,  "(au)", pprec, false);
