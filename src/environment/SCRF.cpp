@@ -132,7 +132,7 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     }
 
     out_gamma.rescale(std::log((epsilon.getEpsIn() / epsilon.getEpsOut())) * (1.0 / (4.0 * mrcpp::pi)));
-    // crashes? mrcpp::clear(d_V, true);
+    mrcpp::clear(d_V, true);
 }
 
 mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma) {
