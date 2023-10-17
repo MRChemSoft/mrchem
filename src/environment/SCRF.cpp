@@ -167,6 +167,9 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
     phi_n[0] = func;
     dPhi_n[0] = dfunc;
 
+    phi_n[0].setRank(mrcpp::mpi::wrk_rank);
+    dPhi_n[0].setRank(mrcpp::mpi::wrk_rank);
+    
     kain.accelerate(this->apply_prec, phi_n, dPhi_n);
 
     func = phi_n[0];
