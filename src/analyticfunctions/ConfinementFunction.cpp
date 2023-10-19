@@ -1,4 +1,5 @@
 #include "ConfinementFunction.h"
+#include "environment/Cavity.h"
 #include "utils/math_utils.h"
 
 namespace mrchem {
@@ -14,6 +15,14 @@ namespace mrchem {
     auto r_0 = this->radius;
 
     f += std::pow(math_utils::calc_distance(r, center) / r_0, N);
+
+    std::vector<mrcpp::Coord<3>> coords = {{0.0, 0.0, 0.0}};
+    std::vector<double> R = {1.0};
+    double slope = 0.2;
+
+    Cavity sphere(coords, R, slope);
+
+    f * (1 - sphere.evalf(r) );
 
     return f;
   }

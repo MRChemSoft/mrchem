@@ -23,7 +23,7 @@ namespace mrchem {
     mrcpp::ComplexFunction &V_c = (*this);
     setApplyPrec(prec);
     V_c = V_loc;
-    //    delete f_loc;
+    delete f_loc;
 
   }
 
