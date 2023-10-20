@@ -95,7 +95,6 @@ void SCRF::computeDensities(OrbitalVector &Phi, Density &rho_out) {
 void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
 
     auto d_V = mrcpp::gradient(*derivative, potential.real()); // FunctionTreeVector
-    std::cout << "size of of grad V " << mrcpp::get_size_nodes(d_V) << "\n";
     resetComplexFunction(out_gamma);
 
     for (int d = 0; d < 3; d++) {
