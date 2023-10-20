@@ -57,11 +57,11 @@ public:
     void updateMOResidual(double const err_t) { this->helper->mo_residual = err_t; }
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->helper->getCurrentReactionPotential(); }
-    mrcpp::ComplexFunction &getPreviousReactionPotential() { return this->helper->getPreviousReactionPotential(); }
+
     mrcpp::ComplexFunction &getCurrentDifferenceReactionPotential() { return this->helper->getCurrentDifferenceReactionPotential(); }
 
     mrcpp::ComplexFunction &getCurrentGamma() { return this->helper->getCurrentGamma(); }
-    mrcpp::ComplexFunction &getPreviousGamma() { return this->helper->getPreviousGamma(); }
+
     mrcpp::ComplexFunction &getCurrentDifferenceGamma() { return this->helper->getCurrentDifferenceGamma(); }
 
     friend class ReactionOperator;

@@ -30,15 +30,14 @@
 #include "qmfunctions/Orbital.h"
 
 namespace mrchem {
+class KAIN;
 /** @class SCRF
  *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
  */
-class Nuclei;
-class KAIN;
 class SCRF final {
 public:
-    SCRF(Permittivity e,
-         const Nuclei &N,
+    SCRF(Permittivity &e,
+         Density const &rho_nuc,
          std::shared_ptr<mrcpp::PoissonOperator> P,
          std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
          double orb_prec,
@@ -53,11 +52,11 @@ public:
     double setConvergenceThreshold(double prec);
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->Vr_n; }
-    mrcpp::ComplexFunction &getPreviousReactionPotential() { return this->Vr_nm1; }
+
     mrcpp::ComplexFunction &getCurrentDifferenceReactionPotential() { return this->dVr_n; }
 
     mrcpp::ComplexFunction &getCurrentGamma() { return this->gamma_n; }
-    mrcpp::ComplexFunction &getPreviousGamma() { return this->gamma_nm1; }
+
     mrcpp::ComplexFunction &getCurrentDifferenceGamma() { return this->dgamma_n; }
 
     Permittivity &getPermittivity() { return this->epsilon; }
@@ -88,17 +87,14 @@ private:
 
     mrcpp::ComplexFunction Vr_n;
     mrcpp::ComplexFunction dVr_n;
-    mrcpp::ComplexFunction Vr_nm1;
 
     mrcpp::ComplexFunction gamma_n;
     mrcpp::ComplexFunction dgamma_n;
-    mrcpp::ComplexFunction gamma_nm1;
 
-    mrcpp::FunctionTreeVector<3> d_cavity; //!< Vector containing the 3 partial derivatives of the cavity function
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
 
-    void setDCavity();
+    // void setDCavity();
 
     void computeDensities(OrbitalVector &Phi);
     void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);

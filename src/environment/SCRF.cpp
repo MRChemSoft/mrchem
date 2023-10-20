@@ -30,8 +30,8 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
-#include "chemistry/PhysicalConstants.h"
-#include "chemistry/chemistry_utils.h"
+// #include "chemistry/PhysicalConstants.h"
+
 #include "qmfunctions/density_utils.h"
 #include "qmoperators/two_electron/ReactionPotential.h"
 #include "scf_solver/KAIN.h"
@@ -48,7 +48,7 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-SCRF::SCRF(Permittivity e, const Nuclei &N, PoissonOperator_p P, DerivativeOperator_p D, double orb_prec, int kain_hist, int max_iter, bool acc_pot, bool dyn_thrs, std::string density_type)
+SCRF::SCRF(Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, double orb_prec, int kain_hist, int max_iter, bool acc_pot, bool dyn_thrs, std::string density_type)
         : accelerate_Vr(acc_pot)
         , dynamic_thrs(dyn_thrs)
         , density_type(density_type)
@@ -58,23 +58,18 @@ SCRF::SCRF(Permittivity e, const Nuclei &N, PoissonOperator_p P, DerivativeOpera
         , conv_thrs(1.0)
         , mo_residual(1.0)
         , epsilon(e)
-        , rho_nuc(false)
+        , rho_nuc(rho_nuc)
         , rho_ext(false)
         , rho_tot(false)
         , Vr_n(false)
         , dVr_n(false)
-        , Vr_nm1(false)
         , gamma_n(false)
         , dgamma_n(false)
-        , gamma_nm1(false)
         , derivative(D)
-        , poisson(P) {
-    setDCavity();
-    rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, N, 1000);
-}
+        , poisson(P) {}
 
 SCRF::~SCRF() {
-    mrcpp::clear(this->d_cavity, true);
+    clear();
 }
 
 void SCRF::clear() {
@@ -86,16 +81,6 @@ double SCRF::setConvergenceThreshold(double prec) {
     this->conv_thrs = prec;
     if (this->dynamic_thrs and this->mo_residual > 10 * prec) this->conv_thrs = std::min(1.0, this->mo_residual);
     return this->conv_thrs;
-}
-
-void SCRF::setDCavity() {
-    mrcpp::FunctionTree<3> *dx_cavity = new mrcpp::FunctionTree<3>(*MRA);
-    mrcpp::FunctionTree<3> *dy_cavity = new mrcpp::FunctionTree<3>(*MRA);
-    mrcpp::FunctionTree<3> *dz_cavity = new mrcpp::FunctionTree<3>(*MRA);
-    d_cavity.push_back(std::make_tuple(1.0, dx_cavity));
-    d_cavity.push_back(std::make_tuple(1.0, dy_cavity));
-    d_cavity.push_back(std::make_tuple(1.0, dz_cavity));
-    // mrcpp::project<3>(this->apply_prec / 100, this->d_cavity, this->epsilon.getGradVector());
 }
 
 void SCRF::computeDensities(OrbitalVector &Phi) {
@@ -117,6 +102,7 @@ void SCRF::computeDensities(OrbitalVector &Phi) {
 void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
 
     auto d_V = mrcpp::gradient(*derivative, potential.real()); // FunctionTreeVector
+    std::cout << "size of of grad V " << mrcpp::get_size_nodes(d_V) << "\n";
     resetComplexFunction(out_gamma);
 
     for (int d = 0; d < 3; d++) {
@@ -140,14 +126,11 @@ mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &
     mrcpp::ComplexFunction rho_eff;
     mrcpp::ComplexFunction first_term;
     mrcpp::ComplexFunction Vr;
-    mrcpp::ComplexFunction eps_inv;
-    eps_inv.alloc(NUMBER::Real);
     Vr.alloc(NUMBER::Real);
 
+    // TODO want to avoid using the flipFunction method
     this->epsilon.flipFunction(true);
-    mrcpp::cplxfunc::project(eps_inv, this->epsilon, NUMBER::Real, this->apply_prec / 100);
-    mrcpp::cplxfunc::multiply(first_term, this->rho_tot, eps_inv, this->apply_prec);
-    // Use directly? mrcpp::cplxfunc::multiply(first_term, this->rho_tot, this->epsilon, this->apply_prec);
+    mrcpp::cplxfunc::multiply(first_term, this->rho_tot, this->epsilon, this->apply_prec);
     this->epsilon.flipFunction(false);
 
     mrcpp::cplxfunc::add(rho_eff, 1.0, first_term, -1.0, this->rho_tot, -1.0);
@@ -169,7 +152,7 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
 
     phi_n[0].setRank(mrcpp::mpi::wrk_rank);
     dPhi_n[0].setRank(mrcpp::mpi::wrk_rank);
-    
+
     kain.accelerate(this->apply_prec, phi_n, dPhi_n);
 
     func = phi_n[0];
@@ -297,7 +280,6 @@ mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
         temp_gamma_n.free(NUMBER::Real);
     }
     print_utils::qmfunction(3, "Initial gamma", this->gamma_n, t_gamma);
-
     Timer t_scrf;
     nestedSCRF(V_vac);
     print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
@@ -326,16 +308,12 @@ void SCRF::resetComplexFunction(mrcpp::ComplexFunction &function) {
 }
 
 void SCRF::updateCurrentReactionPotential(mrcpp::ComplexFunction &Vr_np1) {
-    resetComplexFunction(this->Vr_nm1);
-    mrcpp::cplxfunc::deep_copy(this->Vr_nm1, this->Vr_n);
     resetComplexFunction(this->Vr_n);
     mrcpp::cplxfunc::deep_copy(this->Vr_n, Vr_np1);
     Vr_np1.free(NUMBER::Real);
 }
 
 void SCRF::updateCurrentGamma(mrcpp::ComplexFunction &gamma_np1) {
-    resetComplexFunction(this->gamma_nm1);
-    mrcpp::cplxfunc::deep_copy(this->gamma_nm1, this->gamma_n);
     resetComplexFunction(this->gamma_n);
     mrcpp::cplxfunc::deep_copy(this->gamma_n, gamma_np1);
     gamma_np1.free(NUMBER::Real);

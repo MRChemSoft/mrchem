@@ -61,11 +61,11 @@ public:
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->potential->getCurrentReactionPotential(); }
-    mrcpp::ComplexFunction &getPreviousReactionPotential() { return this->potential->getPreviousReactionPotential(); }
+
     mrcpp::ComplexFunction &getCurrentDifferenceReactionPotential() { return this->potential->getCurrentDifferenceReactionPotential(); }
 
     mrcpp::ComplexFunction &getCurrentGamma() { return this->potential->getCurrentGamma(); }
-    mrcpp::ComplexFunction &getPreviousGamma() { return this->potential->getPreviousGamma(); }
+
     mrcpp::ComplexFunction &getCurrentDifferenceGamma() { return this->potential->getCurrentDifferenceGamma(); }
 
 private:
