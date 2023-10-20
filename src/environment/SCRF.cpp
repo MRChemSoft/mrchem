@@ -64,8 +64,12 @@ SCRF::SCRF(Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, Derivat
         , poisson(P) {}
 
 SCRF::~SCRF() {
+    this->rho_nuc.free(NUMBER::Real);
     clear();
-    this->rho_tot.free(NUMBER::Real);
+}
+
+void SCRF::clear() {
+    this->apply_prec = -1.0;
 }
 
 double SCRF::setConvergenceThreshold(double prec) {
@@ -197,7 +201,7 @@ void SCRF::nestedSCRF(mrcpp::ComplexFunction &V_vac, const std::shared_ptr<mrche
         iter++;
     }
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
-    computeEnergies(*Phi_p); // TODO might not really need this, test it.
+    // computeEnergies(*Phi_p, this->rho_nuc); // TODO might not really need this, test it.
     mrcpp::print::separator(3, '-');
 
     kain.clear();

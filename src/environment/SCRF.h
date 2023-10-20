@@ -46,7 +46,7 @@ public:
          std::string density_type);
     ~SCRF();
 
-        double setConvergenceThreshold(double prec);
+    double setConvergenceThreshold(double prec);
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->Vr_n; }
 
@@ -58,7 +58,7 @@ public:
     void computeEnergies(mrchem::OrbitalVector &Phi);
 
 protected:
-    void clear() { this->apply_prec = -1.0; }
+    void clear();
 
 private:
     bool dynamic_thrs;
