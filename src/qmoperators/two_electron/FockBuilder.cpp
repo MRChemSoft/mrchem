@@ -169,6 +169,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     // Reaction potential part
     if (this->Ro != nullptr) {
+        this->Ro->getHelper()->computeEnergies(Phi);
         Er_nuc = 0.5 * this->Ro->getNuclearEnergy();
         Er_tot = 0.5 * this->Ro->getTotalEnergy();
         Er_el = 0.5 * this->Ro->getElectronicEnergy();
@@ -182,9 +183,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Electronic part
-    if (this->nuc != nullptr) {
-        E_en = this->nuc->trace(Phi).real();
-    }
+    if (this->nuc != nullptr) { E_en = this->nuc->trace(Phi).real(); }
 
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();

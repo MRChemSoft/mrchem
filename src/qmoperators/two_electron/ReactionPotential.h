@@ -58,12 +58,6 @@ public:
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->helper->getCurrentReactionPotential(); }
 
-    mrcpp::ComplexFunction &getCurrentDifferenceReactionPotential() { return this->helper->getCurrentDifferenceReactionPotential(); }
-
-    mrcpp::ComplexFunction &getCurrentGamma() { return this->helper->getCurrentGamma(); }
-
-    mrcpp::ComplexFunction &getCurrentDifferenceGamma() { return this->helper->getCurrentDifferenceGamma(); }
-
     friend class ReactionOperator;
 
 protected:

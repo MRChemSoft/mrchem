@@ -89,7 +89,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
 
     int kain = 4;
-    auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, prec, kain, 100, true, false, "total");
+    auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, 100, false, "total");
 
     auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
     Reo->setup(prec);

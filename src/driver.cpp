@@ -44,11 +44,11 @@
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
 
+#include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
-#include "chemistry/chemistry_utils.h"
 
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
@@ -1057,12 +1057,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_o = json_fock["reaction_operator"]["epsilon_out"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
-        auto accelerate_pot = (optimizer == "potential") ? true : false;
+        auto accelerate_pot = (optimizer == "potential") ? true : false; // this has to go
 
         Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
         dielectric_func.printParameters();
-        auto rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
-        auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, poisson_prec, kain, max_iter, accelerate_pot, dynamic_thrs, density_type);
+        Density rho_nuc(false);
+        rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
+
+        auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
     }

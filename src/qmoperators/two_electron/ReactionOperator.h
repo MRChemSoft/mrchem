@@ -62,12 +62,6 @@ public:
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->potential->getCurrentReactionPotential(); }
 
-    mrcpp::ComplexFunction &getCurrentDifferenceReactionPotential() { return this->potential->getCurrentDifferenceReactionPotential(); }
-
-    mrcpp::ComplexFunction &getCurrentGamma() { return this->potential->getCurrentGamma(); }
-
-    mrcpp::ComplexFunction &getCurrentDifferenceGamma() { return this->potential->getCurrentDifferenceGamma(); }
-
 private:
     std::shared_ptr<ReactionPotential> potential{nullptr};
 };
