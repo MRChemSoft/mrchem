@@ -26,14 +26,16 @@
 #
 
 
-from pathlib import Path
-from ruamel.yaml import YAML
-import subprocess
+import argparse
 import os
 import shutil
-import argparse
+import subprocess
+from pathlib import Path
 
+import periodictable as pt
+import qcelemental as qcel
 from physical_constants import MRChemPhysConstants
+from ruamel.yaml import YAML
 
 root = Path.cwd().parent
 target = root.joinpath("mrchem", "input_parser")
@@ -68,6 +70,151 @@ def update_constants():
 
     # Construct the full template file and dump
     new["sections"].append(constants)
+    yaml.dump(new, f_template)
+
+
+def update_periodic_table():
+    f_template = root.joinpath("template.yml")
+    template = yaml.load(f_template)
+
+    new = {
+        "keywords": template["keywords"],
+        "sections": [
+            section for section in template["sections"] if section["name"] != "Elements"
+        ],
+    }
+
+    # Build new Periodic table Section
+    Elements = {
+        "name": "Elements",
+        "sections": [],
+        "docstring": "list of elements with data",
+    }
+    for ele, vals in pt.PeriodicTableByName.items():
+        if (ele.lower() == "none") or ((ele.lower() == "x") or (ele.lower() == "q")):
+            continue
+        elif ele.lower() == "no":
+            # FIXME this is a hack to get around the fact that "no" is a reserved keyword in YAML
+            name = '"no"'
+            symbol = '"No"'
+        else:
+            name = str(ele)
+            symbol = vals[4]
+
+        context = qcel.VanderWaalsRadii("MANTINA2009")
+
+        if ele.lower() == "h":
+           # these vdw radii are used with a continuum solvation model and 1.2 AA for hydrogen is more appropriate than the default
+            radius = 1.2
+        else:
+            radius = qcel.vdwradii.get(ele, units="angstrom", missing=-1.0)
+
+        element_dict = {
+            "name": name,
+            "docstring": "data of element",
+            "keywords": [
+                {
+                    "name": "vdw-radius",
+                    "default": radius,
+                    "docstring": "radius of element",
+                    "type": "float",
+                },
+                {
+                    "name": "covalent",
+                    "default": vals[1],
+                    "docstring": "covalent value element",
+                    "type": "float",
+                },
+                {
+                    "name": "Z",
+                    "default": vals[2],
+                    "docstring": "z-value of element",
+                    "type": "int",
+                },
+                {
+                    "name": "mass",
+                    "default": vals[3],
+                    "docstring": "mass of element",
+                    "type": "float",
+                },
+                {
+                    "name": "symbol",
+                    "default": symbol,
+                    "docstring": "symbol of element",
+                    "type": "str",
+                },
+                {
+                    "name": "bpt",
+                    "default": vals[5],
+                    "docstring": "bpt of element",
+                    "type": "float",
+                },
+                {
+                    "name": "mpt",
+                    "default": vals[6],
+                    "docstring": "mpt of element",
+                    "type": "float",
+                },
+                {
+                    "name": "density",
+                    "default": vals[7],
+                    "docstring": "density of element",
+                    "type": "float",
+                },
+                {
+                    "name": "volume",
+                    "default": vals[8],
+                    "docstring": "volume of element",
+                    "type": "float",
+                },
+                {
+                    "name": "name",
+                    "default": str(vals[9]),
+                    "docstring": "name of element",
+                    "type": "str",
+                },
+                {
+                    "name": "debye",
+                    "default": vals[10],
+                    "docstring": "debye of element",
+                    "type": "float",
+                },
+                {
+                    "name": "a",
+                    "default": vals[11],
+                    "docstring": "a of element",
+                    "type": "float",
+                },
+                {
+                    "name": "crystal",
+                    "default": str(vals[12]),
+                    "docstring": "crystal of element",
+                    "type": "str",
+                },
+                {
+                    "name": "cpera",
+                    "default": vals[13],
+                    "docstring": "cpera of element",
+                    "type": "float",
+                },
+                {
+                    "name": "conf",
+                    "default": str(vals[14]),
+                    "docstring": "conf of element",
+                    "type": "str",
+                },
+                {
+                    "name": "r_rms",
+                    "default": float(vals[15]),
+                    "docstring": "r_rms of element",
+                    "type": "float",
+                },
+            ],
+        }
+        Elements["sections"].append(element_dict)
+
+    # Construct the full template file and dump
+    new["sections"].append(Elements)
     yaml.dump(new, f_template)
 
 
@@ -128,6 +275,7 @@ if __name__ == "__main__":
     if not args.skip_template:
         print(f'{"Updating template":20} ... ', end="")
         update_constants()
+        update_periodic_table()
         print("done")
 
     if not args.skip_parselglossy:

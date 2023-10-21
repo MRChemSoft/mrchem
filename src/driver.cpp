@@ -44,6 +44,7 @@
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
 
+#include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Density.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
@@ -420,16 +421,16 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto &Phi = mol.getOrbitals();
     auto &nucs = mol.getNuclei();
     auto &F_mat = mol.getFockMatrix();
-    Phi.distribute();
+
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
     if (localize) orbital::localize(prec, Phi, F_mat);
-    else orbital::diagonalize(prec, Phi, F_mat);
 
     F.setup(prec);
     F_mat = F(Phi, Phi);
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     F.clear();
 
+    if (not localize) orbital::diagonalize(prec, Phi, F_mat);
     if (plevel == 1) mrcpp::print::footer(1, t_scf, 2);
 
     Timer t_eps;
@@ -1056,12 +1057,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_o = json_fock["reaction_operator"]["epsilon_out"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
-        auto accelerate_pot = (optimizer == "potential") ? true : false;
+        auto accelerate_pot = (optimizer == "potential") ? true : false; // this has to go
 
         Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
         dielectric_func.printParameters();
+        Density rho_nuc(false);
+        rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
 
-        auto scrf_p = std::make_unique<SCRF>(dielectric_func, nuclei, P_p, D_p, poisson_prec, kain, max_iter, accelerate_pot, dynamic_thrs, density_type);
+        auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
         auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         F.getReactionOperator() = V_R;
     }

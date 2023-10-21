@@ -129,7 +129,11 @@ class MoleculeValidator:
         self.cavity_sigma = self.cavity_dict["sigma"]
 
         # Validate atomic coordinates
-        self.atomic_symbols, self.atomic_coords, self.atomic_rms = self.validate_atomic_coordinates()
+        (
+            self.atomic_symbols,
+            self.atomic_coords,
+            self.atomic_rms,
+        ) = self.validate_atomic_coordinates()
         self.n_atoms = len(self.atomic_coords)
 
         # Translate center of mass if requested
@@ -163,7 +167,9 @@ class MoleculeValidator:
         """Convert nuclear coordinates from JSON syntax to program syntax."""
         return [
             {"atom": label, "xyz": coord, "r_rms": rms}
-            for label, coord, rms in zip(self.atomic_symbols, self.atomic_coords, self.atomic_rms)
+            for label, coord, rms in zip(
+                self.atomic_symbols, self.atomic_coords, self.atomic_rms
+            )
         ]
 
     def get_cavity_in_program_syntax(self):
@@ -217,7 +223,9 @@ class MoleculeValidator:
         p_with_symbol = re.compile(atom_with_symbol)
         p_with_number = re.compile(atom_with_number)
 
-        lines = [x.strip() for x in self.coords_raw.strip().splitlines() if x != ""]
+        lines = [
+            x.strip() for x in self.coords_raw.strip().splitlines() if x != ""
+        ]
         # Parse coordinates
         coords = []
         labels = []
@@ -230,7 +238,7 @@ class MoleculeValidator:
                 g = match_symbol.group()
                 symbol = g.split()[0].strip().lower()
                 labels.append(symbol)
-                radii.append(float (PeriodicTable[symbol].r_rms))
+                radii.append(float(PeriodicTable[symbol].r_rms))
                 coords.append([float(c.strip()) for c in g.split()[1:]])
             elif match_number:
                 g = match_number.group()
@@ -266,14 +274,14 @@ class MoleculeValidator:
 
         - Each sphere "object" in the JSON will contain:
 
-          * Position in Cartesian coordinates :math:`x_{i}, y_{i}, z_{i}`
-          * **Unscaled** radius :math:`R_{i}^{\mathrm{vdW}}`
-          * Radius scaling factor :math:`\alpha_{i}`
-          * Width scaling factor :math:`\beta_{i}`
-          * Width :math:`\sigma_{i}`
+          * Position in Cartesian coordinates x_i, y_i, z_i
+          * **Unscaled** radius R_i^vdW
+          * Radius scaling factor alpha_i
+          * Width scaling factor beta_i
+          * Width sigma_i
 
           Inside MRChem, the radius to be used will be computed as
-          :math:`R_{i} = \alpha_{i}R_{i}^{\mathrm{vdW}} + \beta_{i}\sigma_{i}`.
+          R_i = alpha_i*R_i^vdW + beta_i*sigma_i.
         - In `atoms` mode, we first create the list of spheres from the atomic
           coordinates and built-in radii, alpha (1.1), beta (0.5), and
           sigma (0.2) values. We then read the `$spheres`/`$end` blob of text
@@ -305,6 +313,7 @@ class MoleculeValidator:
           are **always** applied. If special behavior is desired, then it needs to
           be requested *explicitly* in the input.
         """
+
         # Regex components
         integer = r"[0-9]+"
         decimal = r"[+-]?[0-9]+\.?[0-9]*|\.[0-9]+"
@@ -318,13 +327,27 @@ class MoleculeValidator:
 
         # the centers of the spheres are the same as the atoms
         if self.cavity_mode == "atoms":
+
+            def radiusNotFound(x):
+                # This raises an exception in the list comprehension if the radius is not valid.
+                raise ValueError(
+                    f"The vdw-radius of element {x} is not defined in the mantina set"
+                )
+
             coords = deepcopy(self.atomic_coords)
+            # fetches mantina radii from the template.yml file for each atom x.
+            # If the radius is negative, it means it is not defined in the
+            # mantina set and it raises an exception.
             radii = [
-                PeriodicTable[label.lower()].radius for label in self.atomic_symbols
+                self.user_dict["Elements"][x.lower()]["vdw-radius"]
+                if (self.user_dict["Elements"][x.lower()]["vdw-radius"] > 0.0)
+                else radiusNotFound(x)
+                for x in self.atomic_symbols
             ]
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)
+
         else:
             coords = []
             radii = []
@@ -335,7 +358,9 @@ class MoleculeValidator:
         # Parse spheres
         bad_spheres = []
 
-        lines = [x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""]
+        lines = [
+            x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""
+        ]
         for sphere in lines:
             p_match = p.match(sphere)
             q_match = q.match(sphere)
@@ -421,11 +446,16 @@ class MoleculeValidator:
 
         # Check for negative or zero radii
         invalid_radii = {
-            i: r for i, r in enumerate(radii) if ((r < 0) or math.isclose(r, 0.0))
+            i: r
+            for i, r in enumerate(radii)
+            if ((r < 0) or math.isclose(r, 0.0))
         }
         if invalid_radii:
             invalid = "\n".join(
-                [f"Sphere {i} has invalid radius {r}" for i, r in invalid_radii.items()]
+                [
+                    f"Sphere {i} has invalid radius {r}"
+                    for i, r in invalid_radii.items()
+                ]
             )
             raise RuntimeError(
                 self.ERROR_MESSAGE_CAVITY_RADII(
@@ -435,7 +465,9 @@ class MoleculeValidator:
 
         # Check for negative or zero scaling factors
         invalid_alphas = {
-            i: a for i, a in enumerate(alphas) if ((a < 0) or math.isclose(a, 0.0))
+            i: a
+            for i, a in enumerate(alphas)
+            if ((a < 0) or math.isclose(a, 0.0))
         }
         if invalid_alphas:
             invalid = "\n".join(
@@ -473,11 +505,15 @@ class MoleculeValidator:
 
         # Print warnings and raise exception if necessary
         if warning_pairs:
-            msg = self.WARNING_MESSAGE_NUCLEAR_SINGULARITY("\n\n".join(warning_pairs))
+            msg = self.WARNING_MESSAGE_NUCLEAR_SINGULARITY(
+                "\n\n".join(warning_pairs)
+            )
             print(msg)
 
         if error_pairs:
-            msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY("\n\n".join(error_pairs))
+            msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY(
+                "\n\n".join(error_pairs)
+            )
             raise RuntimeError(msg)
 
     def check_for_invalid_electronic_configuration(self):
@@ -521,7 +557,9 @@ class MoleculeValidator:
 
     def translate_com_to_origin(self):
         """Translate center of mass to the origin (in-place)."""
-        masses = [PeriodicTable[label.lower()].mass for label in self.atomic_symbols]
+        masses = [
+            PeriodicTable[label.lower()].mass for label in self.atomic_symbols
+        ]
         M = sum(masses)
 
         # Compute center of mass
@@ -546,7 +584,10 @@ class MoleculeValidator:
 
     def ang2bohr_array(self, coords):
         """Convert List[List[float]] from angstrom to bohr."""
-        return [[c * self.pc["angstrom2bohrs"] for c in element] for element in coords]
+        return [
+            [c * self.pc["angstrom2bohrs"] for c in element]
+            for element in coords
+        ]
 
     def ang2bohr_vector(self, vec):
         """Convert List[float] from angstrom to bohr"""

@@ -38,6 +38,7 @@
 #include "chemistry/Element.h"
 #include "chemistry/Nucleus.h"
 #include "chemistry/PeriodicTable.h"
+#include "chemistry/chemistry_utils.h"
 #include "environment/Cavity.h"
 #include "environment/Permittivity.h"
 #include "environment/SCRF.h"
@@ -85,8 +86,10 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     HydrogenFunction f(1, 0, 0);
     if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Real, prec);
 
+    auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
+
     int kain = 4;
-    auto scrf_p = std::make_unique<SCRF>(dielectric_func, molecule, P_p, D_p, prec, kain, 100, true, false, "total");
+    auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, 100, false, "total");
 
     auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
     Reo->setup(prec);

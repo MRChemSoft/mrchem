@@ -30,8 +30,6 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
-#include "chemistry/PhysicalConstants.h"
-#include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
 #include "qmoperators/two_electron/ReactionPotential.h"
 #include "scf_solver/KAIN.h"
@@ -48,37 +46,30 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-SCRF::SCRF(Permittivity e, const Nuclei &N, PoissonOperator_p P, DerivativeOperator_p D, double orb_prec, int kain_hist, int max_iter, bool acc_pot, bool dyn_thrs, std::string density_type)
-        : accelerate_Vr(acc_pot)
-        , dynamic_thrs(dyn_thrs)
+SCRF::SCRF(Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, std::string density_type)
+        : dynamic_thrs(dyn_thrs)
         , density_type(density_type)
         , max_iter(max_iter)
         , history(kain_hist)
-        , apply_prec(orb_prec)
+        , apply_prec(-1.0)
         , conv_thrs(1.0)
         , mo_residual(1.0)
+        , Er_nuc(0.0)
+        , Er_el(0.0)
+        , Er_tot(0.0)
         , epsilon(e)
-        , rho_nuc(false)
-        , rho_ext(false)
-        , rho_tot(false)
+        , rho_nuc(rho_nuc)
         , Vr_n(false)
-        , dVr_n(false)
-        , Vr_nm1(false)
-        , gamma_n(false)
-        , dgamma_n(false)
-        , gamma_nm1(false)
         , derivative(D)
-        , poisson(P) {
-    setDCavity();
-    rho_nuc = chemistry::compute_nuclear_density(this->apply_prec, N, 1000);
-}
+        , poisson(P) {}
 
 SCRF::~SCRF() {
-    mrcpp::clear(this->d_cavity, true);
+    this->rho_nuc.free(NUMBER::Real);
+    clear();
 }
 
 void SCRF::clear() {
-    this->rho_tot.free(NUMBER::Real);
+    this->apply_prec = -1.0;
 }
 
 double SCRF::setConvergenceThreshold(double prec) {
@@ -88,30 +79,21 @@ double SCRF::setConvergenceThreshold(double prec) {
     return this->conv_thrs;
 }
 
-void SCRF::setDCavity() {
-    mrcpp::FunctionTree<3> *dx_cavity = new mrcpp::FunctionTree<3>(*MRA);
-    mrcpp::FunctionTree<3> *dy_cavity = new mrcpp::FunctionTree<3>(*MRA);
-    mrcpp::FunctionTree<3> *dz_cavity = new mrcpp::FunctionTree<3>(*MRA);
-    d_cavity.push_back(std::make_tuple(1.0, dx_cavity));
-    d_cavity.push_back(std::make_tuple(1.0, dy_cavity));
-    d_cavity.push_back(std::make_tuple(1.0, dz_cavity));
-    // mrcpp::project<3>(this->apply_prec / 100, this->d_cavity, this->epsilon.getGradVector());
-}
-
-void SCRF::computeDensities(OrbitalVector &Phi) {
+void SCRF::computeDensities(OrbitalVector &Phi, Density &rho_out) {
     Timer timer;
-    resetComplexFunction(this->rho_tot);
+
     Density rho_el(false);
     density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
     rho_el.rescale(-1.0);
+
     if (this->density_type == "electronic") {
-        mrcpp::cplxfunc::deep_copy(this->rho_tot, rho_el);
+        mrcpp::cplxfunc::deep_copy(rho_out, rho_el);
     } else if (this->density_type == "nuclear") {
-        mrcpp::cplxfunc::deep_copy(this->rho_tot, this->rho_nuc);
+        mrcpp::cplxfunc::deep_copy(rho_out, this->rho_nuc);
     } else {
-        mrcpp::cplxfunc::add(this->rho_tot, 1.0, rho_el, 1.0, this->rho_nuc, -1.0); // probably change this into a vector
+        mrcpp::cplxfunc::add(rho_out, 1.0, rho_el, 1.0, this->rho_nuc, -1.0);
     }
-    print_utils::qmfunction(3, "Vacuum density", this->rho_tot, timer);
+    print_utils::qmfunction(3, "Vacuum density", rho_out, timer);
 }
 
 void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
@@ -135,27 +117,27 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     mrcpp::clear(d_V, true);
 }
 
-mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma) {
+mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma, mrchem::OrbitalVector &Phi) {
     mrcpp::ComplexFunction Poisson_func;
     mrcpp::ComplexFunction rho_eff;
     mrcpp::ComplexFunction first_term;
-    mrcpp::ComplexFunction Vr;
-    mrcpp::ComplexFunction eps_inv;
-    eps_inv.alloc(NUMBER::Real);
-    Vr.alloc(NUMBER::Real);
-
+    mrcpp::ComplexFunction Vr_np1;
+    Vr_np1.alloc(NUMBER::Real);
+    // TODO want to avoid using the flipFunction method
     this->epsilon.flipFunction(true);
-    mrcpp::cplxfunc::project(eps_inv, this->epsilon, NUMBER::Real, this->apply_prec / 100);
-    mrcpp::cplxfunc::multiply(first_term, this->rho_tot, eps_inv, this->apply_prec);
-    // Use directly? mrcpp::cplxfunc::multiply(first_term, this->rho_tot, this->epsilon, this->apply_prec);
+
+    Density rho_tot(false);
+    computeDensities(Phi, rho_tot);
+
+    mrcpp::cplxfunc::multiply(first_term, rho_tot, this->epsilon, this->apply_prec);
     this->epsilon.flipFunction(false);
 
-    mrcpp::cplxfunc::add(rho_eff, 1.0, first_term, -1.0, this->rho_tot, -1.0);
+    mrcpp::cplxfunc::add(rho_eff, 1.0, first_term, -1.0, rho_tot, -1.0);
+    rho_tot.free(NUMBER::Real);
 
     mrcpp::cplxfunc::add(Poisson_func, 1.0, in_gamma, 1.0, rho_eff, -1.0);
-    mrcpp::apply(this->apply_prec, Vr.real(), *poisson, Poisson_func.real());
-
-    return Vr;
+    mrcpp::apply(this->apply_prec, Vr_np1.real(), *poisson, Poisson_func.real());
+    return Vr_np1;
 }
 
 void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFunction &func, KAIN &kain) {
@@ -169,7 +151,7 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
 
     phi_n[0].setRank(mrcpp::mpi::wrk_rank);
     dPhi_n[0].setRank(mrcpp::mpi::wrk_rank);
-    
+
     kain.accelerate(this->apply_prec, phi_n, dPhi_n);
 
     func = phi_n[0];
@@ -179,7 +161,7 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
     dPhi_n.clear();
 }
 
-void SCRF::nestedSCRF(mrcpp::ComplexFunction V_vac) {
+void SCRF::nestedSCRF(mrcpp::ComplexFunction &V_vac, const std::shared_ptr<mrchem::OrbitalVector> &Phi_p) {
     KAIN kain(this->history);
     kain.setLocalPrintLevel(10);
 
@@ -190,47 +172,38 @@ void SCRF::nestedSCRF(mrcpp::ComplexFunction V_vac) {
     while (update >= this->conv_thrs && iter <= max_iter) {
         Timer t_iter;
         // solve the poisson equation
-        mrcpp::ComplexFunction Vr_np1 = solvePoissonEquation(this->gamma_n);
+        mrcpp::ComplexFunction V_tot;
+        mrcpp::ComplexFunction gamma_n;
+        mrcpp::ComplexFunction dVr_n;
+
+        mrcpp::cplxfunc::add(V_tot, 1.0, this->Vr_n, 1.0, V_vac, -1.0);
+        computeGamma(V_tot, gamma_n);
+        auto Vr_np1 = solvePoissonEquation(gamma_n, *Phi_p);
         norm = Vr_np1.norm();
 
         // use a convergence accelerator
-        resetComplexFunction(this->dVr_n);
-        mrcpp::cplxfunc::add(this->dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
+
+        mrcpp::cplxfunc::add(dVr_n, 1.0, Vr_np1, -1.0, this->Vr_n, -1.0);
         update = dVr_n.norm();
 
-        if (iter > 1 and this->history > 0 and this->accelerate_Vr) {
+        if (iter > 1 and this->history > 0) {
             accelerateConvergence(dVr_n, Vr_n, kain);
             Vr_np1.free(NUMBER::Real);
             mrcpp::cplxfunc::add(Vr_np1, 1.0, Vr_n, 1.0, dVr_n, -1.0);
         }
 
         // set up for next iteration
-        mrcpp::ComplexFunction V_tot;
-        mrcpp::cplxfunc::add(V_tot, 1.0, Vr_np1, 1.0, V_vac, -1.0);
-        updateCurrentReactionPotential(Vr_np1); // push_back() maybe
+        resetComplexFunction(this->Vr_n);
+        mrcpp::cplxfunc::deep_copy(this->Vr_n, Vr_np1);
+        Vr_np1.free(NUMBER::Real);
 
-        mrcpp::ComplexFunction gamma_np1;
-        computeGamma(V_tot, gamma_np1);
-
-        resetComplexFunction(dgamma_n);
-        mrcpp::cplxfunc::add(this->dgamma_n, 1.0, gamma_np1, -1.0, this->gamma_n, -1.0);
-
-        if (iter > 1 and this->history > 0 and (not this->accelerate_Vr)) {
-            accelerateConvergence(dgamma_n, gamma_n, kain);
-            gamma_np1.free(NUMBER::Real);
-            mrcpp::cplxfunc::add(gamma_np1, 1.0, gamma_n, 1.0, dgamma_n, -1.0);
-        }
-
-        updateCurrentGamma(gamma_np1);
         printConvergenceRow(iter, norm, update, t_iter.elapsed());
         iter++;
     }
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
+    // computeEnergies(*Phi_p, this->rho_nuc); // TODO might not really need this, test it.
     mrcpp::print::separator(3, '-');
-    if (this->dVr_n.hasReal()) this->dVr_n.real().clear();
-    if (this->dVr_n.hasReal()) this->dVr_n.real().setZero();
-    this->dgamma_n.real().clear();
-    this->dgamma_n.real().setZero();
+
     kain.clear();
 }
 
@@ -260,85 +233,47 @@ void SCRF::printConvergenceRow(int i, double norm, double update, double time) c
 
 mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
     this->apply_prec = prec;
-    computeDensities(*Phi);
+    Density rho_tot(false);
+    computeDensities(*Phi, rho_tot);
     Timer t_vac;
     mrcpp::ComplexFunction V_vac;
     V_vac.alloc(NUMBER::Real);
-    mrcpp::apply(this->apply_prec, V_vac.real(), *poisson, this->rho_tot.real());
+    mrcpp::apply(this->apply_prec, V_vac.real(), *poisson, rho_tot.real());
+    rho_tot.free(NUMBER::Real);
     print_utils::qmfunction(3, "Vacuum potential", V_vac, t_vac);
 
     // set up the zero-th iteration potential and gamma, so the first iteration gamma and potentials can be made
 
     Timer t_gamma;
-    if ((not this->Vr_n.hasReal()) or (not this->gamma_n.hasReal())) {
+    if (not this->Vr_n.hasReal()) {
         mrcpp::ComplexFunction gamma_0;
         mrcpp::ComplexFunction V_tot;
         computeGamma(V_vac, gamma_0);
-        this->Vr_n = solvePoissonEquation(gamma_0);
-        mrcpp::cplxfunc::add(V_tot, 1.0, V_vac, 1.0, this->Vr_n, -1.0);
-        computeGamma(V_tot, this->gamma_n);
+        this->Vr_n = solvePoissonEquation(gamma_0, *Phi);
     }
 
     // update the potential/gamma before doing anything with them
 
-    if (accelerate_Vr) {
-        mrcpp::ComplexFunction temp_Vr_n;
-        mrcpp::cplxfunc::add(temp_Vr_n, 1.0, this->Vr_n, 1.0, this->dVr_n, -1.0);
-        mrcpp::cplxfunc::deep_copy(this->Vr_n, temp_Vr_n);
-        temp_Vr_n.free(NUMBER::Real);
-        mrcpp::ComplexFunction V_tot;
-        mrcpp::cplxfunc::add(V_tot, 1.0, this->Vr_n, 1.0, V_vac, -1.0);
-        resetComplexFunction(this->gamma_n);
-        computeGamma(V_tot, this->gamma_n);
-    } else {
-        mrcpp::ComplexFunction temp_gamma_n;
-        mrcpp::cplxfunc::add(temp_gamma_n, 1.0, this->gamma_n, 1.0, this->dgamma_n, -1.0);
-        mrcpp::cplxfunc::deep_copy(this->gamma_n, temp_gamma_n);
-        temp_gamma_n.free(NUMBER::Real);
-    }
-    print_utils::qmfunction(3, "Initial gamma", this->gamma_n, t_gamma);
-
     Timer t_scrf;
-    nestedSCRF(V_vac);
+    nestedSCRF(V_vac, Phi);
     print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
     return this->Vr_n;
 }
 
-double SCRF::getNuclearEnergy() {
-    return mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
-}
-
-double SCRF::getElectronicEnergy() {
-    mrcpp::ComplexFunction rho_el;
-    rho_el.alloc(NUMBER::Real);
-    mrcpp::cplxfunc::add(rho_el, 1.0, this->rho_tot, -1.0, this->rho_nuc, -1.0);
-    return mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
-}
-
-double SCRF::getTotalEnergy() {
-    return mrcpp::cplxfunc::dot(this->rho_tot, this->Vr_n).real();
+void SCRF::computeEnergies(mrchem::OrbitalVector &Phi) {
+    this->Er_nuc = mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
+    Density rho_el(false);
+    density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
+    rho_el.rescale(-1.0);
+    this->Er_el = mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
+    rho_el.free(NUMBER::Real);
+    this->Er_tot = this->Er_el + this->Er_nuc;
 }
 
 void SCRF::resetComplexFunction(mrcpp::ComplexFunction &function) {
     if (function.hasReal()) function.free(NUMBER::Real);
     if (function.hasImag()) function.free(NUMBER::Imag);
     function.alloc(NUMBER::Real);
-}
-
-void SCRF::updateCurrentReactionPotential(mrcpp::ComplexFunction &Vr_np1) {
-    resetComplexFunction(this->Vr_nm1);
-    mrcpp::cplxfunc::deep_copy(this->Vr_nm1, this->Vr_n);
-    resetComplexFunction(this->Vr_n);
-    mrcpp::cplxfunc::deep_copy(this->Vr_n, Vr_np1);
-    Vr_np1.free(NUMBER::Real);
-}
-
-void SCRF::updateCurrentGamma(mrcpp::ComplexFunction &gamma_np1) {
-    resetComplexFunction(this->gamma_nm1);
-    mrcpp::cplxfunc::deep_copy(this->gamma_nm1, this->gamma_n);
-    resetComplexFunction(this->gamma_n);
-    mrcpp::cplxfunc::deep_copy(this->gamma_n, gamma_np1);
-    gamma_np1.free(NUMBER::Real);
 }
 
 void SCRF::printParameters() const {
@@ -358,7 +293,7 @@ void SCRF::printParameters() const {
 
     nlohmann::json data = {
         {"Method                ", "SCRF"},
-        {"Optimizer             ", (accelerate_Vr) ? "Potential" : "Density"},
+        {"Optimizer             ", "Potential"},
         {"Max iterations        ", max_iter},
         {"KAIN solver           ", o_kain.str()},
         {"Density type          ", density_type},

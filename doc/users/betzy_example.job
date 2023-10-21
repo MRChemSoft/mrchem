@@ -5,4 +5,4 @@
 export UCX_LOG_LEVEL=ERROR
 export OMP_NUM_THREADS=15
 
-~/my_path/to/mrchem --launcher='mpirun --rank-by node --map-by socket --bind-to numa --oversubscribe' h2o
+~/my_path/to/mrchem --launcher='mpirun --rank-by node --map-by socket --bind-to numa' h2o

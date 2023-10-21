@@ -76,7 +76,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
 
-
     // Make Fock operator contributions
     Timer t_tot, t_lap;
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
@@ -132,8 +131,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
-    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
-    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+    Phi = orbital::adjoin(Phi, Phi_a);
+    Phi = orbital::adjoin(Phi, Phi_b);
     p.clear();
     V.clear();
 
@@ -155,7 +154,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
     print_utils::text(0, "AO basis    ", "3-21G");
     mrcpp::print::separator(0, '~', 2);
-
 
     // Make Fock operator contributions
     Timer t_tot, t_lap;
@@ -210,8 +208,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
-    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
-    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+    Phi = orbital::adjoin(Phi, Phi_a);
+    Phi = orbital::adjoin(Phi, Phi_b);
     p.clear();
     V.clear();
 

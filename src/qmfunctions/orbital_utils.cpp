@@ -331,8 +331,24 @@ OrbitalVector orbital::param_copy(const OrbitalVector &Phi) {
  */
 OrbitalVector orbital::adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b) {
     OrbitalVector out;
-    for (auto &phi : Phi_a) out.push_back(phi);
-    for (auto &phi : Phi_b) out.push_back(phi);
+    for (auto &phi : Phi_a) {
+        if (phi.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
+            // need to send orbital from owner to new owner
+            if (mrcpp::mpi::my_orb(phi)) { mrcpp::mpi::send_function(phi, out.size() % mrcpp::mpi::wrk_size, phi.getRank(), mrcpp::mpi::comm_wrk); }
+            if (mrcpp::mpi::my_orb(out.size())) { mrcpp::mpi::recv_function(phi, phi.getRank() % mrcpp::mpi::wrk_size, phi.getRank(), mrcpp::mpi::comm_wrk); }
+        }
+        phi.setRank(out.size());
+        out.push_back(phi);
+    }
+    for (auto &phi : Phi_b) {
+        if (phi.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
+            // need to send orbital from owner to new owner
+            if (mrcpp::mpi::my_orb(phi)) { mrcpp::mpi::send_function(phi, out.size() % mrcpp::mpi::wrk_size, phi.getRank(), mrcpp::mpi::comm_wrk); }
+            if (mrcpp::mpi::my_orb(out.size())) { mrcpp::mpi::recv_function(phi, phi.getRank() % mrcpp::mpi::wrk_size, phi.getRank(), mrcpp::mpi::comm_wrk); }
+        }
+        phi.setRank(out.size());
+        out.push_back(phi);
+    }
     Phi_a.clear();
     Phi_b.clear();
     return out;
@@ -350,9 +366,19 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     OrbitalVector tmp;
     for (auto &i : Phi) {
         if (i.spin() == spin) {
+            if (i.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
+                // need to send orbital from owner to new owner
+                if (mrcpp::mpi::my_orb(i)) { mrcpp::mpi::send_function(i, out.size() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+                if (mrcpp::mpi::my_orb(out.size())) { mrcpp::mpi::recv_function(i, i.getRank() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+            }
             i.setRank(out.size());
             out.push_back(i);
         } else {
+            if (i.getRank() % mrcpp::mpi::wrk_size != tmp.size() % mrcpp::mpi::wrk_size) {
+                // need to send orbital from owner to new owner
+                if (mrcpp::mpi::my_orb(i)) { mrcpp::mpi::send_function(i, tmp.size() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+                if (mrcpp::mpi::my_orb(tmp.size())) { mrcpp::mpi::recv_function(i, i.getRank() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+            }
             i.setRank(tmp.size());
             tmp.push_back(i);
         }

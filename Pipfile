@@ -6,7 +6,7 @@ name = "pypi"
 [packages]
 
 [dev-packages]
-qcelemental = "<= 0.24.0"
+qcelemental = "0.26.0"
 Pygments = "*"
 recommonmark = "*"
 Sphinx = ">=2.0"

@@ -24,9 +24,9 @@
  */
 
 #include <MRCPP/Gaussians>
+#include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-#include <MRCPP/Parallel>
 
 #include "gto.h"
 
@@ -94,8 +94,8 @@ bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, c
     initial_guess::gto::project_mo(Phi_b, prec, bas_file, mob_file, screen);
 
     // Collect orbitals into one vector
-    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
-    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+    Phi = orbital::adjoin(Phi, Phi_a);
+    Phi = orbital::adjoin(Phi, Phi_b);
 
     return true;
 }

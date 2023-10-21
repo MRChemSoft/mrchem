@@ -1,5 +1,5 @@
 breathe
 recommonmark
-Sphinx>=2.0
+sphinx<7
 sphinx_rtd_theme
 sphinxcontrib-bibtex==1.0.0

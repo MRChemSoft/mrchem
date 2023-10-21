@@ -129,8 +129,9 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
-    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
-    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+    Phi = orbital::adjoin(Phi, Phi_a);
+    Phi = orbital::adjoin(Phi, Phi_b);
+
     V.clear();
     p.clear();
 

@@ -74,8 +74,8 @@ bool initial_guess::mw::setup(OrbitalVector &Phi, double prec, const std::string
     success &= initial_guess::mw::project_mo(Phi_b, prec, file_b);
 
     // Collect orbitals into one vector
-    for (auto &phi_a : Phi_a) Phi.push_back(phi_a);
-    for (auto &phi_b : Phi_b) Phi.push_back(phi_b);
+    Phi = orbital::adjoin(Phi, Phi_a);
+    Phi = orbital::adjoin(Phi, Phi_b);
 
     return success;
 }
