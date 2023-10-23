@@ -37,7 +37,7 @@ class KAIN;
 class SCRF final {
 public:
     SCRF(Permittivity &e,
-         Density const &rho_nuc,
+         const Density &rho_nuc,
          std::shared_ptr<mrcpp::PoissonOperator> P,
          std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
          int kain_hist,
@@ -66,13 +66,13 @@ private:
 
     int max_iter;
     int history;
-    double apply_prec;
-    double conv_thrs;
-    double mo_residual;
+    double apply_prec{-1.0};
+    double conv_thrs{1.0};
+    double mo_residual{1.0};
 
-    double Er_nuc;
-    double Er_el;
-    double Er_tot;
+    double Er_nuc{0.0};
+    double Er_el{0.0};
+    double Er_tot{0.0};
 
     Permittivity epsilon;
 
