@@ -48,9 +48,6 @@ public:
     ~ReactionPotential() override { free(NUMBER::Total); }
 
     SCRF *getHelper() { return this->helper.get(); }
-    double getElectronicEnergy() { return this->helper->getElectronicEnergy(); }
-    double getNuclearEnergy() { return this->helper->getNuclearEnergy(); }
-    double getTotalEnergy() { return this->helper->getTotalEnergy(); }
 
     /** @brief Updates the helper.mo_residual member variable. This variable is used to set the convergence criterion in
      * the dynamic convergence method. */

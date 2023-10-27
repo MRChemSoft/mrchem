@@ -36,7 +36,7 @@ class KAIN;
  */
 class SCRF final {
 public:
-    SCRF(Permittivity &e,
+    SCRF(const Permittivity &e,
          const Density &rho_nuc,
          std::shared_ptr<mrcpp::PoissonOperator> P,
          std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
@@ -55,7 +55,7 @@ public:
     void updateMOResidual(double const err_t) { this->mo_residual = err_t; }
 
     friend class ReactionPotential;
-    void computeEnergies(mrchem::OrbitalVector &Phi);
+    auto computeEnergies(const Density &rho_el) -> std::tuple<double, double>;
 
 protected:
     void clear();
@@ -70,24 +70,16 @@ private:
     double conv_thrs{1.0};
     double mo_residual{1.0};
 
-    double Er_nuc{0.0};
-    double Er_el{0.0};
-    double Er_tot{0.0};
-
     Permittivity epsilon;
 
-    Density rho_nuc;
+    Density rho_nuc; // As of right now, this is the biggest memory hog.
+    // Alternative could be to precompute its contributions, as a potential is not as heavy as a density (maybe)
+    // another one could be to define a representable function which only has the exact analytical form of the nuclear contribution.
 
     mrcpp::ComplexFunction Vr_n;
 
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
-
-    // void setDCavity();
-
-    double const &getNuclearEnergy() { return this->Er_nuc; };
-    double const &getElectronicEnergy() { return this->Er_el; };
-    double const &getTotalEnergy() { return this->Er_tot; };
 
     void computeDensities(OrbitalVector &Phi, Density &rho_out);
     void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
@@ -96,12 +88,10 @@ private:
 
     void accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFunction &func, KAIN &kain);
 
-    // TODO    void variationalSCRF(mrcpp::ComplexFunction V_vac);
-    void nestedSCRF(mrcpp::ComplexFunction &V_vac, const std::shared_ptr<mrchem::OrbitalVector> &Phi_p);
+    void nestedSCRF(const mrcpp::ComplexFunction &V_vac, std::shared_ptr<mrchem::OrbitalVector> Phi_p);
     mrcpp::ComplexFunction &setup(double prec, const std::shared_ptr<mrchem::OrbitalVector> &Phi_p);
 
     void resetComplexFunction(mrcpp::ComplexFunction &function);
-    void updateCurrentReactionPotential(mrcpp::ComplexFunction &Vr_np1);
 
     void printParameters() const;
     void printConvergenceRow(int i, double norm, double update, double time) const;

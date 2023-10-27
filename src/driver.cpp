@@ -1051,13 +1051,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         auto kain = json_fock["reaction_operator"]["kain"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];
-        auto optimizer = json_fock["reaction_operator"]["optimizer"];
         auto dynamic_thrs = json_fock["reaction_operator"]["dynamic_thrs"];
         auto density_type = json_fock["reaction_operator"]["density_type"];
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_o = json_fock["reaction_operator"]["epsilon_out"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
-        auto accelerate_pot = (optimizer == "potential") ? true : false; // this has to go
 
         Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
         dielectric_func.printParameters();

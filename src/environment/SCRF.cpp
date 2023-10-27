@@ -46,7 +46,7 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-SCRF::SCRF(Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, std::string density_type)
+SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, std::string density_type)
         : dynamic_thrs(dyn_thrs)
         , density_type(density_type)
         , max_iter(max_iter)
@@ -117,7 +117,7 @@ mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &
     mrcpp::ComplexFunction first_term;
     mrcpp::ComplexFunction Vr_np1;
     Vr_np1.alloc(NUMBER::Real);
-    // TODO want to avoid using the flipFunction method
+
     this->epsilon.flipFunction(true);
 
     Density rho_tot(false);
@@ -155,7 +155,7 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
     dPhi_n.clear();
 }
 
-void SCRF::nestedSCRF(mrcpp::ComplexFunction &V_vac, const std::shared_ptr<mrchem::OrbitalVector> &Phi_p) {
+void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, std::shared_ptr<mrchem::OrbitalVector> Phi_p) {
     KAIN kain(this->history);
     kain.setLocalPrintLevel(10);
 
@@ -195,7 +195,6 @@ void SCRF::nestedSCRF(mrcpp::ComplexFunction &V_vac, const std::shared_ptr<mrche
         iter++;
     }
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
-    // computeEnergies(*Phi_p, this->rho_nuc); // TODO might not really need this, test it.
     mrcpp::print::separator(3, '-');
 
     kain.clear();
@@ -254,14 +253,11 @@ mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
     return this->Vr_n;
 }
 
-void SCRF::computeEnergies(mrchem::OrbitalVector &Phi) {
-    this->Er_nuc = mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
-    Density rho_el(false);
-    density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
-    rho_el.rescale(-1.0);
-    this->Er_el = mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
-    rho_el.free(NUMBER::Real);
-    this->Er_tot = this->Er_el + this->Er_nuc;
+auto SCRF::computeEnergies(const Density &rho_el) -> std::tuple<double, double> {
+    auto Er_nuc = 0.5 * mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
+
+    auto Er_el = 0.5 * mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
+    return std::make_tuple(Er_el, Er_nuc);
 }
 
 void SCRF::resetComplexFunction(mrcpp::ComplexFunction &function) {

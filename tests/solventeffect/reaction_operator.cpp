@@ -43,6 +43,7 @@
 #include "environment/Permittivity.h"
 #include "environment/SCRF.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
@@ -93,7 +94,13 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
 
     auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
     Reo->setup(prec);
-    double total_energy = Reo->getTotalEnergy();
+
+    Density rho_el(false);
+    density::compute(prec, rho_el, Phi, DensityType::Total);
+    rho_el.rescale(-1.0);
+
+    auto [Er_nuc, Er_el] = Reo->getHelper()->computeEnergies(rho_el);
+    auto total_energy = Er_nuc + Er_el;
     Reo->clear();
     REQUIRE(total_energy == Approx(-0.191434124263).epsilon(thrs));
 }

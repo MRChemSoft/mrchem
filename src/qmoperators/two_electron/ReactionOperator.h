@@ -52,10 +52,6 @@ public:
 
     ComplexDouble trace(OrbitalVector &Phi) { return RankZeroOperator::trace(Phi); }
 
-    double getTotalEnergy() { return this->potential->getTotalEnergy(); }
-    double getNuclearEnergy() { return this->potential->getNuclearEnergy(); }
-    double getElectronicEnergy() { return this->potential->getElectronicEnergy(); }
-
     SCRF *getHelper() { return this->potential->getHelper(); }
     std::shared_ptr<ReactionPotential> getPotential() { return this->potential; }
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }
