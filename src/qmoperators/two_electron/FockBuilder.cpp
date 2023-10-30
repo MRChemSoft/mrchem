@@ -173,7 +173,11 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
         Density rho_el(false);
         density::compute(this->prec, rho_el, Phi, DensityType::Total);
         rho_el.rescale(-1.0);
-        auto [Er_nuc, Er_el] = this->Ro->getHelper()->computeEnergies(rho_el);
+        std::tuple<double, double> Er = this->Ro->getHelper()->computeEnergies(rho_el);
+
+        Er_el = std::get<0>(Er);
+        Er_nuc = std::get<1>(Er);
+
         Er_tot = Er_nuc + Er_el;
     }
 

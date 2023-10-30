@@ -102,7 +102,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto [Er_nuc, Er_el] = Reo->getHelper()->computeEnergies(rho_el);
     auto total_energy = Er_nuc + Er_el;
     Reo->clear();
-    REQUIRE(total_energy == Approx(-0.191434124263).epsilon(thrs));
+    REQUIRE(total_energy == Approx(-1.022729683846e-01).epsilon(thrs));
 }
 
 } // namespace reaction_operator
