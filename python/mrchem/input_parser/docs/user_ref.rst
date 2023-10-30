@@ -845,15 +845,6 @@ User input reference
       
         **Default** ``True``
       
-       :optimizer: Choose which function to use in the KAIN solver, the surface charge ``density`` (gamma) or the reaction ``potential`` (V_R). 
-      
-        **Type** ``str``
-      
-        **Default** ``potential``
-      
-        **Predicates**
-          - ``value.lower() in ['density', 'potential']``
-      
        :density_type: What part of the total molecular charge density to use in the algorithm. ``total`` uses the total charge density. ``nuclear`` uses only the nuclear part of the total charge density. ``electronic`` uses only the electronic part of the total charge density. 
       
         **Type** ``str``

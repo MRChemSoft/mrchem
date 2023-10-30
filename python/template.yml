@@ -828,14 +828,6 @@ sections:
               are close to convergence (``mo_residual < world_prec*10``) the convergence
               threshold will be set equal to ``world_prec``.
               ``false`` uses ``world_prec`` as convergence threshold throughout.
-          - name: optimizer
-            type: str
-            default: potential
-            predicates:
-              - value.lower() in ['density', 'potential']
-            docstring: |
-              Choose which function to use in the KAIN solver, the surface charge ``density``
-              (gamma) or the reaction ``potential`` (V_R).
           - name: kain
             type: int
             default: user['SCF']['kain']
