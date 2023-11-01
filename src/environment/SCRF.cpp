@@ -46,7 +46,7 @@ using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, std::string density_type)
+SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, const std::string &density_type)
         : dynamic_thrs(dyn_thrs)
         , density_type(density_type)
         , max_iter(max_iter)

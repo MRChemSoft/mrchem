@@ -43,7 +43,7 @@ public:
          int kain_hist,
          int max_iter,
          bool dyn_thrs,
-         std::string density_type);
+         const std::string &density_type);
     ~SCRF();
 
     double setConvergenceThreshold(double prec);
