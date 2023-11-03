@@ -51,7 +51,7 @@ namespace detail {
  * where the subscript \f$i\f$ is the index related to each
  * sphere in the cavity, and \f$\operatorname{s}\f$ is the signed normal distance from the surface of each sphere.
  *   @param r The coordinates of a test point in 3D space.
- *   @param index An integer that defines the variable of differentiation (0->x, 1->z and 2->z).
+ *   @param index An integer that defines the variable of differentiation (0->x, 1->y and 2->z).
  *   @param centers A vector containing the coordinates of the centers of the spheres in the cavity.
  *   @param radii A vector containing the radii of the spheres.
  *   @param width A double value describing the width of the transition at the boundary of the spheres.
@@ -112,19 +112,6 @@ Cavity::Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<dou
     }
 }
 
-/** @brief Initializes the members of the class and constructs the analytical gradient vector of the Cavity.
- *
- * This CTOR applies a single width factor to the cavity and **does** not modify the radii. That is, in the formula:
- *
- * \f[
- *   R_{i} =  \alpha_{i} R_{0,i} + \beta_{i}\sigma_{i}
- * \f]
- *
- * for every atom \f$i\f$, \f$\alpha_{i} = 1.0\f$ and \f$\beta_{i} = 0.0\f$.
- */
-Cavity::Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, double sigma)
-        : Cavity(coords, R, std::vector<double>(R.size(), 1.0), std::vector<double>(R.size(), 0.0), std::vector<double>(R.size(), sigma)) {}
-
 /** @brief Evaluates the value of the cavity at a 3D point \f$\mathbf{r}\f$
  *  @param r coordinate of 3D point at which the Cavity is to be evaluated at.
  *  @return double value of the Cavity at point \f$\mathbf{r}\f$
@@ -143,6 +130,65 @@ double Cavity::evalf(const mrcpp::Coord<3> &r) const {
     }
     C = 1 - C;
     return C;
+}
+
+void Cavity::printParameters() const {
+    // Collect relevant quantities
+    auto coords = this->centers;
+    auto radii = this->radii;
+    auto radii_0 = this->radii_0;
+    auto alphas = this->alphas;
+    auto sigmas = this->sigmas;
+    auto betas = this->betas;
+
+    // Set widths
+    auto w0 = mrcpp::Printer::getWidth() - 1;
+    auto w1 = 5;
+    auto w2 = 9;
+    auto w3 = 6;
+    auto w4 = 10;
+    auto w5 = w0 - w1 - w2 - 3 * w3 - 3 * w4;
+
+    // Build table column headers
+    std::stringstream o_head;
+    o_head << std::setw(w1) << "N";
+    o_head << std::setw(w2) << "R_0";
+    o_head << std::setw(w3 + 1) << "Alpha";
+    o_head << std::setw(w3 - 1) << "Beta";
+    o_head << std::setw(w3) << "Sigma";
+    o_head << std::setw(w5) << "Radius";
+    o_head << std::setw(w4) << "x";
+    o_head << std::setw(w4) << "y";
+    o_head << std::setw(w4) << "z";
+
+    // Print
+    mrcpp::print::header(0, "Solvation Cavity");
+    println(0, o_head.str());
+    mrcpp::print::separator(0, '-');
+    for (auto i = 0; i < coords.size(); i++) {
+        auto coord = coords[i];
+        auto x = coord[0];
+        auto y = coord[1];
+        auto z = coord[2];
+        auto r = radii[i];
+        auto r_0 = radii_0[i];
+        auto alpha = alphas[i];
+        auto beta = betas[i];
+        auto sigma = sigmas[i];
+
+        std::stringstream o_coord;
+        o_coord << std::setw(w1) << i;
+        o_coord << std::setw(w2) << std::setprecision(4) << std::fixed << r_0;
+        o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << alpha;
+        o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << beta;
+        o_coord << std::setw(w3) << std::setprecision(2) << std::fixed << sigma << "  ->";
+        o_coord << std::setw(w5 - 4) << std::setprecision(4) << std::fixed << r;
+        o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << x;
+        o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << y;
+        o_coord << std::setw(w4) << std::setprecision(6) << std::fixed << z;
+        println(0, o_coord.str());
+    }
+    mrcpp::print::separator(0, '=', 2);
 }
 
 bool Cavity::isVisibleAtScale(int scale, int nQuadPts) const {

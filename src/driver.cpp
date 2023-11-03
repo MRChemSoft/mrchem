@@ -1048,6 +1048,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
         auto cavity_p = mol.getCavity_p();
+        cavity_p->printParameters();
 
         auto kain = json_fock["reaction_operator"]["kain"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];

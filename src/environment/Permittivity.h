@@ -55,7 +55,11 @@ public:
      *  @param formulation Decides which formulation of the #Permittivity function to implement, only exponential
      * available as of now.
      */
-    Permittivity(const Cavity cavity, double epsilon_in, double epsilon_out, std::string formulation);
+    Permittivity(const Cavity &cavity, double epsilon_in, double epsilon_out, const std::string &formulation)
+            : epsilon_in(epsilon_in)
+            , epsilon_out(epsilon_out)
+            , formulation(formulation)
+            , cavity(cavity) {}
 
     /** @brief Evaluates Permittivity at a point in 3D space with respect to the state of #inverse.
      *  @param r coordinates of a 3D point in space.
@@ -70,12 +74,6 @@ public:
     /** @brief Returns the current state of #inverse. */
     auto isInverse() const { return this->inverse; }
 
-    /** @brief Calls the Cavity::getCoordinates() method of the #cavity instance. */
-    auto getCoordinates() const { return this->cavity.getCoordinates(); }
-
-    /** @brief Calls the Cavity::getRadii() method of the #cavity instance. */
-    auto getRadii() const { return this->cavity.getRadii(); }
-
     /** @brief Calls the Cavity::getGradVector() method of the #cavity instance. */
     auto getGradVector() const { return this->cavity.getGradVector(); }
 
@@ -85,9 +83,6 @@ public:
     /** @brief Returns the value of #epsilon_out. */
     auto getEpsOut() const { return this->epsilon_out; }
 
-    /** @brief Returns the cavity */
-    Cavity getCavity() const { return this->cavity; }
-
     /** @brief Returns the formulation */
     std::string getFormulation() const { return this->formulation; }
 
@@ -95,7 +90,7 @@ public:
     void printParameters() const;
 
 private:
-    bool inverse = false;    //!< State of #evalf
+    bool inverse{false};     //!< State of #evalf
     double epsilon_in;       //!< Dielectric constant describing the permittivity of free space.
     double epsilon_out;      //!< Dielectric constant describing the permittivity of the solvent.
     std::string formulation; //!< Formulation of the permittivity function, only exponential is used as of now.
