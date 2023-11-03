@@ -38,6 +38,7 @@
 namespace mrchem {
 class KAIN;
 class ReactionPotential;
+class ReactionPotentialD1;
 /** @class SCRF
  *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
  */
@@ -64,6 +65,7 @@ public:
     auto computeEnergies(const Density &rho_el) -> std::tuple<double, double>;
 
     friend class ReactionPotential;
+    friend class ReactionPotentialD1;
 
 protected:
     void clear();
