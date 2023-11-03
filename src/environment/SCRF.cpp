@@ -30,6 +30,9 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include "Permittivity.h"
+#include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
 #include "qmfunctions/density_utils.h"
 #include "qmoperators/two_electron/ReactionPotential.h"
 #include "scf_solver/KAIN.h"
@@ -42,7 +45,6 @@ using mrcpp::Timer;
 
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
-using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
@@ -73,15 +75,13 @@ double SCRF::setConvergenceThreshold(double prec) {
     return this->conv_thrs;
 }
 
-void SCRF::computeDensities(OrbitalVector &Phi, Density &rho_out) {
+void SCRF::computeDensities(const Density &rho_el, Density &rho_out) {
     Timer timer;
 
-    Density rho_el(false);
-    density::compute(this->apply_prec, rho_el, Phi, DensityType::Total);
-    rho_el.rescale(-1.0);
-
     if (this->density_type == "electronic") {
-        mrcpp::cplxfunc::deep_copy(rho_out, rho_el);
+        // using const_cast is absolutely EVIL here and in principle shouldn't be needed!
+        // however MRCPP is not everywhere const-correct, so here we go!
+        mrcpp::cplxfunc::deep_copy(rho_out, const_cast<Density &>(rho_el));
     } else if (this->density_type == "nuclear") {
         mrcpp::cplxfunc::deep_copy(rho_out, this->rho_nuc);
     } else {
@@ -112,7 +112,7 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     mrcpp::clear(d_V, true);
 }
 
-mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma, mrchem::OrbitalVector &Phi) {
+mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma, const Density &rho_el) {
     mrcpp::ComplexFunction Poisson_func;
     mrcpp::ComplexFunction rho_eff;
     mrcpp::ComplexFunction first_term;
@@ -121,7 +121,7 @@ mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &
 
     auto eps_inv_func = mrcpp::AnalyticFunction<3>([this](const mrcpp::Coord<3> &r) { return 1.0 / this->epsilon.evalf(r); });
     Density rho_tot(false);
-    computeDensities(Phi, rho_tot);
+    computeDensities(rho_el, rho_tot);
 
     mrcpp::cplxfunc::multiply(first_term, rho_tot, eps_inv_func, this->apply_prec);
 
@@ -154,7 +154,7 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
     dPhi_n.clear();
 }
 
-void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, std::shared_ptr<mrchem::OrbitalVector> Phi_p) {
+void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, const Density &rho_el) {
     KAIN kain(this->history);
     kain.setLocalPrintLevel(10);
 
@@ -171,7 +171,7 @@ void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, std::shared_ptr<mrche
 
         mrcpp::cplxfunc::add(V_tot, 1.0, this->Vr_n, 1.0, V_vac, -1.0);
         computeGamma(V_tot, gamma_n);
-        auto Vr_np1 = solvePoissonEquation(gamma_n, *Phi_p);
+        auto Vr_np1 = solvePoissonEquation(gamma_n, rho_el);
         norm = Vr_np1.norm();
 
         // use a convergence accelerator
@@ -223,10 +223,10 @@ void SCRF::printConvergenceRow(int i, double norm, double update, double time) c
     println(3, o_txt.str());
 }
 
-mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
+mrcpp::ComplexFunction &SCRF::setup(double prec, const Density &rho_el) {
     this->apply_prec = prec;
     Density rho_tot(false);
-    computeDensities(*Phi, rho_tot);
+    computeDensities(rho_el, rho_tot);
     Timer t_vac;
     mrcpp::ComplexFunction V_vac;
     V_vac.alloc(NUMBER::Real);
@@ -241,13 +241,13 @@ mrcpp::ComplexFunction &SCRF::setup(double prec, const OrbitalVector_p &Phi) {
         mrcpp::ComplexFunction gamma_0;
         mrcpp::ComplexFunction V_tot;
         computeGamma(V_vac, gamma_0);
-        this->Vr_n = solvePoissonEquation(gamma_0, *Phi);
+        this->Vr_n = solvePoissonEquation(gamma_0, rho_el);
     }
 
     // update the potential/gamma before doing anything with them
 
     Timer t_scrf;
-    nestedSCRF(V_vac, Phi);
+    nestedSCRF(V_vac, rho_el);
     print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
     return this->Vr_n;
 }
@@ -256,7 +256,7 @@ auto SCRF::computeEnergies(const Density &rho_el) -> std::tuple<double, double> 
     auto Er_nuc = 0.5 * mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
 
     auto Er_el = 0.5 * mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
-    return std::make_tuple(Er_el, Er_nuc);
+    return {Er_el, Er_nuc};
 }
 
 void SCRF::resetComplexFunction(mrcpp::ComplexFunction &function) {
