@@ -65,15 +65,23 @@ namespace mrchem {
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
     Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, const std::vector<double> &alphas, const std::vector<double> &betas, const std::vector<double> &sigmas);
-    Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, double sigma);
+    /** @brief Initializes the members of the class and constructs the analytical gradient vector of the Cavity.
+     *
+     * This CTOR applies a single width factor to the cavity and **does** not modify the radii. That is, in the formula:
+     *
+     * \f[
+     *   R_{i} =  \alpha_{i} R_{0,i} + \beta_{i}\sigma_{i}
+     * \f]
+     *
+     * for every atom \f$i\f$, \f$\alpha_{i} = 1.0\f$ and \f$\beta_{i} = 0.0\f$.
+     */
+    Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, double sigma)
+            : Cavity(coords, R, std::vector<double>(R.size(), 1.0), std::vector<double>(R.size(), 0.0), std::vector<double>(R.size(), sigma)) {}
     double evalf(const mrcpp::Coord<3> &r) const override;
     auto getGradVector() const { return this->gradvector; }
-    std::vector<mrcpp::Coord<3>> getCoordinates() const { return this->centers; } //!< Returns #centers.
-    std::vector<double> getOriginalRadii() const { return this->radii_0; }        //!< Returns #radii_0.
-    std::vector<double> getRadii() const { return this->radii; }                  //!< Returns #radii.
-    std::vector<double> getRadiiScalings() const { return this->alphas; }         //!< Returns #alphas.
-    std::vector<double> getWidths() const { return this->sigmas; }                //!< Returns #sigmas.
-    std::vector<double> getWidthScalings() const { return this->betas; }          //!< Returns #betas.
+
+    /** @brief Print parameters */
+    void printParameters() const;
 
 protected:
     std::vector<double> radii_0;                                             //!< Contains the *unscaled* radius of each sphere in #Center.

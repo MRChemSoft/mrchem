@@ -28,7 +28,6 @@
 #include <MRCPP/MWFunctions>
 
 namespace mrchem {
-
 Permittivity::Permittivity(std::shared_ptr<mrchem::Cavity> cavity, double epsilon_in, double epsilon_out, std::string formulation)
         : StepFunction(cavity, epsilon_in, epsilon_out)
         , formulation(formulation) {}
