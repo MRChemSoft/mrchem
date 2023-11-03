@@ -39,18 +39,21 @@ namespace mrchem {
  *  where \f$\rho\f$ is the total molecular density of a solute molecule, \f$\epsilon\f$ is
  *  the Permittivity function of the continuum and \f$\gamma_s\f$ is the surface charge distribution.
  */
-class ReactionPotential final : public QMPotential {
+class ReactionPotential : public QMPotential {
 public:
     /** @brief Initializes the ReactionPotential class.
-     *  @param scrf_p A SCRF instance which contains the parameters needed to compute the ReactionPotential.
-     *  @param Phi_p A pointer to a vector which contains the orbitals optimized in the SCF procedure. */
-    ReactionPotential(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p);
-    ~ReactionPotential() override { free(NUMBER::Total); }
+     *  @param scrf A SCRF instance which contains the parameters needed to compute the ReactionPotential.
+     *  @param Phi A pointer to a vector which contains the orbitals optimized in the SCF procedure.
+     */
+    explicit ReactionPotential(std::unique_ptr<SCRF> scrf, std::shared_ptr<mrchem::OrbitalVector> Phi = nullptr, bool mpi_share = false);
+    ~ReactionPotential() override = default;
 
     SCRF *getHelper() { return this->helper.get(); }
 
-    /** @brief Updates the helper.mo_residual member variable. This variable is used to set the convergence criterion in
-     * the dynamic convergence method. */
+    /** @brief Updates the helper.mo_residual member variable.
+     *
+     * This variable is used to set the convergence criterion in the dynamic convergence method.
+     */
     void updateMOResidual(double const err_t) { this->helper->mo_residual = err_t; }
 
     mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->helper->getCurrentReactionPotential(); }
@@ -58,13 +61,14 @@ public:
     friend class ReactionOperator;
 
 protected:
-    void clear();
+    std::unique_ptr<SCRF> helper;            ///< A SCRF instance used to compute the ReactionPotential.
+    std::shared_ptr<OrbitalVector> orbitals; ///< Unperturbed orbitals defining the ground-state electron density for the SCRF procedure.
+
+    void setup(double prec) override;
+    void clear() override;
 
 private:
-    std::unique_ptr<SCRF> helper;               //!< A SCRF instance used to compute the ReactionPotential.
-    std::shared_ptr<mrchem::OrbitalVector> Phi; //!< holds the Orbitals needed to compute the electronic density for the SCRF procedure.
-
-    void setup(double prec);
+    virtual mrcpp::ComplexFunction &computePotential(double prec) const = 0;
 };
 
 } // namespace mrchem

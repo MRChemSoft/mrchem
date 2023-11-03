@@ -27,35 +27,43 @@
 #include <MRCPP/Timer>
 
 #include "ReactionPotential.h"
+#include "qmfunctions/density_utils.h"
+
+using mrcpp::Printer;
+using mrcpp::Timer;
 
 using SCRF_p = std::unique_ptr<mrchem::SCRF>;
 using OrbitalVector_p = std::shared_ptr<mrchem::OrbitalVector>;
 
 namespace mrchem {
 
-ReactionPotential::ReactionPotential(SCRF_p scrf_p, OrbitalVector_p Phi_p)
-        : QMPotential(1, false)
-        , helper(std::move(scrf_p))
-        , Phi(Phi_p) {}
+ReactionPotential::ReactionPotential(SCRF_p scrf, OrbitalVector_p Phi, bool mpi_share)
+        : QMPotential(1, mpi_share)
+        , helper(std::move(scrf))
+        , orbitals(Phi) {}
 
 void ReactionPotential::setup(double prec) {
+    if (isSetup(prec)) return;
     setApplyPrec(prec);
     auto thrs = this->helper->setConvergenceThreshold(prec);
-    mrcpp::Timer timer;
-    auto plevel = mrcpp::Printer::getPrintLevel();
+    Timer timer;
+    auto plevel = Printer::getPrintLevel();
     mrcpp::print::separator(3, '=');
     print_utils::centered_text(3, "Building Reaction operator");
     this->helper->printParameters();
     mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
     mrcpp::print::value(3, "Threshold", thrs, "(abs)", 5);
     mrcpp::print::separator(3, '-');
-    auto potential = this->helper->setup(prec, this->Phi);
+
+    auto potential = this->computePotential(prec);
+
     mrcpp::cplxfunc::deep_copy(*this, potential);
     if (plevel == 2) print_utils::qmfunction(2, "Reaction operator", *this, timer);
     mrcpp::print::footer(3, timer, 2);
 }
 
 void ReactionPotential::clear() {
+    mrcpp::ComplexFunction::free(NUMBER::Total); // delete FunctionTree pointers
     clearApplyPrec();
     this->helper->clear();
 }

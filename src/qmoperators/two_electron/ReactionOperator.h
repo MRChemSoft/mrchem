@@ -27,7 +27,7 @@
 
 #include "tensor/RankZeroOperator.h"
 
-#include "ReactionPotential.h"
+#include "ReactionPotentialD1.h"
 
 /** @class ReactionOperator
  *
@@ -42,8 +42,8 @@ class SCRF;
 
 class ReactionOperator final : public RankZeroOperator {
 public:
-    ReactionOperator(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p) {
-        potential = std::make_shared<ReactionPotential>(std::move(scrf_p), Phi_p);
+    ReactionOperator(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p, bool mpi_share = false) {
+        potential = std::make_shared<ReactionPotentialD1>(std::move(scrf_p), Phi_p, mpi_share);
         // Invoke operator= to assign *this operator
         RankZeroOperator &V = (*this);
         V = potential;
