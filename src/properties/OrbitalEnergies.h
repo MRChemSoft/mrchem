@@ -42,11 +42,11 @@ namespace mrchem {
 class OrbitalEnergies final {
 public:
     IntVector &getSpin() { return this->spin; }
-    IntVector &getOccupation() { return this->occupation; }
+    DoubleVector &getOccupation() { return this->occupation; }
     DoubleVector &getEpsilon() { return this->epsilon; }
 
     const IntVector &getSpin() const { return this->spin; }
-    const IntVector &getOccupation() const { return this->occupation; }
+    const DoubleVector &getOccupation() const { return this->occupation; }
     const DoubleVector &getEpsilon() const { return this->epsilon; }
 
     void print(const std::string &id) const {
@@ -103,7 +103,7 @@ public:
 
 private:
     IntVector spin;
-    IntVector occupation;
+    DoubleVector occupation;
     DoubleVector epsilon;
 };
 // clang-format on
