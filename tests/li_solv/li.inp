@@ -23,8 +23,10 @@
   },
   "Permittivity": {
     "epsilon_in": 1.0,
-    "epsilon_out": 2.0,
-    "formulation": "exponential"
+    "formulation": "exponential",
+    "outside": {
+      "epsilon_static": 2.0
+    }
   }
 },
 "SCF": {
