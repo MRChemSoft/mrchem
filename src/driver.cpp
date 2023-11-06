@@ -1043,6 +1043,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("reaction_operator")) {
 
+        // only perturbaton orders 0 and 1 are implemented
+        if (order > 1) MSG_ABORT("Invalid perturbation order");
+
         // preparing Reaction Operator
         auto poisson_prec = json_fock["reaction_operator"]["poisson_prec"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
@@ -1053,6 +1056,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto kain = json_fock["reaction_operator"]["kain"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];
         auto dynamic_thrs = json_fock["reaction_operator"]["dynamic_thrs"];
+        // the input parser helpers have converted this parameter from string
+        // to integer, compatibly with the DensityType enum
         auto density_type = json_fock["reaction_operator"]["density_type"];
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_s = json_fock["reaction_operator"]["epsilon_static"];
@@ -1063,17 +1068,24 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         Density rho_nuc(false);
         rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
 
-        if (order == 0) {
-            // initialize Permittivity function with static epsilon
-            Permittivity dielectric_func(*cavity_p, eps_i, eps_s, formulation);
-            dielectric_func.printParameters();
+        // initialize Permittivity function with static or dynamic epsilon, based on perturbation order
+        Permittivity dielectric_func(*cavity_p, eps_i, (order == 0) ? eps_s : eps_d, formulation);
+        dielectric_func.printParameters();
 
-            auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
-            auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
-            F.getReactionOperator() = V_R;
-        } else {
-            MSG_ABORT("Invalid perturbation order");
-        }
+        // initialize SCRF object
+        auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
+
+        // initialize reaction potential object
+        auto V_R = [&] {
+            if (order == 0) {
+                return std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
+            } else {
+                return std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p, X_p, Y_p);
+            }
+        }();
+
+        // set reaction potential in FockBuilder object
+        F.getReactionOperator() = V_R;
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////

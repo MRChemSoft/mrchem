@@ -26,7 +26,6 @@
 #pragma once
 
 #include <memory>
-#include <string>
 #include <tuple>
 
 #include <MRCPP/MWFunctions>
@@ -39,6 +38,10 @@ namespace mrchem {
 class KAIN;
 class ReactionPotential;
 class ReactionPotentialD1;
+class ReactionPotentialD2;
+
+enum class SCRFDensityType : int { TOTAL = 0, ELECTRONIC = 1, NUCLEAR = 2 };
+
 /** @class SCRF
  *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
  */
@@ -51,7 +54,7 @@ public:
          int kain_hist,
          int max_iter,
          bool dyn_thrs,
-         const std::string &density_type);
+         SCRFDensityType density_type);
     ~SCRF();
 
     double setConvergenceThreshold(double prec);
@@ -64,15 +67,18 @@ public:
 
     auto computeEnergies(const Density &rho_el) -> std::tuple<double, double>;
 
+    auto getDensityType() const -> SCRFDensityType { return this->density_type; }
+
     friend class ReactionPotential;
     friend class ReactionPotentialD1;
+    friend class ReactionPotentialD2;
 
 protected:
     void clear();
 
 private:
     bool dynamic_thrs;
-    std::string density_type;
+    SCRFDensityType density_type;
 
     int max_iter;
     int history;

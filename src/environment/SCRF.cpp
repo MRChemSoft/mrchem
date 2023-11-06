@@ -48,7 +48,7 @@ using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
 
 namespace mrchem {
 
-SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, const std::string &density_type)
+SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, SCRFDensityType density_type)
         : dynamic_thrs(dyn_thrs)
         , density_type(density_type)
         , max_iter(max_iter)
@@ -78,14 +78,20 @@ double SCRF::setConvergenceThreshold(double prec) {
 void SCRF::computeDensities(const Density &rho_el, Density &rho_out) {
     Timer timer;
 
-    if (this->density_type == "electronic") {
-        // using const_cast is absolutely EVIL here and in principle shouldn't be needed!
-        // however MRCPP is not everywhere const-correct, so here we go!
-        mrcpp::cplxfunc::deep_copy(rho_out, const_cast<Density &>(rho_el));
-    } else if (this->density_type == "nuclear") {
-        mrcpp::cplxfunc::deep_copy(rho_out, this->rho_nuc);
-    } else {
-        mrcpp::cplxfunc::add(rho_out, 1.0, rho_el, 1.0, this->rho_nuc, -1.0);
+    switch (this->density_type) {
+        case SCRFDensityType::TOTAL:
+            mrcpp::cplxfunc::add(rho_out, 1.0, rho_el, 1.0, this->rho_nuc, -1.0);
+            break;
+        case SCRFDensityType::ELECTRONIC:
+            // using const_cast is absolutely EVIL here and in principle shouldn't be needed!
+            // however MRCPP is not everywhere const-correct, so here we go!
+            mrcpp::cplxfunc::deep_copy(rho_out, const_cast<Density &>(rho_el));
+            break;
+        case SCRFDensityType::NUCLEAR:
+            mrcpp::cplxfunc::deep_copy(rho_out, this->rho_nuc);
+            break;
+        default:
+            MSG_ABORT("Invalid density type");
     }
     print_utils::qmfunction(3, "Vacuum density", rho_out, timer);
 }
