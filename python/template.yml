@@ -291,7 +291,6 @@ sections:
           including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section.
           ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence
           over keywords in the ``ZORA`` section).
-
       - name: environment
         type: str
         default: none
@@ -942,6 +941,7 @@ sections:
             keywords:
               - name: epsilon_static
                 type: float
+                default: 1.0
                 docstring: |
                   Static permittivity outside the cavity. This is characteristic of the
                   solvent used.
@@ -951,9 +951,15 @@ sections:
                 docstring: |
                   Dynamic permittivity outside the cavity. This is
                   characteristic of the solvent used and relevant only in
-                  response calcualtions. Defaults to the same value as
-                  `epsilon_static`, *i.e.* _not_ using the response
-                  non-equilibrium formulation.
+                  response calculations. Defaults to the same value as
+                  `epsilon_static`.
+              - name: nonequilibrium
+                type: bool
+                default: false
+                docstring: |
+                  Whether to use the nonequilibrium formulation of response,
+                  *i.e.* use the dynamic permittivity for the calculation of the
+                  response reaction field. Defaults to false.
   - name: Constants
     docstring: Physical and mathematical constants used by MRChem
     keywords:

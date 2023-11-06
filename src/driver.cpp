@@ -104,7 +104,7 @@ namespace driver {
 DerivativeOperator_p get_derivative(const std::string &name);
 template <int I> RankOneOperator<I> get_operator(const std::string &name, const json &json_oper);
 template <int I, int J> RankTwoOperator<I, J> get_operator(const std::string &name, const json &json_oper);
-void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order);
+void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int order, bool is_dynamic = false);
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
@@ -746,7 +746,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
 
     FockBuilder F_1;
     const auto &json_fock_1 = json_rsp["fock_operator"];
-    driver::build_fock_operator(json_fock_1, mol, F_1, 1);
+    driver::build_fock_operator(json_fock_1, mol, F_1, 1, dynamic);
 
     const auto &json_pert = json_rsp["perturbation"];
     auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
@@ -983,7 +983,7 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
  * construct all operator which are present in this input. Option to set
  * perturbation order of the operators.
  */
-void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order) {
+void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, bool is_dynamic) {
     auto &nuclei = mol.getNuclei();
     auto Phi_p = mol.getOrbitals_p();
     auto X_p = mol.getOrbitalsX_p();
@@ -1062,14 +1062,28 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
         auto eps_s = json_fock["reaction_operator"]["epsilon_static"];
         auto eps_d = json_fock["reaction_operator"]["epsilon_dynamic"];
+        auto noneq = json_fock["reaction_operator"]["nonequilibrium"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
 
         // compute nuclear charge density
         Density rho_nuc(false);
         rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
 
+        // decide which permittivity to use outside of the cavity
+        auto eps_o = [order, is_dynamic, noneq, eps_s, eps_d] {
+            if (order == 1 && noneq && is_dynamic) {
+                // in response (order == 1), use dynamic permittivity if:
+                // a. nonequilibrium was requested, and
+                // b. the frequency is nonzero
+                return eps_d;
+            } else {
+                // for the ground state, always use the static permittivity
+                return eps_s;
+            }
+        }();
+
         // initialize Permittivity function with static or dynamic epsilon, based on perturbation order
-        Permittivity dielectric_func(*cavity_p, eps_i, (order == 0) ? eps_s : eps_d, formulation);
+        Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
         dielectric_func.printParameters();
 
         // initialize SCRF object
