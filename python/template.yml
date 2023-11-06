@@ -291,6 +291,7 @@ sections:
           including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section.
           ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence
           over keywords in the ``ZORA`` section).
+
       - name: environment
         type: str
         default: none
@@ -926,12 +927,6 @@ sections:
             docstring: |
               Permittivity inside the cavity. 1.0 is the permittivity of free
               space, anything other than this is undefined behaviour.
-          - name: epsilon_out
-            type: float
-            default: 1.0
-            docstring: |
-              Permittivity outside the cavity. This is characteristic of the
-              solvent used.
           - name: formulation
             type: str
             default: exponential
@@ -939,7 +934,26 @@ sections:
               - value.lower() in ['exponential']
             docstring: |
               Formulation of the Permittivity function. Currently only the
-              exponential is used.
+              exponential is available.
+        sections:
+          - name: outside
+            docstring: |
+              Parameters for the continuum solvent outside the cavity.
+            keywords:
+              - name: epsilon_static
+                type: float
+                docstring: |
+                  Static permittivity outside the cavity. This is characteristic of the
+                  solvent used.
+              - name: epsilon_dynamic
+                type: float
+                default: user['PCM']['Permittivity']['outside']['epsilon_static']
+                docstring: |
+                  Dynamic permittivity outside the cavity. This is
+                  characteristic of the solvent used and relevant only in
+                  response calcualtions. Defaults to the same value as
+                  `epsilon_static`, *i.e.* _not_ using the response
+                  non-equilibrium formulation.
   - name: Constants
     docstring: Physical and mathematical constants used by MRChem
     keywords:

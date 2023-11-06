@@ -1055,20 +1055,25 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto dynamic_thrs = json_fock["reaction_operator"]["dynamic_thrs"];
         auto density_type = json_fock["reaction_operator"]["density_type"];
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
-        auto eps_o = json_fock["reaction_operator"]["epsilon_out"];
+        auto eps_s = json_fock["reaction_operator"]["epsilon_static"];
+        auto eps_d = json_fock["reaction_operator"]["epsilon_dynamic"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
 
         // compute nuclear charge density
         Density rho_nuc(false);
         rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
 
-        // initialize permittivity function
-        Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
-        dielectric_func.printParameters();
+        if (order == 0) {
+            // initialize Permittivity function with static epsilon
+            Permittivity dielectric_func(*cavity_p, eps_i, eps_s, formulation);
+            dielectric_func.printParameters();
 
-        auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
-        auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
-        F.getReactionOperator() = V_R;
+            auto scrf_p = std::make_unique<SCRF>(dielectric_func, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
+            auto V_R = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
+            F.getReactionOperator() = V_R;
+        } else {
+            MSG_ABORT("Invalid perturbation order");
+        }
     }
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////

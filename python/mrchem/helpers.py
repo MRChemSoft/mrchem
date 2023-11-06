@@ -80,7 +80,8 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "dynamic_thrs": user_dict["PCM"]["SCRF"]["dynamic_thrs"],
             "density_type": user_dict["PCM"]["SCRF"]["density_type"],
             "epsilon_in": user_dict["PCM"]["Permittivity"]["epsilon_in"],
-            "epsilon_out": user_dict["PCM"]["Permittivity"]["epsilon_out"],
+            "epsilon_static": user_dict["PCM"]["Permittivity"]["outside"]["epsilon_static"],
+            "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["outside"]["epsilon_dynamic"],
             "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
         }
 
@@ -403,6 +404,20 @@ def write_rsp_fock(user_dict, wf_dict):
                 "cutoff": user_dict["DFT"]["density_cutoff"],
                 "functionals": func_dict,
             },
+        }
+
+    # Reaction
+    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+        fock_dict["reaction_operator"] = {
+            "poisson_prec": user_dict["world_prec"],
+            "kain": user_dict["PCM"]["SCRF"]["kain"],
+            "max_iter": user_dict["PCM"]["SCRF"]["max_iter"],
+            "dynamic_thrs": user_dict["PCM"]["SCRF"]["dynamic_thrs"],
+            "density_type": user_dict["PCM"]["SCRF"]["density_type"],
+            "epsilon_in": user_dict["PCM"]["Permittivity"]["epsilon_in"],
+            "epsilon_static": user_dict["PCM"]["Permittivity"]["outside"]["epsilon_static"],
+            "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["outside"]["epsilon_dynamic"],
+            "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
         }
 
     return fock_dict
