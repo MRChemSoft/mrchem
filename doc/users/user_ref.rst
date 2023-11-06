@@ -918,11 +918,19 @@ User input reference
        :outside: Parameters for the continuum solvent outside the cavity. 
       
             :red:`Keywords`
+             :nonequilibrium: Whether to use the nonequilibrium formulation of response, *i.e.* use the dynamic permittivity for the calculation of the response reaction field. Defaults to false. 
+            
+              **Type** ``bool``
+            
+              **Default** ``False``
+            
              :epsilon_static: Static permittivity outside the cavity. This is characteristic of the solvent used. 
             
               **Type** ``float``
             
-             :epsilon_dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calcualtions. Defaults to the same value as `epsilon_static`, *i.e.* _not_ using the response non-equilibrium formulation. 
+              **Default** ``1.0``
+            
+             :epsilon_dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calculations. Defaults to the same value as `epsilon_static`. 
             
               **Type** ``float``
             

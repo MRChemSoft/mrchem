@@ -140,6 +140,7 @@ def _reaction_operator_handler(user_dict, rsp = False):
         "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["outside"][
             "epsilon_dynamic"
         ],
+        "nonequilibrium": user_dict["PCM"]["Permittivity"]["outside"]["nonequilibrium"],
         "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
     }
 
