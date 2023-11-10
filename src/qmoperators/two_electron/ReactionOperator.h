@@ -65,8 +65,6 @@ public:
     std::shared_ptr<ReactionPotential> getPotential() { return this->potential; }
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }
 
-    mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->potential->getCurrentReactionPotential(); }
-
 private:
     std::shared_ptr<ReactionPotential> potential{nullptr};
 };

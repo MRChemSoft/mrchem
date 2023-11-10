@@ -56,8 +56,6 @@ public:
      */
     void updateMOResidual(double const err_t) { this->helper->mo_residual = err_t; }
 
-    mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->helper->getCurrentReactionPotential(); }
-
     friend class ReactionOperator;
 
 protected:
