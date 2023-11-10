@@ -48,9 +48,6 @@ mrcpp::ComplexFunction &ReactionPotentialD2::computePotential(double prec) const
     Timer timer;
     density::compute(prec, rho, Phi, X, Y, DensityType::Total);
     print_utils::qmfunction(3, "Compute global density", rho, timer);
-    // change sign, because it's the electronic density
-    // TODO not sure whether this is needed?
-    rho.rescale(-1.0);
 
     return this->helper->setup(prec, rho);
 }

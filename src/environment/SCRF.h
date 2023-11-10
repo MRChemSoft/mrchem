@@ -59,8 +59,6 @@ public:
 
     double setConvergenceThreshold(double prec);
 
-    mrcpp::ComplexFunction &getCurrentReactionPotential() { return this->Vr_n; }
-
     Permittivity &getPermittivity() { return this->epsilon; }
 
     void updateMOResidual(double const err_t) { this->mo_residual = err_t; }
