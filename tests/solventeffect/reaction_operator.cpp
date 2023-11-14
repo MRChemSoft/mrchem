@@ -99,7 +99,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     density::compute(prec, rho_el, Phi, DensityType::Total);
     rho_el.rescale(-1.0);
 
-    auto [Er_nuc, Er_el] = Reo->getHelper()->computeEnergies(rho_el);
+    auto [Er_nuc, Er_el] = Reo->getSolver()->computeEnergies(rho_el);
     auto total_energy = Er_nuc + Er_el;
     Reo->clear();
     REQUIRE(total_energy == Approx(-1.022729683846e-01).epsilon(thrs));

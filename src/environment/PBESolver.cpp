@@ -58,7 +58,8 @@ PBESolver::PBESolver(const Permittivity &e,
                      bool dyn_thrs,
                      const std::string &density_type)
         : GPESolver(e, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type)
-        , kappa(k) {}
+        , kappa(k)
+        , solver_name("Poisson-Boltzmann") {}
 
 void PBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) {
     // create a lambda function for the sinh(V) term and multiply it with kappa and salt factor to get the PB term
@@ -68,7 +69,7 @@ void PBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_f
     sinhV.alloc(NUMBER::Real);
     mrcpp::map(this->apply_prec / 100, sinhV.real(), V_tot.real(), sinh_f);
 
-    mrcpp::cplxfunc::multiply(pb_term, this->kappa, sinhV, this->apply_prec);
+    mrcpp::cplxfunc::multiply(pb_term, sinhV, this->kappa, this->apply_prec);
 }
 
 void PBESolver::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {

@@ -1100,7 +1100,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         dielectric_func.printParameters();
 
         // initialize SCRF object
-        std::shared_ptr<GPESolver> scrf_p;
+        std::unique_ptr<GPESolver> scrf_p;
+        auto solver_type = json_fock["reaction_operator"]["solver_type"];
 
         if (solver_type == "Poisson-Boltzmann") {
 
@@ -1110,7 +1111,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
             auto cavity_centers = cavity_p->getCoordinates();
             auto cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
-            DHScreening dhscreening(*mol.getCavity_p(), kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we
+            DHScreening dhscreening(mol.getCavity_p(), kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we
                                                                                // have 4 different parametrizations, not all implemented yet.
             dhscreening.printParameters();
             scrf_p = std::make_unique<PBESolver>(dielectric_func, dhscreening, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
@@ -1121,7 +1122,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
             auto cavity_centers = cavity_p->getCoordinates();
             auto cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
-            DHScreening dhscreening(*mol.getCavity_p(), kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we
+            DHScreening dhscreening(mol.getCavity_p(), kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we
                                                                                // have 4 different parametrizations, not all implemented yet.
             dhscreening.printParameters();
             scrf_p = std::make_unique<LPBESolver>(dielectric_func, dhscreening, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);

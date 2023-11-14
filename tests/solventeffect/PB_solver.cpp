@@ -29,14 +29,18 @@
 
 #include "mrchem.h"
 
+#include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Nucleus.h"
 #include "chemistry/PeriodicTable.h"
+#include "chemistry/chemistry_utils.h"
 #include "environment/Cavity.h"
 #include "environment/DHScreening.h"
 #include "environment/GPESolver.h"
 #include "environment/LPBESolver.h"
 #include "environment/PBESolver.h"
 #include "environment/Permittivity.h"
+#include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
 #include "qmfunctions/qmfunction_fwd.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
@@ -48,7 +52,6 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 
-    auto acc_pot = true;
     auto dyn_thrs = false;
     auto kain = 7;
     auto max_iter = 100;
@@ -83,13 +86,23 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.distribute();
 
-        auto scrf_p = std::make_unique<PBESolver>(dielectric_func, kappa_sq, molecule, P_p, D_p, prec / 100, kain, max_iter, acc_pot, dyn_thrs, "nuclear");
+        HydrogenFunction f(1, 0, 0);
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Real, prec);
+
+        auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
+
+        auto scrf_p = std::make_unique<PBESolver>(dielectric_func, kappa_sq, rho_nuc, P_p, D_p, kain, max_iter, dyn_thrs, "nuclear");
         auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         Reo->setup(prec * 10);
 
-        double E_s = Reo->getTotalEnergy() / 2.0;
+        Density rho_el(false);
+        density::compute(prec, rho_el, Phi, DensityType::Total);
+        rho_el.rescale(-1.0);
+
+        auto [Er_nuc, Er_el] = Reo->getSolver()->computeEnergies(rho_el);
+        auto total_energy = Er_nuc + Er_el;
         Reo->clear();
-        REQUIRE(E_s == Approx(-0.1373074208).epsilon(thrs));
+        REQUIRE((total_energy) == Approx(-0.1373074208).epsilon(thrs));
     }
 }
 
@@ -97,7 +110,6 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[pb_linearized]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 
-    auto acc_pot = true;
     auto dyn_thrs = false;
     auto kain = 5;
     auto max_iter = 200;
@@ -133,14 +145,26 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[pb_linearized]") {
         Phi.push_back(Orbital(SPIN::Paired));
         Phi.distribute();
 
-        auto scrf_p = std::make_unique<LPBESolver>(dielectric_func, kappa_sq, molecule, P_p, D_p, prec / 100, kain, max_iter, acc_pot, dyn_thrs, "nuclear");
+        HydrogenFunction f(1, 0, 0);
+        if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Real, prec);
+
+        auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
+
+        auto scrf_p = std::make_unique<LPBESolver>(dielectric_func, kappa_sq, rho_nuc, P_p, D_p, kain, max_iter, dyn_thrs, "nuclear");
 
         auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         Reo->setup(prec * 10);
 
-        double E_s = Reo->getTotalEnergy() / 2.0;
+        Density rho_el(false);
+        density::compute(prec, rho_el, Phi, DensityType::Total);
+        rho_el.rescale(-1.0);
+
+        auto [Er_nuc, Er_el] = Reo->getSolver()->computeEnergies(rho_el);
+        auto total_energy = Er_nuc + Er_el;
+
         Reo->clear();
-        REQUIRE(E_s == Approx(-0.1329646842).epsilon(thrs));
+
+        REQUIRE(total_energy == Approx(-0.1373074208).epsilon(thrs));
     }
 }
 

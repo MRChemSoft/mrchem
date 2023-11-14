@@ -47,12 +47,12 @@ public:
                int kain_hist,
                int max_iter,
                bool dyn_thrs,
-               const std::string &density_type)
-            : PBESolver(e, kappa, N, P, D, orb_prec, kain_hist, max_iter, acc_pot, dyn_thrs, density_type) {}
+               const std::string &density_type);
 
     friend class ReactionPotential;
 
 protected:
     void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) override;
+    std::string solver_name;
 };
 } // namespace mrchem

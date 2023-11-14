@@ -54,6 +54,7 @@ public:
 protected:
     DHScreening kappa;
     mrcpp::ComplexFunction rho_ext;
+    std::string solver_name;
 
     // FIXME ComputeGamma should not be computing the PB term.
     //  THe PB term is actually an approximation for an external density, so

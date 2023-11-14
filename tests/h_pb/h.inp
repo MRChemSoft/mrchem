@@ -16,8 +16,7 @@
   "SCRF": {
     "kain": 6,
     "max_iter": 100,
-    "dynamic_thrs": false,
-    "optimizer": "potential"
+    "dynamic_thrs": false
   },
   "Cavity": {
     "spheres": "0 2.645616384 1.0 0.0 0.2"

@@ -66,15 +66,13 @@ public:
 
     auto computeEnergies(const Density &rho_el) -> std::tuple<double, double>;
 
-    void clear();
-
     auto getDensityType() const -> SCRFDensityType { return this->density_type; }
 
     friend class ReactionPotential;
     friend class ReactionPotentialD1;
     friend class ReactionPotentialD2;
 
-private:
+protected:
     bool dynamic_thrs;
     SCRFDensityType density_type;
 
@@ -99,6 +97,8 @@ private:
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
 
+    void clear();
+
     void computeDensities(const Density &rho_el, Density &rho_out);
     virtual void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
 
@@ -111,7 +111,7 @@ private:
 
     void resetComplexFunction(mrcpp::ComplexFunction &function);
 
-    void printParameters() const;
+    virtual void printParameters() const;
     void printConvergenceRow(int i, double norm, double update, double time) const;
 };
 } // namespace mrchem

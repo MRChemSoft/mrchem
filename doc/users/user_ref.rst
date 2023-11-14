@@ -936,7 +936,7 @@ User input reference
 
               **Default** ``user['PCM']['Permittivity']['epsilon_out']['static']``
 
-   :D_H_screening: Parameters for the debye-huckel screening factor
+   :D_H_screening: Parameters for the Debye-Huckel screening factor
 
       :red:`Keywords`
        :ion_strength: Ionic strength of the electrolyte in mol/L. This represents the concentration of the ions in the bulk solvent.

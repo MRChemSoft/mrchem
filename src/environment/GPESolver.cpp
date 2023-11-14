@@ -200,6 +200,7 @@ void GPESolver::runMicroIterations(const mrcpp::ComplexFunction &V_vac, const De
 
         // compute new PB term
         if (update < this->conv_thrs) break;
+        iter++;
     }
 
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
@@ -290,7 +291,7 @@ void GPESolver::printParameters() const {
     }
 
     nlohmann::json data = {
-        {"Method                ", "GPE Solver"},
+        {"Method                ", this->solver_name},
         {"Density               ", this->density_type},
         {"Max iterations        ", max_iter},
         {"KAIN solver           ", o_kain.str()},
