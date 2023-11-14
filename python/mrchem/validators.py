@@ -348,6 +348,11 @@ class MoleculeValidator:
             betas = [self.cavity_beta] * len(radii)
             sigmas = [self.cavity_sigma] * len(radii)
 
+            # the radii in the periodic table are in angstrom
+            # we convert them to bohr if the units of the input file are NOT angstrom
+            if self.unit != self.UNIT_ANGSTROM:
+                radii = self.ang2bohr_vector(radii)
+
         else:
             coords = []
             radii = []
