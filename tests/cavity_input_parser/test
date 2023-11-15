@@ -1,0 +1,62 @@
+#!/usr/bin/env python3
+
+import json
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from tester import *  # isort:skip
+
+options = script_cli()
+
+reference = Path(__file__).resolve().parent / "reference"
+
+ierr = 0
+for example in [
+    "world_unit=angstrom-default",
+    "world_unit=bohr-default",
+    "world_unit=bohr-mode=atoms-replace",
+    "world_unit=angstrom-mode=atoms-replace",
+    "world_unit=bohr-mode=atoms-append",
+    "world_unit=angstrom-mode=atoms-append",
+    "world_unit=bohr-mode=explicit",
+    "world_unit=angstrom-mode=explicit",
+]:
+    ierr += run(options, input_file=example, filters=None, extra_args=["-D"])
+
+    sys.stdout.write(f"example {', '.join(example.split('-'))}:")
+
+    # load expected JSON
+    if "append" in example:
+        expected = reference / "append.json"
+    else:
+        expected = reference / "default-or-replace.json"
+
+    with expected.open("r") as fh:
+        xptd = json.load(fh)
+
+    # load "computed" JSON
+    with Path(f"{example}.json").open("r") as fh:
+        cptd = json.load(fh)
+
+    # keys to check for each element in the spheres list
+    keys = ["center", "radius", "alpha", "beta", "sigma"]
+    success = True
+
+    for idx, (expected, computed) in enumerate(
+        zip(
+            xptd["input"]["molecule"]["cavity"]["spheres"],
+            cptd["input"]["molecule"]["cavity"]["spheres"],
+        )
+    ):
+        for k in keys:
+            passed, message = compare_values(
+                expected[k], computed[k], f"sphere {idx}, {k}"
+            )
+            success &= passed
+            sys.stdout.write(f"\n{message}")
+
+    ierr += 0 if success else 137
+
+sys.exit(ierr)

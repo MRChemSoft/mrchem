@@ -1,0 +1,41 @@
+# solvent calculation with units in bohr, appending spheres
+
+world_prec = 1.0e-3
+world_unit = bohr
+
+Molecule {
+$coords
+O   0.0                  -1.3133596566149102   -0.09323596931320592
+O   0.0                   1.3133596566149102   -0.09323596931320592
+H   0.7334825766753358   -1.691774597719973     1.4797224924384227
+H  -0.7334825766753358    1.691774597719973     1.4797224924384227
+$end
+}
+
+WaveFunction {
+  method = HF
+  environment = PCM
+}
+
+PCM {
+  Permittivity {
+    epsilon_out = 80.0
+  }
+  Cavity {
+    mode = atoms
+    # sphere 4: append with explicit alpha, beta, sigma
+    # sphere 5: append with explicit alpha and beta, default sigma
+    # sphere 6: append with explicit alpha, default beta and sigma
+    # sphere 7: append with default alpha, beta, and sigma
+    $spheres
+    1.0 0.0 0.0 2.872383709431171 1.1 0.5 0.2
+    0.0 1.0 0.0 2.267671349550924 1.1 0.5
+    0.0 0.0 1.0 2.267671349550924 1.1
+    1.0 0.0 1.0 2.267671349550924
+    $end
+  }
+}
+
+SCF {
+  run = false
+}

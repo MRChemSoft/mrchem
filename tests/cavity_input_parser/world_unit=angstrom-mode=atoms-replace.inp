@@ -1,0 +1,41 @@
+# solvent calculation with units in angstrom, replacing spheres
+
+world_prec = 1.0e-3
+world_unit = angstrom
+
+Molecule {
+$coords
+O   0.000000000000    -0.695000000000    -0.049338350197
+O   0.000000000000     0.695000000000    -0.049338350197
+H   0.388142264171    -0.895248563098     0.783035421459
+H  -0.388142264171     0.895248563098     0.783035421459
+$end
+}
+
+WaveFunction {
+  method = HF
+  environment = PCM
+}
+
+PCM {
+  Permittivity {
+    epsilon_out = 80.0
+  }
+  Cavity {
+    mode = atoms
+    # oxygen: replace with explicit alpha, beta and sigma
+    # oxygen: replace with explicit alpha and beta, default sigma
+    # hydrogen: replace with explicit alpha, default beta and sigma
+    # hydrogen: replace with default alpha, beta, and sigma
+    $spheres
+    0  1.52 1.1 0.5 0.1058354498
+    1  1.52 1.1 0.5
+    2  1.2 1.1
+    3  1.2
+    $end
+  }
+}
+
+SCF {
+  run = false
+}

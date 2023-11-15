@@ -1,0 +1,28 @@
+# solvent calculation with units in angstrom and using all-default cavity parameters
+
+world_prec = 1.0e-3
+world_unit = angstrom
+
+Molecule {
+$coords
+O   0.000000000000    -0.695000000000    -0.049338350197
+O   0.000000000000     0.695000000000    -0.049338350197
+H   0.388142264171    -0.895248563098     0.783035421459
+H  -0.388142264171     0.895248563098     0.783035421459
+$end
+}
+
+WaveFunction {
+  method = HF
+  environment = PCM
+}
+
+PCM {
+  Permittivity {
+    epsilon_out = 80.0
+  }
+}
+
+SCF {
+  run = false
+}

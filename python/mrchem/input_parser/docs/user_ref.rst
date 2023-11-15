@@ -863,7 +863,7 @@ User input reference
    :Cavity: Define the interlocking spheres cavity. 
   
       :red:`Keywords`
-       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma``  (R_i <- alpha*R_i + beta*sigma).  Default spheres can be modified and/or extra spheres added, using the ``$spheres`` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block. 
+       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified and/or extra spheres added, using the ``$spheres`` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block. 
       
         **Type** ``str``
       
@@ -890,7 +890,7 @@ User input reference
       
         **Default** ``0.5``
       
-       :sigma: Width of cavity boundary, smaller value means sharper transition. **The default value is in atomic units**. 
+       :sigma: Width of cavity boundary, smaller value means sharper transition. **This quantity has dimensions of length. The default value is in atomic units**. 
       
         **Type** ``float``
       

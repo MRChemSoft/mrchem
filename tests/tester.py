@@ -105,6 +105,10 @@ def run(options, *, input_file, filters=None, extra_args=None):
             print(f"\nstderr\n{child.stderr}")
             return 137
 
+    if filters is None:
+        sys.stdout.write("\nno filters passed: skipped automated verification\n")
+        return 0
+
     computed = Path(options.work_dir) / f"{inp_no_suffix}.json"
     expected = caller_dir / f"reference/{inp_no_suffix}.json"
     with computed.open("r") as o_json, expected.open("r") as r_json:
@@ -280,9 +284,9 @@ def compare_values(
     expected : float or float array-like
         Reference value against which `computed` is compared.
     label : str, optional
-        Label for passed and error messages. Defaults to calling function name.
+        Label for passed and error messages.
     rtol : float, optional
-        Relative tolerance (see formula below). By default set to zero so `atol` dominates.
+        Relative tolerance (see formula below).
     equal_phase : bool, optional
         Compare computed *or its opposite* as equal.
 

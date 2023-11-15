@@ -1,0 +1,28 @@
+# solvent calculation with units in bohr and using all-default cavity parameters
+
+world_prec = 1.0e-3
+world_unit = bohr
+
+Molecule {
+$coords
+O   0.0                  -1.3133596566149102   -0.09323596931320592
+O   0.0                   1.3133596566149102   -0.09323596931320592
+H   0.7334825766753358   -1.691774597719973     1.4797224924384227
+H  -0.7334825766753358    1.691774597719973     1.4797224924384227
+$end
+}
+
+WaveFunction {
+  method = HF
+  environment = PCM
+}
+
+PCM {
+  Permittivity {
+    epsilon_out = 80.0
+  }
+}
+
+SCF {
+  run = false
+}

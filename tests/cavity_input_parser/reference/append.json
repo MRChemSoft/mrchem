@@ -1,0 +1,249 @@
+{
+  "input": {
+    "schema_name": "mrchem_input",
+    "schema_version": 1,
+    "mpi": {
+      "numerically_exact": false,
+      "shared_memory_size": 10000,
+      "bank_size": -1
+    },
+    "mra": {
+      "basis_type": "interpolating",
+      "basis_order": 5,
+      "boxes": [
+        2,
+        2,
+        2
+      ],
+      "corner": [
+        -1,
+        -1,
+        -1
+      ],
+      "min_scale": -5,
+      "max_scale": 20
+    },
+    "printer": {
+      "print_level": 0,
+      "print_mpi": false,
+      "print_prec": 6,
+      "print_width": 75,
+      "print_constants": false,
+      "file_name": "world_unit=angstrom-mode=atoms-append"
+    },
+    "molecule": {
+      "multiplicity": 1,
+      "charge": 0,
+      "coords": [
+        {
+          "atom": "o",
+          "xyz": [
+            0.0,
+            -1.3133596566149102,
+            -0.09323596931320592
+          ],
+          "r_rms": 5.0580178957e-05
+        },
+        {
+          "atom": "o",
+          "xyz": [
+            0.0,
+            1.3133596566149102,
+            -0.09323596931320592
+          ],
+          "r_rms": 5.0580178957e-05
+        },
+        {
+          "atom": "h",
+          "xyz": [
+            0.7334825766753358,
+            -1.691774597719973,
+            1.4797224924384227
+          ],
+          "r_rms": 2.6569547399e-05
+        },
+        {
+          "atom": "h",
+          "xyz": [
+            -0.7334825766753358,
+            1.691774597719973,
+            1.4797224924384227
+          ],
+          "r_rms": 2.6569547399e-05
+        }
+      ],
+      "cavity": {
+        "spheres": [
+          {
+            "center": [
+              0.0,
+              -1.3133596566149102,
+              -0.09323596931320592
+            ],
+            "radius": 2.872383709431171,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          },
+          {
+            "center": [
+              0.0,
+              1.3133596566149102,
+              -0.09323596931320592
+            ],
+            "radius": 2.872383709431171,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          },
+          {
+            "center": [
+              0.7334825766753358,
+              -1.691774597719973,
+              1.4797224924384227
+            ],
+            "radius": 2.267671349550924,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          },
+          {
+            "center": [
+              -0.7334825766753358,
+              1.691774597719973,
+              1.4797224924384227
+            ],
+            "radius": 2.267671349550924,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          },
+          {
+            "center": [
+              1.000000071992896,
+              0.0,
+              0.0
+            ],
+            "radius": 2.872383709431171,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.20000001439857923
+          },
+          {
+            "center": [
+              0.0,
+              1.000000071992896,
+              0.0
+            ],
+            "radius": 2.267671349550924,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          },
+          {
+            "center": [
+              0.0,
+              0.0,
+              1.000000071992896
+            ],
+            "radius": 2.267671349550924,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          },
+          {
+            "center": [
+              1.000000071992896,
+              0.0,
+              1.000000071992896
+            ],
+            "radius": 2.267671349550924,
+            "alpha": 1.1,
+            "beta": 0.5,
+            "sigma": 0.2
+          }
+        ]
+      }
+    },
+    "scf_calculation": {
+      "fock_operator": {
+        "kinetic_operator": {
+          "derivative": "abgv_55"
+        },
+        "nuclear_operator": {
+          "proj_prec": 0.001,
+          "smooth_prec": 0.001,
+          "nuclear_model": "point_like",
+          "shared_memory": false
+        },
+        "reaction_operator": {
+          "poisson_prec": 0.001,
+          "kain": 5,
+          "max_iter": 100,
+          "dynamic_thrs": true,
+          "density_type": "total",
+          "epsilon_in": 1.0,
+          "epsilon_out": 80.0,
+          "formulation": "exponential"
+        },
+        "coulomb_operator": {
+          "poisson_prec": 0.001,
+          "shared_memory": false
+        },
+        "exchange_operator": {
+          "poisson_prec": 0.001,
+          "exchange_prec": -1.0
+        }
+      },
+      "initial_guess": {
+        "zeta": 0,
+        "prec": 0.001,
+        "type": "sad_gto",
+        "method": "Hartree-Fock",
+        "relativity": "None",
+        "environment": "PCM",
+        "external_field": "None",
+        "screen": 12.0,
+        "localize": false,
+        "restricted": true,
+        "file_chk": "checkpoint/phi_scf",
+        "file_basis": "initial_guess/mrchem.bas",
+        "file_gto_p": "initial_guess/mrchem.mop",
+        "file_gto_a": "initial_guess/mrchem.moa",
+        "file_gto_b": "initial_guess/mrchem.mob",
+        "file_phi_p": "initial_guess/phi_p_scf",
+        "file_phi_a": "initial_guess/phi_a_scf",
+        "file_phi_b": "initial_guess/phi_b_scf",
+        "file_CUBE_p": "cube_vectors/CUBE_p_vector.json",
+        "file_CUBE_a": "cube_vectors/CUBE_a_vector.json",
+        "file_CUBE_b": "cube_vectors/CUBE_b_vector.json"
+      },
+      "properties": {
+        "dipole_moment": {
+          "dip-1": {
+            "operator": "h_e_dip",
+            "precision": 0.001,
+            "r_O": [
+              0.0,
+              0.0,
+              0.0
+            ]
+          }
+        }
+      }
+    },
+    "rsp_calculations": {},
+    "constants": {
+      "hartree2simagnetizability": 78.9451185,
+      "light_speed": 137.035999084,
+      "angstrom2bohrs": 1.8897261246257702,
+      "hartree2kjmol": 2625.4996394798254,
+      "hartree2kcalmol": 627.5094740630558,
+      "hartree2ev": 27.211386245988,
+      "hartree2wavenumbers": 219474.6313632,
+      "fine_structure_constant": 0.0072973525693,
+      "electron_g_factor": -2.00231930436256,
+      "dipmom_au2debye": 2.5417464739297717
+    }
+  }
+}

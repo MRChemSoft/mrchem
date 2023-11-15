@@ -143,7 +143,13 @@ class MoleculeValidator:
         if self.do_translate:
             self.translate_com_to_origin()
 
+        # Convert to bohrs if user gave angstroms
+        if self.unit == self.UNIT_ANGSTROM:
+            self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
+
         # Validate cavity spheres
+        # dimensioned quantities (cavity_radii, cavity_coords, cavity_sigmas)
+        # are _already_ converted to atomic units
         (
             self.cavity_radii,
             self.cavity_coords,
@@ -155,13 +161,6 @@ class MoleculeValidator:
         # Perform some sanity checks
         self.check_for_nuclear_singularities()
         self.check_for_invalid_electronic_configuration()
-
-        # Convert to bohrs if user gave angstroms
-        if self.unit == self.UNIT_ANGSTROM:
-            self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
-            self.cavity_coords = self.ang2bohr_array(self.cavity_coords)
-            self.cavity_radii = self.ang2bohr_vector(self.cavity_radii)
-            self.cavity_sigmas = self.ang2bohr_vector(self.cavity_sigmas)
 
     def get_coords_in_program_syntax(self):
         """Convert nuclear coordinates from JSON syntax to program syntax."""
@@ -223,9 +222,7 @@ class MoleculeValidator:
         p_with_symbol = re.compile(atom_with_symbol)
         p_with_number = re.compile(atom_with_number)
 
-        lines = [
-            x.strip() for x in self.coords_raw.strip().splitlines() if x != ""
-        ]
+        lines = [x.strip() for x in self.coords_raw.strip().splitlines() if x != ""]
         # Parse coordinates
         coords = []
         labels = []
@@ -312,6 +309,8 @@ class MoleculeValidator:
           for the user if the default values of `alpha`, `beta`, and `sigma`
           are **always** applied. If special behavior is desired, then it needs to
           be requested *explicitly* in the input.
+        - Quantities with dimensions of length (sphere centers coordinates, radii, widths)
+          are converted to atomic units before returning.
         """
 
         # Regex components
@@ -320,40 +319,50 @@ class MoleculeValidator:
         positive_decimal = r"[0-9]+\.?[0-9]*|\.[0-9]+"
 
         # Build regexes
+        # regex for matching a line with syntax:
+        # i R [alpha] [beta] [sigma]
+        # the elements in square brackets are optional
         valid_atom = rf"^(?P<index>{integer})\s+(?P<radius>{positive_decimal})(?:\s+)?(?P<alpha>{positive_decimal})?(?:\s+)?(?P<beta>{positive_decimal})?(?:\s+)?(?P<sigma>{positive_decimal})?$"
         p = re.compile(valid_atom)
+        # regex for matching a line with syntax:
+        # X Y Z R [alpha] [beta] [sigma]
+        # the elements in square brackets are optional
         valid_sphere = rf"^(?P<X>{decimal})\s+(?P<Y>{decimal})\s+(?P<Z>{decimal})\s+(?P<radius>{positive_decimal})(?:\s+)?(?P<alpha>{positive_decimal})?(?:\s+)?(?P<beta>{positive_decimal})?(?:\s+)?(?P<sigma>{positive_decimal})?$"
         q = re.compile(valid_sphere)
 
-        # the centers of the spheres are the same as the atoms
+        # build the default sphere list
         if self.cavity_mode == "atoms":
+            # in 'atoms' mode, the centers of the spheres are the same as the atoms
+            # NOTE the coordinates have been converted to atomic units already at this point
+            coords = deepcopy(self.atomic_coords)
 
-            def radiusNotFound(x):
-                # This raises an exception in the list comprehension if the radius is not valid.
+            # fetches mantina radii from the template.yml file for each atom x.
+            # the list is in atomic units
+            radii = []
+            # If the radius is negative, it means it is not defined in the
+            # mantina set. We create a list of all not found radii and then raise an exception.
+            radii_not_found = []
+            for x in self.atomic_symbols:
+                R = self.user_dict["Elements"][x.lower()]["vdw-radius"]
+                if R > 0.0:
+                    # NOTE the default radii are stored in Angstrom!
+                    # append to list and convert to atomic units
+                    radii.append(R * self.pc["angstrom2bohrs"])
+                else:
+                    radii_not_found.append(x)
+
+            if radii_not_found:
                 raise ValueError(
-                    f"The vdw-radius of element {x} is not defined in the mantina set"
+                    f"vdw-radius for {', '.join(radii_not_found)} not defined in the Mantina set."
                 )
 
-            coords = deepcopy(self.atomic_coords)
-            # fetches mantina radii from the template.yml file for each atom x.
-            # If the radius is negative, it means it is not defined in the
-            # mantina set and it raises an exception.
-            radii = [
-                self.user_dict["Elements"][x.lower()]["vdw-radius"]
-                if (self.user_dict["Elements"][x.lower()]["vdw-radius"] > 0.0)
-                else radiusNotFound(x)
-                for x in self.atomic_symbols
-            ]
             alphas = [self.cavity_alpha] * len(radii)
             betas = [self.cavity_beta] * len(radii)
+            # NOTE the default value of the width is 0.2 atomic units, so no need to convert it!
             sigmas = [self.cavity_sigma] * len(radii)
 
-            # the radii in the periodic table are in angstrom
-            # we convert them to bohr if the units of the input file are NOT angstrom
-            if self.unit != self.UNIT_ANGSTROM:
-                radii = self.ang2bohr_vector(radii)
-
         else:
+            # in 'explicit' mode, we build the sphere list from the input
             coords = []
             radii = []
             alphas = []
@@ -363,18 +372,25 @@ class MoleculeValidator:
         # Parse spheres
         bad_spheres = []
 
-        lines = [
-            x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""
-        ]
+        def maybe_convert_to_bohr(x):
+            return (
+                x * self.pc["angstrom2bohrs"] if self.unit == self.UNIT_ANGSTROM else x
+            )
+
+        lines = [x.strip() for x in self.spheres_raw.strip().splitlines() if x != ""]
         for sphere in lines:
+            # match a line in the 'i R [alpha] [beta] [sigma]' format
             p_match = p.match(sphere)
+            # match a line in the 'X Y Z R [alpha] [beta] [sigma]' format
             q_match = q.match(sphere)
             if p_match:
                 # the indexing of the atoms is 0-based in the user input!
                 index = int(p_match.group("index"))
 
                 if self.cavity_mode == "atoms":
-                    radii[index] = float(p_match.group("radius"))
+                    # NOTE in 'atoms' mode, a match of the p regex means:
+                    # "replace R, alpha, beta, sigma for sphere at given index"
+                    radii[index] = maybe_convert_to_bohr(float(p_match.group("radius")))
 
                     if p_match.group("alpha"):
                         alphas[index] = float(p_match.group("alpha"))
@@ -383,10 +399,16 @@ class MoleculeValidator:
                         betas[index] = float(p_match.group("beta"))
 
                     if p_match.group("sigma"):
-                        sigmas[index] = float(p_match.group("sigma"))
+                        sigmas[index] = maybe_convert_to_bohr(
+                            float(p_match.group("sigma"))
+                        )
                 else:
+                    # NOTE in 'explicit' mode, a match of the p regex means:
+                    # "add a sphere centered at the atomic coordinates for given index with specified R, alpha, beta, sigma"
                     coords.append(self.atomic_coords[index])
-                    radii.append(float(p_match.group("radius")))
+
+                    # convert to atomic units, if needed
+                    radii.append(maybe_convert_to_bohr(float(p_match.group("radius"))))
                     alphas.append(
                         (
                             float(p_match.group("alpha"))
@@ -403,20 +425,23 @@ class MoleculeValidator:
                     )
                     sigmas.append(
                         (
-                            float(p_match.group("sigma"))
+                            maybe_convert_to_bohr(float(p_match.group("sigma")))
                             if p_match.group("sigma")
-                            else self.cavity_sigma
+                            else self.cavity_sigma  # NOTE this is already in bohr!
                         )
                     )
             elif q_match:
                 coords.append(
                     [
-                        float(q_match.group("X")),
-                        float(q_match.group("Y")),
-                        float(q_match.group("Z")),
+                        maybe_convert_to_bohr(tmp)
+                        for tmp in (
+                            float(q_match.group("X")),
+                            float(q_match.group("Y")),
+                            float(q_match.group("Z")),
+                        )
                     ]
                 )
-                radii.append(float(q_match.group("radius")))
+                radii.append(maybe_convert_to_bohr(float(q_match.group("radius"))))
                 alphas.append(
                     (
                         float(q_match.group("alpha"))
@@ -433,9 +458,9 @@ class MoleculeValidator:
                 )
                 sigmas.append(
                     (
-                        float(q_match.group("sigma"))
+                        maybe_convert_to_bohr(float(q_match.group("sigma")))
                         if q_match.group("sigma")
-                        else self.cavity_sigma
+                        else self.cavity_sigma  # NOTE this is already in bohr!
                     )
                 )
             else:
@@ -451,16 +476,11 @@ class MoleculeValidator:
 
         # Check for negative or zero radii
         invalid_radii = {
-            i: r
-            for i, r in enumerate(radii)
-            if ((r < 0) or math.isclose(r, 0.0))
+            i: r for i, r in enumerate(radii) if ((r < 0) or math.isclose(r, 0.0))
         }
         if invalid_radii:
             invalid = "\n".join(
-                [
-                    f"Sphere {i} has invalid radius {r}"
-                    for i, r in invalid_radii.items()
-                ]
+                [f"Sphere {i} has invalid radius {r}" for i, r in invalid_radii.items()]
             )
             raise RuntimeError(
                 self.ERROR_MESSAGE_CAVITY_RADII(
@@ -470,9 +490,7 @@ class MoleculeValidator:
 
         # Check for negative or zero scaling factors
         invalid_alphas = {
-            i: a
-            for i, a in enumerate(alphas)
-            if ((a < 0) or math.isclose(a, 0.0))
+            i: a for i, a in enumerate(alphas) if ((a < 0) or math.isclose(a, 0.0))
         }
         if invalid_alphas:
             invalid = "\n".join(
@@ -510,15 +528,11 @@ class MoleculeValidator:
 
         # Print warnings and raise exception if necessary
         if warning_pairs:
-            msg = self.WARNING_MESSAGE_NUCLEAR_SINGULARITY(
-                "\n\n".join(warning_pairs)
-            )
+            msg = self.WARNING_MESSAGE_NUCLEAR_SINGULARITY("\n\n".join(warning_pairs))
             print(msg)
 
         if error_pairs:
-            msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY(
-                "\n\n".join(error_pairs)
-            )
+            msg = self.ERROR_MESSAGE_NUCLEAR_SINGULARITY("\n\n".join(error_pairs))
             raise RuntimeError(msg)
 
     def check_for_invalid_electronic_configuration(self):
@@ -562,9 +576,7 @@ class MoleculeValidator:
 
     def translate_com_to_origin(self):
         """Translate center of mass to the origin (in-place)."""
-        masses = [
-            PeriodicTable[label.lower()].mass for label in self.atomic_symbols
-        ]
+        masses = [PeriodicTable[label.lower()].mass for label in self.atomic_symbols]
         M = sum(masses)
 
         # Compute center of mass
@@ -589,10 +601,7 @@ class MoleculeValidator:
 
     def ang2bohr_array(self, coords):
         """Convert List[List[float]] from angstrom to bohr."""
-        return [
-            [c * self.pc["angstrom2bohrs"] for c in element]
-            for element in coords
-        ]
+        return [[c * self.pc["angstrom2bohrs"] for c in element] for element in coords]
 
     def ang2bohr_vector(self, vec):
         """Convert List[float] from angstrom to bohr"""
