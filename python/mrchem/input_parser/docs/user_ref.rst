@@ -863,7 +863,7 @@ User input reference
    :Cavity: Define the interlocking spheres cavity. 
   
       :red:`Keywords`
-       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified and/or extra spheres added, using the `$spheres` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block. 
+       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma``  (R_i <- alpha*R_i + beta*sigma).  Default spheres can be modified and/or extra spheres added, using the ``$spheres`` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block. 
       
         **Type** ``str``
       
@@ -872,7 +872,7 @@ User input reference
         **Predicates**
           - ``value.lower() in ['atoms', 'explicit']``
       
-       :spheres: This input parameter affects the list of spheres used to generate the cavity. In all cases, values for the radius, the radius scaling factor (``alpha``), the width (``sigma``), and the width scaling factor (``beta``) can be modified. If they are not specified their global default values are used. In ``atoms`` mode, we *modify* the default list of spheres, built with centers from the molecular geometry and radii from internal tabulated van der Waals values. To *substitute* a sphere, include a line like: $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R`` instead of the pre-tabulated vdW radius. To *add* a sphere, include a line like: $spheres x y z R [alpha] [beta] [sigma] $end to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. In ``explicit`` mode, we *build* the complete sphere list from scratch. You can add a line like: $spheres x y z R [alpha] [beta] [sigma] $end to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. Alternatively, you can specify a line like: $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R``. Spheres added in this way are aware of their parent atom. They will contribute to the molecular gradient. 
+       :spheres: This input parameter affects the list of spheres used to generate the cavity. In all cases, values for the radius, the radius scaling factor (``alpha``), the width (``sigma``), and the width scaling factor (``beta``) can be modified. If they are not specified their global default values are used. In ``atoms`` mode, we *modify* the default list of spheres, built with centers from the molecular geometry and radii from internal tabulated van der Waals values. To *substitute* a sphere, include a line like: `` $spheres i R [alpha] [beta] [sigma] $end `` to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R`` instead of the pre-tabulated vdW radius. To *add* a sphere, include a line like: `` $spheres x y z R [alpha] [beta] [sigma] $end ``` to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. In ``explicit`` mode, we *build* the complete sphere list from scratch. You can add a line like: `` $spheres x y z R [alpha] [beta] [sigma] $end `` to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. Alternatively, you can specify a line like: `` $spheres i R [alpha] [beta] [sigma] $end `` to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R``. Spheres added in this way are aware of their parent atom. They will contribute to the molecular gradient. 
       
         **Type** ``str``
       
@@ -890,7 +890,7 @@ User input reference
       
         **Default** ``0.5``
       
-       :sigma: Width of cavity boundary, smaller value means sharper transition. 
+       :sigma: Width of cavity boundary, smaller value means sharper transition. **The default value is in atomic units**. 
       
         **Type** ``float``
       
