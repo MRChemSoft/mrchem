@@ -33,7 +33,15 @@
 
 namespace mrchem {
 /** @class LPBESolver
- *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
+ *  @brief Solves the Linearized Poisson-Boltzmann equation iteratively
+ * @details The Linearized Poisson-Boltzmann equation is solved iteratively using the SCRF procedure outlined in GPESolver and PBESolver.
+ * The linearized Poisson-Boltzmann equation is a further simplification of the Poisson-Boltzmann equation, outlined in PBESolver, where the PB term is expanded and
+ * only the linear term is included. This is a good approximation for low ionic strength solutions.
+ * The linearized Poisson-Boltzmann equation is given by
+ * \f[
+ * \nabla^2 V_{R} = -4\pi\frac{1-\epsilon}{\epsilon}\left(\rho_{el} + \rho_{nuc}\right) + \gamma_s - \kappa^2 V_{tot}
+ * \f]
+ * where \f$\gamma_s\f$ is the surface charge density, \f$\kappa\f$ is obtained from the DHScreening class and \f$V_{R}\f$ is the reaction potential.
  */
 class Nuclei;
 class KAIN;
@@ -52,6 +60,12 @@ public:
     friend class ReactionPotential;
 
 protected:
+    /** @brief Computes the PB term
+     * @param[in] V_tot the total potential
+     * @param[in] salt_factor the salt factor deciding how much of the total concentration to include in the PB term
+     * @param[out] pb_term the ComplexFunction in which to store the result
+     * @details The PB term is computed as \f$ \kappa^2 V_{tot} \f$ and returned.
+     */
     void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) override;
     std::string solver_name;
 };

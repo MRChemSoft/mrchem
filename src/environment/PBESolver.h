@@ -33,7 +33,30 @@
 
 namespace mrchem {
 /** @class PBESolver
- *  @brief class that performs the computation of the  ReactionPotential, named Self Consistent Reaction Field.
+ *  @brief Solves the Poisson-Boltzmann equation iteratively
+ *  @details The Poisson-Boltzmann equation is solved iteratively using the SCRF procedure outlined in GPESolver.
+ * The Poisson-Boltzmann equation models the electrostatic potential in a solvent with electrolytes.
+ * The general equation for electrolyte solutions is given by
+ * \f[
+ * \nabla \cdot \epsilon \nabla V_{tot} = -4\pi\left(\rho_{el} + \rho_{nuc} + \rho_{ext}\right)
+ * \f]
+ * where \f$ V_{tot} \f$ is the total electrostatic potential, \f$ \epsilon\f$ is the permittivity function of the solvent,
+ * \f$\rho_{el}\f$ is the electronic charge density, \f$\rho_{nuc}\f$ is the nuclear charge density and \f$\rho_{ext}\f$ is the external charge density.
+ * In the general form for the Poisson-Boltzmann equation, the external charge density is approximated by assuming a boltzmann distribution of the ions.
+ * \f[
+ * \rho_{ext} = \sum_{i}^{N_{ion}} q_i e I_{0, i}\exp\left(-\frac{q_i e V_{tot}}{k_B T}\right)
+ * \f]
+ * where \f$I_{0, i}\f$ is the concentration of the i-th ion species, \f$q_i\f$ is the charge of the i-th ion species, \f$k_B\f$ is the Boltzmann constant and \f$T\f$ is the temperature.
+ * In this implementation we assume a 1:1 (\f$I_{0, 0} = I_{0, 1}\f$) electrolyte soluttion of ions of same opposite charges (\f$z_i = +1, -1\f$). This simplifies the external density to
+ * \f[
+ * \rho_{ext} = -2 e I_{0} \sinh\left(\frac{e V_{tot}}{2 k_B T}\right)
+ * \f]
+ * where \f$I_{0}\f$ is the concentration of the ions.
+ * We can plug this into the first equation (and massage terms a bit) to arrive at the Poisson-Boltzmann equation for 1:1 electrolyte solution
+ * \f[
+ * \nabla^2 V_{R} = -4\pi\frac{1-\epsilon}{\epsilon}\left(\rho_{el} + \rho_{nuc}\right) + \gamma_s - \kappa^2 \sinh\left(V_{tot}\right)
+ * \f]
+ * where \f$\gamma_s\f$ is the surface charge density, \f$\kappa\f$ is obtained from the DHScreening class and \f$V_{R}\f$ is the reaction potential.
  */
 class Nuclei;
 class KAIN;
@@ -52,15 +75,22 @@ public:
     friend class ReactionPotential;
 
 protected:
-    DHScreening kappa;
-    mrcpp::ComplexFunction rho_ext;
+    DHScreening kappa; ///< the DHScreening object used to compute the PB term \f$\kappa\f$
     std::string solver_name;
 
-    // FIXME ComputeGamma should not be computing the PB term.
-    //  THe PB term is actually an approximation for an external density, so
-    //  it should be computed in the computedensities function or in the
-    //  solvePoissonEquation function.
+    /** @brief constructs the surface chage distribution and adds it to the PB term
+     * @param[in] potential the potential to compute \f$\nabla V\f$ from
+     * @param[out] out_gamma the ComplexFunction in which to store the result
+     * @details Method follows the implementation in GPESolver::computeGamma, but adds the PB term to the surface charge distribution.
+     */
     void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) override;
+
+    /** @brief Computes the PB term
+     * @param[in] V_tot the total potential
+     * @param[in] salt_factor the salt factor deciding how much of the total concentration to include in the PB term
+     * @param[out] pb_term the ComplexFunction in which to store the result
+     * @details The PB term is computed as \f$ \kappa^2 \sinh(V_{tot}) \f$ and returned.
+     */
     virtual void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term);
 };
 } // namespace mrchem

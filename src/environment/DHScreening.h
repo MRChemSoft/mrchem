@@ -34,10 +34,19 @@ namespace mrchem {
 /** @class DHScreening
  *
  * @brief Square of the Debye-Huckel Screening parameter.
- * TODO write proper docs for this function
- *
- * Here the \f$\bar{\kappa}\f$ is dependent on a separate cavity function with its own radius.
- *
+ * @details
+ * This is used for the Poisson-Boltzmann solver. The DHScreening function is defined as
+ * \f[
+ * \kappa^2(\mathbf{r}) = \begin{cases}
+ * \kappa^2_{out} & \text{if } \mathbf{r} \notin \Omega_{ion} \\
+ * 0.0 & \text{if } \mathbf{r} \in \Omega_{ion}
+ * \end{cases}
+ * \f]
+ * This can be parametrized a number of ways. The one used here is
+ * \f[
+ * \kappa^2(\mathbf{r}) = (1 - C_{ion}(\mathbf{r})) \kappa^2_{out}
+ * \f]
+ * Where \f$C_{ion}(\mathbf{r})\f$ is the ion accessible Cavity function.
  */
 
 class Cavity;
@@ -47,40 +56,38 @@ public:
     /** @brief Standard constructor. Initializes the #cavity_ion and #kappa_out with the input parameters.
      *  @param cavity_ion interlocking spheres of Cavity class.
      *  @param kappa_out value of the screening function outside the #cavity_ion.
-     *  @param formulation Decides which formulation of the #DHScreening function to implement, only continuous screening function available
-     * available as of now.
+     *  @param formulation Decides which formulation of the #DHScreening function to implement, only continuous screening function available.
+     * @details #kappa_out is given by
+     * \f[
+     * \kappa = \sqrt{\frac{2000 I_{0} e^2 N_a I_0}{\epsilon_{out} \epsilon_{in} k_B T}}
+     * \f]
+     * where \f$N_a\f$ is the Avogadro constant, e is the elementary charge, \f$I_0\f$ is the concentration of the ions,
+     * \f$k_B\f$ is the Boltzmann constant, \f$T\f$ is the temperature, \f$\epsilon_{out}\f$ is the permittivity of the solvent and \f$\epsilon_{in}\f$ is the permittivity of free space.
      */
-    DHScreening(const Cavity & cavity_ion, double kappa_out, const std::string & formulation);
+    DHScreening(const Cavity &cavity_ion, double kappa_out, const std::string &formulation);
 
-    /** @brief Evaluates DHScreening at a point in 3D space with respect to the state of #inverse.
+    /** @brief Evaluates DHScreening at a point in 3D space.
      *  @param r coordinates of a 3D point in space.
-     *  @return \f$\frac{1}{\epsilon(\mathbf{r})}\f$ if #inverse is true, and \f$ \epsilon(\mathbf{r})\f$ if #inverse is
-     *  false.
+     *  @return Value at point r.
      */
     double evalf(const mrcpp::Coord<3> &r) const override;
 
-    /** @brief Calls the Cavity::getCoordinates() method of the #cavity instance. */
     auto getCoordinates() const { return this->cavity_ion.getCoordinates(); }
 
-    /** @brief Calls the Cavity::getRadii() method of the #cavity instance. */
     auto getRadii() const { return this->cavity_ion.getRadii(); }
 
-    /** @brief Returns the value of #kappa_out. */
     auto getKOut() const { return this->kappa_out; }
 
-    /** @brief Returns the cavity */
     Cavity getCavity() const { return this->cavity_ion; }
 
-    /** @brief Returns the formulation */
     std::string getFormulation() const { return this->formulation; }
 
-    /** @brief Print parameters */
     void printParameters() const;
 
 private:
-    double kappa_out;        //!< Dielectric constant describing the permittivity of the solvent.
+    double kappa_out;        //!< value of the Debye-Huckel screening constant outside the ion accessible cavity.
     std::string formulation; //!< Formulation of the DHScreening function. Only linear variable is used now.
-    Cavity cavity_ion;       //!< A Cavity class instance.
+    Cavity cavity_ion;       //!< A Cavity class instance which describes the ion accessible cavity.
 };
 
 } // namespace mrchem

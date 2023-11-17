@@ -37,8 +37,7 @@ namespace mrchem {
 namespace detail {
 /**  @relates mrchem::Cavity
  *   @brief Constructs a single element of the gradient of the Cavity.
- *
- *   This constructs the analytical partial derivative of the Cavity \f$C\f$ with respect to \f$x\f$, \f$y\f$ or \f$z\f$
+ *   @details This constructs the analytical partial derivative of the Cavity \f$C\f$ with respect to \f$x\f$, \f$y\f$ or \f$z\f$
  * coordinates and evaluates it at a point \f$\mathbf{r}\f$. This is given for \f$x\f$ by
  * \f[
  *    \frac{\partial C\left(\mathbf{r}\right)}{\partial x} = \left(1 - C{\left(\mathbf{r} \right)}\right)

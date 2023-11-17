@@ -194,7 +194,7 @@ as the ``world_origin`` is the true origin).
 WaveFunction
 ------------
 
-Here we give the wavefunction method and whether we run spin restricted (alpha
+Here we give the wavefunction method, environment used (for solvent models) and whether we run spin restricted (alpha
 and beta spins are forced to occupy the same spatial orbitals) or not (method
 must be specified, otherwise defaults are shown):
 
@@ -203,6 +203,7 @@ must be specified, otherwise defaults are shown):
     WaveFunction {
       method = <wavefunction_method>        # Core, Hartree, HF or DFT
       restricted = true                     # Spin restricted/unrestricted
+      environment = pcm                     # Environment (pcm, pcm-pb, pcm-lpb) defaults to none
     }
 
 There are currently four methods available: Core Hamiltonian, Hartree,
@@ -211,6 +212,11 @@ Hartree-Fock (HF) and Density Functional Theory (DFT). When running DFT you can
 B3LYP``), *or* you can set ``method = DFT`` and specify a "non-standard"
 functional in the separate DFT section (see below). See
 :ref:`User input reference` for a list of available default functionals.
+
+The solvent model implemented is a cavity free PCM, described in :cite:`gerez2023`. 
+In this model we have implemented the Generalized Poisson equation solver, keyword ``pcm``, a 
+Poisson-Boltzmann solver, keyword ``pcm-pb`` and a Linearized Poisson-Boltzmann solver, keyword ``pcm-lpb``. 
+Further details for the calculation have to be included in the ``PCM`` section, see :ref: `User input reference` for details.
 
 .. note::
 

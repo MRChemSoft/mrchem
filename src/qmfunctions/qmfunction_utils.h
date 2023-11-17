@@ -28,7 +28,6 @@
 #include "mrchem.h"
 #include "qmfunction_fwd.h"
 
-using mrcpp::ComplexFunctionVector;
 namespace mrchem {
 namespace qmfunction {
 
