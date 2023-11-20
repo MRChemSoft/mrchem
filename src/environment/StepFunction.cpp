@@ -95,7 +95,7 @@ void StepFunction::printParameters() const {
 }
 
 void StepFunction::printHeader() const {
-    mrcpp::print::header(0, "Shift Function of Cavity values");
+    mrcpp::print::header(0, "Step Function of Cavity values");
     print_utils::text(0, "Formulation", getFormulation(), true);
     print_utils::scalar(0, "Value inside Cavity", getValueIn(), "(in)", 6);
     print_utils::scalar(0, "Value outside Cavity", getValueOut(), "(out)", 6);
