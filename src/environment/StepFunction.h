@@ -55,7 +55,7 @@ public:
      *  @param epsilon_out permittivity outside the #cavity.
      * available as of now.
      */
-    StepFunction(const Cavity cavity, double val_in, double val_out);
+    StepFunction(const Cavity &cavity, double val_in, double val_out);
 
     auto getCoordinates() const { return this->cavity.getCoordinates(); }
     auto getRadii() const { return this->cavity.getRadii(); }
