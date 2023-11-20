@@ -34,11 +34,7 @@ Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, doubl
 
 double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
     auto epsilon = this->in * std::exp(std::log(this->out / this->in) * (1 - this->cavity.evalf(r)));
-    if (inverse) {
-        return 1 / epsilon;
-    } else {
-        return epsilon;
-    }
+    return (this->inverse) ? 1.0 / epsilon : epsilon; 
 }
 
 void Permittivity::printHeader() const {
