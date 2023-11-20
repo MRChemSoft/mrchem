@@ -96,7 +96,8 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     resetComplexFunction(out_gamma);
 
     for (int d = 0; d < 3; d++) {
-        mrcpp::AnalyticFunction<3> d_cav(this->epsilon.getGradVector()[d]);
+        auto C_pin = this->epsilon.getCavity();
+        mrcpp::AnalyticFunction<3> d_cav(C_pin->getGradVector()[d]);
         mrcpp::ComplexFunction cplxfunc_prod;
         mrcpp::cplxfunc::multiply(cplxfunc_prod, get_func(d_V, d), d_cav, this->apply_prec, 1);
         // add result into out_gamma
