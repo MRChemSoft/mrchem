@@ -25,10 +25,11 @@
 
 #pragma once
 
-#include "Cavity.h"
-#include "utils/print_utils.h"
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Printer>
+
+#include "Cavity.h"
+#include "utils/print_utils.h"
 
 namespace mrchem {
 /** @class StepFunction
