@@ -35,8 +35,7 @@ Permittivity::Permittivity(std::shared_ptr<mrchem::Cavity> cavity, double epsilo
 
 double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
     auto c_pin = this->cavity;
-    auto epsilon = this->in * std::exp(std::log(this->out / this->in) * (1 - c_pin->evalf(r)));
-    return (this->inverse) ? 1.0 / epsilon : epsilon;
+    return this->in * std::exp(std::log(this->out / this->in) * (1 - c_pin->evalf(r)));
 }
 
 void Permittivity::printHeader() const {

@@ -65,15 +65,10 @@ public:
      */
     double evalf(const mrcpp::Coord<3> &r) const override;
 
-    void flipFunction(bool is_inverse) { this->inverse = is_inverse; }
-    auto isInverse() const { return this->inverse; }
-
     void printHeader() const override;
 
 private:
     std::string formulation = "exponential";
-    bool inverse = false; //!< State of #evalf. When this is false, evalf returns the standard value, but when it is true,
-                          //!< evalf returns 1/epsilon.
 };
 
 } // namespace mrchem
