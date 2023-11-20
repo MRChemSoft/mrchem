@@ -25,24 +25,26 @@
 
 #include <MRCPP/MWFunctions>
 
-#include "StepFunction.h"
 #include "Cavity.h"
+#include "StepFunction.h"
 
 namespace mrchem {
 
-StepFunction::StepFunction(const mrchem::Cavity &cavity, double val_in, double val_out)
+StepFunction::StepFunction(std::shared_ptr<mrchem::Cavity> cavity, double val_in, double val_out)
         : in(val_in)
         , out(val_out)
-        , cavity(cavity) {}
+        , cavity{std::move(cavity)} {}
 
 void StepFunction::printParameters() const {
     // Collect relevant quantities
-    auto coords = this->cavity.getCoordinates();
-    auto radii = this->cavity.getRadii();
-    auto radii_0 = this->cavity.getOriginalRadii();
-    auto alphas = this->cavity.getRadiiScalings();
-    auto sigmas = this->cavity.getWidths();
-    auto betas = this->cavity.getWidthScalings();
+    auto c_pin = this->cavity;
+
+    auto coords = c_pin->getCoordinates();
+    auto radii = c_pin->getRadii();
+    auto radii_0 = c_pin->getOriginalRadii();
+    auto alphas = c_pin->getRadiiScalings();
+    auto sigmas = c_pin->getWidths();
+    auto betas = c_pin->getWidthScalings();
 
     // Set widths
     auto w0 = mrcpp::Printer::getWidth() - 1;
@@ -97,7 +99,7 @@ void StepFunction::printParameters() const {
 
 void StepFunction::printHeader() const {
     mrcpp::print::header(0, "Step Function of Cavity values");
-    print_utils::text(0, "Formulation", getFormulation(), true);
+    print_utils::text(0, "Formulation", "Standard", true);
     print_utils::scalar(0, "Value inside Cavity", getValueIn(), "(in)", 6);
     print_utils::scalar(0, "Value outside Cavity", getValueOut(), "(out)", 6);
 }

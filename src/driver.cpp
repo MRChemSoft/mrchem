@@ -1047,7 +1047,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto poisson_prec = json_fock["reaction_operator"]["poisson_prec"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
-        auto cavity_p = mol.getCavity_p();
 
         auto kain = json_fock["reaction_operator"]["kain"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];
@@ -1057,7 +1056,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto eps_o = json_fock["reaction_operator"]["epsilon_out"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
 
-        Permittivity dielectric_func(*cavity_p, eps_i, eps_o, formulation);
+        Permittivity dielectric_func(mol.getCavity_p(), eps_i, eps_o, formulation);
         dielectric_func.printParameters();
         Density rho_nuc(false);
         rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);

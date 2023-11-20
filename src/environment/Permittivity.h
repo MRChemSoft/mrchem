@@ -56,7 +56,7 @@ public:
      *  @param formulation Decides which formulation of the #Permittivity function to implement, only exponential
      * available as of now.
      */
-    Permittivity(const Cavity cavity, double epsilon_in, double epsilon_out, std::string formulation);
+    Permittivity(std::shared_ptr<Cavity> cavity, double epsilon_in, double epsilon_out, std::string formulation);
 
     /** @brief Evaluates Permittivity at a point in 3D space with respect to the state of #inverse.
      *  @param r coordinates of a 3D point in space.
@@ -71,6 +71,7 @@ public:
     void printHeader() const override;
 
 private:
+    std::string formulation = "exponential";
     bool inverse = false; //!< State of #evalf. When this is false, evalf returns the standard value, but when it is true,
                           //!< evalf returns 1/epsilon.
 };

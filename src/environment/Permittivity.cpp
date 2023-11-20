@@ -29,17 +29,19 @@
 
 namespace mrchem {
 
-Permittivity::Permittivity(const mrchem::Cavity cavity, double epsilon_in, double epsilon_out, std::string formulation)
-        : StepFunction(cavity, epsilon_in, epsilon_out) {}
+Permittivity::Permittivity(std::shared_ptr<mrchem::Cavity> cavity, double epsilon_in, double epsilon_out, std::string formulation)
+        : StepFunction(cavity, epsilon_in, epsilon_out)
+        , formulation(formulation) {}
 
 double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
-    auto epsilon = this->in * std::exp(std::log(this->out / this->in) * (1 - this->cavity.evalf(r)));
-    return (this->inverse) ? 1.0 / epsilon : epsilon; 
+    auto c_pin = this->cavity;
+    auto epsilon = this->in * std::exp(std::log(this->out / this->in) * (1 - c_pin->evalf(r)));
+    return (this->inverse) ? 1.0 / epsilon : epsilon;
 }
 
 void Permittivity::printHeader() const {
     mrcpp::print::header(0, "Solvation Cavity");
-    print_utils::text(0, "Formulation", getFormulation(), true);
+    print_utils::text(0, "Formulation", this->formulation, true);
     print_utils::scalar(0, "Dielectric constant", getValueIn(), "(in)", 6);
     print_utils::scalar(0, "", getValueOut(), "(out)", 6);
 }

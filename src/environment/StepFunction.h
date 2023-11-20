@@ -55,26 +55,20 @@ public:
      *  @param epsilon_out permittivity outside the #cavity.
      * available as of now.
      */
-    StepFunction(const Cavity &cavity, double val_in, double val_out);
+    StepFunction(std::shared_ptr<Cavity> cavity, double val_in, double val_out);
 
-    auto getCoordinates() const { return this->cavity.getCoordinates(); }
-    auto getRadii() const { return this->cavity.getRadii(); }
-    auto getGradVector() const { return this->cavity.getGradVector(); }
     auto getValueIn() const { return this->in; }
     auto getValueOut() const { return this->out; }
 
-    auto getFormulation() const { return this->formulation; }
-
-    Cavity getCavity() const { return this->cavity; }
+    std::shared_ptr<Cavity> getCavity() const { return this->cavity; }
 
     void printParameters() const;
     virtual void printHeader() const;
 
 protected:
-    double in;                            //!< Value of the function inside the #cavity.
-    double out;                           //!< value of the function outside the #cavity.
-    std::string formulation = "standard"; //!< Formula/equation/algorithm used for shifting values.
-    Cavity cavity;                        //!< A Cavity class instance.
+    double in;                      //!< Value of the function inside the #cavity.
+    double out;                     //!< value of the function outside the #cavity.
+    std::shared_ptr<Cavity> cavity; //!< A Cavity class instance.
 };
 
 } // namespace mrchem

@@ -64,7 +64,7 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     double slope = 0.2;
     std::vector<double> radius = {1.0};
     std::vector<mrcpp::Coord<3>> coords = {{0.0, 0.0, 0.0}};
-    Cavity sphere(coords, radius, slope);
+    auto sphere = std::make_shared<Cavity>(coords, radius, slope);
 
     // initialize dielectric function
     double eps_in = 1.0;
