@@ -23,9 +23,10 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/MWFunctions>
+
 #include "StepFunction.h"
 #include "Cavity.h"
-#include <MRCPP/MWFunctions>
 
 namespace mrchem {
 
