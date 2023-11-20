@@ -29,7 +29,7 @@
 
 namespace mrchem {
 
-StepFunction::StepFunction(const mrchem::Cavity cavity, double val_in, double val_out)
+StepFunction::StepFunction(const mrchem::Cavity &cavity, double val_in, double val_out)
         : in(val_in)
         , out(val_out)
         , cavity(cavity) {}
