@@ -24,6 +24,7 @@
  */
 
 #pragma once
+
 #include <memory>
 
 #include <MRCPP/MWFunctions>

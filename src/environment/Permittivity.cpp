@@ -24,8 +24,10 @@
  */
 
 #include "Permittivity.h"
-#include "Cavity.h"
+
 #include <MRCPP/MWFunctions>
+
+#include "Cavity.h"
 
 namespace mrchem {
 Permittivity::Permittivity(std::shared_ptr<mrchem::Cavity> cavity, double epsilon_in, double epsilon_out, std::string formulation)
