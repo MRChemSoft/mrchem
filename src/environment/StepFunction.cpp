@@ -22,11 +22,11 @@
  * For information on the complete list of contributors to MRChem, see:
  * <https://mrchem.readthedocs.io/>
  */
+#include "StepFunction.h"
 
 #include <MRCPP/MWFunctions>
 
 #include "Cavity.h"
-#include "StepFunction.h"
 
 namespace mrchem {
 
