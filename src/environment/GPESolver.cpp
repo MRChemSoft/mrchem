@@ -102,7 +102,7 @@ void GPESolver::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFu
     resetComplexFunction(out_gamma);
 
     for (int d = 0; d < 3; d++) {
-        auto C_pin = this->epsilon.getCavity();
+        auto C_pin = this->epsilon.getCavity_p();
         mrcpp::AnalyticFunction<3> d_cav(C_pin->getGradVector()[d]);
         mrcpp::ComplexFunction cplxfunc_prod;
         mrcpp::cplxfunc::multiply(cplxfunc_prod, get_func(d_V, d), d_cav, this->apply_prec, 1);

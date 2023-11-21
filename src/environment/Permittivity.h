@@ -25,6 +25,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Printer>
 

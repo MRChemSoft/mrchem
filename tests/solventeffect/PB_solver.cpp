@@ -63,7 +63,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
     auto R = std::vector<double>({3.7794522509156563});
     auto sph_coords = std::vector<mrcpp::Coord<3>>({{0.0, 0.0, 0.0}});
     // initialize spherical cavity
-    auto sphere = Cavity(sph_coords, R, slope);
+    auto sphere = std::make_shared<Cavity>(sph_coords, R, slope);
     // initialize dielectric function
     auto dielectric_func = Permittivity(sphere, eps_in, eps_out, "exponential");
     // initialize DHScreening object
@@ -121,7 +121,7 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[pb_linearized]") {
     auto R = std::vector<double>({3.7794522509156563});
     auto sph_coords = std::vector<mrcpp::Coord<3>>({{0.0, 0.0, 0.0}});
     // initialize spherical cavity
-    auto sphere = Cavity(sph_coords, R, slope);
+    auto sphere = std::make_shared<Cavity>(sph_coords, R, slope);
     // initialize dielectric function
     auto dielectric_func = Permittivity(sphere, eps_in, eps_out, "exponential");
     // initialize DHScreening object

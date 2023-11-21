@@ -25,10 +25,11 @@
 
 #pragma once
 
-#include "Cavity.h"
+#include "StepFunction.h"
 #include "utils/print_utils.h"
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Printer>
+#include <memory>
 
 namespace mrchem {
 /** @class DHScreening
@@ -51,7 +52,7 @@ namespace mrchem {
 
 class Cavity;
 
-class DHScreening final : public mrcpp::RepresentableFunction<3> {
+class DHScreening final : public StepFunction {
 public:
     /** @brief Standard constructor. Initializes the #cavity_ion and #kappa_out with the input parameters.
      *  @param cavity_ion interlocking spheres of Cavity class.
@@ -64,30 +65,17 @@ public:
      * where \f$N_a\f$ is the Avogadro constant, e is the elementary charge, \f$I_0\f$ is the concentration of the ions,
      * \f$k_B\f$ is the Boltzmann constant, \f$T\f$ is the temperature, \f$\epsilon_{out}\f$ is the permittivity of the solvent and \f$\epsilon_{in}\f$ is the permittivity of free space.
      */
-    DHScreening(const Cavity &cavity_ion, double kappa_out, const std::string &formulation);
+    DHScreening(std::shared_ptr<Cavity> cavity_ion, double kappa_out, const std::string &formulation);
 
     /** @brief Evaluates DHScreening at a point in 3D space.
      *  @param r coordinates of a 3D point in space.
      *  @return Value at point r.
      */
     double evalf(const mrcpp::Coord<3> &r) const override;
-
-    auto getCoordinates() const { return this->cavity_ion.getCoordinates(); }
-
-    auto getRadii() const { return this->cavity_ion.getRadii(); }
-
-    auto getKOut() const { return this->kappa_out; }
-
-    Cavity getCavity() const { return this->cavity_ion; }
-
-    std::string getFormulation() const { return this->formulation; }
-
-    void printParameters() const;
+    void printHeader() const override { detail::print_header("Ion-accessible Cavity", this->formulation, getValueIn(), getValueOut()); }
 
 private:
-    double kappa_out;        //!< value of the Debye-Huckel screening constant outside the ion accessible cavity.
-    std::string formulation; //!< Formulation of the DHScreening function. Only linear variable is used now.
-    Cavity cavity_ion;       //!< A Cavity class instance which describes the ion accessible cavity.
+    std::string formulation{"Continuous Screening Function"}; //!< Formulation of the DHScreening function. Only linear variable is used now.
 };
 
 } // namespace mrchem

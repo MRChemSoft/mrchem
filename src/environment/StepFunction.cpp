@@ -43,5 +43,5 @@ void print_header(const std::string &header, const std::string &formulation, dou
 StepFunction::StepFunction(std::shared_ptr<mrchem::Cavity> cavity, double val_in, double val_out)
         : in(val_in)
         , out(val_out)
-        , cavity{std::move(cavity)} {}
+        , cavity_p{std::move(cavity)} {}
 } // namespace mrchem
