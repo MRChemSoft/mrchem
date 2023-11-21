@@ -38,11 +38,4 @@ double Permittivity::evalf(const mrcpp::Coord<3> &r) const {
     return this->in * std::exp(std::log(this->out / this->in) * (1 - c_pin->evalf(r)));
 }
 
-void Permittivity::printHeader() const {
-    mrcpp::print::header(0, "Solvation Cavity");
-    print_utils::text(0, "Formulation", this->formulation, true);
-    print_utils::scalar(0, "Dielectric constant", getValueIn(), "(in)", 6);
-    print_utils::scalar(0, "", getValueOut(), "(out)", 6);
-}
-
 } // namespace mrchem

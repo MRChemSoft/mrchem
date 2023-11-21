@@ -32,6 +32,13 @@
 #include "utils/print_utils.h"
 
 namespace mrchem {
+
+namespace detail {
+void print_header(const std::string &header, const std::string &formulation, double in_value, double out_value);
+} // namespace detail
+
+class Cavity;
+
 /** @class StepFunction
  *
  * @brief StepFunction function related to a Cavity function.
@@ -44,9 +51,6 @@ namespace mrchem {
  * where \f$\mathbf{r}\f$ is the coordinate of a point in 3D space, \f$ C \f$ is the #cavity function,
  * and \f$S_{in}\f$ and \f$ S_{out} \f$ are the values of the function inside and outside the #cavity respectively.
  */
-
-class Cavity;
-
 class StepFunction : public mrcpp::RepresentableFunction<3> {
 public:
     /** @brief Standard constructor. Initializes the #cavity, #in and #out with the input parameters.
@@ -63,7 +67,8 @@ public:
     std::shared_ptr<Cavity> getCavity() const { return this->cavity; }
 
     void printParameters() const;
-    virtual void printHeader() const;
+
+    virtual void printHeader() const { detail::print_header("Step function of Cavity values", "Standard", getValueIn(), getValueOut()); }
 
 protected:
     double in;                      //!< Value of the function inside the #cavity.

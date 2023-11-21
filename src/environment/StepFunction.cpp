@@ -29,6 +29,14 @@
 #include "Cavity.h"
 
 namespace mrchem {
+namespace detail {
+void print_header(const std::string &header, const std::string &formulation, double in_value, double out_value) {
+    mrcpp::print::header(0, header);
+    print_utils::text(0, "Formulation", formulation, true);
+    print_utils::scalar(0, "Value inside Cavity", in_value, "(in)", 6);
+    print_utils::scalar(0, "Value outside Cavity", out_value, "(out)", 6);
+}
+} // namespace detail
 
 StepFunction::StepFunction(std::shared_ptr<mrchem::Cavity> cavity, double val_in, double val_out)
         : in(val_in)
@@ -95,13 +103,6 @@ void StepFunction::printParameters() const {
         println(0, o_coord.str());
     }
     mrcpp::print::separator(0, '=', 2);
-}
-
-void StepFunction::printHeader() const {
-    mrcpp::print::header(0, "Step Function of Cavity values");
-    print_utils::text(0, "Formulation", "Standard", true);
-    print_utils::scalar(0, "Value inside Cavity", getValueIn(), "(in)", 6);
-    print_utils::scalar(0, "Value outside Cavity", getValueOut(), "(out)", 6);
 }
 
 } // namespace mrchem
