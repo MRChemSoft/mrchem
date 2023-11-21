@@ -68,7 +68,7 @@ public:
     void printHeader() const override;
 
 private:
-    std::string formulation = "exponential";
+    std::string formulation{"exponential"};
 };
 
 } // namespace mrchem
