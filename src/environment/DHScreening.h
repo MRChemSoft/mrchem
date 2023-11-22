@@ -25,13 +25,16 @@
 
 #pragma once
 
-#include "StepFunction.h"
-#include "utils/print_utils.h"
-#include <MRCPP/MWFunctions>
-#include <MRCPP/Printer>
 #include <memory>
 
+#include <MRCPP/MWFunctions>
+#include <MRCPP/Printer>
+
+#include "StepFunction.h"
+#include "utils/print_utils.h"
+
 namespace mrchem {
+class Cavity;
 /** @class DHScreening
  *
  * @brief Square of the Debye-Huckel Screening parameter.
@@ -49,9 +52,6 @@ namespace mrchem {
  * \f]
  * Where \f$C_{ion}(\mathbf{r})\f$ is the ion accessible Cavity function.
  */
-
-class Cavity;
-
 class DHScreening final : public StepFunction {
 public:
     /** @brief Standard constructor. Initializes the #cavity_ion and #kappa_out with the input parameters.
