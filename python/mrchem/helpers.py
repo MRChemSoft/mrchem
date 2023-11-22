@@ -119,7 +119,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
     return fock_dict
 
 
-def _reaction_operator_handler(user_dict, rsp = False):
+def _reaction_operator_handler(user_dict, rsp=False):
     # convert density_type from string to integer
     if user_dict["PCM"]["SCRF"]["density_type"] == "total":
         density_type = 0
@@ -136,11 +136,11 @@ def _reaction_operator_handler(user_dict, rsp = False):
         # if doing a response calculation, then density_type is set to 1 (electronic only)
         "density_type": 1 if rsp else density_type,
         "epsilon_in": user_dict["PCM"]["Permittivity"]["epsilon_in"],
-        "epsilon_static": user_dict["PCM"]["Permittivity"]["outside"]["epsilon_static"],
-        "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["outside"][
-            "epsilon_dynamic"
+        "epsilon_static": user_dict["PCM"]["Permittivity"]["epsilon_out"]["static"],
+        "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["epsilon_out"]["dynamic"],
+        "nonequilibrium": user_dict["PCM"]["Permittivity"]["epsilon_out"][
+            "nonequilibrium"
         ],
-        "nonequilibrium": user_dict["PCM"]["Permittivity"]["outside"]["nonequilibrium"],
         "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
     }
 

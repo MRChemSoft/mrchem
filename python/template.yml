@@ -945,19 +945,19 @@ sections:
               Formulation of the Permittivity function. Currently only the
               exponential is available.
         sections:
-          - name: outside
+          - name: epsilon_out
             docstring: |
               Parameters for the continuum solvent outside the cavity.
             keywords:
-              - name: epsilon_static
+              - name: static
                 type: float
                 default: 1.0
                 docstring: |
                   Static permittivity outside the cavity. This is characteristic of the
                   solvent used.
-              - name: epsilon_dynamic
+              - name: dynamic
                 type: float
-                default: user['PCM']['Permittivity']['outside']['epsilon_static']
+                default: user['PCM']['Permittivity']['epsilon_out']['static']
                 docstring: |
                   Dynamic permittivity outside the cavity. This is
                   characteristic of the solvent used and relevant only in

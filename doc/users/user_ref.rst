@@ -915,7 +915,7 @@ User input reference
           - ``value.lower() in ['exponential']``
       
       :red:`Sections`
-       :outside: Parameters for the continuum solvent outside the cavity. 
+       :epsilon_out: Parameters for the continuum solvent outside the cavity. 
       
             :red:`Keywords`
              :nonequilibrium: Whether to use the nonequilibrium formulation of response, *i.e.* use the dynamic permittivity for the calculation of the response reaction field. Defaults to false. 
@@ -924,17 +924,17 @@ User input reference
             
               **Default** ``False``
             
-             :epsilon_static: Static permittivity outside the cavity. This is characteristic of the solvent used. 
+             :static: Static permittivity outside the cavity. This is characteristic of the solvent used. 
             
               **Type** ``float``
             
               **Default** ``1.0``
             
-             :epsilon_dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calculations. Defaults to the same value as `epsilon_static`. 
+             :dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calculations. Defaults to the same value as `epsilon_static`. 
             
               **Type** ``float``
             
-              **Default** ``user['PCM']['Permittivity']['outside']['epsilon_static']``
+              **Default** ``user['PCM']['Permittivity']['epsilon_out']['static']``
             
  :Constants: Physical and mathematical constants used by MRChem
 
