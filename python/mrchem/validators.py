@@ -361,11 +361,6 @@ class MoleculeValidator:
             # NOTE the default value of the width is 0.2 atomic units, so no need to convert it!
             sigmas = [self.cavity_sigma] * len(radii)
 
-            # the radii in the periodic table are in angstrom
-            # we convert them to bohr if the units of the input file are NOT angstrom
-            if self.unit != self.UNIT_ANGSTROM:
-                radii = self.ang2bohr_vector(radii)
-
         else:
             # in 'explicit' mode, we build the sphere list from the input
             coords = []

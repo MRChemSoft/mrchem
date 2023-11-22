@@ -19,7 +19,9 @@ WaveFunction {
 
 PCM {
   Permittivity {
-    epsilon_out = 80.0
+    outside = {
+      epsilon_static = 80.0
+    }
   }
   Cavity {
     mode = atoms
