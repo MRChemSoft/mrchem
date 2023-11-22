@@ -983,7 +983,7 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
  * construct all operator which are present in this input. Option to set
  * perturbation order of the operators.
  */
-void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order) {
+void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, bool is_dynamic) {
     auto &nuclei = mol.getNuclei();
     auto Phi_p = mol.getOrbitals_p();
     auto X_p = mol.getOrbitalsX_p();
