@@ -1,0 +1,38 @@
+world_prec = 1.0e-4
+world_unit = angstrom
+
+Molecule {
+$coords
+H      0.0000 0.0000   -0.3705
+H      0.0000 0.0000    0.3705
+$end
+}
+
+WaveFunction {
+  method = HF
+  environment = PCM
+}
+
+PCM {
+  Permittivity {
+    epsilon_out {
+      static = 4.0
+      dynamic = 2.0
+      nonequilibrium = false
+    }
+  }
+}
+
+SCF {
+  run = true
+  guess_type = SAD_DZ
+}
+
+ExternalFields {
+  electric_field = [0.0, 0.0, -0.01]
+}
+
+Properties {
+  dipole_moment = true
+}
+

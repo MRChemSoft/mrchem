@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+import sys
+from pathlib import Path
+import json
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from tester import *  # isort:skip
+
+options = script_cli()
+
+filters = {
+    SUM_OCCUPIED: rel_tolerance(1.0e-6),
+    E_KIN: rel_tolerance(1.0e-6),
+    E_EN: rel_tolerance(1.0e-6),
+    E_EE: rel_tolerance(1.0e-6),
+    E_X: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(1.0e-6),
+    E_EEXT: rel_tolerance(1.0e-6),
+    E_NEXT: rel_tolerance(1.0e-6),
+    E_EL: rel_tolerance(1.0e-6),
+    POLARIZABILITY(0.0): rel_tolerance(1.0e-6),
+    POLARIZABILITY(0.05): rel_tolerance(1.0e-6),
+}
+
+ierr = 0
+for inp in ["eq", "neq"]:
+    ierr += run(options, input_file=f"h2-{inp}", filters=filters)
+
+sys.exit(ierr)

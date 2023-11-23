@@ -746,7 +746,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
 
     FockBuilder F_1;
     const auto &json_fock_1 = json_rsp["fock_operator"];
-    driver::build_fock_operator(json_fock_1, mol, F_1, 1);
+    driver::build_fock_operator(json_fock_1, mol, F_1, 1, dynamic);
 
     const auto &json_pert = json_rsp["perturbation"];
     auto h_1 = driver::get_operator<3>(json_pert["operator"], json_pert);
@@ -1059,9 +1059,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         // the input parser helpers have converted this parameter from string
         // to integer, compatibly with the DensityType enum
         auto density_type = json_fock["reaction_operator"]["density_type"];
+        // permittivity inside the cavity
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
+        // static permittivity outside the cavity
         auto eps_s = json_fock["reaction_operator"]["epsilon_static"];
+        // dynamic permittivity outside the cavity
         auto eps_d = json_fock["reaction_operator"]["epsilon_dynamic"];
+        // whether nonequilibrium response was requested
         auto noneq = json_fock["reaction_operator"]["nonequilibrium"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
 
@@ -1071,10 +1075,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         // decide which permittivity to use outside of the cavity
         auto eps_o = [order, is_dynamic, noneq, eps_s, eps_d] {
-            if (order == 1 && noneq && is_dynamic) {
-                // in response (order == 1), use dynamic permittivity if:
-                // a. nonequilibrium was requested, and
-                // b. the frequency is nonzero
+            if (order >= 1 && noneq && is_dynamic) {
+                // in response (order >= 1), use dynamic permittivity if:
+                // a. nonequilibrium was requested (noneq is true), and
+                // b. the frequency is nonzero (is_dynamic is true)
                 return eps_d;
             } else {
                 // for the ground state, always use the static permittivity

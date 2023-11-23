@@ -1,0 +1,45 @@
+world_prec = 1.0e-3
+world_unit = angstrom
+
+Molecule {
+$coords
+H      0.0000 0.0000   -0.3705
+H      0.0000 0.0000    0.3705
+$end
+}
+
+WaveFunction {
+  method = HF
+  environment = PCM
+}
+
+Properties {
+  polarizability = true
+}
+
+PCM {
+  Permittivity {
+    epsilon_out {
+      static = 4.0
+      dynamic = 2.0
+      nonequilibrium = true
+    }
+  }
+}
+
+SCF {
+  run = false
+  guess_type = SAD_DZ
+}
+
+Polarizability {
+  frequency = [0.0, 0.05]
+}
+
+Response {
+  kain = 3
+  max_iter = 10
+  orbital_thrs = 0.01
+  run = [false, false, true]
+}
+~
