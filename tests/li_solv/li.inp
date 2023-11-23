@@ -24,8 +24,8 @@
   "Permittivity": {
     "epsilon_in": 1.0,
     "formulation": "exponential",
-    "outside": {
-      "epsilon_static": 2.0
+    "epsilon_out": {
+      "static": 2.0
     }
   }
 },
