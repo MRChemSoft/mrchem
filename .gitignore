@@ -134,4 +134,3 @@ Pipfile.lock
 .vscode
 
 cube_vectors/
-tests/**/*.out
