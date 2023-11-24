@@ -971,7 +971,7 @@ sections:
                   Whether to use the nonequilibrium formulation of response,
                   *i.e.* use the dynamic permittivity for the calculation of the
                   response reaction field. Defaults to false.
-      - name: D_H_screening
+      - name: DebyeHuckelScreening
         docstring: |
           Parameters for the Debye-Huckel screening factor
         keywords:
