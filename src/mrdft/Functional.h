@@ -30,6 +30,7 @@
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
+#include <MRCPP/trees/FunctionNode.h>
 #include <XCFun/xcfun.h>
 
 namespace mrdft {
@@ -43,8 +44,11 @@ public:
             , xcfun(std::move(f)) {}
     virtual ~Functional() = default;
 
+    void makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes) const;
+
     void setLogGradient(bool log) { log_grad = log; }
     void setDensityCutoff(double cut) { cutoff = cut; }
+    void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) {derivOp = std::move(d);}
 
     virtual bool isSpin() const = 0;
     bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
@@ -66,6 +70,7 @@ protected:
     Eigen::VectorXi d_mask;
     Eigen::MatrixXi xc_mask;
     XC_p xcfun;
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};
 
     int getXCInputLength() const { return xcfun_input_length(xcfun.get()); }
     int getXCOutputLength() const { return xcfun_output_length(xcfun.get()); }
@@ -73,7 +78,9 @@ protected:
     virtual int getCtrOutputLength() const = 0;
 
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
+    Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
 
     virtual void clear() = 0;
     virtual mrcpp::FunctionTreeVector<3> setupXCInput() = 0;
