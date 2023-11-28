@@ -1101,7 +1101,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         // initialize SCRF object
         std::unique_ptr<GPESolver> scrf_p;
-        auto solver_type = json_fock["reaction_operator"]["solver_type"];
+
         std::shared_ptr<Cavity> cavity_ion;
         if (ion_radius != 0.0) {
             auto radii_0 = cavity_p->getOriginalRadii();

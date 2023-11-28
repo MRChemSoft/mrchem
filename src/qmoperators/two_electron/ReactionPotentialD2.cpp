@@ -23,10 +23,11 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "MRCPP/Printer"
-#include "MRCPP/Timer"
-
 #include "ReactionPotentialD2.h"
+
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+
 #include "qmfunctions/density_utils.h"
 #include "utils/print_utils.h"
 
@@ -51,6 +52,6 @@ mrcpp::ComplexFunction &ReactionPotentialD2::computePotential(double prec) const
     // change sign, because it's the electronic density
     rho.rescale(-1.0);
 
-    return this->helper->setup(prec, rho);
+    return this->solver->solveEquation(prec, rho);
 }
 } // namespace mrchem

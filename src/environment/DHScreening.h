@@ -72,7 +72,7 @@ public:
      *  @return Value at point r.
      */
     double evalf(const mrcpp::Coord<3> &r) const override;
-    void printHeader() const override { detail::print_header("Ion-accessible Cavity", this->formulation, getValueIn(), getValueOut()); }
+    void printParameters() const override { detail::print_header("Ion-accessible Cavity", this->formulation, getValueIn(), getValueOut()); }
 
 private:
     std::string formulation{"Continuous Screening Function"}; //!< Formulation of the DHScreening function. Only linear variable is used now.

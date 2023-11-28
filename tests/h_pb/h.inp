@@ -23,7 +23,7 @@
   },
   "Permittivity": {
     "epsilon_in": 1.0,
-    "epsilon_out": 78.4,
+    "epsilon_out": { "static": 78.4},
     "formulation": "exponential"
   },
   "D_H_screening": {

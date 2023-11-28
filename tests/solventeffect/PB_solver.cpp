@@ -48,7 +48,7 @@ using namespace mrchem;
 
 namespace PB_solver {
 
-TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
+TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 
@@ -73,7 +73,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
     PeriodicTable PT;
-    SECTION("case 0: one positive charge in center of sphere (born model)", "[pb_standard][case_0]") {
+    SECTION("case 0: one positive charge in center of sphere (born model)", "[PB_solver][pb_standard][case_0]") {
         // initialize Nuclei  in center of sphere
         auto q_coords = std::vector<mrcpp::Coord<3>>({{0.0, 0.0, 0.0}});
         Nucleus Q(PT.getElement(0), q_coords[0]);
@@ -91,7 +91,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
 
         auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
 
-        auto scrf_p = std::make_unique<PBESolver>(dielectric_func, kappa_sq, rho_nuc, P_p, D_p, kain, max_iter, dyn_thrs, "nuclear");
+        auto scrf_p = std::make_unique<PBESolver>(dielectric_func, kappa_sq, rho_nuc, P_p, D_p, kain, max_iter, dyn_thrs, SCRFDensityType::NUCLEAR);
         auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         Reo->setup(prec * 10);
 
@@ -106,7 +106,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[pb_standard]") {
     }
 }
 
-TEST_CASE("Poisson Boltzmann equation solver linearized", "[pb_linearized]") {
+TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linearized]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 
@@ -131,7 +131,7 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[pb_linearized]") {
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
     PeriodicTable PT;
-    SECTION("case 0: one positive charge in center of sphere (born model)", "[pb_linearized][case_0]") {
+    SECTION("case 0: one positive charge in center of sphere (born model)", "[PB_solver][pb_linearized][case_0]") {
 
         // initialize Nuclei  in center of sphere
         auto q_coords = std::vector<mrcpp::Coord<3>>({{0.0, 0.0, 0.0}});
@@ -150,7 +150,7 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[pb_linearized]") {
 
         auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
 
-        auto scrf_p = std::make_unique<LPBESolver>(dielectric_func, kappa_sq, rho_nuc, P_p, D_p, kain, max_iter, dyn_thrs, "nuclear");
+        auto scrf_p = std::make_unique<LPBESolver>(dielectric_func, kappa_sq, rho_nuc, P_p, D_p, kain, max_iter, dyn_thrs, SCRFDensityType::NUCLEAR);
 
         auto Reo = std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
         Reo->setup(prec * 10);

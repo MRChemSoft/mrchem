@@ -30,14 +30,11 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include "GPESolver.h"
 #include "chemistry/PhysicalConstants.h"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
-#include "qmoperators/two_electron/ReactionPotential.h"
-#include "scf_solver/KAIN.h"
 #include "utils/print_utils.h"
-
-#include <nlohmann/json.hpp>
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -56,10 +53,9 @@ PBESolver::PBESolver(const Permittivity &e,
                      int kain_hist,
                      int max_iter,
                      bool dyn_thrs,
-                     const std::string &density_type)
+                     SCRFDensityType density_type)
         : GPESolver(e, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type)
-        , kappa(k)
-        , solver_name("Poisson-Boltzmann") {}
+        , kappa(k) {}
 
 void PBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) {
     // create a lambda function for the sinh(V) term and multiply it with kappa and salt factor to get the PB term

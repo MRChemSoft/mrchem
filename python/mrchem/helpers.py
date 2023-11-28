@@ -131,6 +131,7 @@ def _reaction_operator_handler(user_dict, rsp=False):
 
     # reaction field operator settings common to all continuum models
     reo_dict = {
+        "solver_type": "Generalized_Poisson",
         "poisson_prec": user_dict["world_prec"],
         "kain": user_dict["PCM"]["SCRF"]["kain"],
         "max_iter": user_dict["PCM"]["SCRF"]["max_iter"],

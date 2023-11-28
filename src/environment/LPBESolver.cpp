@@ -30,14 +30,12 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include "GPESolver.h"
 #include "chemistry/PhysicalConstants.h"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/density_utils.h"
 #include "qmoperators/two_electron/ReactionPotential.h"
-#include "scf_solver/KAIN.h"
 #include "utils/print_utils.h"
-
-#include <nlohmann/json.hpp>
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -55,9 +53,8 @@ LPBESolver::LPBESolver(const Permittivity &e,
                        int kain_hist,
                        int max_iter,
                        bool dyn_thrs,
-                       const std::string &density_type)
-        : PBESolver(e, k, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type)
-        , solver_name("Linearized Poisson-Boltzmann") {}
+                       SCRFDensityType density_type)
+        : PBESolver(e, k, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type) {}
 // TODO separate this for the linear and non-linear solver
 void LPBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) {
     resetComplexFunction(pb_term);

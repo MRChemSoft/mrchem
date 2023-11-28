@@ -233,7 +233,7 @@ void GPESolver::printConvergenceRow(int i, double norm, double update, double ti
     println(3, o_txt.str());
 }
 
-mrcpp::ComplexFunction &SCRF::iterateEquation(double prec, const Density &rho_el) {
+mrcpp::ComplexFunction &GPESolver::solveEquation(double prec, const Density &rho_el) {
     this->apply_prec = prec;
     Density rho_tot(false);
     computeDensities(rho_el, rho_tot);
@@ -276,32 +276,16 @@ void GPESolver::resetComplexFunction(mrcpp::ComplexFunction &function) {
 }
 
 void GPESolver::printParameters() const {
-    std::stringstream o_iter;
-    if (this->max_iter > 0) {
-        o_iter << this->max_iter;
-    } else {
-        o_iter << "Off";
-    }
-
-    std::stringstream o_kain;
-    if (this->history > 0) {
-        o_kain << this->history;
-    } else {
-        o_kain << "Off";
-    }
-
     nlohmann::json data = {
         {"Method                ", this->solver_name},
         {"Density               ", this->density_type},
-        {"Max iterations        ", max_iter},
-        {"KAIN solver           ", o_kain.str()},
-        {"Density type          ", density_type},
-        {"Dynamic threshold     ", (dynamic_thrs) ? "On" : "Off"},
+        {"Max iterations        ", this->max_iter},
+        {"KAIN solver           ", (this->history > 0) ? std::to_string(this->history) : "Off"},
+        {"Dynamic threshold     ", (this->dynamic_thrs) ? "On" : "Off"},
     };
 
     mrcpp::print::separator(3, '~');
     print_utils::json(3, data, false);
     mrcpp::print::separator(3, '~');
 }
-
 } // namespace mrchem

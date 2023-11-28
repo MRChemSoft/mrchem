@@ -69,13 +69,13 @@ enum class SCRFDensityType : int { TOTAL = 0, ELECTRONIC = 1, NUCLEAR = 2 };
 class GPESolver {
 public:
     GPESolver(const Permittivity &e,
-         const Density &rho_nuc,
-         std::shared_ptr<mrcpp::PoissonOperator> P,
-         std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
-         int kain_hist,
-         int max_iter,
-         bool dyn_thrs,
-         const std::string &density_type);
+              const Density &rho_nuc,
+              std::shared_ptr<mrcpp::PoissonOperator> P,
+              std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
+              int kain_hist,
+              int max_iter,
+              bool dyn_thrs,
+              SCRFDensityType density_type);
     ~GPESolver();
 
     /** @brief Sets the convergence threshold for the micro-iterations, used with dynamic thresholding.
@@ -111,13 +111,13 @@ public:
 protected:
     bool dynamic_thrs;
     SCRFDensityType density_type; //!< Decides which density we will use for computing the reaction potential, options are ``total``, ``electronic`` and ``nuclear``.
-    std::string solver_name = "Generalized Poisson";
 
     int max_iter;
     int history;
     double apply_prec{-1.0};
     double conv_thrs{1.0};
     double mo_residual{1.0};
+    std::string solver_name{"Generalized Poisson"};
 
     Permittivity epsilon;
 
@@ -195,7 +195,7 @@ protected:
      *  -# Update the reaction potential as \f$V_R(\mathbf{r}) = V_R^{old}(\mathbf{r}) + \Delta V_R(\mathbf{r})\f$
      *  -# Check if the reaction potential has converged, if not, repeat from step 1.
      */
-    void runMicroiterations(const mrcpp::ComplexFunction &V_vac, const Density &rho_el);
+    void runMicroIterations(const mrcpp::ComplexFunction &V_vac, const Density &rho_el);
 
     /** @brief Setups and computes the reaction potential through the microiterations
      * @param V_vac the vacuum potential

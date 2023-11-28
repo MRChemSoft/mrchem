@@ -43,8 +43,6 @@ namespace mrchem {
  * \f]
  * where \f$\gamma_s\f$ is the surface charge density, \f$\kappa\f$ is obtained from the DHScreening class and \f$V_{R}\f$ is the reaction potential.
  */
-class Nuclei;
-class KAIN;
 class LPBESolver final : public PBESolver {
 public:
     LPBESolver(const Permittivity &e,
@@ -55,7 +53,7 @@ public:
                int kain_hist,
                int max_iter,
                bool dyn_thrs,
-               const std::string &density_type);
+               SCRFDensityType density_type);
 
     friend class ReactionPotential;
 
@@ -67,6 +65,6 @@ protected:
      * @details The PB term is computed as \f$ \kappa^2 V_{tot} \f$ and returned.
      */
     void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) override;
-    std::string solver_name;
+    std::string solver_name{"Linearized Poisson-Boltzmann"};
 };
 } // namespace mrchem

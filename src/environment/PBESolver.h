@@ -58,8 +58,6 @@ namespace mrchem {
  * \f]
  * where \f$\gamma_s\f$ is the surface charge density, \f$\kappa\f$ is obtained from the DHScreening class and \f$V_{R}\f$ is the reaction potential.
  */
-class Nuclei;
-class KAIN;
 class PBESolver : public GPESolver {
 public:
     PBESolver(const Permittivity &e,
@@ -70,13 +68,13 @@ public:
               int kain_hist,
               int max_iter,
               bool dyn_thrs,
-              const std::string &density_type);
+              SCRFDensityType density_type);
 
     friend class ReactionPotential;
 
 protected:
     DHScreening kappa; ///< the DHScreening object used to compute the PB term \f$\kappa\f$
-    std::string solver_name;
+    std::string solver_name{"Poisson-Boltzmann"};
 
     /** @brief constructs the surface chage distribution and adds it to the PB term
      * @param[in] potential the potential to compute \f$\nabla V\f$ from
