@@ -25,8 +25,8 @@
 
 #pragma once
 
-#include "qmoperators/QMPotential.h"
 #include "environment/GPESolver.h"
+#include "qmoperators/QMPotential.h"
 
 namespace mrchem {
 /** @class ReactionPotential
@@ -56,7 +56,7 @@ public:
     friend class ReactionOperator;
 
 protected:
-    std::unique_ptr<GPESolver> solver;          //!< A GPESolver instance used to compute the ReactionPotential.
+    std::unique_ptr<GPESolver> solver;       //!< A GPESolver instance used to compute the ReactionPotential.
     std::shared_ptr<OrbitalVector> orbitals; ///< Unperturbed orbitals defining the ground-state electron density for the SCRF procedure.
 
     void setup(double prec) override;

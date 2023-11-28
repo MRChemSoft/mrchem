@@ -25,16 +25,11 @@
 
 import math
 
-from .helpers import (
-    write_scf_fock,
-    write_scf_guess,
-    write_scf_solver,
-    write_scf_properties,
-    write_scf_plot,
-    write_rsp_calc,
-    parse_wf_method,
-)
-from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
+from .helpers import (parse_wf_method, write_rsp_calc, write_scf_fock,
+                      write_scf_guess, write_scf_plot, write_scf_properties,
+                      write_scf_solver)
+from .periodictable import PeriodicTable as PT
+from .periodictable import PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
 
 
@@ -128,7 +123,7 @@ def write_molecule(user_dict, origin):
         "charge": mol.charge,
         "coords": mol.get_coords_in_program_syntax(),
     }
-    
+
     if "pcm" in user_dict["WaveFunction"]["environment"].lower():
         mol_dict["cavity"] = {
             "spheres": mol.get_cavity_in_program_syntax(),
