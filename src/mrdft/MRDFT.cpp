@@ -116,14 +116,14 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
             mrcpp::FunctionTree<3> &f_i = mrcpp::get_func(PotVec, i);
             f_i.mwTransform(mrcpp::BottomUp);
             f_i.calcSquareNorm();
-            if(i>0)outNodes += f_i.getNNodes();
-            if(i>0)outSize += f_i.getSizeNodes();
+            outNodes += f_i.getNNodes();
+            outSize += f_i.getSizeNodes();
         }
         this->functional().XCenergy = XCenergy[0];
         mrcpp::print::tree(3, "Make potential", outNodes, outSize, t_post.elapsed());
         return PotVec;
     } else {
-
+        //This block will be removed in the future
     functional().preprocess(inp);
     mrcpp::FunctionTreeVector<3> xcInpVec = functional().setupXCInput();
     mrcpp::FunctionTreeVector<3> ctrInpVec = functional().setupCtrInput();
