@@ -144,7 +144,8 @@ Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen:
             int xc_idx = this->xc_mask(i, j);
             int d_idx = this->d_mask(j);
             if (d_idx >= 0) {
-                out_data.col(i + 1) += xc_data.col(xc_idx) * d_data.col(d_idx);
+                //elementwise product of one column of xc_data and d_data
+                out_data.col(i + 1) += xc_data.col(xc_idx).cwiseProduct(d_data.col(d_idx));
             } else {
                 out_data.col(i + 1) += xc_data.col(xc_idx);
             }
@@ -183,10 +184,12 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         for (int j = 0; j < ncoefs; j++) xcfun_inp(j,i) = rho->getNode(nodeIdx).getCoefs()[j];
         node.mwTransform(mrcpp::Reconstruction);
         node.cvTransform(mrcpp::Forward);
+
         if (isGGA()) {
             //make gradient of input
             for (int d = 0; d < 3; d++) {
                 node.attachCoefs(xcfun_inp.col(spinsize + 3*i + d).data());
+
                 mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
                 derivcalc.calcNode(rho->getNode(nodeIdx), node);
                 // make cv representation of gradient of density
@@ -200,11 +203,21 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
     Eigen::MatrixXd xc_out = Functional::evaluate_transposed(xcfun_inp);
 
     // make gradient of the higher order densities
-    int d_datasize = inp.size()-spinsize;
+    //order:
+    // rho_a_1
+    // rho_b_1
+    // drho_a_1/dx
+    // drho_a_1/dy
+    // drho_a_1/dz
+    // drho_b_1/dx
+    // drho_b_1/dy
+    // drho_b_1/dz
+    int ctrsize = inp.size()-spinsize; //number of higher order inputs
+    int d_datasize = ctrsize;
     if (isGGA()) d_datasize *= 4; // add gradient (3 components for each higher order rho)
     Eigen::MatrixXd d_data = Eigen::MatrixXd::Zero(ncoefs, d_datasize);
     if (d_datasize > 0) {
-        for (int i = 0; i < d_datasize; i++) {
+        for (int i = 0; i < ctrsize; i++) {
             // make cv representation of density
             mrcpp::FunctionTree<3>* rho = std::get<1>(inp[i+spinsize]);
             // we link into the node, in order to be able to do a mwtransform without copying the data back and forth
@@ -215,7 +228,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
             if (isGGA()) {
                 //make gradient of input
                 for (int d = 0; d < 3; d++) {
-                    node.attachCoefs(d_data.col(d_datasize + 3*i + d).data());
+                    node.attachCoefs(d_data.col(ctrsize + 3*i + d).data());
                     mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
                     derivcalc.calcNode(rho->getNode(nodeIdx), node);
                     // make cv representation of gradient of density
@@ -227,18 +240,21 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
     }
 
     Eigen::MatrixXd Ctrout = contract_transposed(xc_out, d_data); //size output: LDA=1, GGA=4, spin *2
+
     // postprocess
     //For SpinGGA:
     //f_xc         : out[0] = inp[0]
     //df_xc/drho_a : out[1] = inp[1] - div(inp[3,4,5])
     //df_xc/drho_b : out[2] = inp[2] - div(inp[6,7,8])
-    int xc_outsize = 1 + inp.size();
+    int xc_outsize = 2;
+    if (isSpin()) xc_outsize = 3;
     for (int i = 0; i < xc_outsize; i++) {
         // from cv to node values
         node.attachCoefs(Ctrout.col(i).data());
         node.cvTransform(mrcpp::Backward);
         node.mwTransform(mrcpp::Compression);
         for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] = Ctrout(j,i);
+        xcNodes[i]->setHasCoefs();
         if (isGGA() and i>0) {
             for (int d = 0; d < 3; d++) {
                 node.attachCoefs(Ctrout.col(xc_outsize + 3*(i-1) + d).data());

@@ -512,19 +512,7 @@ OrbitalChunk orbital::get_my_chunk(OrbitalVector &Phi) {
 
 /** @brief Orthogonalize the Phi orbital against all orbitals in Psi */
 void orbital::orthogonalize(double prec, OrbitalVector &Phi, OrbitalVector &Psi) {
-    // Get all output orbitals belonging to this MPI
-    OrbitalChunk myPhi = orbital::get_my_chunk(Phi);
-    // Orthogonalize MY orbitals with ALL input orbitals
-    OrbitalIterator iter(Psi, false);
-    while (iter.next()) {
-        for (int i = 0; i < iter.get_size(); i++) {
-            Orbital &psi_i = iter.orbital(i);
-            for (auto &j : myPhi) {
-                Orbital &phi_j = std::get<1>(j);
-                orbital::orthogonalize(prec / Psi.size(), phi_j, psi_i);
-            }
-        }
-    }
+    mrcpp::mpifuncvec::orthogonalize(prec, Phi, Psi);
 }
 
 /** @brief Orbital transformation out_j = sum_i inp_i*U_ij

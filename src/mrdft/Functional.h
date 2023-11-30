@@ -60,6 +60,7 @@ public:
         xcfun_get(xcfun.get(), "exx", &exx);
         return exx;
     }
+    double XCenergy = 0.0;
 
     friend class MRDFT;
 

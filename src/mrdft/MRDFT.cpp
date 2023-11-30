@@ -68,10 +68,14 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     int nOutCtr = functional().getCtrOutputLength();
     int nFcs = functional().getXCOutputLength();
 
+    //Note: the other option will be removed after log_grad is implemented
     if (not functional().log_grad) {
+        //Note: we do not need to make the complete energy density (PotVec[0]) for each mpi,
+        //      instead we compute the energy directly.
         mrcpp::Timer t_post;
-        mrcpp::FunctionTree<3>* rho=std::get<1>(inp[0]);
-        mrcpp::FunctionTreeVector<3> PotVec = grid().generate(2);
+        int potvecSize = 2;
+        if (functional().isSpin()) potvecSize = 3;
+        mrcpp::FunctionTreeVector<3> PotVec = grid().generate(potvecSize);
         int nNodes = grid().size();
         int n_start = (mrcpp::mpi::wrk_rank * nNodes) / mrcpp::mpi::wrk_size;
         int n_end = ((mrcpp::mpi::wrk_rank + 1) * nNodes) / mrcpp::mpi::wrk_size;
@@ -82,7 +86,6 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
             for (int n = n_start; n < n_end; n++) {
                vector<mrcpp::FunctionNode<3> *> xcNodes = xc_utils::fetch_nodes(n, PotVec);
                functional().makepot(inp, xcNodes);
-               xcNodes[0]->setHasCoefs();
                XCenergy[0] += xcNodes[0]->integrate();
             }
         }
@@ -90,37 +93,37 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
         if(mrcpp::mpi::wrk_size > 1) {
             // sum up the energy contrbutions from all mpi
             mrcpp::mpi::allreduce_vector(XCenergy, mrcpp::mpi::comm_wrk);
-
             // send to bank
             // note that this cannot be done in the omp loop above, because omp threads cannot use mpi
             mrcpp::BankAccount PotVecBank; // to put the PotVec
             for (int n = n_start; n < n_end; n++) {
                 vector<mrcpp::FunctionNode<3> *> xcNodes = xc_utils::fetch_nodes(n, PotVec);
-                PotVecBank.put_data(2*n, nCoefs, xcNodes[0]->getCoefs());
-                PotVecBank.put_data(2*n + 1, nCoefs, xcNodes[1]->getCoefs());
+                //NB: we do not distribute the energy density (i=0). It is not used, since we have XCenergy
+                for (int i = 1; i < potvecSize; i++)
+                PotVecBank.put_data(potvecSize*n+i, nCoefs, xcNodes[i]->getCoefs());
             }
             for (int n = 0; n < nNodes; n++) {
                 if(n >= n_start and n < n_end) continue; //no need to fetch own results
                 vector<mrcpp::FunctionNode<3> *> xcNodes = xc_utils::fetch_nodes(n, PotVec);
-                PotVecBank.get_data(2*n, nCoefs, xcNodes[0]->getCoefs());
-                PotVecBank.get_data(2*n + 1, nCoefs, xcNodes[1]->getCoefs());
+                for (int i = 1; i < potvecSize; i++)
+                PotVecBank.get_data(potvecSize*n+i, nCoefs, xcNodes[i]->getCoefs());
             }
         }
         functional().clear();
         int outNodes = 0;
         int outSize = 0;
-        for (int i = 0; i < PotVec.size(); i++) {
+        for (int i = 1; i < PotVec.size(); i++) {
             mrcpp::FunctionTree<3> &f_i = mrcpp::get_func(PotVec, i);
             f_i.mwTransform(mrcpp::BottomUp);
             f_i.calcSquareNorm();
-            outNodes += f_i.getNNodes();
-            outSize += f_i.getSizeNodes();
+            if(i>0)outNodes += f_i.getNNodes();
+            if(i>0)outSize += f_i.getSizeNodes();
         }
-        this->XCenergy = XCenergy[0]; // not used, but may be used in the future
-
+        this->functional().XCenergy = XCenergy[0];
         mrcpp::print::tree(3, "Make potential", outNodes, outSize, t_post.elapsed());
         return PotVec;
-    }else{
+    } else {
+
     functional().preprocess(inp);
     mrcpp::FunctionTreeVector<3> xcInpVec = functional().setupXCInput();
     mrcpp::FunctionTreeVector<3> ctrInpVec = functional().setupCtrInput();
@@ -153,6 +156,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
             auto ctrInpNodes = xc_utils::fetch_nodes(n, ctrInpVec);
             auto ctrInpData = xc_utils::compress_nodes(ctrInpNodes);// Eigen::MatrixXd
             auto ctrOutData = functional().contract(xcOutData, ctrInpData);// Eigen::MatrixXd .contract multiplies density and functional derivatives
+
             if (mrcpp::mpi::wrk_size > 1) {
                 // store the results temporarily
                 ctrOutDataVec[n - n_start] = std::move(ctrOutData);
@@ -184,7 +188,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
             auto ctrOutNodes = xc_utils::fetch_nodes(n, ctrOutVec);
             xc_utils::expand_nodes(ctrOutNodes, ctrOutData);
         }
-  }
+    }
 
     // Reconstruct raw xcfun output functions
     /*
@@ -214,6 +218,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
 
     int outNodes = 0;
     int outSize = 0;
+
     for (auto i = 0; i < potOutVec.size(); i++) {
         auto &f_i = mrcpp::get_func(potOutVec, i);
         f_i.mwTransform(mrcpp::BottomUp);
@@ -222,6 +227,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
         outNodes += f_i.getNNodes();
         outSize += f_i.getSizeNodes();
     }
+
     mrcpp::print::tree(3, "Postprocess potential", outNodes, outSize, t_post.elapsed());
     return potOutVec;
     }

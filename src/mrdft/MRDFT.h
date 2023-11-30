@@ -45,7 +45,6 @@ public:
     auto &functional() { return *F; }
 
     mrcpp::FunctionTreeVector<3> evaluate(mrcpp::FunctionTreeVector<3> &inp);
-    double XCenergy;
 
 private:
     std::unique_ptr<Grid> G{nullptr};
