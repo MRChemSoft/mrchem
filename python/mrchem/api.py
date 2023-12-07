@@ -68,6 +68,7 @@ def write_mpi(user_dict):
         "numerically_exact": user_dict["MPI"]["numerically_exact"],
         "shared_memory_size": user_dict["MPI"]["shared_memory_size"],
         "bank_size": user_dict["MPI"]["bank_size"],
+        "omp_threads": user_dict["MPI"]["omp_threads"],
     }
     return mpi_dict
 

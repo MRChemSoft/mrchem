@@ -192,6 +192,11 @@ sections:
         default: -1
         docstring: |
           Number of MPI processes exclusively dedicated to manage orbital bank.
+      - name: omp_threads
+        type: int
+        default: -1
+        docstring: |
+          Force the number of omp threads (leave default is better).
   - name: Basis
     docstring: |
       Define polynomial basis.

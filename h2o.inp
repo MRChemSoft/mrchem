@@ -1,0 +1,50 @@
+
+world_prec = 1.0e-5
+world_size =  5
+
+MPI {
+  numerically_exact = false
+  bank_size = 3
+  #share_nuclear_potential = true       # Use MPI shared memory window
+  #share_coulomb_potential = true       # Use MPI shared memory window
+  #share_xc_potential = true            # Use MPI shared memory window
+}
+
+Printer {
+  print_level = 3                       # Level of detail in the printed output
+}
+
+Molecule {
+
+  $coords
+  O       0.0000  0.0000  -0.1250
+  H      -1.4375  0.0000   1.0250
+  H       1.4375  0.0000   1.0250
+  $end
+
+}
+
+WaveFunction  {
+  method = pbe0
+  environment = pcm
+}
+
+PCM {
+  SCRF {
+    kain = 5
+    max_iter = 10
+    dynamic_thrs = true
+    optimizer = potential
+  }
+
+  Permittivity {
+    epsilon_in = 1.0
+    epsilon_out = 2.0
+    formulation = exponential
+  }
+}
+
+SCF {
+  run = true
+  guess_type = sad_gto
+}

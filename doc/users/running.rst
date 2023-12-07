@@ -173,10 +173,6 @@ a very small molecule for such setup!).
   assigned to any other core, which would result in much reduced performance). The 16
   cores of the group may then be used by the threads initiated by that MPI process.
 
-``--oversubscribe``
-  To tell MPI that it is should accept that the number of MPI processes times
-  the number of threads is larger than the number of available cores.
-
 **Advanced option**:
 Alternatively one can get full control of task placement using the Slurm workload
 manager by replacing ``mpirun`` with ``srun`` and setting explicit CPU masks as::

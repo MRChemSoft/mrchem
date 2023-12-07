@@ -115,6 +115,7 @@ This section defines some parameters that are used in MPI runs (defaults shown):
 
     MPI {
       bank_size = -1                        # Number of processes used as memory bank
+      omp_threads = -1                      # Number of omp threads to use
       numerically_exact = false             # Guarantee MPI invariant results
       share_nuclear_potential = false       # Use MPI shared memory window
       share_coulomb_potential = false       # Use MPI shared memory window
@@ -130,6 +131,11 @@ the number of available processes. For pure DFT functionals on smaller molecules
 it is likely more efficient to set `bank_size = 0`, otherwise it's recommended
 to use the default. If a particular calculation runs out of memory, it might
 help to increase the number of bank processes from the default value.
+
+The number of threads to use in OpenMP can be forced using the omp_threads flag.
+For MPI runs, it is strongly advized to leave the default, as the optimal value
+can be difficult to guess. Still allow the environment variable OMP_NUM_THREADS
+to be as large as possible, or unset.
 
 The ``numerically_exact`` keyword will trigger algorithms that guarantee that
 the computed results are invariant (within double precision) with respect to
@@ -680,4 +686,3 @@ avoid overwriting the files by default). So, in order to use MW orbitals from a
 previous calculation, you must either change one of the paths
 (``Response.path_orbitals`` or ``Files.guess_X_p`` etc), or manually copy the
 files between the default locations.
-
