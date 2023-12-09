@@ -155,12 +155,58 @@ Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen:
 }
 
 
-/** @brief Make dft potential for a given NodeIndex
+/** @brief  Evaluates XC functional and derivatives for a given NodeIndex
+ *
+ * The electronic densities (total/alpha/beta) are given as input.
+ * The values of the zero order densities and their gradient are sent to xcfun.
+ * The output of xcfun must then be combined ("contract") with the gradients
+ * of the higher order densities.
+ *
+ * XCFunctional output (with k=1 and explicit derivatives):
+ *
+ * LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho}\right) \f$
+ *
+ * GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho},
+ *  \frac{\partial F_{xc}}{\partial \rho_x},
+ *  \frac{\partial F_{xc}}{\partial \rho_y},
+ *  \frac{\partial F_{xc}}{\partial \rho_z}\right) \f$
+ *
+ * Spin LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho^\beta}\right) \f$
+ *
+ * Spin GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho^\beta},
+ *  \frac{\partial F_{xc}}{\partial \rho_x^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho_y^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho_z^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho_x^\beta},
+ *  \frac{\partial F_{xc}}{\partial \rho_y^\beta},
+ *  \frac{\partial F_{xc}}{\partial \rho_z^\beta}
+ *  \right) \f$
+ *
+ * XCFunctional output (with k=1 and gamma-type derivatives):
+ *
+ * GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho},
+ *  \frac{\partial F_{xc}}{\partial \gamma} \f$
+ *
+ * Spin GGA: \f$ \left(F_{xc},
+ *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
+ *  \frac{\partial F_{xc}}{\partial \rho^\beta },
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \alpha}},
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \beta }},
+ *  \frac{\partial F_{xc}}{\partial \gamma^{\beta  \beta }}
+ *  \right) \f$
+ *
+ * param[in] inp Input values
+ * param[out] xcNodes Output values
  *
  */
-void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes)  const{
+void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes)  const {
     if (this->log_grad){
-        MSG_ERROR("log_grad not yet implemented");
+        MSG_ERROR("log_grad not implemented");
     }
 
     mrcpp::NodeIndex<3> nodeIdx = xcNodes[0]->getNodeIndex();
@@ -191,6 +237,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
                 node.attachCoefs(xcfun_inp.col(spinsize + 3*i + d).data());
 
                 mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
+                // derive rho and put result into xcfun_inp aka node
                 derivcalc.calcNode(rho->getNode(nodeIdx), node);
                 // make cv representation of gradient of density
                 node.mwTransform(mrcpp::Reconstruction);
