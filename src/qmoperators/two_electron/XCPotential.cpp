@@ -66,14 +66,8 @@ void XCPotential::setup(double prec) {
     mrcpp::FunctionTreeVector<3> xc_inp = setupDensities(prec, grid);
     mrcpp::FunctionTreeVector<3> xc_out = this->mrdft->evaluate(xc_inp);
 
-    // Fetch energy density
-    mrcpp::FunctionTree<3> &f_xc = mrcpp::get_func(xc_out, 0);
-    if(this->mrdft->functional().XCenergy == 0.0){
-        // this option will be removed
-        this->energy = f_xc.integrate();
-    } else {
-        this->energy = this->mrdft->functional().XCenergy;
-    }
+    // Fetch energy
+    this->energy = this->mrdft->functional().XCenergy;
 
     // Fetch potential
     auto &v_local = mrcpp::get_func(xc_out, 1);

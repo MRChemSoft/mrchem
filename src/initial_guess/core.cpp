@@ -227,37 +227,7 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi) {
     if (Psi.size() == 0) return;
     Timer t_tot;
-
-    // To get MPI invariant results we cannot crop until all terms are added
-    auto part_prec = (mrcpp::mpi::numerically_exact) ? -1.0 : prec;
-
-    OrbitalIterator iter(Phi);
-    while (true) {
-        // for some unknown reason, iter.next() does not work here for the parallel version
-        if (mrcpp::mpi::wrk_size == 1) {
-            if (iter.next() < 1) break;
-        } else {
-            if (iter.bank_next() < 1) break;
-        }
-        for (auto j = 0; j < Psi.size(); j++) {
-            if (not mrcpp::mpi::my_orb(j)) continue;
-            std::vector<mrcpp::ComplexFunction> func_vec;
-            ComplexVector coef_vec(iter.get_size());
-            for (auto i = 0; i < iter.get_size(); i++) {
-                auto idx_i = iter.idx(i);
-                auto &recv_i = iter.orbital(i);
-                coef_vec[i] = U(idx_i, j);
-                func_vec.push_back(recv_i);
-            }
-            auto tmp_j = Psi[j].paramCopy();
-            mrcpp::cplxfunc::linear_combination(tmp_j, coef_vec, func_vec, part_prec);
-            Psi[j].add(1.0, tmp_j); // In place addition
-            Psi[j].crop(part_prec);
-        }
-    }
-    if (mrcpp::mpi::numerically_exact)
-        for (auto &psi : Psi) psi.crop(prec);
-
+    mrcpp::mpifuncvec::rotate(Phi, U, Psi, prec);
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
 }
 
