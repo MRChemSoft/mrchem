@@ -131,6 +131,9 @@ def write_scf_fock(user_dict, wf_dict, origin):
         fock_dict["confinement_operator"] = {
             "r_0": user_dict["ConfinementPotential"]["radius"],
             "N": user_dict["ConfinementPotential"]["stiffness"],
+            "slope": user_dict["ConfinementPotential"]["slope"],
+            "cavity_radii": user_dict["ConfinementPotential"]["cavity_radii"],
+            #"centers": user_dict["ConfinementPotential"]["centers"],
         }
 
     return fock_dict

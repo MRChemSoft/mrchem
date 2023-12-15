@@ -2,19 +2,24 @@
 #include "analyticfunctions/ConfinementFunction.h"
 
 #include "utils/math_utils.h"
+#include "chemistry/Molecule.h"
 
 namespace mrchem {
 
-  ConfinementPotential::ConfinementPotential(const double r_0, const int N)
+  ConfinementPotential::ConfinementPotential(double r_0, const int N, double s, std::vector<double> R, std::vector<mrcpp::Coord<3>> coords)
     : QMPotential(1, false)
     , radius(r_0)
-    , stiffness(N) {}
+    , stiffness(N)
+    , slope(s)
+    , cavity_radii(R)
+    , centers(coords) {}
 
 
   void ConfinementPotential::setup(double prec) {
     // Initalize the function representing the confinement
     ConfinementFunction *f_loc = nullptr;
-    f_loc = new ConfinementFunction(this->getRadius(), this->getParam());
+
+    f_loc = new ConfinementFunction(this->getRadius(), this->getStiffness(), this->getSlope(), this->getCavityradii(), this->getCenters());
 
     // Project the potential onto the function representation
     mrcpp::ComplexFunction V_loc(false);

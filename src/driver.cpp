@@ -1134,7 +1134,15 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     if (json_fock.contains("confinement_operator")) {
         auto r_0 = json_fock["confinement_operator"]["r_0"];
 	auto N = json_fock["confinement_operator"]["N"];
-	auto V_N = std::make_shared<ConfinementOperator>(r_0, N);
+	auto s = json_fock["confinement_operator"]["slope"];
+	auto R = json_fock["confinement_operator"]["cavity_radii"];
+	std::vector<mrcpp::Coord<3>> centers;
+	for (auto i = 0; i < mol.getNNuclei(); i++) {
+	    const auto &nuc = mol.getNuclei()[i];
+	    const auto &r_i = nuc.getCoord();
+	    centers.push_back(r_i);
+       }
+	auto V_N = std::make_shared<ConfinementOperator>(r_0, N, s, R, centers);
 	F.getConfinementOperator() = V_N;
     }
     F.build(exx);

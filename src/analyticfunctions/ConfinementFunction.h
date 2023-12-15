@@ -6,16 +6,22 @@ namespace mrchem {
 
   class ConfinementFunction : public mrcpp::RepresentableFunction<3> {
   public:
-    ConfinementFunction(const double r_0, const int N);
+    ConfinementFunction(double r_0, const int N, double slope, std::vector<double> R, std::vector<mrcpp::Coord<3>> centers);
 
     auto getRadius() { return this->radius; }
-    auto getParam() { return this->stiffness; }
+    auto getStiffness() { return this->stiffness; }
+    auto getSlope() { return this->slope; }
+    auto getCavityradii() { return this->cavity_radii; }
+    auto getCenters() { return this->centers; }
     
   protected:
 
-    const double radius; //cavity radius
+    double radius; //
     const int stiffness; // stffness parameter
-    
+    double slope; // cavity boundary slope
+    std::vector<double> cavity_radii;
+    std::vector<mrcpp::Coord<3>> centers;
+
     double evalf(const mrcpp::Coord<3> &r) const override;
 
   };
