@@ -159,6 +159,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
         t_calc.resume();
         if (mrcpp::mpi::my_func(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
         t_calc.stop();
+        ex_iii.rescale(phi_i.occ());
         Ex.push_back(ex_iii);
         i++;
     }
@@ -281,7 +282,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_calc.resume();
                 calcExchange_kij(precf, phi_i, phi_i, phi_j, ex_iij, &ex_jji);
                 t_calc.stop();
-                if (ex_iij.norm() > prec) coef_vec[iijfunc_vec.size()] = j_fac;
+                if (ex_iij.norm() > prec) coef_vec[iijfunc_vec.size()] = j_fac * phi_i.occ();
                 t_snd.resume();
                 if (mrcpp::mpi::bank_size > 0) {
                     // store ex_jji
@@ -289,8 +290,8 @@ void ExchangePotentialD1::setupInternal(double prec) {
                     if (ex_jji.norm() > prec) ExBank.put_func(iorb + jorb * N, ex_jji);
                     if (ex_jji.norm() > prec) tasksMaster.put_readytask(iorb, jorb);
                 } else {
-                    Ex[iorb].add(j_fac, ex_jji);
-                    Ex[jorb].add(j_fac, ex_iij);
+                    Ex[iorb].add(j_fac * phi_j.occ(), ex_jji);
+                    Ex[jorb].add(j_fac * phi_i.occ(), ex_iij);
                 }
                 ex_jji.free();
                 t_snd.stop();
@@ -305,7 +306,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_get.stop();
                 if (not found) MSG_ERROR("Exchange not found");
                 double j_fac = getSpinFactor(ex_rcv, phi_j);
-                coef_vec[iijfunc_vec.size()] = j_fac;
+                coef_vec[iijfunc_vec.size()] = j_fac * Phi[j].occ();
                 iijfunc_vec.push_back(ex_rcv);
             }
             // add all contributions to ex_j,
@@ -352,7 +353,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             int found = ExBank.get_func_del(j + i * N, ex_rcv);
             t_get.stop();
             double j_fac = getSpinFactor(ex_rcv, Phi[j]);
-            coef_vec[iijfunc_vec.size()] = j_fac;
+            coef_vec[iijfunc_vec.size()] = j_fac * Phi[j].occ();
             iijfunc_vec.push_back(ex_rcv);
             if (not found) MSG_ERROR("My Exchange not found in Bank");
             tot++;
