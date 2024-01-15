@@ -599,7 +599,6 @@ def parse_wf_method(user_dict):
     wf_dict["dft_funcs"] = dft_funcs
     return wf_dict
 
-
 def compute_kappa(constants, eps, I):
     kb = constants["boltzmann_constant"]
     e = constants["elementary_charge"]
@@ -614,3 +613,93 @@ def compute_kappa(constants, eps, I):
     debye_length = sqrt(numerator / denominator) * m2au
 
     return 1.0 / debye_length
+ 
+# Error/warning messages
+ERROR_MESSAGE_ORBITAL_OCCUPANCIES = (
+    lambda details: f"ABORT: INVALID ORBITAL OCCUPANCIES: {details}"
+)
+    
+def write_scf_occupancies(user_dict):
+    """Convert orbital occupancies from JSON syntax to program syntax."""
+    # First validate the input file
+    orbitals, occupancies = validate_orbital_occupancies(user_dict)
+    
+    return [
+        {"orbital": orbital, "occupancy": occupancy}
+        for orbital, occupancy in zip(orbitals, occupancies)
+    ]
+    
+def validate_orbital_occupancies(user_dict):
+    """Parse the $occupancies block and ensure correct formatting."""
+    import re
+    
+    # Regex components
+    line_start = r"^"
+    line_end = r"$"
+    decimal = r"[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)"
+    integer = r"[0-9]+"
+    one_or_more_whitespace = r"[\s]+"
+    zero_or_more_whitespace = r"[\s]*"
+
+    # Build regex
+    restricted_occupancies = (
+        line_start
+        + zero_or_more_whitespace
+        + integer
+        + (one_or_more_whitespace + decimal)
+        + zero_or_more_whitespace
+        + line_end
+    )
+    unrestricted_occupancies = (
+        line_start
+        + zero_or_more_whitespace
+        + integer
+        + (one_or_more_whitespace + decimal) * 2
+        + zero_or_more_whitespace
+        + line_end
+    )
+
+    occ_restricted = re.compile(restricted_occupancies)
+    occ_unrestricted = re.compile(unrestricted_occupancies)
+    
+    occs_raw = user_dict["OrbitalOccupancies"]["occupancies"]
+
+    lines = [x.strip() for x in occs_raw.strip().splitlines() if x != ""]
+    # Parse coordinates
+    orbitals = []
+    occupancies = []
+    bad_occupancies = []
+    for occ in lines:
+        match_restricted = occ_restricted.match(occ)
+        match_unrestricted = occ_unrestricted.match(occ)
+        if match_restricted:
+            g = match_restricted.group()
+            orbitals.append(int(g.split()[0].strip()))
+            occupancies.append([float(c.strip()) for c in g.split()[1:]])
+        elif match_unrestricted:
+            g = match_unrestricted.group()
+            orbitals.append(int(g.split()[0].strip()))
+            occupancies.append([float(c.strip()) for c in g.split()[1:]])
+        else:
+            bad_occupancies.append(occ)
+
+    if bad_occupancies:
+        newline = "\n"
+        raise RuntimeError(
+            ERROR_MESSAGE_ORBITAL_OCCUPANCIES(
+                f"One or more orbital occupancies had an invalid input format:\n{newline.join(bad_occupancies)}"
+            )
+        )
+
+    # Check that the orbital is valid - we would need the total number of orbitals to do this properly
+    # so here we just check the index isn't negative
+    fltr = filter(lambda x: x < 0, orbitals)
+    if any(list(fltr)):
+        newline = "\n"
+        raise RuntimeError(
+            self.ERROR_MESSAGE_ORBITAL_OCCUPANCIES(
+                f"One or more invalid atomic symbols:\n{newline.join(set(fltr))}"
+            )
+        )
+
+    return orbitals, occupancies
