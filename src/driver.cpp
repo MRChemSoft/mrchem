@@ -114,7 +114,7 @@ void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int o
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
-bool guess_orbitals(const json &input, Molecule &mol);
+bool guess_orbitals(const json &input, const json &input_occ, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
 void write_orbitals_txt(const json &input, Molecule &mol);
@@ -262,7 +262,8 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
-    if (scf::guess_orbitals(json_guess, mol)) {
+    const auto &json_occ = json_scf["occupancies"];
+    if (scf::guess_orbitals(json_guess, json_occ, mol)) {
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
     } else {
@@ -337,7 +338,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
  *
  * This function expects the "initial_guess" subsection of the input.
  */
-bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
+bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, Molecule &mol) {
     auto prec = json_guess["prec"];
     auto zeta = json_guess["zeta"];
     auto type = json_guess["type"];
@@ -386,55 +387,74 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     ///////////////          Core Hole        /////////////////
     ///////////////////////////////////////////////////////////
     
-    // Modify the occupancies, e.g. to introduce a core hole for DeltaSCF calculations of core binding energies
-    // To be converted to input variables of some form, as well as modifying the names to be less tied to core states
-    bool core_hole = true;
-    IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
-    DoubleVector core_occupancies;    // the occupancies associated with those orbitals
-    int nCH;                          // the number of components of each of these vectors
+    // Modify the occupancies, e.g. to introduce a core hole for DeltaSCF calculations of core binding energies   
+    bool core_hole = false;
+    if (json_occ.size() > 0) core_hole = true;
+                
+    // TODO: convert warnings about input format to proper error messages
     
     if (core_hole){
-      // Retrieve the current occupancies, which we will then modify
-      DoubleVector occs = orbital::get_occupations(Phi);
-      
-      // The variables below should eventually come from an input file in some form
+      IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
+      DoubleVector core_occupancies;    // the occupancies associated with those orbitals
+      int nCH;                          // the number of orbitals whose occupancies will be modified
+
+      // In this case, there is a one-to-one correspondance with the input file format
       if (restricted){
-        // In this case we have on average lost half an electron from each spin channel
-        // So the input for e.g. a hole in the lowest state would look like this
-        nCH = 1;
+        nCH = json_occ.size();
         core_orbitals = IntVector::Zero(nCH);
         core_occupancies = DoubleVector::Zero(nCH);
-        core_orbitals(0) = 0;
-        core_occupancies(0) = 1;
+
+        for (int i = 0; i < nCH; i++){
+          if (json_occ[i]["orbital"] >= Np){
+            std::cout << "Error, orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na << std::endl;
+          }
+          if (json_occ[i]["occupancy"].size() == 2){
+            std::cout << "Warning, occupancies for beta orbitals ignored in restricted calculations" << std::endl;
+          }
+          core_orbitals(i) = json_occ[i]["orbital"];
+          core_occupancies(i) = json_occ[i]["occupancy"][0];
+        }
       }
       
+      // In this case, we need to map the alpha and beta occupancies to the correct orbital number
       else{
-        // Genuine unrestricted case, where the hole is in the lowest core state in the alpha channel only
-        /*nCH = 1;
+        // the input number of orbitals
+        int nCH_in = json_occ.size();
+        // Accounting for alpha and beta
+        nCH = nCH_in * 2;
         core_orbitals = IntVector::Zero(nCH);
         core_occupancies = DoubleVector::Zero(nCH);
-        core_orbitals(0) = 0;
-        core_occupancies(0) = 0;*/
-        
-        // Equivalent to the restricted case for a hole in the lowest core state
-        nCH = 2;
-        core_orbitals = IntVector::Zero(nCH);
-        core_occupancies = DoubleVector::Zero(nCH);
-        // First lose half an electron for alpha
-        core_orbitals(0) = 0;
-        core_occupancies(0) = 0.5;
-        // Then the same for beta
-        core_orbitals(1) = Na;
-        core_occupancies(1) = 0.5;
+
+        // For each alpha orbital, set the orbital and take the first of the 2 occupancies
+        for (int i = 0; i < nCH_in; i++){
+          if (json_occ[i]["orbital"] >= Na){
+            std::cout << "Error, orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na << std::endl;
+          }
+          if (json_occ[i]["occupancy"].size() == 1){
+            std::cout << "Error, occupancies for beta orbitals required for unrestricted calculations" << std::endl;
+          }
+          core_orbitals(i) = json_occ[i]["orbital"];
+          core_occupancies(i) = json_occ[i]["occupancy"][0];
+        }
+
+        // For each beta orbital, find the corresponding orbital index and take and the second of the 2 occupancies
+        for (int i = 0; i < nCH_in; i++){
+        //std::cout << "occ " << json_occ[i]["orbital"] << " " << Na << " " << Na + int(json_occ[i]["orbital"]) << std::endl;
+          core_orbitals(nCH_in + i) = Na + int(json_occ[i]["orbital"]);
+          core_occupancies(nCH_in + i) = json_occ[i]["occupancy"][1];
+        }
       }
+
+      // Retrieve the default occupancies, which we will then modify
+      DoubleVector default_occs = orbital::get_occupations(Phi);
     
-      // Use the inputs to modify the occs vector
+      // Modify the default occupancies
       for (int i = 0; i < nCH; i++) {
-        occs[core_orbitals[i]] = core_occupancies[i];
+        default_occs[core_orbitals[i]] = core_occupancies[i];
       }
 
       // Update the occupancies
-      mrchem::orbital::set_occupations(Phi, occs);
+      mrchem::orbital::set_occupations(Phi, default_occs);
       
     }
     
