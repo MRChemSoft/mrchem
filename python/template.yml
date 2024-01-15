@@ -1133,6 +1133,16 @@ sections:
         docstring: |
           The geometry optimization stopps when the absolute value of all force components is smaller than this keyword.
           A value between 1e-3 and 1e-4 is tight enough for most applications.
+  - name: OrbitalOccupancies
+    docstring: |
+      Modify the default orbital occupancies in order to perform a DeltaSCF calculation.
+    keywords:
+      - name: occupancies
+        type: str
+        default: ''
+        docstring: |
+          List of orbitals, i, for which the default occupancy, f, should be overwritten, written
+          as a list in the format "i f_up f_down", where the orbitals are indexed from zero.
   - name: Constants
     docstring: Physical and mathematical constants used by MRChem
     keywords:
