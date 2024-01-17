@@ -159,7 +159,9 @@ void ExchangePotentialD1::setupInternal(double prec) {
         t_calc.resume();
         if (mrcpp::mpi::my_func(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
         t_calc.stop();
-        ex_iii.rescale(phi_i.occ());
+        // we didn't need to call this before, but now it's needed to get the factor of 1/2 in the restricted case
+        double i_fac = getSpinFactor(phi_i, phi_i);
+        ex_iii.rescale(i_fac * phi_i.occ());
         Ex.push_back(ex_iii);
         i++;
     }
@@ -423,7 +425,7 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
         Orbital phi_i(Phi[i]);
         if (not mrcpp::mpi::my_func(i)) PhiBank.get_func(i, phi_i, 1);
 
-        double spin_fac = getSpinFactor(phi_i, phi_p);
+        double spin_fac = phi_i.occ() * getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital ex_iip = phi_p.paramCopy(true);
             calcExchange_kij(precf, phi_i, phi_i, phi_p, ex_iip);
