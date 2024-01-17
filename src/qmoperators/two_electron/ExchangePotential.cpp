@@ -106,7 +106,6 @@ double ExchangePotential::getSpinFactor(Orbital phi_i, Orbital phi_j) const {
     else if (phi_i.spin() == SPIN::Paired || phi_j.spin() == SPIN::Paired)
         // j_fac is not used correctly (assumes symmetry) for this option to function, so we want to raise an error message
         MSG_ABORT("Mismatch in paired/unpaired spins");
-    std::cout << "spins " << phi_i.spin() << " " << phi_j.spin() << " " << out << std::endl;
 
     return out;
 }
