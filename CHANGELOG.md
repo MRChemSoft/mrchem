@@ -1,5 +1,11 @@
 # Change log
 
+## Version 1.1.4 2024-01-17
+
+### Fixed
+
+- CRITICAL: sign error in para contribution to magnetic properties
+
 ## Version 1.1.3 2023-08-23
 
 ### Fixed

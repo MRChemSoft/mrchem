@@ -1,0 +1,42 @@
+{
+    "world_prec": 0.001,
+    "world_size": 5,
+    "world_unit": "angstrom",
+    "MPI": {
+        "numerically_exact": true
+    },
+    "Molecule": {
+        "coords": "H      0.0000 0.0000   -0.3705\nH      0.0000 0.0000    0.3705\n"
+    },
+    "WaveFunction": {
+        "method": "DFT",
+        "restricted": false
+    },
+    "DFT": {
+        "functionals": "LDA\n"
+    },
+    "Properties": {
+        "magnetizability": true,
+        "nmr_shielding": true
+    },
+    "NMRShielding": {
+        "nuclear_specific": false,
+        "nucleus_k": [
+            0
+        ]
+    },
+    "SCF": {
+        "run": false,
+        "guess_type": "GTO"
+    },
+    "Response": {
+        "kain": 3,
+        "max_iter": 10,
+        "orbital_thrs": 0.01,
+        "run": [
+            true,
+            false,
+            false
+        ]
+    }
+}

@@ -27,22 +27,21 @@
 
 #include "tensor/RankOneOperator.h"
 
-#include "qmoperators/QMDerivative.h"
+#include "qmoperators/one_electron/NablaOperator.h"
 
 namespace mrchem {
 
 class MomentumOperator final : public RankOneOperator<3> {
 public:
-    MomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        auto p_x = std::make_shared<QMDerivative>(0, D, true);
-        auto p_y = std::make_shared<QMDerivative>(1, D, true);
-        auto p_z = std::make_shared<QMDerivative>(2, D, true);
+    MomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
+            : MomentumOperator(NablaOperator(D, true)) {}
 
+    MomentumOperator(NablaOperator D) {
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &p = (*this);
-        p[0] = p_x;
-        p[1] = p_y;
-        p[2] = p_z;
+        p[0] = -1.0*D[0];
+        p[1] = -1.0*D[1];
+        p[2] = -1.0*D[2];
         p[0].name() = "p[x]";
         p[1].name() = "p[y]";
         p[2].name() = "p[z]";

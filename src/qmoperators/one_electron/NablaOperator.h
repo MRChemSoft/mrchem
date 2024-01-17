@@ -33,10 +33,10 @@ namespace mrchem {
 
 class NablaOperator final : public RankOneOperator<3> {
 public:
-    NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D) {
-        auto d_x = std::make_shared<QMDerivative>(0, D);
-        auto d_y = std::make_shared<QMDerivative>(1, D);
-        auto d_z = std::make_shared<QMDerivative>(2, D);
+    NablaOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D, bool imag = false) {
+        auto d_x = std::make_shared<QMDerivative>(0, D, imag);
+        auto d_y = std::make_shared<QMDerivative>(1, D, imag);
+        auto d_z = std::make_shared<QMDerivative>(2, D, imag);
 
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &d = (*this);

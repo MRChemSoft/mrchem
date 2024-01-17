@@ -155,7 +155,7 @@ Orbital HelmholtzVector::apply(int i, Orbital &phi) const {
     if (phi.hasImag()) {
         out.alloc(NUMBER::Imag);
         mrcpp::apply(this->prec, out.imag(), H, phi.imag(), -1, true); // Absolute prec
-        double sign = (phi.conjugate()) ? -1.0 : 1.0;
+        double sign = (phi.conjugate()) ? 1.0 : -1.0;
         out.imag().rescale(sign / (2.0 * mrcpp::pi));
     }
     return out;

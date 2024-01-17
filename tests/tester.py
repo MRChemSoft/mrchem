@@ -60,6 +60,13 @@ def POLARIZABILITY(frequency):
     return ("output", "properties", "polarizability", f"pol-{frequency:.6f}",
             "tensor")
 
+def MAGNETIZABILITY(frequency):
+    return ("output", "properties", "magnetizability", f"mag-{frequency:.6f}",
+            "tensor")
+
+def NMR_SHIELDING(atom):
+    return ("output", "properties", "nmr_shielding", f"nmr-{atom}", "tensor")
+
 
 def GEOMETRIC_DERIVATIVE(index, comp):
     return ("output", "properties", "geometric_derivative", f"geom-{index}", comp)

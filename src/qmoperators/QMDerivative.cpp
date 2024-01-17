@@ -79,12 +79,11 @@ Orbital QMDerivative::apply(Orbital inp) {
         if (inp.hasImag()) {
             out.alloc(NUMBER::Real);
             mrcpp::apply(out.real(), D, inp.imag(), dir);
-            if (inp.conjugate()) out.real().rescale(-1.0);
+            if (!inp.conjugate()) out.real().rescale(-1.0);
         }
         if (inp.hasReal()) {
             out.alloc(NUMBER::Imag);
             mrcpp::apply(out.imag(), D, inp.real(), dir);
-            out.imag().rescale(-1.0);
         }
     }
     return out;
@@ -121,12 +120,11 @@ QMOperatorVector QMDerivative::apply(QMOperator_p &O) {
             if (V_inp->hasImag()) {
                 V_out->alloc(NUMBER::Real);
                 mrcpp::apply(V_out->real(), D, V_inp->imag(), d);
-                if (V_inp->conjugate()) V_out->real().rescale(-1.0);
+                if (!V_inp->conjugate()) V_out->real().rescale(-1.0);
             }
             if (V_inp->hasReal()) {
                 V_out->alloc(NUMBER::Imag);
                 mrcpp::apply(V_out->imag(), D, V_inp->real(), d);
-                V_out->imag().rescale(-1.0);
             }
         }
         out.push_back(V_out);
