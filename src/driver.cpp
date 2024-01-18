@@ -317,6 +317,9 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////   Computing Ground State Properties   //////////
     ///////////////////////////////////////////////////////////
+       
+    // get the orbital positions
+    mol.calculateOrbitalPositions();
 
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals_txt")) scf::write_orbitals_txt(json_scf["write_orbitals_txt"], mol);
@@ -1434,8 +1437,10 @@ DerivativeOperator_p driver::get_derivative(const std::string &name) {
 
 json driver::print_properties(const Molecule &mol) {
     print_utils::headline(0, "Printing Molecular Properties");
+
     mol.printGeometry();
     mol.printEnergies("final");
+    mol.printOrbitalPositions();
     mol.printProperties();
     return mol.json();
 }
