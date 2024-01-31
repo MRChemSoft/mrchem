@@ -22,7 +22,7 @@ if(TARGET MRCPP::mrcpp)
   endif()
 
   # 1. MPI MRChem + non-MPI MRCPP will lead to runtime failures.
-  #    Fail configuration with a fatal error.
+  #    Fail configuration with a fatal error. 
   get_target_property(MRCPP_HAS_MPI MRCPP::mrcpp MRCPP_HAS_MPI)
   if(ENABLE_MPI AND NOT MRCPP_HAS_MPI)
     message(FATAL_ERROR
