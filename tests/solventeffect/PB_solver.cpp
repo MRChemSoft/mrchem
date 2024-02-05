@@ -96,11 +96,14 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard
         Reo->setup(prec * 10);
 
         Density rho_el(false);
-        density::compute(prec, rho_el, Phi, DensityType::Total);
-        rho_el.rescale(-1.0);
+        // density::compute(prec, rho_el, Phi, DensityType::Total);
+        // rho_el.rescale(-1.0);
 
         auto [Er_nuc, Er_el] = Reo->getSolver()->computeEnergies(rho_el);
         auto total_energy = Er_nuc + Er_el;
+        std::cout << "nuclear_energy: " << Er_nuc << std::endl;
+        std::cout << "electronic_energy: " << Er_el << std::endl;
+        std::cout << "total_energy: " << total_energy << std::endl;
         Reo->clear();
         REQUIRE((total_energy) == Approx(-0.1373074208).epsilon(thrs));
     }
@@ -156,12 +159,14 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linear
         Reo->setup(prec * 10);
 
         Density rho_el(false);
-        density::compute(prec, rho_el, Phi, DensityType::Total);
-        rho_el.rescale(-1.0);
+        // density::compute(prec, rho_el, Phi, DensityType::Total);
+        // rho_el.rescale(-1.0);
 
         auto [Er_nuc, Er_el] = Reo->getSolver()->computeEnergies(rho_el);
         auto total_energy = Er_nuc + Er_el;
-
+        std::cout << "nuclear_energy: " << Er_nuc << std::endl;
+        std::cout << "electronic_energy: " << Er_el << std::endl;
+        std::cout << "total_energy: " << total_energy << std::endl;
         Reo->clear();
 
         REQUIRE(total_energy == Approx(-0.1373074208).epsilon(thrs));
