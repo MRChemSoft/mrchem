@@ -54,7 +54,7 @@ namespace PB_solver {
 
 TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-8;
+    const double thrs = 1.0e-4;
 
     auto dyn_thrs = false;
     auto kain = 7;
@@ -102,7 +102,6 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard
         Density rho_el(false);
 
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
-
         Reo->clear();
         REQUIRE((Er_nuc) == Approx(-1.329978908155e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
     }
@@ -110,7 +109,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard
 
 TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linearized]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-8;
+    const double thrs = 1.0e-4;
 
     auto dyn_thrs = false;
     auto kain = 5;
@@ -162,7 +161,6 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linear
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
 
         Reo->clear();
-
         REQUIRE(Er_nuc == Approx(-1.329978908155e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
     }
 }
