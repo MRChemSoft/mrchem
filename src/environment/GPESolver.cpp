@@ -264,6 +264,7 @@ mrcpp::ComplexFunction &GPESolver::solveEquation(double prec, const Density &rho
 
 auto GPESolver::computeEnergies(const Density &rho_el) -> std::tuple<double, double> {
     std::cout << "integral of rho_nuc: " << rho_nuc.integrate() << std::endl;
+    std::cout << "integral of Vr_n: " << Vr_n.integrate() << std::endl;
     auto Er_nuc = 0.5 * mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
     std::cout << "integral of rho_el: " << rho_el.integrate() << std::endl;
     auto Er_el = 0.5 * mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
