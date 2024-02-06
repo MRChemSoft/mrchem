@@ -12,6 +12,7 @@ variables:
       name: Configuring serial
       shell: /bin/bash
       command: |
+        apt-get install python=3.9 ; \
         python setup \
           --type=release \
           --cxx=g++ \
@@ -21,6 +22,7 @@ variables:
       name: Configuring OpenMP parallel
       shell: /bin/bash
       command: |
+        apt-get install python=3.9 ; \
         python setup \
           --type=release \
           --cxx=g++ \
@@ -31,6 +33,7 @@ variables:
       name: Configuring MPI parallel
       shell: /bin/bash
       command: |
+        apt-get install python=3.9 ; \
         python setup \
           --type=release \
           --cxx=mpicxx \
