@@ -140,7 +140,7 @@ class MoleculeValidator:
             self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
 
         # Cavity related data
-        if user_dict["WaveFunction"]["environment"].lower().split("_")[0] == "pcm":
+        if "pcm" in user_dict["WaveFunction"]["environment"].lower():
             self.cavity_dict = user_dict["PCM"]["Cavity"]
             self.cavity_mode = self.cavity_dict["mode"]
             self.spheres_raw = self.cavity_dict["spheres"]
