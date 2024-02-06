@@ -6,7 +6,7 @@ Installation
 Build prerequisites
 -------------------
 
-- Python-3.7 (or later)
+- Python-3.9 (or later)
 - CMake-3.14 (or later)
 - GNU-5.4 or Intel-17 (or later) compilers (C++14 standard)
 
