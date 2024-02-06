@@ -1,9 +1,9 @@
 version: 2
 
 variables:
-  ubuntu-2004: &ubuntu-2004
+  ubuntu-2204: &ubuntu-2204
     docker:
-      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-20.04:sha-343e011
+      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-22.04:sha-9f6ecd4
         name: tsubame
         user: merzbow
     working_directory: ~/mrchem
@@ -12,7 +12,6 @@ variables:
       name: Configuring serial
       shell: /bin/bash
       command: |
-        apt-get install python=3.9 ; \
         python setup \
           --type=release \
           --cxx=g++ \
@@ -22,7 +21,6 @@ variables:
       name: Configuring OpenMP parallel
       shell: /bin/bash
       command: |
-        apt-get install python=3.9 ; \
         python setup \
           --type=release \
           --cxx=g++ \
@@ -33,7 +31,6 @@ variables:
       name: Configuring MPI parallel
       shell: /bin/bash
       command: |
-        apt-get install python=3.9 ; \
         python setup \
           --type=release \
           --cxx=mpicxx \
@@ -55,14 +52,14 @@ variables:
 
 jobs:
   serial-py3:
-    <<: *ubuntu-2004
+    <<: *ubuntu-2204
     steps:
       - checkout
       - *configure-serial
       - *build
       - *tests
   omp-py3:
-    <<: *ubuntu-2004
+    <<: *ubuntu-2204
     environment:
       - OMP_NUM_THREADS: '2'
     steps:
@@ -71,7 +68,7 @@ jobs:
       - *build
       - *tests
   mpi-py3:
-    <<: *ubuntu-2004
+    <<: *ubuntu-2204
     steps:
       - checkout
       - *configure-mpi
