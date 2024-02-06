@@ -9,7 +9,7 @@ Contents:
   UCX
   OpenMPI 4.0.5
   CMake 3.20.6
-  Python3
+  Python3.9
   MRChem (current source version)
 
 Generating recipe (stdout):
@@ -111,7 +111,7 @@ help_str="""
     (--dryrun) the container on the main input file, here called molecule.inp:
 
         $ ./<image-name>.sif --dryrun molecule
-    
+
     This will produce a new file molecule.json in the current directory which can
     be passed to the mrchem.x program inside the container using the singularity
     exec command:

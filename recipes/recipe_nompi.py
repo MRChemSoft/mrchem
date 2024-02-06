@@ -5,7 +5,7 @@ Contents:
   Ubuntu 20.04
   GNU compilers (upstream)
   CMake 3.20.6
-  Python3
+  Python3.9
   MRChem (current source version)
 
 Generating recipe (stdout):
