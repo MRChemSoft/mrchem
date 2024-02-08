@@ -18,10 +18,12 @@ WaveFunction {
 }
 
 PCM {
-  Permittivity {
-    outside = {
-      epsilon_static = 80.0
-    }
+  Solvent {
+    Permittivity {
+      outside = {
+        epsilon_static = 80.0
+      }
+  }
   }
   Cavity {
     mode = atoms

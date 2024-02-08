@@ -18,11 +18,13 @@ Properties {
 }
 
 PCM {
-  Permittivity {
-    epsilon_out {
-      static = 4.0
-      dynamic = 2.0
-      nonequilibrium = false
+  Solvent {
+    Permittivity {
+      epsilon_out {
+        static = 4.0
+        dynamic = 2.0
+        nonequilibrium = false
+      }
     }
   }
 }

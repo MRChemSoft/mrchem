@@ -21,11 +21,13 @@
   "Cavity": {
     "spheres": "0 4.0 1.0 0.0 0.5"
   },
-  "Permittivity": {
-    "epsilon_in": 1.0,
-    "formulation": "exponential",
-    "epsilon_out": {
-      "static": 2.0
+  "Solvent":{
+    "Permittivity": {
+      "epsilon_in": 1.0,
+      "formulation": "exponential",
+      "epsilon_out": {
+        "static": 2.0
+      }
     }
   }
 },

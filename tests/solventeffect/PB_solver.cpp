@@ -159,9 +159,8 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linear
         Density rho_el(false);
 
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
-
         Reo->clear();
-        REQUIRE(Er_nuc == Approx(-1.329978908155e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
+        REQUIRE(Er_nuc == Approx(-1.329978908155e-01).epsilon(thrs)); // what we get in standard GPESolver is -1.455145361712e-01, while with PB we get -1.329978908155e-01
     }
 }
 

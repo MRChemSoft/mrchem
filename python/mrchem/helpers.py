@@ -138,24 +138,24 @@ def _reaction_operator_handler(user_dict, rsp=False):
         "dynamic_thrs": user_dict["PCM"]["SCRF"]["dynamic_thrs"],
         # if doing a response calculation, then density_type is set to 1 (electronic only)
         "density_type": 1 if rsp else density_type,
-        "epsilon_in": user_dict["PCM"]["Permittivity"]["epsilon_in"],
-        "epsilon_static": user_dict["PCM"]["Permittivity"]["epsilon_out"]["static"],
-        "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["epsilon_out"]["dynamic"],
-        "nonequilibrium": user_dict["PCM"]["Permittivity"]["epsilon_out"][
+        "epsilon_in": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_in"],
+        "epsilon_static": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"]["static"],
+        "epsilon_dynamic": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"]["dynamic"],
+        "nonequilibrium": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"][
             "nonequilibrium"
         ],
-        "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
+        "formulation": user_dict["PCM"]["Solvent"]["Permittivity"]["formulation"],
         "kappa_out": 0.0,
-        "ion_radius": user_dict["PCM"]["D_H_screening"]["ion_radius"],
-        "ion_width": user_dict["PCM"]["D_H_screening"]["ion_width"],
-        "DHS-formulation": user_dict["PCM"]["D_H_screening"]["formulation"],
+        "ion_radius": user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["ion_radius"],
+        "ion_width": user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["ion_width"],
+        "DHS-formulation": user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["formulation"],
     }
 
     # ionic solvent continuum model
     ionic_model = user_dict["WaveFunction"]["environment"].lower().split("_")[-1]
     if ionic_model in ("pb", "lpb"):
-        permittivity = user_dict["PCM"]["Permittivity"]["epsilon_out"]["static"]
-        ionic_strength = user_dict["PCM"]["D_H_screening"]["ion_strength"]
+        permittivity = user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"]["static"]
+        ionic_strength = user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["ion_strength"]
         kappa_out = compute_kappa(user_dict["Constants"], permittivity, ionic_strength)
         reo_dict |= {
             "kappa_out": kappa_out,

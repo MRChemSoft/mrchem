@@ -21,15 +21,17 @@
   "Cavity": {
     "spheres": "0 2.645616384 1.0 0.0 0.2"
   },
-  "Permittivity": {
-    "epsilon_in": 1.0,
-    "epsilon_out": { "static": 78.4},
-    "formulation": "exponential"
-  },
-  "D_H_screening": {
-    "ion_strength": 0.25,
-    "ion_radius": 0.0,
-    "ion_width": 0.2
+  "Solvent": {
+    "Permittivity": {
+      "epsilon_in": 1.0,
+      "epsilon_out": { "static": 78.4},
+      "formulation": "exponential"
+    },
+    "DebyeHuckelScreening": {
+      "ion_strength": 0.25,
+      "ion_radius": 0.0,
+      "ion_width": 0.2
+    }
   }
 },
 "SCF": {
