@@ -22,7 +22,7 @@ if(TARGET MRCPP::mrcpp)
   endif()
 
   # 1. MPI MRChem + non-MPI MRCPP will lead to runtime failures.
-  #    Fail configuration with a fatal error. 
+  #    Fail configuration with a fatal error.
   get_target_property(MRCPP_HAS_MPI MRCPP::mrcpp MRCPP_HAS_MPI)
   if(ENABLE_MPI AND NOT MRCPP_HAS_MPI)
     message(FATAL_ERROR
@@ -39,7 +39,7 @@ else()
     GIT_REPOSITORY
       https://github.com/MRChemSoft/mrcpp.git
     GIT_TAG
-      682642f67ed37c2a0e22c6b52b7c098f097f39d4
+      1697cef4a13fe14ee7b298275439614cf510fac8
   )
 
   FetchContent_GetProperties(mrcpp_sources)
