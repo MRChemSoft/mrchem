@@ -53,8 +53,8 @@ namespace PB_solver {
  */
 
 TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard]") {
-    const double prec = 1.0e-3;
-    const double thrs = 1.0e-4;
+    const double prec = 1.0e-5;
+    const double thrs = 1.0e-6;
 
     auto dyn_thrs = false;
     auto kain = 7;
@@ -62,7 +62,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard
     auto eps_in = 1.0;
     auto eps_out = 78.54;
     auto kappa_out = 0.054995;
-    auto slope = 0.1;
+    auto slope = 0.2;
 
     auto R = std::vector<double>({3.7794522509156563});
     auto sph_coords = std::vector<mrcpp::Coord<3>>({{0.0, 0.0, 0.0}});
@@ -102,14 +102,15 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard
         Density rho_el(false);
 
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
+
         Reo->clear();
-        REQUIRE((Er_nuc) == Approx(-1.329978908155e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
+        REQUIRE((Er_nuc) == Approx(-1.358726143734e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
     }
 }
 
 TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linearized]") {
-    const double prec = 1.0e-3;
-    const double thrs = 1.0e-4;
+    const double prec = 1.0e-5;
+    const double thrs = 1.0e-6;
 
     auto dyn_thrs = false;
     auto kain = 5;
@@ -117,7 +118,7 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linear
     auto eps_in = 1.0;
     auto eps_out = 78.54;
     auto kappa_out = 0.054995;
-    auto slope = 0.1;
+    auto slope = 0.2;
 
     auto R = std::vector<double>({3.7794522509156563});
     auto sph_coords = std::vector<mrcpp::Coord<3>>({{0.0, 0.0, 0.0}});
@@ -159,8 +160,9 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linear
         Density rho_el(false);
 
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
+
         Reo->clear();
-        REQUIRE(Er_nuc == Approx(-1.329978908155e-01).epsilon(thrs)); // what we get in standard GPESolver is -1.455145361712e-01, while with PB we get -1.329978908155e-01
+        REQUIRE(Er_nuc == Approx(-1.358725427728e-01).epsilon(thrs)); // what we get in standard GPESolver is -1.455145361712e-01, while with PB we get -1.329978908155e-01
     }
 }
 
