@@ -102,6 +102,8 @@ the code on 16 threads (all sharing the same physical memory space)::
 
     $ OMP_NUM_THREADS=16 mrchem h2o
 
+Note that this is the number of threads will be set by ``OMP_NUM_THREADS`` only
+if the code is compiled without MPI support, see below.
 
 Distributed memory MPI
 ++++++++++++++++++++++
@@ -131,10 +133,12 @@ as it will be literally prepended to the ``mrchem.x`` command when the
     each `NUMA <https://en.wikipedia.org/wiki/Non-uniform_memory_access>`_
     domain (usually one per socket) of your CPU, and MPI across NUMA domains and
     ultimately machines. Ideally, the number of OpenMP threads should be
-    between 8-20. E.g. on hardware with two sockets of 16 cores each, use
-    OMP_NUM_THREADS=16 and scale the number of MPI processes by the size
+    between 8-20. E.g. on hardware with two sockets of 16 cores each, scale
+    the number of MPI processes by the size
     of the molecule, typically one process per ~5 orbitals or so (and
     definitely not *more* than one process per orbital).
+    The actual number of threads will be set automatically regardless of the
+    value of ``OMP_NUM_THREADS``.
 
 
 Job example (Betzy)
