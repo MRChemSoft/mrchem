@@ -134,8 +134,8 @@ help to increase the number of bank processes from the default value.
 
 The number of threads to use in OpenMP can be forced using the omp_threads flag.
 For MPI runs, it is strongly advized to leave the default, as the optimal value
-can be difficult to guess. Still allow the environment variable OMP_NUM_THREADS
-to be as large as possible, or unset.
+can be difficult to guess. The environment variable OMP_NUM_THREADS is not used
+for MPI runs.
 
 The ``numerically_exact`` keyword will trigger algorithms that guarantee that
 the computed results are invariant (within double precision) with respect to
