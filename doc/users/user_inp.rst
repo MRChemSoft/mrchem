@@ -133,7 +133,7 @@ to use the default. If a particular calculation runs out of memory, it might
 help to increase the number of bank processes from the default value.
 
 The number of threads to use in OpenMP can be forced using the omp_threads flag.
-For MPI runs, it is strongly advized to leave the default, as the optimal value
+For MPI runs, it is strongly advised to leave the default, as the optimal value
 can be difficult to guess. The environment variable OMP_NUM_THREADS is not used
 for MPI runs.
 
