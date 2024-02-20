@@ -16,14 +16,14 @@ User input reference
 - Predicates, if present, are the functions run to validate user input.
 
 :red:`Keywords`
- :world_prec: Overall relative precision in the calculation.
+ :world_prec: Overall relative precision in the calculation. 
 
   **Type** ``float``
 
   **Predicates**
     - ``1.0e-10 < value < 1.0``
 
- :world_size: Total size of computational domain given as 2**(``world_size``). Always cubic and symmetric around the origin. Negative value means it will be computed from the molecular geometry.
+ :world_size: Total size of computational domain given as 2**(``world_size``). Always cubic and symmetric around the origin. Negative value means it will be computed from the molecular geometry. 
 
   **Type** ``int``
 
@@ -32,7 +32,7 @@ User input reference
   **Predicates**
     - ``value <= 10``
 
- :world_unit: Length unit for *all* coordinates given in user input. Everything will be converted to atomic units (bohr) before the main executable is launched, so the JSON input is *always* given in bohrs.
+ :world_unit: Length unit for *all* coordinates given in user input. Everything will be converted to atomic units (bohr) before the main executable is launched, so the JSON input is *always* given in bohrs. 
 
   **Type** ``str``
 
@@ -41,7 +41,7 @@ User input reference
   **Predicates**
     - ``value.lower() in ["bohr", "angstrom"]``
 
- :world_origin: Global gauge origin of the calculation.
+ :world_origin: Global gauge origin of the calculation. 
 
   **Type** ``List[float]``
 
@@ -51,12031 +51,12162 @@ User input reference
     - ``len(value) == 3``
 
 :red:`Sections`
- :Precisions: Define specific precision parameters.
+ :Precisions: Define specific precision parameters. 
 
   :red:`Keywords`
-   :exchange_prec: Precision parameter used in construction of Exchange operators. Negative value means it will follow the dynamic precision in SCF.
-
+   :exchange_prec: Precision parameter used in construction of Exchange operators. Negative value means it will follow the dynamic precision in SCF. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :helmholtz_prec: Precision parameter used in construction of Helmholtz operators. Negative value means it will follow the dynamic precision in SCF.
-
+  
+   :helmholtz_prec: Precision parameter used in construction of Helmholtz operators. Negative value means it will follow the dynamic precision in SCF. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :poisson_prec: Precision parameter used in construction of Poisson operators.
-
+  
+   :poisson_prec: Precision parameter used in construction of Poisson operators. 
+  
     **Type** ``float``
-
+  
     **Default** ``user['world_prec']``
-
+  
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-
-   :nuclear_prec: Precision parameter used in smoothing and projection of nuclear potential.
-
+  
+   :nuclear_prec: Precision parameter used in smoothing and projection of nuclear potential. 
+  
     **Type** ``float``
-
+  
     **Default** ``user['world_prec']``
-
+  
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-
- :Printer: Define variables for printed output.
+  
+ :Printer: Define variables for printed output. 
 
   :red:`Keywords`
-   :print_level: Level of detail in the written output. Level 0 for production calculations, negative level for complete silence.
-
+   :print_level: Level of detail in the written output. Level 0 for production calculations, negative level for complete silence. 
+  
     **Type** ``int``
-
+  
     **Default** ``0``
-
-   :print_mpi: Write separate output from each MPI to file called ``<file_name>-<mpi-rank>.out``.
-
+  
+   :print_mpi: Write separate output from each MPI to file called ``<file_name>-<mpi-rank>.out``. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :print_prec: Number of digits in property output (energies will get twice this number of digits).
-
+  
+   :print_prec: Number of digits in property output (energies will get twice this number of digits). 
+  
     **Type** ``int``
-
+  
     **Default** ``6``
-
+  
     **Predicates**
       - ``0 < value < 10``
-
-   :print_width: Line width of printed output (in number of characters).
-
+  
+   :print_width: Line width of printed output (in number of characters). 
+  
     **Type** ``int``
-
+  
     **Default** ``75``
-
+  
     **Predicates**
       - ``50 < value < 100``
-
-   :print_constants: Print table of physical constants used by MRChem.
-
+  
+   :print_constants: Print table of physical constants used by MRChem. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
- :Plotter: Give details regarding the density and orbital plots. Three types of plots are available, line, surface and cube, and the plotting ranges are defined by three vectors (A, B and C) and an origin (O): ``line``: plots on line spanned by A, starting from O. ``surf``: plots on surface spanned by A and B, starting from O. ``cube``: plots on volume spanned by A, B and C, starting from O.
+  
+ :Plotter: Give details regarding the density and orbital plots. Three types of plots are available, line, surface and cube, and the plotting ranges are defined by three vectors (A, B and C) and an origin (O): ``line``: plots on line spanned by A, starting from O. ``surf``: plots on surface spanned by A and B, starting from O. ``cube``: plots on volume spanned by A, B and C, starting from O. 
 
   :red:`Keywords`
-   :path: File path to plot directory.
-
+   :path: File path to plot directory. 
+  
     **Type** ``str``
-
+  
     **Default** ``plots``
-
+  
     **Predicates**
       - ``value[-1] != '/'``
-
-   :type: Type of plot: line (1D), surface (2D) or cube (3D).
-
+  
+   :type: Type of plot: line (1D), surface (2D) or cube (3D). 
+  
     **Type** ``str``
-
+  
     **Default** ``cube``
-
+  
     **Predicates**
       - ``value.lower() in ['line', 'surf', 'cube']``
-
-   :points: Number of points in each direction on the cube grid.
-
+  
+   :points: Number of points in each direction on the cube grid. 
+  
     **Type** ``List[int]``
-
+  
     **Default** ``[20, 20, 20]``
-
+  
     **Predicates**
       - ``all(p > 0 for p in value)``
       - ``not (user['Plotter']['type'] == 'line' and len(value) < 1)``
       - ``not (user['Plotter']['type'] == 'surf' and len(value) < 2)``
       - ``not (user['Plotter']['type'] == 'cube' and len(value) < 3)``
-
-   :O: Origin of plotting ranges.
-
+  
+   :O: Origin of plotting ranges. 
+  
     **Type** ``List[float]``
-
+  
     **Default** ``[0.0, 0.0, 0.0]``
-
+  
     **Predicates**
       - ``len(value) == 3``
-
-   :A: First boundary vector for plot.
-
+  
+   :A: First boundary vector for plot. 
+  
     **Type** ``List[float]``
-
+  
     **Default** ``[1.0, 0.0, 0.0]``
-
+  
     **Predicates**
       - ``len(value) == 3``
-
-   :B: Second boundary vector for plot.
-
+  
+   :B: Second boundary vector for plot. 
+  
     **Type** ``List[float]``
-
+  
     **Default** ``[0.0, 1.0, 0.0]``
-
+  
     **Predicates**
       - ``len(value) == 3``
-
-   :C: Third boundary vector for plot.
-
+  
+   :C: Third boundary vector for plot. 
+  
     **Type** ``List[float]``
-
+  
     **Default** ``[0.0, 0.0, 1.0]``
-
+  
     **Predicates**
       - ``len(value) == 3``
-
- :MPI: Define MPI related parameters.
+  
+ :MPI: Define MPI related parameters. 
 
   :red:`Keywords`
-   :numerically_exact: This will use MPI algorithms that guarantees that the output is invariant wrt the number of MPI processes.
-
+   :numerically_exact: This will use MPI algorithms that guarantees that the output is invariant wrt the number of MPI processes. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :shared_memory_size: Size (MB) of the MPI shared memory blocks of each shared function.
-
+  
+   :shared_memory_size: Size (MB) of the MPI shared memory blocks of each shared function. 
+  
     **Type** ``int``
-
+  
     **Default** ``10000``
-
-   :share_nuclear_potential: This will use MPI shared memory for the nuclear potential.
-
+  
+   :share_nuclear_potential: This will use MPI shared memory for the nuclear potential. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :share_coulomb_potential: This will use MPI shared memory for the Coulomb potential.
-
+  
+   :share_coulomb_potential: This will use MPI shared memory for the Coulomb potential. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :share_xc_potential: This will use MPI shared memory for the exchange-correlation potential.
-
+  
+   :share_xc_potential: This will use MPI shared memory for the exchange-correlation potential. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :bank_size: Number of MPI processes exclusively dedicated to manage orbital bank.
-
+  
+   :bank_size: Number of MPI processes exclusively dedicated to manage orbital bank. 
+  
     **Type** ``int``
-
+  
     **Default** ``-1``
-
+  
    :omp_threads: Force the number of OpenMP threads.
 
     **Type** ``int``
 
     **Default** ``-1``
 
- :Basis: Define polynomial basis.
+    :Basis: Define polynomial basis. 
 
   :red:`Keywords`
-   :order: Polynomial order of multiwavelet basis. Negative value means it will be set automatically based on the world precision.
-
+   :order: Polynomial order of multiwavelet basis. Negative value means it will be set automatically based on the world precision. 
+  
     **Type** ``int``
-
+  
     **Default** ``-1``
-
-   :type: Polynomial type of multiwavelet basis.
-
+  
+   :type: Polynomial type of multiwavelet basis. 
+  
     **Type** ``str``
-
+  
     **Default** ``interpolating``
-
+  
     **Predicates**
       - ``value.lower() in ['interpolating', 'legendre']``
-
- :Derivatives: Define various derivative operators used in the code.
+  
+ :Derivatives: Define various derivative operators used in the code. 
 
   :red:`Keywords`
-   :kinetic: Derivative used in kinetic operator.
-
+   :kinetic: Derivative used in kinetic operator. 
+  
     **Type** ``str``
-
+  
     **Default** ``abgv_55``
-
-   :h_b_dip: Derivative used in magnetic dipole operator.
-
+  
+   :h_b_dip: Derivative used in magnetic dipole operator. 
+  
     **Type** ``str``
-
+  
     **Default** ``abgv_00``
-
-   :h_m_pso: Derivative used in paramagnetic spin-orbit operator.
-
+  
+   :h_m_pso: Derivative used in paramagnetic spin-orbit operator. 
+  
     **Type** ``str``
-
+  
     **Default** ``abgv_00``
-
-   :zora: Derivative used ZORA potential.
-
+  
+   :zora: Derivative used ZORA potential. 
+  
     **Type** ``str``
-
+  
     **Default** ``abgv_00``
-
- :Molecule: Define molecule.
+  
+ :Molecule: Define molecule. 
 
   :red:`Keywords`
-   :charge: Total charge of molecule.
-
+   :charge: Total charge of molecule. 
+  
     **Type** ``int``
-
+  
     **Default** ``0``
-
-   :multiplicity: Spin multiplicity of molecule.
-
+  
+   :multiplicity: Spin multiplicity of molecule. 
+  
     **Type** ``int``
-
+  
     **Default** ``1``
-
+  
     **Predicates**
       - ``value > 0``
-
-   :translate: Translate coordinates such that center of mass coincides with the global gauge origin.
-
+  
+   :translate: Translate coordinates such that center of mass coincides with the global gauge origin. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :coords: Coordinates in xyz format. Atoms can be given either using atom symbol or atom number
-
+  
+   :coords: Coordinates in xyz format. Atoms can be given either using atom symbol or atom number 
+  
     **Type** ``str``
-
- :WaveFunction: Define the wavefunction method.
+  
+ :WaveFunction: Define the wavefunction method. 
 
   :red:`Keywords`
-   :method: Wavefunction method. See predicates for valid methods. ``hf``, ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda`` is an alias for ``svwn5``. You can set a non-standard DFT functional (e.g. varying the amount of exact exchange) by choosing ``dft`` and specifing the functional(s) in the ``DFT`` section below.
-
+   :method: Wavefunction method. See predicates for valid methods. ``hf``, ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda`` is an alias for ``svwn5``. You can set a non-standard DFT functional (e.g. varying the amount of exact exchange) by choosing ``dft`` and specifing the functional(s) in the ``DFT`` section below. 
+  
     **Type** ``str``
-
+  
     **Predicates**
       - ``value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock', 'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86', 'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']``
-
-   :restricted: Use spin restricted wavefunction.
-
+  
+   :restricted: Use spin restricted wavefunction. 
+  
     **Type** ``bool``
-
+  
     **Default** ``True``
-
-   :relativity: Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section. ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence over keywords in the ``ZORA`` section).
-
+  
+   :relativity: Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section. ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence over keywords in the ``ZORA`` section). 
+  
     **Type** ``str``
-
+  
     **Default** ``none``
-
+  
     **Predicates**
       - ``value.lower() in ['none', 'zora', 'nzora']``
-
-   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options.
-
+  
+   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively. 
+  
     **Type** ``str``
-
+  
     **Default** ``none``
-
+  
     **Predicates**
-      - ``value.lower() in ['none', 'pcm']``
-
-   :nuclear_model: Type of nucleus model. Point-like (numerical smoothing): HFYGB (default), parabola or minimal. Finite models (physical smoothing): Gaussian or Homogeneous sphere Finite models are derived from nuclear RMS radius, Visscher (1997)
-
+      - ``value.lower() in ['none', 'pcm', 'pcm_pb', 'pcm_lpb']``
+  
+   :nuclear_model: Type of nucleus model. Point-like (numerical smoothing): HFYGB (default), parabola or minimal. Finite models (physical smoothing): Gaussian or Homogeneous sphere Finite models are derived from nuclear RMS radius, Visscher (1997) 
+  
     **Type** ``str``
-
+  
     **Default** ``point_like``
-
+  
     **Predicates**
       - ``value.lower() in ['point_like', 'point_parabola', 'point_minimal', 'finite_gaussian', 'finite_sphere']``
-
- :ZORA: Define required parameters for the ZORA Hamiltonian.
-
-  :red:`Keywords`
-   :include_nuclear: Include the nuclear potential ``V_nuc`` in the ZORA potential.
-
-    **Type** ``bool``
-
-    **Default** ``True``
-
-   :include_coulomb: Include the Coulomb potential ``J`` in the ZORA potential.
-
-    **Type** ``bool``
-
-    **Default** ``True``
-
-   :include_xc: Include the XC potential ``V_xc`` in the ZORA potential.
-
-    **Type** ``bool``
-
-    **Default** ``True``
-
- :DFT: Define the exchange-correlation functional in case of DFT.
+  
+ :ZORA: Define required parameters for the ZORA Hamiltonian. 
 
   :red:`Keywords`
-   :density_cutoff: Hard cutoff for passing density values to XCFun.
+   :include_nuclear: Include the nuclear potential ``V_nuc`` in the ZORA potential. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+   :include_coulomb: Include the Coulomb potential ``J`` in the ZORA potential. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+   :include_xc: Include the XC potential ``V_xc`` in the ZORA potential. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+ :DFT: Define the exchange-correlation functional in case of DFT. 
 
+  :red:`Keywords`
+   :density_cutoff: Hard cutoff for passing density values to XCFun. 
+  
     **Type** ``float``
-
+  
     **Default** ``0.0``
-
-   :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun documentation <https://xcfun.readthedocs.io/>_.
-
+  
+   :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun documentation <https://xcfun.readthedocs.io/>_. 
+  
     **Type** ``str``
-
+  
     **Default** `` ``
-
-   :spin: Use spin separated density functionals.
-
+  
+   :spin: Use spin separated density functionals. 
+  
     **Type** ``bool``
-
+  
     **Default** ``not(user['WaveFunction']['restricted'])``
-
- :Properties: Provide a list of properties to compute (total SCF energy and orbital energies are always computed).
+  
+ :Properties: Provide a list of properties to compute (total SCF energy and orbital energies are always computed). 
 
   :red:`Keywords`
-   :dipole_moment: Compute dipole moment.
-
+   :dipole_moment: Compute dipole moment. 
+  
     **Type** ``bool``
-
+  
     **Default** ``True``
-
-   :quadrupole_moment: Compute quadrupole moment. Note: Gauge origin dependent, should be used with ``translate = true`` in Molecule.
-
+  
+   :quadrupole_moment: Compute quadrupole moment. Note: Gauge origin dependent, should be used with ``translate = true`` in Molecule. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :polarizability: Compute polarizability tensor.
-
+  
+   :polarizability: Compute polarizability tensor. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :magnetizability: Compute magnetizability tensor.
-
+  
+   :magnetizability: Compute magnetizability tensor. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :nmr_shielding: Compute NMR shielding tensor.
-
+  
+   :nmr_shielding: Compute NMR shielding tensor. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :geometric_derivative: Compute geometric derivative.
-
+  
+   :plot_density: Plot converged electron density. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :plot_density: Plot converged electron density.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :plot_orbitals: Plot converged molecular orbitals from list of indices, negative index plots all orbitals.
-
+  
+   :plot_orbitals: Plot converged molecular orbitals from list of indices, negative index plots all orbitals. 
+  
     **Type** ``List[int]``
-
+  
     **Default** ``[]``
-
- :ExternalFields: Define external electromagnetic fields.
+  
+   :geometric_derivative: Compute geometric derivative. 
+  
+    **Type** ``bool``
+  
+    **Default** ``user['GeometryOptimizer']['run']``
+  
+ :ExternalFields: Define external electromagnetic fields. 
 
   :red:`Keywords`
-   :electric_field: Strength of external electric field.
-
+   :electric_field: Strength of external electric field. 
+  
     **Type** ``List[float]``
-
+  
     **Default** ``[]``
-
+  
     **Predicates**
       - ``len(value) == 0 or len(value) == 3``
-
- :Polarizability: Give details regarding the polarizability calculation.
+  
+ :Polarizability: Give details regarding the polarizability calculation. 
 
   :red:`Keywords`
-   :frequency: List of external field frequencies.
-
+   :frequency: List of external field frequencies. 
+  
     **Type** ``List[float]``
-
+  
     **Default** ``[0.0]``
-
- :NMRShielding: Give details regarding the NMR shileding calculation.
+  
+ :NMRShielding: Give details regarding the NMR shileding calculation. 
 
   :red:`Keywords`
-   :nuclear_specific: Use nuclear specific perturbation operator (h_m_pso).
-
+   :nuclear_specific: Use nuclear specific perturbation operator (h_m_pso). 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :nucleus_k: List of nuclei to compute. Negative value computes all nuclei.
-
+  
+   :nucleus_k: List of nuclei to compute. Negative value computes all nuclei. 
+  
     **Type** ``List[int]``
-
+  
     **Default** ``[-1]``
-
- :Files: Defines file paths used for program input/output. Note: all paths must be given in quotes if they contain slashes "path/to/file".
+  
+ :Files: Defines file paths used for program input/output. Note: all paths must be given in quotes if they contain slashes "path/to/file". 
 
   :red:`Keywords`
-   :guess_basis: File name for GTO basis set, used with ``gto`` guess.
-
+   :guess_basis: File name for GTO basis set, used with ``gto`` guess. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/mrchem.bas``
-
-   :guess_gto_p: File name for paired orbitals, used with ``gto`` guess.
-
+  
+   :guess_gto_p: File name for paired orbitals, used with ``gto`` guess. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/mrchem.mop``
-
-   :guess_gto_a: File name for alpha orbitals, used with ``gto`` guess.
-
+  
+   :guess_gto_a: File name for alpha orbitals, used with ``gto`` guess. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/mrchem.moa``
-
-   :guess_gto_b: File name for beta orbitals, used with ``gto`` guess.
-
+  
+   :guess_gto_b: File name for beta orbitals, used with ``gto`` guess. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/mrchem.mob``
-
-   :guess_phi_p: File name for paired orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.mw
-
+  
+   :guess_phi_p: File name for paired orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/phi_p``
-
-   :guess_phi_a: File name for alpha orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.mw
-
+  
+   :guess_phi_a: File name for alpha orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/phi_a``
-
-   :guess_phi_b: File name for beta orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.mw
-
+  
+   :guess_phi_b: File name for beta orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/phi_b``
-
-   :guess_x_p: File name for paired response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.mw
-
+  
+   :guess_x_p: File name for paired response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/x_p_rsp_idx_<0...Np>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/X_p``
-
-   :guess_x_a: File name for alpha response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/x_a_rsp_idx_<0...Na>_<re/im>.mw
-
+  
+   :guess_x_a: File name for alpha response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/x_a_rsp_idx_<0...Na>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/X_a``
-
-   :guess_x_b: File name for beta response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.mw
-
+  
+   :guess_x_b: File name for beta response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/x_b_rsp_idx_<0...Nb>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/X_b``
-
-   :guess_y_p: File name for paired response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.mw
-
+  
+   :guess_y_p: File name for paired response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/y_p_rsp_idx_<0...Np>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/Y_p``
-
-   :guess_y_a: File name for alpha response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/y_a_rsp_idx_<0...Na>_<re/im>.mw
-
+  
+   :guess_y_a: File name for alpha response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/y_a_rsp_idx_<0...Na>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/Y_a``
-
-   :guess_y_b: File name for beta response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.mw
-
+  
+   :guess_y_b: File name for beta response orbitals, used with ``mw`` guess. Expected path is ``<path_orbitals>/y_b_rsp_idx_<0...Nb>_<re/im>.mw 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/Y_b``
-
-   :guess_cube_p: File name for paired orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_p: File name for paired orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_p_scf_idx_<0...Np>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/phi_p``
-
-   :guess_cube_a: File name for alpha orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_a: File name for alpha orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_a_scf_idx_<0...Na>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/phi_a``
-
-   :guess_cube_b: File name for beta orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_b: File name for beta orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/phi_b_scf_idx_<0...Nb>_<re/im>.cube where `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/phi_b``
-
-   :guess_cube_x_p: File name for paired response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_x_p: File name for paired response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/x_p``
-
-   :guess_cube_x_a: File name for alpha response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_x_a: File name for alpha response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/x_a``
-
-   :guess_cube_x_b: File name for beta response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_x_b: File name for beta response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/x_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/x_b``
-
-   :guess_cube_y_p: File name for paired response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_y_p: File name for paired response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_p_rsp_<0,1,2>_<0...Np>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/y_p``
-
-   :guess_cube_y_a: File name for alpha response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_y_a: File name for alpha response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_a_rsp_<0,1,2>_<0...Na>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/y_a``
-
-   :guess_cube_y_b: File name for beta response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts.
-
+  
+   :guess_cube_y_b: File name for beta response orbitals, used with ``cube`` guess. Expected path is ``<path_orbitals>/y_b_rsp_<0,1,2>_<0...Nb>_<re/im>.cube where `0,1,2` indicate the index of the components of the response vectors. `Np` is the number of orbitals and `re/im` denote real or imaginary parts. 
+  
     **Type** ``str``
-
+  
     **Default** ``initial_guess/y_b``
-
-   :cube_vectors: Directory where cube vectors are stored for mrchem calculation.
-
+  
+   :cube_vectors: Directory where cube vectors are stored for mrchem calculation. 
+  
     **Type** ``str``
-
+  
     **Default** ``cube_vectors/``
-
- :SCF: Includes parameters related to the ground state SCF orbital optimization.
+  
+ :SCF: Includes parameters related to the ground state SCF orbital optimization. 
 
   :red:`Keywords`
-   :run: Run SCF solver. Otherwise properties are computed on the initial orbitals.
-
+   :run: Run SCF solver. Otherwise properties are computed on the initial orbitals. 
+  
     **Type** ``bool``
-
+  
     **Default** ``True``
-
-   :max_iter: Maximum number of SCF iterations.
-
+  
+   :max_iter: Maximum number of SCF iterations. 
+  
     **Type** ``int``
-
+  
     **Default** ``100``
-
-   :kain: Length of KAIN iterative history.
-
+  
+   :kain: Length of KAIN iterative history. 
+  
     **Type** ``int``
-
+  
     **Default** ``5``
-
-   :rotation: Number of iterations between each diagonalization/localization.
-
+  
+   :rotation: Number of iterations between each diagonalization/localization. 
+  
     **Type** ``int``
-
+  
     **Default** ``0``
-
-   :localize: Use canonical or localized orbitals.
-
+  
+   :localize: Use canonical or localized orbitals. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :energy_thrs: Convergence threshold for SCF energy.
-
+  
+   :energy_thrs: Convergence threshold for SCF energy. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :guess_prec: Precision parameter used in construction of initial guess.
-
+  
+   :guess_prec: Precision parameter used in construction of initial guess. 
+  
     **Type** ``float``
-
+  
     **Default** ``0.001``
-
+  
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-
-   :guess_screen: Screening parameter used in GTO evaluations, in number of standard deviations. Every coordinate beyond N StdDev from the Gaussian center is evaluated to zero. Note that too aggressive screening is counter productive, because it leads to a sharp cutoff in the resulting function which requires higher grid refinement. Negative value means no screening.
-
+  
+   :guess_screen: Screening parameter used in GTO evaluations, in number of standard deviations. Every coordinate beyond N StdDev from the Gaussian center is evaluated to zero. Note that too aggressive screening is counter productive, because it leads to a sharp cutoff in the resulting function which requires higher grid refinement. Negative value means no screening. 
+  
     **Type** ``float``
-
+  
     **Default** ``12.0``
-
-   :start_prec: Incremental precision in SCF iterations, initial value.
-
+  
+   :start_prec: Incremental precision in SCF iterations, initial value. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :final_prec: Incremental precision in SCF iterations, final value.
-
+  
+   :final_prec: Incremental precision in SCF iterations, final value. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations.
-
+  
+   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. 
+  
     **Type** ``str``
-
+  
     **Default** ``sad_gto``
-
+  
     **Predicates**
       - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']``
-
-   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint".
-
+  
+   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint". 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess.
-
+  
+   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess. 
+  
     **Type** ``str``
-
+  
     **Default** ``checkpoint``
-
+  
     **Predicates**
       - ``value[-1] != '/'``
-
-   :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations.
-
-    **Type** ``bool``
-
-    **Default** ``False``
-
-   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. Note: must be given in quotes if there are slashes in the path "path/to/orbitals".
-
+  
+   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. Note: must be given in quotes if there are slashes in the path "path/to/orbitals". 
+  
     **Type** ``str``
-
+  
     **Default** ``orbitals``
-
+  
     **Predicates**
       - ``value[-1] != '/'``
-
-   :orbital_thrs: Convergence threshold for orbital residuals.
-
+  
+   :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
+  
+    **Type** ``bool``
+  
+    **Default** ``user['GeometryOptimizer']['use_previous_guess']``
+  
+   :orbital_thrs: Convergence threshold for orbital residuals. 
+  
     **Type** ``float``
-
+  
     **Default** ``10 * user['world_prec']``
-
- :Response: Includes parameters related to the response SCF optimization.
+  
+ :Response: Includes parameters related to the response SCF optimization. 
 
   :red:`Keywords`
-   :run: In which Cartesian directions to run response solver.
-
+   :run: In which Cartesian directions to run response solver. 
+  
     **Type** ``List[bool]``
-
+  
     **Default** ``[True, True, True]``
-
-   :max_iter: Maximum number of response iterations.
-
+  
+   :max_iter: Maximum number of response iterations. 
+  
     **Type** ``int``
-
+  
     **Default** ``100``
-
-   :kain: Length of KAIN iterative history.
-
+  
+   :kain: Length of KAIN iterative history. 
+  
     **Type** ``int``
-
+  
     **Default** ``5``
-
-   :property_thrs: Convergence threshold for symmetric property. Symmetric meaning the property computed from the same operator as the response purturbation, e.g. for external magnetic field the symmetric property corresponds to the magnetizability (NMR shielding in non-symmetric, since one of the operators is external magnetic field, while the other is nuclear magnetic moment).
-
+  
+   :property_thrs: Convergence threshold for symmetric property. Symmetric meaning the property computed from the same operator as the response purturbation, e.g. for external magnetic field the symmetric property corresponds to the magnetizability (NMR shielding in non-symmetric, since one of the operators is external magnetic field, while the other is nuclear magnetic moment). 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :start_prec: Incremental precision in SCF iterations, initial value.
-
+  
+   :start_prec: Incremental precision in SCF iterations, initial value. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :final_prec: Incremental precision in SCF iterations, final value.
-
+  
+   :final_prec: Incremental precision in SCF iterations, final value. 
+  
     **Type** ``float``
-
+  
     **Default** ``-1.0``
-
-   :guess_prec: Precision parameter used in construction of initial guess.
-
+  
+   :guess_prec: Precision parameter used in construction of initial guess. 
+  
     **Type** ``float``
-
+  
     **Default** ``0.001``
-
+  
     **Predicates**
       - ``1.0e-10 < value < 1.0``
-
-   :guess_type: Type of initial guess for response. ``none`` will start from a zero guess for the response functions. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup.
-
+  
+   :guess_type: Type of initial guess for response. ``none`` will start from a zero guess for the response functions. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup. 
+  
     **Type** ``str``
-
+  
     **Default** ``none``
-
+  
     **Predicates**
       - ``value.lower() in ['none', 'chk', 'mw', 'cube']``
-
-   :write_checkpoint: Write perturbed orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations.
-
+  
+   :write_checkpoint: Write perturbed orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess.
-
+  
+   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess. 
+  
     **Type** ``str``
-
+  
     **Default** ``checkpoint``
-
+  
     **Predicates**
       - ``value[-1] != '/'``
-
-   :write_orbitals: Write final perturbed orbitals to disk, file name ``<path_orbitals>/<X/Y>_<p/a/b>_rsp_<direction>_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations.
-
+  
+   :write_orbitals: Write final perturbed orbitals to disk, file name ``<path_orbitals>/<X/Y>_<p/a/b>_rsp_<direction>_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
+  
     **Type** ``bool``
-
+  
     **Default** ``False``
-
-   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword.
-
+  
+   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. 
+  
     **Type** ``str``
-
+  
     **Default** ``orbitals``
-
+  
     **Predicates**
       - ``value[-1] != '/'``
-
-   :orbital_thrs: Convergence threshold for orbital residuals.
-
+  
+   :orbital_thrs: Convergence threshold for orbital residuals. 
+  
     **Type** ``float``
-
+  
     **Default** ``10 * user['world_prec']``
-
-   :localize: Use canonical or localized unperturbed orbitals.
-
+  
+   :localize: Use canonical or localized unperturbed orbitals. 
+  
     **Type** ``bool``
-
+  
     **Default** ``user['SCF']['localize']``
-
- :PCM: Includes parameters related to the computation of the reaction field energy of a system in an environment within the Polarizable Continuum Model.
+  
+ :PCM: Includes parameters related to the computation of the reaction field energy of a system in an environment within the Polarizable Continuum Model. 
 
   :red:`Sections`
-   :SCRF: Parameters for the Self-Consistent Reaction Field optimization.
-
+   :SCRF: Parameters for the Self-Consistent Reaction Field optimization. 
+  
       :red:`Keywords`
-       :max_iter: Max number of iterations allowed in the nested procedure.
-
+       :max_iter: Max number of iterations allowed in the nested procedure. 
+      
         **Type** ``int``
-
+      
         **Default** ``100``
-
-       :dynamic_thrs: Set the convergence threshold for the nested procedure. ``true`` will dynamically tighten the convergence threshold based on the absolute value of the latest orbital update as. When the orbitals are close to convergence (``mo_residual < world_prec*10``) the convergence threshold will be set equal to ``world_prec``. ``false`` uses ``world_prec`` as convergence threshold throughout.
-
+      
+       :dynamic_thrs: Set the convergence threshold for the nested procedure. ``true`` will dynamically tighten the convergence threshold based on the absolute value of the latest orbital update as. When the orbitals are close to convergence (``mo_residual < world_prec*10``) the convergence threshold will be set equal to ``world_prec``. ``false`` uses ``world_prec`` as convergence threshold throughout. 
+      
         **Type** ``bool``
-
+      
         **Default** ``True``
-
-       :density_type: What part of the total molecular charge density to use in the algorithm. ``total`` uses the total charge density. ``nuclear`` uses only the nuclear part of the total charge density. ``electronic`` uses only the electronic part of the total charge density.
-
+      
+       :density_type: What part of the total molecular charge density to use in the algorithm. ``total`` uses the total charge density. ``nuclear`` uses only the nuclear part of the total charge density. ``electronic`` uses only the electronic part of the total charge density. 
+      
         **Type** ``str``
-
+      
         **Default** ``total``
-
+      
         **Predicates**
           - ``value.lower() in ['total', 'nuclear', 'electronic']``
-
-       :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure.
-
+      
+       :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
+      
         **Type** ``int``
-
+      
         **Default** ``user['SCF']['kain']``
-
-   :Cavity: Define the interlocking spheres cavity.
-
+      
+   :Solvent: Parameters for the Self-Consistent Reaction Field optimization. 
+  
+      :red:`Sections`
+       :Permittivity: Parameters for the permittivity function. 
+      
+            :red:`Keywords`
+             :epsilon_in: Permittivity inside the cavity. 1.0 is the permittivity of free space, anything other than this is undefined behaviour. 
+            
+              **Type** ``float``
+            
+              **Default** ``1.0``
+            
+             :formulation: Formulation of the Permittivity function. Currently only the exponential is available. 
+            
+              **Type** ``str``
+            
+              **Default** ``exponential``
+            
+              **Predicates**
+                - ``value.lower() in ['exponential']``
+            
+            :red:`Sections`
+             :epsilon_out: Parameters for the continuum solvent outside the cavity. 
+            
+                    :red:`Keywords`
+                     :nonequilibrium: Whether to use the nonequilibrium formulation of response, *i.e.* use the dynamic permittivity for the calculation of the response reaction field. Defaults to false. 
+                    
+                      **Type** ``bool``
+                    
+                      **Default** ``False``
+                    
+                     :static: Static permittivity outside the cavity. This is characteristic of the solvent used. 
+                    
+                      **Type** ``float``
+                    
+                      **Default** ``1.0``
+                    
+                     :dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calculations. Defaults to the same value as `epsilon_static`. 
+                    
+                      **Type** ``float``
+                    
+                      **Default** ``user['PCM']['Solvent']['Permittivity']['epsilon_out']['static']``
+                    
+       :DebyeHuckelScreening: Parameters for the Debye-Huckel screening factor 
+      
+            :red:`Keywords`
+             :ion_strength: Ionic strength of the electrolyte in mol/L. This represents the concentration of the ions in the bulk solvent. 
+            
+              **Type** ``float``
+            
+              **Default** ``1.0``
+            
+             :ion_radius: Amount with which the vdw-radius of the atoms will be increased. The screening factor will have an area of effect that is often going to be larger than the vdw-cavity, but centered in the same atoms. 
+            
+              **Type** ``float``
+            
+              **Default** ``0.0``
+            
+             :ion_width: Width of the transition between the solute and the ion accessible part. 
+            
+              **Type** ``float``
+            
+              **Default** ``0.2``
+            
+             :formulation: formulation of the debye-huckel screening factor. Currently only the variable factor is implemented. ``variable``: implement the screening functions as  k = (1-C_ion)k_out 
+            
+              **Type** ``str``
+            
+              **Default** ``variable``
+            
+              **Predicates**
+                - ``value.lower() in ['variable']``
+            
+   :Cavity: Define the interlocking spheres cavity. 
+  
       :red:`Keywords`
-       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified and/or extra spheres added, using the `$spheres` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block.
-
+       :mode: Determines how to set up the interlocking spheres cavity. ``atoms``: centers are taken from the molecular geometry, radii taken from tabulated data (van der Waals radius), and rescaled using the parameters ``alpha``, ``beta`` and ``sigma`` (R_i <- alpha*R_i + beta*sigma). Default spheres can be modified and/or extra spheres added, using the ``$spheres`` section, see documentation. ``explicit``: centers and radii given explicitly in the ``spheres`` block. 
+      
         **Type** ``str``
-
+      
         **Default** ``atoms``
-
+      
         **Predicates**
           - ``value.lower() in ['atoms', 'explicit']``
-
-       :spheres: This input parameter affects the list of spheres used to generate the cavity. In all cases, values for the radius, the radius scaling factor (``alpha``), the width (``sigma``), and the width scaling factor (``beta``) can be modified. If they are not specified their global default values are used. In ``atoms`` mode, we *modify* the default list of spheres, built with centers from the molecular geometry and radii from internal tabulated van der Waals values. To *substitute* a sphere, include a line like: $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R`` instead of the pre-tabulated vdW radius. To *add* a sphere, include a line like: $spheres x y z R [alpha] [beta] [sigma] $end to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. In ``explicit`` mode, we *build* the complete sphere list from scratch. You can add a line like: $spheres x y z R [alpha] [beta] [sigma] $end to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. Alternatively, you can specify a line like: $spheres i R [alpha] [beta] [sigma] $end to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R``. Spheres added in this way are aware of their parent atom. They will contribute to the molecular gradient.
-
+      
+       :spheres: This input parameter affects the list of spheres used to generate the cavity. In all cases, values for the radius, the radius scaling factor (``alpha``), the width (``sigma``), and the width scaling factor (``beta``) can be modified. If they are not specified their global default values are used. In ``atoms`` mode, we *modify* the default list of spheres, built with centers from the molecular geometry and radii from internal tabulated van der Waals values. To *substitute* a sphere, include a line like: `` $spheres i R [alpha] [beta] [sigma] $end `` to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R`` instead of the pre-tabulated vdW radius. To *add* a sphere, include a line like: `` $spheres x y z R [alpha] [beta] [sigma] $end ``` to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. In ``explicit`` mode, we *build* the complete sphere list from scratch. You can add a line like: `` $spheres x y z R [alpha] [beta] [sigma] $end `` to specify that a sphere of radius ``R`` should be added at position ``(x, y, z)``. Spheres added in this way are not aware of their parent atom, if any. They will **not** contribute to the molecular gradient. Alternatively, you can specify a line like: `` $spheres i R [alpha] [beta] [sigma] $end `` to specify that the ``i`` atom in the molecule (0-based indexing) should use radius ``R``. Spheres added in this way are aware of their parent atom. They will contribute to the molecular gradient. 
+      
         **Type** ``str``
-
+      
         **Default** ````
-
-       :alpha: Scaling factor on the radius term for the cavity rescaling (R_i <- alpha*R_i + beta*sigma). Only used for the default vdW radii in `atoms` mode, not if explicit ``$spheres`` are given.
-
+      
+       :alpha: Scaling factor on the radius term for the cavity rescaling (R_i <- alpha*R_i + beta*sigma). Only used for the default vdW radii in `atoms` mode, not if explicit ``$spheres`` are given. 
+      
         **Type** ``float``
-
+      
         **Default** ``1.1``
-
-       :beta: Scaling factor on the boundary width term for the cavity rescaling (R_i <- alpha*R_i + beta*sigma). Only used for the default vdW radii in `atoms` mode, not if explicit ``$spheres`` are given.
-
+      
+       :beta: Scaling factor on the boundary width term for the cavity rescaling (R_i <- alpha*R_i + beta*sigma). Only used for the default vdW radii in `atoms` mode, not if explicit ``$spheres`` are given. 
+      
         **Type** ``float``
-
+      
         **Default** ``0.5``
-
-       :sigma: Width of cavity boundary, smaller value means sharper transition.
-
+      
+       :sigma: Width of cavity boundary, smaller value means sharper transition. **This quantity has dimensions of length. The default value is in atomic units**. 
+      
         **Type** ``float``
-
+      
         **Default** ``0.2``
+      
+ :GeometryOptimizer: Includes parameters related to the internal geometry optimization using the SQNM (Stabilized Quasi-Newton Method) for noisy PES. Geometry optimizations require accurate forces. Consider setting world_prec to 1e-5 to 1e-7. Convergence issues can usually be solved by increasing the precision of the SCF calculation. If that does not work, try setting the initial step size manually. 
 
-   :Permittivity: Parameters for the permittivity function.
-
-      :red:`Keywords`
-       :epsilon_in: Permittivity inside the cavity. 1.0 is the permittivity of free space, anything other than this is undefined behaviour.
-
-        **Type** ``float``
-
-        **Default** ``1.0``
-
-       :epsilon_out: Permittivity outside the cavity. This is characteristic of the solvent used.
-
-        **Type** ``float``
-
-        **Default** ``1.0``
-
-       :formulation: Formulation of the Permittivity function. Currently only the exponential is used.
-
-        **Type** ``str``
-
-        **Default** ``exponential``
-
-        **Predicates**
-          - ``value.lower() in ['exponential']``
-
+  :red:`Keywords`
+   :run: Run optimizer. Otherwise single point energy/properties are computed. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :use_previous_guess: Start each SCF from the converged orbitals from the previous geometry step. The guess_type will change to "mw" after the first iteration, and the intermediate orbitals will be stored in the "orbitals" directory. If toggled off, start over using the same initial guess method as in the first iteration. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :init_step_size: Initial step size. For systems with hard bonds (e.g. C-C) use a value between and 1.0 and 2.5. If a system only contains weaker bonds a value up to 5.0 may speed up the convergence. Use a small negative number (should be between -0.1 and -0.5) for an automatic guess. The optimal step size is the inverse of the largest eigenvalue of the hessian matrix. 
+  
+    **Type** ``float``
+  
+    **Default** ``-0.5``
+  
+   :minimal_step_size: Minimal step size. It rarely makes sense to change it. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.01``
+  
+   :max_history_length: Maximum length of history list. Energies and forces from the previous n geometry optimization iterations are used to estimate the hessian matrix. Use a value between 2 and 20. A lower value makes the SQNM algorithm behave more like steepest descent and slows down convergence. But it can handle more noise in the energies and forces. It rarely makes sense to change it. 
+  
+    **Type** ``int``
+  
+    **Default** ``10``
+  
+   :subspace_tolerance: Lower limit on linear dependencies of basis vectors in history listSubspace tolerance. Use a number between 1e-9 and 1e-1. A high subspace tolerance slows down convergence but improves numerical stability when the energies and forces contain a lot of noise. It rarely makes sense to change it. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.001``
+  
+   :max_iter: Maximum number of geometry optimization iterations. 
+  
+    **Type** ``int``
+  
+    **Default** ``100``
+  
+   :max_force_component: The geometry optimization stopps when the absolute value of all force components is smaller than this keyword. A value between 1e-3 and 1e-4 is tight enough for most applications. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.005``
+  
  :Constants: Physical and mathematical constants used by MRChem
 
   :red:`Keywords`
    :hartree2simagnetizability: | Conversion factor for magnetizability from atomic units to SI units  (unit: J T^-2). Affected code: Printed value of the magnetizability property.
-
+  
     **Type** ``float``
-
+  
     **Default** ``78.9451185``
-
+  
    :light_speed: | Speed of light in atomic units  (unit: au). Affected code: Relativistic Hamiltonians (ZORA, etc.)
-
+  
     **Type** ``float``
-
+  
     **Default** ``137.035999084``
-
+  
    :angstrom2bohrs: | Conversion factor for Cartesian coordinates from Angstrom to Bohr  (unit: Å^-1). Affected code: Parsing of input coordinates, printed coordinates
-
+  
     **Type** ``float``
-
+  
     **Default** ``1.8897261246257702``
-
+  
    :hartree2kjmol: | Conversion factor from Hartree to kJ/mol  (unit: kJ mol^-1). Affected code: Printed value of energies.
-
+  
     **Type** ``float``
-
+  
     **Default** ``2625.4996394798254``
-
+  
    :hartree2kcalmol: | Conversion factor from Hartree to kcal/mol  (unit: kcal mol^-1). Affected code: Printed value of energies.
-
+  
     **Type** ``float``
-
+  
     **Default** ``627.5094740630558``
-
+  
    :hartree2ev: | Conversion factor from Hartree to eV  (unit: ev). Affected code: Printed value of energies.
-
+  
     **Type** ``float``
-
+  
     **Default** ``27.211386245988``
-
+  
    :hartree2wavenumbers: | Conversion factor from Hartree to wavenumbers (unit: cm^-1). Affected code: Printed value of frequencies.
-
+  
     **Type** ``float``
-
+  
     **Default** ``219474.6313632``
-
+  
    :fine_structure_constant: | Fine-structure constant in atomic units (unit: au). Affected code: Certain magnetic interaction operators.
-
+  
     **Type** ``float``
-
+  
     **Default** ``0.0072973525693``
-
+  
    :electron_g_factor: | Electron g factor in atomic units (unit: au). Affected code: Certain magnetic interaction operators.
-
+  
     **Type** ``float``
-
+  
     **Default** ``-2.00231930436256``
-
+  
    :dipmom_au2debye: | Conversion factor for dipoles from atomic units to Debye (unit: ?). Affected code: Printed value of dipole moments.
-
+  
     **Type** ``float``
-
+  
     **Default** ``2.5417464739297717``
-
+  
+   :boltzmann_constant: | Boltzmann constant in (unit: J K^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``1.380649e-23``
+  
+   :elementary_charge: | Elementary charge in (unit: C). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``1.602176634e-19``
+  
+   :e0: | Permittivity of free space (unit: F m^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``8.8541878128e-12``
+  
+   :N_a: | Avogadro constant (unit: mol^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``6.02214076e+23``
+  
+   :meter2bohr: | conversion factor from meter to Bohr radius (unit: m^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``18897261246.2577``
+  
  :Elements: list of elements with data
 
   :red:`Sections`
    :h: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.2``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.32``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``1``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.00794``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``H``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.268``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``14.025``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0899``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``14.4``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Hydrogen``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``110.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.75``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.731``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.6569547399e-05``
-
+      
    :he: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.4``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.93``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``2``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.002602``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``He``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.215``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.95``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.1787``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Helium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-26.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.57``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.633``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.5849373401e-05``
-
+      
    :li: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.81``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.23``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``3``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.941``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Li``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1615.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``453.7``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.53``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lithium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``400.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.49``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.0992133976e-05``
-
+      
    :be: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.53``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.9``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``4``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.012182``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Be``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2745.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1560.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.85``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Beryllium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1000.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.29``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.567``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.3632829651e-05``
-
+      
    :b: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.92``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.82``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``5``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.811``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``B``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4275.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2300.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.34``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.6``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Boron``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1250.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.73``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``TET``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.576``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2_2p1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.5906118608e-05``
-
+      
    :c: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.7``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.77``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``6``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.011``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``C``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4470.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4100.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.62``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.58``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Carbon``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1860.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.57``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``DIA``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2_2p2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.6940079496e-05``
-
+      
    :n: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.55``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.75``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``7``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``14.00674``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``N``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``77.35``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``63.14``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.251``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``17.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Nitrogen``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-79.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.039``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.651``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2_2p3``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.8847128967e-05``
-
+      
    :o: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.52``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.73``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``8``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``15.9994``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``O``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``90.18``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``50.35``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.429``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``14.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Oxygen``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-46.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.83``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``CUB``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2_2p4``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.0580178957e-05``
-
+      
    :f: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.47``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.72``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``9``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.9984032``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``F``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``84.95``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``53.48``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.696``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``17.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Fluorine``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``MCL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2_2p5``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.2927138943e-05``
-
+      
    :ne: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.54``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.71``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``10``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.1797``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ne``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``27.096``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``24.553``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.901``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``16.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Neon``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``63.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.43``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``1s2_2s2_2p6``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.3654104231e-05``
-
+      
    :na: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.27``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.54``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``11``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.989768``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Na``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1156.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``371.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.97``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``23.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sodium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``150.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.23``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.5699159416e-05``
-
+      
    :mg: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.73``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.36``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``12``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``24.305``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Mg``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1363.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``922.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.74``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.97``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Magnesium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``318.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.21``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.624``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.6341070732e-05``
-
+      
    :al: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.84``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.18``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``13``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``26.981539``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Al``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2793.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``933.25``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.7``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Aluminum``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``394.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.05``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2_3p1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.8165765928e-05``
-
+      
    :si: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.1``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.11``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``14``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``28.0855``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Si``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3540.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1685.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.33``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Silicon``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``625.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.43``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``DIA``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2_3p2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.8743802504e-05``
-
+      
    :p: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.8``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.06``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``15``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``30.97362``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``P``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``550.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``317.3``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.82``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``17.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Phosphorus``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.17``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``CUB``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2_3p3``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.0399312923e-05``
-
+      
    :s: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.8``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.02``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``16``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``32.066``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``S``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``717.75``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``388.36``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.07``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``15.5``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sulfur``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.47``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2_3p4``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.0927308666e-05``
-
+      
    :cl: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.75``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.99``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``17``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``35.4527``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cl``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``239.1``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``172.16``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.17``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Chlorine``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.24``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2_3p5``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.2448101115e-05``
-
+      
    :ar: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.88``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.98``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``18``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``39.948``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ar``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``87.3``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``83.81``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.784``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``28.5``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Argon``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``85.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.26``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ne]3s2_3p6``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.4800211825e-05``
-
+      
    :k: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.75``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.03``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``19``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``39.0983``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``K``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1032.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``336.35``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.86``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``45.46``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Potassium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``100.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.23``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]4s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.4346167051e-05``
-
+      
    :ca: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.31``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.91``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``20``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``40.078``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ca``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1757.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1112.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.55``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``29.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Calcium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``230.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.58``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.4800211825e-05``
-
+      
    :sc: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.62``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``21``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``44.95591``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sc``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3104.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1812.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``15.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Scandium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-359.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.31``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.594``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d1_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.6963627201e-05``
-
+      
    :ti: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.45``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``22``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``47.88``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ti``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3562.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1943.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.5``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.64``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Titanium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``380.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.95``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.588``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d2_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.818557748e-05``
-
+      
    :v: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.34``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``23``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``50.9415``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``V``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3682.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2175.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.8``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.78``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Vanadium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``390.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.02``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d3_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.935761683e-05``
-
+      
    :cr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.18``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``24``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``51.9961``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2945.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2130.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.19``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.23``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Chromium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``460.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.88``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d5_4s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.9738057221e-05``
-
+      
    :mn: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.17``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``25``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``54.93085``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Mn``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2335.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1517.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.43``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.39``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Manganese``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``400.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.89``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``CUB``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d5_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.0850896638e-05``
-
+      
    :fe: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.17``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``26``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``55.847``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Fe``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3135.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1809.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.86``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Iron``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``460.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.87``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d6_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.1212829817e-05``
-
+      
    :co: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.16``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``27``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``58.9332``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Co``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3201.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1768.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.9``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cobalt``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``385.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.51``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d7_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.2273420879e-05``
-
+      
    :ni: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.15``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``28``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``58.69``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ni``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3187.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1726.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.9``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.59``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Nickel``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``375.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.52``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d8_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.1923970253e-05``
-
+      
    :cu: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.17``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``29``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``63.546``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cu``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2836.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1357.6``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.96``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Copper``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``315.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.61``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.3633018675e-05``
-
+      
    :zn: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.25``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``30``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``65.39``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Zn``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1180.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``692.73``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.14``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.2``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Zinc``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``234.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.66``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.3963875193e-05``
-
+      
    :ga: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.87``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.26``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``31``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``69.723``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ga``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2478.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``302.9``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.91``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``11.8``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Gallium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``240.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.51``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2_4p1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.5568424848e-05``
-
+      
    :ge: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.11``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.22``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``32``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``72.61``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ge``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3107.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1210.4``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.32``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.6``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Germanium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``360.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.66``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``DIA``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2_4p2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.7097216161e-05``
-
+      
    :as: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.85``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.2``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``33``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``74.92159``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``As``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``876.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1081.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.72``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Arsenic``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``285.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.13``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``RHL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``54.16``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2_4p3``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.7394645153e-05``
-
+      
    :se: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.9``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.16``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``34``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``78.96``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Se``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``958.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``494.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.8``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``16.45``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Selenium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-150.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.36``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2_4p4``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.8843427408e-05``
-
+      
    :br: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.83``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.14``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``35``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``79.904``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Br``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``332.25``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``265.9``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.12``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``23.5``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Bromine``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.67``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2_4p5``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.8558604038e-05``
-
+      
    :kr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.02``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.12``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``36``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``83.8``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Kr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``119.8``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``115.78``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.74``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``38.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Krypton``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-73.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.72``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Ar]3d10_4s2_4p6``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.9959560033e-05``
-
+      
    :rb: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.03``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.16``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``37``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``85.4678``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rb``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``961.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``312.64``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.53``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``55.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rubidium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-56.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.59``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]5s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.0233033713e-05``
-
+      
    :sr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.49``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.91``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``38``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``87.62``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1650.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1041.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.6``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``33.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Strontium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-147.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.08``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]5s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.1040799081e-05``
-
+      
    :y: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.62``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``39``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``88.90585``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Y``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3611.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1799.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.5``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.8``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Yttrium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-256.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.65``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.571``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d1_5s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.1305968993e-05``
-
+      
    :zr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.45``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``40``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``91.224``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Zr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4682.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2125.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.49``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``14.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Zirconium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``250.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.23``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.593``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d2_5s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.156915998e-05``
-
+      
    :nb: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.34``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``41``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``92.90638``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Nb``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5017.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2740.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.55``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.87``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Niobium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``275.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.3``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d4_5s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.2347219223e-05``
-
+      
    :mo: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.3``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``42``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``95.94``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Mo``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4912.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2890.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.2``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.4``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Molybdenum``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``380.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.15``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d5_5s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.3607614434e-05``
-
+      
    :tc: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.27``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``43``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-98.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tc``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4538.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2473.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``11.5``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.5``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Technetium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.74``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.604``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d5_5s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.3607614434e-05``
-
+      
    :ru: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.25``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``44``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``101.07``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ru``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4423.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2523.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.2``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ruthenium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-382.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.7``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.584``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d7_5s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.4585397905e-05``
-
+      
    :rh: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.25``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``45``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``102.9055``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rh``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3970.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2236.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rhodium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-350.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.8``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d8_5s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.4825835954e-05``
-
+      
    :pd: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.28``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``46``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``106.42``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pd``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3237.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1825.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Palladium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``275.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.89``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s0``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.5537941156e-05``
-
+      
    :ag: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.34``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``47``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``107.8682``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ag``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2436.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1234.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.5``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Silver``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``215.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.09``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.5772320442e-05``
-
+      
    :cd: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.48``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``48``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``112.411``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cd``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1040.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``594.18``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.65``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cadmium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``120.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.98``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.886``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.7373430179e-05``
-
+      
    :in: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.93``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.44``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``49``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``114.82``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``In``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2346.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``429.76``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.31``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``15.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Indium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``129.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.59``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``TET``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.076``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2_5p1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.7596760865e-05``
-
+      
    :sn: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.17``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.41``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``50``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``118.71``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sn``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2876.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``505.06``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.3``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``16.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tin``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``170.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.82``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``TET``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.546``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2_5p2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.8694413774e-05``
-
+      
    :sb: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.06``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.4``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``51``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``121.75``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sb``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1860.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``904.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.68``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.23``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Antimony``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``200.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.51``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``RHL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``57.1``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2_5p3``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.8910267995e-05``
-
+      
    :te: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.06``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.36``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``52``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``127.6``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Te``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1261.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``722.65``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.24``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.5``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tellurium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-139.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.45``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.33``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2_5p4``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.0801452955e-05``
-
+      
    :i: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.98``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.33``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``53``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``126.90447``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``I``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``458.4``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``386.7``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.92``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``25.74``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Iodine``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.27``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2_5p5``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.018104029e-05``
-
+      
    :xe: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.16``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.31``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``54``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``131.29``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Xe``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``165.03``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``161.36``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.89``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``37.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Xenon``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-55.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.2``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Kr]4d10_5s2_5p6``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.1209776425e-05``
-
+      
    :cs: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.43``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.35``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``55``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``132.90543``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cs``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``944.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``301.55``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.87``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``71.07``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cesium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-40.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.05``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]6s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.1412392742e-05``
-
+      
    :ba: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.68``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.98``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``56``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``137.327``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ba``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2171.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1002.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.5``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``39.24``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Barium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-110.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.02``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.2410525664e-05``
-
+      
    :la: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.69``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``57``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``138.9055``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``La``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3730.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1193.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.7``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.73``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lanthanum``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``132.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.75``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.619``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]5d1_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.2607247118e-05``
-
+      
    :hf: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.44``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``72``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``178.49``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Hf``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4876.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2500.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.1``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.6``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Hafnium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.2``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.582``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d2_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.9970978172e-05``
-
+      
    :ta: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.34``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``73``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``180.9479``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ta``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5731.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3287.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``16.6``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tantalum``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``225.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.31``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d3_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010013585755``
-
+      
    :w: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.3``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``74``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``183.85``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``W``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5828.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3680.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.3``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.53``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tungsten``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``310.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.16``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d4_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0001006268807``
-
+      
    :re: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.28``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``75``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``186.207``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Re``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5869.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3453.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``21.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.85``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rhenium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``416.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.76``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.615``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d5_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010111259523``
-
+      
    :os: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.26``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``76``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``190.2``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Os``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5285.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3300.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.49``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Osmium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-400.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.74``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.579``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d6_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010191070333``
-
+      
    :ir: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.27``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``77``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``192.22``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ir``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4701.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2716.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.5``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.54``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Iridium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``430.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.84``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d7_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010206865731``
-
+      
    :pt: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.3``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``78``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``195.08``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pt``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4100.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2045.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``21.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Platinum``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``230.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.92``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s0``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010238293593``
-
+      
    :au: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.34``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``79``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``196.96654``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Au``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3130.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1337.58``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.3``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.2``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Gold``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``170.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.08``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010269507292``
-
+      
    :hg: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.49``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``80``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``200.59``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Hg``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``630.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``234.28``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.53``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``14.82``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Mercury``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``100.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.99``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``RHL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``70.75``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010346628039``
-
+      
    :tl: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.96``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.48``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``81``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``204.3833``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tl``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1746.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``577.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``11.85``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``17.2``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Thallium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``96.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.46``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.599``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2_6p1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010392291259``
-
+      
    :pb: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.02``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.47``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``82``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``207.2``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pb``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2023.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``600.6``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``11.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.17``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lead``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``88.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.95``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2_6p2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0001043751113``
-
+      
    :bi: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.07``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.46``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``83``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``208.98037``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Bi``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1837.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``544.52``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.8``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``21.3``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Bismuth``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``120.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.75``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``RHL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``57.23``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2_6p3``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010452487744``
-
+      
    :po: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.97``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.46``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``84``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-209.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Po``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1235.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``527.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.23``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Polonium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.35``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``SC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2_6p4``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010452487744``
-
+      
    :at: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.02``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.45``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``85``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``210.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``At``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``610.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``575.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Astatine``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2_6p5``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0001046741666``
-
+      
    :rn: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.2``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.43``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``86``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-222.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rn``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``211.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``202.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.91``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``50.5``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Radon``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d10_6s2_6p6``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010642976299``
-
+      
    :fr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.48``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.5``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``87``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-223.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Fr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``950.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``300.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Francium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]7s1``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010657317899``
-
+      
    :ra: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.83``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.4``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``88``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``226.025``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ra``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1809.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``973.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``45.2``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Radium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.000107000871``
-
+      
    :ac: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.2``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``89``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``227.028``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ac``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3473.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1323.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``10.07``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.54``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Actinium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.31``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010714259349``
-
+      
    :rf: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``104``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-257.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rf``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Rutherfordium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``4-5s``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0001117320442``
-
+      
    :db: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``105``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-262.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Db``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Dubnium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``40s``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011186082063``
-
+      
    :sg: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``106``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-263.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sg``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Seaborgium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``0.9s``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011198926979``
-
+      
    :bh: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``107``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-262.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Bh``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Bohrium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``2ms``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011186082063``
-
+      
    :hs: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``108``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-264.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Hs``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Hassium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0001122451946``
-
+      
    :mt: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``109``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-266.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Mt``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Meitnerium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``5ms``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011237267433``
-
+      
    :110: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``110``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-269.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``110``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``(recent_disc.)``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
    :111: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``111``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-272.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``111``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``(recent_disc.)``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``4/1000s``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
    :112: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``112``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-277.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``112``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``(recent_disc.)``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``280µs``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
    :ce: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.65``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``58``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``140.115``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ce``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3699.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1071.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.78``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.67``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cerium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-139.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.16``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f2_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.2803027311e-05``
-
+      
    :pr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.65``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``59``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``140.90765``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3785.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1204.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.77``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.8``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Praseodymium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-152.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.67``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.614``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f3_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.2997877424e-05``
-
+      
    :nd: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.64``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``60``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``144.24``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Nd``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3341.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1289.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.6``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Neodymium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-157.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.66``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.614``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f4_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.3576955934e-05``
-
+      
    :pm: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.63``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``61``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-145.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pm``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3785.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1204.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.475``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``22.39``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Promethium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f5_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.3768193375e-05``
-
+      
    :sm: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.62``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``62``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``150.36``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Sm``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2064.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1345.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.54``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.95``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Samarium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``166.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``RHL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``23.22``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f6_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.5082839751e-05``
-
+      
    :eu: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.85``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``63``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``151.965``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Eu``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1870.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1090.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.26``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``28.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Europium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-107.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.61``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``BCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f7_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.5267329183e-05``
-
+      
    :gd: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.61``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``64``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``157.25``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Gd``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3539.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1585.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``7.89``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Gadolinium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-176.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.64``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.588``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f7_5d1_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.6177915369e-05``
-
+      
    :tb: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.59``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``65``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``158.92534``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tb``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3496.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1630.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.27``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.2``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Terbium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-188.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.6``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.581``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f9_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.6357719009e-05``
-
+      
    :dy: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.59``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``66``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``162.5``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Dy``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2835.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1682.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.54``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Dysprosium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-186.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.59``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.573``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f10_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.6892647152e-05``
-
+      
    :ho: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.58``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``67``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``164.93032``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ho``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2968.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1743.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``8.8``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.7``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Holmium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-191.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.58``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.57``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f11_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.6892647152e-05``
-
+      
    :er: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.57``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``68``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``167.26``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Er``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3136.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1795.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.05``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.4``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Erbium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-195.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.56``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.57``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f12_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.7943009317e-05``
-
+      
    :tm: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.56``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``69``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``168.93421``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Tm``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2220.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1818.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.33``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.1``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Thulium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-200.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.54``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.57``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f13_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.811562674e-05``
-
+      
    :yb: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.74``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``70``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``173.04``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Yb``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1467.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1097.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``6.98``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``24.79``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Ytterbium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-118.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.49``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d0_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.8968651305e-05``
-
+      
    :lu: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.56``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``71``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``174.967``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lu``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3668.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1936.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.84``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``17.78``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lutetium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-207.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.51``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``HEX``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.585``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Xe]4f14_5d1_6s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``9.9137288835e-05``
-
+      
    :th: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.65``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``90``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``232.0381``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Th``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5061.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2028.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``11.7``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.9``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Thorium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``100.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``5.08``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``FCC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]6d2_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010784503195``
-
+      
    :pa: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``91``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``231.03588``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pa``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``15.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``15.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Protactinium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3.92``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``TET``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.825``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f2_6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010770535752``
-
+      
    :u: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1.42``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``92``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``238.0289``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``U``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4407.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1405.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.9``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.59``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Uranium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-210.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2.85``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f3_6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010867476102``
-
+      
    :np: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``93``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``237.048``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Np``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``910.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``20.4``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``11.62``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Neptunium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-188.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``4.72``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``ORC``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f4_6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010853744903``
-
+      
    :pu: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``94``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-244.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Pu``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``3503.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``913.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``19.8``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``12.32``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Plutonium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-150.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``MCL``
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f6_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010949065967``
-
+      
    :am: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``95``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-243.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Am``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``2880.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1268.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.6``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``17.86``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Americium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f7_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010935561268``
-
+      
    :cm: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``96``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-247.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cm``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``1340.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``13.511``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``18.28``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Curium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f7_6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010989359973``
-
+      
    :bk: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``97``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-247.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Bk``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Berkelium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f8_6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00010989359973``
-
+      
    :cf: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``98``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-251.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Cf``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``900.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Californium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f10_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011042580946``
-
+      
    :es: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``99``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-252.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Es``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Einsteinium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f11_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011055797721``
-
+      
    :fm: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``100``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-257.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Fm``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Fermium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f12_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011121362374``
-
+      
    :md: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``101``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-258.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Md``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Mendelevium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f13_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011134373034``
-
+      
    :"no": data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``102``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-259.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``"No"``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Nobelium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f14_6d0_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011147350119``
-
+      
    :lr: data of element
-
+  
       :red:`Keywords`
        :vdw-radius: radius of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-1.0``
-
+      
        :covalent: covalent value element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :Z: z-value of element
-
+      
         **Type** ``int``
-
+      
         **Default** ``103``
-
+      
        :mass: mass of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``-260.0``
-
+      
        :symbol: symbol of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lr``
-
+      
        :bpt: bpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :mpt: mpt of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :density: density of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :volume: volume of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :name: name of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``Lawrencium``
-
+      
        :debye: debye of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :a: a of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :crystal: crystal of element
-
+      
         **Type** ``str``
-
+      
         **Default** ````
-
+      
        :cpera: cpera of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.0``
-
+      
        :conf: conf of element
-
+      
         **Type** ``str``
-
+      
         **Default** ``[Rn]5f14_6d1_7s2``
-
+      
        :r_rms: r_rms of element
-
+      
         **Type** ``float``
-
+      
         **Default** ``0.00011186082063``
+      
