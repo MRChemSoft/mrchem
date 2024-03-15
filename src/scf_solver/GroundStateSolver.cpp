@@ -304,6 +304,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
+
+        // here: both orbital sets (n, n+1) are available
+        // Possible location to calculate overlap
+        // orbital::dot
+        // occupations
+
         Phi_np1.clear();
 
         kain.accelerate(orb_prec, Phi_n, dPhi_n);
@@ -315,6 +321,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         json_cycle["mo_residual"] = err_t;
 
         // Update orbitals
+        OrbitalVector Phi_mom = Phi_n;
+
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
