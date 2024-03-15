@@ -303,6 +303,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
+
+        // here: both orbital sets (n, n+1) are available
+        // Possible location to calculate overlap
+        // orbital::dot
+        // occupations
+
         Phi_np1.clear();
 
         kain.accelerate(orb_prec, Phi_n, dPhi_n);
@@ -314,8 +320,74 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_cycle["mo_residual"] = err_t;
 
         // Update orbitals
+        OrbitalVector Phi_mom = Phi_n;
+
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
+
+        OrbitalVector Phi_n_spin = Phi_n;
+
+        OrbitalVector Phi_mom_alpha = orbital::disjoin(Phi_mom, 1);
+        OrbitalVector Phi_n_alpha = orbital::disjoin(Phi_n_spin, 1);
+
+        ComplexMatrix overlap;
+        DoubleVector occ;
+        ComplexMatrix tmp;
+        ComplexVector p;
+        unsigned int nVirt;
+        std::vector<std::pair<double, unsigned>> sortme;
+
+        //only unrestricted for now
+        //alpha
+        overlap = orbital::calc_overlap_matrix(Phi_mom_alpha, Phi_n_alpha);
+        occ = orbital::get_occupations(Phi_mom_alpha);
+        tmp = occ.asDiagonal() * overlap;
+        p = tmp.colwise().norm();
+
+        // std::cout << "occ: " << occ << std::endl;
+        // std::cout << "tmp: " << tmp << std::endl;
+        std::cout << "p: " << p << std::endl;
+
+        nVirt = orbital::size_empty(Phi_mom_alpha);
+        for (unsigned int q = 0; q < p.size(); ++q) {
+            sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
+        }
+        DoubleVector occAlpha = DoubleVector::Ones(occ.size());
+        std::stable_sort(sortme.begin(), sortme.end());
+        for (unsigned int q = 0; q < nVirt; q++) {
+            occAlpha(sortme[q].second) = 0.0;
+            std::cout << sortme[q].second << std::endl;
+        }
+        sortme.clear();
+
+        //beta
+        overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n_spin);
+        occ = orbital::get_occupations(Phi_mom);
+        tmp = occ.asDiagonal() * overlap;
+        p = tmp.colwise().norm();
+
+        // std::cout << "occ: " << occ << std::endl;
+        // std::cout << "tmp: " << tmp << std::endl;
+        std::cout << "p: " << p << std::endl;
+
+        nVirt = orbital::size_empty(Phi_mom);
+        for (unsigned int q = 0; q < p.size(); ++q) {
+            sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
+        }
+        DoubleVector occBeta = DoubleVector::Ones(occ.size());
+        std::stable_sort(sortme.begin(), sortme.end());
+        for (unsigned int q = 0; q < nVirt; q++) {
+            occBeta(sortme[q].second) = 0.0;
+            std::cout << "occupation 0: " << sortme[q].second << std::endl;
+        }
+        sortme.clear();
+
+        DoubleVector occNew(occAlpha.size() + occBeta.size());
+        occNew << occAlpha, occBeta;
+        // std::cout << "occNew: " << occNew << std::endl;
+        
+        orbital::set_occupations(Phi_n, occNew);
+
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
