@@ -320,8 +320,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
 
+        //MOM
+        std::cout << "Iter: " << nIter << std::endl;
+        std::string imomFile = "imomOrbs";
+        if (nIter == 1) {
+            // _imomOrbitals = Phi_n;
+            orbital::save_orbitals(Phi_n, imomFile, -1);
+        }
+
         // Update orbitals
-        OrbitalVector Phi_mom = Phi_n;
 
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
