@@ -75,7 +75,7 @@ protected:
     bool needLocalization(int nIter, bool converged) const;
     bool needDiagonalization(int nIter, bool converged) const;
 
-    void runMOM(OrbitalVector &Phi_n, OrbitalVector &Phi_mom);
+    DoubleVector runMOM(OrbitalVector Phi_n, OrbitalVector Phi_mom);
 
 private:
     OrbitalVector _imomOrbitals;
