@@ -485,7 +485,7 @@ DoubleVector GroundStateSolver::runMOM(OrbitalVector Phi_n, OrbitalVector Phi_mo
         // doubly occupied orbitals
         DoubleVector occDoubly = DoubleVector::Zero(occ.size());
         for (unsigned int i = 0; i < occ.size(); i++) {
-            occSingly(i) = (occ(i) == 2.0) ? 2.0 : 0.0;
+            occDoubly(i) = (occ(i) == 2.0) ? 2.0 : 0.0;
         }
         occOverlap = occDoubly.asDiagonal() * overlap;
         p = occOverlap.colwise().norm();
