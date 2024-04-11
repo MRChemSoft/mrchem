@@ -310,6 +310,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
+        solver.setDeltaSCFMethod(deltascf_method);
 
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];

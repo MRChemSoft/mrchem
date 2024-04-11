@@ -328,6 +328,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         dPhi_n.clear();
 
         // MOM / IMOM
+        std::cout << "deltaSCFMethod: " << deltaSCFMethod << std::endl;
         if (deltaSCFMethod == "MOM" || deltaSCFMethod == "IMOM") {
             DoubleVector occNew = runMOM(Phi_n, _imomOrbitals);
             orbital::set_occupations(Phi_n, occNew);
