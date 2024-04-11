@@ -130,7 +130,8 @@
       "final_prec": float,                   # Final precision for solver
       "helmholtz_prec": float,               # Precision for Helmholtz operators
       "orbital_thrs": float,                 # Convergence threshold orbitals
-      "energy_thrs":float                    # Convergence threshold energy
+      "energy_thrs": float,                  # Convergence threshold energy
+      "deltascf_method": string              # Name of DeltaSCF method
     },
     "properties": {                          # Collection of properties to compute
       "dipole_moment": {                     # Collection of dipole moments

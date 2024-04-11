@@ -294,6 +294,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
+        auto deltascf_method = json_scf["scf_solver"]["deltascf_method"];
 
         GroundStateSolver solver;
         solver.setHistory(kain);
