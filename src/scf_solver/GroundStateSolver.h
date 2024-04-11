@@ -67,7 +67,7 @@ protected:
     bool localize{false}; ///< Use localized or canonical orbitals
     std::string chkFile;  ///< Name of checkpoint file
     std::vector<SCFEnergy> energy;
-    std::string deltaSCFMethod;
+    std::string deltaSCFMethod{"none"};
 
     void reset() override;
     double calcPropertyError() const;
