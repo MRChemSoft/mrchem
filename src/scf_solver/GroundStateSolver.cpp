@@ -314,11 +314,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
 
-        //MOM
-        // std::string imomFile = "imomOrbs";
-        if (nIter == 1) {
+        // MOM / IMOM
+        if (deltaSCFMethod == "IMOM" && nIter == 1) {
             _imomOrbitals = Phi_n;
-            // orbital::save_orbitals(Phi_n, imomFile, -1);
+        }
+        else if (deltaSCFMethod == "MOM") {
+            _imomOrbitals = Phi_n;
         }
 
         // Update orbitals
@@ -326,10 +327,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
-        //MOM
-        // DoubleVector occNew = runMOM(Phi_n, orbital::load_orbitals(imomFile, -1));
-        DoubleVector occNew = runMOM(Phi_n, _imomOrbitals);
-        orbital::set_occupations(Phi_n, occNew);
+        // MOM / IMOM
+        if (deltaSCFMethod == "MOM" || deltaSCFMethod == "IMOM") {
+            DoubleVector occNew = runMOM(Phi_n, _imomOrbitals);
+            orbital::set_occupations(Phi_n, occNew);
+        }
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
@@ -461,6 +463,7 @@ DoubleVector GroundStateSolver::runMOM(OrbitalVector Phi_n, OrbitalVector Phi_mo
     DoubleVector occNew = DoubleVector::Zero(orbital::size_empty(Phi_mom) + orbital::size_singly(Phi_mom) + orbital::size_doubly(Phi_mom));
 
     if (restricted) {
+        //maybe first occSingly.asDiagonal() * Phi_mom; then calcOverlapMatrix
         overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
         occ = orbital::get_occupations(Phi_mom);
 
@@ -485,7 +488,8 @@ DoubleVector GroundStateSolver::runMOM(OrbitalVector Phi_n, OrbitalVector Phi_mo
         // doubly occupied orbitals
         DoubleVector occDoubly = DoubleVector::Zero(occ.size());
         for (unsigned int i = 0; i < occ.size(); i++) {
-            occDoubly(i) = (occ(i) == 2.0) ? 2.0 : 0.0;
+            //occNumber of 1 better
+            occDoubly(i) = (occ(i) == 2.0) ? 1.0 : 0.0;
         }
         occOverlap = occDoubly.asDiagonal() * overlap;
         p = occOverlap.colwise().norm();
