@@ -25,6 +25,7 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <set>
 
 #include "GroundStateSolver.h"
 #include "HelmholtzVector.h"
@@ -315,23 +316,40 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_cycle["mo_residual"] = err_t;
 
         // MOM / IMOM
+        // save orbitals of last iteration (MOM) or first iteration (IMOM)
         if (deltaSCFMethod == "IMOM" && nIter == 1) {
-            _imomOrbitals = Phi_n;
+            _deltaSCFOrbitals = Phi_n;
         }
         else if (deltaSCFMethod == "MOM") {
-            _imomOrbitals = Phi_n;
+            _deltaSCFOrbitals = Phi_n;
         }
 
         // Update orbitals
-
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
         // MOM / IMOM
-        std::cout << "deltaSCFMethod: " << deltaSCFMethod << std::endl;
+        // get the new occupation vector for the current iteration
         if (deltaSCFMethod == "MOM" || deltaSCFMethod == "IMOM") {
-            DoubleVector occNew = runMOM(Phi_n, _imomOrbitals);
-            orbital::set_occupations(Phi_n, occNew);
+            bool restricted = (orbital::size_doubly(Phi_n) != 0);
+            if (restricted) {
+                DoubleVector occNew = getNewOccupations(Phi_n, _deltaSCFOrbitals);
+                std::cout << "occNew: " << occNew << std::endl;
+                orbital::set_occupations(Phi_n, occNew);
+            }
+            else {
+                // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
+                OrbitalVector Phi_n_copy = Phi_n;
+                OrbitalVector Phi_mom_copy = _deltaSCFOrbitals;
+                auto Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
+                auto Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
+                DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
+                DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
+                DoubleVector occNew(occAlpha.size() + occBeta.size());
+                occNew << occAlpha, occBeta;
+                std::cout << "occNew: " << occNew << std::endl;
+                orbital::set_occupations(Phi_n, occNew);
+            }
         }
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
@@ -445,105 +463,48 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
     return diag;
 }
 
-DoubleVector GroundStateSolver::runMOM(OrbitalVector Phi_n, OrbitalVector Phi_mom) {
-    bool restricted = (orbital::size_doubly(Phi_n) != 0);
-
-    //restricted: three cases: occ: 0, 1, 2
-    //compare overlap for two of the three cases
-
-    //unrestricted: only two cases: occ: 0, 1
-    //compare overlap for one of the two cases
-
-    //IMOM: maybe read orbitals used for inital guess mw from disk?
-    //needed: file, occupations
-
-    ComplexMatrix overlap, occOverlap;
-    DoubleVector occ;
-    ComplexVector p;
-    std::vector<std::pair<double, unsigned>> sortme;
-    DoubleVector occNew = DoubleVector::Zero(orbital::size_empty(Phi_mom) + orbital::size_singly(Phi_mom) + orbital::size_doubly(Phi_mom));
-
-    if (restricted) {
-        //maybe first occSingly.asDiagonal() * Phi_mom; then calcOverlapMatrix
-        overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
-        occ = orbital::get_occupations(Phi_mom);
-
-        // singly occupied orbitals
-        DoubleVector occSingly = DoubleVector::Zero(occ.size());
+/** @brief Determine new occupation vector according to MOM/IMOM procedure
+ * 
+ * @param Phi_n: orbitals of current iteration n.
+ * @param Phi_mom: orbitals of last iteration n-1 (MOM) or first iteration (IMOM).
+ * 
+ * According to MOM/IMOM procedure the occupation numbers for the current iteration get
+ * determined based on the overlap with the orbitals of an earlier iteration of the SCF procedure.
+ */
+DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
+    ComplexMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
+    DoubleVector occ = orbital::get_occupations(Phi_mom);
+    DoubleVector occNew = DoubleVector::Zero(occ.size());
+    // get all unique occupation numbers
+    std::set<double> occupationNumbers(occ.begin(), occ.end());
+    // for each unique occupation number, determine which orbitals should be assigned this occupation number
+    for (auto& occNumber : occupationNumbers) {
+        // create vector which contains the positions of the unique occupation number
+        DoubleVector currOcc = DoubleVector::Zero(occ.size());
+        unsigned int nCurrOcc = 0;
         for (unsigned int i = 0; i < occ.size(); i++) {
-            occSingly(i) = (occ(i) == 1.0) ? 1.0 : 0.0;
+            if (occ(i) == occNumber) {
+                currOcc(i) = 1.0;
+                nCurrOcc++;
+            }
         }
-        occOverlap = occSingly.asDiagonal() * overlap;
-        p = occOverlap.colwise().norm();
-        unsigned int nSingly = orbital::size_singly(Phi_mom);
+        std::cout << "occNumber; nCurrOcc: " << occNumber << "; " << nCurrOcc << std::endl;
+        // only consider overlap with orbitals with the current unique occupation number
+        ComplexMatrix occOverlap = currOcc.asDiagonal() * overlap;
+        ComplexVector p = occOverlap.colwise().norm();
+        // sort by highest overlap
+        std::vector<std::pair<double, unsigned>> sortme;
         for (unsigned int q = 0; q < p.size(); ++q) {
             sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
         }
         std::stable_sort(sortme.begin(), sortme.end());
         std::reverse(sortme.begin(), sortme.end());
-        for (unsigned int q = 0; q < nSingly; q++) {
-            occNew(sortme[q].second) = 1.0;
-        }
-        sortme.clear();
-
-        // doubly occupied orbitals
-        DoubleVector occDoubly = DoubleVector::Zero(occ.size());
-        for (unsigned int i = 0; i < occ.size(); i++) {
-            //occNumber of 1 better
-            occDoubly(i) = (occ(i) == 2.0) ? 1.0 : 0.0;
-        }
-        occOverlap = occDoubly.asDiagonal() * overlap;
-        p = occOverlap.colwise().norm();
-        unsigned int nDoubly = orbital::size_doubly(Phi_mom);
-        for (unsigned int q = 0; q < p.size(); ++q) {
-            sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
-        }
-        std::stable_sort(sortme.begin(), sortme.end());
-        std::reverse(sortme.begin(), sortme.end());
-        for (unsigned int q = 0; q < nDoubly; q++) {
-            occNew(sortme[q].second) = 2.0;
+        // assign the current unique occupation number to orbitals with highest overlap
+        for (unsigned int q = 0; q < nCurrOcc; q++) {
+            occNew(sortme[q].second) = occNumber;
         }
         sortme.clear();
     }
-    else {
-        auto Phi_n_a = orbital::disjoin(Phi_n, SPIN::Alpha);
-        auto Phi_mom_a = orbital::disjoin(Phi_mom, SPIN::Alpha);
-
-        // alpha orbitals
-        overlap = orbital::calc_overlap_matrix(Phi_mom_a, Phi_n_a);
-        occ = orbital::get_occupations(Phi_mom_a);
-        occOverlap = occ.asDiagonal() * overlap;
-        p = occOverlap.colwise().norm();
-
-        unsigned int nAlpha = orbital::size_singly(Phi_mom_a);
-        for (unsigned int q = 0; q < p.size(); ++q) {
-            sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
-        }
-        std::stable_sort(sortme.begin(), sortme.end());
-        std::reverse(sortme.begin(), sortme.end());
-        for (unsigned int q = 0; q < nAlpha; q++) {
-            occNew(sortme[q].second) = 1.0;
-        }
-        sortme.clear();
-
-        // beta orbitals
-        overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
-        occ = orbital::get_occupations(Phi_mom);
-        occOverlap = occ.asDiagonal() * overlap;
-        p = occOverlap.colwise().norm();
-
-        unsigned int nBeta = orbital::size_singly(Phi_mom);
-        for (unsigned int q = 0; q < p.size(); ++q) {
-            sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
-        }
-        std::stable_sort(sortme.begin(), sortme.end());
-        std::reverse(sortme.begin(), sortme.end());
-        for (unsigned int q = 0; q < nBeta; q++) {
-            occNew(sortme[q].second + nAlpha) = 1.0;
-        }
-        sortme.clear();
-    }
-    std::cout << "occNew: " << occNew << std::endl;
     return occNew;
 }
 

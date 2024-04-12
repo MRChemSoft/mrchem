@@ -77,10 +77,10 @@ protected:
     bool needLocalization(int nIter, bool converged) const;
     bool needDiagonalization(int nIter, bool converged) const;
 
-    DoubleVector runMOM(OrbitalVector Phi_n, OrbitalVector Phi_mom);
+    DoubleVector getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom);
 
 private:
-    OrbitalVector _imomOrbitals;
+    OrbitalVector _deltaSCFOrbitals;
 };
 
 } // namespace mrchem
