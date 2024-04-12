@@ -25,6 +25,7 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <set>
 
 #include "GroundStateSolver.h"
 #include "HelmholtzVector.h"
@@ -316,15 +317,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         json_cycle["mo_residual"] = err_t;
 
         // MOM / IMOM
+        // save orbitals of last iteration (MOM) or first iteration (IMOM)
         if (deltaSCFMethod == "IMOM" && nIter == 1) {
-            _imomOrbitals = Phi_n;
+            _deltaSCFOrbitals = Phi_n;
         }
         else if (deltaSCFMethod == "MOM") {
-            _imomOrbitals = Phi_n;
+            _deltaSCFOrbitals = Phi_n;
         }
 
         // Update orbitals
-
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
