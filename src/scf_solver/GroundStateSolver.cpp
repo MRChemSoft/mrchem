@@ -304,7 +304,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
-
         Phi_np1.clear();
 
         kain.accelerate(orb_prec, Phi_n, dPhi_n);
