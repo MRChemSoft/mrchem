@@ -840,9 +840,9 @@ void orbital::print(const OrbitalVector &Phi) {
 
     std::stringstream o_head;
     o_head << std::setw(w1) << "n";
-    o_head << std::setw(w1) << "Occ";
+    o_head << std::setw(w1 + 3) << "Occ";
     o_head << std::setw(w1) << "Spin";
-    o_head << std::string(w3 - 1, ' ') << ':';
+    o_head << std::string(w3 - 4, ' ') << ':';
     o_head << std::setw(3 * w2) << "Norm";
 
     mrcpp::print::header(0, "Molecular Orbitals");
@@ -862,7 +862,7 @@ void orbital::print(const OrbitalVector &Phi) {
         memory += Phi[i].getSizeNodes() / 1024.0;
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w1) << Phi[i].occ();
+        o_txt << std::setw(w1 + 3) << std::setprecision(2) << std::fixed << Phi[i].occ();
         o_txt << std::setw(w1) << Phi[i].printSpin();
         print_utils::scalar(0, o_txt.str(), norms[i], "", 2 * pprec, true);
     }
