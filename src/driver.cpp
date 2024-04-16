@@ -418,6 +418,8 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
           }
           core_orbitals(i) = json_occ[i]["orbital"];
           core_occupancies(i) = json_occ[i]["occupancy"][0];
+          double beta = json_occ[i]["occupancy"][1];
+          core_occupancies(i) += beta;
         }
       }
       
