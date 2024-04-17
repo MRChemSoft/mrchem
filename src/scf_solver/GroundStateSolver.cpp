@@ -473,37 +473,47 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
 DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
     ComplexMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
     DoubleVector occ = orbital::get_occupations(Phi_mom);
-    DoubleVector occNew = DoubleVector::Zero(occ.size());
     // get all unique occupation numbers
     std::set<double> occupationNumbers(occ.begin(), occ.end());
     // for each unique occupation number, determine which orbitals should be assigned this occupation number
+    double hole = 0.0;
+    double occupied = 0.0;
     for (auto& occNumber : occupationNumbers) {
-        // create vector which contains the positions of the unique occupation number
-        DoubleVector currOcc = DoubleVector::Zero(occ.size());
-        unsigned int nCurrOcc = 0;
-        for (unsigned int i = 0; i < occ.size(); i++) {
-            if (occ(i) == occNumber) {
-                currOcc(i) = 1.0;
-                nCurrOcc++;
-            }
+        if (occNumber > occupied) {
+            hole = occupied;
+            occupied = occNumber;
         }
-        std::cout << "occNumber; nCurrOcc: " << occNumber << "; " << nCurrOcc << std::endl;
-        // only consider overlap with orbitals with the current unique occupation number
-        ComplexMatrix occOverlap = currOcc.asDiagonal() * overlap;
-        ComplexVector p = occOverlap.colwise().norm();
-        // sort by highest overlap
-        std::vector<std::pair<double, unsigned>> sortme;
-        for (unsigned int q = 0; q < p.size(); ++q) {
-            sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
+        else {
+            hole = occNumber;
         }
-        std::stable_sort(sortme.begin(), sortme.end());
-        std::reverse(sortme.begin(), sortme.end());
-        // assign the current unique occupation number to orbitals with highest overlap
-        for (unsigned int q = 0; q < nCurrOcc; q++) {
-            occNew(sortme[q].second) = occNumber;
-        }
-        sortme.clear();
     }
+    DoubleVector occNew = DoubleVector::Constant(occ.size(), hole);
+    // create vector which contains the positions of the unique occupation number
+    DoubleVector currOcc = DoubleVector::Zero(occ.size());
+    unsigned int nCurrOcc = 0;
+    for (unsigned int i = 0; i < occ.size(); i++) {
+        if (occ(i) == occupied) {
+            currOcc(i) = 1.0;
+            nCurrOcc++;
+        }
+    }
+    std::cout << "occNumber; nCurrOcc: " << occupied << "; " << nCurrOcc << std::endl;
+    // only consider overlap with orbitals with the current unique occupation number
+    ComplexMatrix occOverlap = currOcc.asDiagonal() * overlap;
+    ComplexVector p = occOverlap.colwise().norm();
+    std::cout << "p: " << p << std::endl;
+    // sort by highest overlap
+    std::vector<std::pair<double, unsigned>> sortme;
+    for (unsigned int q = 0; q < p.size(); ++q) {
+        sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
+    }
+    std::stable_sort(sortme.begin(), sortme.end());
+    std::reverse(sortme.begin(), sortme.end());
+    // assign the current unique occupation number to orbitals with highest overlap
+    for (unsigned int q = 0; q < nCurrOcc; q++) {
+        occNew(sortme[q].second) = occupied;
+    }
+    sortme.clear();
     return occNew;
 }
 
