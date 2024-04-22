@@ -115,6 +115,7 @@ This section defines some parameters that are used in MPI runs (defaults shown):
 
     MPI {
       bank_size = -1                        # Number of processes used as memory bank
+      omp_threads = -1                      # Number of omp threads to use
       numerically_exact = false             # Guarantee MPI invariant results
       share_nuclear_potential = false       # Use MPI shared memory window
       share_coulomb_potential = false       # Use MPI shared memory window
@@ -130,6 +131,11 @@ the number of available processes. For pure DFT functionals on smaller molecules
 it is likely more efficient to set `bank_size = 0`, otherwise it's recommended
 to use the default. If a particular calculation runs out of memory, it might
 help to increase the number of bank processes from the default value.
+
+The number of threads to use in OpenMP can be forced using the omp_threads flag.
+For MPI runs, it is strongly advised to leave the default, as the optimal value
+can be difficult to guess. The environment variable OMP_NUM_THREADS is not used
+for MPI runs.
 
 The ``numerically_exact`` keyword will trigger algorithms that guarantee that
 the computed results are invariant (within double precision) with respect to
@@ -194,7 +200,7 @@ as the ``world_origin`` is the true origin).
 WaveFunction
 ------------
 
-Here we give the wavefunction method and whether we run spin restricted (alpha
+Here we give the wavefunction method, environment used (for solvent models) and whether we run spin restricted (alpha
 and beta spins are forced to occupy the same spatial orbitals) or not (method
 must be specified, otherwise defaults are shown):
 
@@ -203,6 +209,7 @@ must be specified, otherwise defaults are shown):
     WaveFunction {
       method = <wavefunction_method>        # Core, Hartree, HF or DFT
       restricted = true                     # Spin restricted/unrestricted
+      environment = pcm                     # Environment (pcm, pcm-pb, pcm-lpb) defaults to none
     }
 
 There are currently four methods available: Core Hamiltonian, Hartree,
@@ -211,6 +218,11 @@ Hartree-Fock (HF) and Density Functional Theory (DFT). When running DFT you can
 B3LYP``), *or* you can set ``method = DFT`` and specify a "non-standard"
 functional in the separate DFT section (see below). See
 :ref:`User input reference` for a list of available default functionals.
+
+The solvent model implemented is a cavity free PCM, described in :cite:`gerez2023`. 
+In this model we have implemented the Generalized Poisson equation solver, keyword ``pcm``, a 
+Poisson-Boltzmann solver, keyword ``pcm-pb`` and a Linearized Poisson-Boltzmann solver, keyword ``pcm-lpb``. 
+Further details for the calculation have to be included in the ``PCM`` section, see :ref: `User input reference` for details.
 
 .. note::
 
@@ -674,4 +686,3 @@ avoid overwriting the files by default). So, in order to use MW orbitals from a
 previous calculation, you must either change one of the paths
 (``Response.path_orbitals`` or ``Files.guess_X_p`` etc), or manually copy the
 files between the default locations.
-

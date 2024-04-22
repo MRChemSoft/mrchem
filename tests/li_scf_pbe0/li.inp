@@ -25,4 +25,3 @@ SCF {
   orbital_thrs = 2.0e-2
   guess_type = GTO             # Type of initial guess (none, gto, mw)
 }
-

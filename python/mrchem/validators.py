@@ -120,14 +120,6 @@ class MoleculeValidator:
         self.do_translate = self.user_mol["translate"]
         self.coords_raw = self.user_mol["coords"]
 
-        # Cavity related data
-        self.cavity_dict = user_dict["PCM"]["Cavity"]
-        self.cavity_mode = self.cavity_dict["mode"]
-        self.spheres_raw = self.cavity_dict["spheres"]
-        self.cavity_alpha = self.cavity_dict["alpha"]
-        self.cavity_beta = self.cavity_dict["beta"]
-        self.cavity_sigma = self.cavity_dict["sigma"]
-
         # Validate atomic coordinates
         (
             self.atomic_symbols,
@@ -147,16 +139,25 @@ class MoleculeValidator:
         if self.unit == self.UNIT_ANGSTROM:
             self.atomic_coords = self.ang2bohr_array(self.atomic_coords)
 
-        # Validate cavity spheres
-        # dimensioned quantities (cavity_radii, cavity_coords, cavity_sigmas)
-        # are _already_ converted to atomic units
-        (
-            self.cavity_radii,
-            self.cavity_coords,
-            self.cavity_alphas,
-            self.cavity_betas,
-            self.cavity_sigmas,
-        ) = self.validate_cavity()
+        # Cavity related data
+        if "pcm" in user_dict["WaveFunction"]["environment"].lower():
+            self.cavity_dict = user_dict["PCM"]["Cavity"]
+            self.cavity_mode = self.cavity_dict["mode"]
+            self.spheres_raw = self.cavity_dict["spheres"]
+            self.cavity_alpha = self.cavity_dict["alpha"]
+            self.cavity_beta = self.cavity_dict["beta"]
+            self.cavity_sigma = self.cavity_dict["sigma"]
+
+            # Validate cavity spheres
+            # dimensioned quantities (cavity_radii, cavity_coords, cavity_sigmas)
+            # are _already_ converted to atomic units
+            (
+                self.cavity_radii,
+                self.cavity_coords,
+                self.cavity_alphas,
+                self.cavity_betas,
+                self.cavity_sigmas,
+            ) = self.validate_cavity()
 
         # Perform some sanity checks
         self.check_for_nuclear_singularities()
@@ -353,7 +354,7 @@ class MoleculeValidator:
 
             if radii_not_found:
                 raise ValueError(
-                    f"vdw-radius for {', '.join(radii_not_found)} not defined in the Mantina set."
+                    f"vdw-radius for {', '.join(radii_not_found)} not defined in the Mantina set. You should specify them in your input file."
                 )
 
             alphas = [self.cavity_alpha] * len(radii)

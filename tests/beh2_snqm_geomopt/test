@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from tester import *  # isort:skip
+
+options = script_cli()
+
+filters = {
+    SUM_OCCUPIED: rel_tolerance(1.0e-6),
+    E_KIN: rel_tolerance(1.0e-6),
+    E_EN: rel_tolerance(1.0e-6),
+    E_EE: rel_tolerance(1.0e-6),
+    E_X: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(1.0e-6),
+    E_EEXT: rel_tolerance(1.0e-6),
+    E_NEXT: rel_tolerance(1.0e-6),
+    E_EL: rel_tolerance(1.0e-6),
+    DIPOLE_MOMENT(1): abs_tolerance(1.0e-6),
+    DIPOLE_MOMENT_EL(1): abs_tolerance(1.0e-6),
+    DIPOLE_MOMENT_NUC(1): abs_tolerance(1.0e-6),
+}
+
+ierr = run(options, input_file="beh2_snqm_geomopt", filters=filters)
+
+# get reference optimized geometry
+with Path("reference/beh2_snqm_geomopt.json").open("r") as o:
+    ref_geom = json.load(o)["output"]["iteration_2"]["results"]["geometry"]
+
+# read optimized geometry during the test
+with Path("beh2_snqm_geomopt.json").open("r") as o:
+    geom = json.load(o)["output"]["iteration_2"]["results"]["geometry"]
+
+passed, message = compare_values(
+    geom,
+    ref_geom,
+    "Final optimized geometry",
+    rtol=1.0e-6,
+    atol=1.0e-6,
+)
+sys.stdout.write(f"{message}\n")
+ierr += 0 if passed else 137
+
+sys.exit(ierr)

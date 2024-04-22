@@ -37,6 +37,8 @@
 #include "chemistry/Molecule.h"
 #include "chemistry/PhysicalConstants.h"
 
+#include "vc_sqnm/mrchem_optimizer.hpp"
+
 // Initializing global variables
 mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
@@ -57,24 +59,37 @@ int main(int argc, char **argv) {
     const auto &scf_inp = json_inp["scf_calculation"];
     const auto &rsp_inp = json_inp["rsp_calculations"];
     const auto &con_inp = json_inp["constants"];
+    const auto &geopt_inp = json_inp["geom_opt"];
 
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
     if (json_inp["printer"]["print_constants"]) PhysicalConstants::Print();
 
     Timer timer;
-    Molecule mol;
-    driver::init_molecule(mol_inp, mol);
-    auto scf_out = driver::scf::run(scf_inp, mol);
-    json rsp_out = {};
-    if (scf_out["success"]) {
-        for (auto &i : rsp_inp.items()) rsp_out[i.key()] = driver::rsp::run(i.value(), mol);
-    }
-    mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     json json_out;
-    // Name and version of the output schema
-    json_out["schema_name"] = "mrchem_output";
-    json_out["schema_version"] = 1;
+
+    if (geopt_inp["run"]) {
+        json_out = optimize_positions(scf_inp, mol_inp, geopt_inp, json_inp["printer"]["file_name"]);
+        mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
+    } else {
+        Molecule mol;
+        driver::init_molecule(mol_inp, mol);
+        auto scf_out = driver::scf::run(scf_inp, mol);
+        json rsp_out = {};
+        if (scf_out["success"]) {
+            for (auto &i : rsp_inp.items()) rsp_out[i.key()] = driver::rsp::run(i.value(), mol);
+        }
+        mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
+        // Name and version of the output schema
+        json_out["schema_name"] = "mrchem_output";
+        json_out["schema_version"] = 1;
+        // Computed values
+        json_out["scf_calculation"] = scf_out;
+        json_out["rsp_calculations"] = rsp_out;
+        json_out["properties"] = driver::print_properties(mol);
+        // Global success field: true if all requested calculations succeeded
+        json_out["success"] = detail::all_success(json_out);
+    }
     // Provenance
     json_out["provenance"] = {{"creator", "MRChem"},
                               {"version", program_version()},
@@ -82,15 +97,9 @@ int main(int argc, char **argv) {
                               {"mpi_processes", mrcpp::mpi::world_size},
                               {"total_cores", mrcpp::mpi::world_size * mrcpp::omp::n_threads},
                               {"routine", "mrchem.x"}};
-    // Computed values
-    json_out["scf_calculation"] = scf_out;
-    json_out["rsp_calculations"] = rsp_out;
-    json_out["properties"] = driver::print_properties(mol);
-    // Global success field: true if all requested calculations succeeded
-    json_out["success"] = detail::all_success(json_out);
+
     mrenv::finalize(timer.elapsed());
     mrenv::dump_json(json_inp, json_out);
-
     mrcpp::mpi::finalize();
     return EXIT_SUCCESS;
 }

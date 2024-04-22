@@ -25,16 +25,11 @@
 
 import math
 
-from .helpers import (
-    write_scf_fock,
-    write_scf_guess,
-    write_scf_solver,
-    write_scf_properties,
-    write_scf_plot,
-    write_rsp_calc,
-    parse_wf_method,
-)
-from .periodictable import PeriodicTable as PT, PeriodicTableByZ as PT_Z
+from .helpers import (parse_wf_method, write_rsp_calc, write_scf_fock,
+                      write_scf_guess, write_scf_plot, write_scf_properties,
+                      write_scf_solver)
+from .periodictable import PeriodicTable as PT
+from .periodictable import PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
 
 
@@ -62,6 +57,7 @@ def translate_input(user_dict):
         "molecule": mol_dict,
         "scf_calculation": scf_dict,
         "rsp_calculations": rsp_dict,
+        "geom_opt": user_dict['GeometryOptimizer'],
         "constants": user_dict["Constants"],
     }
     return program_dict
@@ -72,6 +68,7 @@ def write_mpi(user_dict):
         "numerically_exact": user_dict["MPI"]["numerically_exact"],
         "shared_memory_size": user_dict["MPI"]["shared_memory_size"],
         "bank_size": user_dict["MPI"]["bank_size"],
+        "omp_threads": user_dict["MPI"]["omp_threads"],
     }
     return mpi_dict
 
@@ -127,7 +124,8 @@ def write_molecule(user_dict, origin):
         "charge": mol.charge,
         "coords": mol.get_coords_in_program_syntax(),
     }
-    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+
+    if "pcm" in user_dict["WaveFunction"]["environment"].lower():
         mol_dict["cavity"] = {
             "spheres": mol.get_cavity_in_program_syntax(),
         }

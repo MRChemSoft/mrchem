@@ -25,9 +25,8 @@
 
 #pragma once
 
+#include "environment/GPESolver.h"
 #include "qmoperators/QMPotential.h"
-
-#include "environment/SCRF.h"
 
 namespace mrchem {
 /** @class ReactionPotential
@@ -42,24 +41,22 @@ namespace mrchem {
 class ReactionPotential : public QMPotential {
 public:
     /** @brief Initializes the ReactionPotential class.
-     *  @param scrf A SCRF instance which contains the parameters needed to compute the ReactionPotential.
+     *  @param scrf A GPESolver instance which contains the parameters needed to compute the ReactionPotential.
      *  @param Phi A pointer to a vector which contains the orbitals optimized in the SCF procedure.
      */
-    explicit ReactionPotential(std::unique_ptr<SCRF> scrf, std::shared_ptr<mrchem::OrbitalVector> Phi = nullptr, bool mpi_share = false);
+    explicit ReactionPotential(std::unique_ptr<GPESolver> scrf, std::shared_ptr<mrchem::OrbitalVector> Phi = nullptr, bool mpi_share = false);
     ~ReactionPotential() override = default;
 
-    SCRF *getHelper() { return this->helper.get(); }
+    GPESolver *getSolver() { return this->solver.get(); }
 
-    /** @brief Updates the helper.mo_residual member variable.
-     *
-     * This variable is used to set the convergence criterion in the dynamic convergence method.
-     */
-    void updateMOResidual(double const err_t) { this->helper->mo_residual = err_t; }
+    /** @brief Updates the solver.mo_residual member variable. This variable is used to set the convergence criterion in
+     * the dynamic convergence method. */
+    void updateMOResidual(double const err_t) { this->solver->mo_residual = err_t; }
 
     friend class ReactionOperator;
 
 protected:
-    std::unique_ptr<SCRF> helper;            ///< A SCRF instance used to compute the ReactionPotential.
+    std::unique_ptr<GPESolver> solver;       //!< A GPESolver instance used to compute the ReactionPotential.
     std::shared_ptr<OrbitalVector> orbitals; ///< Unperturbed orbitals defining the ground-state electron density for the SCRF procedure.
 
     void setup(double prec) override;

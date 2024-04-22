@@ -231,7 +231,13 @@ User input reference
   
     **Default** ``-1``
   
- :Basis: Define polynomial basis. 
+   :omp_threads: Force the number of OpenMP threads.
+
+    **Type** ``int``
+
+    **Default** ``-1``
+
+    :Basis: Define polynomial basis. 
 
   :red:`Keywords`
    :order: Polynomial order of multiwavelet basis. Negative value means it will be set automatically based on the world precision. 
@@ -329,14 +335,14 @@ User input reference
     **Predicates**
       - ``value.lower() in ['none', 'zora', 'nzora']``
   
-   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. 
+   :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively. 
   
     **Type** ``str``
   
     **Default** ``none``
   
     **Predicates**
-      - ``value.lower() in ['none', 'pcm']``
+      - ``value.lower() in ['none', 'pcm', 'pcm_pb', 'pcm_lpb']``
   
    :nuclear_model: Type of nucleus model. Point-like (numerical smoothing): HFYGB (default), parabola or minimal. Finite models (physical smoothing): Gaussian or Homogeneous sphere Finite models are derived from nuclear RMS radius, Visscher (1997) 
   
@@ -422,12 +428,6 @@ User input reference
   
     **Default** ``False``
   
-   :geometric_derivative: Compute geometric derivative. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
    :plot_density: Plot converged electron density. 
   
     **Type** ``bool``
@@ -439,6 +439,12 @@ User input reference
     **Type** ``List[int]``
   
     **Default** ``[]``
+  
+   :geometric_derivative: Compute geometric derivative. 
+  
+    **Type** ``bool``
+  
+    **Default** ``user['GeometryOptimizer']['run']``
   
  :ExternalFields: Define external electromagnetic fields. 
 
@@ -707,12 +713,6 @@ User input reference
     **Predicates**
       - ``value[-1] != '/'``
   
-   :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
-  
-    **Type** ``bool``
-  
-    **Default** ``False``
-  
    :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. Note: must be given in quotes if there are slashes in the path "path/to/orbitals". 
   
     **Type** ``str``
@@ -721,6 +721,12 @@ User input reference
   
     **Predicates**
       - ``value[-1] != '/'``
+  
+   :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
+  
+    **Type** ``bool``
+  
+    **Default** ``user['GeometryOptimizer']['use_previous_guess']``
   
    :orbital_thrs: Convergence threshold for orbital residuals. 
   
@@ -860,6 +866,79 @@ User input reference
       
         **Default** ``user['SCF']['kain']``
       
+   :Solvent: Parameters for the Self-Consistent Reaction Field optimization. 
+  
+      :red:`Sections`
+       :Permittivity: Parameters for the permittivity function. 
+      
+            :red:`Keywords`
+             :epsilon_in: Permittivity inside the cavity. 1.0 is the permittivity of free space, anything other than this is undefined behaviour. 
+            
+              **Type** ``float``
+            
+              **Default** ``1.0``
+            
+             :formulation: Formulation of the Permittivity function. Currently only the exponential is available. 
+            
+              **Type** ``str``
+            
+              **Default** ``exponential``
+            
+              **Predicates**
+                - ``value.lower() in ['exponential']``
+            
+            :red:`Sections`
+             :epsilon_out: Parameters for the continuum solvent outside the cavity. 
+            
+                    :red:`Keywords`
+                     :nonequilibrium: Whether to use the nonequilibrium formulation of response, *i.e.* use the dynamic permittivity for the calculation of the response reaction field. Defaults to false. 
+                    
+                      **Type** ``bool``
+                    
+                      **Default** ``False``
+                    
+                     :static: Static permittivity outside the cavity. This is characteristic of the solvent used. 
+                    
+                      **Type** ``float``
+                    
+                      **Default** ``1.0``
+                    
+                     :dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calculations. Defaults to the same value as `epsilon_static`. 
+                    
+                      **Type** ``float``
+                    
+                      **Default** ``user['PCM']['Solvent']['Permittivity']['epsilon_out']['static']``
+                    
+       :DebyeHuckelScreening: Parameters for the Debye-Huckel screening factor 
+      
+            :red:`Keywords`
+             :ion_strength: Ionic strength of the electrolyte in mol/L. This represents the concentration of the ions in the bulk solvent. 
+            
+              **Type** ``float``
+            
+              **Default** ``1.0``
+            
+             :ion_radius: Amount with which the vdw-radius of the atoms will be increased. The screening factor will have an area of effect that is often going to be larger than the vdw-cavity, but centered in the same atoms. 
+            
+              **Type** ``float``
+            
+              **Default** ``0.0``
+            
+             :ion_width: Width of the transition between the solute and the ion accessible part. 
+            
+              **Type** ``float``
+            
+              **Default** ``0.2``
+            
+             :formulation: formulation of the debye-huckel screening factor. Currently only the variable factor is implemented. ``variable``: implement the screening functions as  k = (1-C_ion)k_out 
+            
+              **Type** ``str``
+            
+              **Default** ``variable``
+            
+              **Predicates**
+                - ``value.lower() in ['variable']``
+            
    :Cavity: Define the interlocking spheres cavity. 
   
       :red:`Keywords`
@@ -896,46 +975,57 @@ User input reference
       
         **Default** ``0.2``
       
-   :Permittivity: Parameters for the permittivity function. 
+ :GeometryOptimizer: Includes parameters related to the internal geometry optimization using the SQNM (Stabilized Quasi-Newton Method) for noisy PES. Geometry optimizations require accurate forces. Consider setting world_prec to 1e-5 to 1e-7. Convergence issues can usually be solved by increasing the precision of the SCF calculation. If that does not work, try setting the initial step size manually. 
+
+  :red:`Keywords`
+   :run: Run optimizer. Otherwise single point energy/properties are computed. 
   
-      :red:`Keywords`
-       :epsilon_in: Permittivity inside the cavity. 1.0 is the permittivity of free space, anything other than this is undefined behaviour. 
-      
-        **Type** ``float``
-      
-        **Default** ``1.0``
-      
-       :formulation: Formulation of the Permittivity function. Currently only the exponential is available. 
-      
-        **Type** ``str``
-      
-        **Default** ``exponential``
-      
-        **Predicates**
-          - ``value.lower() in ['exponential']``
-      
-      :red:`Sections`
-       :epsilon_out: Parameters for the continuum solvent outside the cavity. 
-      
-            :red:`Keywords`
-             :nonequilibrium: Whether to use the nonequilibrium formulation of response, *i.e.* use the dynamic permittivity for the calculation of the response reaction field. Defaults to false. 
-            
-              **Type** ``bool``
-            
-              **Default** ``False``
-            
-             :static: Static permittivity outside the cavity. This is characteristic of the solvent used. 
-            
-              **Type** ``float``
-            
-              **Default** ``1.0``
-            
-             :dynamic: Dynamic permittivity outside the cavity. This is characteristic of the solvent used and relevant only in response calculations. Defaults to the same value as `epsilon_static`. 
-            
-              **Type** ``float``
-            
-              **Default** ``user['PCM']['Permittivity']['epsilon_out']['static']``
-            
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :use_previous_guess: Start each SCF from the converged orbitals from the previous geometry step. The guess_type will change to "mw" after the first iteration, and the intermediate orbitals will be stored in the "orbitals" directory. If toggled off, start over using the same initial guess method as in the first iteration. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :init_step_size: Initial step size. For systems with hard bonds (e.g. C-C) use a value between and 1.0 and 2.5. If a system only contains weaker bonds a value up to 5.0 may speed up the convergence. Use a small negative number (should be between -0.1 and -0.5) for an automatic guess. The optimal step size is the inverse of the largest eigenvalue of the hessian matrix. 
+  
+    **Type** ``float``
+  
+    **Default** ``-0.5``
+  
+   :minimal_step_size: Minimal step size. It rarely makes sense to change it. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.01``
+  
+   :max_history_length: Maximum length of history list. Energies and forces from the previous n geometry optimization iterations are used to estimate the hessian matrix. Use a value between 2 and 20. A lower value makes the SQNM algorithm behave more like steepest descent and slows down convergence. But it can handle more noise in the energies and forces. It rarely makes sense to change it. 
+  
+    **Type** ``int``
+  
+    **Default** ``10``
+  
+   :subspace_tolerance: Lower limit on linear dependencies of basis vectors in history listSubspace tolerance. Use a number between 1e-9 and 1e-1. A high subspace tolerance slows down convergence but improves numerical stability when the energies and forces contain a lot of noise. It rarely makes sense to change it. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.001``
+  
+   :max_iter: Maximum number of geometry optimization iterations. 
+  
+    **Type** ``int``
+  
+    **Default** ``100``
+  
+   :max_force_component: The geometry optimization stopps when the absolute value of all force components is smaller than this keyword. A value between 1e-3 and 1e-4 is tight enough for most applications. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.005``
+  
  :Constants: Physical and mathematical constants used by MRChem
 
   :red:`Keywords`
@@ -998,6 +1088,36 @@ User input reference
     **Type** ``float``
   
     **Default** ``2.5417464739297717``
+  
+   :boltzmann_constant: | Boltzmann constant in (unit: J K^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``1.380649e-23``
+  
+   :elementary_charge: | Elementary charge in (unit: C). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``1.602176634e-19``
+  
+   :e0: | Permittivity of free space (unit: F m^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``8.8541878128e-12``
+  
+   :N_a: | Avogadro constant (unit: mol^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``6.02214076e+23``
+  
+   :meter2bohr: | conversion factor from meter to Bohr radius (unit: m^-1). Affected code: Value of the Debye-Huckel screening parameter in the Poisson-Boltzmann equation.
+  
+    **Type** ``float``
+  
+    **Default** ``18897261246.2577``
   
  :Elements: list of elements with data
 

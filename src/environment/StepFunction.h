@@ -66,14 +66,14 @@ public:
     auto getValueIn() const { return this->in; }
     auto getValueOut() const { return this->out; }
 
-    std::shared_ptr<Cavity> getCavity() const { return this->cavity; }
+    std::shared_ptr<Cavity> getCavity_p() const { return this->cavity_p; }
 
     virtual void printParameters() const { detail::print_header("Step function", "Standard", getValueIn(), getValueOut()); }
 
 protected:
-    double in;                      //!< Value of the function inside the #cavity.
-    double out;                     //!< value of the function outside the #cavity.
-    std::shared_ptr<Cavity> cavity; //!< A Cavity class instance.
+    double in;                        //!< Value of the function inside the #cavity.
+    double out;                       //!< value of the function outside the #cavity.
+    std::shared_ptr<Cavity> cavity_p; //!< A shared pointer to a Cavity class instance.
 };
 
 } // namespace mrchem

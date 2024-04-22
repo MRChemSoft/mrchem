@@ -77,6 +77,8 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
+    diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+    func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);
 

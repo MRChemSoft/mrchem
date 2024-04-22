@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "SCRF.h"
+#include "GPESolver.h"
 
 #include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
@@ -48,7 +48,7 @@ using DerivativeOperator_p = std::shared_ptr<mrcpp::DerivativeOperator<3>>;
 
 namespace mrchem {
 
-SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, SCRFDensityType density_type)
+GPESolver::GPESolver(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, DerivativeOperator_p D, int kain_hist, int max_iter, bool dyn_thrs, SCRFDensityType density_type)
         : dynamic_thrs(dyn_thrs)
         , density_type(density_type)
         , max_iter(max_iter)
@@ -59,23 +59,23 @@ SCRF::SCRF(const Permittivity &e, const Density &rho_nuc, PoissonOperator_p P, D
         , derivative(D)
         , poisson(P) {}
 
-SCRF::~SCRF() {
+GPESolver::~GPESolver() {
     this->rho_nuc.free(NUMBER::Real);
     clear();
 }
 
-void SCRF::clear() {
+void GPESolver::clear() {
     this->apply_prec = -1.0;
 }
 
-double SCRF::setConvergenceThreshold(double prec) {
+double GPESolver::setConvergenceThreshold(double prec) {
     // converge_thrs should be in the interval [prec, 1.0]
     this->conv_thrs = prec;
     if (this->dynamic_thrs and this->mo_residual > 10 * prec) this->conv_thrs = std::min(1.0, this->mo_residual);
     return this->conv_thrs;
 }
 
-void SCRF::computeDensities(const Density &rho_el, Density &rho_out) {
+void GPESolver::computeDensities(const Density &rho_el, Density &rho_out) {
     Timer timer;
 
     switch (this->density_type) {
@@ -96,13 +96,13 @@ void SCRF::computeDensities(const Density &rho_el, Density &rho_out) {
     print_utils::qmfunction(3, "Vacuum density", rho_out, timer);
 }
 
-void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
+void GPESolver::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) {
 
     auto d_V = mrcpp::gradient(*derivative, potential.real()); // FunctionTreeVector
     resetComplexFunction(out_gamma);
 
     for (int d = 0; d < 3; d++) {
-        auto C_pin = this->epsilon.getCavity();
+        auto C_pin = this->epsilon.getCavity_p();
         mrcpp::AnalyticFunction<3> d_cav(C_pin->getGradVector()[d]);
         mrcpp::ComplexFunction cplxfunc_prod;
         mrcpp::cplxfunc::multiply(cplxfunc_prod, get_func(d_V, d), d_cav, this->apply_prec, 1);
@@ -118,7 +118,7 @@ void SCRF::computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunctio
     mrcpp::clear(d_V, true);
 }
 
-mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma, const Density &rho_el) {
+mrcpp::ComplexFunction GPESolver::solvePoissonEquation(const mrcpp::ComplexFunction &in_gamma, const Density &rho_el) {
     mrcpp::ComplexFunction Poisson_func;
     mrcpp::ComplexFunction rho_eff;
     mrcpp::ComplexFunction first_term;
@@ -139,7 +139,7 @@ mrcpp::ComplexFunction SCRF::solvePoissonEquation(const mrcpp::ComplexFunction &
     return Vr_np1;
 }
 
-void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFunction &func, KAIN &kain) {
+void GPESolver::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFunction &func, KAIN &kain) {
     OrbitalVector phi_n(0);
     OrbitalVector dPhi_n(0);
     phi_n.push_back(Orbital(SPIN::Paired));
@@ -160,14 +160,14 @@ void SCRF::accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFu
     dPhi_n.clear();
 }
 
-void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, const Density &rho_el) {
+void GPESolver::runMicroIterations(const mrcpp::ComplexFunction &V_vac, const Density &rho_el) {
     KAIN kain(this->history);
     kain.setLocalPrintLevel(10);
 
     mrcpp::print::separator(3, '-');
+    auto update = 10.0, norm = 1.0;
 
-    double update = 10.0, norm = 1.0;
-    int iter = 1;
+    auto iter = 1;
     while (update >= this->conv_thrs && iter <= max_iter) {
         Timer t_iter;
         // solve the poisson equation
@@ -197,15 +197,19 @@ void SCRF::nestedSCRF(const mrcpp::ComplexFunction &V_vac, const Density &rho_el
         Vr_np1.free(NUMBER::Real);
 
         printConvergenceRow(iter, norm, update, t_iter.elapsed());
+
+        // compute new PB term
+        if (update < this->conv_thrs) break;
         iter++;
     }
+
     if (iter > max_iter) println(0, "Reaction potential failed to converge after " << iter - 1 << " iterations, residual " << update);
     mrcpp::print::separator(3, '-');
 
     kain.clear();
 }
 
-void SCRF::printConvergenceRow(int i, double norm, double update, double time) const {
+void GPESolver::printConvergenceRow(int i, double norm, double update, double time) const {
     auto pprec = Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
     auto w1 = 9;
@@ -229,7 +233,7 @@ void SCRF::printConvergenceRow(int i, double norm, double update, double time) c
     println(3, o_txt.str());
 }
 
-mrcpp::ComplexFunction &SCRF::setup(double prec, const Density &rho_el) {
+mrcpp::ComplexFunction &GPESolver::solveEquation(double prec, const Density &rho_el) {
     this->apply_prec = prec;
     Density rho_tot(false);
     computeDensities(rho_el, rho_tot);
@@ -253,51 +257,34 @@ mrcpp::ComplexFunction &SCRF::setup(double prec, const Density &rho_el) {
     // update the potential/gamma before doing anything with them
 
     Timer t_scrf;
-    nestedSCRF(V_vac, rho_el);
+    runMicroIterations(V_vac, rho_el);
     print_utils::qmfunction(3, "Reaction potential", this->Vr_n, t_scrf);
     return this->Vr_n;
 }
 
-auto SCRF::computeEnergies(const Density &rho_el) -> std::tuple<double, double> {
+auto GPESolver::computeEnergies(const Density &rho_el) -> std::tuple<double, double> {
     auto Er_nuc = 0.5 * mrcpp::cplxfunc::dot(this->rho_nuc, this->Vr_n).real();
-
     auto Er_el = 0.5 * mrcpp::cplxfunc::dot(rho_el, this->Vr_n).real();
     return {Er_el, Er_nuc};
 }
 
-void SCRF::resetComplexFunction(mrcpp::ComplexFunction &function) {
+void GPESolver::resetComplexFunction(mrcpp::ComplexFunction &function) {
     if (function.hasReal()) function.free(NUMBER::Real);
     if (function.hasImag()) function.free(NUMBER::Imag);
     function.alloc(NUMBER::Real);
 }
 
-void SCRF::printParameters() const {
-    std::stringstream o_iter;
-    if (this->max_iter > 0) {
-        o_iter << this->max_iter;
-    } else {
-        o_iter << "Off";
-    }
-
-    std::stringstream o_kain;
-    if (this->history > 0) {
-        o_kain << this->history;
-    } else {
-        o_kain << "Off";
-    }
-
+void GPESolver::printParameters() const {
     nlohmann::json data = {
-        {"Method                ", "SCRF"},
-        {"Optimizer             ", "Potential"},
-        {"Max iterations        ", max_iter},
-        {"KAIN solver           ", o_kain.str()},
-        {"Density type          ", density_type},
-        {"Dynamic threshold     ", (dynamic_thrs) ? "On" : "Off"},
+        {"Method                ", this->solver_name},
+        {"Density               ", this->density_type},
+        {"Max iterations        ", this->max_iter},
+        {"KAIN solver           ", (this->history > 0) ? std::to_string(this->history) : "Off"},
+        {"Dynamic threshold     ", (this->dynamic_thrs) ? "On" : "Off"},
     };
 
     mrcpp::print::separator(3, '~');
     print_utils::json(3, data, false);
     mrcpp::print::separator(3, '~');
 }
-
 } // namespace mrchem

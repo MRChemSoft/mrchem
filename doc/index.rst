@@ -42,6 +42,8 @@ Features in MRChem-1.1:
         - Electric field
     + Solvent effects
         - Cavity-free PCM
+        - Poisson-Boltzmann PCM
+        - Linearized Poisson-Boltzmann PCM
 * Properties:
     + Ground state energy
     + Dipole moment

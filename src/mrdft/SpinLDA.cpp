@@ -139,5 +139,4 @@ mrcpp::FunctionTreeVector<3> SpinLDA::postprocess(mrcpp::FunctionTreeVector<3> &
     out_vec.push_back(std::make_tuple(1.0, &v_b));
     return out_vec;
 }
-
 } // namespace mrdft

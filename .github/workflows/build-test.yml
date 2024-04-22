@@ -42,19 +42,19 @@ jobs:
           activate-environment: mrchem-gha
           environment-file: .github/mrchem-gha.yml
           channel-priority: true
-          python-version: 3.6
+          python-version: 3.9
           use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
 
     - name: Configure
       shell: bash -l {0}
       run: |
         python ./setup --type=$BUILD_TYPE --omp --arch-flags=false --generator=Ninja --prefix=$GITHUB_WORKSPACE/Software/MRChem build
-        
+
     - name: Build
       shell: bash -l {0}
       run: |
         cmake --build build --config $BUILD_TYPE --target install -- -v -d stats
-        
+
     - name: Test
       shell: bash -l {0}
       run: |

@@ -24,6 +24,7 @@
   },
   "mpi": {                                   # Section for MPI specification
     "bank_size": int,                        # Number of MPI ranks in memory bank
+    "omp_threads": int,                      # Number of omp threads
     "numerically_exact": bool,               # Guarantee MPI invariant results
     "shared_memory_size": int                # Size (MB) of MPI shared memory blocks
   },

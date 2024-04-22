@@ -130,6 +130,7 @@ void mrenv::init_mpi(const json &json_mpi) {
     mrcpp::mpi::numerically_exact = json_mpi["numerically_exact"];
     mrcpp::mpi::shared_memory_size = json_mpi["shared_memory_size"];
     mrcpp::mpi::bank_size = json_mpi["bank_size"];
+    mrcpp::mpi::omp_threads = json_mpi["omp_threads"];
     mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 

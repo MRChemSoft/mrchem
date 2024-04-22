@@ -34,7 +34,7 @@
 namespace mrchem {
 /** @class Cavity
  * @brief Interlocking spheres cavity centered on the nuclei of the molecule.
- * The Cavity class represents the following function \cite Fosso-Tande2013
+ * @details The Cavity class represents the following function \cite Fosso-Tande2013
  *
  * \f[
  *    C(\mathbf{r})   = 1 - \prod^N_{i=1} (1-C_i(\mathbf{r})) \\
@@ -59,12 +59,13 @@ namespace mrchem {
  *  - \f$R_{0,i}\f$ is the atomic radius. By default, the van der Waals radius.
  *  - \f$\alpha_{i}\f$ is a scaling factor. By default, 1.1
  *  - \f$\beta_{i}\f$ is a width scaling factor. By default, 0.5
- *  - \f$\sigma_{i}\f$ is the width. By default, 0.2
+ *  - \f$\sigma_{i}\f$ is the width. By default, 0.2 bohr
  */
 
 class Cavity final : public mrcpp::RepresentableFunction<3> {
 public:
     Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, const std::vector<double> &alphas, const std::vector<double> &betas, const std::vector<double> &sigmas);
+
     /** @brief Initializes the members of the class and constructs the analytical gradient vector of the Cavity.
      *
      * This CTOR applies a single width factor to the cavity and **does** not modify the radii. That is, in the formula:
@@ -77,8 +78,17 @@ public:
      */
     Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<double> &R, double sigma)
             : Cavity(coords, R, std::vector<double>(R.size(), 1.0), std::vector<double>(R.size(), 0.0), std::vector<double>(R.size(), sigma)) {}
+
     double evalf(const mrcpp::Coord<3> &r) const override;
+
     auto getGradVector() const { return this->gradvector; }
+
+    std::vector<mrcpp::Coord<3>> getCoordinates() const { return this->centers; } //!< Returns #centers.
+    std::vector<double> getOriginalRadii() const { return this->radii_0; }        //!< Returns #radii_0.
+    std::vector<double> getRadii() const { return this->radii; }                  //!< Returns #radii.
+    std::vector<double> getRadiiScalings() const { return this->alphas; }         //!< Returns #alphas.
+    std::vector<double> getWidths() const { return this->sigmas; }                //!< Returns #sigmas.
+    std::vector<double> getWidthScalings() const { return this->betas; }          //!< Returns #betas.
 
     /** @brief Print parameters */
     void printParameters() const;

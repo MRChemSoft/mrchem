@@ -23,6 +23,7 @@
 # <https://mrchem.readthedocs.io/>
 #
 
+from math import sqrt
 from pathlib import Path
 
 from .CUBEparser import parse_files
@@ -72,7 +73,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
     }
 
     # Reaction
-    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+    if user_dict["WaveFunction"]["environment"].lower() != "none":
         fock_dict["reaction_operator"] = _reaction_operator_handler(user_dict)
 
     # Coulomb
@@ -128,21 +129,42 @@ def _reaction_operator_handler(user_dict, rsp=False):
     else:
         density_type = 2
 
-    return {
+    # reaction field operator settings common to all continuum models
+    reo_dict = {
+        "solver_type": "Generalized_Poisson",
         "poisson_prec": user_dict["world_prec"],
         "kain": user_dict["PCM"]["SCRF"]["kain"],
         "max_iter": user_dict["PCM"]["SCRF"]["max_iter"],
         "dynamic_thrs": user_dict["PCM"]["SCRF"]["dynamic_thrs"],
         # if doing a response calculation, then density_type is set to 1 (electronic only)
         "density_type": 1 if rsp else density_type,
-        "epsilon_in": user_dict["PCM"]["Permittivity"]["epsilon_in"],
-        "epsilon_static": user_dict["PCM"]["Permittivity"]["epsilon_out"]["static"],
-        "epsilon_dynamic": user_dict["PCM"]["Permittivity"]["epsilon_out"]["dynamic"],
-        "nonequilibrium": user_dict["PCM"]["Permittivity"]["epsilon_out"][
+        "epsilon_in": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_in"],
+        "epsilon_static": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"]["static"],
+        "epsilon_dynamic": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"]["dynamic"],
+        "nonequilibrium": user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"][
             "nonequilibrium"
         ],
-        "formulation": user_dict["PCM"]["Permittivity"]["formulation"],
+        "formulation": user_dict["PCM"]["Solvent"]["Permittivity"]["formulation"],
+        "kappa_out": 0.0,
+        "ion_radius": user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["ion_radius"],
+        "ion_width": user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["ion_width"],
+        "DHS-formulation": user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["formulation"],
     }
+
+    # ionic solvent continuum model
+    ionic_model = user_dict["WaveFunction"]["environment"].lower().split("_")[-1]
+    if ionic_model in ("pb", "lpb"):
+        permittivity = user_dict["PCM"]["Solvent"]["Permittivity"]["epsilon_out"]["static"]
+        ionic_strength = user_dict["PCM"]["Solvent"]["DebyeHuckelScreening"]["ion_strength"]
+        kappa_out = compute_kappa(user_dict["Constants"], permittivity, ionic_strength)
+        reo_dict |= {
+            "kappa_out": kappa_out,
+            "solver_type": "Poisson-Boltzmann"
+            if ionic_model == "pb"
+            else "Linearized_Poisson-Boltzmann",
+        }
+
+    return reo_dict
 
 
 def write_scf_guess(user_dict, wf_dict):
@@ -422,7 +444,7 @@ def write_rsp_fock(user_dict, wf_dict):
         }
 
     # Reaction
-    if user_dict["WaveFunction"]["environment"].lower() == "pcm":
+    if user_dict["WaveFunction"]["environment"].lower() != "none":
         fock_dict["reaction_operator"] = _reaction_operator_handler(user_dict, rsp=True)
 
     return fock_dict
@@ -547,3 +569,19 @@ def parse_wf_method(user_dict):
         "dft_funcs": dft_funcs,
     }
     return wf_dict
+
+
+def compute_kappa(constants, eps, I):
+    kb = constants["boltzmann_constant"]
+    e = constants["elementary_charge"]
+    e_0 = constants["e0"]
+    N_a = constants["N_a"]
+    m2au = constants["meter2bohr"]
+    T = 298.15
+
+    numerator = e_0 * eps * kb * T
+    denominator = 2.0 * (e**2) * N_a * 1000.0 * I
+
+    debye_length = sqrt(numerator / denominator) * m2au
+
+    return 1.0 / debye_length

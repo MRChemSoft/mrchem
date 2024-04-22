@@ -21,10 +21,37 @@ Permittivity
    :protected-members:
    :private-members: 
 
-SCRF
+DHScreening
 ------------
 
-.. doxygenclass:: mrchem::SCRF
+.. doxygenclass:: mrchem::DHScreening
+   :project: MRChem
+   :members:  
+   :protected-members:
+   :private-members: 
+
+GPESolver
+------------
+
+.. doxygenclass:: mrchem::GPESolver
+   :project: MRChem
+   :members:  
+   :protected-members:
+   :private-members: 
+
+PBESolver
+------------
+
+.. doxygenclass:: mrchem::PBESolver
+   :project: MRChem
+   :members:  
+   :protected-members:
+   :private-members: 
+
+LPBESolver
+------------
+
+.. doxygenclass:: mrchem::LPBESolver
    :project: MRChem
    :members:  
    :protected-members:

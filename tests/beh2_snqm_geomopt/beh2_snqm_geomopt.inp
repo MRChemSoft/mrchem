@@ -1,0 +1,18 @@
+world_prec = 1.0e-4
+
+WaveFunction {
+  method = lda
+}
+
+GeometryOptimizer{
+        run = true
+        max_force_component = 1e-2
+}
+
+Molecule {
+$coords
+ Be       0.047274        0.032162       -0.275106
+  H      -0.000377        2.549743       -0.704835
+  H      -0.000807       -2.442007       -0.685253
+$end
+}

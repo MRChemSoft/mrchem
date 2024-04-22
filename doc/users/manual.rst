@@ -42,3 +42,4 @@ in more detail in the sections below.
    user_ref
    qcengine
    program_json
+   geometry_optimization.rst

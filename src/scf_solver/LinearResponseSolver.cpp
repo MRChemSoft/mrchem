@@ -127,7 +127,7 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
             mrcpp::print::time(2, "Applying V_1", t_lap);
 
             t_lap.start();
-            orbital::orthogonalize(this->orth_prec, Psi_1, Phi_0);
+            mrcpp::mpifuncvec::orthogonalize(this->orth_prec, Psi_1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();

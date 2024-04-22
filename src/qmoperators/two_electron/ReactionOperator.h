@@ -29,30 +29,31 @@
 
 #include "ReactionPotentialD1.h"
 #include "ReactionPotentialD2.h"
-#include "environment/SCRF.h"
+#include "environment/GPESolver.h"
 
 /** @class ReactionOperator
  *
  * @brief Operator containing a single ReactionPotential
  *
  * This class is a simple TensorOperator realization of @class ReactionPotential.
+ *
  */
 
 namespace mrchem {
 class ReactionOperator final : public RankZeroOperator {
 public:
-    ReactionOperator(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p, bool mpi_share = false) {
-        potential = std::make_shared<ReactionPotentialD1>(std::move(scrf_p), Phi_p, mpi_share);
+    ReactionOperator(std::unique_ptr<GPESolver> gpesolver_p, std::shared_ptr<mrchem::OrbitalVector> Phi_p, bool mpi_share = false) {
+        potential = std::make_shared<ReactionPotentialD1>(std::move(gpesolver_p), Phi_p, mpi_share);
         // Invoke operator= to assign *this operator
         RankZeroOperator &V = (*this);
         V = potential;
         V.name() = "V_r";
     }
 
-    ReactionOperator(std::unique_ptr<SCRF> scrf_p, std::shared_ptr<mrchem::OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false) {
-        // check that the SCRF object uses the electronic density only
-        if (scrf_p->getDensityType() != SCRFDensityType::ELECTRONIC) MSG_ERROR("Invalid SCRF object passed: only electronic density in response");
-        potential = std::make_shared<ReactionPotentialD2>(std::move(scrf_p), Phi, X, Y, mpi_share);
+    ReactionOperator(std::unique_ptr<GPESolver> gpesolver_p, std::shared_ptr<mrchem::OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false) {
+        // check that the GPESolver object uses the electronic density only
+        if (gpesolver_p->getDensityType() != SCRFDensityType::ELECTRONIC) MSG_ERROR("Invalid SCRF object passed: only electronic density in response");
+        potential = std::make_shared<ReactionPotentialD2>(std::move(gpesolver_p), Phi, X, Y, mpi_share);
         // Invoke operator= to assign *this operator
         RankZeroOperator &V = (*this);
         V = potential;
@@ -61,7 +62,7 @@ public:
 
     ComplexDouble trace(OrbitalVector &Phi) { return RankZeroOperator::trace(Phi); }
 
-    SCRF *getHelper() { return this->potential->getHelper(); }
+    GPESolver *getSolver() { return this->potential->getSolver(); }
     std::shared_ptr<ReactionPotential> getPotential() { return this->potential; }
     void updateMOResidual(double const err_t) { this->potential->updateMOResidual(err_t); }
 
