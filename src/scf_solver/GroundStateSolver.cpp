@@ -472,7 +472,8 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
  */
 DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
     ComplexMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
-    DoubleVector occ = orbital::get_occupations(Phi_mom);
+    std::cout << "overlap: " << std::endl << overlap << std::endl;
+    DoubleVector occ = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
     // get all unique occupation numbers
     std::set<double> occupationNumbers(occ.begin(), occ.end());
     // for each unique occupation number, determine which orbitals should be assigned this occupation number
@@ -501,7 +502,7 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     // only consider overlap with orbitals with the current unique occupation number
     ComplexMatrix occOverlap = currOcc.asDiagonal() * overlap;
     ComplexVector p = occOverlap.colwise().norm();
-    std::cout << "p: " << p << std::endl;
+    std::cout << "p: " << std::endl << p << std::endl;
     // sort by highest overlap
     std::vector<std::pair<double, unsigned>> sortme;
     for (unsigned int q = 0; q < p.size(); ++q) {
