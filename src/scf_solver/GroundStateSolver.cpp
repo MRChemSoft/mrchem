@@ -316,12 +316,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         json_cycle["mo_residual"] = err_t;
 
         // MOM / IMOM
-        // save orbitals of last iteration (MOM) or first iteration (IMOM)
-        if (deltaSCFMethod == "IMOM" && nIter == 1) {
-            _deltaSCFOrbitals = Phi_n;
-        }
-        else if (deltaSCFMethod == "MOM") {
-            _deltaSCFOrbitals = Phi_n;
+        // save orbitals of last iteration for MOM
+        if (deltaSCFMethod == "MOM" && nIter > 1) {
+            Phi_mom = Phi_n;
         }
 
         // Update orbitals
