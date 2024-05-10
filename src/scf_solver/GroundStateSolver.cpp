@@ -221,6 +221,7 @@ void GroundStateSolver::reset() {
  *
  * @param mol: Molecule to optimize
  * @param F: FockBuilder defining the SCF equations
+ * @param Phi_mom: MOM/IMOM orbitals
  *
  * Optimize orbitals until convergence thresholds are met. This algorithm computes
  * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
@@ -242,7 +243,7 @@ void GroundStateSolver::reset() {
  * 11) Compute Fock matrix
  *
  */
-json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
+json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &Phi_mom) {
     printParameters("Optimize ground state orbitals");
 
     Timer t_tot;
@@ -315,12 +316,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_cycle["mo_residual"] = err_t;
 
         // MOM / IMOM
-        // save orbitals of last iteration (MOM) or first iteration (IMOM)
-        if (deltaSCFMethod == "IMOM" && nIter == 1) {
-            _deltaSCFOrbitals = Phi_n;
-        }
-        else if (deltaSCFMethod == "MOM") {
-            _deltaSCFOrbitals = Phi_n;
+        // save orbitals of last iteration for MOM
+        if (deltaSCFMethod == "MOM" && nIter > 1) {
+            Phi_mom = Phi_n;
         }
 
         // Update orbitals
@@ -328,28 +326,31 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         dPhi_n.clear();
 
         // MOM / IMOM
-        // get the new occupation vector for the current iteration
-        if (deltaSCFMethod == "MOM" || deltaSCFMethod == "IMOM") {
+        // get the new occupation vector for the current scf iteration
+        if (Phi_mom.size() > 0) {
             bool restricted = (orbital::size_doubly(Phi_n) != 0);
             if (restricted) {
-                DoubleVector occNew = getNewOccupations(Phi_n, _deltaSCFOrbitals);
-                std::cout << "occNew: " << occNew << std::endl;
+                DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
+                // std::cout << "occNew: " << occNew << std::endl;
                 orbital::set_occupations(Phi_n, occNew);
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
                 OrbitalVector Phi_n_copy = Phi_n;
-                OrbitalVector Phi_mom_copy = _deltaSCFOrbitals;
+                OrbitalVector Phi_mom_copy = Phi_mom;
                 auto Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
                 auto Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
                 DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
                 DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
-                std::cout << "occNew: " << occNew << std::endl;
+                // std::cout << "occNew: " << occNew << std::endl;
                 orbital::set_occupations(Phi_n, occNew);
             }
         }
+
+        // TODO: print occupations in each scf step (printlevel 2)
+        // TODO: keep MOM or just use IMOM?
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
@@ -500,7 +501,7 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     // only consider overlap with orbitals with the current unique occupation number
     ComplexMatrix occOverlap = currOcc.asDiagonal() * overlap;
     ComplexVector p = occOverlap.colwise().norm();
-    std::cout << "p: " << std::endl << p << std::endl;
+    // std::cout << "p: " << std::endl << p << std::endl;
     // sort by highest overlap
     std::vector<std::pair<double, unsigned>> sortme;
     for (unsigned int q = 0; q < p.size(); ++q) {

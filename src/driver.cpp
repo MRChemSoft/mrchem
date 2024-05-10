@@ -263,7 +263,10 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
     const auto &json_occ = json_scf["occupancies"];
+    // save the orbitals for MOM/IMOM before the initial guess energy is calculated due to localization/diagonalization
+    OrbitalVector Phi_mom;
     if (scf::guess_orbitals(json_guess, json_occ, mol)) {
+        if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") Phi_mom = mol.getOrbitals();
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
     } else {
@@ -312,7 +315,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setThreshold(orbital_thrs, energy_thrs);
         solver.setDeltaSCFMethod(deltascf_method);
 
-        json_out["scf_solver"] = solver.optimize(mol, F);
+        json_out["scf_solver"] = solver.optimize(mol, F, Phi_mom);
         json_out["success"] = json_out["scf_solver"]["converged"];
     }
 
@@ -411,15 +414,16 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
 
         for (int i = 0; i < nCH; i++){
           if (json_occ[i]["orbital"] >= Np){
-            std::cout << "Error, orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na << std::endl;
+            MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
+            return false;
           }
           if (json_occ[i]["occupancy"].size() == 2){
-            std::cout << "Warning, occupancies for beta orbitals ignored in restricted calculations" << std::endl;
+            MSG_WARN("Occupancies for alpha and beta orbitals are added together for restricted calculations");
           }
           core_orbitals(i) = json_occ[i]["orbital"];
           core_occupancies(i) = json_occ[i]["occupancy"][0];
-          double beta = json_occ[i]["occupancy"][1];
-          core_occupancies(i) += beta;
+          double beta_occ = json_occ[i]["occupancy"][1];
+          core_occupancies(i) += beta_occ;
         }
       }
       
@@ -435,10 +439,12 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
         // For each alpha orbital, set the orbital and take the first of the 2 occupancies
         for (int i = 0; i < nCH_in; i++){
           if (json_occ[i]["orbital"] >= Na){
-            std::cout << "Error, orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na << std::endl;
+            MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
+            return false;
           }
           if (json_occ[i]["occupancy"].size() == 1){
-            std::cout << "Error, occupancies for beta orbitals required for unrestricted calculations" << std::endl;
+            MSG_ERROR("Error, occupancies for beta orbitals required for unrestricted calculations");
+            return false;
           }
           core_orbitals(i) = json_occ[i]["orbital"];
           core_occupancies(i) = json_occ[i]["occupancy"][0];
@@ -446,7 +452,6 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
 
         // For each beta orbital, find the corresponding orbital index and take and the second of the 2 occupancies
         for (int i = 0; i < nCH_in; i++){
-        //std::cout << "occ " << json_occ[i]["orbital"] << " " << Na << " " << Na + int(json_occ[i]["orbital"]) << std::endl;
           core_orbitals(nCH_in + i) = Na + int(json_occ[i]["orbital"]);
           core_occupancies(nCH_in + i) = json_occ[i]["occupancy"][1];
         }
