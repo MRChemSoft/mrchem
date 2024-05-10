@@ -60,7 +60,7 @@ public:
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
     void setDeltaSCFMethod(const std::string method) { this-> deltaSCFMethod = method; }
 
-    nlohmann::json optimize(Molecule &mol, FockBuilder &F);
+    nlohmann::json optimize(Molecule &mol, FockBuilder &F, OrbitalVector &Phi_mom);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization
@@ -78,9 +78,6 @@ protected:
     bool needDiagonalization(int nIter, bool converged) const;
 
     DoubleVector getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom);
-
-private:
-    OrbitalVector _deltaSCFOrbitals;
 };
 
 } // namespace mrchem
