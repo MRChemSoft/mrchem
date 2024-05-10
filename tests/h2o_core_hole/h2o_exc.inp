@@ -1,6 +1,7 @@
 # vim:syntax=sh:
 
 world_prec = 1.0e-3                 # Overall relative precision
+world_size = 6                      # Size of simulation box 2^n
 
 MPI {
   numerically_exact = true          # Guarantee identical results in MPI
@@ -15,23 +16,17 @@ $end
 }
 
 WaveFunction {
-  method = DFT                      # Wave function method (HF or DFT)
+  method = PBE                      # Wave function method (HF or DFT)
 }
 
 OrbitalOccupancies {
   occupancies = "0 1 0"
 }
 
-DFT {
-$functionals
-PBE
-$end
-}
-
 SCF {
   run = true
   max_iter = 1
-  localize = false                   # Use canonical of localized orbitals
-  guess_type = mw              # Type of initial guess: none, mw, gto
+  localize = false                  # Use canonical of localized orbitals
+  guess_type = mw                   # Type of initial guess: none, mw, gto
   deltascf_method = IMOM
 }

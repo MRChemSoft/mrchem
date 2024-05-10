@@ -266,7 +266,9 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     // save the orbitals for MOM/IMOM before the initial guess energy is calculated due to localization/diagonalization
     OrbitalVector Phi_mom;
     if (scf::guess_orbitals(json_guess, json_occ, mol)) {
-        if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") Phi_mom = mol.getOrbitals();
+        if (json_scf.contains("scf_solver")) {
+            if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") Phi_mom = mol.getOrbitals();
+        }
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
     } else {
