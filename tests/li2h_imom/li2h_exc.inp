@@ -8,10 +8,11 @@ MPI {
 }
 
 Molecule {
+  charge = 1
 $coords
-O       0.0000  0.0000  -0.1250
-H      -1.4375  0.0000   1.0250
-H       1.4375  0.0000   1.0250
+Li    -5.46737452    2.65708721    0.38412463
+Li     2.48697407    1.97066310   -0.29143356
+H     -0.09374931   -1.62164958   -3.76992803
 $end
 }
 
@@ -20,13 +21,11 @@ WaveFunction {
 }
 
 OrbitalOccupancies {
-  occupancies = "0 1 0"
+  occupancies = "1 1 0"
 }
 
 SCF {
   run = true
-  max_iter = 1
-  localize = false                  # Use canonical of localized orbitals
   guess_type = mw                   # Type of initial guess: none, mw, gto
   deltascf_method = IMOM
 }

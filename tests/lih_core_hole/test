@@ -19,15 +19,9 @@ filters = {
     E_EEXT: rel_tolerance(1.0e-6),
     E_NEXT: rel_tolerance(1.0e-6),
     E_EL: rel_tolerance(1.0e-6),
-    # DIPOLE_MOMENT(1): abs_tolerance(1.0e-6),
-    # DIPOLE_MOMENT_EL(1): abs_tolerance(1.0e-6),
-    # DIPOLE_MOMENT_NUC(1): abs_tolerance(1.0e-6),
-    # QUADRUPOLE_MOMENT(1): abs_tolerance(1.0e-6),
-    # QUADRUPOLE_MOMENT_EL(1): abs_tolerance(1.0e-6),
-    # QUADRUPOLE_MOMENT_NUC(1): abs_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="h2o_gs", filters=filters)
-ierr = run(options, input_file="h2o_exc", filters=filters)
+ierr = run(options, input_file="lih_gs", filters=filters)
+ierr = run(options, input_file="lih_exc", filters=filters)
 
 sys.exit(ierr)
