@@ -224,6 +224,7 @@ def write_scf_guess(user_dict, wf_dict):
         "external_field": wf_dict["external_name"],
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
+        "rotate": scf_dict["guess_rotate"],
         "restricted": user_dict["WaveFunction"]["restricted"],
         "file_chk": f"{scf_dict['path_checkpoint']}/phi_scf",
         "file_basis": file_dict["guess_basis"],

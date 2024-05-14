@@ -449,6 +449,7 @@ The ``core`` and ``sad`` guesses are fully specified with the following keywords
       guess_prec = 1.0e-3                   # Numerical precision used in guess
       guess_type = sad_gto                  # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
       guess_screen = 12.0                   # Number of StdDev before a GTO is set to zero (sad_gto)
+      guess_rotate = true                   # Localize/Diagonalize guess orbitals before calculating the initial guess energy
     }
 
 Checkpointing

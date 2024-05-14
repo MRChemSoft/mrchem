@@ -405,6 +405,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto environment = json_guess["environment"];
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
+    auto rotate = json_guess["rotate"];
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
@@ -425,14 +426,14 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto &F_mat = mol.getFockMatrix();
 
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
-    if (localize) orbital::localize(prec, Phi, F_mat);
+    if (localize && rotate) orbital::localize(prec, Phi, F_mat);
 
     F.setup(prec);
     F_mat = F(Phi, Phi);
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     F.clear();
 
-    if (not localize) orbital::diagonalize(prec, Phi, F_mat);
+    if (not localize && rotate) orbital::diagonalize(prec, Phi, F_mat);
     if (plevel == 1) mrcpp::print::footer(1, t_scf, 2);
 
     Timer t_eps;

@@ -231,6 +231,12 @@ User input reference
   
     **Default** ``-1``
   
+   :omp_threads: Force the number of omp threads (leave default is better). 
+  
+    **Type** ``int``
+  
+    **Default** ``-1``
+  
  :Basis: Define polynomial basis. 
 
   :red:`Keywords`
@@ -715,6 +721,12 @@ User input reference
   
     **Predicates**
       - ``value[-1] != '/'``
+  
+   :guess_rotate: Localize/Diagonalize the initial guess orbitals before calculating the initial guess energy. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
   
    :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
   
