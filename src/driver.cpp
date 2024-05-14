@@ -398,17 +398,12 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     ///////////////////////////////////////////////////////////
     
     // Modify the occupancies, e.g. to introduce a core hole for DeltaSCF calculations of core binding energies   
-    bool core_hole = false;
-    if (json_occ.size() > 0) core_hole = true;
-                
-    // TODO: convert warnings about input format to proper error messages
-    
-    if (core_hole){
+    if (json_occ.size() > 0){
       IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
       DoubleVector core_occupancies;    // the occupancies associated with those orbitals
       int nCH;                          // the number of orbitals whose occupancies will be modified
 
-      // In this case, there is a one-to-one correspondance with the input file format
+      // In the restricted case, there is a one-to-one correspondance with the input file format
       if (restricted){
         nCH = json_occ.size();
         core_orbitals = IntVector::Zero(nCH);
@@ -429,7 +424,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
         }
       }
       
-      // In this case, we need to map the alpha and beta occupancies to the correct orbital number
+      // In the unrestricted case, we need to map the alpha and beta occupancies to the correct orbital number
       else{
         // the input number of orbitals
         int nCH_in = json_occ.size();
@@ -469,7 +464,6 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
 
       // Update the occupancies
       mrchem::orbital::set_occupations(Phi, default_occs);
-      
     }
     
     Phi.distribute();

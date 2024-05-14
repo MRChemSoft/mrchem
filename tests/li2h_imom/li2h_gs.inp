@@ -1,0 +1,28 @@
+# vim:syntax=sh:
+
+world_prec = 1.0e-3                 # Overall relative precision
+world_size = 6                      # Size of simulation box 2^n
+
+MPI {
+  numerically_exact = true          # Guarantee identical results in MPI
+}
+
+Molecule {
+  charge = 1
+$coords
+Li    -5.46737452    2.65708721    0.38412463
+Li     2.48697407    1.97066310   -0.29143356
+H     -0.09374931   -1.62164958   -3.76992803
+$end
+}
+
+WaveFunction {
+  method = PBE                      # Wave function method (HF or DFT)
+}
+
+SCF {
+  run = false
+  localize = true                   # Use canonical of localized orbitals
+  write_orbitals = true
+  path_orbitals = initial_guess
+}
