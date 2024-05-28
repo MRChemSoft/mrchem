@@ -220,20 +220,24 @@ def update_periodic_table():
 
 def run_parselglossy():
     os.chdir(root)
-    cmd = [
-        "parselglossy",
-        "generate",
-        "--template",
-        "template.yml",
-        "--docfile",
-        "user_ref.rst",
-        "--doc-header",
-        "User input reference",
-        "--target",
-        target,
-    ]
+    pyparsing_path = target.joinpath("plumbing", "pyparsing")
+    if os.path.isdir(pyparsing_path):
+        print(f"{pyparsing_path} already exists. Please delete this directory to run the script.")
+    else:
+        cmd = [
+            "parselglossy",
+            "generate",
+            "--template",
+            "template.yml",
+            "--docfile",
+            "user_ref.rst",
+            "--doc-header",
+            "User input reference",
+            "--target",
+            target,
+        ]
 
-    subprocess.call(cmd)
+        subprocess.call(cmd)
 
 
 def update_doc():
