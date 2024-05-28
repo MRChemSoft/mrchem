@@ -12,7 +12,7 @@ To run the script:
 
 ```bash
 $ cd python/mrchem
-$ rm -r input_parser/plumbing/pyparser
+$ rm -r input_parser/plumbing/pyparsing
 $ python update_input_parser.py
 ```
 
@@ -35,7 +35,7 @@ The utility script can also do this, by specifying the flag `--skip-template`:
 
 ```bash
 $ cd python/mrchem
-$ rm -r input_parser/plumbing/pyparser
+$ rm -r input_parser/plumbing/pyparing
 $ python update_input_parser --skip-template
 ```
 
@@ -45,7 +45,7 @@ You can also perform these steps manually without using the utility script:
 
 ```bash
 $ cd python
-$ rm -r mrchem/input_parser/plumbing/pyparser
+$ rm -r mrchem/input_parser/plumbing/pyparsing
 $ parselglossy generate --template template.yml --docfile user_ref.rst --doc-header="User input reference" --target="mrchem/input_parser"
 $ cp mrchem/input_parser/docs/user_ref.rst ../doc/users/user_ref.rst
 ```
