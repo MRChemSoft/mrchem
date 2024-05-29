@@ -318,7 +318,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         // MOM / IMOM
         // save orbitals of last iteration for MOM
         if (deltaSCFMethod == "MOM" && nIter > 1) {
-            Phi_mom = Phi_n;
+            Phi_mom = orbital::deep_copy(Phi_n);
         }
 
         // Update orbitals
@@ -331,20 +331,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             bool restricted = (orbital::size_doubly(Phi_n) != 0);
             if (restricted) {
                 DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
-                // std::cout << "occNew: " << occNew << std::endl;
                 orbital::set_occupations(Phi_n, occNew);
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
-                OrbitalVector Phi_n_copy = Phi_n;
-                OrbitalVector Phi_mom_copy = Phi_mom;
+                OrbitalVector Phi_n_copy = orbital::deep_copy(Phi_n);
+                OrbitalVector Phi_mom_copy = orbital::deep_copy(Phi_mom);
                 auto Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
                 auto Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
                 DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
                 DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
-                // std::cout << "occNew: " << occNew << std::endl;
                 orbital::set_occupations(Phi_n, occNew);
             }
         }
@@ -499,13 +497,12 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
         }
     }
     // only consider overlap with orbitals with the current unique occupation number
-    ComplexMatrix occOverlap = currOcc.asDiagonal() * overlap;
-    ComplexVector p = occOverlap.colwise().norm();
-    // std::cout << "p: " << std::endl << p << std::endl;
+    DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap.real();
+    DoubleVector p = occOverlap.colwise().norm();
     // sort by highest overlap
     std::vector<std::pair<double, unsigned>> sortme;
     for (unsigned int q = 0; q < p.size(); ++q) {
-        sortme.push_back(std::pair<double, unsigned>(p(q).real(), q));
+        sortme.push_back(std::pair<double, unsigned>(p(q), q));
     }
     std::stable_sort(sortme.begin(), sortme.end());
     std::reverse(sortme.begin(), sortme.end());
