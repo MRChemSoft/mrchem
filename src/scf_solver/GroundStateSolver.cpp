@@ -315,18 +315,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
 
-        // MOM / IMOM
-        // save orbitals of last iteration for MOM
-        if (deltaSCFMethod == "MOM" && nIter > 1) {
-            Phi_mom = orbital::deep_copy(Phi_n);
-        }
-
         // Update orbitals
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
-        // MOM / IMOM
-        // get the new occupation vector for the current scf iteration
+        // MOM / IMOM: get the new occupation vector for the current scf iteration
         if (Phi_mom.size() > 0) {
             bool restricted = (orbital::size_doubly(Phi_n) != 0);
             if (restricted) {
@@ -345,9 +338,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
             }
+            if (plevel >= 2) { // TODO: whats the right print level here?
+                orbital::print(Phi_n);
+                mol.calculateOrbitalPositions();
+                mol.printOrbitalPositions();
+            }
         }
 
-        // TODO: print occupations in each scf step (printlevel 2)
+        // MOM: save orbitals of current iteration for next iteration
+        if (deltaSCFMethod == "MOM") {
+            Phi_mom = orbital::deep_copy(Phi_n);
+        }
+
         // TODO: keep MOM or just use IMOM?
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
@@ -470,7 +472,7 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
  * determined based on the overlap with the orbitals of an earlier iteration of the SCF procedure.
  */
 DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
-    ComplexMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n);
+    DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
     DoubleVector occ = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
     // get all unique occupation numbers
     std::set<double> occupationNumbers(occ.begin(), occ.end());
@@ -497,8 +499,13 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
         }
     }
     // only consider overlap with orbitals with the current unique occupation number
-    DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap.real();
+    DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
     DoubleVector p = occOverlap.colwise().norm();
+
+    //print section
+    print_utils::matrix(2, "Overlap matrix", overlap, 2);
+    print_utils::vector(2, "Total overlap", p, 2);
+
     // sort by highest overlap
     std::vector<std::pair<double, unsigned>> sortme;
     for (unsigned int q = 0; q < p.size(); ++q) {
