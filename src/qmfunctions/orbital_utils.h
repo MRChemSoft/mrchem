@@ -62,7 +62,7 @@ ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi);
 ComplexMatrix calc_overlap_matrix(OrbitalVector &BraKet);
 ComplexMatrix calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ket);
 
-ComplexMatrix localize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
+ComplexMatrix localize(double prec, OrbitalVector &Phi, ComplexMatrix &F, bool partial = false);
 ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 
