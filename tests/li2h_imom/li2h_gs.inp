@@ -22,7 +22,6 @@ WaveFunction {
 
 SCF {
   run = false
-  localize = true                   # Use canonical of localized orbitals
   write_orbitals = true
   path_orbitals = initial_guess
 }
