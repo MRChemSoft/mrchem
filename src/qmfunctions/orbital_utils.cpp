@@ -47,14 +47,14 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 namespace orbital {
-ComplexMatrix localize(double prec, OrbitalVector &Phi, int spin);
+ComplexMatrix localize(double prec, OrbitalVector &Phi, int spin, bool partial = false);
 ComplexMatrix calc_localization_matrix(double prec, OrbitalVector &Phi);
 
 /* POD struct for orbital meta data. Used for simple MPI communication. */
 struct OrbitalData {
     int rank_id;
     int spin;
-    int occ;
+    double occ;
 };
 OrbitalData getOrbitalData(const Orbital &orb) {
     OrbitalData orb_data;
@@ -388,6 +388,34 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     return out;
 }
 
+ /** @brief Erase orbitals from a vector
+ *
+ * Orbitals are copied in a new vector, except the ones which are defined as to_erase.
+ * The number of orbitals in the new vector will be smaller if to_erase is not empty.
+ * The indices to be erased are marked with 1, for example
+ * to_erase[4] = 1; to_erase[5] = 1; will erase orbitals with indices 4 and 5
+ *
+ */
+OrbitalVector orbital::deep_copy_erase(OrbitalVector &Phi, std::map<int,int> to_erase) {
+    OrbitalVector out;
+    for (auto &i : Phi) {
+        if (to_erase[i.getRank()] == 0) {
+            Orbital out_i(i.spin(), i.occ(), i.getRank());
+            if (i.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
+                // need to send orbital from owner to new owner
+                if (mrcpp::mpi::my_orb(i)) { mrcpp::mpi::send_function(i, out.size() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+                if (mrcpp::mpi::my_orb(out.size())) { mrcpp::mpi::recv_function(out_i, i.getRank() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+            } else {
+                // owner of old and new orbital. Just copy
+                mrcpp::cplxfunc::deep_copy(out_i, i);
+            }
+            out_i.setRank(out.size());
+            out.push_back(out_i);
+        }
+    }
+    return out;
+}
+
 /** @brief Write orbitals to disk
  *
  * @param Phi: orbitals to save
@@ -700,7 +728,7 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
     return S_m12;
 }
 
-ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &F, bool partial) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Localizing orbitals");
@@ -713,9 +741,9 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &
     int nA = size_alpha(Phi);
     int nB = size_beta(Phi);
     ComplexMatrix U = ComplexMatrix::Identity(nO, nO);
-    if (nP > 0) U.block(0, 0, nP, nP) = localize(prec, Phi, SPIN::Paired);
-    if (nA > 0) U.block(nP, nP, nA, nA) = localize(prec, Phi, SPIN::Alpha);
-    if (nB > 0) U.block(nP + nA, nP + nA, nB, nB) = localize(prec, Phi, SPIN::Beta);
+    if (nP > 0) U.block(0, 0, nP, nP) = localize(prec, Phi, SPIN::Paired, partial);
+    if (nA > 0) U.block(nP, nP, nA, nA) = localize(prec, Phi, SPIN::Alpha, partial);
+    if (nB > 0) U.block(nP + nA, nP + nA, nB, nB) = localize(prec, Phi, SPIN::Beta, partial);
 
     // Transform Fock matrix
     F = U.adjoint() * F * U;
@@ -733,9 +761,43 @@ Localization is done for each set of spins separately (we don't want to mix spin
 The localization matrix is returned for further processing.
 
 */
-ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, int spin) {
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, int spin, bool partial) {
     OrbitalVector Phi_s = orbital::disjoin(Phi, spin);
-    ComplexMatrix U = calc_localization_matrix(prec, Phi_s);
+    ComplexMatrix U;
+    if (partial) {
+        DoubleVector occ = orbital::get_occupations(Phi_s);
+        int mainOcc = (spin == SPIN::Paired) ? 2 : 1;
+        std::map<int, int> to_erase;
+        for (int i = 0; i < Phi_s.size(); i++) {
+            if (occ(i) == mainOcc) {
+                to_erase[i] = 0;
+            }
+            else {
+                to_erase[i] = 1;
+            }
+        }
+        OrbitalVector Phi_s_small = orbital::deep_copy_erase(Phi_s, to_erase);
+        ComplexMatrix U_small = calc_localization_matrix(prec, Phi_s_small);
+        U = ComplexMatrix::Identity(Phi_s.size(), Phi_s.size());
+        unsigned int j = 0;
+        for (int i = 0; i < Phi_s.size(); i++) {
+            if (to_erase[i] == 0) {
+                unsigned int l = 0;
+                for (int k = 0; k < Phi_s.size(); k++) {
+                    if (to_erase[k] == 0) {
+                        U(i, k) = U_small(j, l);
+                        l++;
+                    }
+                }
+                j++;
+            }
+        }
+        print_utils::matrix(2, "Loc matrix small", U_small.real());
+        print_utils::matrix(2, "Localization matrix", U.real());
+    }
+    else {
+        U = calc_localization_matrix(prec, Phi_s);
+    }
     Timer rot_t;
     mrcpp::mpifuncvec::rotate(Phi_s, U, prec);
     Phi = orbital::adjoin(Phi, Phi_s);
@@ -900,8 +962,10 @@ int orbital::size_beta(const OrbitalVector &Phi) {
 
 /** @brief Returns the spin multiplicity of the vector */
 int orbital::get_multiplicity(const OrbitalVector &Phi) {
-    int nAlpha = get_electron_number(Phi, SPIN::Alpha);
-    int nBeta = get_electron_number(Phi, SPIN::Beta);
+    double nAlpha = get_electron_number(Phi, SPIN::Alpha);
+    double nBeta = get_electron_number(Phi, SPIN::Beta);
+    // LR: not sure this is currently meaningful for fractional occupancies
+    // as a minimum should we add some kind of warning/error message if the result is not an integer?
     int S = std::abs(nAlpha - nBeta);
     return S + 1;
 }
@@ -911,15 +975,17 @@ int orbital::get_multiplicity(const OrbitalVector &Phi) {
  * Paired spin (default input) returns the total number of electrons.
  *
  */
-int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
-    int nElectrons = 0;
+double orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
+    double nElectrons = 0;
     for (auto &phi_i : Phi) {
         if (spin == SPIN::Paired) {
             nElectrons += phi_i.occ();
         } else if (spin == SPIN::Alpha) {
-            if (phi_i.spin() == SPIN::Paired or phi_i.spin() == SPIN::Alpha) nElectrons += 1;
+            if (phi_i.spin() == SPIN::Paired) {nElectrons += 0.5 * phi_i.occ();}
+            else if (phi_i.spin() == SPIN::Alpha) {nElectrons += phi_i.occ();}
         } else if (spin == SPIN::Beta) {
-            if (phi_i.spin() == SPIN::Paired or phi_i.spin() == SPIN::Beta) nElectrons += 1;
+            if (phi_i.spin() == SPIN::Paired) {nElectrons += 0.5 * phi_i.occ();}
+            else if (phi_i.spin() == SPIN::Beta) {nElectrons += phi_i.occ();}
         } else {
             MSG_ERROR("Invalid spin argument");
         }
@@ -970,9 +1036,9 @@ void orbital::set_spins(OrbitalVector &Phi, const IntVector &spins) {
 }
 
 /** @brief Returns a vector containing the orbital occupations */
-IntVector orbital::get_occupations(const OrbitalVector &Phi) {
+DoubleVector orbital::get_occupations(const OrbitalVector &Phi) {
     int nOrbs = Phi.size();
-    IntVector occ = IntVector::Zero(nOrbs);
+    DoubleVector occ = DoubleVector::Zero(nOrbs);
     for (int i = 0; i < nOrbs; i++) occ(i) = Phi[i].occ();
     return occ;
 }
@@ -982,7 +1048,7 @@ IntVector orbital::get_occupations(const OrbitalVector &Phi) {
  * Length of input vector must match the number of orbitals in the set.
  *
  */
-void orbital::set_occupations(OrbitalVector &Phi, const IntVector &occ) {
+void orbital::set_occupations(OrbitalVector &Phi, const DoubleVector &occ) {
     if (Phi.size() != occ.size()) MSG_ERROR("Size mismatch");
     for (int i = 0; i < Phi.size(); i++) Phi[i].setOcc(occ(i));
 }
@@ -1058,20 +1124,20 @@ void orbital::print(const OrbitalVector &Phi) {
     auto w3 = w0 - 3 * w1 - 3 * w2;
 
     auto N_e = orbital::get_electron_number(Phi);
-    auto N_a = orbital::size_alpha(Phi) + orbital::size_paired(Phi);
-    auto N_b = orbital::size_beta(Phi) + orbital::size_paired(Phi);
+    auto N_a = orbital::get_electron_number(Phi, SPIN::Alpha);
+    auto N_b = orbital::get_electron_number(Phi, SPIN::Beta);
 
     std::stringstream o_head;
     o_head << std::setw(w1) << "n";
-    o_head << std::setw(w1) << "Occ";
+    o_head << std::setw(w1 + 3) << "Occ";
     o_head << std::setw(w1) << "Spin";
-    o_head << std::string(w3 - 1, ' ') << ':';
+    o_head << std::string(w3 - 4, ' ') << ':';
     o_head << std::setw(3 * w2) << "Norm";
 
     mrcpp::print::header(0, "Molecular Orbitals");
-    print_utils::scalar(0, "Alpha electrons ", N_a, "", 0, false);
-    print_utils::scalar(0, "Beta electrons  ", N_b, "", 0, false);
-    print_utils::scalar(0, "Total electrons ", N_e, "", 0, false);
+    print_utils::scalar(0, "Alpha electrons ", N_a, "", 3, false);
+    print_utils::scalar(0, "Beta electrons  ", N_b, "", 3, false);
+    print_utils::scalar(0, "Total electrons ", N_e, "", 3, false);
     mrcpp::print::separator(0, '-');
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');
@@ -1085,7 +1151,7 @@ void orbital::print(const OrbitalVector &Phi) {
         memory += Phi[i].getSizeNodes(NUMBER::Total) / 1024.0;
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w1) << Phi[i].occ();
+        o_txt << std::setw(w1 + 3) << std::setprecision(2) << std::fixed << Phi[i].occ();
         o_txt << std::setw(w1) << Phi[i].printSpin();
         print_utils::scalar(0, o_txt.str(), norms[i], "", 2 * pprec, true);
     }

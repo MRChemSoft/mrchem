@@ -53,6 +53,8 @@ OrbitalVector param_copy(const OrbitalVector &Phi);
 OrbitalVector adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b);
 OrbitalVector disjoin(OrbitalVector &Phi, int spin);
 
+OrbitalVector deep_copy_erase(OrbitalVector &Phi, std::map<int,int> to_erase);
+
 void save_orbitals(OrbitalVector &Phi, const std::string &file, int spin = -1);
 OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
 
@@ -67,7 +69,7 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &BraKet);
 ComplexMatrix calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ket);
 DoubleMatrix calc_norm_overlap_matrix(OrbitalVector &BraKet);
 
-ComplexMatrix localize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
+ComplexMatrix localize(double prec, OrbitalVector &Phi, ComplexMatrix &F, bool partial = false);
 ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 
@@ -79,17 +81,17 @@ int size_paired(const OrbitalVector &Phi);
 int size_alpha(const OrbitalVector &Phi);
 int size_beta(const OrbitalVector &Phi);
 int get_multiplicity(const OrbitalVector &Phi);
-int get_electron_number(const OrbitalVector &Phi, int spin = SPIN::Paired);
+double get_electron_number(const OrbitalVector &Phi, int spin = SPIN::Paired);
 int start_index(const OrbitalVector &Phi, int spin);
 int get_n_nodes(const OrbitalVector &Phi, bool avg = false);
 int get_size_nodes(const OrbitalVector &Phi, bool avg = false);
 bool orbital_vector_is_sane(const OrbitalVector &Phi);
 
 void set_spins(OrbitalVector &Phi, const IntVector &spins);
-void set_occupations(OrbitalVector &Phi, const IntVector &occ);
+void set_occupations(OrbitalVector &Phi, const DoubleVector &occ);
 
 IntVector get_spins(const OrbitalVector &Phi);
-IntVector get_occupations(const OrbitalVector &Phi);
+DoubleVector get_occupations(const OrbitalVector &Phi);
 DoubleVector get_norms(const OrbitalVector &Phi);
 DoubleVector get_squared_norms(const OrbitalVector &Phi);
 DoubleVector calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);

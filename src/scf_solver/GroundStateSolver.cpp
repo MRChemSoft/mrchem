@@ -25,6 +25,7 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <set>
 
 #include "GroundStateSolver.h"
 #include "HelmholtzVector.h"
@@ -220,6 +221,7 @@ void GroundStateSolver::reset() {
  *
  * @param mol: Molecule to optimize
  * @param F: FockBuilder defining the SCF equations
+ * @param Phi_mom: MOM/IMOM orbitals
  *
  * Optimize orbitals until convergence thresholds are met. This algorithm computes
  * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
@@ -241,7 +243,7 @@ void GroundStateSolver::reset() {
  * 11) Compute Fock matrix
  *
  */
-json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
+json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &Phi_mom) {
     printParameters("Optimize ground state orbitals");
 
     Timer t_tot;
@@ -317,6 +319,40 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
         dPhi_n.clear();
 
+        // MOM / IMOM: get the new occupation vector for the current scf iteration
+        if (Phi_mom.size() > 0) {
+            bool restricted = (orbital::size_doubly(Phi_n) != 0);
+            if (restricted) {
+                DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
+                orbital::set_occupations(Phi_n, occNew);
+                
+                // orbital::print(Phi_n);
+                // mol.calculateOrbitalPositions();
+                // mol.printOrbitalPositions();
+            }
+            else {
+                // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
+                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n, SPIN::Alpha);
+                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom, SPIN::Alpha);
+                DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
+                DoubleVector occBeta = getNewOccupations(Phi_n, Phi_mom);
+                DoubleVector occNew(occAlpha.size() + occBeta.size());
+                occNew << occAlpha, occBeta;
+                orbital::set_occupations(Phi_n, occNew);
+                orbital::adjoin(Phi_n, Phi_n_a);
+                orbital::adjoin(Phi_mom, Phi_mom_a);
+
+                // orbital::print(Phi_n);
+                // mol.calculateOrbitalPositions();
+                // mol.printOrbitalPositions();
+            }
+        }
+
+        // MOM: save orbitals of current iteration for next iteration
+        if (deltaSCFMethod == "MOM") {
+            Phi_mom = orbital::deep_copy(Phi_n);
+        }
+
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
         // Compute Fock matrix and energy
@@ -338,7 +374,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
-            ComplexMatrix U_mat = orbital::localize(orb_prec, Phi_n, F_mat);
+            ComplexMatrix U_mat = orbital::localize(orb_prec, Phi_n, F_mat, true);
             F.rotate(U_mat);
             kain.clear();
         } else if (needDiagonalization(nIter, converged)) {
@@ -426,6 +462,64 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
         diag = true;
     }
     return diag;
+}
+
+/** @brief Determine new occupation vector according to MOM/IMOM procedure
+ * 
+ * @param Phi_n: orbitals of current iteration n.
+ * @param Phi_mom: orbitals of last iteration n-1 (MOM) or first iteration (IMOM).
+ * 
+ * According to MOM/IMOM procedure the occupation numbers for the current iteration get
+ * determined based on the overlap with the orbitals of an earlier iteration of the SCF procedure.
+ */
+DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
+    DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
+    DoubleVector occ = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
+    // get all unique occupation numbers
+    std::set<double> occupationNumbers(occ.begin(), occ.end());
+    // for each unique occupation number, determine which orbitals should be assigned this occupation number
+    double hole = 0.0;
+    double occupied = 0.0;
+    for (auto& occNumber : occupationNumbers) {
+        if (occNumber > occupied) {
+            hole = occupied;
+            occupied = occNumber;
+        }
+        else {
+            hole = occNumber;
+        }
+    }
+    DoubleVector occNew = DoubleVector::Constant(occ.size(), hole);
+    // create vector which contains the positions of the unique occupation number
+    DoubleVector currOcc = DoubleVector::Zero(occ.size());
+    unsigned int nCurrOcc = 0;
+    for (unsigned int i = 0; i < occ.size(); i++) {
+        if (occ(i) == occupied) {
+            currOcc(i) = 1.0;
+            nCurrOcc++;
+        }
+    }
+    // only consider overlap with orbitals with the current unique occupation number
+    DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
+    DoubleVector p = occOverlap.colwise().norm();
+
+    //print section
+    print_utils::matrix(2, "Overlap matrix", overlap, 2);
+    print_utils::vector(2, "Total overlap", p, 2);
+
+    // sort by highest overlap
+    std::vector<std::pair<double, unsigned>> sortme;
+    for (unsigned int q = 0; q < p.size(); ++q) {
+        sortme.push_back(std::pair<double, unsigned>(p(q), q));
+    }
+    std::stable_sort(sortme.begin(), sortme.end());
+    std::reverse(sortme.begin(), sortme.end());
+    // assign the current unique occupation number to orbitals with highest overlap
+    for (unsigned int q = 0; q < nCurrOcc; q++) {
+        occNew(sortme[q].second) = occupied;
+    }
+    sortme.clear();
+    return occNew;
 }
 
 } // namespace mrchem

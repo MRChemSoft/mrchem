@@ -739,6 +739,12 @@ User input reference
     **Type** ``float``
   
     **Default** ``10 * user['world_prec']``
+
+   :deltascf_method: Method to use for a DeltaSCF calculation. Options are ``none`` for a normal SCF run, ``MOM`` for a run using the MOM method and ``IMOM`` for a run using the IMOM method.
+
+   **Type** ``str``
+
+   **Default** ``none``
   
  :Response: Includes parameters related to the response SCF optimization. 
 
@@ -1031,7 +1037,16 @@ User input reference
     **Type** ``float``
   
     **Default** ``0.005``
+
+ :OrbitalOccupancies: Modify the default orbital occupancies in order to perform a DeltaSCF calculation. 
+
+  :red:`Keywords`
+   :occupancies: List of orbitals, i, for which the default occupancy, f, should be overwritten, written as a list in the format "i f_up f_down", where the orbitals are indexed from zero. 
   
+    **Type** ``str``
+  
+    **Default** ````
+
  :Constants: Physical and mathematical constants used by MRChem
 
   :red:`Keywords`
