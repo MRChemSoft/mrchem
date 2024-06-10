@@ -529,7 +529,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto &F_mat = mol.getFockMatrix();
 
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
-    if (localize && rotate) orbital::localize(prec, Phi, F_mat);
+    if (localize && rotate) orbital::localize(prec, Phi, F_mat, true);
 
     F.setup(prec);
     F_mat = F(Phi, Phi);
