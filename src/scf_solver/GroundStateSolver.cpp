@@ -325,23 +325,26 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             if (restricted) {
                 DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
                 orbital::set_occupations(Phi_n, occNew);
+                
+                // orbital::print(Phi_n);
+                // mol.calculateOrbitalPositions();
+                // mol.printOrbitalPositions();
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
-                OrbitalVector Phi_n_copy = orbital::deep_copy(Phi_n);
-                OrbitalVector Phi_mom_copy = orbital::deep_copy(Phi_mom);
-                auto Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
-                auto Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
+                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n, SPIN::Alpha);
+                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom, SPIN::Alpha);
                 DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
-                DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
+                DoubleVector occBeta = getNewOccupations(Phi_n, Phi_mom);
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
-            }
-            if (plevel >= 2) { // TODO: whats the right print level here?
-                orbital::print(Phi_n);
-                mol.calculateOrbitalPositions();
-                mol.printOrbitalPositions();
+                orbital::adjoin(Phi_n, Phi_n_a);
+                orbital::adjoin(Phi_mom, Phi_mom_a);
+
+                // orbital::print(Phi_n);
+                // mol.calculateOrbitalPositions();
+                // mol.printOrbitalPositions();
             }
         }
 
@@ -349,8 +352,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         if (deltaSCFMethod == "MOM") {
             Phi_mom = orbital::deep_copy(Phi_n);
         }
-
-        // TODO: keep MOM or just use IMOM?
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
@@ -373,7 +374,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
-            ComplexMatrix U_mat = orbital::localize(orb_prec, Phi_n, F_mat);
+            ComplexMatrix U_mat = orbital::localize(orb_prec, Phi_n, F_mat, true);
             F.rotate(U_mat);
             kain.clear();
         } else if (needDiagonalization(nIter, converged)) {
