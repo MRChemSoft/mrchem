@@ -46,7 +46,7 @@ namespace mrchem {
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 
 namespace orbital {
-ComplexMatrix localize(double prec, OrbitalVector &Phi, int spin);
+ComplexMatrix localize(double prec, OrbitalVector &Phi, int spin, bool partial = false);
 ComplexMatrix calc_localization_matrix(double prec, OrbitalVector &Phi);
 
 /* POD struct for orbital meta data. Used for simple MPI communication. */
@@ -317,6 +317,34 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     return out;
 }
 
+ /** @brief Erase orbitals from a vector
+ *
+ * Orbitals are copied in a new vector, except the ones which are defined as to_erase.
+ * The number of orbitals in the new vector will be smaller if to_erase is not empty.
+ * The indices to be erased are marked with 1, for example
+ * to_erase[4] = 1; to_erase[5] = 1; will erase orbitals with indices 4 and 5
+ *
+ */
+OrbitalVector orbital::deep_copy_erase(OrbitalVector &Phi, std::map<int,int> to_erase) {
+    OrbitalVector out;
+    for (auto &i : Phi) {
+        if (to_erase[i.getRank()] == 0) {
+            Orbital out_i(i.spin(), i.occ(), i.getRank());
+            if (i.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
+                // need to send orbital from owner to new owner
+                if (mrcpp::mpi::my_orb(i)) { mrcpp::mpi::send_function(i, out.size() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+                if (mrcpp::mpi::my_orb(out.size())) { mrcpp::mpi::recv_function(out_i, i.getRank() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
+            } else {
+                // owner of old and new orbital. Just copy
+                mrcpp::cplxfunc::deep_copy(out_i, i);
+            }
+            out_i.setRank(out.size());
+            out.push_back(out_i);
+        }
+    }
+    return out;
+}
+
 /** @brief Write orbitals to disk
  *
  * @param Phi: orbitals to save
@@ -473,7 +501,7 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
     return S_m12;
 }
 
-ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &F, bool partial) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Localizing orbitals");
@@ -486,9 +514,9 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &
     int nA = size_alpha(Phi);
     int nB = size_beta(Phi);
     ComplexMatrix U = ComplexMatrix::Identity(nO, nO);
-    if (nP > 0) U.block(0, 0, nP, nP) = localize(prec, Phi, SPIN::Paired);
-    if (nA > 0) U.block(nP, nP, nA, nA) = localize(prec, Phi, SPIN::Alpha);
-    if (nB > 0) U.block(nP + nA, nP + nA, nB, nB) = localize(prec, Phi, SPIN::Beta);
+    if (nP > 0) U.block(0, 0, nP, nP) = localize(prec, Phi, SPIN::Paired, partial);
+    if (nA > 0) U.block(nP, nP, nA, nA) = localize(prec, Phi, SPIN::Alpha, partial);
+    if (nB > 0) U.block(nP + nA, nP + nA, nB, nB) = localize(prec, Phi, SPIN::Beta, partial);
 
     // Transform Fock matrix
     F = U.adjoint() * F * U;
@@ -506,9 +534,43 @@ Localization is done for each set of spins separately (we don't want to mix spin
 The localization matrix is returned for further processing.
 
 */
-ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, int spin) {
+ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, int spin, bool partial) {
     OrbitalVector Phi_s = orbital::disjoin(Phi, spin);
-    ComplexMatrix U = calc_localization_matrix(prec, Phi_s);
+    ComplexMatrix U;
+    if (partial) {
+        DoubleVector occ = orbital::get_occupations(Phi_s);
+        int mainOcc = (spin == SPIN::Paired) ? 2 : 1;
+        std::map<int, int> to_erase;
+        for (int i = 0; i < Phi_s.size(); i++) {
+            if (occ(i) == mainOcc) {
+                to_erase[i] = 0;
+            }
+            else {
+                to_erase[i] = 1;
+            }
+        }
+        OrbitalVector Phi_s_small = orbital::deep_copy_erase(Phi_s, to_erase);
+        ComplexMatrix U_small = calc_localization_matrix(prec, Phi_s_small);
+        U = ComplexMatrix::Identity(Phi_s.size(), Phi_s.size());
+        unsigned int j = 0;
+        for (int i = 0; i < Phi_s.size(); i++) {
+            if (to_erase[i] == 0) {
+                unsigned int l = 0;
+                for (int k = 0; k < Phi_s.size(); k++) {
+                    if (to_erase[k] == 0) {
+                        U(i, k) = U_small(j, l);
+                        l++;
+                    }
+                }
+                j++;
+            }
+        }
+        print_utils::matrix(2, "Loc matrix small", U_small.real());
+        print_utils::matrix(2, "Localization matrix", U.real());
+    }
+    else {
+        U = calc_localization_matrix(prec, Phi_s);
+    }
     Timer rot_t;
     mrcpp::rotate(Phi_s, U, prec);
     Phi = orbital::adjoin(Phi, Phi_s);
