@@ -446,6 +446,45 @@ User input reference
   
     **Default** ``user['GeometryOptimizer']['run']``
   
+ :Forces: Define parameters for the computation of forces. 
+
+  :red:`Keywords`
+   :method: Method for computing forces. ``surface_integrals`` (more accurate) uses surface integrals over the quantum mechanical stress tensor, while ``hellmann_feynman`` (slightly faster) uses the Hellmann-Feynman theorem. 
+  
+    **Type** ``str``
+  
+    **Default** ``surface_integrals``
+  
+    **Predicates**
+      - ``value.lower() in ['surface_integrals', 'hellmann_feynman']``
+  
+   :surface_integral_precision: Precision of the surface integrals used in the computation of forces. Determines the number of Lebvedev grid points used in the surface integration. 
+  
+    **Type** ``str``
+  
+    **Default** ``medium``
+  
+    **Predicates**
+      - ``value.lower() in ['low', 'medium', 'high']``
+  
+   :sphere_averaging: Method for averaging the forces over the nuclear sphere. ``shift`` (default) shifts the centers of the integration spheres, ``radial`` averages the forces by varying the radius of the integration spheres, and ``none`` does not perform any averaging. 
+  
+    **Type** ``str``
+  
+    **Default** ``shift``
+  
+    **Predicates**
+      - ``value.lower() in ['shift', 'radial', 'none']``
+  
+   :sphere_averaging_precision: Precision of the sphere averaging used in the computation of forces. Determines the number of spheres used in the averaging. 
+  
+    **Type** ``str``
+  
+    **Default** ``medium``
+  
+    **Predicates**
+      - ``value.lower() in ['low', 'medium', 'high']``
+  
  :ExternalFields: Define external electromagnetic fields. 
 
   :red:`Keywords`

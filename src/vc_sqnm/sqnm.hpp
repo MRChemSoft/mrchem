@@ -149,7 +149,7 @@ namespace sqnm_space
           this->estimate_step_size = false;
         } else
         {
-          double gainratio = calc_gainratio(f_of_x);
+          double gainratio = calc_gainratio(f_of_x, df_dx);
           adjust_stepsize(gainratio);
         }
 
@@ -257,14 +257,17 @@ namespace sqnm_space
     }
 
     private:
-    double calc_gainratio(double &f){
-      double gr = (f - prev_f) / ( .5 * this->dir_of_descent.dot(prev_df_dx));
+    double calc_gainratio(double &f, Eigen::VectorXd &df_dx){
+      // double gr = (f - prev_f) / ( .5 * this->dir_of_descent.dot(prev_df_dx));
+      double gr = prev_df_dx.dot(df_dx) / (prev_df_dx.norm() * df_dx.norm());
       return gr;
     }
 
     void adjust_stepsize(double &gainratio){
-      if ( gainratio < 0.5 ) alpha = std::max(alpha * 0.65, alpha0);
-      else if(gainratio > 1.05) alpha = alpha * 1.05;
+      // if ( gainratio < 0.5 ) alpha = std::max(alpha * 0.65, alpha0);
+      // else if(gainratio > 1.05) alpha = alpha * 1.05;
+      if ( gainratio > 0.5) alpha *= 1.05;
+      else alpha = std::max(alpha * 0.55, alpha0);
     }
 
     Eigen::MatrixXd calc_ovrlp(){

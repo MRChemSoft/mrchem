@@ -81,6 +81,7 @@
 #include "environment/LPBESolver.h"
 #include "environment/PBESolver.h"
 #include "environment/Permittivity.h"
+#include "surface_forces/SurfaceForce.h"
 
 #include "mrdft/Factory.h"
 
@@ -113,7 +114,7 @@ namespace scf {
 bool guess_orbitals(const json &input, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
-void calc_properties(const json &input, Molecule &mol);
+void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
 } // namespace scf
 
@@ -307,7 +308,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
 
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
-        if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol);
+        if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol, json_fock);
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
 
@@ -460,7 +461,7 @@ void driver::scf::write_orbitals(const json &json_orbs, Molecule &mol) {
  * input section, and will compute all properties which are present in this input.
  * This includes the diamagnetic contributions to the magnetic response properties.
  */
-void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
+void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const json &json_fock) {
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Computing ground state properties");
@@ -507,35 +508,63 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
 
     if (json_prop.contains("geometric_derivative")) {
         t_lap.start();
+        // time the calculation of forces:
+        Timer t_classic;
+        t_classic.start();
         mrcpp::print::header(2, "Computing geometric derivative");
-        for (const auto &item : json_prop["geometric_derivative"].items()) {
-            const auto &id = item.key();
-            const double &prec = item.value()["precision"];
-            const double &smoothing = item.value()["smoothing"];
-            GeometricDerivative &G = mol.getGeometricDerivative(id);
+        if (json_prop["geometric_derivative"]["geom-1"]["method"] == "hellmann_feynman") {
+            for (const auto &item : json_prop["geometric_derivative"].items()) {
+                const auto &id = item.key();
+                const double &prec = item.value()["precision"];
+                const double &smoothing = item.value()["smoothing"];
+                GeometricDerivative &G = mol.getGeometricDerivative(id);
+                auto &nuc = G.getNuclear();
+                auto &el = G.getElectronic();
+
+                for (auto k = 0; k < mol.getNNuclei(); ++k) {
+                    const auto nuc_k = nuclei[k];
+                    auto Z_k = nuc_k.getCharge();
+                    auto R_k = nuc_k.getCoord();
+                    double c = detail::nuclear_gradient_smoothing(smoothing, Z_k, mol.getNNuclei());
+                    NuclearGradientOperator h(Z_k, R_k, prec, c);
+                    h.setup(prec);
+                    nuc.row(k) = Eigen::RowVector3d::Zero();
+                    for (auto l = 0; l < mol.getNNuclei(); ++l) {
+                        if (l == k) continue;
+                        const auto nuc_l = nuclei[l];
+                        auto Z_l = nuc_l.getCharge();
+                        auto R_l = nuc_l.getCoord();
+                        std::array<double, 3> R_kl = {R_k[0] - R_l[0], R_k[1] - R_l[1], R_k[2] - R_l[2]};
+                        auto R_kl_3_2 = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);
+                        nuc.row(k) -= Eigen::Map<Eigen::RowVector3d>(R_kl.data()) * (Z_k * Z_l / R_kl_3_2);
+                    }
+                    el.row(k) = h.trace(Phi).real();
+                    h.clear();
+                }
+                t_classic.stop();
+            }
+        } else if (json_prop["geometric_derivative"]["geom-1"]["method"] == "surface_integrals") {
+            double prec = json_prop["geometric_derivative"]["geom-1"]["precision"];
+            Timer t_surface;
+            t_surface.start();
+            std::string lebv_prec = json_prop["geometric_derivative"]["geom-1"]["surface_integral_precision"];
+            std::string averaging = json_prop["geometric_derivative"]["geom-1"]["sphere_averaging"];
+            std::string avg_precision = json_prop["geometric_derivative"]["geom-1"]["sphere_averaging_precision"];
+            Eigen::MatrixXd surfaceForces = surface_force::surface_forces(mol, Phi, prec, json_fock, lebv_prec, averaging, avg_precision);
+            t_surface.stop();
+            GeometricDerivative &G = mol.getGeometricDerivative("geom-1");
             auto &nuc = G.getNuclear();
             auto &el = G.getElectronic();
 
-            for (auto k = 0; k < mol.getNNuclei(); ++k) {
-                const auto nuc_k = nuclei[k];
-                auto Z_k = nuc_k.getCharge();
-                auto R_k = nuc_k.getCoord();
-                double c = detail::nuclear_gradient_smoothing(smoothing, Z_k, mol.getNNuclei());
-                NuclearGradientOperator h(Z_k, R_k, prec, c);
-                h.setup(prec);
+            for (int k = 0; k < mol.getNNuclei(); k++) {
+                // set row of nuclear gradient zero
                 nuc.row(k) = Eigen::RowVector3d::Zero();
-                for (auto l = 0; l < mol.getNNuclei(); ++l) {
-                    if (l == k) continue;
-                    const auto nuc_l = nuclei[l];
-                    auto Z_l = nuc_l.getCharge();
-                    auto R_l = nuc_l.getCoord();
-                    std::array<double, 3> R_kl = {R_k[0] - R_l[0], R_k[1] - R_l[1], R_k[2] - R_l[2]};
-                    auto R_kl_3_2 = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);
-                    nuc.row(k) -= Eigen::Map<Eigen::RowVector3d>(R_kl.data()) * (Z_k * Z_l / R_kl_3_2);
-                }
-                el.row(k) = h.trace(Phi).real();
-                h.clear();
+                // set row of electronic gradient to row of surface forces
+                el.row(k) = surfaceForces.row(k);
             }
+
+        } else {
+            MSG_ABORT("Invalid method for geometric derivative");
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Geometric derivative", t_lap);
@@ -737,7 +766,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     F_0.setup(unpert_prec);
     if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
-    if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
+    if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol, unpert_fock);
 
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////

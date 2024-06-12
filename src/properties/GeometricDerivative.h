@@ -56,6 +56,8 @@ public:
         mrcpp::print::separator(0, '-');
         print_utils::matrix(0, "Electronic", getElectronic());
         print_utils::scalar(0, "Norm", getElectronic().norm(), "(au)");
+        mrcpp::print::separator(0, '-');
+        print_utils::scalar(0, "Est. var. of force error", variance(), "(au)", 4, true);
         mrcpp::print::separator(0, '=', 2);
     }
 
@@ -66,6 +68,18 @@ public:
                 {"nuclear_norm", getNuclear().norm()},
                 {"electronic", print_utils::eigen_to_vector(getElectronic(), 1.0e-12)},
                 {"electronic_norm", getElectronic().norm()}};
+    }
+
+    /**
+     * @brief Compute the variance of the total force using the formula
+     * sigma = sqrt(1/(3N) * sum_i sum_j (F_{ij})^2) presented in
+     * Gubler et al.: Journal of Computational Physics: X Volume 17, November 2023, 100131
+    */
+    double variance() const {
+        DoubleMatrix forces = getTensor();
+        Eigen::Vector3d total_force = forces.colwise().sum();
+        double force_variance = total_force.norm() * std::sqrt( 1.0 / (3.0 * forces.rows()) );
+        return force_variance;
     }
 
 protected:

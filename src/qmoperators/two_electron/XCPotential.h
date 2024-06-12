@@ -63,6 +63,10 @@ public:
             , mrdft(std::move(F)) {}
     ~XCPotential() override = default;
 
+    mrcpp::FunctionTreeVector<3> xc_vec;
+    void setup(double prec) override;
+    void clear() override;
+
     friend class XCOperator;
 
 protected:
@@ -76,8 +80,6 @@ protected:
     Density &getDensity(DensityType spin, int pert_idx);
     mrcpp::FunctionTree<3> &getPotential(int spin);
 
-    void setup(double prec) override;
-    void clear() override;
 
     virtual mrcpp::FunctionTreeVector<3> setupDensities(double prec, mrcpp::FunctionTree<3> &grid) = 0;
 
