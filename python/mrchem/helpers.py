@@ -117,6 +117,16 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "r_O": origin,
         }
 
+    # Confinement Potential
+    if len(user_dict["ConfinementPotential"]) > 0:
+        fock_dict["confinement_operator"] = {
+            "r_0": user_dict["ConfinementPotential"]["radius"],
+            "N": user_dict["ConfinementPotential"]["stiffness"],
+            "slope": user_dict["ConfinementPotential"]["slope"],
+            "cavity_radii": user_dict["ConfinementPotential"]["cavity_radii"],
+            #"centers": user_dict["ConfinementPotential"]["centers"],
+        }
+
     return fock_dict
 
 
@@ -222,6 +232,7 @@ def write_scf_guess(user_dict, wf_dict):
         "relativity": wf_dict["relativity_name"],
         "environment": wf_dict["environment_name"],
         "external_field": wf_dict["external_name"],
+        "confinement_potential": wf_dict["confinement_name"],
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
         "rotate": scf_dict["guess_rotate"],
@@ -256,6 +267,7 @@ def write_scf_solver(user_dict, wf_dict):
         "relativity": wf_dict["relativity_name"],
         "environment": wf_dict["environment_name"],
         "external_field": wf_dict["external_name"],
+        "confinement_potential": wf_dict["confinement_name"],
         "kain": scf_dict["kain"],
         "max_iter": scf_dict["max_iter"],
         "rotation": scf_dict["rotation"],
@@ -561,10 +573,16 @@ def parse_wf_method(user_dict):
         # Labels to aggregate
         external_name = f"Electric field ({x}, {y}, {z})"
 
+    # Determine confinement potential name
+    confinement_name = "None"
+    if len(user_dict["ConfinementPotential"]) > 0:
+        confinement_name = "Confinement"
+
     wf_dict = {
         "relativity_name": relativity_name,
         "environment_name": environment_name,
         "external_name": external_name,
+        "confinement_name": confinement_name,
         "method_name": method_name,
         "method_type": method_type,
         "dft_funcs": dft_funcs,

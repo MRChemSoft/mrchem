@@ -55,6 +55,7 @@
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/one_electron/ConfinementOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
@@ -271,6 +272,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto relativity = json_scf["scf_solver"]["relativity"];
         auto environment = json_scf["scf_solver"]["environment"];
         auto external_field = json_scf["scf_solver"]["external_field"];
+	auto confinement_potential = json_scf["scf_solver"]["confinement_potential"];
         auto max_iter = json_scf["scf_solver"]["max_iter"];
         auto rotation = json_scf["scf_solver"]["rotation"];
         auto localize = json_scf["scf_solver"]["localize"];
@@ -290,6 +292,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
+	solver.setConfinementPotentialName(confinement_potential);
         solver.setCheckpoint(checkpoint);
         solver.setCheckpointFile(file_chk);
         solver.setMaxIterations(max_iter);
@@ -404,17 +407,19 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto relativity = json_guess["relativity"];
     auto environment = json_guess["environment"];
     auto external_field = json_guess["external_field"];
+    auto confinement_potential = json_guess["confinement_potential"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
 
     mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation    ", "Compute initial energy");
-    print_utils::text(0, "Method         ", method);
-    print_utils::text(0, "Relativity     ", relativity);
-    print_utils::text(0, "Environment    ", environment);
-    print_utils::text(0, "External fields", external_field);
-    print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
-    print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
+    print_utils::text(0, "Calculation          ", "Compute initial energy");
+    print_utils::text(0, "Method               ", method);
+    print_utils::text(0, "Relativity           ", relativity);
+    print_utils::text(0, "Environment          ", environment);
+    print_utils::text(0, "External fields      ", external_field);
+    print_utils::text(0, "Confinement potential", confinement_potential);
+    print_utils::text(0, "Precision            ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Localization         ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 
     Timer t_scf;
@@ -1199,6 +1204,23 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto r_O = json_fock["external_operator"]["r_O"];
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
+    }
+    ///////////////////////////////////////////////////////////
+    ///////////////   Confinement Potential   /////////////////
+    ///////////////////////////////////////////////////////////
+    if (json_fock.contains("confinement_operator")) {
+        auto r_0 = json_fock["confinement_operator"]["r_0"];
+	auto N = json_fock["confinement_operator"]["N"];
+	auto s = json_fock["confinement_operator"]["slope"];
+	auto R = json_fock["confinement_operator"]["cavity_radii"];
+	std::vector<mrcpp::Coord<3>> centers;
+	for (auto i = 0; i < mol.getNNuclei(); i++) {
+	    const auto &nuc = mol.getNuclei()[i];
+	    const auto &r_i = nuc.getCoord();
+	    centers.push_back(r_i);
+       }
+	auto V_N = std::make_shared<ConfinementOperator>(r_0, N, s, R, centers);
+	F.getConfinementOperator() = V_N;
     }
     F.build(exx);
 }

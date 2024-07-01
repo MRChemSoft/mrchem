@@ -80,9 +80,12 @@ void GroundStateSolver::printProperty() const {
     double Er_el_1 = scf_1.getElectronReactionEnergy();
     double Er_nuc_0 = scf_0.getNuclearReactionEnergy();
     double Er_nuc_1 = scf_1.getNuclearReactionEnergy();
+    double E_cp_0 = scf_0.getConfinementPotentialEnergy();
+    double E_cp_1 = scf_1.getConfinementPotentialEnergy();
 
     bool has_react = (std::abs(Er_el_1) > mrcpp::MachineZero) || (std::abs(Er_nuc_1) > mrcpp::MachineZero);
     bool has_ext = (std::abs(E_eext_1) > mrcpp::MachineZero) || (std::abs(E_next_1) > mrcpp::MachineZero);
+    bool has_conf = (std::abs(E_cp_1) > mrcpp::MachineZero);
 
     int w0 = (Printer::getWidth() - 1);
     int w1 = 20;
@@ -116,6 +119,10 @@ void GroundStateSolver::printProperty() const {
         printUpdate(2, " Reaction energy (el) ", Er_el_1, Er_el_1 - Er_el_0, this->propThrs);
         printUpdate(2, " Reaction energy (nuc) ", Er_nuc_1, Er_nuc_1 - Er_nuc_0, this->propThrs);
         printUpdate(2, " Reaction energy (tot)  ", Er_1, Er_1 - Er_0, this->propThrs);
+    }
+    if (has_conf) {
+        mrcpp::print::separator(2, '-');
+        printUpdate(2, " Confinement potential ", E_cp_1, E_cp_1 - E_cp_0, this->propThrs);
     }
     mrcpp::print::separator(2, '-');
     printUpdate(2, " Electronic energy", E_1, E_1 - E_0, this->propThrs);
@@ -197,6 +204,7 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     print_utils::text(0, "Relativity         ", this->relativityName);
     print_utils::text(0, "Environment        ", this->environmentName);
     print_utils::text(0, "External fields    ", this->externalFieldName);
+    print_utils::text(0, "Confinement        ", this->confinementPotentialName);
     print_utils::text(0, "Checkpointing      ", (this->checkpoint) ? "On" : "Off");
     print_utils::text(0, "Max iterations     ", o_iter.str());
     print_utils::text(0, "KAIN solver        ", o_kain.str());
