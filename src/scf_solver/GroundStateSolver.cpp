@@ -332,15 +332,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
-                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n, SPIN::Alpha);
-                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom, SPIN::Alpha);
+                OrbitalVector Phi_n_copy = orbital::deep_copy(Phi_n);
+                OrbitalVector Phi_mom_copy = orbital::deep_copy(Phi_mom);
+                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
+                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
                 DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
-                DoubleVector occBeta = getNewOccupations(Phi_n, Phi_mom);
+                DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
-                orbital::adjoin(Phi_n, Phi_n_a);
-                orbital::adjoin(Phi_mom, Phi_mom_a);
 
                 // orbital::print(Phi_n);
                 // mol.calculateOrbitalPositions();
