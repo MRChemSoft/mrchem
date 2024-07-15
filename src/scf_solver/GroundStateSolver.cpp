@@ -337,7 +337,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
                 OrbitalVector Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
                 OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
                 DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
-                DoubleVector occBeta = getNewOccupations(Phi_n, Phi_mom);
+                DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
