@@ -47,11 +47,12 @@ public:
                        double en = 0.0, double ee = 0.0,
                        double x = 0.0, double xc = 0.0,
                        double next = 0.0, double eext = 0.0,
-                       double rt = 0.0, double rn = 0.0, double re = 0.0) :
+                       double rt = 0.0, double rn = 0.0,
+		       double re = 0.0, double cp = 0.0) :
         E_kin(kin), E_nn(nn), E_en(en), E_ee(ee),
-          E_x(x), E_xc(xc), E_next(next), E_eext(eext), Er_tot(rt), Er_nuc(rn), Er_el(re) {
+	E_x(x), E_xc(xc), E_next(next), E_eext(eext), Er_tot(rt), Er_nuc(rn), Er_el(re), E_cp(cp) {
             E_nuc = E_nn + E_next + Er_nuc;
-            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + Er_el;
+            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + Er_el, E_cp;
         }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
@@ -69,6 +70,7 @@ public:
     double getReactionEnergy() const { return this->Er_tot; }
     double getElectronReactionEnergy() const { return this->Er_el; }
     double getNuclearReactionEnergy() const { return this->Er_nuc; }
+    double getConfinementPotentialEnergy() const { return this-> E_cp; }
 
     void print(const std::string &id) const {
         auto E_au = E_nuc + E_el;
@@ -78,6 +80,7 @@ public:
 
         bool has_ext = (std::abs(E_eext) > mrcpp::MachineZero) || (std::abs(E_next) > mrcpp::MachineZero);
         bool has_react = (std::abs(Er_el) > mrcpp::MachineZero) || (std::abs(Er_nuc) > mrcpp::MachineZero);
+	bool has_conf = (std::abs(E_cp) > mrcpp::MachineZero);
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
         mrcpp::print::header(0, "Molecular Energy (" + id + ")");
@@ -99,6 +102,10 @@ public:
             print_utils::scalar(0, "Reaction energy (nuc) ", Er_nuc,  "(au)", pprec, false);
             print_utils::scalar(0, "Reaction energy (tot) ", Er_tot,  "(au)", pprec, false);
         }
+	if (has_conf) {
+	    mrcpp::print::separator(0, '-');
+	    print_utils::scalar(0, "Confinement potential ", E_cp, "(au)", pprec, false);
+	}
         mrcpp::print::separator(0, '-');
         print_utils::scalar(0, "Electronic energy", E_el,   "(au)", pprec, false);
         print_utils::scalar(0, "Nuclear energy   ", E_nuc,  "(au)", pprec, false);
@@ -124,6 +131,7 @@ public:
             {"Er_tot", Er_tot},
             {"Er_el", Er_el},
             {"Er_nuc", Er_nuc},
+	    {"E_cp", E_cp},
             {"E_nuc", E_nuc},
             {"E_tot", E_nuc + E_el}
         };
@@ -144,6 +152,7 @@ private:
     double Er_tot{0.0};
     double Er_nuc{0.0};
     double Er_el{0.0};
+    double E_cp{0.0};
 };
 // clang-format on
 
