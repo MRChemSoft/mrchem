@@ -325,10 +325,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             if (restricted) {
                 DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
                 orbital::set_occupations(Phi_n, occNew);
-                
-                // orbital::print(Phi_n);
-                // mol.calculateOrbitalPositions();
-                // mol.printOrbitalPositions();
+                if (plevel > 1) {
+                    orbital::print(Phi_n);
+                    mol.calculateOrbitalPositions();
+                    mol.printOrbitalPositions();
+                }
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
@@ -341,10 +342,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
-
-                // orbital::print(Phi_n);
-                // mol.calculateOrbitalPositions();
-                // mol.printOrbitalPositions();
+                if (plevel > 1) {
+                    orbital::print(Phi_n);
+                    mol.calculateOrbitalPositions();
+                    mol.printOrbitalPositions();
+                }
             }
         }
 
@@ -475,36 +477,28 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
 DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
     DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
     DoubleVector occ = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
-    // get all unique occupation numbers
-    std::set<double> occupationNumbers(occ.begin(), occ.end());
-    // for each unique occupation number, determine which orbitals should be assigned this occupation number; necessary???
-    double hole, occupied = 0.0;
-    for (auto& occNumber : occupationNumbers) {
-        if (occNumber > occupied) {
-            hole = occupied;
-            occupied = occNumber;
-        }
-        else {
-            hole = occNumber;
-        }
-    }
-    DoubleVector occNew = DoubleVector::Constant(occ.size(), hole);
-    // create vector which contains the positions of the unique occupation number
+    double occ1 = occ(0);
+    DoubleVector occNew = DoubleVector::Constant(occ.size(), occ1);
+
+    // create vector which contains the positions of the second occupation number
     DoubleVector currOcc = DoubleVector::Zero(occ.size());
     unsigned int nCurrOcc = 0;
-    for (unsigned int i = 0; i < occ.size(); i++) {
-        if (occ(i) == occupied) {
+    double occ2 = 0.0;
+    for (unsigned int i = 1; i < occ.size(); i++) {
+        if (occ(i) != occ1) {
+            occ2 = occ(i);
             currOcc(i) = 1.0;
             nCurrOcc++;
         }
     }
-    // only consider overlap with orbitals with the current unique occupation number
+
+    // only consider overlap with orbitals with the second occupation number
     DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
     DoubleVector p = occOverlap.colwise().norm();
 
     //print section
-    print_utils::matrix(2, "Overlap matrix", overlap, 2);
-    print_utils::vector(2, "Total overlap", p, 2);
+    print_utils::matrix(2, "MOM overlap matrix", overlap, 2);
+    print_utils::vector(2, "MOM total overlap", p, 2);
 
     // sort by highest overlap
     std::vector<std::pair<double, unsigned>> sortme;
@@ -513,9 +507,10 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     }
     std::stable_sort(sortme.begin(), sortme.end());
     std::reverse(sortme.begin(), sortme.end());
-    // assign the current unique occupation number to orbitals with highest overlap
+
+    // assign the second occupation number to orbitals with highest overlap
     for (unsigned int q = 0; q < nCurrOcc; q++) {
-        occNew(sortme[q].second) = occupied;
+        occNew(sortme[q].second) = occ2;
     }
     sortme.clear();
     return occNew;

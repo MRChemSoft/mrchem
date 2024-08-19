@@ -18,6 +18,7 @@ $end
 
 WaveFunction {
   method = PBE                      # Wave function method (HF or DFT)
+  restricted = false
 }
 
 OrbitalOccupancies {
@@ -26,6 +27,11 @@ OrbitalOccupancies {
 
 SCF {
   run = true
+  max_iter = 5
   guess_type = mw                   # Type of initial guess: none, mw, gto
   deltascf_method = IMOM
+}
+
+Printer {
+  print_level = 2
 }

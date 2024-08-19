@@ -21,7 +21,8 @@ filters = {
     E_EL: rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="li2h_gs", filters=filters)
-ierr = run(options, input_file="li2h_exc", filters=filters)
-
+ierr = run(options, input_file="li2h_gs_restricted", filters=filters)
+ierr = run(options, input_file="li2h_exc_restricted", filters=filters)
+ierr = run(options, input_file="li2h_gs_unrestricted", filters=filters)
+ierr = run(options, input_file="li2h_exc_unrestricted", filters=filters)
 sys.exit(ierr)
