@@ -25,7 +25,6 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-#include <set>
 
 #include "GroundStateSolver.h"
 #include "HelmholtzVector.h"
