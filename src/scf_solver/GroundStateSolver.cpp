@@ -374,7 +374,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
-            ComplexMatrix U_mat = orbital::localize(orb_prec, Phi_n, F_mat, true);
+            ComplexMatrix U_mat = orbital::localize(orb_prec, Phi_n, F_mat);
             F.rotate(U_mat);
             kain.clear();
         } else if (needDiagonalization(nIter, converged)) {
@@ -477,9 +477,8 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     DoubleVector occ = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
     // get all unique occupation numbers
     std::set<double> occupationNumbers(occ.begin(), occ.end());
-    // for each unique occupation number, determine which orbitals should be assigned this occupation number
-    double hole = 0.0;
-    double occupied = 0.0;
+    // for each unique occupation number, determine which orbitals should be assigned this occupation number; necessary???
+    double hole, occupied = 0.0;
     for (auto& occNumber : occupationNumbers) {
         if (occNumber > occupied) {
             hole = occupied;
