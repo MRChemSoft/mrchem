@@ -18,9 +18,11 @@ $end
 
 WaveFunction {
   method = PBE                      # Wave function method (HF or DFT)
+  restricted = true
 }
 
 SCF {
+  localize = true
   run = false
   write_orbitals = true
   path_orbitals = initial_guess
