@@ -55,9 +55,9 @@ public:
         auto z_rm3 = std::make_shared<QMPotential>(1);
 
         // Project analytic potential
-        mrcpp::cplxfunc::project(*x_rm3, f_x, NUMBER::Real, proj_prec);
-        mrcpp::cplxfunc::project(*y_rm3, f_y, NUMBER::Real, proj_prec);
-        mrcpp::cplxfunc::project(*z_rm3, f_z, NUMBER::Real, proj_prec);
+        mrcpp::project<3>(*x_rm3, f_x, proj_prec);
+        mrcpp::project<3>(*y_rm3, f_y, proj_prec);
+        mrcpp::project<3>(*z_rm3, f_z, proj_prec);
 
         // Invoke operator= to assign *this operator
         RankOneOperator &v = (*this);

@@ -65,7 +65,7 @@ protected:
     auto &getPoisson() { return this->poisson; }
     auto &getDensity() { return this->density; }
 
-    bool hasDensity() const { return (this->density.squaredNorm() < 0.0) ? false : true; }
+    bool hasDensity() const { return (this->density.getSquareNorm() <= 0.0) ? false : true; }
 
     void setup(double prec) override;
     void clear() override;
@@ -74,8 +74,8 @@ protected:
     virtual void setupLocalDensity(double prec) {}
 
     void setupGlobalPotential(double prec);
-    mrcpp::ComplexFunction setupLocalPotential(double prec);
-    void allreducePotential(double prec, mrcpp::ComplexFunction &V_loc);
+    mrcpp::CompFunction<3> setupLocalPotential(double prec);
+    void allreducePotential(double prec, mrcpp::CompFunction<3> &V_loc);
 };
 
 } // namespace mrchem

@@ -80,7 +80,7 @@ void initialize_mra() {
 
     // Constructing global MRA
     mrchem::MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
-    mrcpp::cplxfunc::SetdefaultMRA(mrchem::MRA);
+    mrcpp::SetdefaultMRA(mrchem::MRA);
 }
 
 void finalize_mra() {

@@ -34,7 +34,8 @@ namespace mrchem {
 class MomentumOperator final : public RankOneOperator<3> {
 public:
     MomentumOperator(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
-            : MomentumOperator(NablaOperator(D, true)) {}
+                    : MomentumOperator(NablaOperator(D, true)) {} //2.610296212006e+02
+       //     : MomentumOperator(NablaOperator(D, false)) {} //7.500000129099e-01
 
     MomentumOperator(NablaOperator D) {
         // Invoke operator= to assign *this operator

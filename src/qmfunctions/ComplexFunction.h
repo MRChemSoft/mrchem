@@ -44,9 +44,9 @@ struct FunctionData {
     bool is_shared{false};
 };
 
-class ComplexFunction final {
+class CompFunction<3> final {
 public:
-    explicit ComplexFunction(bool share)
+    explicit CompFunction<3>(bool share)
             : shared_mem_re(nullptr)
             , shared_mem_im(nullptr)
             , re(nullptr)
@@ -61,7 +61,7 @@ public:
         }
     }
 
-    ~ComplexFunction() {
+    ~CompFunction<3>() {
         if (this->shared_mem_re != nullptr) delete this->shared_mem_re;
         if (this->shared_mem_im != nullptr) delete this->shared_mem_im;
         if (this->re != nullptr) delete this->re;

@@ -52,7 +52,7 @@ private:
     double prec;         ///< Precision for construction and application of Helmholtz operators
     DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
 
-    Orbital apply(int i, Orbital &phi) const;
+    Orbital apply(int i, const Orbital &phi) const;
 };
 
 } // namespace mrchem

@@ -118,9 +118,9 @@ bool initial_guess::cube::project_mo(OrbitalVector &Phi, double prec, const std:
     bool success = true;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mrcpp::mpi::my_orb(Phi[i])) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
             CUBEfunction phi_i = CUBEVector[i];
-            Phi[i].alloc(NUMBER::Real);
+            Phi[i].alloc(1);
             mrcpp::project(prec, Phi[i].real(), phi_i);
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;

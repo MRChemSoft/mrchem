@@ -44,14 +44,12 @@ TEST_CASE("PositionOperator", "[position_operator]") {
     int nFuncs = 3;
     OrbitalVector Phi;
     for (int n = 0; n < nFuncs; n++) Phi.push_back(Orbital(SPIN::Paired));
-    Phi.distribute();
 
     for (int n = 0; n < nFuncs; n++) {
         int nu[3] = {n, 0, 0};
         HarmonicOscillatorFunction f(nu);
-        if (mrcpp::mpi::my_orb(Phi[n])) mrcpp::cplxfunc::project(Phi[n], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[n])) mrcpp::project(Phi[n], f, prec);
     }
-
     // reference values for harmonic oscillator eigenfunctions
     DoubleMatrix ref(nFuncs, nFuncs);
     for (int i = 0; i < nFuncs; i++) {
@@ -65,7 +63,7 @@ TEST_CASE("PositionOperator", "[position_operator]") {
     r.setup(prec);
     SECTION("vector apply") {
         OrbitalVector xPhi = r[0](Phi);
-        ComplexMatrix X = orbital::calc_overlap_matrix(Phi, xPhi);
+        ComplexMatrix X = mrcpp::calc_overlap_matrix(Phi, xPhi);
         for (int i = 0; i < X.rows(); i++) {
             for (int j = 0; j < X.cols(); j++) { REQUIRE(std::abs(X(i, j).real() - ref(i, j)) < thrs); }
         }

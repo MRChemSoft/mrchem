@@ -53,7 +53,7 @@ public:
 
         // Project analytic potential
         auto delta = std::make_shared<QMPotential>(1);
-        mrcpp::cplxfunc::project(*delta, f, NUMBER::Real, proj_prec);
+        mrcpp::project<3>(*delta, f, proj_prec);
 
         // Invoke operator= to assign *this operator
         RankZeroOperator &h = (*this);

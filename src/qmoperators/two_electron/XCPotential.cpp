@@ -104,7 +104,7 @@ void XCPotential::setup(double prec) {
 /** @brief Clears all data in the XCPotential object */
 void XCPotential::clear() {
     this->energy = 0.0;
-    for (auto &rho : this->densities) rho.free(NUMBER::Total);
+    for (auto &rho : this->densities) rho.free();
     mrcpp::clear(this->potentials, true);
     clearApplyPrec();
 }

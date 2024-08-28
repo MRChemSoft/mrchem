@@ -30,8 +30,6 @@
 
 namespace mrchem {
 
-using Orbital = mrcpp::ComplexFunction;
-
 /** @class RankTwoOperator
  *
  *  @brief Matrix of RankZeroOperator

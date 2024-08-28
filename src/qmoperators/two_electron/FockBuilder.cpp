@@ -270,7 +270,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     Timer t_3;
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
     for (int i = 0; i < epsPhi.size(); i++) {
-        if (not mrcpp::mpi::my_orb(epsPhi[i])) continue;
+        if (not mrcpp::mpi::my_func(epsPhi[i])) continue;
         epsPhi[i].rescale(eps[i] / two_cc);
     }
     OrbitalVector termThree = operThree(epsPhi);
@@ -285,7 +285,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     Timer t_add;
     OrbitalVector arg = orbital::deep_copy(termOne);
     for (int i = 0; i < arg.size(); i++) {
-        if (not mrcpp::mpi::my_orb(arg[i])) continue;
+        if (not mrcpp::mpi::my_func(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
         arg[i].add(1.0, Psi[i]);
@@ -316,7 +316,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, Orbita
     Timer t_add;
     OrbitalVector out = orbital::deep_copy(termOne);
     for (int i = 0; i < out.size(); i++) {
-        if (not mrcpp::mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_func(out[i])) continue;
         out[i].add(1.0, Psi[i]);
     };
     mrcpp::print::time(2, "Adding contributions", t_add);

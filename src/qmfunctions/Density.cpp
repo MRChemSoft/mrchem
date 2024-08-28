@@ -40,7 +40,7 @@ namespace mrchem {
  * NO transfer of ownership.
  */
 Density &Density::operator=(const Density &dens) {
-    if (this != &dens) mrcpp::ComplexFunction::operator=(dens);
+    if (this != &dens) mrcpp::CompFunction<3>::operator=(dens);
     return *this;
 }
 
@@ -58,26 +58,27 @@ void Density::saveDensity(const std::string &file) {
     metafile << file << ".meta";
 
     // this flushes tree sizes
-    mrcpp::FunctionData &func_data = mrcpp::ComplexFunction::getFunctionData();
+    mrcpp::CompFunctionData<3> &func_data = mrcpp::CompFunction<3>::func_ptr->data;
+    flushFuncData();
 
     std::fstream f;
     f.open(metafile.str(), std::ios::out | std::ios::binary);
     if (not f.is_open()) MSG_ERROR("Unable to open file");
-    f.write((char *)&func_data, sizeof(mrcpp::FunctionData));
+    f.write((char *)&func_data, sizeof(mrcpp::CompFunctionData<3>));
     f.close();
 
     // writing real part
-    if (hasReal()) {
+    if (isreal()) {
         std::stringstream fname;
         fname << file << "_re";
-        real().saveTree(fname.str());
+        CompD[0]->saveTree(fname.str());
     }
 
     // writing imaginary part
-    if (hasImag()) {
+    if (iscomplex()) {
         std::stringstream fname;
-        fname << file << "_im";
-        imag().saveTree(fname.str());
+        fname << file << "_cx";
+        CompC[0]->saveTree(fname.str());
     }
 }
 
@@ -98,27 +99,28 @@ void Density::loadDensity(const std::string &file) {
     fmeta << file << ".meta";
 
     // this flushes tree sizes
-    mrcpp::FunctionData &func_data = mrcpp::ComplexFunction::getFunctionData();
+    mrcpp::CompFunctionData<3> &func_data = mrcpp::CompFunction<3>::func_ptr->data;
+    flushFuncData();
 
     std::fstream f;
     f.open(fmeta.str(), std::ios::in | std::ios::binary);
-    if (f.is_open()) f.read((char *)&func_data, sizeof(mrcpp::FunctionData));
+    if (f.is_open()) f.read((char *)&func_data, sizeof(mrcpp::CompFunctionData<3>));
     f.close();
 
-    // reading real part
-    if (func_data.real_size > 0) {
+    // reading real tree
+    if (isreal()) {
         std::stringstream fname;
         fname << file << "_re";
-        alloc(NUMBER::Real);
-        real().loadTree(fname.str());
+        alloc(1);
+        CompD[0]->loadTree(fname.str());
     }
 
-    // reading imaginary part
-    if (func_data.imag_size > 0) {
+    // reading complex tree
+    if (iscomplex()) {
         std::stringstream fname;
-        fname << file << "_im";
-        alloc(NUMBER::Imag);
-        imag().loadTree(fname.str());
+        fname << file << "_cx";
+        alloc(1);
+        CompC[0]->loadTree(fname.str());
     }
 }
 

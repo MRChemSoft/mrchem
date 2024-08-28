@@ -390,7 +390,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = false;
     }
     for (const auto &phi_i : Phi) {
-        double err = (mrcpp::mpi::my_orb(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        double err = (mrcpp::mpi::my_func(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
         if (err > 0.01) MSG_WARN("MO not normalized!");
     }
 
@@ -622,7 +622,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         if (line) plt.linePlot(npts, rho, fname);
         if (surf) plt.surfPlot(npts, rho, fname);
         if (cube) plt.cubePlot(npts, rho, fname);
-        rho.free(NUMBER::Total);
+        rho.free();
         mrcpp::print::time(1, fname, t_lap);
 
         if (orbital::size_singly(Phi) > 0) {
@@ -633,7 +633,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             if (surf) plt.surfPlot(npts, rho, fname);
             if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
-            rho.free(NUMBER::Total);
+            rho.free();
 
             t_lap.start();
             fname = path + "/rho_a";
@@ -642,7 +642,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             if (surf) plt.surfPlot(npts, rho, fname);
             if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
-            rho.free(NUMBER::Total);
+            rho.free();
 
             t_lap.start();
             fname = path + "/rho_b";
@@ -650,7 +650,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             if (line) plt.linePlot(npts, rho, fname);
             if (surf) plt.surfPlot(npts, rho, fname);
             if (cube) plt.cubePlot(npts, rho, fname);
-            rho.free(NUMBER::Total);
+            rho.free();
             mrcpp::print::time(1, fname, t_lap);
         }
     }
@@ -660,10 +660,10 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         if (orb_idx[0] < 0) {
             // Plotting ALL orbitals
             for (auto i = 0; i < Phi.size(); i++) {
-                if (not mrcpp::mpi::my_orb(Phi[i])) continue;
+                if (not mrcpp::mpi::my_func(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
-                name << path << "/phi_" << Phi[i].printSpin() << "_scf_idx_" << i;
+                name << path << "/phi_" << Orbital(Phi[i]).printSpin() << "_scf_idx_" << i;
                 if (line) plt.linePlot(npts, Phi[i], name.str());
                 if (surf) plt.surfPlot(npts, Phi[i], name.str());
                 if (cube) plt.cubePlot(npts, Phi[i], name.str());
@@ -672,7 +672,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         } else {
             // Plotting some orbitals
             for (auto &i : orb_idx) {
-                if (not mrcpp::mpi::my_orb(Phi[i])) continue;
+                if (not mrcpp::mpi::my_func(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
                 auto sp = 'u';
