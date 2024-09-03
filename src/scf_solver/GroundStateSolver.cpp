@@ -324,11 +324,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             if (restricted) {
                 DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
                 orbital::set_occupations(Phi_n, occNew);
-                if (plevel > 1) {
-                    orbital::print(Phi_n);
-                    mol.calculateOrbitalPositions();
-                    mol.printOrbitalPositions();
-                }
+                // ToDo: output depending on print level
+                orbital::print(Phi_n);
+                mol.calculateOrbitalPositions();
+                mol.printOrbitalPositions();
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
@@ -341,11 +340,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
-                if (plevel > 1) {
-                    orbital::print(Phi_n);
-                    mol.calculateOrbitalPositions();
-                    mol.printOrbitalPositions();
-                }
+                // ToDo: output depending on print level
+                orbital::print(Phi_n);
+                mol.calculateOrbitalPositions();
+                mol.printOrbitalPositions();
             }
         }
 

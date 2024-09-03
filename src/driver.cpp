@@ -120,6 +120,7 @@ void write_orbitals(const json &input, Molecule &mol);
 void write_orbitals_txt(const json &input, Molecule &mol);
 void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
+bool _useExchange = false;
 } // namespace scf
 
 namespace rsp {
@@ -267,7 +268,11 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     OrbitalVector Phi_mom;
     if (scf::guess_orbitals(json_guess, json_occ, mol)) {
         if (json_scf.contains("scf_solver")) {
-            if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") Phi_mom = orbital::deep_copy(mol.getOrbitals());
+            if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") {
+                if (_useExchange)
+                    MSG_ABORT("Running DeltaSCF calculations with exact exchange is currently not supported!");
+                Phi_mom = orbital::deep_copy(mol.getOrbitals());
+            }
         }
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
@@ -1377,6 +1382,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         }
+        scf::_useExchange = true; // determine if exact exchange is used in order to prevent MOM/IMOM calculations
     }
     ///////////////////////////////////////////////////////////
     /////////////////   External Operator   ///////////////////
