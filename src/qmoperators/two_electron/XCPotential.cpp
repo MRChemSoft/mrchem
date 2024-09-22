@@ -85,7 +85,6 @@ void XCPotential::setup(double prec) {
         this->potentials.push_back(std::make_tuple(1.0, v_global));
     }
 
-    mrcpp::clear(xc_out, true);
 
     if (plevel == 2) {
         int totNodes = 0;
@@ -98,6 +97,7 @@ void XCPotential::setup(double prec) {
         auto t = timer.elapsed();
         mrcpp::print::tree(2, "XC operator", totNodes, totSize, t);
     }
+    mrcpp::clear(xc_out, true);
     mrcpp::print::footer(3, timer, 2);
 }
 

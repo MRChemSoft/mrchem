@@ -1,0 +1,32 @@
+world_prec = 1.0e-3                 # Overall relative precision
+world_size = 6                      # Size of simulation box 2^n
+world_unit = angstrom
+
+MPI {
+  numerically_exact = true          # Guarantee identical results in MPI
+}
+
+Molecule {
+$coords
+F           -1.194868474027    -0.244625419775     0.340936636348
+H           -1.672505086978    -0.395082674713     1.107306807211
+$end
+translate = false
+}
+
+Forces {
+    method = 'surface_integrals'
+}
+
+WaveFunction {
+  method = blyp                      # Wave function method (HF or DFT)
+}
+
+Properties {
+  geometric_derivative = true       # Compute geometric derivative
+}
+
+SCF {
+  run = false
+  guess_type = CORE_DZ              # Type of initial guess: none, mw, gto
+}

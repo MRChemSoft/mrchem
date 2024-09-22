@@ -35,6 +35,7 @@ add_subdirectory(mrdft)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 add_subdirectory(scf_solver)
+add_subdirectory(surface_forces)
 add_subdirectory(tensor)
 add_subdirectory(utils)
 

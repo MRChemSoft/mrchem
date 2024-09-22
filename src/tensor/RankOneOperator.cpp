@@ -75,3 +75,4 @@ template <int I> ComplexVector RankOneOperator<I>::trace(const Nuclei &nucs) {
 } // namespace mrchem
 
 template class mrchem::RankOneOperator<3>;
+template class mrchem::RankOneOperator<6>;
