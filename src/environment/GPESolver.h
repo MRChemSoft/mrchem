@@ -129,7 +129,7 @@ protected:
     // just iterate through V_R only. Only issue here is (1 -1\epsilon)/\epsilon * \rho_nuc as I am not sure how to represent this as an analytitcal function,
     // maybe after applying the Poisson operator?
 
-    mrcpp::ComplexFunction Vr_n;
+    mrcpp::CompFunction<3> Vr_n;
 
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
     std::shared_ptr<mrcpp::PoissonOperator> poisson;
@@ -152,14 +152,14 @@ protected:
 
     /** @brief Computes the surface charge distibution due to polarization at the solute-solvent boundary
      * @param potential Potential used to compute \f$\nabla V(\mathbf{r})\f$
-     * @param out_gamma ComplexFunction in which the surface charge distribution will be computed.
+     * @param out_gamma CompFunction<3> in which the surface charge distribution will be computed.
      * @details The surface charge distribution is given by
      * \f[
      * \gamma_s(\mathbf{r}) = \frac{\log \frac{\epsilon_{in}}{\epsilon_{out}}}{4 \pi } \left( \nabla C(\mathbf{r}) \cdot \nabla V(\mathbf{r})\right)
      * \f]
      * where \f$\epsilon_{in}\f$ is the permittivity inside the cavity and \f$\epsilon_{out}\f$ is the permittivity outside the cavity.
      */
-    virtual void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma);
+    virtual void computeGamma(mrcpp::CompFunction<3> &potential, mrcpp::CompFunction<3> &out_gamma);
 
     /** @brief Iterates once through the Generalized Poisson equation to compute the reaction potential
      * @param ingamma the surface charge distribution
@@ -172,14 +172,14 @@ protected:
      * where \f$\gamma_s(\mathbf{r})\f$ is the surface charge distribution describing the polarization at the surface, \f$\rho_{eff}(\mathbf{r})\f$ is the effective charge density given by
      * \f$\frac{\rho(\mathbf{r})}{\epsilon(\mathbf{r})}\f$ and \f$V_R(\mathbf{r})\f$ is the reaction potential.
      */
-    mrcpp::ComplexFunction solvePoissonEquation(const mrcpp::ComplexFunction &ingamma, const Density &rho_el);
+    mrcpp::CompFunction<3> solvePoissonEquation(const mrcpp::CompFunction<3> &ingamma, const Density &rho_el);
 
     /** @brief Uses KAIN to accelerate convergece of the reaction potential
      * @param dfunc the current update of the reaction potential
      * @param func the current reaction potential
      * @param kain the KAIN object
      */
-    void accelerateConvergence(mrcpp::ComplexFunction &dfunc, mrcpp::ComplexFunction &func, KAIN &kain);
+    void accelerateConvergence(mrcpp::CompFunction<3> &dfunc, mrcpp::CompFunction<3> &func, KAIN &kain);
 
     /** @brief Iterates through the application of the Poisson operator to Solve the Generalized Poisson equation
      *  @param V_vac the vacuum potential
@@ -195,7 +195,7 @@ protected:
      *  -# Update the reaction potential as \f$V_R(\mathbf{r}) = V_R^{old}(\mathbf{r}) + \Delta V_R(\mathbf{r})\f$
      *  -# Check if the reaction potential has converged, if not, repeat from step 1.
      */
-    void runMicroIterations(const mrcpp::ComplexFunction &V_vac, const Density &rho_el);
+    void runMicroIterations(const mrcpp::CompFunction<3> &V_vac, const Density &rho_el);
 
     /** @brief Setups and computes the reaction potential through the microiterations
      * @param V_vac the vacuum potential
@@ -209,13 +209,13 @@ protected:
      * the method then runs the micro-iterations through #runMicroIterations and returns the converged reaction potential.
      * If this is not the first SCF iteration, the previous converged reaction potential is used as an initial guess for the micro-iterations.
      */
-    mrcpp::ComplexFunction &solveEquation(double prec, const Density &rho_el);
+    mrcpp::CompFunction<3> &solveEquation(double prec, const Density &rho_el);
 
     /** @brief Frees the memory used by the FunctionTrees of the input Complexfunction and reallocates them.
-     * @param function the ComplexFunction to reset
-     * @details This is done to avoid memory leaks when the ComplexFunction is used in the micro-iterations.
+     * @param function the CompFunction<3> to reset
+     * @details This is done to avoid memory leaks when the CompFunction<3> is used in the micro-iterations.
      */
-    void resetComplexFunction(mrcpp::ComplexFunction &function);
+    void resetComplexFunction(mrcpp::CompFunction<3> &function);
 
     virtual void printParameters() const;
     void printConvergenceRow(int i, double norm, double update, double time) const;

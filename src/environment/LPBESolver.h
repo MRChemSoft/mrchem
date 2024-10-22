@@ -61,10 +61,10 @@ protected:
     /** @brief Computes the PB term
      * @param[in] V_tot the total potential
      * @param[in] salt_factor the salt factor deciding how much of the total concentration to include in the PB term
-     * @param[out] pb_term the ComplexFunction in which to store the result
+     * @param[out] pb_term the CompFunction<3> in which to store the result
      * @details The PB term is computed as \f$ \kappa^2 V_{tot} \f$ and returned.
      */
-    void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) override;
+    void computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_factor, mrcpp::CompFunction<3> &pb_term) override;
     std::string solver_name{"Linearized Poisson-Boltzmann"};
 };
 } // namespace mrchem

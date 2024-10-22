@@ -37,9 +37,9 @@ template <int I> RankOneOperator<I> RankOneOperator<I>::operator()(RankZeroOpera
     return out;
 }
 
-template <int I> OrbitalVector RankOneOperator<I>::operator()(Orbital phi) {
+template <int I> std::vector<Orbital> RankOneOperator<I>::operator()(Orbital phi) {
     RankOneOperator<I> &O = *this;
-    OrbitalVector out;
+    std::vector<Orbital> out;
     for (int i = 0; i < I; i++) out.push_back(O[i](phi));
     return out;
 }

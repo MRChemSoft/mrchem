@@ -30,11 +30,11 @@
 
 /** Notes on vectors:
  * The OrbitalVector (std::vector<Orbital>) is conceptually different from the
- * mrcpp::ComplexFunctionVector (std::vector<mrcpp::ComplexFunction>). The former should be a collection
+ * mrcpp::CompFunction<3>Vector (std::vector<mrcpp::CompFunction<3>>). The former should be a collection
  * of orbitals defining a proper Slater determinant, while the latter is any
  * arbitrary collection of functions (could also be orbitals) used e.g. when
  * adding several orbitals into one. The difference is important when MPI is
- * considered, as OrbitalVectors are distributed while mrcpp::ComplexFunctionVectors are
+ * considered, as OrbitalVectors are distributed while mrcpp::CompFunction<3>Vectors are
  * not. This is reflected in the functionality that is available for the
  * different vectors, where OrbitalVectors should always be treated as a whole,
  * e.g. in an orbital rotation Psi = orbital::rotate(U, Phi), where U is a
@@ -46,14 +46,14 @@
 
 namespace mrchem {
 
-class ComplexFunction;
+class CompFunction;
 
 // class Orbital;
-using Orbital = mrcpp::ComplexFunction;
+class Orbital;
 using OrbitalChunk = std::vector<std::tuple<int, Orbital>>;
 
-using OrbitalVector = mrcpp::MPI_FuncVector;
-// class OrbitalVector;
+// using OrbitalVector = mrcpp::CompFunctionVector<3>;
+class OrbitalVector;
 
 class Density;
 

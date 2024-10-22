@@ -148,10 +148,9 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     Timer t3;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mrcpp::mpi::my_orb(Phi[i])) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
-            Phi[i].alloc(NUMBER::Real);
             mrcpp::project(prec, Phi[i].real(), mo_i);
         }
         std::stringstream o_txt;
@@ -224,8 +223,8 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
             Phi.back().setRank(Phi.size() - 1);
             GaussExp<3> ao_i = gto_exp.getAO(i);
             ao_i.calcScreening(screen);
-            if (mrcpp::mpi::my_orb(Phi.back())) {
-                mrcpp::cplxfunc::project(Phi.back(), ao_i, NUMBER::Real, prec);
+            if (mrcpp::mpi::my_func(Phi.back())) {
+                mrcpp::project(Phi.back(), ao_i, prec);
                 if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
             }
 

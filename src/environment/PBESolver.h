@@ -78,17 +78,17 @@ protected:
 
     /** @brief constructs the surface chage distribution and adds it to the PB term
      * @param[in] potential the potential to compute \f$\nabla V\f$ from
-     * @param[out] out_gamma the ComplexFunction in which to store the result
+     * @param[out] out_gamma the CompFunction<3> in which to store the result
      * @details Method follows the implementation in GPESolver::computeGamma, but adds the PB term to the surface charge distribution.
      */
-    void computeGamma(mrcpp::ComplexFunction &potential, mrcpp::ComplexFunction &out_gamma) override;
+    void computeGamma(mrcpp::CompFunction<3> &potential, mrcpp::CompFunction<3> &out_gamma) override;
 
     /** @brief Computes the PB term
      * @param[in] V_tot the total potential
      * @param[in] salt_factor the salt factor deciding how much of the total concentration to include in the PB term
-     * @param[out] pb_term the ComplexFunction in which to store the result
+     * @param[out] pb_term the CompFunction<3> in which to store the result
      * @details The PB term is computed as \f$ \kappa^2 \sinh(V_{tot}) \f$ and returned.
      */
-    virtual void computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term);
+    virtual void computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_factor, mrcpp::CompFunction<3> &pb_term);
 };
 } // namespace mrchem

@@ -40,6 +40,6 @@ private:
     std::shared_ptr<OrbitalVector> orbitals_x; ///< Perturbed orbitals
     std::shared_ptr<OrbitalVector> orbitals_y; ///< Perturbed orbitals
 
-    mrcpp::ComplexFunction &computePotential(double prec) const override;
+    mrcpp::CompFunction<3> &computePotential(double prec) const override;
 };
 } // namespace mrchem

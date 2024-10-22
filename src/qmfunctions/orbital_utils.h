@@ -36,13 +36,9 @@ bool compare(const Orbital &phi_a, const Orbital &phi_b);
 int compare_spin(const Orbital &phi_a, const Orbital &phi_b);
 int compare_occupation(const Orbital &phi_a, const Orbital &phi_b);
 
-ComplexDouble dot(Orbital bra, Orbital ket);
-ComplexVector dot(OrbitalVector &Bra, OrbitalVector &Ket);
-ComplexDouble node_norm_dot(Orbital bra, Orbital ket, bool exact);
-
 void normalize(Orbital phi);
 OrbitalChunk get_my_chunk(OrbitalVector &Phi);
-void orthogonalize(double prec, Orbital &phi, Orbital psi);
+void orthogonalize(double prec, Orbital &&phi, Orbital psi);
 
 OrbitalVector add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec = -1.0);
 OrbitalVector rotate(OrbitalVector &Phi, const ComplexMatrix &U, double prec = -1.0);
@@ -97,9 +93,9 @@ ComplexVector get_integrals(const OrbitalVector &Phi);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
-void saveOrbital(const std::string &file, Orbital& orb);
+void saveOrbital(const std::string &file, const Orbital& orb);
+void saveOrbital(const std::string &file, mrcpp::CompFunction<3>& orb);
 void loadOrbital(const std::string &file, Orbital& orb);
- //char printSpin(const Orbital& orb);
 
 } // namespace orbital
 } // namespace mrchem

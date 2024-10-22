@@ -41,11 +41,11 @@ namespace mrchem {
 // clang-format off
 class OrbitalEnergies final {
 public:
-    IntVector &getSpin() { return this->spin; }
+    IntVector &getSpin() { return this->spinVec; }
     IntVector &getOccupation() { return this->occupation; }
     DoubleVector &getEpsilon() { return this->epsilon; }
 
-    const IntVector &getSpin() const { return this->spin; }
+    const IntVector &getSpin() const { return this->spinVec; }
     const IntVector &getOccupation() const { return this->occupation; }
     const DoubleVector &getEpsilon() const { return this->epsilon; }
 
@@ -69,9 +69,9 @@ public:
 
         for (int i = 0; i < this->epsilon.size(); i++) {
             auto sp = 'u';
-            if (this->spin(i) == SPIN::Paired) sp = 'p';
-            if (this->spin(i) == SPIN::Alpha) sp = 'a';
-            if (this->spin(i) == SPIN::Beta) sp = 'b';
+            if (this->spinVec(i) == SPIN::Paired) sp = 'p';
+            if (this->spinVec(i) == SPIN::Alpha) sp = 'a';
+            if (this->spinVec(i) == SPIN::Beta) sp = 'b';
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;
             o_txt << std::setw(w1) << this->occupation(i);
@@ -88,10 +88,10 @@ public:
         DoubleVector occ = getOccupation().cast<double>();
         const DoubleVector &eps = getEpsilon();
         std::vector<std::string> spn;
-        for (auto i = 0; i < spin.size(); i++) {
-            if (this->spin(i) == SPIN::Paired) spn.push_back("p");
-            if (this->spin(i) == SPIN::Alpha) spn.push_back("a");
-            if (this->spin(i) == SPIN::Beta) spn.push_back("b");
+        for (auto i = 0; i < spinVec.size(); i++) {
+            if (this->spinVec(i) == SPIN::Paired) spn.push_back("p");
+            if (this->spinVec(i) == SPIN::Alpha) spn.push_back("a");
+            if (this->spinVec(i) == SPIN::Beta) spn.push_back("b");
         }
         return {
             {"spin", spn},
@@ -102,7 +102,7 @@ public:
     }
 
 private:
-    IntVector spin;
+    IntVector spinVec;
     IntVector occupation;
     DoubleVector epsilon;
 };

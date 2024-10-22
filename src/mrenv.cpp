@@ -123,7 +123,7 @@ void mrenv::init_mra(const json &json_mra) {
     } else {
         MSG_ABORT("Invalid basis type!");
     }
-    mrcpp::cplxfunc::SetdefaultMRA(MRA);
+    mrcpp::SetdefaultMRA(MRA);
 }
 
 void mrenv::init_mpi(const json &json_mpi) {
