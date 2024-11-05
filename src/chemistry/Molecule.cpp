@@ -30,6 +30,7 @@
 
 #include "environment/Cavity.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmoperators/one_electron/PositionOperator.h"
 
 using mrcpp::Coord;
 using mrcpp::Printer;
@@ -245,6 +246,12 @@ nlohmann::json Molecule::json() const {
 
     json_out["scf_energy"] = energy.json();
     json_out["orbital_energies"] = epsilon.json();
+    json_out["orbital_positions"] = {};
+    for (auto i = 0; i < getOrbitalPositionsX().size(); i++) {
+      nlohmann::json json_atom = {getOrbitalPositionsX()[i].real(), getOrbitalPositionsY()[i].real(), getOrbitalPositionsZ()[i].real()};
+      json_out["orbital_positions"].push_back(json_atom);
+    }
+    
     if (not dipole.empty()) json_out["dipole_moment"] = {};
     if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
     if (not polarizability.empty()) json_out["polarizability"] = {};
@@ -271,4 +278,71 @@ void Molecule::initCavity(const std::vector<mrcpp::Coord<3>> &coords,
     this->cavity = std::make_shared<Cavity>(coords, R, alphas, betas, sigmas);
 }
 
+
+// calculate the average orbital position, to eventually do similar for the spreads
+void Molecule::calculateOrbitalPositions(){
+
+    // need to work out how to define prec correctly - should be the final_prec?
+    double prec = 1.0e-4;
+
+    PositionOperator r;
+    r.setup(prec);
+
+    RankZeroOperator &r_x = r[0];
+    RankZeroOperator &r_y = r[1];
+    RankZeroOperator &r_z = r[2];
+
+    auto &Phi = getOrbitals();
+    
+    OrbitalVector xPhi_Vec = r_x(Phi);
+    OrbitalVector yPhi_Vec = r_y(Phi);
+    OrbitalVector zPhi_Vec = r_z(Phi);
+       
+    ComplexVector R_X = orbital::dot(Phi, xPhi_Vec);
+    ComplexVector R_Y = orbital::dot(Phi, yPhi_Vec);
+    ComplexVector R_Z = orbital::dot(Phi, zPhi_Vec);
+    
+    this->OrbitalPositionsX = R_X;
+    this->OrbitalPositionsY = R_Y;
+    this->OrbitalPositionsZ = R_Z; 
+    
+    r_x.clear();
+    r_y.clear();
+    r_z.clear();
+    
+}
+
+// print the average orbital position, to eventually do similar for the spreads
+void Molecule::printOrbitalPositions() const{
+
+    auto pprec = mrcpp::Printer::getPrecision();
+    auto w0 = Printer::getWidth() - 1;
+    auto w1 = 5;
+    auto w2 = 2 * w0 / 9;
+    auto w3 = w0 - w1 - 3 * w2;
+    
+    std::stringstream o_head;
+    o_head << std::setw(w1) << "Index";
+    o_head << std::string(w3 - 1, ' ') << ':';
+    o_head << std::setw(w2) << "x";
+    o_head << std::setw(w2) << "y";
+    o_head << std::setw(w2) << "z";
+
+    mrcpp::print::header(0, "Orbital Positions");
+    println(0, o_head.str());
+    mrcpp::print::separator(0, '-');
+    for (auto i = 0; i < getOrbitalPositionsX().size(); i++) {
+        std::stringstream o_txt;
+        o_txt << std::setw(w1 - 1) << i;
+        DoubleVector orbitalPositionsVec = DoubleVector::Zero(3);
+        orbitalPositionsVec[0] = getOrbitalPositionsX()[i].real();
+        orbitalPositionsVec[1] = getOrbitalPositionsY()[i].real();
+        orbitalPositionsVec[2] = getOrbitalPositionsZ()[i].real();
+        print_utils::vector(0, o_txt.str(), orbitalPositionsVec, pprec);
+    }
+    mrcpp::print::separator(0, '=', 2);
+
+}
+
 } // namespace mrchem
+
