@@ -15,11 +15,11 @@ translate = false
 }
 
 Forces {
-    method = 'hellmann_feynman'
+    method = 'surface_integrals'
 }
 
 WaveFunction {
-  method = LDA                      # Wave function method (HF or DFT)
+  method = blyp                      # Wave function method (HF or DFT)
 }
 
 Properties {

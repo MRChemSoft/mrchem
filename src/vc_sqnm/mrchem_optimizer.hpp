@@ -160,6 +160,7 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp, std::
 
     if (mrcpp::mpi::grand_master()) {
         xyzFile.open(jsonOutFileName + ".xyz", std::ios::out);
+        xyzFile.precision(12);
     }
 
     mrcpp::print::header(printLevel, "Starting geometry optimization using the SQNM method", 1, '=');
