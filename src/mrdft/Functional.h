@@ -62,6 +62,8 @@ public:
     }
     double XCenergy = 0.0;
 
+    Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     friend class MRDFT;
 
 protected:
@@ -78,8 +80,6 @@ protected:
     virtual int getCtrInputLength() const = 0;
     virtual int getCtrOutputLength() const = 0;
 
-    Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
-    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
     Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
 

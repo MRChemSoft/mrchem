@@ -458,6 +458,33 @@ User input reference
   
     **Default** ``user['GeometryOptimizer']['run']``
   
+ :Forces: Define parameters for the computation of forces. 
+
+  :red:`Keywords`
+   :method: Method for computing forces. ``surface_integrals`` (more accurate) uses surface integrals over the quantum mechanical stress tensor, while ``hellmann_feynman`` uses the Hellmann-Feynman theorem. 
+  
+    **Type** ``str``
+  
+    **Default** ``surface_integrals``
+  
+    **Predicates**
+      - ``value.lower() in ['surface_integrals', 'hellmann_feynman']``
+  
+   :surface_integral_precision: Precision of the surface integrals used in the computation of forces. Determines the number of Lebedev grid points used in the surface integration. 
+  
+    **Type** ``str``
+  
+    **Default** ``medium``
+  
+    **Predicates**
+      - ``value.lower() in ['low', 'medium', 'high']``
+  
+   :radius_factor: Sets the radius of the surface used in the computation of forces. The radius is given by this factor times the distance to the neariest neighbour. Must be between 0.1 and 0.9. This should rarely need to be changed. Different values can change the accuracy of the forces. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.6``
+  
  :ExternalFields: Define external electromagnetic fields. 
 
   :red:`Keywords`
