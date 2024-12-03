@@ -49,7 +49,7 @@ Orbital::Orbital()
  *
  * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
-Orbital::Orbital(int spin, int occ, int rank)
+Orbital::Orbital(int spin, double occ, int rank)
         : QMFunction(false)
         , orb_data({rank, spin, occ}) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
