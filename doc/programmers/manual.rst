@@ -2,6 +2,18 @@
 Programmer's Manual
 ===================
 
+Coding and maintenance guidelines
+---------------------------------
+
+.. toctree::
+
+   general-structure
+   coding-standards
+   documentation
+   cmake-usage
+   maintenance
+   testing
+
 
 Classes and functions reference
 -------------------------------
