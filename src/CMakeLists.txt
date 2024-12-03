@@ -32,11 +32,20 @@ add_subdirectory(analyticfunctions)
 add_subdirectory(chemistry)
 add_subdirectory(environment)
 add_subdirectory(mrdft)
+add_subdirectory(properties)
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 add_subdirectory(scf_solver)
+add_subdirectory(surface_forces)
 add_subdirectory(tensor)
 add_subdirectory(utils)
+
+target_compile_definitions(mrchem PRIVATE
+    HIRSHFELD_SOURCE_DIR="${HIRSHFELD_SOURCE_DIR}"
+    HIRSHFELD_INSTALL_DIR="${HIRSHFELD_INSTALL_DIR}"
+    AZORA_POTENTIALS_SOURCE_DIR="${AZORA_POTENTIALS_SOURCE_DIR}"
+    AZORA_POTENTIALS_INSTALL_DIR="${AZORA_POTENTIALS_INSTALL_DIR}"
+)
 
 target_link_libraries(mrchem
   PRIVATE

@@ -231,6 +231,12 @@ User input reference
   
     **Default** ``-1``
   
+   :omp_threads: Force the number of omp threads (leave default is better). 
+  
+    **Type** ``int``
+  
+    **Default** ``-1``
+  
  :Basis: Define polynomial basis. 
 
   :red:`Keywords`
@@ -320,14 +326,14 @@ User input reference
   
     **Default** ``True``
   
-   :relativity: Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section. ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence over keywords in the ``ZORA`` section). 
+   :relativity: Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section. ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence over keywords in the ``ZORA`` section). ``azora`` uses atomic ZORA potentials, which are precomputed and read from the directory  specified in the ``azora_potential_path`` keyword. 
   
     **Type** ``str``
   
     **Default** ``none``
   
     **Predicates**
-      - ``value.lower() in ['none', 'zora', 'nzora']``
+      - ``value.lower() in ['none', 'zora', 'nzora', 'azora']``
   
    :environment: Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model, which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively. 
   
@@ -367,6 +373,12 @@ User input reference
     **Type** ``bool``
   
     **Default** ``True``
+  
+   :azora_potential_path: Path to the directory containing the AZORA potentials. If not specified, the default potentials will be used. Look into the readme file in the share/azora_potentials directory for information about the potential file format. 
+  
+    **Type** ``str``
+  
+    **Default** ``none``
   
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
@@ -434,11 +446,44 @@ User input reference
   
     **Default** ``[]``
   
+   :hirshfeld_charges: Compute Hirshfeld charges. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
    :geometric_derivative: Compute geometric derivative. 
   
     **Type** ``bool``
   
     **Default** ``user['GeometryOptimizer']['run']``
+  
+ :Forces: Define parameters for the computation of forces. 
+
+  :red:`Keywords`
+   :method: Method for computing forces. ``surface_integrals`` (more accurate) uses surface integrals over the quantum mechanical stress tensor, while ``hellmann_feynman`` uses the Hellmann-Feynman theorem. 
+  
+    **Type** ``str``
+  
+    **Default** ``surface_integrals``
+  
+    **Predicates**
+      - ``value.lower() in ['surface_integrals', 'hellmann_feynman']``
+  
+   :surface_integral_precision: Precision of the surface integrals used in the computation of forces. Determines the number of Lebedev grid points used in the surface integration. 
+  
+    **Type** ``str``
+  
+    **Default** ``medium``
+  
+    **Predicates**
+      - ``value.lower() in ['low', 'medium', 'high']``
+  
+   :radius_factor: Sets the radius of the surface used in the computation of forces. The radius is given by this factor times the distance to the neariest neighbour. Must be between 0.1 and 0.9. This should rarely need to be changed. Different values can change the accuracy of the forces. 
+  
+    **Type** ``float``
+  
+    **Default** ``0.6``
   
  :ExternalFields: Define external electromagnetic fields. 
 
@@ -715,6 +760,12 @@ User input reference
   
     **Predicates**
       - ``value[-1] != '/'``
+  
+   :guess_rotate: Localize/Diagonalize the initial guess orbitals before calculating the initial guess energy. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
   
    :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
   

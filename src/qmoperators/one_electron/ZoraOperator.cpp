@@ -30,6 +30,7 @@
 
 #include "qmoperators/QMPotential.h"
 #include "utils/print_utils.h"
+#include <string>
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -40,29 +41,40 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
     Timer timer;
     double two_cc = 2.0 * c * c;
 
-    auto k = std::make_shared<QMPotential>(1);
+    std::shared_ptr<QMPotential> k = std::make_shared<QMPotential>(1);
     mrcpp::cplxfunc::deep_copy(*k, vz);
 
-    if (k->hasImag()) MSG_ERROR("Inverse of complex function");
+    if (k->hasImag()) MSG_ERROR("Inverse of complex function in zora potential");
     if (k->hasReal()) {
         mrcpp::refine_grid(k->real(), 1);
         if (inverse) {
-            k->real().map([two_cc](double val) { return (two_cc - val) / two_cc; });
+            k->real().map([two_cc](double val) { return (two_cc - val) / two_cc - 1.0; });
         } else {
-            k->real().map([two_cc](double val) { return two_cc / (two_cc - val); });
+            k->real().map([two_cc](double val) { return (val) / (two_cc - val); });
         }
         k->real().crop(proj_prec);
     }
 
-    RankZeroOperator &kappa = (*this);
-    kappa = k;
+    RankZeroOperator &chi = (*this);
+    chi = k;
     if (inverse) {
-        kappa.name() = "kappa_m1";
+        chi.name() = "chi_inv";
     } else {
-        kappa.name() = "kappa";
+        chi.name() = "chi";
     }
     auto plevel = Printer::getPrintLevel();
-    print_utils::qmfunction(2, "ZORA operator (" + kappa.name() + ")", *k, timer);
+    print_utils::qmfunction(2, "ZORA operator (" + chi.name() + ")", *k, timer);
+}
+
+/**
+ * @brief Constructor for ZoraOperator used to construct an atomic zora operator
+ * @param relativisticDampening shared pointer to QMPotential that contains the precompouted kappa function
+ * @param name name of the operator should be either "kappa" or "kappa_inv"
+*/
+ZoraOperator::ZoraOperator(std::shared_ptr<QMPotential> relativisticDampening, std::string name) {
+    RankZeroOperator &kappa = (*this);
+    kappa = relativisticDampening;
+    kappa.name() = name;
 }
 
 } // namespace mrchem

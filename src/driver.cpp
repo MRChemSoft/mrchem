@@ -27,6 +27,7 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include <filesystem>
 #include "driver.h"
 
 #include "chemistry/Molecule.h"
@@ -55,6 +56,7 @@
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/one_electron/AZoraPotential.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
@@ -81,6 +83,8 @@
 #include "environment/LPBESolver.h"
 #include "environment/PBESolver.h"
 #include "environment/Permittivity.h"
+#include "surface_forces/SurfaceForce.h"
+#include "properties/hirshfeld/HirshfeldPartition.h"
 
 #include "mrdft/Factory.h"
 
@@ -113,7 +117,7 @@ namespace scf {
 bool guess_orbitals(const json &input, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
-void calc_properties(const json &input, Molecule &mol);
+void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
 } // namespace scf
 
@@ -217,6 +221,13 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
             if (not geom_map.count(id)) geom_map.insert({id, GeometricDerivative(mol.getNNuclei())});
         }
     }
+    if (json_prop.contains("hirshfeld_charges")) {
+        for (const auto &item : json_prop["hirshfeld_charges"].items()) {
+            const auto &id = item.key();
+            auto &hir_map = mol.getHirshfeldCharges();
+            if (not hir_map.count(id)) hir_map.insert({id, HirshfeldCharges()});
+        }
+    }
 }
 
 /** @brief Run ground-state SCF calculation
@@ -307,7 +318,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
 
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
-        if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol);
+        if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol, json_fock);
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
 
@@ -405,6 +416,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto environment = json_guess["environment"];
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
+    auto rotate = json_guess["rotate"];
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
@@ -425,14 +437,14 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto &F_mat = mol.getFockMatrix();
 
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
-    if (localize) orbital::localize(prec, Phi, F_mat);
+    if (localize && rotate) orbital::localize(prec, Phi, F_mat);
 
     F.setup(prec);
     F_mat = F(Phi, Phi);
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     F.clear();
 
-    if (not localize) orbital::diagonalize(prec, Phi, F_mat);
+    if (not localize && rotate) orbital::diagonalize(prec, Phi, F_mat);
     if (plevel == 1) mrcpp::print::footer(1, t_scf, 2);
 
     Timer t_eps;
@@ -459,7 +471,7 @@ void driver::scf::write_orbitals(const json &json_orbs, Molecule &mol) {
  * input section, and will compute all properties which are present in this input.
  * This includes the diamagnetic contributions to the magnetic response properties.
  */
-void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
+void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const json &json_fock) {
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Computing ground state properties");
@@ -507,12 +519,29 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
     if (json_prop.contains("geometric_derivative")) {
         t_lap.start();
         mrcpp::print::header(2, "Computing geometric derivative");
-        for (const auto &item : json_prop["geometric_derivative"].items()) {
-            const auto &id = item.key();
-            const double &prec = item.value()["precision"];
-            const double &smoothing = item.value()["smoothing"];
-            GeometricDerivative &G = mol.getGeometricDerivative(id);
-            auto &nuc = G.getNuclear();
+        GeometricDerivative &G = mol.getGeometricDerivative("geom-1");
+        auto &nuc = G.getNuclear();
+
+        // calculate nuclear gradient
+        for (auto k = 0; k < mol.getNNuclei(); ++k) {
+            const auto nuc_k = nuclei[k];
+            auto Z_k = nuc_k.getCharge();
+            auto R_k = nuc_k.getCoord();
+            nuc.row(k) = Eigen::RowVector3d::Zero();
+            for (auto l = 0; l < mol.getNNuclei(); ++l) {
+                if (l == k) continue;
+                const auto nuc_l = nuclei[l];
+                auto Z_l = nuc_l.getCharge();
+                auto R_l = nuc_l.getCoord();
+                std::array<double, 3> R_kl = {R_k[0] - R_l[0], R_k[1] - R_l[1], R_k[2] - R_l[2]};
+                auto R_kl_3_2 = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);
+                nuc.row(k) -= Eigen::Map<Eigen::RowVector3d>(R_kl.data()) * (Z_k * Z_l / R_kl_3_2);
+            }
+        }
+        // calculate electronic gradient using the Hellmann-Feynman theorem
+        if (json_prop["geometric_derivative"]["geom-1"]["method"] == "hellmann_feynman") {
+            const double &prec = json_prop["geometric_derivative"]["geom-1"]["precision"];
+            const double &smoothing = json_prop["geometric_derivative"]["geom-1"]["smoothing"];
             auto &el = G.getElectronic();
 
             for (auto k = 0; k < mol.getNNuclei(); ++k) {
@@ -522,19 +551,24 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
                 double c = detail::nuclear_gradient_smoothing(smoothing, Z_k, mol.getNNuclei());
                 NuclearGradientOperator h(Z_k, R_k, prec, c);
                 h.setup(prec);
-                nuc.row(k) = Eigen::RowVector3d::Zero();
-                for (auto l = 0; l < mol.getNNuclei(); ++l) {
-                    if (l == k) continue;
-                    const auto nuc_l = nuclei[l];
-                    auto Z_l = nuc_l.getCharge();
-                    auto R_l = nuc_l.getCoord();
-                    std::array<double, 3> R_kl = {R_k[0] - R_l[0], R_k[1] - R_l[1], R_k[2] - R_l[2]};
-                    auto R_kl_3_2 = std::pow(math_utils::calc_distance(R_k, R_l), 3.0);
-                    nuc.row(k) -= Eigen::Map<Eigen::RowVector3d>(R_kl.data()) * (Z_k * Z_l / R_kl_3_2);
-                }
                 el.row(k) = h.trace(Phi).real();
                 h.clear();
             }
+        // calculate electronic gradient using the surface integrals method
+        } else if (json_prop["geometric_derivative"]["geom-1"]["method"] == "surface_integrals") {
+            double prec = json_prop["geometric_derivative"]["geom-1"]["precision"];
+            std::string leb_prec = json_prop["geometric_derivative"]["geom-1"]["surface_integral_precision"];
+            double radius_factor = json_prop["geometric_derivative"]["geom-1"]["radius_factor"];
+            Eigen::MatrixXd surfaceForces = surface_force::surface_forces(mol, Phi, prec, json_fock, leb_prec, radius_factor);
+            GeometricDerivative &G = mol.getGeometricDerivative("geom-1");
+            auto &nuc = G.getNuclear();
+            auto &el = G.getElectronic();
+            // set electronic gradient
+            for (int k = 0; k < mol.getNNuclei(); k++) {
+                el.row(k) = surfaceForces.row(k) - nuc.row(k);
+            }
+        } else {
+            MSG_ABORT("Invalid method for geometric derivative");
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Geometric derivative", t_lap);
@@ -572,6 +606,41 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol) {
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "NMR shielding (dia)", t_lap);
+    }
+
+    if (json_prop.contains("hirshfeld_charges")) {
+        t_lap.start();
+        std::string source_dir = HIRSHFELD_SOURCE_DIR;
+        std::string install_dir = HIRSHFELD_INSTALL_DIR;
+        std::string data_dir = "";
+        // check if data_dir exists
+        if (std::filesystem::exists(install_dir)) {
+            data_dir = install_dir + "/lda/";
+        } else if (std::filesystem::exists(source_dir)) {
+            data_dir = source_dir + "/lda/";
+        } else {
+            MSG_ABORT("Hirshfeld data directory not found");
+        }
+        for (const auto &item : json_prop["hirshfeld_charges"].items()) {
+            const auto &id = item.key();
+            double prec = item.value()["precision"];
+
+            HirshfeldPartition partitioner(mol, data_dir);
+            mrchem::Density rho(false);
+            mrchem::density::compute(prec, rho, Phi, DensityType::Total);
+            Eigen::VectorXd charges = Eigen::VectorXd::Zero(mol.getNNuclei());
+            for (int i = 0; i < mol.getNNuclei(); i++) {
+                if ( ! mrcpp::mpi::my_orb(i) ) continue; // my_orb also works for atoms.
+                double charge = partitioner.getHirshfeldPartitionIntegral(i, rho, prec);
+                charge = - charge + mol.getNuclei()[i].getCharge();
+                charges(i) = charge;
+            }
+            mrcpp::mpi::allreduce_vector(charges, mrcpp::mpi::comm_wrk);
+            HirshfeldCharges &hir = mol.getHirshfeldCharges(id);
+            hir.setVector(charges);
+        }
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Computing Hirshfeld charges", t_lap);
     }
 
     if (json_prop.contains("hyperpolarizability")) MSG_ERROR("Hyperpolarizability not implemented");
@@ -736,7 +805,7 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     F_0.setup(unpert_prec);
     if (plevel == 1) mrcpp::print::footer(1, t_unpert, 2);
 
-    if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol);
+    if (json_rsp.contains("properties")) scf::calc_properties(json_rsp["properties"], mol, unpert_fock);
 
     ///////////////////////////////////////////////////////////
     //////////////   Preparing Perturbed System   /////////////
@@ -1018,10 +1087,40 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto c = PhysicalConstants::get("light_speed");
         F.setLightSpeed(c);
 
-        auto include_nuclear = json_fock["zora_operator"]["include_nuclear"];
-        auto include_coulomb = json_fock["zora_operator"]["include_coulomb"];
-        auto include_xc = json_fock["zora_operator"]["include_xc"];
-        F.setZoraType(include_nuclear, include_coulomb, include_xc);
+        bool include_nuclear = json_fock["zora_operator"]["include_nuclear"];
+        bool include_coulomb = json_fock["zora_operator"]["include_coulomb"];
+        bool include_xc = json_fock["zora_operator"]["include_xc"];
+        bool is_azora = json_fock["zora_operator"]["isAZORA"];
+        F.setZoraType(include_nuclear, include_coulomb, include_xc, is_azora);
+        if (is_azora) {
+            std::string azora_dir_src = AZORA_POTENTIALS_SOURCE_DIR;
+            std::string azora_dir_install = AZORA_POTENTIALS_INSTALL_DIR;
+            std::string azora_dir = "";
+            if (json_fock["zora_operator"].contains("azora_potential_path")) {
+                azora_dir = json_fock["zora_operator"]["azora_potential_path"];
+            }
+
+            std::string azora_dir_final;
+            if (azora_dir != "") {
+                azora_dir_final = azora_dir;
+            } else {
+                if (std::filesystem::exists(azora_dir_install)) {
+                    azora_dir_final = azora_dir_install;
+                } else {
+                    if (std::filesystem::exists(azora_dir_src)) {
+                        azora_dir_final = azora_dir_src;
+                    } else {
+                        MSG_ABORT("AZORA: No directory provided and no default directories found.");
+                    }
+                }
+            }
+            int adap = 0;
+            bool share = false;
+
+            mrchem::Nuclei nuclei = mol.getNuclei();
+            F.getAZoraChiPotential() = std::make_shared<AZoraPotential>(nuclei, adap, azora_dir_final, share, c);
+            F.setNucs(nuclei);
+        }
     }
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////

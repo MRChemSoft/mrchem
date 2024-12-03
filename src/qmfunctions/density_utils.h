@@ -27,6 +27,7 @@
 
 #include "mrchem.h"
 #include "Orbital.h"
+#include "Density.h"
 
 namespace mrchem {
 namespace density {
@@ -37,6 +38,14 @@ void compute(double prec, Density &rho, OrbitalVector &Phi, DensityType spin);
 void compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin);
 void compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin);
 void compute_local(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin);
+
+/**
+ * @brief Reads atomic density data from a file
+ * @param path The path to the file containing the data
+ * @param rGrid The grid for the radial distances
+ * @param rhoGrid The grid for the atomic density values
+ */
+void readAtomicDensity(const std::string path, Eigen::VectorXd &rGrid, Eigen::VectorXd &rhoGrid);
 
 } // namespace density
 } // namespace mrchem

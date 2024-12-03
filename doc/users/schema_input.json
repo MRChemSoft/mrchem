@@ -101,6 +101,7 @@
       "zeta": int,                           # Zeta quality for AO basis
       "method": string,                      # Name of method for initial energy
       "localize": bool,                      # Use localized orbitals
+      "rotate": bool,                        # Rotate orbitals in initial guess
       "restricted": bool,                    # Use spin restricted orbitals
       "relativity": string,                  # Name of relativistic method
       "screen": float,                       # Screening used in GTO evaluations

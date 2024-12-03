@@ -59,7 +59,19 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "include_nuclear": user_dict["ZORA"]["include_nuclear"],
             "include_coulomb": user_dict["ZORA"]["include_coulomb"],
             "include_xc": user_dict["ZORA"]["include_xc"],
+            "isAZORA": False,
+            "azora_potential_path": user_dict["ZORA"]["azora_potential_path"]
         }
+    # AZORA
+    if user_dict["WaveFunction"]["relativity"].lower() == "azora":
+        fock_dict["zora_operator"] = {
+            "include_nuclear": False,
+            "include_coulomb": False,
+            "include_xc": False,
+            "isAZORA": True
+        }
+        if user_dict["ZORA"]["azora_potential_path"].lower() != "none":
+            fock_dict["zora_operator"]["azora_potential_path"] = user_dict["ZORA"]["azora_potential_path"]
 
     # Kinetic
     fock_dict["kinetic_operator"] = {"derivative": user_dict["Derivatives"]["kinetic"]}
@@ -224,6 +236,7 @@ def write_scf_guess(user_dict, wf_dict):
         "external_field": wf_dict["external_name"],
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
+        "rotate": scf_dict["guess_rotate"],
         "restricted": user_dict["WaveFunction"]["restricted"],
         "file_chk": f"{scf_dict['path_checkpoint']}/phi_scf",
         "file_basis": file_dict["guess_basis"],
@@ -274,7 +287,7 @@ def write_scf_solver(user_dict, wf_dict):
 def write_scf_properties(user_dict, origin):
     prop_dict = {}
     if user_dict["Properties"]["dipole_moment"]:
-        prop_dict["dipole_moment"] = {}
+        prop_dict["dipole_moment"] = {} 
         prop_dict["dipole_moment"]["dip-1"] = {
             "operator": "h_e_dip",
             "precision": user_dict["world_prec"],
@@ -293,7 +306,16 @@ def write_scf_properties(user_dict, origin):
             "operator": "h_nuc_grad",
             "precision": user_dict["world_prec"],
             "smoothing": user_dict["Precisions"]["nuclear_prec"],
+            "method": user_dict["Forces"]["method"],
+            "surface_integral_precision": user_dict["Forces"]["surface_integral_precision"],
+            "radius_factor": user_dict["Forces"]["radius_factor"],
         }
+    if user_dict["Properties"]["hirshfeld_charges"]:
+        prop_dict["hirshfeld_charges"] = {}
+        prop_dict["hirshfeld_charges"]["hirshfeld-1"] = {
+            'precision': user_dict["world_prec"]
+        }
+
     return prop_dict
 
 
@@ -506,11 +528,20 @@ def parse_wf_method(user_dict):
 
     # Determine relativity name label for print outs to the output file
     relativity_name = "None"
+    wf_dict = dict()
     if user_dict["WaveFunction"]["relativity"].lower() in ["none"]:
         user_dict["WaveFunction"]["relativity"] = "off"
         user_dict["ZORA"]["include_nuclear"] = False
         user_dict["ZORA"]["include_coulomb"] = False
         user_dict["ZORA"]["include_xc"] = False
+
+    if user_dict["WaveFunction"]["relativity"].lower() in ["azora"]:
+        relativity_name = "AZORA"
+        user_dict["WaveFunction"]["relativity"] = "azora"
+        user_dict["ZORA"]["include_nuclear"] = False
+        user_dict["ZORA"]["include_coulomb"] = False
+        user_dict["ZORA"]["include_xc"] = False
+        user_dict["ZORA"]["isAZORA"] = True
 
     if user_dict["WaveFunction"]["relativity"].lower() in ["nzora"]:
         user_dict["WaveFunction"]["relativity"] = "zora"
@@ -534,10 +565,10 @@ def parse_wf_method(user_dict):
         else:
             raise RuntimeError("ZORA selected, but no ZORA potential included")
 
-        if user_dict["ZORA"]["include_xc"] and not restricted:
-            raise RuntimeError(
-                "ZORA (V_xc) not available for unrestricted wavefunctions"
-            )
+        # if user_dict["ZORA"]["include_xc"] and not restricted:
+        #     raise RuntimeError(
+        #         "ZORA (V_xc) not available for unrestricted wavefunctions"
+        #     )
 
     # Determine environment name label for print outs to the output file
     environment_name = "None"
@@ -560,14 +591,12 @@ def parse_wf_method(user_dict):
         # Labels to aggregate
         external_name = f"Electric field ({x}, {y}, {z})"
 
-    wf_dict = {
-        "relativity_name": relativity_name,
-        "environment_name": environment_name,
-        "external_name": external_name,
-        "method_name": method_name,
-        "method_type": method_type,
-        "dft_funcs": dft_funcs,
-    }
+    wf_dict["relativity_name"] = relativity_name
+    wf_dict["environment_name"] = environment_name
+    wf_dict["external_name"] = external_name
+    wf_dict["method_name"] = method_name
+    wf_dict["method_type"] = method_type
+    wf_dict["dft_funcs"] = dft_funcs
     return wf_dict
 
 

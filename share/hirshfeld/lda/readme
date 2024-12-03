@@ -1,0 +1,2 @@
+This directory contains the tabulated hirshfeld charge densities. 
+The data is stored column wise. The first column contains a radial grid and the second column the charge density at this radius.

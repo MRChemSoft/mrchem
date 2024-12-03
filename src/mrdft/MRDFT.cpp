@@ -78,15 +78,18 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     int n_start = (mrcpp::mpi::wrk_rank * nNodes) / mrcpp::mpi::wrk_size;
     int n_end = ((mrcpp::mpi::wrk_rank + 1) * nNodes) / mrcpp::mpi::wrk_size;
     DoubleVector XCenergy = DoubleVector::Zero(1);
+    double sum = 0.0;
 #pragma omp parallel
     {
-#pragma omp for schedule(guided)
+#pragma omp for schedule(guided) reduction (+: sum)
         for (int n = n_start; n < n_end; n++) {
             vector<mrcpp::FunctionNode<3> *> xcNodes = xc_utils::fetch_nodes(n, PotVec);
             functional().makepot(inp, xcNodes);
-            XCenergy[0] += xcNodes[0]->integrate();
+            sum += xcNodes[0]->integrate();
         }
     }
+    XCenergy[0] = sum;
+
     // each mpi only has part of the results. All send their results to bank and then fetch
     if(mrcpp::mpi::wrk_size > 1) {
         // sum up the energy contrbutions from all mpi

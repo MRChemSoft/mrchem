@@ -1,0 +1,25 @@
+world_prec = 1.0e-4
+world_unit = angstrom
+
+WaveFunction {
+  method = lda
+}
+
+SCF {
+run = false
+guess_type = GTO
+guess_screen = 16.0
+}
+
+Molecule {
+translate = true
+$coords
+O       0.0000  0.0000  -0.1250
+H      -1.4375  0.0000   1.0250
+H       1.4375  0.0000   1.0250
+$end
+}
+
+Properties {
+  hirshfeld_charges = true
+}

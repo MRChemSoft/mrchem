@@ -1,3 +1,4 @@
+
 /*
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
@@ -28,6 +29,8 @@
 #include "qmoperators/QMPotential.h"
 #include "tensor/RankOneOperator.h"
 #include "tensor/RankZeroOperator.h"
+#include <string>
+#include "chemistry/Nucleus.h"
 
 /** @class FockOperator
  *
@@ -46,6 +49,7 @@ class MomentumOperator;
 class KineticOperator;
 class ZoraKineticOperator;
 class ZoraOperator;
+class AZoraPotential;
 class NuclearOperator;
 class CoulombOperator;
 class ExchangeOperator;
@@ -66,6 +70,7 @@ public:
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
+    std::shared_ptr<AZoraPotential> &getAZoraChiPotential() { return this->chiPot; }
 
     void rotate(const ComplexMatrix &U);
 
@@ -76,8 +81,11 @@ public:
     void setLightSpeed(double c) { this->light_speed = c; }
     double getLightSpeed() const { return this->light_speed; }
 
+    bool isAZora() const { return zora_is_azora; }
     bool isZora() const { return (zora_has_nuc || zora_has_coul || zora_has_xc); }
-    void setZoraType(bool has_nuc, bool has_coul, bool has_xc);
+    void setZoraType(bool has_nuc, bool has_coul, bool has_xc, bool is_azora);
+    void setAZORADirectory(const std::string &dir) {azora_dir = dir;}
+    void setNucs(const Nuclei &nucs) { this->nucs = nucs;}
 
     SCFEnergy trace(OrbitalVector &Phi, const Nuclei &nucs);
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);
@@ -88,12 +96,17 @@ private:
     bool zora_has_nuc{false};
     bool zora_has_coul{false};
     bool zora_has_xc{false};
+    bool zora_is_azora{false};
+    std::string azora_dir = "";
+    std::string azora_dir_src = "";
+    std::string azora_dir_install = "";
 
     double light_speed{-1.0};
     double exact_exchange{1.0};
     RankZeroOperator zora_base;
 
     double prec;
+    Nuclei nucs;
 
     RankZeroOperator V;   ///< Total potential energy operator
     RankZeroOperator H_1; ///< Perturbation operators
@@ -105,12 +118,14 @@ private:
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};       // Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr}; // Total external potential
-    std::shared_ptr<ZoraOperator> kappa{nullptr};
-    std::shared_ptr<ZoraOperator> kappa_inv{nullptr};
+    std::shared_ptr<ZoraOperator> chi{nullptr};
+    std::shared_ptr<ZoraOperator> chi_inv{nullptr};
 
     std::shared_ptr<QMPotential> collectZoraBasePotential();
     OrbitalVector buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec);
     OrbitalVector buildHelmholtzArgumentNREL(OrbitalVector &Phi, OrbitalVector &Psi);
+    std::shared_ptr<AZoraPotential> chiPot{nullptr}; // Potential for AZORA chi operator
+    std::shared_ptr<QMPotential> chiInvPot{nullptr}; // Potential for AZORA chi_inv operator
 };
 
 } // namespace mrchem

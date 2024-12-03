@@ -51,6 +51,7 @@
 #include "properties/QuadrupoleMoment.h"
 #include "properties/SCFEnergy.h"
 #include "qmfunctions/Orbital.h"
+#include "properties/HirshfeldCharges.h"
 
 /** @class Molecule
  *
@@ -118,6 +119,7 @@ public:
     Magnetizability &getMagnetizability(const std::string &id) { return this->magnetizability.at(id); }
     NMRShielding &getNMRShielding(const std::string &id) { return this->nmr_shielding.at(id); }
     GeometricDerivative &getGeometricDerivative(const std::string &id) { return this->geometric_derivative.at(id); }
+    HirshfeldCharges &getHirshfeldCharges(const std::string &id) { return this->hirshfeld_charges.at(id); }
 
     PropertyMap<DipoleMoment> &getDipoleMoments() { return this->dipole; }
     PropertyMap<QuadrupoleMoment> &getQuadrupoleMoments() { return this->quadrupole; }
@@ -125,6 +127,7 @@ public:
     PropertyMap<Magnetizability> &getMagnetizabilities() { return this->magnetizability; }
     PropertyMap<NMRShielding> &getNMRShieldings() { return this->nmr_shielding; }
     PropertyMap<GeometricDerivative> &getGeometricDerivatives() { return this->geometric_derivative; }
+    PropertyMap<HirshfeldCharges> &getHirshfeldCharges() { return this->hirshfeld_charges; }
 
 protected:
     int charge{0};
@@ -146,6 +149,7 @@ protected:
     PropertyMap<Magnetizability> magnetizability{};
     PropertyMap<NMRShielding> nmr_shielding{};
     PropertyMap<GeometricDerivative> geometric_derivative{};
+    PropertyMap<HirshfeldCharges> hirshfeld_charges{};
 
     void readCoordinateFile(const std::string &file);
     void readCoordinateString(const std::vector<std::string> &coord_str);

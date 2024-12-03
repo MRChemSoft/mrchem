@@ -14,6 +14,10 @@ $end
 translate = false
 }
 
+Forces {
+    method = 'hellmann_feynman'
+}
+
 WaveFunction {
   method = LDA                      # Wave function method (HF or DFT)
 }

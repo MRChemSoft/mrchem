@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from tester import *  # isort:skip
+
+options = script_cli()
+
+filters = {
+    SUM_OCCUPIED: rel_tolerance(1.0e-6),
+    E_KIN: rel_tolerance(1.0e-6),
+    E_EN: rel_tolerance(1.0e-6),
+    E_EE: rel_tolerance(1.0e-6),
+    E_X: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(1.0e-6),
+    E_EEXT: rel_tolerance(1.0e-6),
+    E_NEXT: rel_tolerance(1.0e-6),
+    E_EL: rel_tolerance(1.0e-6),
+    HIRSHFELD_CHARGES(1, "total"): rel_tolerance(1.0e-6)
+}
+
+ierr = run(options, input_file="h2o", filters=filters)
+
+sys.exit(ierr)

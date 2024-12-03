@@ -33,6 +33,7 @@
 #include "Orbital.h"
 #include "density_utils.h"
 #include "orbital_utils.h"
+#include <fstream>
 
 using mrcpp::FunctionTree;
 using mrcpp::FunctionTreeVector;
@@ -272,6 +273,26 @@ void density::allreduce_density(double prec, Density &rho_tot, Density &rho_loc)
         mrcpp::copy_grid(rho_tot.real(), rho_loc.real());
         mrcpp::copy_func(rho_tot.real(), rho_loc.real());
     }
+}
+
+
+// Function to read atomic density data from a file
+void density::readAtomicDensity(const std::string path, Eigen::VectorXd &rGrid, Eigen::VectorXd &rhoGrid) {
+    std::vector<double> r, rho;
+    std::ifstream file(path);
+    std::string line;
+    double r_, rho_;
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        iss >> r_ >> rho_;
+        if (rho_ > 0) {
+            r.push_back(r_);
+            rho.push_back(rho_);
+        }
+    }
+    file.close();
+    rGrid = Eigen::Map<Eigen::VectorXd>(r.data(), r.size());
+    rhoGrid = Eigen::Map<Eigen::VectorXd>(rho.data(), rho.size());
 }
 
 } // namespace mrchem

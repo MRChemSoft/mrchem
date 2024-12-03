@@ -71,6 +71,8 @@ def NMR_SHIELDING(atom):
 def GEOMETRIC_DERIVATIVE(index, comp):
     return ("output", "properties", "geometric_derivative", f"geom-{index}", comp)
 
+def HIRSHFELD_CHARGES(index, comp):
+    return ("output", "properties", "hirshfeld_charges", f"hirshfeld-{index}", comp)
 
 def run(options, *, input_file, filters=None, extra_args=None):
     launcher = "mrchem"

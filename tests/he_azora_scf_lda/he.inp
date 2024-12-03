@@ -1,0 +1,14 @@
+world_prec = 1.0e-4
+
+WaveFunction {
+  method = LDA
+  restricted = true
+  relativity = azora
+}
+
+
+Molecule {
+$coords
+He   0.0 0.0 0.0
+$end
+}
