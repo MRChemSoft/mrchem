@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "MRCPP/MWOperators"
 
@@ -73,7 +73,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
         Orbital Tphi_0 = T(Phi[0]);
         ComplexDouble T_00 = orbital::dot(Phi[0], Tphi_0);
         if (mrcpp::mpi::my_orb(Phi[0])) {
-            REQUIRE(T_00.real() == Approx(E_K(0)));
+            REQUIRE(T_00.real() == Catch::Approx(E_K(0)));
             REQUIRE(T_00.imag() < thrs);
         } else {
             REQUIRE(T_00.real() < thrs);
@@ -86,7 +86,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
         for (int i = 0; i < Phi.size(); i++) {
             ComplexDouble T_ii = orbital::dot(Phi[i], TPhi[i]);
             if (mrcpp::mpi::my_orb(Phi[i])) {
-                REQUIRE(T_ii.real() == Approx(E_K(i)));
+                REQUIRE(T_ii.real() == Catch::Approx(E_K(i)));
                 REQUIRE(T_ii.imag() < thrs);
             } else {
                 REQUIRE(T_ii.real() < thrs);
@@ -97,7 +97,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     SECTION("expectation value") {
         ComplexDouble T_00 = T(Phi[0], Phi[0]);
         if (mrcpp::mpi::my_orb(Phi[0])) {
-            REQUIRE(T_00.real() == Approx(E_K(0)));
+            REQUIRE(T_00.real() == Catch::Approx(E_K(0)));
             REQUIRE(T_00.imag() < thrs);
         } else {
             REQUIRE(T_00.real() < thrs);
@@ -107,7 +107,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     SECTION("expectation matrix ") {
         ComplexMatrix t = T(Phi, Phi);
         for (int i = 0; i < Phi.size(); i++) {
-            REQUIRE(t(i, i).real() == Approx(E_K(i)));
+            REQUIRE(t(i, i).real() == Catch::Approx(E_K(i)));
             REQUIRE(t(i, i).imag() < thrs);
         }
     }

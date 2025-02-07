@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mrchem.h"
 #include "qmfunctions/Orbital.h"
@@ -101,14 +101,14 @@ TEST_CASE("Orbital", "[orbital]") {
 
     SECTION("normalize") {
         Orbital phi(SPIN::Paired);
-        REQUIRE(phi.norm() == Approx(-1.0));
+        REQUIRE(phi.norm() == Catch::Approx(-1.0));
 
         mrcpp::cplxfunc::project(phi, f, NUMBER::Real, prec);
         mrcpp::cplxfunc::project(phi, g, NUMBER::Imag, prec);
         REQUIRE(phi.norm() > 1.0);
 
         orbital::normalize(phi);
-        REQUIRE(phi.norm() == Approx(1.0));
+        REQUIRE(phi.norm() == Catch::Approx(1.0));
     }
 
     SECTION("orthogonalize") {
@@ -137,8 +137,8 @@ TEST_CASE("Orbital", "[orbital]") {
 
                 AND_THEN("<phi_1|phi_2^dag> = <phi_1|phi_2>*") {
                     ComplexDouble S2 = orbital::dot(phi_1, phi_2.dagger());
-                    REQUIRE(S2.real() == Approx(S1.real()));
-                    REQUIRE(S2.imag() == Approx(-S1.imag()));
+                    REQUIRE(S2.real() == Catch::Approx(S1.real()));
+                    REQUIRE(S2.imag() == Catch::Approx(-S1.imag()));
                 }
             }
 

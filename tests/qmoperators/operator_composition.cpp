@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
@@ -70,8 +70,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             II.setup(prec);
             const ComplexMatrix ref = I(Phi, Phi);
             const ComplexMatrix val = II(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref(0, 0).real()).epsilon(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref(0, 0).imag()).margin(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref(0, 0).real()).epsilon(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref(0, 0).imag()).margin(thrs));
             II.clear();
         }
         SECTION("composition I(I)") {
@@ -82,8 +82,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             II.setup(prec);
             const ComplexMatrix ref = I(Phi, Phi);
             const ComplexMatrix val = II(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref(0, 0).real()).epsilon(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref(0, 0).imag()).margin(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref(0, 0).real()).epsilon(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref(0, 0).imag()).margin(thrs));
             II.clear();
         }
         SECTION("product I*V") {
@@ -95,8 +95,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             IV.setup(prec);
             const ComplexMatrix ref = V[0](Phi, Phi);
             const ComplexMatrix val = IV(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref(1, 0).real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref(1, 0).imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref(1, 0).real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref(1, 0).imag()).margin(thrs));
             IV.clear();
         }
         SECTION("composition I(V)") {
@@ -108,8 +108,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             IV.setup(prec);
             const ComplexMatrix ref = V[0](Phi, Phi);
             const ComplexMatrix val = IV(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref(1, 0).real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref(1, 0).imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref(1, 0).real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref(1, 0).imag()).margin(thrs));
             IV.clear();
         }
         SECTION("product I*D") {
@@ -121,8 +121,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             ID.setup(prec);
             const ComplexMatrix ref = D[0](Phi, Phi);
             const ComplexMatrix val = ID(Phi, Phi);
-            REQUIRE(val(0, 1).real() == Approx(ref(0, 1).real()).margin(thrs));
-            REQUIRE(val(0, 1).imag() == Approx(ref(0, 1).imag()).epsilon(thrs));
+            REQUIRE(val(0, 1).real() == Catch::Approx(ref(0, 1).real()).margin(thrs));
+            REQUIRE(val(0, 1).imag() == Catch::Approx(ref(0, 1).imag()).epsilon(thrs));
             ID.clear();
         }
         SECTION("composition I(D)") {
@@ -134,8 +134,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             ID.setup(prec);
             const ComplexMatrix ref = D[0](Phi, Phi);
             const ComplexMatrix val = ID(Phi, Phi);
-            REQUIRE(val(0, 1).real() == Approx(ref(0, 1).real()).margin(thrs));
-            REQUIRE(val(0, 1).imag() == Approx(ref(0, 1).imag()).epsilon(thrs));
+            REQUIRE(val(0, 1).real() == Catch::Approx(ref(0, 1).real()).margin(thrs));
+            REQUIRE(val(0, 1).imag() == Catch::Approx(ref(0, 1).imag()).epsilon(thrs));
             ID.clear();
         }
         SECTION("product I*S") {
@@ -147,8 +147,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             IS.setup(prec);
             const ComplexMatrix ref = S[1](Phi, Phi);
             const ComplexMatrix val = IS(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref(0, 0).real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref(0, 0).imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref(0, 0).real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref(0, 0).imag()).epsilon(thrs));
             IS.clear();
         }
         SECTION("composition I(S)") {
@@ -160,8 +160,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             IS.setup(prec);
             const ComplexMatrix ref = S[1](Phi, Phi);
             const ComplexMatrix val = IS(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref(0, 0).real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref(0, 0).imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref(0, 0).real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref(0, 0).imag()).epsilon(thrs));
             IS.clear();
         }
     }
@@ -176,8 +176,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VI.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 2.0, 0.0};
             const ComplexMatrix val = VI(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             VI.clear();
         }
         SECTION("composition V(I)") {
@@ -189,8 +189,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VI.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 2.0, 0.0};
             const ComplexMatrix val = VI(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             VI.clear();
         }
         SECTION("product V*V") {
@@ -201,8 +201,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VV.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 2.0, 0.0};
             const ComplexMatrix val = VV(Phi, Phi);
-            REQUIRE(val(2, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(2, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(2, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(2, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             VV.clear();
         }
         SECTION("composition V(V)") {
@@ -213,8 +213,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VV.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 2.0, 0.0};
             const ComplexMatrix val = VV(Phi, Phi);
-            REQUIRE(val(2, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(2, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(2, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(2, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             VV.clear();
         }
         SECTION("product V*D") {
@@ -226,8 +226,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VD.setup(prec);
             const ComplexDouble ref = {0.0, 0.5};
             const ComplexMatrix val = VD(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             VD.clear();
         }
         SECTION("composition V(D)") {
@@ -239,8 +239,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VD.setup(prec);
             const ComplexDouble ref = {0.0, 0.5};
             const ComplexMatrix val = VD(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             VD.clear();
         }
         SECTION("product V*S") {
@@ -252,8 +252,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VS.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 4.0, 0.0};
             const ComplexMatrix val = VS(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             VS.clear();
         }
         SECTION("composition V(S)") {
@@ -265,8 +265,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             VS.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 4.0, 0.0};
             const ComplexMatrix val = VS(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             VS.clear();
         }
     }
@@ -281,8 +281,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DI.setup(prec);
             const ComplexDouble ref = {0.0, std::sqrt(2.0) / 2.0};
             const ComplexMatrix val = DI(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             DI.clear();
         }
         SECTION("composition D(I)") {
@@ -294,8 +294,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DI.setup(prec);
             const ComplexDouble ref = {0.0, std::sqrt(2.0) / 2.0};
             const ComplexMatrix val = DI(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             DI.clear();
         }
         SECTION("product D*V") {
@@ -307,8 +307,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DV.setup(prec);
             const ComplexDouble ref = {0.0, -0.5};
             const ComplexMatrix val = DV(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             DV.clear();
         }
         SECTION("composition D(V)") {
@@ -320,8 +320,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DV.setup(prec);
             const ComplexDouble ref = {0.0, -1.0};
             const ComplexMatrix val = DV(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             DV.clear();
         }
         SECTION("product D*D") {
@@ -332,8 +332,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DD.setup(prec);
             const ComplexDouble ref = {0.5, 0.0};
             const ComplexMatrix val = DD(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             DD.clear();
         }
         SECTION("composition D(D)") {
@@ -344,8 +344,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DD.setup(prec);
             const ComplexDouble ref = {0.5, 0.0};
             const ComplexMatrix val = DD(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             DD.clear();
         }
         SECTION("product D*S") {
@@ -357,8 +357,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DS.setup(prec);
             const ComplexDouble ref = {0.0, std::sqrt(2.0) / 4.0};
             const ComplexMatrix val = DS(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             DS.clear();
         }
         SECTION("composition D(S)") {
@@ -370,8 +370,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             DS.setup(prec);
             const ComplexDouble ref = {0.0, std::sqrt(2.0) / 4.0};
             const ComplexMatrix val = DS(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             DS.clear();
         }
     }
@@ -386,8 +386,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SI.setup(prec);
             const ComplexDouble ref = {0.0, 0.5};
             const ComplexMatrix val = SI(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             SI.clear();
         }
         SECTION("composition S(I)") {
@@ -399,8 +399,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SI.setup(prec);
             const ComplexDouble ref = {0.0, 0.5};
             const ComplexMatrix val = SI(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             SI.clear();
         }
         SECTION("product S*V") {
@@ -412,8 +412,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SV.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 4.0, 0.0};
             const ComplexMatrix val = SV(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             SV.clear();
         }
         SECTION("product S(V)") {
@@ -425,8 +425,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SV.setup(prec);
             const ComplexDouble ref = {std::sqrt(2.0) / 4.0, 0.0};
             const ComplexMatrix val = SV(Phi, Phi);
-            REQUIRE(val(1, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(1, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(1, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(1, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             SV.clear();
         }
         SECTION("product S*D") {
@@ -438,8 +438,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SD.setup(prec);
             const ComplexDouble ref = {0.0, -std::sqrt(2.0) / 4.0};
             const ComplexMatrix val = SD(Phi, Phi);
-            REQUIRE(val(0, 1).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 1).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 1).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 1).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             SD.clear();
         }
         SECTION("composition S(D)") {
@@ -451,8 +451,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SD.setup(prec);
             const ComplexDouble ref = {0.0, -std::sqrt(2.0) / 4.0};
             const ComplexMatrix val = SD(Phi, Phi);
-            REQUIRE(val(0, 1).real() == Approx(ref.real()).margin(thrs));
-            REQUIRE(val(0, 1).imag() == Approx(ref.imag()).epsilon(thrs));
+            REQUIRE(val(0, 1).real() == Catch::Approx(ref.real()).margin(thrs));
+            REQUIRE(val(0, 1).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
             SD.clear();
         }
         SECTION("product S*S") {
@@ -464,8 +464,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SS.setup(prec);
             const ComplexDouble ref = {1.0 / 4.0, 0.0};
             const ComplexMatrix val = SS(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             SS.clear();
         }
         SECTION("composition S(S)") {
@@ -477,8 +477,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             SS.setup(prec);
             const ComplexDouble ref = {1.0 / 4.0, 0.0};
             const ComplexMatrix val = SS(Phi, Phi);
-            REQUIRE(val(0, 0).real() == Approx(ref.real()).epsilon(thrs));
-            REQUIRE(val(0, 0).imag() == Approx(ref.imag()).margin(thrs));
+            REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).epsilon(thrs));
+            REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).margin(thrs));
             SS.clear();
         }
     }
@@ -498,9 +498,9 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             if (mrcpp::mpi::my_orb(Phi[0])) {
                 OrbitalVector dPhi_0 = gradV(Phi[0]);
                 REQUIRE(dPhi_0.size() == 3);
-                REQUIRE(dPhi_0[0].norm() == Approx(1.0).epsilon(thrs));
-                REQUIRE(dPhi_0[1].norm() == Approx(0.0).margin(thrs));
-                REQUIRE(dPhi_0[2].norm() == Approx(0.0).margin(thrs));
+                REQUIRE(dPhi_0[0].norm() == Catch::Approx(1.0).epsilon(thrs));
+                REQUIRE(dPhi_0[1].norm() == Catch::Approx(0.0).margin(thrs));
+                REQUIRE(dPhi_0[2].norm() == Catch::Approx(0.0).margin(thrs));
             }
             gradV.clear();
         }
@@ -515,8 +515,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             OrbitalVector Psi = divV(Phi);
             const ComplexVector ref = orbital::get_integrals(Phi);
             const ComplexVector val = orbital::get_integrals(Psi);
-            REQUIRE(val(0).real() == Approx(3.0 * ref(0).real()).epsilon(thrs));
-            REQUIRE(val(0).imag() == Approx(3.0 * ref(0).imag()).margin(thrs));
+            REQUIRE(val(0).real() == Catch::Approx(3.0 * ref(0).real()).epsilon(thrs));
+            REQUIRE(val(0).imag() == Catch::Approx(3.0 * ref(0).imag()).margin(thrs));
             divV.clear();
         }
         SECTION("curl Del x V_vector") {
@@ -529,7 +529,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
                 REQUIRE(curlV[i].size(1) == 1);
                 OrbitalVector Psi = curlV[i](Phi);
                 const DoubleVector val = orbital::get_norms(Psi);
-                for (int n = 0; n < Psi.size(); n++) REQUIRE(val(n) == Approx(0.0).margin(thrs));
+                for (int n = 0; n < Psi.size(); n++) REQUIRE(val(n) == Catch::Approx(0.0).margin(thrs));
             }
             curlV.clear();
         }
@@ -545,9 +545,9 @@ TEST_CASE("Operator composition", "[operator_composition]") {
                     const DoubleVector val = orbital::get_norms(Psi);
                     for (int n = 0; n < Psi.size(); n++) {
                         if (i == j) {
-                            REQUIRE(val(n) == Approx(1.0).epsilon(thrs));
+                            REQUIRE(val(n) == Catch::Approx(1.0).epsilon(thrs));
                         } else {
-                            REQUIRE(val(n) == Approx(0.0).margin(thrs));
+                            REQUIRE(val(n) == Catch::Approx(0.0).margin(thrs));
                         }
                     }
                 }

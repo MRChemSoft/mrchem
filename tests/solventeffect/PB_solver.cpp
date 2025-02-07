@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include <MRCPP/MWOperators>
 
@@ -104,7 +104,7 @@ TEST_CASE("Poisson Boltzmann equation solver standard", "[PB_solver][pb_standard
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
 
         Reo->clear();
-        REQUIRE((Er_nuc) == Approx(-1.358726143734e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
+        REQUIRE((Er_nuc) == Catch::Approx(-1.358726143734e-01).epsilon(thrs)); // exact is -0.1373074208 Hartree, though ours is close, i think we are a bit too far away, some parameterization issue
     }
 }
 
@@ -162,7 +162,7 @@ TEST_CASE("Poisson Boltzmann equation solver linearized", "[PB_solver][pb_linear
         auto [Er_el, Er_nuc] = Reo->getSolver()->computeEnergies(rho_el);
 
         Reo->clear();
-        REQUIRE(Er_nuc == Approx(-1.358725427728e-01).epsilon(thrs)); // what we get in standard GPESolver is -1.455145361712e-01, while with PB we get -1.329978908155e-01
+        REQUIRE(Er_nuc == Catch::Approx(-1.358725427728e-01).epsilon(thrs)); // what we get in standard GPESolver is -1.455145361712e-01, while with PB we get -1.329978908155e-01
     }
 }
 

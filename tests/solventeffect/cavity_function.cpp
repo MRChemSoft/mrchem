@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "MRCPP/MWFunctions"
 #include "MRCPP/MWOperators"
@@ -53,7 +53,7 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::project<3>(prec, cav_tree, sphere);
 
     auto sphere_volume = cav_tree.integrate();
-    REQUIRE(sphere_volume == Approx(4.44011761692970985).epsilon(thrs));
+    REQUIRE(sphere_volume == Catch::Approx(4.44011761692970985).epsilon(thrs));
 
     // test gradCavity
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
@@ -66,7 +66,7 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::FunctionTree<3> diff_func(*MRA);
     mrcpp::add(prec, diff_func, 1.0, mrcpp::get_func(d_cav, 0), -1.0, dx_cav_analytical);
     double diff = diff_func.integrate();
-    REQUIRE(diff == Approx(0.00).margin(prec));
+    REQUIRE(diff == Catch::Approx(0.00).margin(prec));
 
     // test volume of two interlocking spheres
     coords.push_back({0.0, 0.0, 1.0});
@@ -76,6 +76,6 @@ TEST_CASE("Cavityfunction", "[cavity_function]") {
     mrcpp::project<3>(prec, two_cav_tree, two_spheres);
 
     double two_sphere_volume = two_cav_tree.integrate();
-    REQUIRE(two_sphere_volume == Approx(7.5096630756284952213).epsilon(thrs * 10));
+    REQUIRE(two_sphere_volume == Catch::Approx(7.5096630756284952213).epsilon(thrs * 10));
 }
 } // namespace cavity_function

@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "mrchem.h"
 
@@ -60,8 +60,8 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         Orbital Iphi = I(phi);
         I.clear();
 
-        REQUIRE(Iphi.integrate().real() == Approx(phi.integrate().real()));
-        REQUIRE(Iphi.integrate().imag() == Approx(phi.integrate().imag()));
+        REQUIRE(Iphi.integrate().real() == Catch::Approx(phi.integrate().real()));
+        REQUIRE(Iphi.integrate().imag() == Catch::Approx(phi.integrate().imag()));
     }
 
     SECTION("vector apply") {
@@ -80,15 +80,15 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
             OrbitalVector IPhi = I(Phi);
             ComplexVector ints_a = orbital::get_integrals(Phi);
             ComplexVector ints_b = orbital::get_integrals(IPhi);
-            REQUIRE(ints_a.real()(0) == Approx(ints_b.real()(0)));
-            REQUIRE(ints_a.real()(1) == Approx(ints_b.real()(1)));
-            REQUIRE(ints_a.imag()(0) == Approx(ints_b.imag()(0)));
-            REQUIRE(ints_a.imag()(1) == Approx(ints_b.imag()(1)));
+            REQUIRE(ints_a.real()(0) == Catch::Approx(ints_b.real()(0)));
+            REQUIRE(ints_a.real()(1) == Catch::Approx(ints_b.real()(1)));
+            REQUIRE(ints_a.imag()(0) == Catch::Approx(ints_b.imag()(0)));
+            REQUIRE(ints_a.imag()(1) == Catch::Approx(ints_b.imag()(1)));
         }
         SECTION("trace") {
             double nEl = get_electron_number(Phi);
             ComplexDouble tr = I.trace(Phi);
-            REQUIRE(tr.real() == Approx(nEl));
+            REQUIRE(tr.real() == Catch::Approx(nEl));
             REQUIRE(std::abs(tr.imag()) < thrs);
         }
         I.clear();
@@ -104,7 +104,7 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         ComplexDouble S = I(phi, phi);
         I.clear();
 
-        REQUIRE(S.real() == Approx(phi.squaredNorm()));
+        REQUIRE(S.real() == Catch::Approx(phi.squaredNorm()));
         REQUIRE(S.imag() < thrs);
     }
 
@@ -123,10 +123,10 @@ TEST_CASE("IdentityOperator", "[identity_operator]") {
         I.clear();
 
         DoubleMatrix sq_norms = orbital::get_squared_norms(Phi);
-        REQUIRE(std::abs(S(0, 0)) == Approx(sq_norms(0)));
-        REQUIRE(std::abs(S(1, 1)) == Approx(sq_norms(1)));
-        REQUIRE(S(0, 1).real() == Approx(S(1, 0).real()));
-        REQUIRE(S(0, 1).imag() == Approx(-S(1, 0).imag()));
+        REQUIRE(std::abs(S(0, 0)) == Catch::Approx(sq_norms(0)));
+        REQUIRE(std::abs(S(1, 1)) == Catch::Approx(sq_norms(1)));
+        REQUIRE(S(0, 1).real() == Catch::Approx(S(1, 0).real()));
+        REQUIRE(S(0, 1).imag() == Catch::Approx(-S(1, 0).imag()));
     }
 }
 

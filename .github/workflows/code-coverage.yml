@@ -15,31 +15,32 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        shell: bash -el {0}
+
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up environment
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
           auto-update-conda: true
           auto-activate-base: false
           activate-environment: mrchem-codecov
           environment-file: .github/mrchem-codecov.yml
           channel-priority: true
-          python-version: 3.9
+          python-version: 3.12
 
     - name: Configure
-      shell: bash -l {0}
       run: |
-        python ./setup --type=$BUILD_TYPE --arch-flags=false --coverage --generator=Ninja --prefix=$GITHUB_WORKSPACE/Software/MRChem build
+        python ./setup --type=$BUILD_TYPE --arch-flags=false --coverage --generator=Ninja build
 
     - name: Build
-      shell: bash -l {0}
       run: |
-        cmake --build build --config $BUILD_TYPE --target install -- -v -d stats
+        cmake --build build --config $BUILD_TYPE -- -v -d stats
 
     - name: Test MRChem and generate coverage report
-      shell: bash -l {0}
       run: |
         cd build
         ctest -C $BUILD_TYPE --output-on-failure --verbose

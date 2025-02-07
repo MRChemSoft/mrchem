@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "mrchem.h"
@@ -65,8 +65,8 @@ TEST_CASE("Density", "[density]") {
             density::compute(prec, rho_t, Phi, DensityType::Total);
             density::compute(prec, rho_s, Phi, DensityType::Spin);
 
-            REQUIRE(rho_t.integrate().real() == Approx(7.0));
-            REQUIRE(rho_s.integrate().real() == Approx(3.0));
+            REQUIRE(rho_t.integrate().real() == Catch::Approx(7.0));
+            REQUIRE(rho_s.integrate().real() == Catch::Approx(3.0));
         }
 
         SECTION("shared memory alpha/beta density") {
@@ -76,8 +76,8 @@ TEST_CASE("Density", "[density]") {
             density::compute(prec, rho_a, Phi, DensityType::Alpha);
             density::compute(prec, rho_b, Phi, DensityType::Beta);
 
-            REQUIRE(rho_a.integrate().real() == Approx(5.0));
-            REQUIRE(rho_b.integrate().real() == Approx(2.0));
+            REQUIRE(rho_a.integrate().real() == Catch::Approx(5.0));
+            REQUIRE(rho_b.integrate().real() == Catch::Approx(2.0));
         }
     }
 }

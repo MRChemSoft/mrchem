@@ -23,7 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include "catch.hpp"
+#include "catch2/catch_all.hpp"
 
 #include "MRCPP/Parallel"
 #include "mrchem.h"
@@ -53,7 +53,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("copy constructor") {
             mrcpp::ComplexFunction func_2(func_1);
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
@@ -62,7 +62,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             mrcpp::ComplexFunction func_2;
             func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
@@ -70,7 +70,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("assigment constructor") {
             mrcpp::ComplexFunction func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
             REQUIRE(&func_2.real() == &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
@@ -79,7 +79,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             mrcpp::ComplexFunction func_2(false);
             mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(not func_2.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
             REQUIRE(&func_2.real() != &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
@@ -87,7 +87,7 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("deep copy to shared") {
             mrcpp::ComplexFunction func_2(true);
             mrcpp::cplxfunc::deep_copy(func_2, func_1);
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
             REQUIRE(&func_2.real() != &func_1.real());
             REQUIRE(&func_2.imag() == &func_1.imag());
         }
@@ -103,44 +103,44 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("copy constructor") {
             mrcpp::ComplexFunction func_2(func_1);
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
-            REQUIRE(func_2.integrate().imag() == Approx(func_1.integrate().imag()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.integrate().real()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(func_1.integrate().imag()));
         }
 
         SECTION("default constructor plus assignment") {
             mrcpp::ComplexFunction func_2;
             func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
-            REQUIRE(func_2.integrate().imag() == Approx(func_1.integrate().imag()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.integrate().real()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(func_1.integrate().imag()));
         }
 
         SECTION("assigment constructor") {
             mrcpp::ComplexFunction func_2 = func_1;
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
-            REQUIRE(func_2.integrate().imag() == Approx(func_1.integrate().imag()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.integrate().real()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(func_1.integrate().imag()));
         }
 
         SECTION("deep copy to non-shared") {
             mrcpp::ComplexFunction func_2(false);
             mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(not func_2.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
-            REQUIRE(func_2.integrate().imag() == Approx(func_1.integrate().imag()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.integrate().real()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(func_1.integrate().imag()));
         }
 
         SECTION("deep copy to shared") {
             mrcpp::ComplexFunction func_2(true);
             mrcpp::cplxfunc::deep_copy(func_2, func_1);
             REQUIRE(func_2.isShared() == func_1.isShared());
-            REQUIRE(func_2.norm() == Approx(func_1.norm()));
-            REQUIRE(func_2.integrate().real() == Approx(func_1.integrate().real()));
-            REQUIRE(func_2.integrate().imag() == Approx(func_1.integrate().imag()));
+            REQUIRE(func_2.norm() == Catch::Approx(func_1.norm()));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.integrate().real()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(func_1.integrate().imag()));
         }
     }
 #endif
@@ -155,25 +155,25 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         const double g_int = func.imag().integrate();
         SECTION("real scalar") {
             func.rescale(pi);
-            REQUIRE(func.norm() == Approx(pi * ref_norm));
-            REQUIRE(func.real().integrate() == Approx(pi * f_int));
-            REQUIRE(func.imag().integrate() == Approx(pi * g_int));
+            REQUIRE(func.norm() == Catch::Approx(pi * ref_norm));
+            REQUIRE(func.real().integrate() == Catch::Approx(pi * f_int));
+            REQUIRE(func.imag().integrate() == Catch::Approx(pi * g_int));
         }
         SECTION("imaginary unit") {
             ComplexDouble i(0.0, 1.0);
             func.rescale(i);
-            REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.real().integrate() == Approx(-g_int));
-            REQUIRE(func.imag().integrate() == Approx(f_int));
+            REQUIRE(func.norm() == Catch::Approx(ref_norm));
+            REQUIRE(func.real().integrate() == Catch::Approx(-g_int));
+            REQUIRE(func.imag().integrate() == Catch::Approx(f_int));
         }
         SECTION("unitary rotation") {
             double re = std::sin(0.5);
             double im = std::cos(0.5);
             ComplexDouble c(re, im);
             func.rescale(c);
-            REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.real().integrate() == Approx(re * f_int - im * g_int));
-            REQUIRE(func.imag().integrate() == Approx(im * f_int + re * g_int));
+            REQUIRE(func.norm() == Catch::Approx(ref_norm));
+            REQUIRE(func.real().integrate() == Catch::Approx(re * f_int - im * g_int));
+            REQUIRE(func.imag().integrate() == Catch::Approx(im * f_int + re * g_int));
         }
     }
 #ifdef MRCHEM_HAS_MPI
@@ -188,26 +188,26 @@ TEST_CASE("QMFunction", "[qmfunction]") {
 
         SECTION("real scalar") {
             func.rescale(pi);
-            REQUIRE(func.norm() == Approx(pi * ref_norm));
-            REQUIRE(func.real().integrate() == Approx(pi * f_int));
-            REQUIRE(func.imag().integrate() == Approx(pi * g_int));
+            REQUIRE(func.norm() == Catch::Approx(pi * ref_norm));
+            REQUIRE(func.real().integrate() == Catch::Approx(pi * f_int));
+            REQUIRE(func.imag().integrate() == Catch::Approx(pi * g_int));
         }
         SECTION("imaginary unit") {
             ComplexDouble i(0.0, 1.0);
             func.rescale(i);
             mrcpp::mpi::barrier(mrcpp::mpi::comm_share);
-            REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.real().integrate() == Approx(-g_int));
-            REQUIRE(func.imag().integrate() == Approx(f_int));
+            REQUIRE(func.norm() == Catch::Approx(ref_norm));
+            REQUIRE(func.real().integrate() == Catch::Approx(-g_int));
+            REQUIRE(func.imag().integrate() == Catch::Approx(f_int));
         }
         SECTION("unitary rotation") {
             double re = std::sin(0.5);
             double im = std::cos(0.5);
             ComplexDouble c(re, im);
             func.rescale(c);
-            REQUIRE(func.norm() == Approx(ref_norm));
-            REQUIRE(func.real().integrate() == Approx(re * f_int - im * g_int));
-            REQUIRE(func.imag().integrate() == Approx(im * f_int + re * g_int));
+            REQUIRE(func.norm() == Catch::Approx(ref_norm));
+            REQUIRE(func.real().integrate() == Catch::Approx(re * f_int - im * g_int));
+            REQUIRE(func.imag().integrate() == Catch::Approx(im * f_int + re * g_int));
         }
     }
 
@@ -222,13 +222,13 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             mrcpp::ComplexFunction func_h(false);
             SECTION("with complex scalar") {
                 mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im, -1.0);
-                REQUIRE(func_h.integrate().real() == Approx(0.0));
-                REQUIRE(func_h.integrate().imag() == Approx(f_im.integrate().imag()));
+                REQUIRE(func_h.integrate().real() == Catch::Approx(0.0));
+                REQUIRE(func_h.integrate().imag() == Catch::Approx(f_im.integrate().imag()));
             }
             SECTION("with function conjugate") {
                 mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im.dagger(), -1.0);
-                REQUIRE(func_h.integrate().real() == Approx(f_re.integrate().real()));
-                REQUIRE(func_h.integrate().imag() == Approx(0.0));
+                REQUIRE(func_h.integrate().real() == Catch::Approx(f_re.integrate().real()));
+                REQUIRE(func_h.integrate().imag() == Catch::Approx(0.0));
             }
         }
         SECTION("into shared function") {
@@ -236,13 +236,13 @@ TEST_CASE("QMFunction", "[qmfunction]") {
             mrcpp::ComplexFunction func_h(true);
             SECTION("with complex scalar") {
                 mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im, -1.0);
-                REQUIRE(func_h.integrate().real() == Approx(0.0));
-                REQUIRE(func_h.integrate().imag() == Approx(f_im.integrate().imag()));
+                REQUIRE(func_h.integrate().real() == Catch::Approx(0.0));
+                REQUIRE(func_h.integrate().imag() == Catch::Approx(f_im.integrate().imag()));
             }
             SECTION("with function conjugate") {
                 mrcpp::cplxfunc::add(func_h, c, f_re, c, f_im.dagger(), -1.0);
-                REQUIRE(func_h.integrate().real() == Approx(f_re.integrate().real()));
-                REQUIRE(func_h.integrate().imag() == Approx(0.0));
+                REQUIRE(func_h.integrate().real() == Catch::Approx(f_re.integrate().real()));
+                REQUIRE(func_h.integrate().imag() == Catch::Approx(0.0));
             }
         }
     }
@@ -256,15 +256,15 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("into non-shared function") {
             mrcpp::ComplexFunction func_2(false);
             mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
-            REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
-            REQUIRE(func_2.integrate().imag() == Approx(0.0));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.squaredNorm()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(0.0));
         }
 #ifdef MRCHEM_HAS_MPI
         SECTION("into shared function") {
             mrcpp::ComplexFunction func_2(true);
             mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
-            REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
-            REQUIRE(func_2.integrate().imag() == Approx(0.0));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.squaredNorm()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(0.0));
         }
 #endif
     }
@@ -278,14 +278,14 @@ TEST_CASE("QMFunction", "[qmfunction]") {
         SECTION("into non-shared function") {
             mrcpp::ComplexFunction func_2(false);
             mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
-            REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
-            REQUIRE(func_2.integrate().imag() == Approx(0.0));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.squaredNorm()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(0.0));
         }
         SECTION("into shared function") {
             mrcpp::ComplexFunction func_2(true);
             mrcpp::cplxfunc::multiply(func_2, func_1, func_1.dagger(), -1.0);
-            REQUIRE(func_2.integrate().real() == Approx(func_1.squaredNorm()));
-            REQUIRE(func_2.integrate().imag() == Approx(0.0));
+            REQUIRE(func_2.integrate().real() == Catch::Approx(func_1.squaredNorm()));
+            REQUIRE(func_2.integrate().imag() == Catch::Approx(0.0));
         }
     }
 #endif
