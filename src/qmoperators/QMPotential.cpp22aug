@@ -56,12 +56,12 @@ namespace mrchem {
 QMPotential::QMPotential(int adap, bool shared)
         : mrcpp::CompFunction<3>(0, shared)
         , QMOperator()
-        , adap_build(adap) {}
+        , adap_build(adap) {std::cout<<" QMPotential::adapcreator "<<" "<<std::endl;}
 
 QMPotential::QMPotential(const QMPotential &inp)
         : mrcpp::CompFunction<3>(0, inp.isShared())
         , QMOperator()
-        , adap_build(inp.adap_build) {}
+        , adap_build(inp.adap_build) {    std::cout<<" QMPotential::creator "<<" "<<std::endl;}
 
 /** @brief apply potential
  *
@@ -74,7 +74,9 @@ Orbital QMPotential::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
     Orbital out;
+    std::cout<<" AQMPotential::applystar "<<" "<<inp.squaredNorm()<<" "<<inp.spin()<<std::endl;
     calc(out, inp, false);
+    std::cout<<" AQMPotential::apply "<<" "<<out.squaredNorm()<<" "<<inp.squaredNorm()<<" "<<inp.spin()<<" "<<out.spin()<<std::endl;
 
     return out;
 }
@@ -89,12 +91,13 @@ Orbital QMPotential::apply(Orbital inp) {
 Orbital QMPotential::dagger(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
 
-    Orbital out = inp.paramCopy(true);
+    Orbital out = inp.paramCopy();
     calc(out, inp, true);
     return out;
 }
 
 QMOperatorVector QMPotential::apply(QMOperator_p &O) {
+      std::cout<<" QMPotential::capply"<<std::endl;
     QMIdentity *I = dynamic_cast<QMIdentity *>(&(*O));
     QMPotential *V_inp = dynamic_cast<QMPotential *>(&(*O));
 
@@ -116,7 +119,8 @@ QMOperatorVector QMPotential::apply(QMOperator_p &O) {
         out.push_back(O);
         out.push_back(V_out);
     }
-    return out;
+      std::cout<<" QMPotential::capply done"<<std::endl;
+   return out;
 }
 
 /** @brief compute real part of output
@@ -136,9 +140,14 @@ void QMPotential::calc(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> &inp,
     if (inp.conjugate()) MSG_ERROR("Not implemented");
 
     mrcpp::CompFunction<3> &V = *this;
+    std::cout<<" QMPotential::calc"<<" "<<V.squaredNorm()<<" "<<out.func_ptr->isreal<<" "<<inp.spin()<<std::endl;
     double coef = 1.0;
     mrcpp::copy_grid(out, inp);
+    std::cout<<" QMPotential::calc cpgrid"<<" "<<out.getNNodes()<<" "<<inp.getNNodes()<<" "<<out.isreal()<<" "<<V.isreal()<<" "<<inp.isreal()<<" "<<inp.spin()<<" "<<out.spin()<<std::endl;
     mrcpp::multiply(prec, out, coef, inp, V, adap);
+    std::cout<<"mm "<<inp.squaredNorm()<<" "<<out.squaredNorm()<<" "<<V.squaredNorm()<<" "<<out.getNNodes()<<" "<<out.isreal()<<" "<<out.iscomplex()<<" "<<" "<<V.isreal()<<" "<<V.iscomplex()<<" "<<inp.spin()<<" "<<out.spin()<<std::endl;
+    if(out.iscomplex())std::cout<<" MRA "<<out.CompC[0]->getMRA().getMaxScale()<<std::endl;
+        std::cout<<" QMPotential::calc done"<<std::endl;
 }
 
 } // namespace mrchem

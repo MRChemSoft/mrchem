@@ -29,7 +29,7 @@
 
 #include "parallel.h"
 
-#include "mrcpp::ComplexFunction.h"
+#include "mrcpp::CompFunction.h"
 #include "qmfunction_utils.h"
 
 using mrcpp::FunctionTree;
@@ -45,7 +45,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
  *  Notice that the <bra| position is already complex conjugated.
  *
  */
-ComplexDouble mrcpp::cplxfunc::dot(mrcpp::ComplexFunction bra, mrcpp::ComplexFunction ket) {
+ComplexDouble mrcpp::dot(mrcpp::CompFunction<3> bra, mrcpp::CompFunction<3> ket) {
     double rr(0.0), ri(0.0), ir(0.0), ii(0.0);
     if (bra.hasReal() and ket.hasReal()) rr = mrcpp::dot(bra.real(), ket.real());
     if (bra.hasReal() and ket.hasImag()) ri = mrcpp::dot(bra.real(), ket.imag());
@@ -63,7 +63,7 @@ ComplexDouble mrcpp::cplxfunc::dot(mrcpp::ComplexFunction bra, mrcpp::ComplexFun
 /** @brief Compute <bra|ket> = int |bra^\dag(r)| * |ket(r)| dr.
  *
  */
-ComplexDouble mrcpp::cplxfunc::node_norm_dot(mrcpp::ComplexFunction bra, mrcpp::ComplexFunction ket, bool exact) {
+ComplexDouble mrcpp::node_norm_dot(mrcpp::CompFunction<3> bra, mrcpp::CompFunction<3> ket, bool exact) {
     double rr(0.0), ri(0.0), ir(0.0), ii(0.0);
     if (bra.hasReal() and ket.hasReal()) rr = mrcpp::node_norm_dot(bra.real(), ket.real(), exact);
     if (bra.hasReal() and ket.hasImag()) ri = mrcpp::node_norm_dot(bra.real(), ket.imag(), exact);
@@ -84,7 +84,7 @@ ComplexDouble mrcpp::cplxfunc::node_norm_dot(mrcpp::ComplexFunction bra, mrcpp::
  * This is achieved by building a new grid for the real and imaginary parts and
  * copying.
  */
-void mrcpp::cplxfunc::deep_copy(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction &inp) {
+void mrcpp::deep_copy(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> &inp) {
     bool need_to_copy = not(out.isShared()) or mrcpp::mpi::share_master();
     if (inp.hasReal()) {
         if (not out.hasReal()) out.alloc(NUMBER::Real);
@@ -104,7 +104,7 @@ void mrcpp::cplxfunc::deep_copy(mrcpp::ComplexFunction &out, mrcpp::ComplexFunct
     mrcpp::mpi::share_function(out, 0, 1324, mrcpp::mpi::comm_share);
 }
 
-void mrcpp::cplxfunc::project(mrcpp::ComplexFunction &out, std::function<double(const mrcpp::Coord<3> &r)> f, int type, double prec) {
+void mrcpp::project(mrcpp::CompFunction<3> &out, std::function<double(const mrcpp::Coord<3> &r)> f, int type, double prec) {
     bool need_to_project = not(out.isShared()) or mrcpp::mpi::share_master();
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (not out.hasReal()) out.alloc(NUMBER::Real);
@@ -117,7 +117,7 @@ void mrcpp::cplxfunc::project(mrcpp::ComplexFunction &out, std::function<double(
     mrcpp::mpi::share_function(out, 0, 123123, mrcpp::mpi::comm_share);
 }
 
-void mrcpp::cplxfunc::project(mrcpp::ComplexFunction &out, mrcpp::GaussExp<3> &f, int type, double prec) {
+void mrcpp::project(mrcpp::CompFunction<3> &out, mrcpp::GaussExp<3> &f, int type, double prec) {
     bool need_to_project = not(out.isShared()) or mrcpp::mpi::share_master();
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (not out.hasReal()) out.alloc(NUMBER::Real);
@@ -136,7 +136,7 @@ void mrcpp::cplxfunc::project(mrcpp::ComplexFunction &out, mrcpp::GaussExp<3> &f
     mrcpp::mpi::share_function(out, 0, 132231, mrcpp::mpi::comm_share);
 }
 
-void mrcpp::cplxfunc::project(mrcpp::ComplexFunction &out, mrcpp::RepresentableFunction<3> &f, int type, double prec) {
+void mrcpp::project(mrcpp::CompFunction<3> &out, mrcpp::RepresentableFunction<3> &f, int type, double prec) {
     bool need_to_project = not(out.isShared()) or mrcpp::mpi::share_master();
     if (type == NUMBER::Real or type == NUMBER::Total) {
         if (not out.hasReal()) out.alloc(NUMBER::Real);
@@ -156,80 +156,30 @@ void mrcpp::cplxfunc::project(mrcpp::ComplexFunction &out, mrcpp::RepresentableF
  * Recast into linear_combination.
  *
  */
-void mrcpp::cplxfunc::add(mrcpp::ComplexFunction &out, ComplexDouble a, mrcpp::ComplexFunction inp_a, ComplexDouble b, mrcpp::ComplexFunction inp_b, double prec) {
+void mrcpp::add(mrcpp::CompFunction<3> &out, ComplexDouble a, mrcpp::CompFunction<3> inp_a, ComplexDouble b, mrcpp::CompFunction<3> inp_b, double prec) {
     ComplexVector coefs(2);
     coefs(0) = a;
     coefs(1) = b;
 
-    mrcpp::ComplexFunctionVector funcs;
+    mrcpp::CompFunction<3>Vector funcs;
     funcs.push_back(inp_a);
     funcs.push_back(inp_b);
 
-    mrcpp::cplxfunc::linear_combination(out, coefs, funcs, prec);
+    mrcpp::linear_combination(out, coefs, funcs, prec);
 }
 
 /** @brief out = inp_a * inp_b
  *
  */
-void mrcpp::cplxfunc::multiply(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction inp_a, mrcpp::ComplexFunction inp_b, double prec, bool absPrec, bool useMaxNorms) {
+void mrcpp::multiply(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> inp_a, mrcpp::CompFunction<3> inp_b, double prec, bool absPrec, bool useMaxNorms) {
     multiply_real(out, inp_a, inp_b, prec, absPrec, useMaxNorms);
     multiply_imag(out, inp_a, inp_b, prec, absPrec, useMaxNorms);
-}
-
-/** @brief out = c_0*inp_0 + c_1*inp_1 + ... + c_N*inp_N
- *
- */
-void mrcpp::cplxfunc::linear_combination(mrcpp::ComplexFunction &out, const ComplexVector &c, mrcpp::ComplexFunctionVector &inp, double prec) {
-    FunctionTreeVector<3> rvec;
-    FunctionTreeVector<3> ivec;
-
-    double thrs = mrcpp::MachineZero;
-    for (int i = 0; i < inp.size(); i++) {
-        double sign = (inp[i].conjugate()) ? -1.0 : 1.0;
-
-        bool cHasReal = (std::abs(c[i].real()) > thrs);
-        bool cHasImag = (std::abs(c[i].imag()) > thrs);
-
-        if (cHasReal and inp[i].hasReal()) rvec.push_back(std::make_tuple(c[i].real(), &inp[i].real()));
-        if (cHasImag and inp[i].hasImag()) rvec.push_back(std::make_tuple(-sign * c[i].imag(), &inp[i].imag()));
-
-        if (cHasImag and inp[i].hasReal()) ivec.push_back(std::make_tuple(c[i].imag(), &inp[i].real()));
-        if (cHasReal and inp[i].hasImag()) ivec.push_back(std::make_tuple(sign * c[i].real(), &inp[i].imag()));
-    }
-
-    if (rvec.size() > 0 and not out.hasReal()) out.alloc(NUMBER::Real);
-    if (ivec.size() > 0 and not out.hasImag()) out.alloc(NUMBER::Imag);
-
-    bool need_to_add = not(out.isShared()) or mrcpp::mpi::share_master();
-    if (need_to_add) {
-        if (rvec.size() > 0) {
-            if (prec < 0.0) {
-                mrcpp::build_grid(out.real(), rvec);
-                mrcpp::add(prec, out.real(), rvec, 0);
-            } else {
-                mrcpp::add(prec, out.real(), rvec);
-            }
-        } else if (out.hasReal()) {
-            out.real().setZero();
-        }
-        if (ivec.size() > 0) {
-            if (prec < 0.0) {
-                mrcpp::build_grid(out.imag(), ivec);
-                mrcpp::add(prec, out.imag(), ivec, 0);
-            } else {
-                mrcpp::add(prec, out.imag(), ivec);
-            }
-        } else if (out.hasImag()) {
-            out.imag().setZero();
-        }
-    }
-    mrcpp::mpi::share_function(out, 0, 9911, mrcpp::mpi::comm_share);
 }
 
 /** @brief out = Re(inp_a * inp_b)
  *
  */
-void mrcpp::cplxfunc::multiply_real(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction inp_a, mrcpp::ComplexFunction inp_b, double prec, bool absPrec, bool useMaxNorms) {
+void mrcpp::multiply_real(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> inp_a, mrcpp::CompFunction<3> inp_b, double prec, bool absPrec, bool useMaxNorms) {
     double conj_a = (inp_a.conjugate()) ? -1.0 : 1.0;
     double conj_b = (inp_b.conjugate()) ? -1.0 : 1.0;
 
@@ -298,7 +248,7 @@ void mrcpp::cplxfunc::multiply_real(mrcpp::ComplexFunction &out, mrcpp::ComplexF
 /** @brief out = Im(inp_a * inp_b)
  *
  */
-void mrcpp::cplxfunc::multiply_imag(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction inp_a, mrcpp::ComplexFunction inp_b, double prec, bool absPrec, bool useMaxNorms) {
+void mrcpp::multiply_imag(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> inp_a, mrcpp::CompFunction<3> inp_b, double prec, bool absPrec, bool useMaxNorms) {
     double conj_a = (inp_a.conjugate()) ? -1.0 : 1.0;
     double conj_b = (inp_b.conjugate()) ? -1.0 : 1.0;
 

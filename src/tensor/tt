@@ -1,0 +1,14 @@
+false:
+RankZeroOperator Orb 1
+
+
+True
+  RankZeroOperator::operator()(OrbitalVector &bra, OrbitalVector &ket)
+ RankZeroOperator Orb 1
+apply complex metric
+apply complex metric done
+0 term 1.000000000162e+00 1.788488608850e+00
+ QMPotential::calc
+ 1.788488608850e+00 2.610296212006e+02
+ QMPotential::calc done
+1 term 1.000000000162e+00 2.610296212006e+02

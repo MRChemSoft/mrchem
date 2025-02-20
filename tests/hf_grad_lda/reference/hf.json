@@ -1,29 +1,38 @@
 {
   "input": {
+    "constants": {
+      "N_a": 6.02214076e+23,
+      "angstrom2bohrs": 1.8897261246257702,
+      "boltzmann_constant": 1.380649e-23,
+      "dipmom_au2debye": 2.5417464739297717,
+      "e0": 8.8541878128e-12,
+      "electron_g_factor": -2.00231930436256,
+      "elementary_charge": 1.602176634e-19,
+      "fine_structure_constant": 0.0072973525693,
+      "hartree2ev": 27.211386245988,
+      "hartree2kcalmol": 627.5094740630558,
+      "hartree2kjmol": 2625.4996394798254,
+      "hartree2simagnetizability": 78.9451185,
+      "hartree2wavenumbers": 219474.6313632,
+      "light_speed": 137.035999084,
+      "meter2bohr": 18897261246.2577
+    },
+    "geom_opt": {
+      "init_step_size": -0.5,
+      "max_force_component": 0.005,
+      "max_history_length": 10,
+      "max_iter": 100,
+      "minimal_step_size": 0.01,
+      "run": false,
+      "subspace_tolerance": 0.001,
+      "use_previous_guess": false
+    },
     "molecule": {
-      "cavity_coords": [
-        {
-          "center": [
-            -4.266952779405394,
-            -0.8735732321267697,
-            1.2175068299888478
-          ],
-          "radius": 1.0771438910366888
-        },
-        {
-          "center": [
-            -5.9726240875689705,
-            -1.4108658430663887,
-            3.9542643909246906
-          ],
-          "radius": 1.4928836384543585
-        }
-      ],
-      "cavity_width": 0.37794522492515403,
       "charge": 0,
       "coords": [
         {
           "atom": "f",
+          "r_rms": 5.2927138943e-05,
           "xyz": [
             -2.25797417086055,
             -0.462275046496363,
@@ -32,6 +41,7 @@
         },
         {
           "atom": "h",
+          "r_rms": 2.6569547399e-05,
           "xyz": [
             -3.1605765564318227,
             -0.7465980517921813,
@@ -42,9 +52,12 @@
       "multiplicity": 1
     },
     "mpi": {
+      "bank_per_node": -1,
       "bank_size": -1,
       "numerically_exact": true,
-      "shared_memory_size": 10000
+      "omp_threads": -1,
+      "shared_memory_size": 10000,
+      "use_omp_num_threads": false
     },
     "mra": {
       "basis_order": 5,
@@ -63,7 +76,8 @@
       "min_scale": -6
     },
     "printer": {
-      "file_name": "hf.inp",
+      "file_name": "hf",
+      "print_constants": false,
       "print_level": 0,
       "print_mpi": false,
       "print_prec": 6,
@@ -84,6 +98,7 @@
           "derivative": "abgv_55"
         },
         "nuclear_operator": {
+          "nuclear_model": "point_like",
           "proj_prec": 0.001,
           "shared_memory": false,
           "smooth_prec": 0.001
@@ -103,6 +118,11 @@
         }
       },
       "initial_guess": {
+        "environment": "None",
+        "external_field": "None",
+        "file_CUBE_a": "cube_vectors/CUBE_a_vector.json",
+        "file_CUBE_b": "cube_vectors/CUBE_b_vector.json",
+        "file_CUBE_p": "cube_vectors/CUBE_p_vector.json",
         "file_basis": "initial_guess/mrchem.bas",
         "file_chk": "checkpoint/phi_scf",
         "file_gto_a": "initial_guess/mrchem.moa",
@@ -114,7 +134,10 @@
         "localize": false,
         "method": "DFT (SVWN5)",
         "prec": 0.001,
+        "relativity": "None",
         "restricted": true,
+        "rotate": true,
+        "screen": 12.0,
         "type": "core",
         "zeta": 2
       },
@@ -132,9 +155,12 @@
         },
         "geometric_derivative": {
           "geom-1": {
+            "method": "hellmann_feynman",
             "operator": "h_nuc_grad",
             "precision": 0.001,
-            "smooth_prec": 0.001
+            "radius_factor": 0.5,
+            "smoothing": 0.001,
+            "surface_integral_precision": "medium"
           }
         }
       }
@@ -152,21 +178,21 @@
       "charge": 0,
       "dipole_moment": {
         "dip-1": {
-          "magnitude": 1.719904025547463,
+          "magnitude": 1.7062875014362446,
           "r_O": [
             0.0,
             0.0,
             0.0
           ],
           "vector": [
-            -0.8972280913620452,
-            -0.28411660698606145,
-            1.4395587389196445
+            -0.887789451985288,
+            -0.28714890143962,
+            1.428563066477369
           ],
           "vector_el": [
-            22.585116002812203,
-            4.622956863273583,
-            -6.451439679582518
+            22.59455464218896,
+            4.619924568820024,
+            -6.4624353520247935
           ],
           "vector_nuc": [
             -23.48234409417425,
@@ -178,14 +204,14 @@
       "geometric_derivative": {
         "geom-1": {
           "electronic": [
-            0.18841208365699463,
-            -2.0754989710159437,
-            -0.30224686528652456,
-            -1.7451139820795545,
-            -0.550106829049456,
-            2.8002194690324362
+            -0.09496103696802138,
+            -3.4132265395264794,
+            0.7938249209911681,
+            -1.7368175804110166,
+            -0.5507594994913632,
+            2.7907795847178725
           ],
-          "electronic_norm": 3.9526975179105786,
+          "electronic_norm": 4.837107920879934,
           "nuclear": [
             -1.5689195606619417,
             -0.49421531749272585,
@@ -196,14 +222,14 @@
           ],
           "nuclear_norm": 4.252705427032731,
           "total": [
-            -1.380507477004947,
-            -2.5697142885086697,
-            2.215091879635327,
-            -0.17619442141761277,
-            -0.05589151155673011,
-            0.28288072411058485
+            -1.663880597629963,
+            -3.9074418570192053,
+            3.3111636659130195,
+            -0.16789801974907492,
+            -0.05654418199863731,
+            0.2734408397960211
           ],
-          "total_norm": 3.678322211706672
+          "total_norm": 5.395049787911099
         }
       },
       "geometry": [
@@ -227,11 +253,11 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -15.989315407026629,
-          3.235637551573358,
-          4.7527923878469505,
-          4.77560198567038,
-          4.776109835111442
+          -15.804626535069248,
+          4.315120517981482,
+          4.7428340772062,
+          4.7724651360789485,
+          5.076921041906711
         ],
         "occupation": [
           2.0,
@@ -247,20 +273,20 @@
           "p",
           "p"
         ],
-        "sum_occupied": 3.1016527063510058
+        "sum_occupied": 6.205428476208182
       },
       "scf_energy": {
-        "E_ee": 94.65104330071759,
+        "E_ee": 94.63986905852005,
         "E_eext": 0.0,
-        "E_el": -86.5736125221208,
-        "E_en": -329.77091312936926,
-        "E_kin": 163.86995613659036,
+        "E_el": -83.52282286402836,
+        "E_en": -329.66039196257634,
+        "E_kin": 166.83783976049733,
         "E_next": 0.0,
         "E_nn": 5.2023121410189415,
         "E_nuc": 5.2023121410189415,
-        "E_tot": -81.37130038110186,
+        "E_tot": -78.32051072300942,
         "E_x": 0.0,
-        "E_xc": -15.323698830059485,
+        "E_xc": -15.340139720469399,
         "Er_el": 0.0,
         "Er_nuc": 0.0,
         "Er_tot": 0.0
@@ -272,22 +298,22 @@
       "nthreads": 1,
       "routine": "mrchem.x",
       "total_cores": 1,
-      "version": "1.1.0-alpha"
+      "version": "1.2.0-alpha"
     },
     "rsp_calculations": null,
     "scf_calculation": {
       "initial_energy": {
-        "E_ee": 94.65104330071759,
+        "E_ee": 94.63986905852005,
         "E_eext": 0.0,
-        "E_el": -86.5736125221208,
-        "E_en": -329.77091312936926,
-        "E_kin": 163.86995613659036,
+        "E_el": -83.52282286402836,
+        "E_en": -329.66039196257634,
+        "E_kin": 166.83783976049733,
         "E_next": 0.0,
         "E_nn": 5.2023121410189415,
         "E_nuc": 5.2023121410189415,
-        "E_tot": -81.37130038110186,
+        "E_tot": -78.32051072300942,
         "E_x": 0.0,
-        "E_xc": -15.323698830059485,
+        "E_xc": -15.340139720469399,
         "Er_el": 0.0,
         "Er_nuc": 0.0,
         "Er_tot": 0.0

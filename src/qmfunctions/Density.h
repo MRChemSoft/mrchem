@@ -33,7 +33,7 @@
  *
  * @brief General complex-valued function to handle densities (incl trans. densities)
  *
- * Inherits the general features of a complex function from mrcpp::ComplexFunction which
+ * Inherits the general features of a complex function from mrcpp::CompFunction<3> which
  * means separate MW function representations for the real and imaginary parts.
  * Note that there are several options for copying/assignment: the proper copy
  * constructor and assignment operator are *shallow* copies, which means that
@@ -48,12 +48,12 @@
 
 namespace mrchem {
 
-class Density final : public mrcpp::ComplexFunction {
+class Density final : public mrcpp::CompFunction<3> {
 public:
-    explicit Density(bool share)
-            : mrcpp::ComplexFunction(0, -1, -1, share) {}
+    explicit Density(bool share = false)
+            : mrcpp::CompFunction<3>(0, share) {}
     Density(const Density &dens)
-            : mrcpp::ComplexFunction(dens) {}
+            : mrcpp::CompFunction<3>(dens) {}
     Density &operator=(const Density &dens);
 
     void saveDensity(const std::string &file);

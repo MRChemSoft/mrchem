@@ -36,7 +36,7 @@ public:
             : ReactionPotential(std::move(gpesolver), Phi, mpi_share) {}
 
 private:
-    mrcpp::ComplexFunction &computePotential(double prec) const override;
+    mrcpp::CompFunction<3> &computePotential(double prec) const override;
 };
 
 } // namespace mrchem

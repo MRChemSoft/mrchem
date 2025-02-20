@@ -49,9 +49,10 @@ public:
         auto r_z = std::make_shared<QMPotential>(1);
 
         // Project analytic potential (exact on root scale, thus no prec)
-        mrcpp::cplxfunc::project(*r_x, f_x, NUMBER::Real, -1.0);
-        mrcpp::cplxfunc::project(*r_y, f_y, NUMBER::Real, -1.0);
-        mrcpp::cplxfunc::project(*r_z, f_z, NUMBER::Real, -1.0);
+        // the cast is required, because otherwise the compiler is not smart enough to understand that it returns a double
+        mrcpp::project(*r_x, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(f_x), -1.0);
+        mrcpp::project(*r_y, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(f_y), -1.0);
+        mrcpp::project(*r_z, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(f_z), -1.0);
 
         // Invoke operator= to assign *this operator
         RankOneOperator &r = (*this);

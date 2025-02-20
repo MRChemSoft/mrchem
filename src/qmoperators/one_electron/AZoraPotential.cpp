@@ -40,7 +40,7 @@ void readZoraPotential(const std::string path, Eigen::VectorXd &rGrid, Eigen::Ve
     rGrid = Eigen::Map<Eigen::VectorXd>(r.data(), r.size());
     vZora = Eigen::Map<Eigen::VectorXd>(v.data(), v.size());
     kappa = Eigen::Map<Eigen::VectorXd>(k.data(), k.size());
-    // The kappa function is half of what is defined in the paper Scalar 
+    // The kappa function is half of what is defined in the paper Scalar
     // Relativistic Effects with Multiwavelets: Implementation and Benchmark
     // it is not used in the code, only the potential is used
 }
@@ -75,16 +75,16 @@ namespace mrchem {
 
     void AZoraPotential::project(double proj_prec){
         if (isProjected) free(mrchem::NUMBER::Total);
-        mrcpp::ComplexFunction vtot;
+        mrcpp::CompFunction<3> vtot;
         this->prec = proj_prec;
-        auto chi_analytic = [this](const mrcpp::Coord<3>& r) {
+        std::function<double(const mrcpp::Coord<3>&)> chi_analytic = [this](const mrcpp::Coord<3>& r) {
             return this->evalf_analytic(r);
         };
-        mrcpp::cplxfunc::project(vtot, chi_analytic, mrcpp::NUMBER::Real, proj_prec);
+        mrcpp::project(vtot, chi_analytic, proj_prec);
         this->add(1.0, vtot);
         isProjected = true;
     }
-    
+
     double AZoraPotential::evalf_analytic(const mrcpp::Coord<3>& r){
         double V = 0.0;
         // Loop over all atoms:

@@ -46,12 +46,11 @@ TEST_CASE("MomentumOperator", "[momentum_operator]") {
     int nFuncs = 3;
     OrbitalVector Phi;
     for (int n = 0; n < nFuncs; n++) Phi.push_back(Orbital(SPIN::Paired));
-    Phi.distribute();
 
     for (int n = 0; n < nFuncs; n++) {
         int nu[3] = {n, 0, 0};
         HarmonicOscillatorFunction f(nu);
-        if (mrcpp::mpi::my_orb(Phi[n])) mrcpp::cplxfunc::project(Phi[n], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[n])) mrcpp::project(Phi[n], f, prec);
     }
 
     // reference values for harmonic oscillator eigenfunctions

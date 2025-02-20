@@ -42,7 +42,7 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
     double two_cc = 2.0 * c * c;
 
     std::shared_ptr<QMPotential> k = std::make_shared<QMPotential>(1);
-    mrcpp::cplxfunc::deep_copy(*k, vz);
+    mrcpp::deep_copy(*k, vz);
 
     if (k->hasImag()) MSG_ERROR("Inverse of complex function in zora potential");
     if (k->hasReal()) {

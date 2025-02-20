@@ -24,7 +24,7 @@ class HirshfeldPartition{
     /**
      * @brief Get the integral rho * w_i for a given atom i
      */
-    double getHirshfeldPartitionIntegral(int index, mrcpp::ComplexFunction &rho, double prec) const;
+    double getHirshfeldPartitionIntegral(int index, mrcpp::CompFunction<3> &rho, double prec) const;
 
     protected:
 

@@ -31,6 +31,7 @@
 
 #include "mrchem.h"
 #include "tensor/tensor_fwd.h"
+#include "qmfunctions/Orbital.h"
 
 /** @class QMOperator
  *
@@ -53,13 +54,11 @@
  */
 namespace mrchem {
 
-using Orbital = mrcpp::ComplexFunction;
-
 class QMOperator {
 public:
     QMOperator() = default;
     virtual ~QMOperator() {
-        if (prec() > 0.0) MSG_ERROR("Operator not properly cleared");
+        if (prec() > 0.0) MSG_ERROR("QMOperator not properly cleared");
     }
 
     double prec() { return this->apply_prec; }

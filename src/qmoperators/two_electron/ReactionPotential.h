@@ -63,7 +63,7 @@ protected:
     void clear() override;
 
 private:
-    virtual mrcpp::ComplexFunction &computePotential(double prec) const = 0;
+    virtual mrcpp::CompFunction<3> &computePotential(double prec) const = 0;
 };
 
 } // namespace mrchem

@@ -192,11 +192,22 @@ sections:
         default: -1
         docstring: |
           Number of MPI processes exclusively dedicated to manage orbital bank.
+      - name: bank_per_node
+        type: int
+        default: -1
+        docstring: |
+          Number of MPI processes per node exclusively dedicated to manage orbital bank.
       - name: omp_threads
         type: int
         default: -1
         docstring: |
-          Force the number of omp threads (leave default is better).
+          Force the number of omp threads for worker processes (leave default is better).
+      - name: use_omp_num_threads
+        type: bool
+        default: false
+        docstring: |
+          This will use the environment variable OMP_NUM_THREADS to determine the
+          average number of threads for OMP (bank will use 1, workers may use more).
   - name: Basis
     docstring: |
       Define polynomial basis.
@@ -741,6 +752,13 @@ sections:
         default: user['GeometryOptimizer']['use_previous_guess']
         docstring: |
           Write final orbitals to disk, file name
+          ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``.
+          Can be used as ``mw`` initial guess in subsequent calculations.
+      - name: write_orbitals_txt
+        type: bool
+        default: false
+        docstring: |
+          Write final orbitals to disk, in text format, file name
           ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``.
           Can be used as ``mw`` initial guess in subsequent calculations.
       - name: path_orbitals
