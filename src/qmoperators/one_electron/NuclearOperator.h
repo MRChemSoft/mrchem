@@ -35,6 +35,10 @@ class NuclearOperator final : public RankZeroOperator {
 public:
     NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false, const std::string &model = "point_like");
 
+    inline void add(const NuclearOperator &op) {
+        this->V_func.add(1.0, op.V_func);
+    }
+
 private:
     mrcpp::ComplexFunction V_func; // The MW Function representation of the potential
 
