@@ -46,6 +46,10 @@ public:
         h[0].name() = "l[x]";
         h[1].name() = "l[y]";
         h[2].name() = "l[z]";
+        h[0].setImag(p[0].isImag());
+        h[1].setImag(p[1].isImag());
+        h[2].setImag(p[2].isImag());
+        imag = p[0].isImag();
     }
 };
 

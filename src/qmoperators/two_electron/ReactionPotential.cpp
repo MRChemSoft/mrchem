@@ -52,13 +52,13 @@ void ReactionPotential::setup(double prec) {
     mrcpp::print::value(3, "Threshold", thrs, "(abs)", 5);
     mrcpp::print::separator(3, '-');
     auto potential = this->computePotential(prec);
-    mrcpp::cplxfunc::deep_copy(*this, potential);
+    mrcpp::deep_copy(*this, potential);
     if (plevel == 2) print_utils::qmfunction(2, "Reaction operator", *this, timer);
     mrcpp::print::footer(3, timer, 2);
 }
 
 void ReactionPotential::clear() {
-    mrcpp::ComplexFunction::free(NUMBER::Total); // delete FunctionTree pointers
+    mrcpp::CompFunction<3>::free(); // delete FunctionTree pointers
     clearApplyPrec();
     this->solver->clear();
 }

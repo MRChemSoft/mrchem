@@ -30,8 +30,6 @@
 
 namespace mrchem {
 
-using Orbital = mrcpp::ComplexFunction;
-
 /** @class RankOneOperator
  *
  *  @brief Vector of RankZeroOperator
@@ -44,11 +42,15 @@ using Orbital = mrcpp::ComplexFunction;
 template <int I> class RankOneOperator : public TensorOperator<I, RankZeroOperator> {
 public:
     RankOneOperator<I> operator()(RankZeroOperator B);
-    OrbitalVector operator()(Orbital phi);
+    std::vector<Orbital> operator()(Orbital phi); // NB: not an "OrbitalVector", because is not related to MPI
     ComplexVector operator()(Orbital bra, Orbital ket);
     ComplexVector trace(OrbitalVector &phi);
     ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
     ComplexVector trace(const Nuclei &nucs);
+    bool isImag() { return this->imag; }
+
+protected:
+    bool imag = false; // value will be taken from RankZeroOperator
 };
 
 namespace tensor {

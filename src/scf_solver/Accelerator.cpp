@@ -94,10 +94,10 @@ void Accelerator::rotate(const ComplexMatrix &U, bool all) {
     if (nOrbs <= 0) { return; }
     for (int i = 0; i < nOrbs; i++) {
         auto &Phi = this->orbitals[i];
-        mrcpp::mpifuncvec::rotate(Phi, U);
+        mrcpp::rotate(Phi, U);
 
         auto &dPhi = this->dOrbitals[i];
-        mrcpp::mpifuncvec::rotate(dPhi, U);
+        mrcpp::rotate(dPhi, U);
     }
     for (int i = 0; i < nFock; i++) {
         auto &F = this->fock[i];
@@ -162,11 +162,11 @@ bool Accelerator::verifyOverlap(OrbitalVector &Phi) {
     if (nHistory > 0) {
         for (int i = 0; i < nOrbs; i++) {
             auto &phi_i = Phi[i];
-            if (mrcpp::mpi::my_orb(phi_i)) {
+            if (mrcpp::mpi::my_func(phi_i)) {
                 auto &last_i = this->orbitals[nHistory][i];
-                if (not mrcpp::mpi::my_orb(last_i)) MSG_ABORT("MPI rank mismatch");
-                auto sqNorm = phi_i.squaredNorm();
-                auto overlap = orbital::dot(phi_i, last_i);
+                if (not mrcpp::mpi::my_func(last_i)) MSG_ABORT("MPI rank mismatch");
+                auto sqNorm = phi_i.getSquareNorm();
+                auto overlap = mrcpp::dot(phi_i, last_i);
                 if (std::abs(overlap) < 0.5 * sqNorm) {
                     mrcpp::print::value(this->pl + 2, "Overlap not verified ", std::abs(overlap));
                     out(i) = 1;

@@ -36,13 +36,9 @@ bool compare(const Orbital &phi_a, const Orbital &phi_b);
 int compare_spin(const Orbital &phi_a, const Orbital &phi_b);
 int compare_occupation(const Orbital &phi_a, const Orbital &phi_b);
 
-ComplexDouble dot(Orbital bra, Orbital ket);
-ComplexVector dot(OrbitalVector &Bra, OrbitalVector &Ket);
-ComplexDouble node_norm_dot(Orbital bra, Orbital ket, bool exact);
-
 void normalize(Orbital phi);
 OrbitalChunk get_my_chunk(OrbitalVector &Phi);
-void orthogonalize(double prec, Orbital &phi, Orbital psi);
+void orthogonalize(double prec, Orbital &&phi, Orbital psi);
 
 OrbitalVector add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec = -1.0);
 OrbitalVector rotate(OrbitalVector &Phi, const ComplexMatrix &U, double prec = -1.0);
@@ -53,7 +49,7 @@ OrbitalVector param_copy(const OrbitalVector &Phi);
 OrbitalVector adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b);
 OrbitalVector disjoin(OrbitalVector &Phi, int spin);
 
-void save_orbitals(OrbitalVector &Phi, const std::string &file, int spin = -1);
+void save_orbitals(OrbitalVector &Phi, const std::string &file, int spin = -1, int text_format = 0);
 OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
 
 void save_nodes(OrbitalVector Phi, mrcpp::FunctionTree<3> &refTree, mrcpp::BankAccount &nodes);
@@ -65,7 +61,6 @@ void orthogonalize(double prec, OrbitalVector &Phi, OrbitalVector &Psi);
 ComplexMatrix calc_lowdin_matrix(OrbitalVector &Phi);
 ComplexMatrix calc_overlap_matrix(OrbitalVector &BraKet);
 ComplexMatrix calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ket);
-DoubleMatrix calc_norm_overlap_matrix(OrbitalVector &BraKet);
 
 ComplexMatrix localize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
@@ -86,10 +81,10 @@ int get_size_nodes(const OrbitalVector &Phi, bool avg = false);
 bool orbital_vector_is_sane(const OrbitalVector &Phi);
 
 void set_spins(OrbitalVector &Phi, const IntVector &spins);
-void set_occupations(OrbitalVector &Phi, const IntVector &occ);
+void set_occupations(OrbitalVector &Phi, const DoubleVector &occ);
 
 IntVector get_spins(const OrbitalVector &Phi);
-IntVector get_occupations(const OrbitalVector &Phi);
+DoubleVector get_occupations(const OrbitalVector &Phi);
 DoubleVector get_norms(const OrbitalVector &Phi);
 DoubleVector get_squared_norms(const OrbitalVector &Phi);
 DoubleVector calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
@@ -97,9 +92,9 @@ ComplexVector get_integrals(const OrbitalVector &Phi);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
-void saveOrbital(const std::string &file, Orbital& orb);
-void loadOrbital(const std::string &file, Orbital& orb);
- //char printSpin(const Orbital& orb);
+void saveOrbital(const std::string &file, const Orbital &orb, int text_format = 0);
+void saveOrbital(const std::string &file, mrcpp::CompFunction<3> &orb, int text_format = 0);
+void loadOrbital(const std::string &file, Orbital &orb);
 
 } // namespace orbital
 } // namespace mrchem

@@ -76,8 +76,8 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
     ComplexMatrix F_mat_y = F_mat_0 - omega * ComplexMatrix::Identity(Phi_0.size(), Phi_0.size());
 
     RankZeroOperator V_0 = F_0.potential();
-    RankZeroOperator V_1 = F_1.potential() + F_1.perturbation();
-
+    RankZeroOperator V_1 = F_1.perturbation();
+    if( F_1.potential().isImag() == F_1.perturbation().isImag()) V_1 += F_1.potential();
     double err_o = 1.0;
     double err_t = 1.0;
     DoubleVector errors_x = DoubleVector::Zero(Phi_0.size());
@@ -127,7 +127,7 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
             mrcpp::print::time(2, "Applying V_1", t_lap);
 
             t_lap.start();
-            mrcpp::mpifuncvec::orthogonalize(this->orth_prec, Psi_1, Phi_0);
+            mrcpp::orthogonalize(this->orth_prec, Psi_1, Phi_0);
             mrcpp::print::time(2, "Projecting (1 - rho_0)", t_lap);
 
             t_lap.start();
@@ -161,7 +161,7 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
             kain_x.accelerate(orb_prec, X_n, dX_n);
 
             // Prepare for next iteration
-            X_n = orbital::add(1.0, X_n, 1.0, dX_n);
+            X_n = orbital::add(1.0, dX_n, 1.0, X_n); // The result inherits parameters from dX_n
 
             // Save checkpoint file
             if (this->checkpoint) orbital::save_orbitals(X_n, this->chkFileX);
@@ -212,7 +212,7 @@ json LinearResponseSolver::optimize(double omega, Molecule &mol, FockBuilder &F_
             kain_y.accelerate(orb_prec, Y_n, dY_n);
 
             // Prepare for next iteration
-            Y_n = orbital::add(1.0, Y_n, 1.0, dY_n);
+            Y_n = orbital::add(1.0, dY_n, 1.0, Y_n);
 
             // Save checkpoint file
             if (this->checkpoint) orbital::save_orbitals(Y_n, this->chkFileY);

@@ -37,7 +37,6 @@ public:
     QMDerivative(const QMDerivative &inp);
 
 private:
-    const bool imag;     // add imaginary unit prefactor, for faster application
     const int apply_dir; // Cartesian direction of derivative
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative;
 

@@ -25,9 +25,9 @@
 
 #pragma once
 
-#include "mrchem.h"
-#include "Orbital.h"
 #include "Density.h"
+#include "Orbital.h"
+#include "mrchem.h"
 
 namespace mrchem {
 namespace density {

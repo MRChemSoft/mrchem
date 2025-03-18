@@ -27,8 +27,8 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
-#include <filesystem>
 #include "driver.h"
+#include <filesystem>
 
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
@@ -51,12 +51,12 @@
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 
+#include "qmoperators/one_electron/AZoraPotential.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
-#include "qmoperators/one_electron/AZoraPotential.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
@@ -83,8 +83,8 @@
 #include "environment/LPBESolver.h"
 #include "environment/PBESolver.h"
 #include "environment/Permittivity.h"
-#include "surface_forces/SurfaceForce.h"
 #include "properties/hirshfeld/HirshfeldPartition.h"
+#include "surface_forces/SurfaceForce.h"
 
 #include "mrdft/Factory.h"
 
@@ -117,6 +117,7 @@ namespace scf {
 bool guess_orbitals(const json &input, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
+void write_orbitals_txt(const json &input, Molecule &mol);
 void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
 } // namespace scf
@@ -317,6 +318,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
 
     if (json_out["success"]) {
+        if (json_scf.contains("write_orbitals_txt")) scf::write_orbitals_txt(json_scf["write_orbitals_txt"], mol);
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol, json_fock);
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
@@ -401,7 +403,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = false;
     }
     for (const auto &phi_i : Phi) {
-        double err = (mrcpp::mpi::my_orb(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        double err = (mrcpp::mpi::my_func(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
         if (err > 0.01) MSG_WARN("MO not normalized!");
     }
 
@@ -456,6 +458,13 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     mrcpp::print::footer(1, t_eps, 2);
     mol.printEnergies("initial");
     return true;
+}
+
+void driver::scf::write_orbitals_txt(const json &json_orbs, Molecule &mol) {
+    auto &Phi = mol.getOrbitals();
+    orbital::save_orbitals(Phi, json_orbs["file_phi_p"], SPIN::Paired, true);
+    orbital::save_orbitals(Phi, json_orbs["file_phi_a"], SPIN::Alpha, true);
+    orbital::save_orbitals(Phi, json_orbs["file_phi_b"], SPIN::Beta, true);
 }
 
 void driver::scf::write_orbitals(const json &json_orbs, Molecule &mol) {
@@ -554,7 +563,7 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
                 el.row(k) = h.trace(Phi).real();
                 h.clear();
             }
-        // calculate electronic gradient using the surface integrals method
+            // calculate electronic gradient using the surface integrals method
         } else if (json_prop["geometric_derivative"]["geom-1"]["method"] == "surface_integrals") {
             double prec = json_prop["geometric_derivative"]["geom-1"]["precision"];
             std::string leb_prec = json_prop["geometric_derivative"]["geom-1"]["surface_integral_precision"];
@@ -564,9 +573,7 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
             auto &nuc = G.getNuclear();
             auto &el = G.getElectronic();
             // set electronic gradient
-            for (int k = 0; k < mol.getNNuclei(); k++) {
-                el.row(k) = surfaceForces.row(k) - nuc.row(k);
-            }
+            for (int k = 0; k < mol.getNNuclei(); k++) { el.row(k) = surfaceForces.row(k) - nuc.row(k); }
         } else {
             MSG_ABORT("Invalid method for geometric derivative");
         }
@@ -630,9 +637,9 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
             mrchem::density::compute(prec, rho, Phi, DensityType::Total);
             Eigen::VectorXd charges = Eigen::VectorXd::Zero(mol.getNNuclei());
             for (int i = 0; i < mol.getNNuclei(); i++) {
-                if ( ! mrcpp::mpi::my_orb(i) ) continue; // my_orb also works for atoms.
+                if (!mrcpp::mpi::my_func(i)) continue; // my_orb also works for atoms.
                 double charge = partitioner.getHirshfeldPartitionIntegral(i, rho, prec);
-                charge = - charge + mol.getNuclei()[i].getCharge();
+                charge = -charge + mol.getNuclei()[i].getCharge();
                 charges(i) = charge;
             }
             mrcpp::mpi::allreduce_vector(charges, mrcpp::mpi::comm_wrk);
@@ -690,7 +697,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         if (line) plt.linePlot(npts, rho, fname);
         if (surf) plt.surfPlot(npts, rho, fname);
         if (cube) plt.cubePlot(npts, rho, fname);
-        rho.free(NUMBER::Total);
+        rho.free();
         mrcpp::print::time(1, fname, t_lap);
 
         if (orbital::size_singly(Phi) > 0) {
@@ -701,7 +708,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             if (surf) plt.surfPlot(npts, rho, fname);
             if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
-            rho.free(NUMBER::Total);
+            rho.free();
 
             t_lap.start();
             fname = path + "/rho_a";
@@ -710,7 +717,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             if (surf) plt.surfPlot(npts, rho, fname);
             if (cube) plt.cubePlot(npts, rho, fname);
             mrcpp::print::time(1, fname, t_lap);
-            rho.free(NUMBER::Total);
+            rho.free();
 
             t_lap.start();
             fname = path + "/rho_b";
@@ -718,7 +725,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
             if (line) plt.linePlot(npts, rho, fname);
             if (surf) plt.surfPlot(npts, rho, fname);
             if (cube) plt.cubePlot(npts, rho, fname);
-            rho.free(NUMBER::Total);
+            rho.free();
             mrcpp::print::time(1, fname, t_lap);
         }
     }
@@ -728,10 +735,10 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         if (orb_idx[0] < 0) {
             // Plotting ALL orbitals
             for (auto i = 0; i < Phi.size(); i++) {
-                if (not mrcpp::mpi::my_orb(Phi[i])) continue;
+                if (not mrcpp::mpi::my_func(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
-                name << path << "/phi_" << Phi[i].printSpin() << "_scf_idx_" << i;
+                name << path << "/phi_" << Orbital(Phi[i]).printSpin() << "_scf_idx_" << i;
                 if (line) plt.linePlot(npts, Phi[i], name.str());
                 if (surf) plt.surfPlot(npts, Phi[i], name.str());
                 if (cube) plt.cubePlot(npts, Phi[i], name.str());
@@ -740,7 +747,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         } else {
             // Plotting some orbitals
             for (auto &i : orb_idx) {
-                if (not mrcpp::mpi::my_orb(Phi[i])) continue;
+                if (not mrcpp::mpi::my_func(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
                 auto sp = 'u';
@@ -1096,9 +1103,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             std::string azora_dir_src = AZORA_POTENTIALS_SOURCE_DIR;
             std::string azora_dir_install = AZORA_POTENTIALS_INSTALL_DIR;
             std::string azora_dir = "";
-            if (json_fock["zora_operator"].contains("azora_potential_path")) {
-                azora_dir = json_fock["zora_operator"]["azora_potential_path"];
-            }
+            if (json_fock["zora_operator"].contains("azora_potential_path")) { azora_dir = json_fock["zora_operator"]["azora_potential_path"]; }
 
             std::string azora_dir_final;
             if (azora_dir != "") {

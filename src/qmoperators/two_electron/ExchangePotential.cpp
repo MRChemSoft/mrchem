@@ -29,7 +29,6 @@
 
 #include "ExchangePotential.h"
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
 
@@ -59,7 +58,7 @@ ExchangePotential::ExchangePotential(PoissonOperator_p P, OrbitalVector_p Phi, d
  */
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
-    mrcpp::mpifuncvec::rotate(this->exchange, U, this->apply_prec);
+    mrcpp::rotate(this->exchange, U, this->apply_prec);
 
     // NOTE: The following MPI point is currently NOT implemented!
     //
@@ -171,47 +170,48 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     // if the product is smaller than the target precision,
     // the result is expected to be negligible
     Timer timer_ij;
-    Orbital rho_ij = phi_i.paramCopy();
-    mrcpp::cplxfunc::multiply(rho_ij, phi_i.dagger(), phi_j, prec_m1, true, true);
+    Orbital rho_ij = phi_i.paramCopy(true);
+    mrcpp::multiply(rho_ij, phi_i, phi_j, prec_m1, true, true, true);
     timer_ij.stop();
     if (rho_ij.norm() < prec) return;
 
-    auto N_i = phi_i.getNNodes(NUMBER::Total);
-    auto N_j = phi_j.getNNodes(NUMBER::Total);
-    auto N_ij = rho_ij.getNNodes(NUMBER::Total);
+    auto N_i = phi_i.getNNodes();
+    auto N_j = phi_j.getNNodes();
+    auto N_ij = rho_ij.getNNodes();
     auto norm_ij = rho_ij.norm();
+    // For now we assume all phi are complex or all ar real.
+
+    bool RealOrbitals = phi_i.isreal();
 
     // prepare vector used to steer precision of Poisson application
-    mrcpp::FunctionTreeVector<3> phi_opt_vec;
-    if (phi_k.hasReal()) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_k.real()));
-    if (phi_k.hasImag()) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_k.imag()));
-
-    if (phi_j.hasReal() and &phi_j != &phi_k) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_j.real()));
-    if (phi_j.hasImag() and &phi_j != &phi_k) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_j.imag()));
-
-    if (phi_i.hasReal() and &phi_i != &phi_k and &phi_i != &phi_j) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_i.real()));
-    if (phi_i.hasImag() and &phi_i != &phi_k and &phi_i != &phi_j) phi_opt_vec.push_back(std::make_tuple(1.0, &phi_i.imag()));
-
+    mrcpp::FunctionTreeVector<3, double> phi_opt_vec_real;
+    mrcpp::FunctionTreeVector<3, ComplexDouble> phi_opt_vec_cplx;
+    if (RealOrbitals) {
+        if (phi_k.isreal() and phi_k.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_k.CompD[0]);
+        if (phi_j.isreal() and &phi_j != &phi_k and phi_j.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_j.CompD[0]);
+        if (phi_i.isreal() and &phi_i != &phi_k and &phi_i != &phi_j and phi_i.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_i.CompD[0]);
+    } else {
+        if (phi_k.iscomplex()) phi_opt_vec_cplx.emplace_back(1.0, phi_k.CompC[0]);
+        if (phi_j.iscomplex() and &phi_j != &phi_k) phi_opt_vec_cplx.emplace_back(1.0, phi_j.CompC[0]);
+        if (phi_i.iscomplex() and &phi_i != &phi_k and &phi_i != &phi_j) phi_opt_vec_cplx.emplace_back(1.0, phi_i.CompC[0]);
+    }
     // compute V_ij = P[rho_ij]
     Timer timer_p;
-    Orbital V_ij = rho_ij.paramCopy();
-    if (rho_ij.hasReal()) {
-        V_ij.alloc(NUMBER::Real);
-        mrcpp::apply(prec_p, V_ij.real(), P, rho_ij.real(), phi_opt_vec, -1, true);
+    Orbital V_ij = rho_ij.paramCopy(true);
+    if (RealOrbitals) {
+        mrcpp::apply(prec_p, *V_ij.CompD[0], P, *rho_ij.CompD[0], phi_opt_vec_real, -1, true);
+    } else {
+        mrcpp::apply(prec_p, *V_ij.CompC[0], P, *rho_ij.CompC[0], phi_opt_vec_cplx, -1, true);
     }
-    if (rho_ij.hasImag()) {
-        V_ij.alloc(NUMBER::Imag);
-        mrcpp::apply(prec_p, V_ij.imag(), P, rho_ij.imag(), phi_opt_vec, -1, true);
-    }
-    rho_ij.release();
+    rho_ij.free();
     timer_p.stop();
-    auto N_p = V_ij.getNNodes(NUMBER::Total);
+    auto N_p = V_ij.getNNodes();
     auto norm_p = V_ij.norm();
 
     // compute out_kij = phi_k * V_ij
     Timer timer_kij;
-    mrcpp::cplxfunc::multiply(out_kij, phi_k, V_ij, prec_m2, true, true);
-    auto N_kij = out_kij.getNNodes(NUMBER::Total);
+    mrcpp::multiply(out_kij, phi_k, V_ij, prec_m2, true, true);
+    auto N_kij = out_kij.getNNodes();
     auto norm_kij = out_kij.norm();
     timer_kij.stop();
 
@@ -220,8 +220,8 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     auto N_jji = 0;
     auto norm_jji = 0.0;
     if (out_jji != nullptr) {
-        mrcpp::cplxfunc::multiply(*out_jji, phi_j, V_ij.dagger(), prec_m2, true, true);
-        N_jji = out_jji->getNNodes(NUMBER::Total);
+        mrcpp::multiply(*out_jji, V_ij, phi_j, prec_m2, true, true, true);
+        N_jji = out_jji->getNNodes();
         norm_jji = out_jji->norm();
     }
     timer_jji.stop();

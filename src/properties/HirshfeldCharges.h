@@ -12,14 +12,13 @@ namespace mrchem {
 
 class HirshfeldCharges final {
 public:
-
     DoubleVector getVector() const { return this->hirshfeld_charges; }
 
     void setVector(const DoubleVector &v) { this->hirshfeld_charges = v; }
 
     void print(const std::string &id) const {
         mrcpp::print::header(0, "Hirshfeld Charges (" + id + ")");
-        mrcpp::print::separator(0, '-');    
+        mrcpp::print::separator(0, '-');
         for (int i = 0; i < hirshfeld_charges.size(); i++) {
             std::string text = "Charge of atom " + std::to_string(i);
             print_utils::scalar(0, text, hirshfeld_charges(i));
@@ -29,9 +28,7 @@ public:
         mrcpp::print::separator(0, '=');
     }
 
-    nlohmann::json json() const {
-        return {{"total", print_utils::eigen_to_vector(getVector(), 1.0e-12)}};
-    }
+    nlohmann::json json() const { return {{"total", print_utils::eigen_to_vector(getVector(), 1.0e-12)}}; }
 
 protected:
     DoubleVector hirshfeld_charges;

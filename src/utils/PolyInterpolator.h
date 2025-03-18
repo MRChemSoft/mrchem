@@ -1,12 +1,12 @@
 #pragma once
-#include <vector>
 #include <Eigen/Dense>
-#include <fstream>
-#include <string>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <string>
+#include <vector>
 
-namespace interpolation_utils{
+namespace interpolation_utils {
 
 /**
  * @brief Interpolate a 5th order polynomial through 5 points and evaluate at x.
@@ -50,13 +50,13 @@ class PolyInterpolator {
      */
     double ypxmin;
 
-    public:
+public:
     /**
      * @brief Constructor
      * @param x_in x values of the points to interpolate
      * @param y_in y values of the points to interpolate
      */
-    PolyInterpolator(Eigen::VectorXd &x_in, Eigen::VectorXd &y_in){
+    PolyInterpolator(Eigen::VectorXd &x_in, Eigen::VectorXd &y_in) {
         x = x_in;
         y = y_in;
         n = x_in.size();
@@ -77,17 +77,17 @@ class PolyInterpolator {
         }
         ypxmin = polynomialInterpolate5_deriv(x_in_poly, y_in_poly, xmin);
     }
-    
+
     /**
-     * @brief Evaluate the interpolated function at x. 
+     * @brief Evaluate the interpolated function at x.
      * No extrapolation for x < xmin (meaning that the polynomial is evaluated at x < xmin), linear extrapolation for x > xmax.
      * Useful when the logarithm of the density is interpolated.
      * @param x x value at which to evaluate the function
      */
-    double evalfLeftNoRightLinear(const double &xval) const{
+    double evalfLeftNoRightLinear(const double &xval) const {
         double y;
         if (xval > xmax) { // linear extrapolation
-                y = this->y(n - 1) + ypxmax*(xval - xmax);
+            y = this->y(n - 1) + ypxmax * (xval - xmax);
             return y;
         }
 
@@ -107,7 +107,7 @@ class PolyInterpolator {
      * Useful when the density is interpolated.
      * @param x x value at which to evaluate the function
      */
-    double evalfLeftNoRightZero(const double &xval) const{
+    double evalfLeftNoRightZero(const double &xval) const {
         double y;
         if (xval > xmax) { // constant
             y = 0.0;
@@ -146,7 +146,7 @@ class PolyInterpolator {
         return y;
     }
 
-    private: 
+private:
     int adjustIndexToBoundaries(int i) const {
         int j = i;
         if (i == 0) j = 2;
@@ -155,5 +155,5 @@ class PolyInterpolator {
         if (i == n - 2) j = n - 3;
         return j;
     }
-};    
+};
 } // namespace interpolation_utils

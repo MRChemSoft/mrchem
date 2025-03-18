@@ -28,12 +28,12 @@
 #include <MRCPP/Timer>
 
 #include "QMDerivative.h"
+#include "qmfunctions/Orbital.h"
 
 #include "QMIdentity.h"
 #include "QMPotential.h"
 #include "QMSpin.h"
-#include "qmfunctions/Orbital.h"
-#include "qmfunctions/orbital_utils.h"
+//#include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
 
 using mrcpp::DerivativeOperator;
@@ -47,44 +47,39 @@ namespace mrchem {
 
 QMDerivative::QMDerivative(int d, std::shared_ptr<DerivativeOperator<3>> D, bool im)
         : QMOperator()
-        , imag(im)
         , apply_dir(d)
-        , derivative(D) {}
+        , derivative(D) {
+    imag = im;
+}
 
 QMDerivative::QMDerivative(const QMDerivative &inp)
         : QMOperator()
-        , imag(inp.imag)
         , apply_dir(inp.apply_dir)
-        , derivative(inp.derivative) {}
+        , derivative(inp.derivative) {
+    imag = inp.imag;
+}
 
 Orbital QMDerivative::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
     if (this->derivative == nullptr) MSG_ERROR("No derivative operator");
-
     auto dir = this->apply_dir;
     auto &D = *this->derivative;
-
-    Orbital out = inp.paramCopy();
-    if (this->isReal()) {
-        if (inp.hasReal()) {
-            out.alloc(NUMBER::Real);
-            mrcpp::apply(out.real(), D, inp.real(), dir);
+    Orbital out = inp.paramCopy(true);
+    ComplexDouble metric[4][4];
+    ComplexDouble diago = 1.0;
+    if (isImag() and inp.iscomplex()) diago = {0.0, 1.0}; // output will be complex
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (i == j)
+                metric[i][j] = diago;
+            else
+                metric[i][j] = 0.0;
         }
-        if (inp.hasImag()) {
-            out.alloc(NUMBER::Imag);
-            mrcpp::apply(out.imag(), D, inp.imag(), dir);
-            if (inp.conjugate()) out.imag().rescale(-1.0);
-        }
-    } else {
-        if (inp.hasImag()) {
-            out.alloc(NUMBER::Real);
-            mrcpp::apply(out.real(), D, inp.imag(), dir);
-            if (!inp.conjugate()) out.real().rescale(-1.0);
-        }
-        if (inp.hasReal()) {
-            out.alloc(NUMBER::Imag);
-            mrcpp::apply(out.imag(), D, inp.real(), dir);
-        }
+    }
+    mrcpp::apply(out, D, inp, dir, metric);
+    if (isImag() and !inp.iscomplex()) { // output is real, but we keep a soft complex scalar factor
+        ComplexDouble i1(0.0, 1.0);
+        out.func_ptr->data.c1[0] *= i1;
     }
     return out;
 }
@@ -106,25 +101,31 @@ QMOperatorVector QMDerivative::apply(QMOperator_p &O) {
         auto &D = *this->derivative;
         auto d = this->apply_dir;
         auto V_out = std::make_shared<QMPotential>(*V_inp);
+        // does not compile?       mrcpp::apply(V_out_base, D, V_inp, d);
         if (this->isReal()) {
-            if (V_inp->hasReal()) {
-                V_out->alloc(NUMBER::Real);
+            if (V_inp->isreal()) {
+                V_out->alloc(1);
                 mrcpp::apply(V_out->real(), D, V_inp->real(), d);
             }
-            if (V_inp->hasImag()) {
-                V_out->alloc(NUMBER::Imag);
-                mrcpp::apply(V_out->imag(), D, V_inp->imag(), d);
-                if (V_inp->conjugate()) V_out->imag().rescale(-1.0);
+            if (V_inp->iscomplex()) {
+                V_out->func_ptr->isreal = 0;
+                V_out->func_ptr->iscomplex = 1;
+                V_out->alloc(1);
+                mrcpp::apply(V_out->complex(), D, V_inp->complex(), d);
             }
         } else {
-            if (V_inp->hasImag()) {
-                V_out->alloc(NUMBER::Real);
-                mrcpp::apply(V_out->real(), D, V_inp->imag(), d);
-                if (!V_inp->conjugate()) V_out->real().rescale(-1.0);
+            if (V_inp->iscomplex()) {
+                V_out->func_ptr->isreal = 0;
+                V_out->func_ptr->iscomplex = 1;
+                V_out->alloc(1);
+                mrcpp::apply(V_out->complex(), D, V_inp->complex(), d);
+                if (!V_inp->conjugate()) V_out->CompC[0]->rescale({0.0, 1.0});
             }
-            if (V_inp->hasReal()) {
-                V_out->alloc(NUMBER::Imag);
-                mrcpp::apply(V_out->imag(), D, V_inp->real(), d);
+            if (V_inp->isreal()) {
+                mrcpp::copy_grid(V_out->real(), V_inp->real());
+                mrcpp::apply(V_out->real(), D, V_inp->real(), d);
+                ComplexDouble i1(0.0, 1.0);
+                V_out->func_ptr->data.c1[0] *= i1;
             }
         }
         out.push_back(V_out);

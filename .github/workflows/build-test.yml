@@ -26,10 +26,10 @@ jobs:
         os: [ubuntu-latest] #, macos-12]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Cache conda
-      uses: actions/cache@v1
+      uses: actions/cache@v4
       env:
         CACHE_NUMBER: 0  # Increase this value to reset cache if .github/mrchem-gha.yml has not changed
       with:
@@ -44,7 +44,7 @@ jobs:
           activate-environment: mrchem-gha
           environment-file: .github/mrchem-gha.yml
           channel-priority: true
-          python-version: 3.9
+          python-version: 3.11
           use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
 
     - name: Configure

@@ -44,6 +44,7 @@
 #include "Nucleus.h"
 #include "properties/DipoleMoment.h"
 #include "properties/GeometricDerivative.h"
+#include "properties/HirshfeldCharges.h"
 #include "properties/Magnetizability.h"
 #include "properties/NMRShielding.h"
 #include "properties/OrbitalEnergies.h"
@@ -51,7 +52,6 @@
 #include "properties/QuadrupoleMoment.h"
 #include "properties/SCFEnergy.h"
 #include "qmfunctions/Orbital.h"
-#include "properties/HirshfeldCharges.h"
 
 /** @class Molecule
  *

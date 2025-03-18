@@ -29,7 +29,6 @@
 
 #include "ExchangePotentialD1.h"
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
 
@@ -59,7 +58,7 @@ void ExchangePotentialD1::setupBank() {
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     OrbitalVector &Phi = *this->orbitals;
     for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_orb(i)) PhiBank.put_func(i, Phi[i]);
+        if (mrcpp::mpi::my_func(i)) PhiBank.put_func(i, Phi[i]);
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::time(3, "Setting up exchange bank", timer);
@@ -103,14 +102,14 @@ int ExchangePotentialD1::testInternal(Orbital phi_p) const {
  * particular exchange contribution has been precomputed.
  */
 Orbital ExchangePotentialD1::apply(Orbital phi_p) {
-    Orbital out_p = phi_p.paramCopy();
+    Orbital out_p = phi_p.paramCopy(true);
     if (this->apply_prec < 0.0) {
         MSG_ERROR("Uninitialized operator");
         return out_p;
     }
     int i = testInternal(phi_p);
     if (i < 0) {
-        if (not mrcpp::mpi::my_orb(phi_p)) {
+        if (not mrcpp::mpi::my_func(phi_p)) {
             MSG_WARN("Not computing exchange contributions that are not mine");
             return out_p;
         }
@@ -158,7 +157,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     for (auto &phi_i : Phi) {
         Orbital ex_iii(phi_i.spin(), phi_i.occ(), phi_i.getRank());
         t_calc.resume();
-        if (mrcpp::mpi::my_orb(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
+        if (mrcpp::mpi::my_func(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
         t_calc.stop();
         Ex.push_back(ex_iii);
         i++;
@@ -242,7 +241,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
         task = tasksMaster.next_task();
         if (task < 0) break;
         // we fetch all required i (but only one j at a time)
-        OrbitalVector iorb_vec;
+        std::vector<Orbital> iorb_vec;
         int i0 = -1;
         for (int i = 0; i < itasks[task].size(); i++) {
             int iorb = itasks[task][i];
@@ -268,13 +267,13 @@ void ExchangePotentialD1::setupInternal(double prec) {
             } else
                 phi_j = Phi[jorb];
             t_orb.stop();
-            std::vector<mrcpp::ComplexFunction> iijfunc_vec;
-            ComplexVector coef_vec(N);
+            std::vector<mrcpp::CompFunction<3>> iijfunc_vec;
+            std::vector<ComplexDouble> coef_vec(N);
             for (int i = 0; i < iorb_vec.size(); i++) {
                 int iorb = itasks[task][i];
                 Orbital &phi_i = iorb_vec[i];
-                Orbital ex_jji = phi_i.paramCopy();
-                Orbital ex_iij = phi_j.paramCopy();
+                Orbital ex_jji = phi_i.paramCopy(true);
+                Orbital ex_iij = phi_j.paramCopy(true);
 
                 // compute K_iij and K_jji in one operation
                 double j_fac = getSpinFactor(phi_i, phi_j);
@@ -293,7 +292,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                     Ex[iorb].add(j_fac, ex_jji);
                     Ex[jorb].add(j_fac, ex_iij);
                 }
-                ex_jji.free(NUMBER::Total);
+                ex_jji.free();
                 t_snd.stop();
             }
             Timer timerx;
@@ -312,9 +311,9 @@ void ExchangePotentialD1::setupInternal(double prec) {
             }
             // add all contributions to ex_j,
             if (mrcpp::mpi::bank_size > 0 and iijfunc_vec.size() > 0) {
-                Orbital ex_j = phi_j.paramCopy();
+                Orbital ex_j = phi_j.paramCopy(true);
                 t_add.resume();
-                mrcpp::cplxfunc::linear_combination(ex_j, coef_vec, iijfunc_vec, prec);
+                mrcpp::linear_combination(ex_j, coef_vec, iijfunc_vec, prec);
                 t_add.stop();
                 // ex_j is sent to Bank
                 if (ex_j.hasReal() or ex_j.hasImag()) {
@@ -327,11 +326,11 @@ void ExchangePotentialD1::setupInternal(double prec) {
                         tasksMaster.put_readytask(jorb, i0 + N);
                     }
                     t_snd.stop();
-                    ex_j.free(NUMBER::Total);
+                    ex_j.free();
                 } else if (iijfunc_vec.size() > 0) {
                     MSG_ERROR("Exchange exists but has no real and no Imag parts");
                 }
-                for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free(NUMBER::Total);
+                for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free();
             }
         }
     }
@@ -342,10 +341,10 @@ void ExchangePotentialD1::setupInternal(double prec) {
     t_wait.stop();
 
     for (int j = 0; j < N; j++) {
-        if (not mrcpp::mpi::my_orb(j) or mrcpp::mpi::bank_size == 0) continue; // fetch only own j
+        if (not mrcpp::mpi::my_func(j) or mrcpp::mpi::bank_size == 0) continue; // fetch only own j
         std::vector<int> iVec = tasksMaster.get_readytask(j, 1);
-        std::vector<mrcpp::ComplexFunction> iijfunc_vec;
-        ComplexVector coef_vec(N);
+        std::vector<mrcpp::CompFunction<3>> iijfunc_vec;
+        std::vector<ComplexDouble> coef_vec(N);
         int tot = 0;
         int totmax = 2 * block_size;
         for (int i : iVec) {
@@ -362,11 +361,11 @@ void ExchangePotentialD1::setupInternal(double prec) {
             if (tot >= totmax) {
                 // we sum the contributions so far before fetching new ones
                 t_add.resume();
-                auto tmp_j = Ex[j].paramCopy();
-                mrcpp::cplxfunc::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
+                auto tmp_j = Ex[j].paramCopy(true);
+                mrcpp::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
                 Ex[j].add(1.0, tmp_j);
-                tmp_j.free(NUMBER::Total);
-                for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free(NUMBER::Total);
+                tmp_j.free();
+                for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free();
                 iijfunc_vec.clear();
                 Ex[j].crop(prec);
                 t_add.stop();
@@ -375,11 +374,11 @@ void ExchangePotentialD1::setupInternal(double prec) {
         }
         if (iijfunc_vec.size() > 0) {
             t_add.resume();
-            auto tmp_j = Ex[j].paramCopy();
-            mrcpp::cplxfunc::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
+            auto tmp_j = Ex[j].paramCopy(true);
+            mrcpp::linear_combination(tmp_j, coef_vec, iijfunc_vec, prec);
             Ex[j].add(1.0, tmp_j);
-            tmp_j.free(NUMBER::Total);
-            for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free(NUMBER::Total);
+            tmp_j.free();
+            for (int jj = 0; jj < iijfunc_vec.size(); jj++) iijfunc_vec[jj].free();
             Ex[j].crop(prec);
             t_add.stop();
         }
@@ -419,27 +418,27 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
     // adjust precision since we sum over orbitals
     precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
 
-    std::vector<mrcpp::ComplexFunction> func_vec;
+    std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
-        Orbital &phi_i = Phi[i];
-        if (not mrcpp::mpi::my_orb(i)) PhiBank.get_func(i, phi_i, 1);
+        Orbital phi_i(Phi[i]);
+        if (not mrcpp::mpi::my_func(i)) PhiBank.get_func(i, phi_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
-            Orbital ex_iip = phi_p.paramCopy();
+            Orbital ex_iip = phi_p.paramCopy(true);
             calcExchange_kij(precf, phi_i, phi_i, phi_p, ex_iip);
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
             func_vec.push_back(ex_iip);
         }
 
-        if (not mrcpp::mpi::my_orb(i)) phi_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_func(i)) phi_i.free();
     }
 
     // compute ex_p = sum_i c_i*ex_iip
-    Orbital ex_p = phi_p.paramCopy();
-    Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    mrcpp::cplxfunc::linear_combination(ex_p, coefs, func_vec, prec);
+    Orbital ex_p = phi_p.paramCopy(true);
+    // Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
+    mrcpp::linear_combination(ex_p, coef_vec, func_vec, prec);
     print_utils::qmfunction(4, "Applied exchange", ex_p, timer);
     return ex_p;
 }

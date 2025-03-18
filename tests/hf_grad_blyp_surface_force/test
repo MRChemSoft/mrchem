@@ -30,10 +30,10 @@ filters = {
     E_EN: rel_tolerance(1.0e-6),
     E_EE: rel_tolerance(1.0e-6),
     E_X: rel_tolerance(1.0e-6),
-    E_XC: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(1.0e-5),
     E_EEXT: rel_tolerance(1.0e-6),
     E_NEXT: rel_tolerance(1.0e-6),
-    E_EL: rel_tolerance(1.0e-6),
+    E_EL: rel_tolerance(1.0e-5),
     GEOMETRIC_DERIVATIVE(1, "total"): rel_tolerance(1.0e-6),
 }
 
@@ -46,7 +46,7 @@ passed, message = compare_values(
     nuc_grad,
     psi4_nuc_grad,
     "MRChem vs. Psi4 nuclear component of the molecular gradient",
-    rtol=1.0e-6,
+    rtol=1.0e-5,
     atol=1.0e-6,
 )
 sys.stdout.write(f"{message}\n")

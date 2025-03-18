@@ -37,7 +37,6 @@ public:
         auto d_x = std::make_shared<QMDerivative>(0, D, imag);
         auto d_y = std::make_shared<QMDerivative>(1, D, imag);
         auto d_z = std::make_shared<QMDerivative>(2, D, imag);
-
         // Invoke operator= to assign *this operator
         RankOneOperator<3> &d = (*this);
         d[0] = d_x;

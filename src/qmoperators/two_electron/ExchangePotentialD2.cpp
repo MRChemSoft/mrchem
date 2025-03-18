@@ -29,7 +29,6 @@
 
 #include "ExchangePotentialD2.h"
 #include "qmfunctions/Orbital.h"
-#include "qmfunctions/OrbitalIterator.h"
 #include "qmfunctions/orbital_utils.h"
 #include "utils/print_utils.h"
 
@@ -63,15 +62,15 @@ void ExchangePotentialD2::setupBank() {
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     OrbitalVector &Phi = *this->orbitals;
     for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_orb(Phi[i])) PhiBank.put_func(i, Phi[i]);
+        if (mrcpp::mpi::my_func(Phi[i])) PhiBank.put_func(i, Phi[i]);
     }
     OrbitalVector &X = *this->orbitals_x;
     for (int i = 0; i < X.size(); i++) {
-        if (mrcpp::mpi::my_orb(X[i])) XBank.put_func(i, X[i]);
+        if (mrcpp::mpi::my_func(X[i])) XBank.put_func(i, X[i]);
     }
     OrbitalVector &Y = *this->orbitals_y;
     for (int i = 0; i < Y.size(); i++) {
-        if (mrcpp::mpi::my_orb(Y[i])) YBank.put_func(i, Y[i]);
+        if (mrcpp::mpi::my_func(Y[i])) YBank.put_func(i, Y[i]);
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::time(3, "Setting up exchange bank", timer);
@@ -97,7 +96,7 @@ void ExchangePotentialD2::clearBank() {
 Orbital ExchangePotentialD2::apply(Orbital phi_p) {
     if (this->apply_prec < 0.0) {
         MSG_ERROR("Uninitialized operator");
-        return phi_p.paramCopy();
+        return phi_p.paramCopy(true);
     }
 
     Timer timer;
@@ -111,37 +110,37 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
     // adjust precision since we sum over orbitals
     precf /= std::sqrt(1 * Phi.size());
 
-    std::vector<mrcpp::ComplexFunction> func_vec;
+    std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
-        Orbital &phi_i = Phi[i];
-        Orbital &x_i = X[i];
-        Orbital &y_i = Y[i];
+        Orbital phi_i(Phi[i]);
+        Orbital x_i(X[i]);
+        Orbital y_i(Y[i]);
 
-        if (not mrcpp::mpi::my_orb(phi_i)) PhiBank.get_func(i, phi_i, 1);
-        if (not mrcpp::mpi::my_orb(x_i)) XBank.get_func(i, x_i, 1);
-        if (not mrcpp::mpi::my_orb(y_i)) YBank.get_func(i, y_i, 1);
+        if (not mrcpp::mpi::my_func(phi_i)) PhiBank.get_func(i, phi_i, 1);
+        if (not mrcpp::mpi::my_func(x_i)) XBank.get_func(i, x_i, 1);
+        if (not mrcpp::mpi::my_func(y_i)) YBank.get_func(i, y_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
-            Orbital ex_xip = phi_p.paramCopy();
-            Orbital ex_iyp = phi_p.paramCopy();
+            Orbital ex_xip = phi_p.paramCopy(true);
+            Orbital ex_iyp = phi_p.paramCopy(true);
             calcExchange_kij(precf, x_i, phi_i, phi_p, ex_xip);
             calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
             func_vec.push_back(ex_xip);
             func_vec.push_back(ex_iyp);
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
+            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
         }
-        if (not mrcpp::mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
-        if (not mrcpp::mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
-        if (not mrcpp::mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_func(phi_i)) phi_i.free();
+        if (not mrcpp::mpi::my_func(x_i)) x_i.free();
+        if (not mrcpp::mpi::my_func(y_i)) y_i.free();
     }
 
     // compute out_p = sum_i c_i*(ex_xip + ex_iyp)
-    Orbital out_p = phi_p.paramCopy();
-    Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    mrcpp::cplxfunc::linear_combination(out_p, coefs, func_vec, prec);
+    Orbital out_p = phi_p.paramCopy(true);
+    // Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
+    mrcpp::linear_combination(out_p, coef_vec, func_vec, prec);
     print_utils::qmfunction(4, "Applied exchange", out_p, timer);
     return out_p;
 }
@@ -156,7 +155,7 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
 Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
     if (this->apply_prec < 0.0) {
         MSG_ERROR("Uninitialized operator");
-        return phi_p.paramCopy();
+        return phi_p.paramCopy(true);
     }
 
     Timer timer;
@@ -170,37 +169,37 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
     // adjust precision since we sum over orbitals
     precf /= std::min(10.0, std::sqrt(1.0 * Phi.size()));
 
-    std::vector<mrcpp::ComplexFunction> func_vec;
+    std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec;
     for (int i = 0; i < Phi.size(); i++) {
-        Orbital &phi_i = Phi[i];
-        Orbital &x_i = X[i];
-        Orbital &y_i = Y[i];
+        Orbital phi_i(Phi[i]);
+        Orbital x_i(X[i]);
+        Orbital y_i(Y[i]);
 
-        if (not mrcpp::mpi::my_orb(phi_i)) PhiBank.get_func(i, phi_i, 1);
-        if (not mrcpp::mpi::my_orb(x_i)) XBank.get_func(i, x_i, 1);
-        if (not mrcpp::mpi::my_orb(y_i)) YBank.get_func(i, y_i, 1);
+        if (not mrcpp::mpi::my_func(phi_i)) PhiBank.get_func(i, phi_i, 1);
+        if (not mrcpp::mpi::my_func(x_i)) XBank.get_func(i, x_i, 1);
+        if (not mrcpp::mpi::my_func(y_i)) YBank.get_func(i, y_i, 1);
 
         double spin_fac = getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
-            Orbital ex_ixp = phi_p.paramCopy();
-            Orbital ex_yip = phi_p.paramCopy();
+            Orbital ex_ixp = phi_p.paramCopy(true);
+            Orbital ex_yip = phi_p.paramCopy(true);
             calcExchange_kij(precf, phi_i, x_i, phi_p, ex_ixp);
             calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
             func_vec.push_back(ex_ixp);
             func_vec.push_back(ex_yip);
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
-            coef_vec.push_back(spin_fac / phi_i.squaredNorm());
+            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
+            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
         }
-        if (not mrcpp::mpi::my_orb(phi_i)) phi_i.free(NUMBER::Total);
-        if (not mrcpp::mpi::my_orb(x_i)) x_i.free(NUMBER::Total);
-        if (not mrcpp::mpi::my_orb(y_i)) y_i.free(NUMBER::Total);
+        if (not mrcpp::mpi::my_func(phi_i)) phi_i.free();
+        if (not mrcpp::mpi::my_func(x_i)) x_i.free();
+        if (not mrcpp::mpi::my_func(y_i)) y_i.free();
     }
 
     // compute ex_p = sum_i c_i*(ex_ixp + ex_yip)
-    Orbital ex_p = phi_p.paramCopy();
-    Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
-    mrcpp::cplxfunc::linear_combination(ex_p, coefs, func_vec, prec);
+    Orbital ex_p = phi_p.paramCopy(true);
+    // Eigen::Map<ComplexVector> coefs(coef_vec.data(), coef_vec.size());
+    mrcpp::linear_combination(ex_p, coef_vec, func_vec, prec);
     print_utils::qmfunction(4, "Applied exchange", ex_p, timer);
     return ex_p;
 }

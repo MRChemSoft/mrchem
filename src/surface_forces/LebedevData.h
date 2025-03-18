@@ -9,5 +9,4 @@
  * @param[in] N
  * @return the weights and points.
  */
-auto
-lebedev(size_t N) -> std::tuple<Eigen::VectorXd, Eigen::Matrix3Xd>;
+auto lebedev(size_t N) -> std::tuple<Eigen::VectorXd, Eigen::Matrix3Xd>;

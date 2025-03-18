@@ -26,8 +26,8 @@
 #include <MRCPP/Printer>
 
 #include "QMIdentity.h"
-
 #include "qmfunctions/Orbital.h"
+
 #include "qmfunctions/orbital_utils.h"
 
 using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
@@ -37,8 +37,9 @@ namespace mrchem {
 /** Identity operator is a deep copy */
 Orbital QMIdentity::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-    Orbital out = inp.paramCopy();
-    mrcpp::cplxfunc::deep_copy(out, inp);
+    Orbital out;
+    mrcpp::deep_copy(out, inp);
+
     return out;
 }
 

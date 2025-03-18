@@ -1,9 +1,8 @@
 #pragma once
 #include "chemistry/Nucleus.h"
-#include <vector>
-#include "utils/PolyInterpolator.h"
 #include "qmoperators/QMPotential.h"
-
+#include "utils/PolyInterpolator.h"
+#include <vector>
 
 namespace mrchem {
 
@@ -23,8 +22,8 @@ public:
      * @param adap Adaptive parameter from QMPotential.
      * @param shared Determines if the base potential is shared.
      */
-    AZoraPotential(Nuclei nucs, int adap, std::string azora_dir, bool shared = false, double c = 137.035999084) 
-        : QMPotential(adap, shared) {
+    AZoraPotential(Nuclei nucs, int adap, std::string azora_dir, bool shared = false, double c = 137.035999084)
+            : QMPotential(adap, shared) {
         this->nucs = nucs;
         this->c = c;
         this->azora_dir = azora_dir;
@@ -35,8 +34,8 @@ public:
      * Copy constructor.
      * @param other The other instance to copy from.
      */
-    AZoraPotential(const AZoraPotential& other) 
-        : QMPotential(other) {
+    AZoraPotential(const AZoraPotential &other)
+            : QMPotential(other) {
         this->nucs = other.nucs;
         this->prec = other.prec;
         this->c = other.c;
@@ -47,13 +46,13 @@ public:
     /**
      * Destructor.
      */
-    virtual ~AZoraPotential(){
+    virtual ~AZoraPotential() {
         free(mrchem::NUMBER::Total);
         isProjected = false;
     }
 
     // Delete copy assignment to prevent copying
-    AZoraPotential& operator=(const AZoraPotential&) = delete;
+    AZoraPotential &operator=(const AZoraPotential &) = delete;
 
     /**
      * Project the potential from the analytic function stored in this object.
@@ -62,14 +61,14 @@ public:
     void project(double prec);
 
 protected:
-    Nuclei nucs; // The nuclei of the molecule
-    double prec; // The precision parameter
-    double c;    // The speed of light
+    Nuclei nucs;           // The nuclei of the molecule
+    double prec;           // The precision parameter
+    double c;              // The speed of light
     std::string azora_dir; // The directory containing the azora potential data
     std::vector<interpolation_utils::PolyInterpolator> atomicPotentials;
     bool isProjected = false;
 
-    double evalf_analytic(const mrcpp::Coord<3>& r);
+    double evalf_analytic(const mrcpp::Coord<3> &r);
 
     /**
      * Initialize the azora potential based on the molecule.

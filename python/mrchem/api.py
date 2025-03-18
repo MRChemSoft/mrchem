@@ -68,7 +68,9 @@ def write_mpi(user_dict):
         "numerically_exact": user_dict["MPI"]["numerically_exact"],
         "shared_memory_size": user_dict["MPI"]["shared_memory_size"],
         "bank_size": user_dict["MPI"]["bank_size"],
+        "bank_per_node": user_dict["MPI"]["bank_per_node"],
         "omp_threads": user_dict["MPI"]["omp_threads"],
+        "use_omp_num_threads": user_dict["MPI"]["use_omp_num_threads"],
     }
     return mpi_dict
 
@@ -153,6 +155,12 @@ def write_scf_calculation(user_dict, origin):
             "file_phi_b": path_orbitals + "/phi_b_scf",
         }
 
+    if user_dict["SCF"]["write_orbitals_txt"]:
+        scf_dict["write_orbitals_txt"] = {
+            "file_phi_p": path_orbitals + "/phi_p_scf",
+            "file_phi_a": path_orbitals + "/phi_a_scf",
+            "file_phi_b": path_orbitals + "/phi_b_scf",
+        }
     if user_dict["SCF"]["run"]:
         scf_dict["scf_solver"] = write_scf_solver(user_dict, wf_dict)
 

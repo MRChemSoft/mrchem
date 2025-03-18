@@ -42,8 +42,7 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
     double two_cc = 2.0 * c * c;
 
     std::shared_ptr<QMPotential> k = std::make_shared<QMPotential>(1);
-    mrcpp::cplxfunc::deep_copy(*k, vz);
-
+    mrcpp::deep_copy(*k, vz);
     if (k->hasImag()) MSG_ERROR("Inverse of complex function in zora potential");
     if (k->hasReal()) {
         mrcpp::refine_grid(k->real(), 1);
@@ -70,7 +69,7 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
  * @brief Constructor for ZoraOperator used to construct an atomic zora operator
  * @param relativisticDampening shared pointer to QMPotential that contains the precompouted kappa function
  * @param name name of the operator should be either "kappa" or "kappa_inv"
-*/
+ */
 ZoraOperator::ZoraOperator(std::shared_ptr<QMPotential> relativisticDampening, std::string name) {
     RankZeroOperator &kappa = (*this);
     kappa = relativisticDampening;

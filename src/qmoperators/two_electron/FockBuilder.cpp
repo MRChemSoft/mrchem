@@ -121,7 +121,7 @@ void FockBuilder::setup(double prec) {
         chiPot->project(prec);
         chiInvPot = std::make_shared<QMPotential>(adap);
 
-        mrcpp::cplxfunc::deep_copy(*chiInvPot, *chiPot);
+        mrcpp::deep_copy(*chiInvPot, *chiPot);
 
         chiInvPot->real().map([](double val) { return 1.0 / (val + 1) - 1; });
 
@@ -276,7 +276,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi
 
 /**
  * @brief Build the Helmholtz argument for the ZORA operator. Eq. 17 in J. Chem. Theory and Comput. 2024, 20, 728-737
-*/
+ */
 OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, OrbitalVector &Psi, DoubleVector eps, double prec) {
     // Get necessary operators
     double c = getLightSpeed();
@@ -292,13 +292,13 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     if (isZora()) {
         RankZeroOperator &V_zora = this->zora_base;
         operThreePtr = std::make_shared<RankZeroOperator>(V_zora * chi + V_zora);
-    } else if (isAZora()) { 
+    } else if (isAZora()) {
         /*
         Note that V_z * kappa = 2 c^2 * (kappa - 1)
         With this trick, the expensive projection of the potential is avoided
         */
         std::shared_ptr<QMPotential> vTimesKappa = std::make_shared<QMPotential>(0);
-        mrcpp::cplxfunc::deep_copy(*vTimesKappa, *chiPot);
+        mrcpp::deep_copy(*vTimesKappa, *chiPot);
         vTimesKappa->real().map([two_cc](double val) { return two_cc * (val); });
         operThreePtr = std::make_shared<RankZeroOperator>(vTimesKappa);
     } else {
@@ -324,7 +324,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     Timer t_3;
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
     for (int i = 0; i < epsPhi.size(); i++) {
-        if (not mrcpp::mpi::my_orb(epsPhi[i])) continue;
+        if (not mrcpp::mpi::my_func(epsPhi[i])) continue;
         epsPhi[i].rescale(eps[i] / two_cc);
     }
     OrbitalVector termThree = operThree(epsPhi);
@@ -334,12 +334,11 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     auto normsTwo = orbital::get_norms(termTwo);
     auto normsThree = orbital::get_norms(termThree);
     auto normsPsi = orbital::get_norms(Psi);
-
     // Add up all the terms
     Timer t_add;
     OrbitalVector arg = orbital::deep_copy(termOne);
     for (int i = 0; i < arg.size(); i++) {
-        if (not mrcpp::mpi::my_orb(arg[i])) continue;
+        if (not mrcpp::mpi::my_func(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
         arg[i].add(1.0, Psi[i]);
@@ -352,7 +351,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     Timer t_kappa;
     mrchem::OrbitalVector out = chi_m1(arg);
     for (int i = 0; i < arg.size(); i++) {
-        if (not mrcpp::mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_func(out[i])) continue;
         out[i].add(1.0, arg[i]);
     }
     mrcpp::print::time(2, "Applying kappa inverse", t_kappa);
@@ -374,7 +373,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, Orbita
     Timer t_add;
     OrbitalVector out = orbital::deep_copy(termOne);
     for (int i = 0; i < out.size(); i++) {
-        if (not mrcpp::mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_func(out[i])) continue;
         out[i].add(1.0, Psi[i]);
     };
     mrcpp::print::time(2, "Adding contributions", t_add);

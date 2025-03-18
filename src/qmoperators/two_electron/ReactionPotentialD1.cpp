@@ -38,7 +38,7 @@ using PoissonOperator = mrcpp::PoissonOperator;
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
 
 namespace mrchem {
-mrcpp::ComplexFunction &ReactionPotentialD1::computePotential(double prec) const {
+mrcpp::CompFunction<3> &ReactionPotentialD1::computePotential(double prec) const {
     // construct electronic density from the orbitals
     OrbitalVector &Phi = *this->orbitals;
     Density rho_el(false);
