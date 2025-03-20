@@ -28,15 +28,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: Cache conda
-      uses: actions/cache@v1
-      env:
-        CACHE_NUMBER: 0  # Increase this value to reset cache if .github/mrchem-gha.yml has not changed
-      with:
-        path: ~/conda_pkgs_dir
-        key:
-          ${{ matrix.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('.github/mrchem-gha.yml') }}
-
     - uses: conda-incubator/setup-miniconda@v3
       with:
           auto-update-conda: true
