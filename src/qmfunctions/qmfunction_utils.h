@@ -41,7 +41,7 @@ void project(mrcpp::ComplexFunction &out, mrcpp::GaussExp<3> &f, int type, doubl
 void multiply(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction inp_a, mrcpp::ComplexFunction inp_b, double prec, bool absPrec = false, bool useMaxNorms = false);
 void multiply_real(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction inp_a, mrcpp::ComplexFunction inp_b, double prec, bool absPrec = false, bool useMaxNorms = false);
 void multiply_imag(mrcpp::ComplexFunction &out, mrcpp::ComplexFunction inp_a, mrcpp::ComplexFunction inp_b, double prec, bool absPrec = false, bool useMaxNorms = false);
-void linear_combination(mrcpp::ComplexFunction &out, const ComplexVector &c, mrcpp::ComplexFunctionVector &inp, double prec);
+void linear_combination(mrcpp::ComplexFunction &out, const ComplexVector &c, ComplexFunctionVector &inp, double prec);
 
 } // namespace qmfunction
 } // namespace mrchem
