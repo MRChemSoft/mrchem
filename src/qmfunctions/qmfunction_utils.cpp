@@ -179,7 +179,7 @@ void mrcpp::cplxfunc::multiply(mrcpp::ComplexFunction &out, mrcpp::ComplexFuncti
 /** @brief out = c_0*inp_0 + c_1*inp_1 + ... + c_N*inp_N
  *
  */
-void mrcpp::cplxfunc::linear_combination(mrcpp::ComplexFunction &out, const ComplexVector &c, mrcpp::ComplexFunctionVector &inp, double prec) {
+void mrcpp::cplxfunc::linear_combination(mrcpp::ComplexFunction &out, const ComplexVector &c, ComplexFunctionVector &inp, double prec) {
     FunctionTreeVector<3> rvec;
     FunctionTreeVector<3> ivec;
 

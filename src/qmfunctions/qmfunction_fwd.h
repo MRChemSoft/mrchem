@@ -47,6 +47,7 @@
 namespace mrchem {
 
 class ComplexFunction;
+using ComplexFunctionVector = mrcpp::MPI_FuncVector;
 
 // class Orbital;
 using Orbital = mrcpp::ComplexFunction;
