@@ -24,8 +24,7 @@
  */
 
 #include <MRCPP/Printer>
-#include <xc.h>
-#include <xc_funcs.h>
+
 #include "Functional.h"
 
 namespace mrdft {
@@ -53,9 +52,8 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
         }
         // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
         // That means that we cannot extract the energy density data with out.row(0).data() for example.
-        if (calc) xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data()); 
+        if (calc) xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
     }
-
     return out;
 }
 
@@ -73,20 +71,11 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     int nPts = inp.rows();
-
-
-
-
-    xc_func_type xfunc;
-    xc_func_init(&xfunc, 1, XC_UNPOLARIZED);
-
-
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
     Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
     Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
-
     for (int i = 0; i < nPts; i++) {
         bool calc = true;
         if (isSpin()) {
@@ -95,7 +84,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             if (inp(i, 0) < cutoff) calc = false;
         }
         for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
-        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data()); // skal byttes med libxc -- inp_row.data() gir vektor med input i rekkefølgen xcfun vil ha for en ( node ?)
+        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
         for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
     }
     return out;
