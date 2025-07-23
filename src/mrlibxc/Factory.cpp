@@ -28,7 +28,7 @@ void Factory::cleanupFunctionals() {
 
 int Factory::mapFunctionalName(const std::string &name) const {
     // Map common functional names to LibXC IDs
-    if (name == "LDA" || name == "LDA_X") return XC_LDA_X;
+    if (name == "LDA" || name == "LDA_X" || name == "svwn5") return XC_LDA_X;
     if (name == "VWN" || name == "LDA_C_VWN") return XC_LDA_C_VWN;
     if (name == "PBE_X") return XC_GGA_X_PBE;
     if (name == "PBE_C") return XC_GGA_C_PBE;

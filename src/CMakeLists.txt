@@ -17,7 +17,7 @@ target_compile_definitions(mrchem
 
 target_include_directories(mrchem
   PRIVATE 
-    $<TARGET_PROPERTY:Libxc::xc,INTERFACE_INCLUDE_DIRECTORIES> # ask why this should be private when the others are public?
+    $<TARGET_PROPERTY:Libxc::xc,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
@@ -55,9 +55,9 @@ target_compile_definitions(mrchem PRIVATE
 target_link_libraries(mrchem
   PRIVATE
     Eigen3::Eigen
+    Libxc::xc
   PUBLIC
     XCFun::xcfun
-    Libxc::xc
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json
     $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:OpenMP::OpenMP_CXX>

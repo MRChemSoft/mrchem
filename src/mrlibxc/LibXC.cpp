@@ -48,27 +48,24 @@
  bool LibXC::setFunctional(const std::string &name, double weight) {
      // Map common XCFun functional names to LibXC identifiers
      static const std::map<std::string, int> func_map = {
-         // LDA functionals
-         {"slater", XC_LDA_X},
-         {"vwn", XC_LDA_C_VWN},
-         {"vwn5", XC_LDA_C_VWN},
-         {"vwn3", XC_LDA_C_VWN_3},
-         {"pw92c", XC_LDA_C_PW},
-         
-         // GGA functionals
-         {"becke88", XC_GGA_X_B88},
-         {"lyp", XC_GGA_C_LYP},
-         {"pbex", XC_GGA_X_PBE},
-         {"pbec", XC_GGA_C_PBE},
-         {"revpbex", XC_GGA_X_PBE_R},
-         
-         // Hybrid functionals
-         {"b3lyp", XC_HYB_GGA_XC_B3LYP},
-         {"pbe0", XC_HYB_GGA_XC_APBE0},
-         
-         // Meta-GGA functionals
-         {"tpss", XC_MGGA_X_TPSS},
-         {"m06l", XC_MGGA_X_M06_L}
+          // LDA functionals
+          {"slater", XC_LDA_X},
+          {"vwn", XC_LDA_C_VWN},
+          {"vwn5", XC_LDA_C_VWN},
+          {"vwn3", XC_LDA_C_VWN_3},
+          {"pw92c", XC_LDA_C_PW},          
+          // GGA functionals
+          {"becke88", XC_GGA_X_B88},
+          {"lyp", XC_GGA_C_LYP},
+          {"pbex", XC_GGA_X_PBE},
+          {"pbec", XC_GGA_C_PBE},
+          {"revpbex", XC_GGA_X_PBE_R},         
+          // Hybrid functionals
+          {"b3lyp", XC_HYB_GGA_XC_B3LYP},
+          {"pbe0", XC_HYB_GGA_XC_APBE0},           
+          // Meta-GGA functionals
+          {"tpss", XC_MGGA_X_TPSS},
+          {"m06l", XC_MGGA_X_M06_L}
      };
      
      auto it = func_map.find(name);

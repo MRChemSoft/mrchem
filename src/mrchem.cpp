@@ -47,6 +47,7 @@ using Timer = mrcpp::Timer;
 using namespace mrchem;
 
 int main(int argc, char **argv) {
+    std::cout << "Hei!!!!:)" << std::endl;
     if (std::string(argv[1]) == "--version" || std::string(argv[1]) == "-v") {
         std::cout << program_version() << std::endl;
         return EXIT_SUCCESS;
