@@ -31,19 +31,16 @@
 //  namespace mrchem {
  namespace mrdft {
  
-//  LibXC::LibXC()
-//      : order(1)
-//      , spin_polarized(false)
-//      , use_gamma(false)
-//      , has_lda(false)
-//      , has_gga(false)
-//      , has_mgga(false)
-//      , exx_coef(0.0) {
-//  }
+ LibXC::LibXC()
+     : order(1)
+     , spin_polarized(false)
+     , use_gamma(false)
+     , has_lda(false)
+     , has_gga(false)
+     , has_mgga(false)
+     , exx_coef(0.0) {
+ }
  
-//  LibXC::~LibXC() {
-//      // Cleanup handled by FunctionalUnit destructor
-//  }
  
  bool LibXC::setFunctional(const std::string &name, double weight) {
      // Map common XCFun functional names to LibXC identifiers

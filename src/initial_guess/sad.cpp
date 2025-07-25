@@ -46,7 +46,7 @@
 #include "qmoperators/two_electron/CoulombOperator.h"
 #include "qmoperators/two_electron/XCOperator.h"
 
-#include "mrdft/Factory-orig.h"
+#include "mrdft/Factory.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;

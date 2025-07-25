@@ -67,6 +67,7 @@ public:
     friend class MRDFT;
 
 protected:
+// xcfun shit
     const int order;
     bool log_grad{false};
     double cutoff{-1.0};
@@ -89,6 +90,8 @@ protected:
 
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+
+// libxc/my own shit
 };
 
 } // namespace mrdft

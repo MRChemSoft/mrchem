@@ -25,6 +25,8 @@
 
  #pragma once
 
+ #include <MRCPP/trees/FunctionTreeVector.h>
+
  #include <memory>
  #include <string>
  #include <vector>
@@ -40,7 +42,8 @@
  class LibXC {
  public:
      LibXC();
-     ~LibXC();
+    //  ~LibXC();
+     virtual ~LibXC() = default;
  
      // Set up functional by name or ID
      bool setFunctional(const std::string &name, double weight = 1.0);
@@ -55,16 +58,29 @@
      void setInputMode(bool use_gamma);
      
      // Query methods
-     int getInputLength() const;
-     int getOutputLength() const;
+    //  int getInputLength() const;
+    //  int getOutputLength() const;
+     virtual int getCtrInputLength() const = 0;
+     virtual int getCtrOutputLength() const = 0;
      double getEXX() const { return exx_coef; }
+
+    virtual int getInputLength() const = 0;
+    virtual int getOutputLength() const = 0;
      
      // Type checking methods
-     bool isSpin() const { return spin_polarized; }
+    //  bool isSpin() const { return spin_polarized; }
+     virtual bool isSpin() const = 0;
      bool isLDA() const;
      bool isGGA() const;
      bool isMetaGGA() const;
      bool isHybrid() const { return exx_coef > 1.0e-10; }
+
+    virtual void clear() = 0;
+    virtual mrcpp::FunctionTreeVector<3> setupXCInput() = 0;
+    virtual mrcpp::FunctionTreeVector<3> setupCtrInput() = 0;
+    virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+    virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+
      
  private:
      struct FunctionalUnit {

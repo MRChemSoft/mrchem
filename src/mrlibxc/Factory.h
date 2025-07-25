@@ -1,4 +1,11 @@
+#pragma once
+
+#include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
+#include <MRCPP/trees/FunctionNode.h>
+#include <MRCPP/trees/FunctionTreeVector.h>
+#include <MRCPP/trees/FunctionTree.h>
+#include <MRCPP/Printer>
 #include <memory>
 #include <string>
 #include <map>

@@ -19,7 +19,7 @@
 #include <fstream>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-#include "mrdft/Factory-orig.h"
+#include "mrdft/Factory.h"
 #include "mrdft/MRDFT.h"
 #include "mrdft/xc_utils.h"
 #include "qmoperators/two_electron/XCOperator.h"
