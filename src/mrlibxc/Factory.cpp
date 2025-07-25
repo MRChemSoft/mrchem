@@ -1,6 +1,5 @@
+
 #include "Factory.h"
-
-
 #include "LibXC.h"
 #include "LDA.h"
 
