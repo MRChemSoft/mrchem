@@ -23,41 +23,53 @@
  * <https://mrchem.readthedocs.io/>
  */
 
- #pragma once
+#pragma once
 
- #include <MRCPP/MWOperators>
- #include <XCFun/xcfun.h>
- 
- #include "MRDFT.h"
- 
- namespace mrdft {
- 
- class Factory final {
- public:
-     Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
-     ~Factory() = default;
- 
-     void setSpin(bool s) { spin = s; }
-     void setOrder(int k) { order = k; }
-     void setUseGamma(bool g) { gamma = g; }
-     void setLogGradient(bool lg) { log_grad = lg; }
-     void setDensityCutoff(double c) { cutoff = c; }
-     void setDerivative(const std::string &n) { diff_s = n; }
-     void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
- 
-     std::unique_ptr<MRDFT> build();
- 
- private:
-     int order{1};
-     bool spin{false};
-     bool gamma{false};
-     bool log_grad{false};
-     double cutoff{-1.0};
-     std::string diff_s{"abgv_00"};
-     const mrcpp::MultiResolutionAnalysis<3> mra;
- 
-     XC_p xcfun_p;
-     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
- };
- 
- } // namespace mrdft
+#include <MRCPP/MWOperators>
+#include <XCFun/xcfun.h>
+
+#include "MRDFT.h"
+
+// #include <xc_funcs.h>
+// #include <xc.h>
+#include </home/ylvaos/work/libxc/install/include/xc.h>
+#include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
+
+namespace mrdft {
+
+class Factory final {
+public:
+    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
+    ~Factory() = default;
+
+    void setSpin(bool s) { spin = s; }
+    void setOrder(int k) { order = k; }
+    void setUseGamma(bool g) { gamma = g; }
+    void setLogGradient(bool lg) { log_grad = lg; }
+    void setDensityCutoff(double c) { cutoff = c; }
+    void setDerivative(const std::string &n) { diff_s = n; }
+    //  void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
+     void setFunctional(const std::string &n, double c = 1.0);
+
+    std::unique_ptr<MRDFT> build();
+
+private:
+    int order{1};
+    bool spin{false};
+    bool gamma{false};
+    bool log_grad{false};
+    double cutoff{-1.0};
+    std::string diff_s{"abgv_00"};
+    const mrcpp::MultiResolutionAnalysis<3> mra;
+
+    XC_p xcfun_p;
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
+
+    // LibXC
+    std::string name;
+    xc_func_type libxc_p;
+
+    int mapFunctionalName(const std::string &name) const;
+};
+
+} // namespace mrdft

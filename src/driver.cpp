@@ -1254,7 +1254,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
 
-        // mrlibxc::Factory xc_factory(*MRA); 
         mrdft::Factory xc_factory(*MRA); 
         xc_factory.setSpin(xc_spin);
         xc_factory.setOrder(xc_order);
@@ -1262,17 +1261,23 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
             auto coef = f["coef"];
+            std::cout << "!!!!!!!!!!!Name is: " << name << std::endl;
+            std::cout << "!!!!!!!!!!!Coef is: " << coef << std::endl;
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
+        std::cout << "xc_factory built" << std::endl;
         exx = mrdft_p->functional().amountEXX();
+        std::cout << "exx sat" << std::endl;
 
         if (order == 0) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, shared_memory);
             F.getXCOperator() = XC_p;
+            std::cout << "order = 0" << std::endl;
         } else if (order == 1) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, X_p, Y_p, shared_memory);
             F.getXCOperator() = XC_p;
+            std::cout << "order = 1" << std::endl;
         } else {
             MSG_ABORT("Invalid perturbation order");
         }
@@ -1301,7 +1306,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
+    std::cout << "Try to build F" << std::endl;
     F.build(exx);
+    std::cout << "F build complete :) " << std::endl;
 }
 
 /** @brief Construct perturbation operator based on input keyword */

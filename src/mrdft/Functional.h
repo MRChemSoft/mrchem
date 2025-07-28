@@ -33,6 +33,10 @@
 #include <MRCPP/trees/FunctionNode.h>
 #include <XCFun/xcfun.h>
 
+// LibXC
+#include </home/ylvaos/work/libxc/install/include/xc.h>
+#include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
+
 namespace mrdft {
 
 using XC_p = std::unique_ptr<xcfun_t, decltype(&xcfun_delete)>;
@@ -66,8 +70,11 @@ public:
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     friend class MRDFT;
 
+    // Libxc
+    void set_libxc_functional_object(xc_func_type libxc_p_);
+
 protected:
-// xcfun shit
+// XCfun
     const int order;
     bool log_grad{false};
     double cutoff{-1.0};
@@ -91,7 +98,9 @@ protected:
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
 
-// libxc/my own shit
+// Libxc
+
+    xc_func_type libxc_p;
 };
 
 } // namespace mrdft

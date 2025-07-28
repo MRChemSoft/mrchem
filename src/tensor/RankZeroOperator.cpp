@@ -199,10 +199,15 @@ RankZeroOperator &RankZeroOperator::operator-=(const RankZeroOperator &O) {
  * applied with the given precision. Must be called prior to application.
  */
 void RankZeroOperator::setup(double prec) {
+    std::cout << "Running RankZeroOperator setup" << std::endl;
     for (auto &i : this->oper_exp) {
+        std::cout << "Starting for loop, i.size() = " << i.size() << std::endl;
         for (int j = 0; j < i.size(); j++) {
+            std::cout << "Starting second for loop" << std::endl;
             i[j]->setup(prec); }
-    }
+            std::cout << "Ending second for loop" << std::endl;
+        }
+    std::cout << "Completed RankZeroOperator setup" << std::endl;
 }
 
 /** @brief run clear on all operators in the expansion

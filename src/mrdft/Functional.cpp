@@ -29,6 +29,12 @@
 
 namespace mrdft {
 
+
+void Functional::set_libxc_functional_object(xc_func_type libxc_p_) {
+    libxc_p = libxc_p_;
+}
+
+
 /** @brief Run a collection of grid points through XCFun
  *
  * Each row corresponds to one grid point.
@@ -54,6 +60,8 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
         // That means that we cannot extract the energy density data with out.row(0).data() for example.
         if (calc) xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
     }
+
+
     return out;
 }
 
@@ -76,17 +84,23 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
     Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
     Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
-    for (int i = 0; i < nPts; i++) {
-        bool calc = true;
-        if (isSpin()) {
-            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
-        } else {
-            if (inp(i, 0) < cutoff) calc = false;
-        }
-        for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
-        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-        for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
-    }
+    // for (int i = 0; i < nPts; i++) {
+    //     bool calc = true;
+    //     if (isSpin()) {
+    //         if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+    //     } else {
+    //         if (inp(i, 0) < cutoff) calc = false;
+    //     }
+    //     for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+    //     if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+    //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+    // }
+
+    
+    // if (libxc_p->family == XC_FAMILY_LDA) {
+    xc_lda_exc(&libxc_p, nPts, inp.data(), out.data());
+    // }
+
     return out;
 }
 

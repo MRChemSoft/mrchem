@@ -64,6 +64,7 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
     if (Phi.size() == 0) return false;
 
+    std::cout << "SAD func 1 !!" << std::endl;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
@@ -85,13 +86,15 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
+    std::cout << "building sad xc_factory" << std::endl;
     auto mrdft_p = xc_factory.build();
+    std::cout << "sad xc_factory built :)" << std::endl;
 
     MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
     CoulombOperator J(P_p);
-    XCOperator XC(mrdft_p);
-    RankZeroOperator V = V_nuc + J + XC;
+    XCOperator XC_(mrdft_p);
+    RankZeroOperator V = V_nuc + J + XC_;
 
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
@@ -103,7 +106,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);
 
     // Compute XC density
-    Density &rho_xc = XC.getDensity(DensityType::Total);
+    Density &rho_xc = XC_.getDensity(DensityType::Total);
     mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
@@ -141,9 +144,52 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     return true;
 }
 
+
+void debugPrint(const RankZeroOperator& op, const std::string& label = "Operator") {
+    std::cout << "==== Debug: " << label << " ====\n";
+    std::cout << "Name: " << op.name() << "\n";
+    std::cout << "Number of outer terms: " << op.size() << "\n";
+
+    // Use const_cast to call the non-const method
+    auto& nonConstOp = const_cast<RankZeroOperator&>(op);
+
+    for (int i = 0; i < op.size(); ++i) {
+        std::cout << "  Term[" << i << "] has " << op.size(i) << " inner operators\n";
+        for (int j = 0; j < op.size(i); ++j) {
+            QMOperator& qmo = nonConstOp.getRaw(i, j);
+            std::cout << "    - Sub-operator [" << i << "][" << j << "] type: "
+                      << typeid(qmo).name() << "\n";
+        }
+    }
+
+    std::cout << "===============================\n";
+}
+
+
+void debugPrint2(const mrchem::MomentumOperator &op, const std::string &label = "MomentumOperator") {
+    std::cout << "==== Debug: " << label << " ====" << std::endl;
+
+    // Print type name directly (may be mangled)
+    std::cout << "Type: " << typeid(op).name() << std::endl;
+
+    // MomentumOperator inherits from RankOneOperator<3>
+    // Let's assume it has 3 components: p[0], p[1], p[2]
+
+    for (int i = 0; i < 3; ++i) {
+        std::cout << "Component p[" << i << "] name: " << op[i].name() << std::endl;
+
+        // If you want, you can also print the type of each sub-operator (assuming op[i] is RankZeroOperator)
+        std::cout << "  Type of sub-operator: " << typeid(op[i]).name() << std::endl;
+    }
+
+    std::cout << "===============================" << std::endl;
+}
+
+
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
     if (Phi.size() == 0) return false;
 
+    std::cout << "SAD func 2 !!" << std::endl;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
@@ -164,14 +210,23 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
+    std::cout << "building sad xc_factory" << std::endl;
     auto mrdft_p = xc_factory.build();
+    std::cout << "sad xc_factory built :)" << std::endl;
+
     MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
     CoulombOperator J(P_p);
-    XCOperator XC(mrdft_p);
-    RankZeroOperator V = V_nuc + J + XC;
+    XCOperator XC_(mrdft_p);
+    RankZeroOperator V = V_nuc + J + XC_;
 
-    auto plevel = Printer::getPrintLevel();
+    debugPrint(V, "Total XC Operator");
+    debugPrint2(p, "Momentum Operator");
+
+
+    // auto plevel = Printer::getPrintLevel();
+    int plevel = 2;
+    std::cout << "plevel: " << plevel << std::endl;
     if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
     if (plevel == 1) mrcpp::print::time(1, "Initializing operators", t_lap);
 
@@ -180,26 +235,39 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     Density &rho_j = J.getDensity();
     initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);
 
+    std::cout << "project_atomic_densities sucsessfully called" << std::endl;
+
     // Compute XC density
-    Density &rho_xc = XC.getDensity(DensityType::Total);
+    Density &rho_xc = XC_.getDensity(DensityType::Total);
     mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
+
+    std::cout << "XC density computed" << std::endl;
 
     // Project AO basis of hydrogen functions
     t_lap.start();
     OrbitalVector Psi;
     initial_guess::gto::project_ao(Psi, prec, nucs);
+    std::cout << "plevel: " << plevel << std::endl;
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO AOs", t_lap);
     if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
+    std::cout << "after plevel prints" << std::endl;
     t_lap.start();
     p.setup(prec);
+    std::cout << "p setup complete" << std::endl;
+    std::cout << "V: " << std::endl;
     V.setup(prec);
+    std::cout << "V setup complete" << std::endl;
     if (plevel == 2) mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
+    
+    std::cout << "AO basis projected" << std::endl;
 
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
+
+    std::cout << "F computed" << std::endl;
 
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
@@ -215,10 +283,15 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
+
+    std::cout << "last step: orb rot complete" << std::endl;
+
     return true;
 }
 
 void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs, double screen) {
+    std::cout << "SAD func 3 -- atm den" << std::endl;
+    
     auto pprec = Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
     auto w1 = 5;
@@ -270,6 +343,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         charges[k] = nucs[k].getCharge();
         charges[N_nucs + k] = rho_k.integrate().real();
     }
+
     t_loc.stop();
     Timer t_com;
     mrcpp::mpi::allreduce_vector(charges, mrcpp::mpi::comm_wrk);
@@ -301,6 +375,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     print_utils::qmfunction(2, "Local density", rho_loc, t_loc);
     print_utils::qmfunction(2, "Allreduce density", rho_tot, t_com);
     mrcpp::print::footer(2, t_tot, 2);
+    std::cout << "SAD func 3 -- complete" << std::endl;
 }
 
 } // namespace mrchem

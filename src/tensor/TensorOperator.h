@@ -54,7 +54,9 @@ public:
     virtual ~TensorOperator() = default;
 
     void setup(double prec) {
+        std::cout << "runing setup" << std::endl;
         for (int i = 0; i < I; i++) this->oper[i].setup(prec);
+        std::cout << "setup ran" << std::endl;
     }
     void clear() {
         for (int i = 0; i < I; i++) this->oper[i].clear();
