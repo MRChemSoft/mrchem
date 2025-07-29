@@ -64,7 +64,6 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
     if (Phi.size() == 0) return false;
 
-    std::cout << "SAD func 1 !!" << std::endl;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
@@ -86,9 +85,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
-    std::cout << "building sad xc_factory" << std::endl;
     auto mrdft_p = xc_factory.build();
-    std::cout << "sad xc_factory built :)" << std::endl;
 
     MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
@@ -189,7 +186,7 @@ void debugPrint2(const mrchem::MomentumOperator &op, const std::string &label = 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
     if (Phi.size() == 0) return false;
 
-    std::cout << "SAD func 2 !!" << std::endl;
+
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
@@ -210,9 +207,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
-    std::cout << "building sad xc_factory" << std::endl;
     auto mrdft_p = xc_factory.build();
-    std::cout << "sad xc_factory built :)" << std::endl;
 
     MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
@@ -224,9 +219,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     debugPrint2(p, "Momentum Operator");
 
 
-    // auto plevel = Printer::getPrintLevel();
-    int plevel = 2;
-    std::cout << "plevel: " << plevel << std::endl;
+    auto plevel = Printer::getPrintLevel();
+
     if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
     if (plevel == 1) mrcpp::print::time(1, "Initializing operators", t_lap);
 
@@ -235,39 +229,30 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     Density &rho_j = J.getDensity();
     initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);
 
-    std::cout << "project_atomic_densities sucsessfully called" << std::endl;
 
     // Compute XC density
     Density &rho_xc = XC_.getDensity(DensityType::Total);
     mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
-    std::cout << "XC density computed" << std::endl;
 
     // Project AO basis of hydrogen functions
     t_lap.start();
     OrbitalVector Psi;
     initial_guess::gto::project_ao(Psi, prec, nucs);
-    std::cout << "plevel: " << plevel << std::endl;
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO AOs", t_lap);
     if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
-    std::cout << "after plevel prints" << std::endl;
     t_lap.start();
     p.setup(prec);
-    std::cout << "p setup complete" << std::endl;
-    std::cout << "V: " << std::endl;
     V.setup(prec);
-    std::cout << "V setup complete" << std::endl;
     if (plevel == 2) mrcpp::print::footer(2, t_lap, 2);
     if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
     
-    std::cout << "AO basis projected" << std::endl;
 
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
 
-    std::cout << "F computed" << std::endl;
 
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
@@ -284,13 +269,12 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
 
-    std::cout << "last step: orb rot complete" << std::endl;
 
     return true;
 }
 
 void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs, double screen) {
-    std::cout << "SAD func 3 -- atm den" << std::endl;
+
     
     auto pprec = Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
@@ -375,7 +359,6 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     print_utils::qmfunction(2, "Local density", rho_loc, t_loc);
     print_utils::qmfunction(2, "Allreduce density", rho_tot, t_com);
     mrcpp::print::footer(2, t_tot, 2);
-    std::cout << "SAD func 3 -- complete" << std::endl;
 }
 
 } // namespace mrchem

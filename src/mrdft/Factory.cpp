@@ -113,10 +113,10 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
 
-    func_p->set_libxc_functional_object(libxc_p);
-    std::cout << "!!!!!!!!! Libxc obj set" << std::endl;
-
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
+    
+    func_p->set_libxc_functional_object(libxc_p);
+    
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
@@ -124,8 +124,6 @@ std::unique_ptr<MRDFT> Factory::build() {
 
 
     auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
-
-    std::cout << "auto mrdft_p sat " << std::endl;
 
     return mrdft_p;
 }

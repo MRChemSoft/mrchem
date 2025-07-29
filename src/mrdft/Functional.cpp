@@ -96,10 +96,15 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
     // }
 
+    // Eigen::VectorXd rho = inp.col(0);
+    // Eigen::VectorXd exc(nPts);
     
     // if (libxc_p->family == XC_FAMILY_LDA) {
+    // xc_lda_exc(&libxc_p, nPts, rho.data(), exc.data());
     xc_lda_exc(&libxc_p, nPts, inp.data(), out.data());
     // }
+
+    // out.col(0) = exc;
 
     return out;
 }
