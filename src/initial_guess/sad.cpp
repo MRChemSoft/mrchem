@@ -142,46 +142,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 }
 
 
-void debugPrint(const RankZeroOperator& op, const std::string& label = "Operator") {
-    std::cout << "==== Debug: " << label << " ====\n";
-    std::cout << "Name: " << op.name() << "\n";
-    std::cout << "Number of outer terms: " << op.size() << "\n";
-
-    // Use const_cast to call the non-const method
-    auto& nonConstOp = const_cast<RankZeroOperator&>(op);
-
-    for (int i = 0; i < op.size(); ++i) {
-        std::cout << "  Term[" << i << "] has " << op.size(i) << " inner operators\n";
-        for (int j = 0; j < op.size(i); ++j) {
-            QMOperator& qmo = nonConstOp.getRaw(i, j);
-            std::cout << "    - Sub-operator [" << i << "][" << j << "] type: "
-                      << typeid(qmo).name() << "\n";
-        }
-    }
-
-    std::cout << "===============================\n";
-}
-
-
-void debugPrint2(const mrchem::MomentumOperator &op, const std::string &label = "MomentumOperator") {
-    std::cout << "==== Debug: " << label << " ====" << std::endl;
-
-    // Print type name directly (may be mangled)
-    std::cout << "Type: " << typeid(op).name() << std::endl;
-
-    // MomentumOperator inherits from RankOneOperator<3>
-    // Let's assume it has 3 components: p[0], p[1], p[2]
-
-    for (int i = 0; i < 3; ++i) {
-        std::cout << "Component p[" << i << "] name: " << op[i].name() << std::endl;
-
-        // If you want, you can also print the type of each sub-operator (assuming op[i] is RankZeroOperator)
-        std::cout << "  Type of sub-operator: " << typeid(op[i]).name() << std::endl;
-    }
-
-    std::cout << "===============================" << std::endl;
-}
-
 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
     if (Phi.size() == 0) return false;
@@ -214,9 +174,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     CoulombOperator J(P_p);
     XCOperator XC_(mrdft_p);
     RankZeroOperator V = V_nuc + J + XC_;
-
-    debugPrint(V, "Total XC Operator");
-    debugPrint2(p, "Momentum Operator");
 
 
     auto plevel = Printer::getPrintLevel();
@@ -275,7 +232,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
 void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs, double screen) {
 
-    
     auto pprec = Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
     auto w1 = 5;
@@ -356,8 +312,11 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     mrcpp::print::separator(2, '-');
     println(2, o_row.str());
     mrcpp::print::separator(2, '-');
-    print_utils::qmfunction(2, "Local density", rho_loc, t_loc);
-    print_utils::qmfunction(2, "Allreduce density", rho_tot, t_com);
+    print_utils::qmfunction(0, "Local density", rho_loc, t_loc);
+
+    // std::cout << "rho_loc: " << print_utils::qmfunction(2, "Local density", rho_loc, t_loc) << std::endl;
+    
+    print_utils::qmfunction(0, "Allreduce density", rho_tot, t_com);
     mrcpp::print::footer(2, t_tot, 2);
 }
 

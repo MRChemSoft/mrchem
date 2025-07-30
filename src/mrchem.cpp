@@ -47,7 +47,6 @@ using Timer = mrcpp::Timer;
 using namespace mrchem;
 
 int main(int argc, char **argv) {
-    std::cout << "Hei!!!!:)" << std::endl;
     if (std::string(argv[1]) == "--version" || std::string(argv[1]) == "-v") {
         std::cout << program_version() << std::endl;
         return EXIT_SUCCESS;
@@ -65,25 +64,17 @@ int main(int argc, char **argv) {
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
     if (json_inp["printer"]["print_constants"]) PhysicalConstants::Print();
-    std::cout << "!!!!!!! line 68" << std::endl;
     Timer timer;
     json json_out;
 
     if (geopt_inp["run"]) {
-        std::cout << "!!!!!!! line 73" << std::endl;
         json_out = optimize_positions(scf_inp, mol_inp, geopt_inp, json_inp["printer"]["file_name"]);
         mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
-        std::cout << "!!!!!!! line 76" << std::endl;
     } else {
-        std::cout << "!!!!!!! line 78" << std::endl;
         Molecule mol;
-        std::cout << "!!!!!!! line 80" << std::endl;
         driver::init_molecule(mol_inp, mol);
-        std::cout << "!!!!!!! line 82" << std::endl;
         auto scf_out = driver::scf::run(scf_inp, mol);
-        std::cout << "!!!!!!! line 84" << std::endl;
         json rsp_out = {};
-        std::cout << "!!!!!!! line 86" << std::endl;
         if (scf_out["success"]) {
             for (auto &i : rsp_inp.items()) rsp_out[i.key()] = driver::rsp::run(i.value(), mol);
         }

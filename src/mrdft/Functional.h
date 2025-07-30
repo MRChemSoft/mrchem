@@ -71,7 +71,7 @@ public:
     friend class MRDFT;
 
     // Libxc
-    void set_libxc_functional_object(xc_func_type libxc_p_);
+    void set_libxc_functional_object(xc_func_type libxc_p_, xc_func_type libxc_p2_);
 
 protected:
 // XCfun
@@ -101,6 +101,7 @@ protected:
 // Libxc
 
     xc_func_type libxc_p;
+    xc_func_type libxc_p2;
 };
 
 } // namespace mrdft

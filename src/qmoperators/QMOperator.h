@@ -70,11 +70,8 @@ protected:
     double apply_prec{-1.0};
 
     void setApplyPrec(double prec) {
-        std::cout << "apply prec: " << this->apply_prec << std::endl;
         if (this->apply_prec < 0.0) {
-            std::cout << "Trying to apply prec " << std::endl;
             this->apply_prec = prec;
-            std::cout << "Completed to apply prec " << std::endl;
         } else if (not isSetup(prec)) {
             MSG_ERROR("Clear operator before setup with different prec!");
         }
@@ -89,9 +86,7 @@ protected:
     }
 
     virtual void setup(double prec) {
-        std::cout << "Start virtual void setup" << std::endl;
         setApplyPrec(prec);
-        std::cout << "Completed virtual void setup" << std::endl;
     }
     virtual void clear() { clearApplyPrec(); }
 

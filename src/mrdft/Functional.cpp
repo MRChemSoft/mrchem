@@ -30,8 +30,9 @@
 namespace mrdft {
 
 
-void Functional::set_libxc_functional_object(xc_func_type libxc_p_) {
+void Functional::set_libxc_functional_object(xc_func_type libxc_p_, xc_func_type libxc_p2_) {
     libxc_p = libxc_p_;
+    libxc_p2 = libxc_p2_;
 }
 
 
@@ -84,28 +85,73 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
     Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
     Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
-    // for (int i = 0; i < nPts; i++) {
-    //     bool calc = true;
-    //     if (isSpin()) {
-    //         if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
-    //     } else {
-    //         if (inp(i, 0) < cutoff) calc = false;
-    //     }
-    //     for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
-    //     if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-    //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
-    // }
+    for (int i = 0; i < nPts; i++) {
+        bool calc = true;
+        if (isSpin()) {
+            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+        } else {
+            if (inp(i, 0) < cutoff) calc = false;
+        }
+        for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+        for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+    }
 
-    // Eigen::VectorXd rho = inp.col(0);
-    // Eigen::VectorXd exc(nPts);
+    double totexc_xcfun = 0;
+    double totv_xcfun = 0;
+
+    for (size_t i = 0; i < nPts; ++i) {
+        totexc_xcfun += out.col(0)[i];
+        totv_xcfun += out.col(1)[i];
+    }
+
+
+    Eigen::VectorXd exc = Eigen::VectorXd::Zero(nPts);
+    Eigen::VectorXd vxc = Eigen::VectorXd::Zero(nPts);
+    Eigen::VectorXd exc2 = Eigen::VectorXd::Zero(nPts);
+    Eigen::VectorXd vxc2 = Eigen::VectorXd::Zero(nPts);
     
     // if (libxc_p->family == XC_FAMILY_LDA) {
-    // xc_lda_exc(&libxc_p, nPts, rho.data(), exc.data());
-    xc_lda_exc(&libxc_p, nPts, inp.data(), out.data());
+    xc_lda_exc_vxc(&libxc_p, nPts, inp.data(), exc.data(), vxc.data());
+    xc_lda_exc_vxc(&libxc_p2, nPts, inp.data(), exc2.data(), vxc2.data());
+    // xc_lda_exc(&libxc_p, nPts, inp.data(), out.data());
     // }
 
-    // out.col(0) = exc;
+    exc += exc2;
+    vxc += vxc2;
 
+    // Eigen::MatrixXd diff_out = out - out2;
+
+    double totexc_libxc = 0.0;
+    double totv_libxc = 0.0;
+
+    double max_dev_exc = 0.0;
+    double max_dev_vxc = 0.0;
+
+    for (size_t i = 0; i < nPts; ++i) {
+        totexc_libxc += exc[i];
+        totv_libxc   += vxc[i];
+
+        double exc_dev = abs(exc[i] - out(i, 0));
+        double vxc_dev = abs(vxc[i] - out(i, 1));
+
+        max_dev_exc = exc_dev > max_dev_exc ? exc_dev : max_dev_exc;
+        max_dev_vxc = vxc_dev > max_dev_vxc ? vxc_dev : max_dev_vxc;
+    }
+
+    // std::cout << "xc_fun, libxc:   " << tot_xcfun << ",  " << tot_libxc << std::endl;
+    std::cout << "diff exc:            " << totexc_xcfun - totexc_libxc << std::endl;
+    std::cout << "diff vxc:            " << totv_xcfun - totv_libxc << std::endl;
+    std::cout << "Abs max diff exc:    " << max_dev_exc << std::endl;
+    std::cout << "Abs max diff vxc:    " << max_dev_vxc << std::endl << std::endl;
+
+
+    for (size_t i = 0; i < nPts; ++i) {
+        out(i, 0) = exc[i];
+        out(i, 1) = vxc[i];
+    }
+
+    
     return out;
 }
 

@@ -68,6 +68,7 @@ private:
     // LibXC
     std::string name;
     xc_func_type libxc_p;
+    xc_func_type libxc_p2;
 
     int mapFunctionalName(const std::string &name) const;
 };

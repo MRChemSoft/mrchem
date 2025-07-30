@@ -1266,18 +1266,14 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
-        std::cout << "xc_factory built" << std::endl;
         exx = mrdft_p->functional().amountEXX();
-        std::cout << "exx sat" << std::endl;
 
         if (order == 0) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, shared_memory);
             F.getXCOperator() = XC_p;
-            std::cout << "order = 0" << std::endl;
         } else if (order == 1) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, X_p, Y_p, shared_memory);
             F.getXCOperator() = XC_p;
-            std::cout << "order = 1" << std::endl;
         } else {
             MSG_ABORT("Invalid perturbation order");
         }
@@ -1306,9 +1302,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
-    std::cout << "Try to build F" << std::endl;
     F.build(exx);
-    std::cout << "F build complete :) " << std::endl;
 }
 
 /** @brief Construct perturbation operator based on input keyword */
