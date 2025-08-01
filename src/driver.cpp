@@ -1261,8 +1261,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
             auto coef = f["coef"];
-            std::cout << "!!!!!!!!!!!Name is: " << name << std::endl;
-            std::cout << "!!!!!!!!!!!Coef is: " << coef << std::endl;
+            std::cout << "Name is: " << name << std::endl;
+            std::cout << "Coef is: " << coef << std::endl;
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
