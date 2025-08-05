@@ -29,10 +29,17 @@
 
 namespace mrdft {
 
+static bool libxc = true;
+
 
 void Functional::set_libxc_functional_object(xc_func_type libxc_p_, xc_func_type libxc_p2_) {
     libxc_p = libxc_p_;
     libxc_p2 = libxc_p2_;
+    if (libxc) {
+        std::cout << "RUNNING LIBXC" << std::endl;
+    } else {
+        std::cout << "RUNNING XCFUN" << std::endl;
+    }
 }
 
 
@@ -84,10 +91,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
 
-    bool libxc = true;
-
     if (libxc) {
-        std::cout << "RUNNING LIBXC" << std::endl;
         Eigen::VectorXd exc = Eigen::VectorXd::Zero(nPts);
         Eigen::VectorXd vxc = Eigen::VectorXd::Zero(nPts);
         Eigen::VectorXd exc2 = Eigen::VectorXd::Zero(nPts);
@@ -112,7 +116,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
         }
     }
     else {
-        std::cout << "RUNNING XCFUN" << std::endl;
         Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
         Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
         for (int i = 0; i < nPts; i++) {
