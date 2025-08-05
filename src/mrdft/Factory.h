@@ -66,11 +66,11 @@ private:
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
 
     // LibXC
-    std::string name;
-    xc_func_type libxc_p;
-    xc_func_type libxc_p2;
 
-    int mapFunctionalName(const std::string &name) const;
+    std::vector<xc_func_type> libxc_objects;
+    std::vector<double> libxc_coeffs;
+
+    std::vector<int> mapFunctionalName(const std::string &name) const;
 };
 
 } // namespace mrdft

@@ -32,9 +32,17 @@ namespace mrdft {
 static bool libxc = true;
 
 
-void Functional::set_libxc_functional_object(xc_func_type libxc_p_, xc_func_type libxc_p2_) {
-    libxc_p = libxc_p_;
-    libxc_p2 = libxc_p2_;
+void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
+    libxc_objects = libxc_objects_;
+    libxc_coeffs  = libxc_coeffs_;
+
+    for (size_t i; i < libxc_objects.size(); i++) {
+        if (libxc_objects[i].info->family == XC_FAMILY_LDA) {
+            std::cout << "Family of " << libxc_objects[i].info->name << " is LDA" << std::endl;
+        } else {
+            std::cout << "Family, " << libxc_objects[i].info->name << ", is not LDA, or code is wrong" << std::endl;
+        }
+    }
     if (libxc) {
         std::cout << "RUNNING LIBXC" << std::endl;
     } else {
@@ -97,15 +105,13 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
         Eigen::VectorXd exc2 = Eigen::VectorXd::Zero(nPts);
         Eigen::VectorXd vxc2 = Eigen::VectorXd::Zero(nPts);
         
-        // // if (libxc_p->family == XC_FAMILY_LDA) {
-        xc_lda_exc_vxc(&libxc_p, nPts, inp.data(), exc.data(), vxc.data());
-        xc_lda_exc_vxc(&libxc_p2, nPts, inp.data(), exc2.data(), vxc2.data());
-        // // xc_lda_exc(&libxc_p, nPts, inp.data(), out.data());
-        // // }
-
-        exc += exc2;
-        vxc += vxc2;
-
+        for (size_t i = 0; i < libxc_objects.size(); i++){
+            xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.data(), exc2.data(), vxc2.data());
+            exc2 *= libxc_coeffs[i];
+            vxc2 *= libxc_coeffs[i];
+            exc += exc2;
+            vxc += vxc2;
+        }
 
         for (size_t i = 0; i < nPts; ++i) {
             //  xcfun computes rho * exc for energy density, so we do the same

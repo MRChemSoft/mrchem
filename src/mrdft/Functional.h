@@ -71,7 +71,7 @@ public:
     friend class MRDFT;
 
     // Libxc
-    void set_libxc_functional_object(xc_func_type libxc_p_, xc_func_type libxc_p2_);
+    void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_);
 
 protected:
 // XCfun
@@ -100,8 +100,8 @@ protected:
 
 // Libxc
 
-    xc_func_type libxc_p;
-    xc_func_type libxc_p2;
+    std::vector<xc_func_type> libxc_objects;
+    std::vector<double> libxc_coeffs;
 };
 
 } // namespace mrdft

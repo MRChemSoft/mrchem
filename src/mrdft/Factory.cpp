@@ -41,32 +41,20 @@ namespace mrdft {
 Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         : mra(MRA)
         , xcfun_p(xcfun_new(), xcfun_delete) {
-    int id = XC_LDA_X;
-    int id2 = XC_LDA_C_VWN;
-
-    // Finn ut hvordan man får om polarized eller ikke fra input på et vis
-    if (xc_func_init(&libxc_p, id, XC_UNPOLARIZED) != 0) {
-        std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << id << "--" << xc_func_init(&libxc_p, id, XC_UNPOLARIZED) << std::endl;
-    }
-    if (xc_func_init(&libxc_p2, id2, XC_UNPOLARIZED) != 0) {
-        std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << id << "--" << xc_func_init(&libxc_p, id, XC_UNPOLARIZED) << std::endl;
-    }
-//     xc_func_set_dens_threshold(&libxc_p, 1e-15 );
-//     xc_func_set_dens_threshold(&libxc_p2,1e-15 );
 }
 
 // Todo: det finnes sikkert gode util funksjoner i libxc for dette
-int Factory::mapFunctionalName(const std::string &name) const {
+std::vector<int> Factory::mapFunctionalName(const std::string &name) const {
     // Map common functional names to LibXC IDs, only LDA for now
     std::cout << "name from xcfun: " << name << std::endl;
-    if (name == "slaterx") return XC_LDA_X;
-    if (name == "svwn5"|| name == "svwn5c") return XC_LDA_C_VWN;
-    if (name == "svwn3") return XC_LDA_C_VWN_3;
-    else { std::cout << "!!!!! Unknown functional (mapfunctionalname, add to map list): " << name << std::endl;}
+    if (name == "slaterx") return {XC_LDA_X};
+    if (name == "svwn5c" || name == "VWN5") return {XC_LDA_C_VWN};
+    if (name == "svwn3") return {XC_LDA_X, XC_LDA_C_VWN_3};
+    if (name == "svwn5") return {XC_LDA_X, XC_LDA_C_VWN};
+    else { std::cout << "!!!!! Add functional to map list: " << name << std::endl;}
 
-    // int func_id = xc_functional_get_number(name.c_str());
-    int func_id = 1;
-    return func_id;
+    MSG_ABORT("Unknown functional")
+    return {1};
 }
 
 void Factory::setFunctional(const std::string &n, double c) {
@@ -74,17 +62,19 @@ void Factory::setFunctional(const std::string &n, double c) {
     std::string name = n;
     std::cout << "xcfun func: " << n << std::endl;
 
-    
-    // int id = this->mapFunctionalName(name);
+    std::cout << "NAMEEEE: " << n << ", " << name << std::endl;
+    std::vector<int> ids = this->mapFunctionalName(name);
     // int id2 = XC_LDA_C_VWN;
 
-    // // Finn ut hvordan man får om polarized eller ikke fra input på et vis
-    // if (xc_func_init(&libxc_p, id, XC_UNPOLARIZED) != 0) {
-    //     std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << id << "--" << xc_func_init(&libxc_p, id, XC_UNPOLARIZED) << std::endl;
-    // }
-    // if (xc_func_init(&libxc_p2, id2, XC_UNPOLARIZED) != 0) {
-    //     std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << id << "--" << xc_func_init(&libxc_p, id, XC_UNPOLARIZED) << std::endl;
-    // }
+    xc_func_type libxc_obj;
+    for (size_t i = 0; i < ids.size(); i++) {
+        if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
+            std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
+        }
+
+        libxc_objects.push_back(libxc_obj);
+        libxc_coeffs.push_back(c);
+    }
 }
 
 /** @brief Build a MRDFT object from the currently defined parameters */
@@ -127,7 +117,7 @@ std::unique_ptr<MRDFT> Factory::build() {
 
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
 
-    func_p->set_libxc_functional_object(libxc_p, libxc_p2);
+    func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
 
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
