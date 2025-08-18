@@ -36,22 +36,24 @@
 #include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
 
 namespace mrdft {
-
-class Factory final {
-public:
-    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
-    ~Factory() = default;
-
-    void setSpin(bool s) { spin = s; }
-    void setOrder(int k) { order = k; }
-    void setUseGamma(bool g) { gamma = g; }
-    void setLogGradient(bool lg) { log_grad = lg; }
-    void setDensityCutoff(double c) { cutoff = c; }
-    void setDerivative(const std::string &n) { diff_s = n; }
-    //  void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
-     void setFunctional(const std::string &n, double c = 1.0);
-
-    std::unique_ptr<MRDFT> build();
+    
+    class Factory final {
+        public:
+        Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
+        ~Factory() = default;
+        
+        void setSpin(bool s) { spin = s; }
+        void setOrder(int k) { order = k; }
+        void setUseGamma(bool g) { gamma = g; }
+        void setLogGradient(bool lg) { log_grad = lg; }
+        void setDensityCutoff(double c) { cutoff = c; }
+        void setLibxc(bool libxc_) { libxc = libxc_; }
+        void setDerivative(const std::string &n) { diff_s = n; }
+        //  void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
+        void setFunctional(const std::string &n, double c = 1.0);
+        
+        std::unique_ptr<MRDFT> build();
+        bool libxc;
 
 private:
     int order{1};

@@ -340,7 +340,14 @@ def stencil() -> JSONDict:
                                             'type': 'str'},
                                         {   'default': "not(user['WaveFunction']['restricted'])",
                                             'name': 'spin',
-                                            'type': 'bool'}],
+                                            'type': 'bool'},
+                                        # {   'default': True,
+                                        #     'name': 'libxc',
+                                        #     'type': 'bool'}
+                                        {   'default': 'xcfun',
+                                            'name': 'xc_library',
+                                            'type': 'str'}
+                                        ],
                         'name': 'DFT'},
                     {   'keywords': [   {   'default': True,
                                             'name': 'dipole_moment',

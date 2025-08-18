@@ -52,6 +52,7 @@ public:
 
     void setLogGradient(bool log) { log_grad = log; }
     void setDensityCutoff(double cut) { cutoff = cut; }
+    void setLibxc(bool libxc_) { libxc = libxc_; }
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) {derivOp = std::move(d);}
 
     virtual bool isSpin() const = 0;
@@ -99,7 +100,7 @@ protected:
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
 
 // Libxc
-
+    bool libxc;
     std::vector<xc_func_type> libxc_objects;
     std::vector<double> libxc_coeffs;
 };

@@ -29,20 +29,12 @@
 
 namespace mrdft {
 
-static bool libxc = true;
 
 
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
     libxc_objects = libxc_objects_;
     libxc_coeffs  = libxc_coeffs_;
 
-    for (size_t i; i < libxc_objects.size(); i++) {
-        if (libxc_objects[i].info->family == XC_FAMILY_LDA) {
-            std::cout << "Family of " << libxc_objects[i].info->name << " is LDA" << std::endl;
-        } else {
-            std::cout << "Family, " << libxc_objects[i].info->name << ", is not LDA, or code is wrong" << std::endl;
-        }
-    }
     if (libxc) {
         std::cout << "RUNNING LIBXC" << std::endl;
     } else {
@@ -96,34 +88,67 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
+    // std::cout << "nInp: " << nInp << ", nOut: " << nOut << std::endl;
+    
+    Eigen::MatrixXd out       = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::MatrixXd out_libxc = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::VectorXd out_sxc   = Eigen::VectorXd::Zero(nPts);
+    Eigen::VectorXd exc, vxc, sxc, xxc, yxc, zxc, sigma, inp_row, out_row;
 
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+
+
 
     if (libxc) {
-        Eigen::VectorXd exc = Eigen::VectorXd::Zero(nPts);
-        Eigen::VectorXd vxc = Eigen::VectorXd::Zero(nPts);
-        Eigen::VectorXd exc2 = Eigen::VectorXd::Zero(nPts);
-        Eigen::VectorXd vxc2 = Eigen::VectorXd::Zero(nPts);
-        
-        for (size_t i = 0; i < libxc_objects.size(); i++){
-            xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.data(), exc2.data(), vxc2.data());
-            exc2 *= libxc_coeffs[i];
-            vxc2 *= libxc_coeffs[i];
-            exc += exc2;
-            vxc += vxc2;
+        for (size_t i; i < libxc_objects.size(); i++) {
+            switch (libxc_objects[i].info->family) {
+                case XC_FAMILY_LDA:
+                case XC_FAMILY_HYB_LDA:
+                    exc = Eigen::VectorXd::Zero(nPts);
+                    vxc = Eigen::VectorXd::Zero(nPts);
+                    xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), exc.data(), vxc.data());
+                    for (size_t j = 0; j < nPts; ++j) {
+                        //  xcfun computes rho * exc for energy density, so we do the same
+                        //    aka xcfun calculates actual energy density while libxc calculates 
+                        //    energy density per electron density
+                        out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                        out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                    }
+                    break;
+                case XC_FAMILY_GGA:
+                case XC_FAMILY_HYB_GGA:
+                    exc = Eigen::VectorXd::Zero(nPts);
+                    vxc = Eigen::VectorXd::Zero(nPts);
+                    sxc = Eigen::VectorXd::Zero(nPts);
+                    xxc = Eigen::VectorXd::Zero(nPts);
+                    yxc = Eigen::VectorXd::Zero(nPts);
+                    zxc = Eigen::VectorXd::Zero(nPts);
+                    sigma = Eigen::VectorXd::Zero(nPts);
+                    sigma = inp.col(1) * inp.col(1) + inp.col(2) * inp.col(2) + inp.col(3) * inp.col(3);
+                    xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(),
+                        exc.data(), vxc.data(), sxc.data());
+                    // Convert sxc to derivatives of x, y and z so output are similar to xcfun
+                    xxc = 2 * sxc * inp.col(1);
+                    yxc = 2 * sxc * inp.col(2);
+                    zxc = 2 * sxc * inp.col(3);
+                    for (size_t j = 0; j < nPts; ++j) {
+                        //  xcfun computes rho * exc for energy density, so we do the same
+                        //    aka xcfun calculates actual energy density while libxc calculates 
+                        //    energy density per electron density
+                        out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                        out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                        out_libxc(j, 2) += xxc[j] * libxc_coeffs[i];
+                        out_libxc(j, 3) += yxc[j] * libxc_coeffs[i];
+                        out_libxc(j, 4) += zxc[j] * libxc_coeffs[i];
+                        out_sxc[j]      += sxc[j];
+                    }
+                    break;
+                default:
+                break;
+            }
         }
-
-        for (size_t i = 0; i < nPts; ++i) {
-            //  xcfun computes rho * exc for energy density, so we do the same
-            //    aka xcfun calculates actual energy density while libxc calculates 
-            //    energy density per electron density
-            out(i, 0) = exc[i] * inp(i, 0);
-            out(i, 1) = vxc[i];
-        }
-    }
-    else {
-        Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
-        Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
+    } else {
+        inp_row = Eigen::VectorXd::Zero(nInp);
+        out_row = Eigen::VectorXd::Zero(nOut);
         for (int i = 0; i < nPts; i++) {
             bool calc = true;
             if (isSpin()) {
@@ -138,7 +163,83 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     }
 
 
+    // !! Debug !!
 
+    // if (nInp == 1) {
+    //     return out;
+    // }
+
+    // double dx = 0.0, dy = 0.0, dz = 0.0;
+
+    // for (size_t i = 0; i < nPts; i++) {
+    //     double sxc_x_xcfun = out(i, 2) / (2 * inp(i, 1));
+    //     double sxc_y_xcfun = out(i, 3) / (2 * inp(i, 2));
+    //     double sxc_z_xcfun = out(i, 4) / (2 * inp(i, 3));
+
+    //     dx += sxc_x_xcfun - out_sxc[i];
+    //     dy += sxc_y_xcfun - out_sxc[i];
+    //     dz += sxc_z_xcfun - out_sxc[i];
+    // }
+
+    // dx /= nPts;
+    // dy /= nPts;
+    // dz /= nPts;
+
+    // std::cout << "SXC avg dev: " << dx << " " << dy << " " << dz << std::endl;
+
+    // for (size_t i = 0; i < nOut; i++) {
+    //     double max_dev = 0.0, mean_dev = 0.0;
+    //     size_t max_i = 0;
+
+    //     for (size_t j = 0; j < nPts; j++) {
+    //         double dev = abs(out(j, i) - out_libxc(j, i));
+
+    //         mean_dev += dev;
+
+    //         if (dev > max_dev) {
+    //             max_dev = dev;
+    //             max_i = j;
+    //         }
+    //     }
+
+    //     mean_dev /= nPts;
+
+    //     std::cout << i << " max_dev: " << max_dev << " mean_dev: " << mean_dev << std::endl;
+    //     std::cout << "Info of max i: " << max_i << std::endl <<
+    //     "----------------------" << std::endl <<
+    //     "Input: " << std::endl <<
+    //     "    Density:   " << inp(max_i, 0) << std::endl <<
+    //     "    dr/dx:     " << inp(max_i, 1) << std::endl <<
+    //     "    dr/dy:     " << inp(max_i, 2) << std::endl <<
+    //     "    dr/dz:     " << inp(max_i, 3) << std::endl <<
+    //     "    sigma   :  " << sigma[max_i] << std::endl <<
+    //     "Output Libxc: " << std::endl <<
+    //     "    EXC:      " << out_libxc(max_i, 0) << std::endl <<
+    //     "    VXC:      " << out_libxc(max_i, 1) << std::endl <<
+    //     "    dEXC/dx:  " << out_libxc(max_i, 2) << std::endl <<
+    //     "    dEXC/dy:  " << out_libxc(max_i, 3) << std::endl <<
+    //     "    dEXC/dz:  " << out_libxc(max_i, 4) << std::endl <<
+    //     "Output XCFun: " << std::endl <<
+    //     "    EXC:      " << out(max_i, 0) << std::endl <<
+    //     "    VXC:      " << out(max_i, 1) << std::endl <<
+    //     "    dEXC/dx:  " << out(max_i, 2) << std::endl <<
+    //     "    dEXC/dy:  " << out(max_i, 3) << std::endl <<
+    //     "    dEXC/dz:  " << out(max_i, 4) << std::endl <<
+    //     "----------------------" << std::endl;
+    //     if (i < nOut - 1) {
+    //         std::cout << "----------------------" << std::endl <<
+    //         "Next Input: " << std::endl <<
+    //         "    Density:   " << inp(i+1, 0) << std::endl <<
+    //         "    dr/dx:     " << inp(i+1, 1) << std::endl <<
+    //         "    dr/dy:     " << inp(i+1, 2) << std::endl <<
+    //         "    dr/dz:     " << inp(i+1, 3) << std::endl <<
+    //         "    sigma:     " << sigma[i+1] << std::endl <<
+    //         "----------------------" << std::endl;
+    //     }
+    // }
+    // std::cout << std::endl;
+
+    if (libxc) return out_libxc;
     return out;
 }
 

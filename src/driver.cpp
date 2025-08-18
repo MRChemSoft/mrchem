@@ -87,7 +87,6 @@
 #include "surface_forces/SurfaceForce.h"
 #include "properties/hirshfeld/HirshfeldPartition.h"
 
-// #include "mrlibxc/Factory.h"
 #include "mrdft/Factory.h"
 
 using mrcpp::ABGVOperator;
@@ -130,6 +129,9 @@ void calc_properties(const json &input, Molecule &mol, int dir, double omega);
 } // namespace rsp
 
 } // namespace driver
+
+
+// bool xc_libxc = false;
 
 /** @brief Initialize a molecule from input
  *
@@ -248,20 +250,53 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     json json_out = {{"success", true}};
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
 
+
+    ///////////////////////////////////////////////////////////
+    //////////////////   Setting XC Library  //////////////////
+    ///////////////////////////////////////////////////////////
+    
+    // xc_libxc = false;
+    bool xc_libxc;
+    nlohmann::json xc_lib;
+
+    if (json_scf["fock_operator"].contains("xc_library")) {
+        xc_lib = json_scf["fock_operator"]["xc_library"][0];
+        std::cout << xc_lib << std::endl;
+    } else {xc_lib = "xcfun";}
+
+    if (xc_lib == "xcfun") {xc_libxc = false;
+        } else if (xc_lib == "libxc") {xc_libxc = true;
+        std::cout << xc_libxc << std::endl;
+        } else { std::cout << "some ERROR" << std::endl;
+    }
+
+    // if (json_fock.contains("xc_operator")) {
+    //     xc_libxc = json_fock["xc_operator"]["xc_functional"]["libxc"];
+    // }
+
+
+
+
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
-    FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
+    if (json_fock.contains("xc_operator")) driver::init_properties(json_fock["properties"], mol);
+    FockBuilder F;
     driver::build_fock_operator(json_fock, mol, F, 0);
-
+    
     // Pre-compute internal exchange contributions
     if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
+    
 
+
+
+    
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
+    // std::cout << xc_libxc << std::endl;
     const auto &json_guess = json_scf["initial_guess"];
     if (scf::guess_orbitals(json_guess, mol)) {
         scf::guess_energy(json_guess, mol, F);
@@ -270,6 +305,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         json_out["success"] = false;
         return json_out;
     }
+
 
     ///////////////////////////////////////////////////////////
     //////////   Optimizing Ground State Orbitals  ////////////
@@ -354,6 +390,12 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
+    auto xc_lib = json_guess["xc_library"];
+
+    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
+    // if (json_fock.contains("xc_operator")) {
+    //     auto xc_libxc = json_fock["xc_operator"]["xc_functional"]["libxc"];
+    // }
 
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
@@ -419,10 +461,14 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
+    auto xc_lib = json_guess["xc_library"];
+
+    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
     print_utils::text(0, "Method         ", method);
+    print_utils::text(0, "XC Library     ", xc_lib);
     print_utils::text(0, "Relativity     ", relativity);
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
@@ -1062,6 +1108,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     auto X_p = mol.getOrbitalsX_p();
     auto Y_p = mol.getOrbitalsY_p();
 
+
+
     ///////////////////////////////////////////////////////////
     ///////////////      Momentum Operator    /////////////////
     ///////////////////////////////////////////////////////////
@@ -1254,7 +1302,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
 
-        mrdft::Factory xc_factory(*MRA); 
+        // auto xc_libxc = json_xcfunc["libxc"];
+        // GroundStateSolver solver;
+        // solver.setLibxc(xc_libxc);
+        // mrdft::Factory.setLibxc(xc_libxc);
+        // std::cout << "Libxc driver.cpp line 1278: " << xc_libxc << std::endl;
+
+        mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);

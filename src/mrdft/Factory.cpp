@@ -45,15 +45,17 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
 
 // Todo: det finnes sikkert gode util funksjoner i libxc for dette
 std::vector<int> Factory::mapFunctionalName(const std::string &name) const {
-    // Map common functional names to LibXC IDs, only LDA for now
-    std::cout << "name from xcfun: " << name << std::endl;
-    if (name == "slaterx") return {XC_LDA_X};
+    // Map common functional names from XCFun to LibXC IDs, only LDAs for now
+    if (name == "slaterx")                  return {XC_LDA_X};
+    if (name == "svwn3")                    return {XC_LDA_X, XC_LDA_C_VWN_3};
     if (name == "svwn5c" || name == "VWN5") return {XC_LDA_C_VWN};
-    if (name == "svwn3") return {XC_LDA_X, XC_LDA_C_VWN_3};
-    if (name == "svwn5") return {XC_LDA_X, XC_LDA_C_VWN};
-    else { std::cout << "!!!!! Add functional to map list: " << name << std::endl;}
+    if (name == "svwn5")                    return {XC_LDA_X, XC_LDA_C_VWN};
+    if (name == "pbe")                      return {XC_GGA_X_PBE, XC_GGA_C_PBE};
+    if (name == "b3lyp")                    return {XC_HYB_GGA_XC_B3LYP};
+    if (name == "pbe0")                      return {XC_HYB_GGA_XC_PBEH};
 
-    MSG_ABORT("Unknown functional")
+    std::cout << "!!!!! Add functional to mapFunctionalName(): " << name << std::endl;
+    MSG_ABORT("Unknown functional for libxc")
     return {1};
 }
 
@@ -61,17 +63,15 @@ void Factory::setFunctional(const std::string &n, double c) {
     xcfun_set(xcfun_p.get(), n.c_str(), c);
     std::string name = n;
     std::cout << "xcfun func: " << n << std::endl;
-
-    std::cout << "NAMEEEE: " << n << ", " << name << std::endl;
     std::vector<int> ids = this->mapFunctionalName(name);
-    // int id2 = XC_LDA_C_VWN;
 
     xc_func_type libxc_obj;
     for (size_t i = 0; i < ids.size(); i++) {
         if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
             std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
         }
-
+        xc_func_set_dens_threshold(&libxc_obj, cutoff);
+        // xc_func_set_dens_threshold(&libxc_obj, 1e-7);
         libxc_objects.push_back(libxc_obj);
         libxc_coeffs.push_back(c);
     }
@@ -81,6 +81,7 @@ void Factory::setFunctional(const std::string &n, double c) {
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
+    // setLibxc(libxc);
 
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
@@ -94,9 +95,6 @@ std::unique_ptr<MRDFT> Factory::build() {
     unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
     if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
     xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
-
-    std::cout << "Functional (func_type): " << func_type << std::endl;
-    std::cout << "Functional (order): " << order << std::endl;
 
     // Init MW derivative
     if (gga) {
