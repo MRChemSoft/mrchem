@@ -67,7 +67,6 @@ void Factory::setFunctional(const std::string &n, double c) {
     std::cout << "xcfun func: " << n << std::endl;
     std::vector<int> ids = this->mapFunctionalName(name);
     setLibxc(libxc);
-    std::cout << "setLibxc in set Functional: " << libxc << std::endl;
 
     xc_func_type libxc_obj;
     for (size_t i = 0; i < ids.size(); i++) {
@@ -85,9 +84,7 @@ void Factory::setFunctional(const std::string &n, double c) {
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
-    std::cout << "Factory build libxc bool (old): " << libxc << std::endl;
     setLibxc(libxc);
-    std::cout << "setLibxc in factory build: " << libxc << std::endl;
     
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
@@ -120,8 +117,6 @@ std::unique_ptr<MRDFT> Factory::build() {
     }
 
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-
-    std::cout << "Factory build libxc bool (pre set libxc obj): " << libxc << std::endl;
 
     func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
 

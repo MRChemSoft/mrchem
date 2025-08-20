@@ -261,12 +261,10 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
 
     if (json_scf["fock_operator"].contains("xc_library")) {
         xc_lib = json_scf["fock_operator"]["xc_library"][0];
-        std::cout << xc_lib << std::endl;
     } else {xc_lib = "xcfun";}
 
     if (xc_lib == "xcfun") {xc_libxc = false;
         } else if (xc_lib == "libxc") {xc_libxc = true;
-        std::cout << xc_libxc << std::endl;
         } else { std::cout << "some ERROR" << std::endl;
     }
 
@@ -291,7 +289,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
-    // std::cout << xc_libxc << std::endl;
     const auto &json_guess = json_scf["initial_guess"];
     if (scf::guess_orbitals(json_guess, mol)) {
         scf::guess_energy(json_guess, mol, F);
@@ -387,12 +384,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
     auto xc_lib = json_guess["xc_library"];
-
-    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
-    // if (json_fock.contains("xc_operator")) {
-    //     auto xc_libxc = json_fock["xc_operator"]["xc_functional"]["libxc"];
-    // }
-
+    
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
         MSG_ERROR("Restricted open-shell not supported");
@@ -446,7 +438,6 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     }
 
     orbital::print(Phi);
-    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
     return success;
 }
 
@@ -460,12 +451,10 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto rotate = json_guess["rotate"];
     auto xc_lib = json_guess["xc_library"];
 
-    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
-
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
     print_utils::text(0, "Method         ", method);
-    print_utils::text(0, "XC Library     ", xc_lib);
+    print_utils::text(0, "XC Library     ", (xc_lib == "libxc") ? "LibXC" : "XCFun");
     print_utils::text(0, "Relativity     ", relativity);
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
@@ -501,7 +490,6 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     mrcpp::print::footer(1, t_eps, 2);
     mol.printEnergies("initial");
 
-    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
     return true;
 }
 
@@ -1301,23 +1289,16 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-        bool xc_libxc;
+        // bool xc_libxc;
         
-        if (xc_lib == "xcfun") {xc_libxc = false;
-        } else if (xc_lib == "libxc") {xc_libxc = true;
-            std::cout << xc_libxc << std::endl;
-        } else { std::cout << "some ERROR" << std::endl;}
+        // if (xc_lib == "xcfun") {xc_libxc = false;
+        // } else if (xc_lib == "libxc") {xc_libxc = true;
+        // } else { std::cout << "some ERROR" << std::endl;}
         
-        std::cout << "Build fock xc_lib: " << xc_lib << std::endl;
         
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
-        std::cout << "Build fock Factory::libxc, pre setlibxc: " << mrdft::Factory::libxc << ", " << xc_libxc << std::endl;
-        xc_factory.setLibxc(xc_libxc);
-        std::cout << "Build fock Factory::libxc, pre setlibxc: " << mrdft::Factory::libxc << ", " << xc_libxc << std::endl;
-        // mrdft::Factory::libxc = (xc_lib == "libxc" ? true : false);
-        std::cout << "Build fock xc_lib n2: " << xc_lib << std::endl;
-        std::cout << xc_lib << std::endl;
+        xc_factory.setLibxc((xc_lib == "libxc") ? true : false);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {

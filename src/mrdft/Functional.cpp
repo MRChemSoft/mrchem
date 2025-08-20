@@ -34,10 +34,8 @@ namespace mrdft {
 
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
     libxc = Factory::libxc;
-    std::cout << "Functional set libxc func obj: " << libxc << std::endl;
     libxc_objects = libxc_objects_;
     libxc_coeffs  = libxc_coeffs_;
-    std::cout << "Pre running x print: " << libxc << std::endl;
     if (libxc) {
         std::cout << "RUNNING LIBXC" << std::endl;
     } else {

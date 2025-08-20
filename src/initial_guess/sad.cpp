@@ -74,7 +74,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "Functional  ", "libxc (added manually)");
     print_utils::text(0, "XC Library  ", (mrdft::Factory::libxc) ? "LibXC" : "XCFun");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
@@ -159,7 +158,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "Functional  ", "libxc (added manually)");
     print_utils::text(0, "XC Library  ", (mrdft::Factory::libxc) ? "LibXC" : "XCFun");
     print_utils::text(0, "AO basis    ", "3-21G");
     mrcpp::print::separator(0, '~', 2);
@@ -320,8 +318,6 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     mrcpp::print::separator(2, '-');
     print_utils::qmfunction(0, "Local density", rho_loc, t_loc);
 
-    // std::cout << "rho_loc: " << print_utils::qmfunction(2, "Local density", rho_loc, t_loc) << std::endl;
-    
     print_utils::qmfunction(0, "Allreduce density", rho_tot, t_com);
     mrcpp::print::footer(2, t_tot, 2);
 }

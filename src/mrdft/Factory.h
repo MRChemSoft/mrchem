@@ -32,8 +32,8 @@
 
 // #include <xc_funcs.h>
 // #include <xc.h>
-#include </home/ylvaos/work/libxc/install/include/xc.h>
-#include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
+#include </home/ylvaos/work/libxc-4.3.4/install/include/xc.h>
+#include </home/ylvaos/work/libxc-4.3.4/install/include/xc_funcs.h>
 
 namespace mrdft {
     
