@@ -88,6 +88,7 @@
 #include "properties/hirshfeld/HirshfeldPartition.h"
 
 #include "mrdft/Factory.h"
+// #include "mrdft/Functional.h"
 
 using mrcpp::ABGVOperator;
 using mrcpp::Coord;
@@ -131,7 +132,6 @@ void calc_properties(const json &input, Molecule &mol, int dir, double omega);
 } // namespace driver
 
 
-// bool xc_libxc = false;
 
 /** @brief Initialize a molecule from input
  *
@@ -270,11 +270,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         } else { std::cout << "some ERROR" << std::endl;
     }
 
-    // if (json_fock.contains("xc_operator")) {
-    //     xc_libxc = json_fock["xc_operator"]["xc_functional"]["libxc"];
-    // }
-
-
 
 
     ///////////////////////////////////////////////////////////
@@ -336,6 +331,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRotation(rotation);
         solver.setLocalize(localize);
         solver.setMethodName(method);
+        solver.setLibxc(xc_libxc);
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
@@ -450,6 +446,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     }
 
     orbital::print(Phi);
+    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
     return success;
 }
 
@@ -503,6 +500,8 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     eps.getSpin() = orbital::get_spins(Phi);
     mrcpp::print::footer(1, t_eps, 2);
     mol.printEnergies("initial");
+
+    std::cout << "XC LIB GUESS ORB: " << xc_lib << std::endl;
     return true;
 }
 
@@ -1297,19 +1296,28 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     if (json_fock.contains("xc_operator")) {
         auto shared_memory = json_fock["xc_operator"]["shared_memory"];
         auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
+        auto xc_lib = json_fock["xc_library"][0];
         auto xc_spin = json_xcfunc["spin"];
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-
-        // auto xc_libxc = json_xcfunc["libxc"];
-        // GroundStateSolver solver;
-        // solver.setLibxc(xc_libxc);
-        // mrdft::Factory.setLibxc(xc_libxc);
-        // std::cout << "Libxc driver.cpp line 1278: " << xc_libxc << std::endl;
-
+        bool xc_libxc;
+        
+        if (xc_lib == "xcfun") {xc_libxc = false;
+        } else if (xc_lib == "libxc") {xc_libxc = true;
+            std::cout << xc_libxc << std::endl;
+        } else { std::cout << "some ERROR" << std::endl;}
+        
+        std::cout << "Build fock xc_lib: " << xc_lib << std::endl;
+        
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
+        std::cout << "Build fock Factory::libxc, pre setlibxc: " << mrdft::Factory::libxc << ", " << xc_libxc << std::endl;
+        xc_factory.setLibxc(xc_libxc);
+        std::cout << "Build fock Factory::libxc, pre setlibxc: " << mrdft::Factory::libxc << ", " << xc_libxc << std::endl;
+        // mrdft::Factory::libxc = (xc_lib == "libxc" ? true : false);
+        std::cout << "Build fock xc_lib n2: " << xc_lib << std::endl;
+        std::cout << xc_lib << std::endl;
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {

@@ -26,15 +26,18 @@
 #include <MRCPP/Printer>
 
 #include "Functional.h"
+#include "Factory.h"
 
 namespace mrdft {
 
 
 
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
+    libxc = Factory::libxc;
+    std::cout << "Functional set libxc func obj: " << libxc << std::endl;
     libxc_objects = libxc_objects_;
     libxc_coeffs  = libxc_coeffs_;
-
+    std::cout << "Pre running x print: " << libxc << std::endl;
     if (libxc) {
         std::cout << "RUNNING LIBXC" << std::endl;
     } else {
@@ -98,7 +101,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
 
 
 
-    if (libxc) {
+    if (Factory::libxc) {
         for (size_t i; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
                 case XC_FAMILY_LDA:

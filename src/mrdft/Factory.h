@@ -47,13 +47,13 @@ namespace mrdft {
         void setUseGamma(bool g) { gamma = g; }
         void setLogGradient(bool lg) { log_grad = lg; }
         void setDensityCutoff(double c) { cutoff = c; }
-        void setLibxc(bool libxc_) { libxc = libxc_; }
+        void setLibxc(bool libxc_) {libxc = libxc_; }
         void setDerivative(const std::string &n) { diff_s = n; }
         //  void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
         void setFunctional(const std::string &n, double c = 1.0);
         
         std::unique_ptr<MRDFT> build();
-        bool libxc;
+        static bool libxc;
 
 private:
     int order{1};

@@ -64,7 +64,7 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
     if (Phi.size() == 0) return false;
-
+    
 
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
@@ -74,7 +74,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    // print_utils::text(0, "XC Library  ", (libxc) ? "LibXC" : "XCFun");
+    print_utils::text(0, "Functional  ", "libxc (added manually)");
+    print_utils::text(0, "XC Library  ", (mrdft::Factory::libxc) ? "LibXC" : "XCFun");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
@@ -158,7 +159,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    // print_utils::text(0, "XC Library  ", (libxc) ? "LibXC" : "XCFun");
+    print_utils::text(0, "Functional  ", "libxc (added manually)");
+    print_utils::text(0, "XC Library  ", (mrdft::Factory::libxc) ? "LibXC" : "XCFun");
     print_utils::text(0, "AO basis    ", "3-21G");
     mrcpp::print::separator(0, '~', 2);
 

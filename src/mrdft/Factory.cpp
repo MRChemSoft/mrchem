@@ -43,6 +43,8 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         , xcfun_p(xcfun_new(), xcfun_delete) {
 }
 
+bool Factory::libxc;
+
 // Todo: det finnes sikkert gode util funksjoner i libxc for dette
 std::vector<int> Factory::mapFunctionalName(const std::string &name) const {
     // Map common functional names from XCFun to LibXC IDs, only LDAs for now
@@ -52,7 +54,7 @@ std::vector<int> Factory::mapFunctionalName(const std::string &name) const {
     if (name == "svwn5")                    return {XC_LDA_X, XC_LDA_C_VWN};
     if (name == "pbe")                      return {XC_GGA_X_PBE, XC_GGA_C_PBE};
     if (name == "b3lyp")                    return {XC_HYB_GGA_XC_B3LYP};
-    if (name == "pbe0")                      return {XC_HYB_GGA_XC_PBEH};
+    if (name == "pbe0")                     return {XC_HYB_GGA_XC_PBEH};
 
     std::cout << "!!!!! Add functional to mapFunctionalName(): " << name << std::endl;
     MSG_ABORT("Unknown functional for libxc")
@@ -64,6 +66,8 @@ void Factory::setFunctional(const std::string &n, double c) {
     std::string name = n;
     std::cout << "xcfun func: " << n << std::endl;
     std::vector<int> ids = this->mapFunctionalName(name);
+    setLibxc(libxc);
+    std::cout << "setLibxc in set Functional: " << libxc << std::endl;
 
     xc_func_type libxc_obj;
     for (size_t i = 0; i < ids.size(); i++) {
@@ -81,8 +85,10 @@ void Factory::setFunctional(const std::string &n, double c) {
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
-    // setLibxc(libxc);
-
+    std::cout << "Factory build libxc bool (old): " << libxc << std::endl;
+    setLibxc(libxc);
+    std::cout << "setLibxc in factory build: " << libxc << std::endl;
+    
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
     bool lda = not(gga);
@@ -114,6 +120,8 @@ std::unique_ptr<MRDFT> Factory::build() {
     }
 
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
+
+    std::cout << "Factory build libxc bool (pre set libxc obj): " << libxc << std::endl;
 
     func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
 
