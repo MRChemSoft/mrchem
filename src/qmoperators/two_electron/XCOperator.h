@@ -27,6 +27,7 @@
 
 #include "tensor/RankZeroOperator.h"
 
+#include "chemistry/Nucleus.h"
 #include "XCPotential.h"
 #include "XCPotentialD1.h"
 #include "XCPotentialD2.h"
@@ -63,6 +64,10 @@ public:
 
     auto getEnergy() { return potential->getEnergy(); }
     auto &getDensity(DensityType spin, int pert_idx = 0) { return potential->getDensity(spin, pert_idx); }
+
+    void setNuclei(std::shared_ptr<Nuclei> nucs) {
+        this->potential->setNuclei(nucs);
+    }
 
     void setSpin(int spin) {
         mrcpp::FunctionTree<3> &pot = this->potential->getPotential(spin);

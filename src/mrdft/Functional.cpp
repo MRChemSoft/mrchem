@@ -307,6 +307,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
                 node.attachCoefs(Ctrout.col(xc_outsize + 3*(i-1) + d).data());
                 node.cvTransform(mrcpp::Backward);
                 node.mwTransform(mrcpp::Compression);
+                node.calcNorms(); // quick fix
                 mrcpp::DerivativeCalculator<3> derivcalc(d,*this->derivOp, *rho0);//TODO: define outside loops
                 mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx),true,false);
                 derivcalc.calcNode(node, noded);
