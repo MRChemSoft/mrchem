@@ -85,17 +85,11 @@ void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<
         return;
     } else if (name == "b3p86") {
         // ids = {XC_HYB_GGA_XC_B3P86_NWCHEM};
-        // ids = {XC_HYB_GGA_XC_B3P86}; // Closest to xcfun
+        ids = {XC_HYB_GGA_XC_B3P86}; // Closest to xcfun
         // coeffs = {1.0};
         // ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86, XC_LDA_C_PZ};
         // coeffs = {0.80, 0.72, 1.0, 0.81, -0.81};
-
-        ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86}; // What chat GPT said XC_HYB_GGA_XC_B3P86 is
-        coeffs = {0.80, 0.72, 1.0, 0.81};
-        // ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86}; // What chat GPT said XC_HYB_GGA_XC_B3P86_NWCHEM is
-        // coeffs = {0.80, 0.72, 0.19, 0.81};
-        // ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_P86}; // What chat GPT said the closest to xcfun is
-        // coeffs = {0.80, 0.72, 1.00};
+        
         return;
     } else if (name == "bpw91") {
         ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_PW91};
