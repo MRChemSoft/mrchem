@@ -1,0 +1,1275 @@
+===== BEGIN src/mrdft/Factory.h =====
+#pragma once
+
+#include <MRCPP/MWOperators>
+#include <XCFun/xcfun.h>
+
+#include "MRDFT.h"
+
+namespace mrdft {
+
+class Factory final {
+public:
+    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
+    ~Factory() = default;
+
+    void setSpin(bool s) { spin = s; }
+    void setOrder(int k) { order = k; }
+    void setUseGamma(bool g) { gamma = g; }
+    void setLogGradient(bool lg) { log_grad = lg; }
+    void setDensityCutoff(double c) { cutoff = c; }
+    void setDerivative(const std::string &n) { diff_s = n; }
+    void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
+
+    // Optional: select backend and (for LibXC) functional IDs via code (we also read env vars)
+    void setBackend(const std::string &b) { backend = b; }
+    void setLibXCIDs(const std::vector<int> &ids_in) { libxc_ids = ids_in; }
+
+    std::unique_ptr<MRDFT> build();
+
+private:
+    int order{1};
+    bool spin{false};
+    bool gamma{false};
+    bool log_grad{false};
+    double cutoff{-1.0};
+    std::string diff_s{"abgv_00"};
+    std::string backend{"xcfun"};           // "xcfun" (default) or "libxc"
+    std::vector<int> libxc_ids;             // used only if backend == "libxc"
+    const mrcpp::MultiResolutionAnalysis<3> mra;
+
+    XC_p xcfun_p;
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/Factory.h =====
+
+===== BEGIN src/mrdft/Factory.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ *
+ * This file is part of MRChem.
+ */
+
+#include "Factory.h"
+
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <XCFun/xcfun.h>
+
+#include "GGA.h"
+#include "Grid.h"
+#include "LDA.h"
+#include "MRDFT.h"
+#include "SpinGGA.h"
+#include "SpinLDA.h"
+
+// LibXC adapters (compiled only if enabled at configure time)
+#ifdef MRCHEM_ENABLE_LIBXC
+#  include "LibXCBackend.h"
+#endif
+
+namespace mrdft {
+
+// ------------------------------- helpers ---------------------------------
+
+static std::string to_lower(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+    return s;
+}
+
+static std::vector<int> parse_ids_csv(const char* csv_env) {
+    std::vector<int> out;
+    if (!csv_env) return out;
+    std::stringstream ss(csv_env);
+    for (std::string tok; std::getline(ss, tok, ','); ) {
+        if (!tok.empty()) out.push_back(std::stoi(tok));
+    }
+    return out;
+}
+
+// ------------------------------ Factory ----------------------------------
+
+Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
+    : mra(MRA)
+    , xcfun_p(xcfun_new(), xcfun_delete) {}
+
+/** @brief Build a MRDFT object from the currently defined parameters
+ *
+ * Backend selection policy:
+ *  - Default: XCFun
+ *  - If env MRCHEM_XC_BACKEND=libxc (or MRCHEM_FORCE_LIBXC=1), choose LibXC (if compiled)
+ *  - LibXC IDs are taken from Factory::libxc_ids if set; otherwise from env MRCHEM_LIBXC_IDS
+ *  - If LibXC chosen but no IDs available, abort with a clear message
+ */
+std::unique_ptr<MRDFT> Factory::build() {
+    // Init DFT grid
+    auto grid_p = std::make_unique<Grid>(mra);
+
+    // Decide backend from member + env (env wins)
+    std::string backend_eff = to_lower(backend);
+    if (const char* be = std::getenv("MRCHEM_XC_BACKEND")) {
+        backend_eff = to_lower(std::string(be));
+    }
+    const bool force_libxc = (std::getenv("MRCHEM_FORCE_LIBXC") != nullptr);
+    const bool want_libxc  = force_libxc || (backend_eff == "libxc");
+
+    // Determine LibXC IDs if needed
+    std::vector<int> ids = libxc_ids; // may be pre-filled by caller
+    if (ids.empty()) {
+        // env override
+        auto env_ids = parse_ids_csv(std::getenv("MRCHEM_LIBXC_IDS"));
+        if (!env_ids.empty()) ids = std::move(env_ids);
+    }
+
+    // Flag whether LibXC adapters are compiled in
+#ifdef MRCHEM_ENABLE_LIBXC
+    const bool libxc_available = true;
+#else
+    const bool libxc_available = false;
+#endif
+    const bool use_libxc = (want_libxc && libxc_available);
+
+    // ---------------------------------------------------------------------
+    // XCFun user-eval setup (parity with upstream)
+    // ---------------------------------------------------------------------
+    bool gga = xcfun_is_gga(xcfun_p.get());
+    bool lda = !gga;
+
+    unsigned int mode          = 1;                    // partial derivative mode
+    unsigned int func_type     = (gga ? 1u : 0u);      // LDA(0) or GGA(1)
+    unsigned int dens_type     = 1 + spin;             // n (1) or alpha&beta (2)
+    unsigned int laplacian     = 0;                    // no laplacian
+    unsigned int kinetic       = 0;                    // no kinetic energy density
+    unsigned int current       = 0;                    // no current density
+    unsigned int exp_deriv     = !gamma;               // use gamma or explicit derivatives
+    if (!gga) exp_deriv = 0;                           // fall back to gamma-type if LDA
+
+    xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type,
+                          mode, laplacian, kinetic, current, exp_deriv);
+
+    // ---------------------------------------------------------------------
+    // MW derivative operator if GGA
+    // ---------------------------------------------------------------------
+    if (gga) {
+        if      (diff_s == "bspline") diff_p = std::make_unique<mrcpp::BSOperator<3>>(mra, 1);
+        else if (diff_s == "abgv_00") diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+        else if (diff_s == "abgv_55") diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.5, 0.5);
+        // else leave null; Functional classes can validate as needed
+    }
+
+    // ---------------------------------------------------------------------
+    // Build Functional (choose LibXC adapters when requested & available)
+    // ---------------------------------------------------------------------
+    std::unique_ptr<Functional> func_p{nullptr};
+
+    if (spin) {
+        if (gga) {
+#ifdef MRCHEM_ENABLE_LIBXC
+            if (use_libxc) {
+                if (ids.empty()) {
+                    MSG_ABORT("LibXC backend selected but no LibXC IDs specified. "
+                              "Set MRCHEM_LIBXC_IDS (e.g. 402 for B3LYP, or '106,131' for BLYP), "
+                              "or call Factory::setLibXCIDs().");
+                }
+                func_p = std::make_unique<LibXCSpinGGA>(order, xcfun_p, diff_p, ids);
+            } else
+#endif
+            {
+                func_p = std::make_unique<SpinGGA>(order, xcfun_p, diff_p);
+            }
+        } else if (lda) {
+#ifdef MRCHEM_ENABLE_LIBXC
+            if (use_libxc) {
+                if (ids.empty()) {
+                    MSG_ABORT("LibXC backend selected but no LibXC IDs specified. "
+                              "Set MRCHEM_LIBXC_IDS (e.g. '1,9' for LDA X+PW92 C), "
+                              "or call Factory::setLibXCIDs().");
+                }
+                func_p = std::make_unique<LibXCSpinLDA>(order, xcfun_p, ids);
+            } else
+#endif
+            {
+                func_p = std::make_unique<SpinLDA>(order, xcfun_p);
+            }
+        }
+    } else {
+        if (gga) {
+#ifdef MRCHEM_ENABLE_LIBXC
+            if (use_libxc) {
+                if (ids.empty()) {
+                    MSG_ABORT("LibXC backend selected but no LibXC IDs specified. "
+                              "Set MRCHEM_LIBXC_IDS (e.g. 402 for B3LYP, or '106,131' for BLYP), "
+                              "or call Factory::setLibXCIDs().");
+                }
+                func_p = std::make_unique<LibXCGGA>(order, xcfun_p, diff_p, ids);
+            } else
+#endif
+            {
+                func_p = std::make_unique<GGA>(order, xcfun_p, diff_p);
+            }
+        } else if (lda) {
+#ifdef MRCHEM_ENABLE_LIBXC
+            if (use_libxc) {
+                if (ids.empty()) {
+                    MSG_ABORT("LibXC backend selected but no LibXC IDs specified. "
+                              "Set MRCHEM_LIBXC_IDS (e.g. '1,9' for LDA X+PW92 C), "
+                              "or call Factory::setLibXCIDs().");
+                }
+                func_p = std::make_unique<LibXCLDA>(order, xcfun_p, ids);
+            } else
+#endif
+            {
+                func_p = std::make_unique<LDA>(order, xcfun_p);
+            }
+        }
+    }
+
+    if (!func_p) {
+        MSG_ABORT("Invalid or unsupported functional type (spin/LDA/GGA combination).");
+    }
+
+    // ---------------------------------------------------------------------
+    // Keep original behavior: set derivative operator & knobs on the functional
+    // ---------------------------------------------------------------------
+    // (Upstream MRChem sets ABGV(0,0) as a default fallback.)
+    diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+    func_p->setDerivOp(diff_p);
+    func_p->setLogGradient(log_grad);
+    func_p->setDensityCutoff(cutoff);
+
+    auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
+    return mrdft_p;
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/Factory.cpp =====
+
+===== BEGIN src/mrdft/LibXCBackend.h =====
+#pragma once
+
+#include <vector>
+#include <memory>
+#include <stdexcept>
+#include <Eigen/Core>
+
+#include <xc.h>  // LibXC C header
+
+#include "LDA.h"
+#include "GGA.h"
+#include "SpinLDA.h"
+#include "SpinGGA.h"
+
+namespace mrdft {
+
+/* Minimal RAII wrapper for LibXC function handles */
+class LibXCHandle {
+public:
+    LibXCHandle(const std::vector<int>& ids, int nspin)
+        : funcs(ids.size()), nspin(nspin) {
+        for (size_t k = 0; k < ids.size(); ++k) {
+            if (xc_func_init(&funcs[k], ids[k], nspin) != 0) {
+                throw std::runtime_error("LibXC: could not initialize functional id=" + std::to_string(ids[k]));
+            }
+        }
+    }
+    ~LibXCHandle() {
+        for (auto &f : funcs) xc_func_end(&f);
+    }
+    std::vector<xc_func_type> funcs;
+    int nspin{XC_UNPOLARIZED};
+};
+
+/* -------- Unpolarized LDA -------- */
+class LibXCLDA : public LDA {
+public:
+    LibXCLDA(int k, XC_p &f, const std::vector<int>& ids)
+        : LDA(k, f), handle(ids, XC_UNPOLARIZED) {}
+
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+
+private:
+    LibXCHandle handle;
+};
+
+/* -------- Unpolarized GGA -------- */
+class LibXCGGA : public GGA {
+public:
+    LibXCGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d, const std::vector<int>& ids)
+        : GGA(k, f, d), handle(ids, XC_UNPOLARIZED) {}
+
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+
+private:
+    LibXCHandle handle;
+};
+
+/* -------- Spin LDA -------- */
+class LibXCSpinLDA : public SpinLDA {
+public:
+    LibXCSpinLDA(int k, XC_p &f, const std::vector<int>& ids)
+        : SpinLDA(k, f), handle(ids, XC_POLARIZED) {}
+
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+
+private:
+    LibXCHandle handle;
+};
+
+/* -------- Spin GGA -------- */
+class LibXCSpinGGA : public SpinGGA {
+public:
+    LibXCSpinGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d, const std::vector<int>& ids)
+        : SpinGGA(k, f, d), handle(ids, XC_POLARIZED) {}
+
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+
+private:
+    LibXCHandle handle;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/LibXCBackend.h =====
+
+===== BEGIN src/mrdft/LibXCBackend.cpp =====
+#include "LibXCBackend.h"
+
+namespace mrdft {
+
+/* For now, these stubs simply delegate to XCFun.
+   Next step we’ll fill them with real LibXC calls (xc_lda_exc_vxc, xc_gga_exc_vxc, etc.). */
+
+Eigen::MatrixXd LibXCLDA::evaluate_transposed(Eigen::MatrixXd &inp) const {
+    return Functional::evaluate_transposed(inp);
+}
+
+Eigen::MatrixXd LibXCSpinLDA::evaluate_transposed(Eigen::MatrixXd &inp) const {
+    return Functional::evaluate_transposed(inp);
+}
+
+Eigen::MatrixXd LibXCGGA::evaluate_transposed(Eigen::MatrixXd &inp) const {
+    return Functional::evaluate_transposed(inp);
+}
+
+Eigen::MatrixXd LibXCSpinGGA::evaluate_transposed(Eigen::MatrixXd &inp) const {
+    return Functional::evaluate_transposed(inp);
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/LibXCBackend.cpp =====
+
+===== BEGIN src/mrdft/xc_backend.h =====
+#pragma once
+
+#include <Eigen/Core>
+#include <memory>
+#include <string>
+
+namespace mrdft {
+
+class XCBackend {
+public:
+    virtual ~XCBackend() = default;
+
+    // Configure functional & coefficient (same semantics as xcfun_set)
+    virtual void set_functional(const std::string &name, double coeff) = 0;
+
+    // Configure evaluation layout (order, spin, gamma vs explicit)
+    virtual void configure(int order, bool spin, bool use_gamma) = 0;
+
+    // Introspection
+    virtual bool  is_gga() const = 0;
+    virtual bool  is_metagga() const = 0;
+    virtual double amount_exx() const = 0;
+    virtual int   input_length() const = 0;
+    virtual int   output_length() const = 0;
+
+    // Evaluate at many grid points. Each ROW is one grid point.
+    // Returns (nPts x nOut). Applies cutoff identical to old code.
+    virtual Eigen::MatrixXd eval_transposed(const Eigen::MatrixXd &inp,
+                                            double cutoff,
+                                            bool is_spin_sep) const = 0;
+};
+
+using XCBackend_p = std::shared_ptr<XCBackend>;
+
+// Stage 1 backend: wraps XCFun
+XCBackend_p make_xcfun_backend();
+
+} // namespace mrdft
+
+===== END src/mrdft/xc_backend.h =====
+
+===== BEGIN src/mrdft/xc_backend_xcfun.cpp =====
+#include "xc_backend.h"
+
+#include <XCFun/xcfun.h>
+#include <memory>
+#include <stdexcept>
+#include <utility>
+
+namespace mrdft {
+
+namespace {
+struct XCFunDeleter {
+    void operator()(xcfun_t *p) const { if (p) xcfun_delete(p); }
+};
+} // namespace
+
+class XCFunBackend final : public XCBackend {
+public:
+    XCFunBackend()
+        : xcfun_(xcfun_new(), XCFunDeleter{}) {}
+
+    void set_functional(const std::string &name, double coeff) override {
+        xcfun_set(xcfun_.get(), name.c_str(), coeff);
+    }
+
+    void configure(int order, bool spin, bool use_gamma) override {
+        order_ = order;
+        spin_  = spin;
+
+        const bool gga = xcfun_is_gga(xcfun_.get());
+        unsigned int mode         = 1;                 // partial derivatives
+        unsigned int func_type    = gga ? 1u : 0u;     // 0=LDA, 1=GGA
+        unsigned int dens_type    = static_cast<unsigned>(1 + (spin ? 1 : 0)); // 1 or 2
+        unsigned int laplacian    = 0;
+        unsigned int kinetic      = 0;
+        unsigned int current      = 0;
+        unsigned int exp_deriv    = static_cast<unsigned>(!use_gamma);
+        if (!gga) exp_deriv = 0; // fall back to gamma-type for LDA
+
+        xcfun_user_eval_setup(xcfun_.get(), order_, func_type, dens_type,
+                              mode, laplacian, kinetic, current, exp_deriv);
+    }
+
+    bool is_gga() const override     { return xcfun_is_gga(xcfun_.get()); }
+    bool is_metagga() const override { return xcfun_is_metagga(xcfun_.get()); }
+
+    double amount_exx() const override {
+        double exx = 0.0;
+        xcfun_get(xcfun_.get(), "exx", &exx);
+        return exx;
+    }
+
+    int input_length()  const override { return xcfun_input_length(xcfun_.get()); }
+    int output_length() const override { return xcfun_output_length(xcfun_.get()); }
+
+    Eigen::MatrixXd eval_transposed(const Eigen::MatrixXd &inp,
+                                    double cutoff,
+                                    bool is_spin_sep) const override {
+        const int nInp = input_length();
+        const int nOut = output_length();
+        const int nPts = static_cast<int>(inp.rows());
+        if (inp.cols() != nInp) throw std::runtime_error("XCFunBackend: invalid input shape");
+
+        Eigen::MatrixXd out(nPts, nOut);
+        out.setZero();
+
+        Eigen::VectorXd in_row(nInp);
+        Eigen::VectorXd out_row(nOut);
+        for (int i = 0; i < nPts; ++i) {
+            bool calc = true;
+            if (is_spin_sep) {
+                if (inp(i, 0) < cutoff && inp(i, 1) < cutoff) calc = false;
+            } else {
+                if (inp(i, 0) < cutoff) calc = false;
+            }
+            for (int j = 0; j < nInp; ++j) in_row(j) = inp(i, j);
+            if (calc) xcfun_eval(xcfun_.get(), in_row.data(), out_row.data());
+            for (int j = 0; j < nOut; ++j) out(i, j) = out_row(j);
+        }
+        return out;
+    }
+
+private:
+    std::unique_ptr<xcfun_t, XCFunDeleter> xcfun_;
+    int  order_ = 1;
+    bool spin_  = false;
+};
+
+XCBackend_p make_xcfun_backend() {
+    return std::make_shared<XCFunBackend>();
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/xc_backend_xcfun.cpp =====
+
+===== BEGIN src/mrenv.h =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include <string>
+
+#include <nlohmann/json.hpp>
+
+namespace mrchem {
+namespace mrenv {
+
+nlohmann::json fetch_json(int argc, char **argv);
+void dump_json(const nlohmann::json &json_inp, const nlohmann::json &json_out);
+
+void initialize(const nlohmann::json &json_inp);
+void finalize(double wt);
+
+} // namespace mrenv
+namespace detail {
+std::string remove_extension(const std::string &fname);
+bool all_success(const nlohmann::json &json_out);
+} // namespace detail
+} // namespace mrchem
+
+===== END src/mrenv.h =====
+
+===== BEGIN src/mrenv.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include <MRCPP/Printer>
+#include <XCFun/xcfun.h>
+#include <fstream>
+#include "MRCPP/utils/parallel.h"
+
+#include "mrchem.h"
+#include "mrenv.h"
+#include "utils/print_utils.h"
+#include "version.h"
+
+using json = nlohmann::json;
+using Printer = mrcpp::Printer;
+
+namespace mrchem {
+
+namespace mrenv {
+void init_printer(const json &json_print);
+void init_mra(const json &json_mra);
+void init_mpi(const json &json_mpi);
+void print_header();
+} // namespace mrenv
+
+json mrenv::fetch_json(int argc, char **argv) {
+    const char *infile = nullptr;
+    if (argc == 1) {
+        infile = "STDIN";
+    } else if (argc == 2) {
+        infile = argv[1];
+    } else {
+        MSG_ERROR("Ivalid number of arguments!");
+    }
+
+    // Read JSON input
+    json input;
+    std::ifstream ifs(infile, std::ios_base::in);
+    ifs >> input;
+    ifs.close();
+
+    return input["input"];
+}
+
+void mrenv::initialize(const json &json_inp) {
+    auto json_print = json_inp.find("printer");
+    auto json_mra = json_inp.find("mra");
+    auto json_mpi = json_inp.find("mpi");
+
+    if (json_mra == json_inp.end()) {
+        MSG_ABORT("Missing MRA input!");
+    } else {
+        mrenv::init_mra(*json_mra);
+    }
+    if (json_mpi != json_inp.end()) mrenv::init_mpi(*json_mpi);
+    if (json_print != json_inp.end()) mrenv::init_printer(*json_print);
+
+    mrenv::print_header();
+}
+
+void mrenv::init_printer(const json &json_print) {
+    // Initialize printing
+    auto print_level = json_print["print_level"];
+    auto print_prec = json_print["print_prec"];
+    auto print_width = json_print["print_width"];
+    auto print_mpi = json_print["print_mpi"];
+    auto fname = json_print["file_name"].get<std::string>();
+    if (print_mpi) {
+        Printer::init(print_level, mrcpp::mpi::world_rank, mrcpp::mpi::world_size, fname.c_str());
+    } else {
+        Printer::init(print_level, mrcpp::mpi::world_rank, mrcpp::mpi::world_size);
+    }
+    Printer::setPrecision(print_prec);
+    Printer::setWidth(print_width);
+}
+
+void mrenv::init_mra(const json &json_mra) {
+    // Initialize world box
+    int min_scale = json_mra["min_scale"];
+    int max_scale = json_mra["max_scale"];
+    auto corner = json_mra["corner"];
+    auto boxes = json_mra["boxes"];
+    mrcpp::BoundingBox<3> world(min_scale, corner, boxes);
+
+    // Initialize scaling basis
+    auto order = json_mra["basis_order"];
+    auto btype = json_mra["basis_type"];
+
+    auto max_depth = max_scale - min_scale;
+    if (min_scale < mrcpp::MinScale) MSG_ABORT("Root scale too large");
+    if (max_scale > mrcpp::MaxScale) MSG_ABORT("Max scale too large");
+    if (max_depth > mrcpp::MaxDepth) MSG_ABORT("Max depth too large");
+
+    // Initialize global MRA
+    if (btype == "interpolating") {
+        mrcpp::InterpolatingBasis basis(order);
+        MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
+    } else if (btype == "legendre") {
+        mrcpp::LegendreBasis basis(order);
+        MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
+    } else {
+        MSG_ABORT("Invalid basis type!");
+    }
+    mrcpp::cplxfunc::SetdefaultMRA(MRA);
+}
+
+void mrenv::init_mpi(const json &json_mpi) {
+    mrcpp::mpi::numerically_exact = json_mpi["numerically_exact"];
+    mrcpp::mpi::shared_memory_size = json_mpi["shared_memory_size"];
+    mrcpp::mpi::bank_size = json_mpi["bank_size"];
+    mrcpp::mpi::omp_threads = json_mpi["omp_threads"];
+    mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
+}
+
+void mrenv::print_header() {
+    auto pwidth = Printer::getWidth();
+    auto txt_width = 50;
+    auto pre_spaces = (pwidth - 6 - txt_width) / 2;
+    auto post_spaces = pwidth - 6 - txt_width - pre_spaces;
+    std::string pre_str = std::string(3, '*') + std::string(pre_spaces, ' ');
+    std::string post_str = std::string(post_spaces, ' ') + std::string(3, '*');
+    std::stringstream o_ver, o_branch, o_hash, o_author, o_date;
+    o_ver << "VERSION            " << program_version();
+    o_branch << "Git branch         " << git_branch();
+    o_hash << "Git commit hash    " << git_commit_hash();
+    o_author << "Git commit author  " << git_commit_author();
+    o_date << "Git commit date    " << git_commit_date();
+
+    int ver_len = o_ver.str().size();
+    int branch_len = o_branch.str().size();
+    int hash_len = o_hash.str().size();
+    int auth_len = o_author.str().size();
+    int date_len = o_date.str().size();
+
+    o_ver << std::string(std::max(0, txt_width - ver_len), ' ');
+    o_branch << std::string(std::max(0, txt_width - branch_len), ' ');
+    o_hash << std::string(std::max(0, txt_width - hash_len), ' ');
+    o_author << std::string(std::max(0, txt_width - auth_len), ' ');
+    o_date << std::string(std::max(0, txt_width - date_len), ' ');
+
+    std::stringstream o_bank;
+    if (mrcpp::mpi::bank_size > 0) {
+        o_bank << "(" << mrcpp::mpi::tot_bank_size << " bank)";
+    } else {
+        o_bank << "(no bank)";
+    }
+
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, '*');
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << " __  __ ____   ____ _                             " << post_str);
+    println(0, pre_str << "|  \\/  |  _ \\ / ___| |__   ___ _ __ ___           " << post_str);
+    println(0, pre_str << "| |\\/| | |_) | |   | '_ \\ / _ \\ '_ ` _ \\          " << post_str);
+    println(0, pre_str << "| |  | |  _ <| |___| | | |  __/ | | | | |         " << post_str);
+    println(0, pre_str << "|_|  |_|_| \\_\\\\____|_| |_|\\___|_| |_| |_|         " << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << o_ver.str() << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << o_branch.str() << post_str);
+    println(0, pre_str << o_hash.str() << post_str);
+    println(0, pre_str << o_author.str() << post_str);
+    println(0, pre_str << o_date.str() << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << "Contact: luca.frediani@uit.no                     " << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << "Radovan Bast            Magnar Bjorgve            " << post_str);
+    println(0, pre_str << "Roberto Di Remigio      Antoine Durdek            " << post_str);
+    println(0, pre_str << "Luca Frediani           Gabriel Gerez             " << post_str);
+    println(0, pre_str << "Stig Rune Jensen        Jonas Juselius            " << post_str);
+    println(0, pre_str << "Rune Monstad            Peter Wind                " << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    mrcpp::print::separator(0, '*', 1);
+    mrcpp::print::separator(0, '-', 1);
+    print_utils::scalar(0, "MPI processes  ", mrcpp::mpi::world_size, o_bank.str(), 0, false);
+    print_utils::scalar(0, "OpenMP threads ", mrcpp::omp::n_threads, "", 0, false);
+    print_utils::scalar(0, "Total cores    ", (mrcpp::mpi::world_size - mrcpp::mpi::tot_bank_size) * mrcpp::omp::n_threads + mrcpp::mpi::tot_bank_size, "", 0, false);
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, '-', 1);
+    printout(0, xcfun_splash());
+    mrcpp::print::environment(0);
+    MRA->print();
+}
+
+void mrenv::finalize(double wt) {
+    // Delete global MRA
+    if (MRA != nullptr) delete MRA;
+    MRA = nullptr;
+
+    auto pwidth = Printer::getWidth();
+    auto txt_width = 45;
+    auto pre_spaces = (pwidth - 6 - txt_width) / 2;
+    auto post_spaces = pwidth - 6 - txt_width - pre_spaces;
+    std::string pre_str = std::string(3, '*') + std::string(pre_spaces, ' ');
+    std::string post_str = std::string(post_spaces, ' ') + std::string(3, '*');
+
+    auto hr = static_cast<int>(wt / 3600.0);
+    auto min = static_cast<int>(std::fmod(wt, 3600.0) / 60.0);
+    auto sec = static_cast<int>(std::fmod(wt, 60.0));
+
+    std::stringstream o_time;
+    o_time << "Wall time : " << std::setw(2) << hr << "h" << std::setw(3) << min << "m" << std::setw(3) << sec << "s";
+
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, '*');
+    println(0, pre_str << "                                             " << post_str);
+    println(0, pre_str << "                Exiting MRChem               " << post_str);
+    println(0, pre_str << "                                             " << post_str);
+    println(0, pre_str << "           " << o_time.str() << "           " << post_str);
+    println(0, pre_str << "                                             " << post_str);
+    mrcpp::print::separator(0, '*');
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, ' ');
+}
+
+void mrenv::dump_json(const json &json_inp, const json &json_out) {
+    json json_tot;
+    json_tot["input"] = json_inp;
+    json_tot["output"] = json_out;
+
+    const auto file_name = detail::remove_extension(json_inp["printer"]["file_name"].get<std::string>());
+    if (mrcpp::mpi::grand_master()) {
+        std::ofstream ofs;
+        ofs.open(file_name + ".json", std::ios::out);
+        ofs << json_tot.dump(2) << std::endl;
+        ofs.close();
+    }
+}
+
+std::string detail::remove_extension(const std::string &fname) {
+    size_t lastdot = fname.find_last_of(".");
+    if (lastdot == std::string::npos) return fname;
+    return fname.substr(0, lastdot);
+}
+
+bool detail::all_success(const json &json_out) {
+    auto scf_success = json_out["scf_calculation"]["success"].get<bool>();
+    auto rsp_success = true;
+    for (const auto &x : json_out["rsp_calculations"]) { rsp_success &= x["success"].get<bool>(); }
+    return scf_success & rsp_success;
+}
+} // namespace mrchem
+
+===== END src/mrenv.cpp =====
+
+===== BEGIN src/utils/json_utils.h =====
+#pragma once
+#include <nlohmann/json.hpp>
+#include <string>
+#include <algorithm>
+#include <type_traits>
+#include <cctype>
+#include <unordered_set>
+
+namespace mrchem::json_utils {
+
+using json = nlohmann::json;
+
+// Strict-but-tolerant conversion to bool.
+// Accepts true/false, 0/1, and strings like "on/off", "yes/no".
+inline bool to_bool(const nlohmann::json& j, bool def = false) {
+    if (j.is_boolean()) return j.get<bool>();
+    if (j.is_number_integer()) return j.get<int>() != 0;
+    if (j.is_number_float())   return j.get<double>() != 0.0;
+    if (j.is_string()) {
+        std::string s = j.get<std::string>();
+        std::transform(s.begin(), s.end(), s.begin(),
+                       [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+        if (s == "true"  || s == "1" || s == "yes" || s == "on")  return true;
+        if (s == "false" || s == "0" || s == "no"  || s == "off") return false;
+        return def;
+    }
+    return def;
+}
+
+// Safely fetch a value of type T. For bool, uses to_bool.
+// For numbers/strings, only returns if JSON type matches; else returns default.
+template <class T>
+inline T value_loose(const nlohmann::json& jparent, const char* key, const T& def) {
+    if (!jparent.contains(key)) return def;
+    const auto& j = jparent.at(key);
+    if constexpr (std::is_same_v<T,bool>) {
+        return to_bool(j, def);
+    } else if constexpr (std::is_integral_v<T>) {
+        if (j.is_number_integer()) return j.get<T>();
+    } else if constexpr (std::is_floating_point_v<T>) {
+        if (j.is_number()) return j.get<T>();
+    } else if constexpr (std::is_same_v<T,std::string>) {
+        if (j.is_string()) return j.get<std::string>();
+    } else {
+        try { return j.get<T>(); } catch (...) { /* fallthrough */ }
+    }
+    return def;
+}
+
+// ---------- New: input sanitizer to normalize booleans in the whole tree ----------
+
+inline bool looks_like_bool_key(const std::string& k) {
+    // common flags across the codebase
+    static const std::unordered_set<std::string> whitelist = {
+        "print_mpi","numerically_exact","restricted","localize","rotate","checkpoint",
+        "dynamic","shared_memory","include_nuclear","include_coulomb","include_xc",
+        "isAZORA","spin","nonequilibrium","density","unrestricted","debug","verbose",
+        "timings","write_orbitals","plots","plot_density","plot_orbitals","enable",
+        "disable","use_gpu","use_mpi","use_omp"
+    };
+
+    if (whitelist.count(k)) return true;
+    // Heuristics by prefix/suffix
+    auto starts_with = [&](const char* p){
+        return k.rfind(p, 0) == 0;
+    };
+    auto ends_with = [&](const char* sfx){
+        return k.size() >= std::char_traits<char>::length(sfx)
+            && k.compare(k.size()-std::char_traits<char>::length(sfx),
+                         std::char_traits<char>::length(sfx), sfx) == 0;
+    };
+
+    return starts_with("is_") || starts_with("has_") || starts_with("use_")
+        || starts_with("enable_") || starts_with("disable_") || starts_with("do_")
+        || starts_with("with_") || starts_with("print_") || starts_with("plot_")
+        || ends_with("_enabled") || ends_with("_disabled");
+}
+
+// Recursively coerce 0/1 and on/off-like strings to booleans for "boolean-ish" keys.
+inline void sanitize_booleans(nlohmann::json& j) {
+    if (j.is_object()) {
+        for (auto it = j.begin(); it != j.end(); ++it) {
+            const std::string key = it.key();
+            auto& val = it.value();
+            // Recurse first
+            if (val.is_object() || val.is_array()) sanitize_booleans(val);
+
+            if (looks_like_bool_key(key)) {
+                if (!val.is_boolean()) {
+                    // Only coerce if convertible; otherwise leave as-is
+                    bool coerced = to_bool(val, /*def*/false);
+                    // If val was non-convertible string (e.g., "maybe"), keep old value
+                    if (val.is_boolean() || val.is_number() || val.is_string()) {
+                        // Special case: avoid mis-coercing numbers not 0/1
+                        if (val.is_number_integer()) {
+                            int n = val.get<int>();
+                            if (n == 0 || n == 1) { val = coerced; }
+                        } else if (val.is_number_float()) {
+                            double x = val.get<double>();
+                            if (x == 0.0 || x == 1.0) { val = coerced; }
+                        } else if (val.is_string()) {
+                            // Strings like "on"/"off"/"yes"/"no"/"true"/"false"/"0"/"1"
+                            std::string s = val.get<std::string>();
+                            std::string sl = s;
+                            std::transform(sl.begin(), sl.end(), sl.begin(),
+                                           [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+                            if (sl=="true"||sl=="false"||sl=="on"||sl=="off"||sl=="yes"||sl=="no"||sl=="0"||sl=="1") {
+                                val = coerced;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } else if (j.is_array()) {
+        for (auto& x : j) sanitize_booleans(x);
+    }
+}
+
+} // namespace mrchem::json_utils
+
+===== END src/utils/json_utils.h =====
+
+===== MISSING src/utils/json_utils.cpp =====
+
+===== BEGIN CMakeLists.txt =====
+# This file is autogenerated by Autocmake v1.0.0 http://autocmake.org
+# Copyright (c) 2015-2020 by Radovan Bast, Roberto Di Remigio, Jonas Juselius, and contributors.
+
+# set minimum cmake version
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+# project name
+project(MRChem LANGUAGES CXX)
+
+# do not rebuild if rules (compiler flags) change
+set(CMAKE_SKIP_RULE_DEPENDENCY TRUE)
+
+# if CMAKE_BUILD_TYPE undefined, we set it to Release
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# Options handling utilities
+include(CMakeDependentOption)
+# Macro for printing an option in a consistent manner
+# Written by Lori A. Burns (@loriab) and Ryan M. Richard (@ryanmrichard)
+# Syntax: print_option(<option to print> <was specified>)
+macro(print_option variable default)
+  if(NOT DEFINED ${variable} OR "${${variable}}" STREQUAL "")
+    message(STATUS "Setting (unspecified) option ${variable}: ${default}")
+  else()
+    message(STATUS "Setting option ${variable}: ${${variable}}")
+  endif()
+endmacro()
+
+# Wraps an option with default ON/OFF. Adds nice messaging to option()
+# Written by Lori A. Burns (@loriab) and Ryan M. Richard (@ryanmrichard)
+# Syntax: option_with_print(<option name> <description> <default value>)
+macro(option_with_print variable msge default)
+  print_option(${variable} ${default})
+  option(${variable} ${msge} ${default})
+endmacro()
+
+# Wraps an option with a default other than ON/OFF and prints it
+# Written by Lori A. Burns (@loriab) and Ryan M. Richard (@ryanmrichard)
+# NOTE: Can't combine with above b/c CMake handles ON/OFF options specially
+# NOTE2: CMake variables are always defined so need to further check for if
+#       they are the NULL string. This is also why we need the force
+# Syntax: option_with_default(<option name> <description> <default value>)
+macro(option_with_default variable msge default)
+  print_option(${variable} "${default}")
+  if(NOT DEFINED ${variable} OR "${${variable}}" STREQUAL "")
+    set(${variable} "${default}" CACHE STRING ${msge} FORCE)
+  endif()
+endmacro()
+
+# included cmake modules
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_cxx.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/compiler_flags/CXXFlags.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_default_build_paths.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_safeguards.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_code_coverage.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/mpi.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/omp.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/sad_basis.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/hirshfeld.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/azora_potentials.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/main.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/feature_summary.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/tests.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_save_flags.cmake)
+
+===== END CMakeLists.txt =====
+
+===== BEGIN src/mrdft/CMakeLists.txt =====
+target_sources(mrchem PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MRDFT.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Functional.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/LDA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpinLDA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/GGA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpinGGA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/xc_utils.cpp
+)
+
+if(MRCHEM_ENABLE_LIBXC AND HAVE_LIBXC)
+    target_sources(mrchem PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/LibXCBackend.cpp
+    )
+    target_compile_definitions(mrchem PRIVATE MRCHEM_ENABLE_LIBXC)
+    target_link_libraries(mrchem PRIVATE Libxc::xc)
+endif()
+
+===== END src/mrdft/CMakeLists.txt =====
+
+===== BEGIN external/upstream/fetch_libxc.cmake =====
+# Try to find LibXC. We only enable the backend if we both (a) opt in with
+# MRCHEM_ENABLE_LIBXC=ON and (b) actually find a working Libxc::xc target.
+
+find_package(Libxc QUIET)
+
+# Some distros provide an imported target Libxc::xc, some only variables.
+if(TARGET Libxc::xc)
+  set(HAVE_LIBXC TRUE)
+  get_property(_loc TARGET Libxc::xc PROPERTY LOCATION)
+  message(STATUS "Found LibXC: ${_loc}")
+elseif(LIBXC_FOUND)
+  # Compat path: construct an IMPORTED target from legacy variables.
+  add_library(Libxc::xc UNKNOWN IMPORTED)
+  set_target_properties(Libxc::xc PROPERTIES
+    IMPORTED_LOCATION "${LIBXC_LIBRARIES}"
+    INTERFACE_INCLUDE_DIRECTORIES "${LIBXC_INCLUDE_DIRS}"
+  )
+  set(HAVE_LIBXC TRUE)
+  message(STATUS "Found LibXC (legacy variables).")
+else()
+  set(HAVE_LIBXC FALSE)
+  message(STATUS "LibXC not found – LibXC backend will be disabled unless you install it.")
+endif()
+
+===== END external/upstream/fetch_libxc.cmake =====
+
+===== BEGIN cmake/custom/main.cmake =====
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+file(READ "${PROJECT_SOURCE_DIR}/VERSION" MRCHEM_VERSION)
+string(STRIP "${MRCHEM_VERSION}" MRCHEM_VERSION)
+
+string(REPLACE "." ";" VERSION_LIST ${MRCHEM_VERSION})
+list(GET VERSION_LIST 0 MRCHEM_VERSION_MAJOR)
+list(GET VERSION_LIST 1 MRCHEM_VERSION_MINOR)
+
+configure_file (
+  ${PROJECT_SOURCE_DIR}/config.h.in
+  ${PROJECT_BINARY_DIR}/config.h
+  @ONLY
+  )
+
+add_custom_command(
+  OUTPUT
+    ${PROJECT_BINARY_DIR}/version.h
+  COMMAND
+    ${CMAKE_COMMAND} -DINPUT_DIR=${PROJECT_SOURCE_DIR}
+                     -DTARGET_DIR=${PROJECT_BINARY_DIR}
+                     -DCMAKE_SYSTEM=${CMAKE_SYSTEM}
+                     -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+                     -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                     -DCMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
+                     -DMRCHEM_VERSION=${MRCHEM_VERSION}
+                     -DMW_FILTER_SOURCE_DIR=${MW_FILTER_SOURCE_DIR}
+                     -DMW_FILTER_INSTALL_DIR=${MW_FILTER_INSTALL_DIR}
+                     -P ${CMAKE_CURRENT_LIST_DIR}/binary-info.cmake
+  MAIN_DEPENDENCY
+    ${PROJECT_SOURCE_DIR}/version.h.in
+  WORKING_DIRECTORY
+    ${CMAKE_CURRENT_LIST_DIR}
+  )
+
+# rebuild version_info.h every time
+add_custom_target(
+  mrchem-info
+  ALL
+  COMMAND
+    ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_SOURCE_DIR}/version.h.in
+  DEPENDS
+    ${PROJECT_BINARY_DIR}/version.h
+  )
+
+# See here for the reason why: https://gitlab.kitware.com/cmake/cmake/issues/18399
+set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
+  PROPERTIES
+    GENERATED 1
+  )
+
+# We save CMAKE_BUILD_TYPE, as we will set it to Release for externals
+
+# === LibXC backend switch (OFF by default, XCFun remains the default backend) ===
+option(MRCHEM_ENABLE_LIBXC "Enable experimental LibXC backend (in addition to XCFun)" OFF)
+
+
+set(_build_type ${CMAKE_BUILD_TYPE})
+# Order IS important here!
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
+# Optional LibXC (only used if MRCHEM_ENABLE_LIBXC=ON and LibXC is found)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
+# reset CMAKE_BUILD_TYPE to whatever it was for MRChem
+set(CMAKE_BUILD_TYPE ${_build_type})
+
+add_subdirectory(src)
+add_subdirectory(python)
+add_subdirectory(pilot)
+
+===== END cmake/custom/main.cmake =====
+
+===== BEGIN python/mrchem/cli.py =====
+#
+# MRChem, a numerical real-space code for molecular electronic structure
+# calculations within the self-consistent field (SCF) approximations of quantum
+# chemistry (Hartree-Fock and Density Functional Theory).
+# Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+#
+# This file is part of MRChem.
+#
+# MRChem is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# MRChem is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+#
+# For information on the complete list of contributors to MRChem, see:
+# <https://mrchem.readthedocs.io/>
+#
+
+import argparse
+
+from .config import MRCHEM_EXECUTABLE, MRCHEM_VERSION, MRCHEM_MODULE
+
+
+def cli():
+    cli = argparse.ArgumentParser(description="Front-end CLI for MRChem")
+    cli.add_argument("-v", "--version", action="version", version=MRCHEM_VERSION)
+    cli.add_argument(
+        "--launcher",
+        action="store",
+        dest="launcher",
+        type=str,
+        default="",
+        help="Set program launcher string",
+    )
+    cli.add_argument(
+        "--executable",
+        "-x",
+        action="store",
+        dest="executable",
+        type=str,
+        default=MRCHEM_EXECUTABLE,
+        help="Set executable name",
+    )
+    cli.add_argument(
+        "--dryrun",
+        "-D",
+        action="store_true",
+        dest="dryrun",
+        default=False,
+        help="Only process input",
+    )
+    cli.add_argument(
+        "--stdout",
+        action="store_true",
+        dest="stdout",
+        default=False,
+        help="Print to stdout",
+    )
+    cli.add_argument(
+        "--json",
+        "-j",
+        action="store_true",
+        dest="inp_json",
+        default=False,
+        help="Input file is in json format",
+    )
+    cli.add_argument("--module", "-m", action="version", version=str(MRCHEM_MODULE))
+    cli.add_argument("inp_name", type=str, help="Input file in getkw format")
+
+    args = cli.parse_args()
+
+    return args
+
+===== END python/mrchem/cli.py =====
+
+===== BEGIN python/mrchem/config.py.in =====
+#
+# MRChem, a numerical real-space code for molecular electronic structure
+# calculations within the self-consistent field (SCF) approximations of quantum
+# chemistry (Hartree-Fock and Density Functional Theory).
+# Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+#
+# This file is part of MRChem.
+#
+# MRChem is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# MRChem is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+#
+# For information on the complete list of contributors to MRChem, see:
+# <https://mrchem.readthedocs.io/>
+#
+
+from pathlib import Path
+
+MRCHEM_VERSION = "@MRCHEM_VERSION@"
+"""Version of MRChem"""
+MRCHEM_EXECUTABLE = "@MRCHEM_EXECUTABLE@"
+"""Full path to the ``mrchem.x`` executable"""
+MRCHEM_MODULE = Path(__file__).parents[1]
+"""Path to the ``mrchem`` Python frontend module. Do ``sys.path.append(MRCHEM_MODULE)`` to use it"""
+
+===== END python/mrchem/config.py.in =====
+

@@ -7,4 +7,12 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/GGA.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SpinGGA.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/xc_utils.cpp
+)
+
+if(MRCHEM_ENABLE_LIBXC AND HAVE_LIBXC)
+    target_sources(mrchem PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/LibXCBackend.cpp
     )
+    target_compile_definitions(mrchem PRIVATE MRCHEM_ENABLE_LIBXC)
+    target_link_libraries(mrchem PRIVATE Libxc::xc)
+endif()

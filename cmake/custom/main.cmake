@@ -52,10 +52,17 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
   )
 
 # We save CMAKE_BUILD_TYPE, as we will set it to Release for externals
+
+# === LibXC backend switch (OFF by default, XCFun remains the default backend) ===
+option(MRCHEM_ENABLE_LIBXC "Enable experimental LibXC backend (in addition to XCFun)" OFF)
+
+
 set(_build_type ${CMAKE_BUILD_TYPE})
 # Order IS important here!
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
+# Optional LibXC (only used if MRCHEM_ENABLE_LIBXC=ON and LibXC is found)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
 # reset CMAKE_BUILD_TYPE to whatever it was for MRChem

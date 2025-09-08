@@ -1,0 +1,2572 @@
+===== BEGIN src/mrdft/xc_utils.h =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include <Eigen/Core>
+#include <MRCPP/MWFunctions>
+
+namespace mrdft {
+namespace xc_utils {
+
+Eigen::MatrixXi build_output_mask(bool is_lda, bool is_spin_sep, int order);
+Eigen::VectorXi build_density_mask(bool is_lda, bool is_spin_sep, int order);
+
+std::vector<mrcpp::FunctionNode<3> *> fetch_nodes(int n, mrcpp::FunctionTreeVector<3> &inp);
+Eigen::MatrixXd compress_nodes(std::vector<mrcpp::FunctionNode<3> *> &inp_nodes);
+void expand_nodes(std::vector<mrcpp::FunctionNode<3> *> &out_nodes, Eigen::MatrixXd &out_data);
+
+mrcpp::FunctionTreeVector<3> log_gradient(mrcpp::DerivativeOperator<3> &diff_oper, mrcpp::FunctionTree<3> &rho);
+
+} // namespace xc_utils
+} // namespace mrdft
+
+===== END src/mrdft/xc_utils.h =====
+
+===== BEGIN src/mrdft/xc_utils.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <MRCPP/trees/FunctionNode.h>
+
+#include "xc_utils.h"
+
+namespace mrdft {
+
+namespace xc_utils {
+void fill_output_mask(Eigen::MatrixXi &mask, int start);
+} // namespace xc_utils
+
+Eigen::MatrixXi xc_utils::build_output_mask(bool is_lda, bool is_spin_sep, int order) {
+    int start = 2;
+    bool is_gga = not is_lda;
+    Eigen::MatrixXi mask(1, 1);
+    mask << 1;
+    switch (order) {
+        case 0:
+            break;
+        case 1:
+            if (is_lda and is_spin_sep) {
+                mask.resize(2, 1);
+                mask << 1, 2;
+            } else if (is_gga and not is_spin_sep) {
+                mask.resize(4, 1);
+                mask << 1, 2, 3, 4;
+            } else if (is_gga and is_spin_sep) {
+                mask.resize(8, 1);
+                mask << 1, 2, 3, 4, 5, 6, 7, 8;
+            }
+            break;
+        case 2:
+            if (is_lda and is_spin_sep) {
+                start = 3;
+                mask.resize(2, 2);
+            } else if (is_gga and not is_spin_sep) {
+                start = 5;
+                mask.resize(4, 4);
+            } else if (is_gga and is_spin_sep) {
+                start = 9;
+                mask.resize(8, 8);
+            }
+            fill_output_mask(mask, start);
+            break;
+        default:
+            MSG_ABORT("Not implemented");
+    }
+    return mask;
+}
+
+Eigen::VectorXi xc_utils::build_density_mask(bool is_lda, bool is_spin_sep, int order) {
+    bool is_gga = not is_lda;
+    Eigen::VectorXi mask(1);
+    switch (order) {
+        case 0:
+        case 1:
+            mask(0) = -1;
+            break;
+        case 2:
+            mask(0) = 0;
+            if (is_lda and is_spin_sep) {
+                mask.resize(2);
+                mask << 0, 1;
+            } else if (is_gga and not is_spin_sep) {
+                mask.resize(4);
+                mask << 0, 1, 2, 3;
+            } else if (is_gga and is_spin_sep) {
+                mask.resize(8);
+                mask << 0, 1, 2, 3, 4, 5, 6, 7;
+            }
+            break;
+        default:
+            MSG_ABORT("Not implemented");
+    }
+    return mask;
+}
+
+void xc_utils::fill_output_mask(Eigen::MatrixXi &mask, int value) {
+    for (int i = 0; i < mask.rows(); i++) {
+        mask(i, i) = value;
+        value++;
+        for (int j = i + 1; j < mask.cols(); j++) {
+            mask(i, j) = value;
+            mask(j, i) = value;
+            value++;
+        }
+    }
+}
+
+/** @brief Fetch specific node from several FunctionTrees
+ *
+ * This will retrieve one node from each of the input trees and put them
+ * into a vector of FunctionNodes. The node is fetched from position n
+ * in the respective endNodeTables, which means that the tree structures
+ * must be identical for this routine to work as intended.
+ *
+ * param[in] n Node position in EndNodeTable
+ * param[in] inp_trees Array of FunctionTrees
+ * param[out] out_nodes Array of FunctionNodes
+ */
+std::vector<mrcpp::FunctionNode<3> *> xc_utils::fetch_nodes(int n, mrcpp::FunctionTreeVector<3> &inp_trees) {
+    std::vector<mrcpp::FunctionNode<3> *> out_nodes;
+    for (auto i = 0; i < inp_trees.size(); i++) {
+        auto &iTree = mrcpp::get_func(inp_trees, i);
+        auto &iNode = iTree.getEndFuncNode(n);
+        out_nodes.push_back(&iNode);
+    }
+    return out_nodes;
+}
+
+/** @brief Collect data from FunctionNodes into a matrix
+ *
+ * Collects function values from the input nodes into the rows
+ * of a matrix. Matrix dimension: rows = nNodes, cols = nCoefs.
+ *
+ * param[in] inp_nodes Array of FunctionNodes
+ * param[out] out_data Matrix of function values
+ */
+Eigen::MatrixXd xc_utils::compress_nodes(std::vector<mrcpp::FunctionNode<3> *> &inp_nodes) {
+    Eigen::MatrixXd out_data;
+    auto nNodes = inp_nodes.size();
+    if (nNodes > 0) {
+        auto nCoefs = inp_nodes[0]->getNCoefs();
+        out_data = Eigen::MatrixXd::Zero(nNodes, nCoefs);
+        for (auto i = 0; i < nNodes; i++) {
+            auto &node = inp_nodes[i];
+            Eigen::VectorXd row_i;
+            node->getValues(row_i);
+            if (row_i.size() != nCoefs) MSG_ABORT("Size mismatch");
+            out_data.row(i) = row_i;
+        }
+    }
+    return out_data;
+}
+
+/** @brief Put data from a matrix into FunctionNodes
+ *
+ * Each row of the input data is used as function values
+ * of the corresponding FunctionNode in the output vector.
+ * Matrix dimension: rows = nNodes, cols = nCoefs.
+ *
+ * param[inout] out_nodes Array of FunctionNodes
+ * param[in] inp_data Matrix of function values
+ */
+void xc_utils::expand_nodes(std::vector<mrcpp::FunctionNode<3> *> &out_nodes, Eigen::MatrixXd &inp_data) {
+    auto nFuncs = out_nodes.size();
+    if (inp_data.rows() != nFuncs) MSG_ERROR("Size mismatch " << inp_data.rows() << " vs " << nFuncs);
+
+    for (auto i = 0; i < nFuncs; i++) {
+        auto &node = out_nodes[i];
+        node->setValues(inp_data.row(i));
+    }
+}
+
+/** @brief Compute the gradient using a log parametrization
+ *
+ * zeta = log(inp_func)
+ * grad(inp_func) = inp_func * grad(zeta)
+ *
+ * param[in] diff_oper Derivative operator
+ * param[in] inp_func Function to differentiate
+ * param[out] out_grad Gradient of input function
+ */
+mrcpp::FunctionTreeVector<3> xc_utils::log_gradient(mrcpp::DerivativeOperator<3> &diff_oper, mrcpp::FunctionTree<3> &inp_func) {
+    mrcpp::FunctionTree<3> zeta(inp_func.getMRA());
+    mrcpp::copy_grid(zeta, inp_func);
+    mrcpp::copy_func(zeta, inp_func);
+    for (auto i = 0; i < zeta.getNEndNodes(); i++) {
+        auto &node = zeta.getEndFuncNode(i);
+        Eigen::VectorXd values;
+        node.getValues(values);
+        for (auto j = 0; j < node.getNCoefs(); j++) {
+            if (values[j] > mrcpp::MachineZero) {
+                values[j] = std::log(values[j]);
+            } else {
+                values[j] = mrcpp::MachineZero;
+            }
+        }
+        node.setValues(values);
+    }
+    zeta.mwTransform(mrcpp::BottomUp);
+
+    mrcpp::FunctionTreeVector<3> grad_zeta = mrcpp::gradient(diff_oper, zeta);
+
+    mrcpp::FunctionTreeVector<3> out_grad;
+    for (int i = 0; i < 3; i++) {
+        mrcpp::FunctionTree<3> *grad_comp = new mrcpp::FunctionTree<3>(inp_func.getMRA());
+        mrcpp::copy_grid(*grad_comp, inp_func);
+        mrcpp::multiply(-1.0, *grad_comp, 1.0, inp_func, mrcpp::get_func(grad_zeta, i));
+        out_grad.push_back(std::make_tuple(1.0, grad_comp));
+    }
+    mrcpp::clear(grad_zeta, true);
+    return out_grad;
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/xc_utils.cpp =====
+
+===== BEGIN src/mrdft/Functional.h =====
+// ===== BEGIN src/mrdft/Functional.h =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include <memory>
+
+#include <Eigen/Core>
+#include <MRCPP/MWFunctions>
+#include <MRCPP/MWOperators>
+#include <MRCPP/trees/FunctionNode.h>
+#include <XCFun/xcfun.h>
+
+namespace mrdft {
+
+using XC_p = std::unique_ptr<xcfun_t, decltype(&xcfun_delete)>;
+
+class Functional {
+public:
+    Functional(int k, XC_p &f)
+            : order(k)
+            , xcfun(std::move(f)) {}
+    virtual ~Functional() = default;
+
+    void makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes) const;
+
+    void setLogGradient(bool log) { log_grad = log; }
+    void setDensityCutoff(double cut) { cutoff = cut; }
+    void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) {derivOp = std::move(d);}
+
+    virtual bool isSpin() const = 0;
+    bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
+    bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
+    bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
+    bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
+    double amountEXX() const {
+        double exx = 0.0;
+        xcfun_get(xcfun.get(), "exx", &exx);
+        return exx;
+    }
+    double XCenergy = 0.0;
+
+    // MAKE THESE VIRTUAL so LibXC subclasses can override them
+    virtual Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
+    virtual Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
+
+    friend class MRDFT;
+
+protected:
+    const int order;
+    bool log_grad{false};
+    double cutoff{-1.0};
+    Eigen::VectorXi d_mask;
+    Eigen::MatrixXi xc_mask;
+    XC_p xcfun;
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};
+
+    int getXCInputLength() const { return xcfun_input_length(xcfun.get()); }
+    int getXCOutputLength() const { return xcfun_output_length(xcfun.get()); }
+    virtual int getCtrInputLength() const = 0;
+    virtual int getCtrOutputLength() const = 0;
+
+    Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
+    Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
+
+    virtual void clear() = 0;
+    virtual mrcpp::FunctionTreeVector<3> setupXCInput() = 0;
+    virtual mrcpp::FunctionTreeVector<3> setupCtrInput() = 0;
+
+    virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+    virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+};
+
+} // namespace mrdft
+// ===== END src/mrdft/Functional.h =====
+
+===== END src/mrdft/Functional.h =====
+
+===== BEGIN src/mrdft/Functional.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) ...
+ */
+
+#include <MRCPP/Printer>
+
+#include "Functional.h"
+
+namespace mrdft {
+
+namespace {
+// Put XCFun into a valid “user eval” mode so input_length/output_length work.
+inline void ensure_xcfun_user_setup(xcfun_t* xf, int order, bool spin, bool is_gga) {
+    const unsigned int mode      = 1u;                    // partial derivatives
+    const unsigned int func_type = is_gga ? 1u : 0u;      // 0=LDA, 1=GGA
+    const unsigned int dens_type = spin ? 2u : 1u;        // 1 (unpol) or 2 (pol)
+    const unsigned int laplacian = 0u;
+    const unsigned int kinetic   = 0u;
+    const unsigned int current   = 0u;
+    const unsigned int exp_deriv = is_gga ? 1u : 0u;      // explicit derivs for GGA only
+
+    xcfun_user_eval_setup(xf, order, func_type, dens_type,
+                          mode, laplacian, kinetic, current, exp_deriv);
+}
+} // namespace
+
+/** @brief Run a collection of grid points through XCFun
+ *
+ * Each row corresponds to one grid point.
+ */
+Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
+    // Make sure XCFun knows what shape to expect/produce
+    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), isGGA());
+
+    int nInp = xcfun_input_length(xcfun.get());   // input parameters to XCFun
+    int nOut = xcfun_output_length(xcfun.get());  // output parameters from XCFun
+    int nPts = inp.cols();
+    if (nInp != inp.rows()) MSG_ABORT("Invalid input");
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
+    for (int i = 0; i < nPts; i++) {
+        bool calc = true;
+        if (isSpin()) {
+            if (inp(0, i) < cutoff and inp(1, i) < cutoff) calc = false;
+        } else {
+            if (inp(0, i) < cutoff) calc = false;
+        }
+        if (calc) xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
+    }
+    return out;
+}
+
+/** @brief Run a collection of grid points through XCFun
+ *
+ * Each column corresponds to one grid point.
+ */
+Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
+    // Make sure XCFun knows what shape to expect/produce
+    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), isGGA());
+
+    int nInp = xcfun_input_length(xcfun.get());   // input parameters to XCFun
+    int nOut = xcfun_output_length(xcfun.get());  // output parameters from XCFun
+    int nPts = inp.rows();
+    if (nInp != inp.cols()) MSG_ABORT("Invalid input");
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
+    Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
+    for (int i = 0; i < nPts; i++) {
+        bool calc = true;
+        if (isSpin()) {
+            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+        } else {
+            if (inp(i, 0) < cutoff) calc = false;
+        }
+        for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+        for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+    }
+    return out;
+}
+
+/** @brief Contract (row-major) */
+Eigen::MatrixXd Functional::contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
+    auto nPts = xc_data.cols();
+    auto nFcs = getCtrOutputLength();
+    Eigen::MatrixXd out_data = Eigen::MatrixXd::Zero(nFcs, nPts);
+    out_data.row(0) = xc_data.row(0); // keep energy functional
+
+    for (int i = 0; i < this->xc_mask.rows(); i++) {
+        Eigen::VectorXd cont_i = Eigen::VectorXd::Zero(nPts);
+        for (int j = 0; j < this->xc_mask.cols(); j++) {
+            Eigen::VectorXd cont_ij = Eigen::VectorXd::Zero(nPts);
+            int xc_idx = this->xc_mask(i, j);
+            int d_idx = this->d_mask(j);
+            if (d_idx >= 0) {
+                cont_ij = xc_data.row(xc_idx).array() * d_data.row(d_idx).array();
+            } else {
+                cont_ij = xc_data.row(xc_idx);
+            }
+            cont_i += cont_ij;
+        }
+        out_data.row(i + 1) = cont_i;
+    }
+    return out_data;
+}
+
+/** @brief Contract (column-major) */
+Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
+    auto nPts = xc_data.rows();
+    auto nFcs = getCtrOutputLength();
+    Eigen::MatrixXd out_data = Eigen::MatrixXd::Zero(nPts, nFcs);
+    out_data.col(0) = xc_data.col(0); // keep energy functional
+
+    for (int i = 0; i < this->xc_mask.rows(); i++) {
+        for (int j = 0; j < this->xc_mask.cols(); j++) {
+            int xc_idx = this->xc_mask(i, j);
+            int d_idx = this->d_mask(j);
+            if (d_idx >= 0) {
+                out_data.col(i + 1) += xc_data.col(xc_idx).cwiseProduct(d_data.col(d_idx));
+            } else {
+                out_data.col(i + 1) += xc_data.col(xc_idx);
+            }
+        }
+    }
+    return out_data;
+}
+
+/** @brief makepot: compute XC and contract */
+void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes)  const {
+    if (this->log_grad){
+        MSG_ERROR("log_grad not implemented");
+    }
+
+    mrcpp::NodeIndex<3> nodeIdx = xcNodes[0]->getNodeIndex();
+    mrcpp::FunctionTree<3>* rho0=std::get<1>(inp[0]);
+    mrcpp::MWNode<3> node(rho0->getNode(nodeIdx),true,false);
+    int ncoefs = rho0->getTDim() * rho0->getKp1_d();
+    int xcfun_inpsize = 1; // rho
+    int spinsize = 1; // paired
+    if (isSpin()) spinsize = 2; // alpha, beta
+    xcfun_inpsize *= spinsize; // alpha and beta
+    if (isGGA()) xcfun_inpsize *= 4; // add gradient (3 components for each spin)
+
+    Eigen::MatrixXd xcfun_inp(ncoefs, xcfun_inpsize);
+    double* coef = node.getCoefs();
+
+    for (int i = 0; i < spinsize; i++) {
+        mrcpp::FunctionTree<3>* rho=std::get<1>(inp[i]);
+        node.attachCoefs(xcfun_inp.col(i).data());
+        for (int j = 0; j < ncoefs; j++) xcfun_inp(j,i) = rho->getNode(nodeIdx).getCoefs()[j];
+        node.mwTransform(mrcpp::Reconstruction);
+        node.cvTransform(mrcpp::Forward);
+
+        if (isGGA()) {
+            for (int d = 0; d < 3; d++) {
+                node.attachCoefs(xcfun_inp.col(spinsize + 3*i + d).data());
+                mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
+                derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                node.mwTransform(mrcpp::Reconstruction);
+                node.cvTransform(mrcpp::Forward);
+            }
+       }
+    }
+
+    // NB: VIRTUAL DISPATCH here (so LibXC adapters can override)!
+    Eigen::MatrixXd xc_out = this->evaluate_transposed(xcfun_inp);
+
+    int ctrsize = inp.size()-spinsize;
+    int d_datasize = ctrsize;
+    if (isGGA()) d_datasize *= 4;
+    Eigen::MatrixXd d_data = Eigen::MatrixXd::Zero(ncoefs, d_datasize);
+    if (d_datasize > 0) {
+        for (int i = 0; i < ctrsize; i++) {
+            mrcpp::FunctionTree<3>* rho = std::get<1>(inp[i+spinsize]);
+            node.attachCoefs(d_data.col(i).data());
+            for (int j = 0; j < ncoefs; j++) d_data(j,i) = rho->getNode(nodeIdx).getCoefs()[j];
+            node.mwTransform(mrcpp::Reconstruction);
+            node.cvTransform(mrcpp::Forward);
+            if (isGGA()) {
+                for (int d = 0; d < 3; d++) {
+                    node.attachCoefs(d_data.col(ctrsize + 3*i + d).data());
+                    mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
+                    derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                    node.mwTransform(mrcpp::Reconstruction);
+                    node.cvTransform(mrcpp::Forward);
+                }
+            }
+        }
+    }
+
+    Eigen::MatrixXd Ctrout = contract_transposed(xc_out, d_data);
+
+    int xc_outsize = 2;
+    if (isSpin()) xc_outsize = 3;
+    for (int i = 0; i < xc_outsize; i++) {
+        node.attachCoefs(Ctrout.col(i).data());
+        node.cvTransform(mrcpp::Backward);
+        node.mwTransform(mrcpp::Compression);
+        for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] = Ctrout(j,i);
+        xcNodes[i]->setHasCoefs();
+        if (isGGA() and i>0) {
+            for (int d = 0; d < 3; d++) {
+                node.attachCoefs(Ctrout.col(xc_outsize + 3*(i-1) + d).data());
+                node.cvTransform(mrcpp::Backward);
+                node.mwTransform(mrcpp::Compression);
+                mrcpp::DerivativeCalculator<3> derivcalc(d,*this->derivOp, *rho0);
+                mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx),true,false);
+                derivcalc.calcNode(node, noded);
+                for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] -= noded.getCoefs()[j];
+            }
+        }
+    }
+    node.attachCoefs(coef);
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/Functional.cpp =====
+
+===== BEGIN src/mrdft/Factory.h =====
+#pragma once
+
+#include <MRCPP/MWOperators>
+#include <XCFun/xcfun.h>
+
+#include "MRDFT.h"
+
+namespace mrdft {
+
+class Factory final {
+public:
+    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
+    ~Factory() = default;
+
+    void setSpin(bool s) { spin = s; }
+    void setOrder(int k) { order = k; }
+    void setUseGamma(bool g) { gamma = g; }
+    void setLogGradient(bool lg) { log_grad = lg; }
+    void setDensityCutoff(double c) { cutoff = c; }
+    void setDerivative(const std::string &n) { diff_s = n; }
+    void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
+
+    // Optional: select backend and (for LibXC) functional IDs via code (we also read env vars)
+    void setBackend(const std::string &b) { backend = b; }
+    void setLibXCIDs(const std::vector<int> &ids_in) { libxc_ids = ids_in; }
+
+    std::unique_ptr<MRDFT> build();
+
+private:
+    int order{1};
+    bool spin{false};
+    bool gamma{false};
+    bool log_grad{false};
+    double cutoff{-1.0};
+    std::string diff_s{"abgv_00"};
+    std::string backend{"xcfun"};           // "xcfun" (default) or "libxc"
+    std::vector<int> libxc_ids;             // used only if backend == "libxc"
+    const mrcpp::MultiResolutionAnalysis<3> mra;
+
+    XC_p xcfun_p;
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/Factory.h =====
+
+===== BEGIN src/mrdft/Factory.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) ...
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include "Factory.h"
+
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <sstream>
+#include <string>
+#include <vector>
+
+#include <MRCPP/MWOperators>
+#include <MRCPP/Printer>
+#include <XCFun/xcfun.h>
+
+#include "GGA.h"
+#include "Grid.h"
+#include "LDA.h"
+#include "MRDFT.h"
+#include "SpinGGA.h"
+#include "SpinLDA.h"
+
+// LibXC adapters (already added to your tree)
+#include "LibXCBackend.h"
+
+namespace mrdft {
+
+static std::string to_lower(std::string s) {
+    std::transform(s.begin(), s.end(), s.begin(),
+                   [](unsigned char c){ return static_cast<char>(std::tolower(c)); });
+    return s;
+}
+
+Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
+        : mra(MRA)
+        , xcfun_p(xcfun_new(), xcfun_delete) {}
+
+/** @brief Build a MRDFT object from the currently defined parameters */
+std::unique_ptr<MRDFT> Factory::build() {
+    // Init DFT grid
+    auto grid_p = std::make_unique<Grid>(mra);
+
+    // Decide backend (member setting can be overridden by env)
+    std::string backend_eff = to_lower(backend);
+    if (const char* be = std::getenv("MRCHEM_XC_BACKEND")) {
+        backend_eff = to_lower(std::string(be));
+    }
+    const bool use_libxc = (backend_eff == "libxc");
+
+    // If LibXC is requested, make sure we have functional IDs
+    std::vector<int> ids = libxc_ids;
+    if (use_libxc && ids.empty()) {
+        if (const char* ids_env = std::getenv("MRCHEM_LIBXC_IDS")) {
+            std::stringstream ss(ids_env);
+            for (std::string tok; std::getline(ss, tok, ','); ) {
+                if (!tok.empty()) ids.push_back(std::stoi(tok));
+            }
+        }
+        if (ids.empty()) {
+            MSG_ABORT("LibXC backend selected but no LibXC IDs specified. "
+                      "Set MRCHEM_LIBXC_IDS (e.g. 1,9 for LDA X+PW92 C or 106,131 for BLYP), "
+                      "or call Factory::setLibXCIDs().");
+        }
+    }
+
+    // Init XCFun (still used for masks, meta info, etc., and for the XCFun path)
+    bool gga = xcfun_is_gga(xcfun_p.get());
+    bool lda = not(gga);
+    unsigned int mode = 1;                    //!< only partial derivative mode implemented
+    unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
+    unsigned int dens_type = 1 + spin;        //!< n (1) or alpha&beta (2)
+    unsigned int laplacian = 0;               //!< no laplacian
+    unsigned int kinetic = 0;                 //!< no kinetic energy density
+    unsigned int current = 0;                 //!< no current density
+    unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
+    if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
+    xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type,
+                          mode, laplacian, kinetic, current, exp_derivative);
+
+    // Init MW derivative if GGA
+    if (gga) {
+        if (diff_s == "bspline") diff_p = std::make_unique<mrcpp::BSOperator<3>>(mra, 1);
+        if (diff_s == "abgv_00") diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+        if (diff_s == "abgv_55") diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.5, 0.5);
+    }
+
+    // Init XC functional (choose LibXC adapters when requested)
+    std::unique_ptr<Functional> func_p{nullptr};
+    if (spin) {
+        if (gga) {
+            if (use_libxc) func_p = std::make_unique<LibXCSpinGGA>(order, xcfun_p, diff_p, ids);
+            else           func_p = std::make_unique<SpinGGA>(order, xcfun_p, diff_p);
+        }
+        if (lda) {
+            if (use_libxc) func_p = std::make_unique<LibXCSpinLDA>(order, xcfun_p, ids);
+            else           func_p = std::make_unique<SpinLDA>(order, xcfun_p);
+        }
+    } else {
+        if (gga) {
+            if (use_libxc) func_p = std::make_unique<LibXCGGA>(order, xcfun_p, diff_p, ids);
+            else           func_p = std::make_unique<GGA>(order, xcfun_p, diff_p);
+        }
+        if (lda) {
+            if (use_libxc) func_p = std::make_unique<LibXCLDA>(order, xcfun_p, ids);
+            else           func_p = std::make_unique<LDA>(order, xcfun_p);
+        }
+    }
+    if (func_p == nullptr) MSG_ABORT("Invalid functional type");
+
+    // (Keep your original behavior here)
+    diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+    func_p->setDerivOp(diff_p);
+    func_p->setLogGradient(log_grad);
+    func_p->setDensityCutoff(cutoff);
+
+    auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
+    return mrdft_p;
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/Factory.cpp =====
+
+===== BEGIN src/mrdft/LDA.h =====
+#pragma once
+
+#include <XCFun/xcfun.h>
+#include "Functional.h"
+
+namespace mrdft {
+
+class LDA : public Functional {
+public:
+    LDA(int k, XC_p &f);
+    ~LDA() override = default;
+
+    bool isSpin() const override { return false; }
+
+private:
+    mrcpp::FunctionTreeVector<3> rho;
+
+    int getCtrInputLength() const override;
+    int getCtrOutputLength() const override { return 2; }
+
+    void clear() override;
+    mrcpp::FunctionTreeVector<3> setupXCInput() override;
+    mrcpp::FunctionTreeVector<3> setupCtrInput() override;
+
+    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/LDA.h =====
+
+===== BEGIN src/mrdft/LDA.cpp =====
+/*
+ * (banner unchanged)
+ */
+
+#include "MRCPP/MWFunctions"
+#include "MRCPP/Printer"
+
+#include "LDA.h"
+#include "xc_utils.h"
+
+namespace mrdft {
+
+LDA::LDA(int k, XC_p &f)
+        : Functional(k, f) {
+    xc_mask = xc_utils::build_output_mask(true, false, this->order);
+    d_mask = xc_utils::build_density_mask(true, false, this->order);
+}
+
+/** @brief Clear internal functions
+ *
+ * Ownership of densities is outside MRDFT -> clear
+ * Ownership of gradients is inside MRDFT -> free
+ */
+void LDA::clear() {
+    mrcpp::clear(this->rho, false);
+}
+
+/** @brief Number of function involved in contraction step */
+int LDA::getCtrInputLength() const {
+    int length = -1;
+    if (this->order < 2) length = 0;
+    if (this->order == 2) length = 1;
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    return length;
+}
+
+/** @brief Collect input functions to xcfun evaluation step
+ *
+ * For LDA : [rho_0]
+ */
+mrcpp::FunctionTreeVector<3> LDA::setupXCInput() {
+    if (this->rho.size() < 1) MSG_ERROR("Density not initialized");
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(this->rho[0]);
+    return out_vec;
+}
+
+/** @brief Collect input functions to contraction step
+ *
+ * For LDA:
+ * Ground State: No contraction, empty vector
+ * Linear Response: [rho_1]
+ * Higher Response: NOT_IMPLEMENTED
+ */
+mrcpp::FunctionTreeVector<3> LDA::setupCtrInput() {
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    mrcpp::FunctionTreeVector<3> out_vec;
+    if (order == 2) out_vec.push_back(this->rho[1]);
+    return out_vec;
+}
+
+/** @brief Prepare input functions to xcfun
+ *
+ * Collects input densities and computes necessary gradients.
+ *
+ * Ordering of input:
+ * inp_vec[0] = alpha_0
+ * inp_vec[1] = beta_0
+ * inp_vec[2] = alpha_1
+ * inp_vec[3] = beta_1
+ * ...
+ */
+void LDA::preprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    if (inp_vec.size() != this->order) MSG_ERROR("Invalid input length");
+    if (this->rho.size() > 0) MSG_ERROR("Density not empty");
+
+    for (auto i = 0; i < this->order; i++) this->rho.push_back(inp_vec[i]);
+}
+
+/** @brief Compute final output functions
+ *
+ * Combine the raw partial derivatives from xcfun into functional derivatives.
+ *
+ * For LDA:
+ * f_xc       : out[0] = inp[0]
+ * df_xc/drho : out[1] = inp[1]
+ */
+mrcpp::FunctionTreeVector<3> LDA::postprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    // Energy density
+    mrcpp::FunctionTree<3> &f_xc = mrcpp::get_func(inp_vec, 0);
+    inp_vec[0] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    // XC potential
+    mrcpp::FunctionTree<3> &v_xc = mrcpp::get_func(inp_vec, 1);
+    inp_vec[1] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(std::make_tuple(1.0, &f_xc));
+    out_vec.push_back(std::make_tuple(1.0, &v_xc));
+    return out_vec;
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/LDA.cpp =====
+
+===== BEGIN src/mrdft/GGA.h =====
+#pragma once
+
+#include <XCFun/xcfun.h>
+#include "Functional.h"
+
+namespace mrdft {
+
+class GGA : public Functional {
+public:
+    GGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d);
+    ~GGA() override = default;
+
+    bool isSpin() const override { return false; }
+
+private:
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
+    mrcpp::FunctionTreeVector<3> rho;
+    mrcpp::FunctionTreeVector<3> grad;
+
+    int getCtrInputLength() const override;
+    int getCtrOutputLength() const override { return 5; }
+
+    void clear() override;
+    mrcpp::FunctionTreeVector<3> setupXCInput() override;
+    mrcpp::FunctionTreeVector<3> setupCtrInput() override;
+
+    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/GGA.h =====
+
+===== BEGIN src/mrdft/GGA.cpp =====
+/*
+ * (banner unchanged)
+ */
+#include "MRCPP/MWOperators"
+#include "MRCPP/Printer"
+
+#include "GGA.h"
+#include "xc_utils.h"
+
+namespace mrdft {
+
+GGA::GGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d)
+        : Functional(k, f)
+        , derivative(std::move(d)) {
+    xc_mask = xc_utils::build_output_mask(false, false, this->order);
+    d_mask = xc_utils::build_density_mask(false, false, this->order);
+}
+
+/** @brief Clear internal functions
+ *
+ * Ownership of densities is outside MRDFT -> clear
+ * Ownership of gradients is inside MRDFT -> free
+ */
+void GGA::clear() {
+    mrcpp::clear(this->rho, false);
+    mrcpp::clear(this->grad, true);
+}
+
+/** @brief Number of function involved in contraction step */
+int GGA::getCtrInputLength() const {
+    int length = -1;
+    if (this->order < 2) length = 0;
+    if (this->order == 2) length = 4;
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    return length;
+}
+
+/** @brief Collect input functions to xcfun evaluation step
+ *
+ * For GGA : [rho_0, grad(rho_0)]
+ */
+mrcpp::FunctionTreeVector<3> GGA::setupXCInput() {
+    if (this->rho.size() < 1) MSG_ERROR("Density not initialized");
+    if (this->grad.size() < 3) MSG_ERROR("Gradient not initialized");
+
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(this->rho[0]);
+    out_vec.insert(out_vec.end(), this->grad.begin(), this->grad.begin() + 3);
+    return out_vec;
+}
+
+/** @brief Collect input functions to contraction step
+ *
+ * For GGA:
+ * Ground State: No contraction, empty vector
+ * Linear Response: [rho_1, grad(rho_1)]
+ * Higher Response: NOT_IMPLEMENTED
+ */
+mrcpp::FunctionTreeVector<3> GGA::setupCtrInput() {
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    mrcpp::FunctionTreeVector<3> out_vec;
+    if (this->order == 2) {
+        out_vec.push_back(this->rho[1]);
+        out_vec.insert(out_vec.end(), this->grad.begin() + 3, this->grad.begin() + 6);
+    }
+    return out_vec;
+}
+
+/** @brief Prepare input functions to xcfun
+ *
+ * Collects input densities and computes necessary gradients.
+ */
+void GGA::preprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    if (inp_vec.size() != this->order) MSG_ERROR("Invalid input length");
+    if (this->rho.size() > 0) MSG_ERROR("Density not empty");
+    if (this->grad.size() > 0) MSG_ERROR("Gradient not empty");
+
+    int n = 0;
+    for (int i = 0; i < this->order; i++) this->rho.push_back(inp_vec[n++]);
+
+    for (int i = 0; i < this->order; i++) {
+        mrcpp::FunctionTreeVector<3> tmp;
+        if (this->log_grad and i == 0) {
+            tmp = xc_utils::log_gradient(*this->derivative, mrcpp::get_func(this->rho, i));
+        } else {
+            tmp = mrcpp::gradient(*this->derivative, mrcpp::get_func(this->rho, i));
+        }
+        this->grad.insert(this->grad.end(), tmp.begin(), tmp.end());
+    }
+}
+
+/** @brief Compute final output functions
+ *
+ * For GGA:
+ * f_xc       : out[0] = inp[0]
+ * df_xc/drho : out[1] = inp[1] - div(inp[2,3,4])
+ */
+mrcpp::FunctionTreeVector<3> GGA::postprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    // Energy density
+    mrcpp::FunctionTree<3> &f_xc = mrcpp::get_func(inp_vec, 0);
+    inp_vec[0] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    // Potential part
+    mrcpp::FunctionTree<3> &df_dr = mrcpp::get_func(inp_vec, 1);
+    mrcpp::FunctionTreeVector<3> df_dg(inp_vec.begin() + 2, inp_vec.begin() + 5);
+
+    auto *tmp = new mrcpp::FunctionTree<3>(df_dr.getMRA());
+    mrcpp::divergence(*tmp, *this->derivative, df_dg);
+
+    auto *v_xc = new mrcpp::FunctionTree<3>(df_dr.getMRA());
+    mrcpp::build_grid(*v_xc, df_dr);
+    mrcpp::build_grid(*v_xc, *tmp);
+    mrcpp::add(-1.0, *v_xc, 1.0, df_dr, -1.0, *tmp);
+    delete tmp;
+
+    // Collect output
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(std::make_tuple(1.0, &f_xc));
+    out_vec.push_back(std::make_tuple(1.0, v_xc));
+    v_xc = nullptr;
+
+    return out_vec;
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/GGA.cpp =====
+
+===== BEGIN src/mrdft/SpinLDA.h =====
+#pragma once
+
+#include <XCFun/xcfun.h>
+#include "Functional.h"
+
+namespace mrdft {
+
+class SpinLDA : public Functional {
+public:
+    SpinLDA(int k, XC_p &f);
+    ~SpinLDA() override = default;
+
+    bool isSpin() const override { return true; }
+
+private:
+    mrcpp::FunctionTreeVector<3> rho_a;
+    mrcpp::FunctionTreeVector<3> rho_b;
+
+    int getCtrInputLength() const override;
+    int getCtrOutputLength() const override { return 3; }
+
+    void clear() override;
+    mrcpp::FunctionTreeVector<3> setupXCInput() override;
+    mrcpp::FunctionTreeVector<3> setupCtrInput() override;
+
+    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/SpinLDA.h =====
+
+===== BEGIN src/mrdft/SpinLDA.cpp =====
+/*
+ * (banner unchanged)
+ */
+
+#include "MRCPP/MWFunctions"
+#include "MRCPP/Printer"
+
+#include "SpinLDA.h"
+#include "xc_utils.h"
+
+namespace mrdft {
+
+SpinLDA::SpinLDA(int k, XC_p &f)
+        : Functional(k, f) {
+    xc_mask = xc_utils::build_output_mask(true, true, this->order);
+    d_mask = xc_utils::build_density_mask(true, true, this->order);
+}
+
+/** @brief Clear internal functions
+ *
+ * Ownership of densities is outside MRDFT -> clear
+ * Ownership of gradients is inside MRDFT -> free
+ */
+void SpinLDA::clear() {
+    mrcpp::clear(this->rho_a, false);
+    mrcpp::clear(this->rho_b, false);
+}
+
+/** @brief Number of function involved in contraction step */
+int SpinLDA::getCtrInputLength() const {
+    int length = -1;
+    if (this->order < 2) length = 0;
+    if (this->order == 2) length = 2;
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    return length;
+}
+
+/** @brief Collect input functions to xcfun evaluation step
+ *
+ * For SpinLDA : [alpha_0, beta_0]
+ */
+mrcpp::FunctionTreeVector<3> SpinLDA::setupXCInput() {
+    if (this->rho_a.size() < 1) MSG_ERROR("Alpha density not initialized");
+    if (this->rho_b.size() < 1) MSG_ERROR("Beta density not initialized");
+
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(this->rho_a[0]);
+    out_vec.push_back(this->rho_b[0]);
+    return out_vec;
+}
+
+/** @brief Collect input functions to contraction step
+ *
+ * For SpinLDA:
+ * Ground State: No contraction, empty vector
+ * Linear Response: [alpha_1, beta_1]
+ * Higher Response: NOT_IMPLEMENTED
+ */
+mrcpp::FunctionTreeVector<3> SpinLDA::setupCtrInput() {
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    mrcpp::FunctionTreeVector<3> out_vec;
+    if (order == 2) {
+        out_vec.push_back(this->rho_a[1]);
+        out_vec.push_back(this->rho_b[1]);
+    }
+    return out_vec;
+}
+
+/** @brief Prepare input functions to xcfun
+ *
+ * Collects input densities and computes necessary gradients.
+ */
+void SpinLDA::preprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    if (inp_vec.size() != 2 * this->order) MSG_ERROR("Invalid input length");
+    if (this->rho_a.size() > 0) MSG_ERROR("Alpha density not empty");
+    if (this->rho_b.size() > 0) MSG_ERROR("Beta density not empty");
+
+    int n = 0;
+    for (int i = 0; i < this->order; i++) {
+        this->rho_a.push_back(inp_vec[n++]);
+        this->rho_b.push_back(inp_vec[n++]);
+    }
+}
+
+/** @brief Compute final output functions
+ *
+ * For SpinLDA:
+ * f_xc         : out[0] = inp[0]
+ * df_xc/drho_a : out[1] = inp[1]
+ * df_xc/drho_b : out[2] = inp[2]
+ */
+mrcpp::FunctionTreeVector<3> SpinLDA::postprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    // Energy density
+    mrcpp::FunctionTree<3> &f_xc = mrcpp::get_func(inp_vec, 0);
+    inp_vec[0] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    // Alpha potential
+    mrcpp::FunctionTree<3> &v_a = mrcpp::get_func(inp_vec, 1);
+    inp_vec[1] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    // Beta potential
+    mrcpp::FunctionTree<3> &v_b = mrcpp::get_func(inp_vec, 2);
+    inp_vec[2] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    // Collect output
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(std::make_tuple(1.0, &f_xc));
+    out_vec.push_back(std::make_tuple(1.0, &v_a));
+    out_vec.push_back(std::make_tuple(1.0, &v_b));
+    return out_vec;
+}
+} // namespace mrdft
+
+===== END src/mrdft/SpinLDA.cpp =====
+
+===== BEGIN src/mrdft/SpinGGA.h =====
+#pragma once
+
+#include <XCFun/xcfun.h>
+#include "Functional.h"
+
+namespace mrdft {
+
+class SpinGGA : public Functional {
+public:
+    SpinGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d);
+    ~SpinGGA() override = default;
+
+    bool isSpin() const override { return true; }
+
+private:
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
+    mrcpp::FunctionTreeVector<3> rho_a;
+    mrcpp::FunctionTreeVector<3> rho_b;
+    mrcpp::FunctionTreeVector<3> grad_a;
+    mrcpp::FunctionTreeVector<3> grad_b;
+
+    int getCtrInputLength() const override;
+    int getCtrOutputLength() const override { return 9; }
+
+    void clear() override;
+    mrcpp::FunctionTreeVector<3> setupXCInput() override;
+    mrcpp::FunctionTreeVector<3> setupCtrInput() override;
+
+    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+};
+
+} // namespace mrdft
+
+===== END src/mrdft/SpinGGA.h =====
+
+===== BEGIN src/mrdft/SpinGGA.cpp =====
+/*
+ * (banner unchanged)
+ */
+
+#include "MRCPP/MWOperators"
+#include "MRCPP/Printer"
+
+#include "SpinGGA.h"
+#include "xc_utils.h"
+
+namespace mrdft {
+
+SpinGGA::SpinGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d)
+        : Functional(k, f)
+        , derivative(std::move(d)) {
+    xc_mask = xc_utils::build_output_mask(false, true, this->order);
+    d_mask = xc_utils::build_density_mask(false, true, this->order);
+}
+
+/** @brief Clear internal functions
+ *
+ * Ownership of densities is outside MRDFT -> clear
+ * Ownership of gradients is inside MRDFT -> free
+ */
+void SpinGGA::clear() {
+    mrcpp::clear(this->rho_a, false);
+    mrcpp::clear(this->rho_b, false);
+    mrcpp::clear(this->grad_a, true);
+    mrcpp::clear(this->grad_b, true);
+}
+
+/** @brief Number of function involved in contraction step */
+int SpinGGA::getCtrInputLength() const {
+    int length = -1;
+    if (this->order < 2) length = 0;
+    if (this->order == 2) length = 8;
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    return length;
+}
+
+/** @brief Collect input functions to xcfun evaluation step
+ *
+ * For SpinGGA : [alpha_0, beta_0, grad(alpha_0), grad(beta_0)]
+ */
+mrcpp::FunctionTreeVector<3> SpinGGA::setupXCInput() {
+    if (this->rho_a.size() < 1) MSG_ERROR("Alpha density not initialized");
+    if (this->rho_b.size() < 1) MSG_ERROR("Beta density not initialized");
+    if (this->grad_a.size() < 3) MSG_ERROR("Alpha gradient not initialized");
+    if (this->grad_b.size() < 3) MSG_ERROR("Beta gradient not initialized");
+
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(this->rho_a[0]);
+    out_vec.push_back(this->rho_b[0]);
+    out_vec.insert(out_vec.end(), this->grad_a.begin(), this->grad_a.begin() + 3);
+    out_vec.insert(out_vec.end(), this->grad_b.begin(), this->grad_b.begin() + 3);
+    return out_vec;
+}
+
+/** @brief Collect input functions to contraction step
+ *
+ * For SpinGGA:
+ * Ground State: No contraction, empty vector
+ * Linear Response: [alpha_1, beta_1, grad(alpha_1), grad(beta_1)]
+ * Higher Response: NOT_IMPLEMENTED
+ */
+mrcpp::FunctionTreeVector<3> SpinGGA::setupCtrInput() {
+    if (this->order > 2) NOT_IMPLEMENTED_ABORT;
+    mrcpp::FunctionTreeVector<3> out_vec;
+    if (this->order == 2) {
+        out_vec.push_back(this->rho_a[1]);
+        out_vec.push_back(this->rho_b[1]);
+        out_vec.insert(out_vec.end(), this->grad_a.begin() + 3, this->grad_a.begin() + 6);
+        out_vec.insert(out_vec.end(), this->grad_b.begin() + 3, this->grad_b.begin() + 6);
+    }
+    return out_vec;
+}
+
+/** @brief Prepare input functions to xcfun
+ *
+ * Collects input densities and computes necessary gradients.
+ */
+void SpinGGA::preprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    if (inp_vec.size() != 2 * this->order) MSG_ERROR("Invalid input length");
+    if (this->rho_a.size() > 0) MSG_ERROR("Alpha density not empty");
+    if (this->rho_b.size() > 0) MSG_ERROR("Beta density not empty");
+    if (this->grad_a.size() > 0) MSG_ERROR("Alpha gradient not empty");
+    if (this->grad_b.size() > 0) MSG_ERROR("Beta gradient not empty");
+
+    int n = 0;
+    for (int i = 0; i < this->order; i++) {
+        this->rho_a.push_back(inp_vec[n++]);
+        this->rho_b.push_back(inp_vec[n++]);
+    }
+
+    for (int i = 0; i < this->order; i++) {
+        mrcpp::FunctionTreeVector<3> tmp_a, tmp_b;
+        if (this->log_grad and i == 0) {
+            tmp_a = xc_utils::log_gradient(*this->derivative, mrcpp::get_func(this->rho_a, i));
+            tmp_b = xc_utils::log_gradient(*this->derivative, mrcpp::get_func(this->rho_b, i));
+        } else {
+            tmp_a = mrcpp::gradient(*this->derivative, mrcpp::get_func(this->rho_a, i));
+            tmp_b = mrcpp::gradient(*this->derivative, mrcpp::get_func(this->rho_b, i));
+        }
+        this->grad_a.insert(this->grad_a.end(), tmp_a.begin(), tmp_a.end());
+        this->grad_b.insert(this->grad_b.end(), tmp_b.begin(), tmp_b.end());
+    }
+}
+
+/** @brief Compute final output functions
+ *
+ * For SpinGGA:
+ * f_xc         : out[0] = inp[0]
+ * df_xc/drho_a : out[1] = inp[1] - div(inp[3,4,5])
+ * df_xc/drho_b : out[2] = inp[2] - div(inp[6,7,8])
+ */
+mrcpp::FunctionTreeVector<3> SpinGGA::postprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
+    // Energy density
+    mrcpp::FunctionTree<3> &f_xc = mrcpp::get_func(inp_vec, 0);
+    inp_vec[0] = std::make_tuple<double, mrcpp::FunctionTree<3> *>(1.0, nullptr);
+
+    // Alpha part
+    mrcpp::FunctionTree<3> &df_da = mrcpp::get_func(inp_vec, 1);
+    mrcpp::FunctionTreeVector<3> df_dga(inp_vec.begin() + 3, inp_vec.begin() + 6);
+
+    auto *tmp_a = new mrcpp::FunctionTree<3>(df_da.getMRA());
+    mrcpp::divergence(*tmp_a, *this->derivative, df_dga);
+
+    auto *v_a = new mrcpp::FunctionTree<3>(df_da.getMRA());
+    mrcpp::build_grid(*v_a, df_da);
+    mrcpp::build_grid(*v_a, *tmp_a);
+    mrcpp::add(-1.0, *v_a, 1.0, df_da, -1.0, *tmp_a);
+    delete tmp_a;
+
+    // Beta part
+    mrcpp::FunctionTree<3> &df_db = mrcpp::get_func(inp_vec, 2);
+    mrcpp::FunctionTreeVector<3> df_dgb(inp_vec.begin() + 6, inp_vec.begin() + 9);
+
+    auto *tmp_b = new mrcpp::FunctionTree<3>(df_db.getMRA());
+    mrcpp::divergence(*tmp_b, *this->derivative, df_dgb);
+
+    auto *v_b = new mrcpp::FunctionTree<3>(df_db.getMRA());
+    mrcpp::build_grid(*v_b, df_db);
+    mrcpp::build_grid(*v_b, *tmp_b);
+    mrcpp::add(-1.0, *v_b, 1.0, df_db, -1.0, *tmp_b);
+    delete tmp_b;
+
+    // Collect output
+    mrcpp::FunctionTreeVector<3> out_vec;
+    out_vec.push_back(std::make_tuple(1.0, &f_xc));
+    out_vec.push_back(std::make_tuple(1.0, v_a));
+    out_vec.push_back(std::make_tuple(1.0, v_b));
+    v_a = nullptr;
+    v_b = nullptr;
+
+    return out_vec;
+}
+
+} // namespace mrdft
+
+===== END src/mrdft/SpinGGA.cpp =====
+
+===== MISSING src/qmoperators/xc_operator_lda.cpp =====
+
+===== MISSING src/qmoperators/xc_operator_blyp.cpp =====
+
+===== MISSING src/qmoperators/xc_hessian_lda.cpp =====
+
+===== MISSING src/qmoperators/xc_hessian_pbe.cpp =====
+
+===== BEGIN src/surface_forces/xcStress.h =====
+#pragma once
+
+#include "mrchem.h"
+#include <Eigen/Core>
+#include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
+#include "mrdft/MRDFT.h"
+#include <vector>
+#include "qmoperators/one_electron/NablaOperator.h"
+
+namespace surface_force {
+
+std::vector<Eigen::Matrix3d> xcLDAStress(std::unique_ptr<mrdft::MRDFT> &mrdft_p, Eigen::MatrixXd &rhoGrid);
+std::vector<Eigen::Matrix3d> xcLDASpinStress(std::unique_ptr<mrdft::MRDFT> &mrdft_p, Eigen::MatrixXd &rhoGridAlpha, Eigen::MatrixXd &rhoGridBeta);
+std::vector<Eigen::Matrix3d> xcGGAStress(std::unique_ptr<mrdft::MRDFT> &mrdft_p, Eigen::MatrixXd &rhoGrid, Eigen::MatrixXd &nablaRhoGrid);
+std::vector<Eigen::Matrix3d> xcGGASpinStress(std::unique_ptr<mrdft::MRDFT> &mrdft_p, Eigen::MatrixXd &rhoGridAlpha, Eigen::MatrixXd &rhoGridBeta, Eigen::MatrixXd &nablaRhoGridAlpha, Eigen::MatrixXd &nablaRhoGridBeta);
+std::vector<Eigen::Matrix3d> getXCStress(std::unique_ptr<mrdft::MRDFT> &mrdft_p, mrcpp::FunctionTreeVector<3> &xc_pots, std::shared_ptr<mrchem::OrbitalVector> phi, std::shared_ptr<mrchem::NablaOperator> nabla, Eigen::MatrixXd &gridPos, bool isOpenShell, double prec);
+
+} // namespace surface_force
+
+===== END src/surface_forces/xcStress.h =====
+
+===== BEGIN src/surface_forces/xcStress.cpp =====
+#include "surface_forces/xcStress.h"
+
+#include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
+#include "mrdft/MRDFT.h"
+#include "qmfunctions/Density.h"
+#include "qmfunctions/density_utils.h"
+#include "qmoperators/one_electron/NablaOperator.h"
+
+using namespace Eigen;
+using namespace mrchem;
+using namespace std;
+
+namespace surface_force{
+
+/**
+ * @brief Compute the exchange-correlation stress tensor for LDA functional
+ * 
+ * @param mrdft_p MRDFT object
+ * @param rhoGrid MatrixXd with density values, shape (nGrid, 1)
+ * @return std::vector<Eigen::Matrix3d> vector of 3x3 matrices with stress tensor at each grid point
+ */
+std::vector<Eigen::Matrix3d> xcLDAStress(unique_ptr<mrdft::MRDFT> &mrdft_p, Eigen::MatrixXd &rhoGrid){
+    int nGrid = rhoGrid.rows();
+    std::vector<Eigen::Matrix3d> out(nGrid);
+    Eigen::MatrixXd xcOUT =  mrdft_p->functional().evaluate_transposed(rhoGrid);
+    for (int i = 0; i < nGrid; i++) {
+        out[i] = Matrix3d::Zero();
+        for (int j = 0; j < 3; j++) {
+            out[i](j, j) = xcOUT(i, 0) - xcOUT(i, 1) * rhoGrid(i);
+        }
+    }
+    return out;
+}
+
+/**
+ * @brief Compute the exchange-correlation stress tensor for LDA functional for open shell systems
+ * 
+ * @param mrdft_p MRDFT object
+ * @param rhoGridAlpha MatrixXd with alpha density values, shape (nGrid, 1)
+ * @param rhoGridBeta MatrixXd with beta density values, shape (nGrid, 1)
+ * @return std::vector<Eigen::Matrix3d> vector of 3x3 matrices with stress tensor at each grid point
+ */
+std::vector<Matrix3d> xcLDASpinStress(unique_ptr<mrdft::MRDFT> &mrdft_p, MatrixXd &rhoGridAlpha, MatrixXd &rhoGridBeta){
+    int nGrid = rhoGridAlpha.rows();
+    Eigen::MatrixXd inp(rhoGridAlpha.rows(), 2);
+    std::vector<Matrix3d> out = std::vector<Eigen::Matrix3d>(nGrid);
+    inp.col(0) = rhoGridAlpha.col(0);
+    inp.col(1) = rhoGridBeta.col(0);
+    Eigen::MatrixXd xc = mrdft_p->functional().evaluate_transposed(inp);
+    for (int i = 0; i < rhoGridAlpha.rows(); i++) {
+        out[i] = Matrix3d::Zero();
+        for (int j = 0; j < 3; j++) {
+            out[i](j, j) = xc(i, 0) - xc(i, 1) * rhoGridAlpha(i) - xc(i, 2) * rhoGridBeta(i);
+        }
+    }
+    return out;
+}
+
+/**
+ * @brief Compute the exchange-correlation stress tensor for GGA functional
+ * 
+ * @param mrdft_p MRDFT object
+ * @param rhoGrid MatrixXd with density values, shape (nGrid, 1)
+ * @param nablaRhoGrid MatrixXd with gradient of density values, shape (nGrid, 3)
+ * @return std::vector<Eigen::Matrix3d> vector of 3x3 matrices with stress tensor at each grid point
+ */
+std::vector<Matrix3d> xcGGAStress(unique_ptr<mrdft::MRDFT> &mrdft_p, mrcpp::FunctionTreeVector<3> &xc_pots, MatrixXd &rhoGrid, MatrixXd &nablaRhoGrid, Eigen::MatrixXd &gridPos){
+    int nGrid = rhoGrid.rows();
+    Eigen::MatrixXd inp(rhoGrid.rows(), 4);
+    inp.col(0) = rhoGrid.col(0);
+    inp.col(1) = nablaRhoGrid.col(0);
+    inp.col(2) = nablaRhoGrid.col(1);
+    inp.col(3) = nablaRhoGrid.col(2);
+    Eigen::MatrixXd xcOUT =  mrdft_p->functional().evaluate_transposed(inp);
+    std::vector<Matrix3d> out(nGrid);
+    std::array<double, 3> pos;
+    for (int i = 0; i < rhoGrid.rows(); i++) {
+        out[i] = Matrix3d::Zero();
+        pos[0] = gridPos(i, 0);
+        pos[1] = gridPos(i, 1);
+        pos[2] = gridPos(i, 2);
+        for (int j = 0; j < 3; j++) {
+            out[i](j, j) = xcOUT(i, 0) - rhoGrid(i) * std::get<1>(xc_pots[0])->evalf(pos);
+        }
+        for (int j1 = 0; j1 < 3; j1++) {
+            for (int j2 = 0; j2 < 3; j2++) {
+                out[i](j1, j2) = out[i](j1, j2) - xcOUT(i, 2 + j1) * nablaRhoGrid(i, j2);
+            }
+        }
+    }
+    return out;
+}
+
+/**
+ * @brief Compute the exchange-correlation stress tensor for GGA functional for open shell systems
+ * 
+ * @param mrdft_p MRDFT object
+ * @param rhoGridAlpha MatrixXd with alpha density values, shape (nGrid, 1)
+ * @param rhoGridBeta MatrixXd with beta density values, shape (nGrid, 1)
+ * @param nablaRhoGridAlpha MatrixXd with gradient of alpha density values, shape (nGrid, 3)
+ * @param nablaRhoGridBeta MatrixXd with gradient of beta density values, shape (nGrid, 3)
+ * @return std::vector<Eigen::Matrix3d> vector of 3x3 matrices with stress tensor at each grid point
+ */
+std::vector<Matrix3d> xcGGASpinStress(unique_ptr<mrdft::MRDFT> &mrdft_p, mrcpp::FunctionTreeVector<3> &xc_pots, MatrixXd &rhoGridAlpha, MatrixXd &rhoGridBeta, MatrixXd &nablaRhoGridAlpha, MatrixXd &nablaRhoGridBeta, Eigen::MatrixXd &gridPos){
+    int nGrid = rhoGridAlpha.rows();
+    Eigen::MatrixXd inp(rhoGridAlpha.rows(), 8);
+    std::vector<Matrix3d> out = std::vector<Eigen::Matrix3d>(nGrid);
+    inp.col(0) = rhoGridAlpha.col(0);
+    inp.col(1) = rhoGridBeta.col(0);
+    inp.col(2) = nablaRhoGridAlpha.col(0);
+    inp.col(3) = nablaRhoGridAlpha.col(1);
+    inp.col(4) = nablaRhoGridAlpha.col(2);
+    inp.col(5) = nablaRhoGridBeta.col(0);
+    inp.col(6) = nablaRhoGridBeta.col(1);
+    inp.col(7) = nablaRhoGridBeta.col(2);
+    Eigen::MatrixXd xc = mrdft_p->functional().evaluate_transposed(inp);
+    std::array<double, 3> pos;
+    for (int i = 0; i < rhoGridAlpha.rows(); i++) {
+        out[i] = Matrix3d::Zero();
+        pos[0] = gridPos(i, 0);
+        pos[1] = gridPos(i, 1);
+        pos[2] = gridPos(i, 2);
+        for (int j = 0; j < 3; j++) {
+            out[i](j, j) = xc(i, 0) - std::get<1>(xc_pots[0])->evalf(pos) * rhoGridAlpha(i) - std::get<1>(xc_pots[1])->evalf(pos) * rhoGridBeta(i);
+        }
+        for (int j1 = 0; j1 < 3; j1++) {
+            for (int j2 = 0; j2 < 3; j2++) {
+                out[i](j1, j2) = out[i](j1, j2) 
+                    - xc(i, 3 + j1) * nablaRhoGridAlpha(i, j2) - xc(i, 6 + j1) * nablaRhoGridBeta(i, j2);
+            }
+        }
+    }
+    return out;
+}
+
+/**
+ * @brief Compute the exchange-correlation stress tensor on a grid
+ * 
+ * @param mrdft_p MRDFT object
+ * @param phi OrbitalVector
+ * @param nabla NablaOperator (must be set up prior to calling this function)
+ * @param gridPos MatrixXd with grid positions, shape (nGrid, 3)
+ * @param isOpenShell bool, true if open shell calculation
+ * @param prec precision to use in density representation
+ */
+std::vector<Eigen::Matrix3d> getXCStress(unique_ptr<mrdft::MRDFT> &mrdft_p, mrcpp::FunctionTreeVector<3> &xc_pots, std::shared_ptr<OrbitalVector> phi,
+        std::shared_ptr<NablaOperator> nabla, MatrixXd &gridPos, bool isOpenShell, double prec){
+
+    bool isGGA = mrdft_p->functional().isGGA();
+    bool isHybrid = mrdft_p->functional().isHybrid();
+    if (isHybrid) {
+        MSG_ABORT("Exact exchange is not implemented for forces computed with surface integrals");
+    }
+
+    std::array<double, 3> pos;
+    int nGrid = gridPos.rows();
+
+    vector<Matrix3d> xcStress;
+
+    if (isOpenShell) {
+        MatrixXd rhoGridAlpha(nGrid, 1);
+        MatrixXd rhoGridBeta(nGrid, 1);
+        mrchem::Density rhoA(false);
+        mrchem::Density rhoB(false);
+        mrchem::density::compute(prec, rhoA, *phi, DensityType::Alpha);
+        mrchem::density::compute(prec, rhoB, *phi, DensityType::Beta);
+
+        for (int i = 0; i < nGrid; i++) { // compute density on grid
+            pos[0] = gridPos(i, 0);
+            pos[1] = gridPos(i, 1);
+            pos[2] = gridPos(i, 2);
+            rhoGridAlpha(i) = rhoA.real().evalf(pos);
+            rhoGridBeta(i) = rhoB.real().evalf(pos);
+        }
+
+        if (isGGA) {
+            mrchem::NablaOperator nablaOP = *nabla;
+            std::vector<mrchem::Orbital> nablaRhoAlpha = nablaOP(rhoA);
+            std::vector<mrchem::Orbital> nablaRhoBeta = nablaOP(rhoB);
+            MatrixXd nablaRhoGridAlpha(nGrid, 3);
+            MatrixXd nablaRhoGridBeta(nGrid, 3);
+            for (int i = 0; i < nGrid; i++) {
+                pos[0] = gridPos(i, 0);
+                pos[1] = gridPos(i, 1);
+                pos[2] = gridPos(i, 2);
+                nablaRhoGridAlpha(i, 0) = nablaRhoAlpha[0].real().evalf(pos);
+                nablaRhoGridAlpha(i, 1) = nablaRhoAlpha[1].real().evalf(pos);
+                nablaRhoGridAlpha(i, 2) = nablaRhoAlpha[2].real().evalf(pos);
+                nablaRhoGridBeta(i, 0) = nablaRhoBeta[0].real().evalf(pos);
+                nablaRhoGridBeta(i, 1) = nablaRhoBeta[1].real().evalf(pos);
+                nablaRhoGridBeta(i, 2) = nablaRhoBeta[2].real().evalf(pos);
+            }
+
+            xcStress = xcGGASpinStress(mrdft_p, xc_pots, rhoGridAlpha, rhoGridBeta, nablaRhoGridAlpha, nablaRhoGridBeta, gridPos);
+        } else {
+            xcStress = xcLDASpinStress(mrdft_p, rhoGridAlpha, rhoGridBeta);
+        }
+
+    } else { // closed shell
+        MatrixXd rhoGrid(nGrid, 1);
+        mrchem::Density rho(false);
+        mrchem::density::compute(prec, rho, *phi, DensityType::Total);
+
+        for (int i = 0; i < nGrid; i++) { // compute density on grid
+            pos[0] = gridPos(i, 0);
+            pos[1] = gridPos(i, 1);
+            pos[2] = gridPos(i, 2);
+            rhoGrid(i) = rho.real().evalf(pos);
+        }
+
+        if (isGGA) {
+            mrchem::NablaOperator nablaOP = *nabla;
+            std::vector<mrchem::Orbital> nablaRho = nablaOP(rho);
+            MatrixXd nablaRhoGrid(nGrid, 3);
+            for (int i = 0; i < nGrid; i++) {
+                pos[0] = gridPos(i, 0);
+                pos[1] = gridPos(i, 1);
+                pos[2] = gridPos(i, 2);
+                nablaRhoGrid(i, 0) = nablaRho[0].real().evalf(pos);
+                nablaRhoGrid(i, 1) = nablaRho[1].real().evalf(pos);
+                nablaRhoGrid(i, 2) = nablaRho[2].real().evalf(pos);
+            }
+            xcStress = xcGGAStress(mrdft_p, xc_pots, rhoGrid, nablaRhoGrid, gridPos);
+        } else {
+            xcStress = xcLDAStress(mrdft_p, rhoGrid);
+        }
+    }
+    return xcStress;
+}
+} // namespace surface_force
+===== END src/surface_forces/xcStress.cpp =====
+
+===== BEGIN src/qmoperators/two_electron/XCPotential.h =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include "qmoperators/QMPotential.h"
+#include "qmfunctions/Density.h"
+
+#include "mrdft/MRDFT.h"
+
+/**
+ * @class XCPotential
+ * @brief Exchange-Correlation potential defined by a particular (spin) density
+ *
+ * The XC potential is computed by mapping of the density through a XC functional,
+ * provided by the XCFun library. There are two ways of defining the density:
+ *
+ *  1) Use getDensity() prior to setup() and build the density as you like.
+ *  2) Provide a default set of orbitals in the constructor that is used to
+ *     compute the density on-the-fly in setup().
+ *
+ * If a set of orbitals has NOT been given in the constructor, the density
+ * MUST be explicitly computed prior to setup(). The density will be computed
+ * on-the-fly in setup() ONLY if it is not already available. After setup() the
+ * operator will be fixed until clear(), which deletes both the density and the
+ * potential.
+ *
+ * LDA and GGA functionals are supported as well as two different ways to compute
+ * the XC potentials: either with explicit derivatives or gamma-type derivatives.
+ *
+ */
+
+namespace mrchem {
+
+class XCPotential : public QMPotential {
+public:
+    explicit XCPotential(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi = nullptr, bool mpi_shared = false)
+            : QMPotential(1, mpi_shared)
+            , energy(0.0)
+            , orbitals(Phi)
+            , mrdft(std::move(F)) {}
+    ~XCPotential() override = default;
+
+    /**
+     * @brief Get the XC potential. For unrestricted calculations, the potential is a vector of two functions.
+     */
+    std::shared_ptr<mrcpp::FunctionTreeVector<3>> getPotentialVector() { 
+        return std::make_shared<mrcpp::FunctionTreeVector<3>>(potentials); 
+    }
+
+    friend class XCOperator;
+
+protected:
+    double energy;                           ///< XC energy
+    std::vector<Density> densities;          ///< XC densities (total or alpha/beta)
+    mrcpp::FunctionTreeVector<3> potentials; ///< XC Potential functions collected in a vector
+    std::shared_ptr<mrcpp::FunctionTree<3>> v_tot{nullptr};            ///< Total XC potential
+    std::shared_ptr<OrbitalVector> orbitals; ///< External set of orbitals used to build the density
+    std::unique_ptr<mrdft::MRDFT> mrdft;     ///< External XC functional to be used
+
+    double getEnergy() const { return this->energy; }
+    Density &getDensity(DensityType spin, int pert_idx);
+    mrcpp::FunctionTree<3> &getPotential(int spin);
+
+    void setup(double prec) override;
+    void clear() override;
+
+    virtual mrcpp::FunctionTreeVector<3> setupDensities(double prec, mrcpp::FunctionTree<3> &grid) = 0;
+
+    Orbital apply(Orbital phi) override;
+    Orbital dagger(Orbital phi) override;
+    QMOperatorVector apply(std::shared_ptr<QMOperator> &O) override;
+};
+
+} // namespace mrchem
+===== END src/qmoperators/two_electron/XCPotential.h =====
+
+===== BEGIN src/qmoperators/two_electron/XCPotential.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include <MRCPP/Printer>
+#include <MRCPP/Timer>
+
+#include "XCPotential.h"
+#include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
+
+using mrcpp::FunctionTree;
+using mrcpp::Printer;
+using mrcpp::Timer;
+
+using QMOperator_p = std::shared_ptr<mrchem::QMOperator>;
+
+namespace mrchem {
+
+/** @brief Prepare the operator for application
+ *
+ * @param[in] prec Apply precision
+ *
+ * Sequence of steps required to compute the XC potentials:
+ *
+ * 1) Compute density
+ * 2) Setup xcfun input functions (gradients etc.)
+ * 3) Evaluate xcfun
+ * 4) Compute XC energy by integrating energy density
+ * 5) Compute XC potential(s) from xcfun output functions
+ *
+ */
+void XCPotential::setup(double prec) {
+    if (isSetup(prec)) return;
+    setApplyPrec(prec);
+    Timer timer;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(3, "Building XC operator");
+    mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
+    mrcpp::print::separator(3, '-');
+    if (this->mrdft == nullptr) MSG_ERROR("XCFunctional not initialized");
+    if (this->potentials.size() != 0) MSG_ERROR("Potential not properly cleared");
+
+    auto &grid = this->mrdft->grid().get();
+    mrcpp::FunctionTreeVector<3> xc_inp = setupDensities(prec, grid);
+    mrcpp::FunctionTreeVector<3> xc_out = this->mrdft->evaluate(xc_inp);
+
+    // Fetch energy
+    this->energy = this->mrdft->functional().XCenergy;
+
+    // Fetch potential
+    auto &v_local = mrcpp::get_func(xc_out, 1);
+    auto *v_global = new mrcpp::FunctionTree<3>(v_local.getMRA());
+    mrcpp::copy_grid(*v_global, v_local);
+    mrcpp::copy_func(*v_global, v_local);
+    this->potentials.push_back(std::make_tuple(1.0, v_global));
+
+    // Fetch potential
+    if (this->mrdft->functional().isSpin()) {
+        auto &v_local = mrcpp::get_func(xc_out, 2);
+        auto *v_global = new mrcpp::FunctionTree<3>(v_local.getMRA());
+        mrcpp::copy_grid(*v_global, v_local);
+        mrcpp::copy_func(*v_global, v_local);
+        this->potentials.push_back(std::make_tuple(1.0, v_global));
+    }
+
+
+    if (plevel == 2) {
+        int totNodes = 0;
+        int totSize = 0;
+        for (auto i = 0; i < this->potentials.size(); i++) {
+            auto &f_i = mrcpp::get_func(this->potentials, i);
+            totNodes += f_i.getNNodes();
+            totSize += f_i.getSizeNodes();
+        }
+        auto t = timer.elapsed();
+        mrcpp::print::tree(2, "XC operator", totNodes, totSize, t);
+    }
+    mrcpp::clear(xc_out, true);
+    mrcpp::print::footer(3, timer, 2);
+}
+
+/** @brief Clears all data in the XCPotential object */
+void XCPotential::clear() {
+    this->energy = 0.0;
+    for (auto &rho : this->densities) rho.free(NUMBER::Total);
+    mrcpp::clear(this->potentials, true);
+    clearApplyPrec();
+}
+
+Density &XCPotential::getDensity(DensityType spin, int pert_idx) {
+    int dens_idx = -1;
+    if (spin == DensityType::Total) {
+        if (pert_idx == 0) dens_idx = 0;
+        if (pert_idx == 1) dens_idx = 3;
+    } else if (spin == DensityType::Alpha) {
+        if (pert_idx == 0) dens_idx = 1;
+        if (pert_idx == 1) dens_idx = 4;
+    } else if (spin == DensityType::Beta) {
+        if (pert_idx == 0) dens_idx = 2;
+        if (pert_idx == 1) dens_idx = 5;
+    } else {
+        NOT_IMPLEMENTED_ABORT;
+    }
+    if (dens_idx < 0) MSG_ABORT("Invalid density index");
+    if (dens_idx > densities.size()) MSG_ABORT("Invalid density index");
+    return densities[dens_idx];
+}
+
+/** @brief Return FunctionTree for the XC spin potential
+ *
+ * @param[in] type Which spin potential to return (alpha, beta or total)
+ */
+FunctionTree<3> &XCPotential::getPotential(int spin) {
+    int nPots = this->potentials.size();
+    if (nPots < 1 or nPots > 2) MSG_ERROR("Invalid potential");
+
+    bool spinFunctional = this->mrdft->functional().isSpin();
+    int pot_idx = -1;
+    if (spinFunctional and spin == SPIN::Alpha) {
+        pot_idx = 0;
+    } else if (spinFunctional and spin == SPIN::Beta) {
+        pot_idx = 1;
+    } else if (not spinFunctional) {
+        pot_idx = 0;
+    } else if (spinFunctional and spin == SPIN::Paired) {
+        this->v_tot = std::make_shared<FunctionTree<3>>(*MRA);
+        mrcpp::add(prec(), *this->v_tot, this->potentials);
+        return *this->v_tot;
+    } else {
+        NOT_IMPLEMENTED_ABORT;
+    }
+    return mrcpp::get_func(this->potentials, pot_idx);
+}
+
+/** @brief XCPotentialD1 application
+ *
+ * @param[in] phi Orbital to which the potential is applied
+ *
+ * The operator is applied by choosing the correct potential function
+ * which is then assigned to the real function part of the operator
+ * base-class before the base class function is called.
+ */
+Orbital XCPotential::apply(Orbital phi) {
+    QMPotential &V = *this;
+    if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
+
+    FunctionTree<3> &pot = getPotential(phi.spin());
+    V.setReal(&pot);
+    Orbital Vphi = QMPotential::apply(phi);
+    V.setReal(nullptr);
+    return Vphi;
+}
+
+Orbital XCPotential::dagger(Orbital phi) {
+    QMPotential &V = *this;
+    if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
+
+    FunctionTree<3> &pot = getPotential(phi.spin());
+    V.setReal(&pot);
+    Orbital Vphi = QMPotential::dagger(phi);
+    V.setReal(nullptr);
+    return Vphi;
+}
+
+QMOperatorVector XCPotential::apply(QMOperator_p &O) {
+    NOT_IMPLEMENTED_ABORT;
+}
+
+} // namespace mrchem
+===== END src/qmoperators/two_electron/XCPotential.cpp =====
+
+===== BEGIN src/qmoperators/two_electron/XCPotentialD1.h =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include "XCPotential.h"
+
+/** @class XCPotential
+ *
+ * @brief Exchange-Correlation potential defined by a particular (spin) density
+ *
+ * The XC potential is computed by mapping of the density through a XC functional,
+ * provided by the XCFun library. There are two ways of defining the density:
+ *
+ *  1) Use getDensity() prior to setup() and build the density as you like.
+ *  2) Provide a default set of orbitals in the constructor that is used to
+ *     compute the density on-the-fly in setup().
+ *
+ * If a set of orbitals has NOT been given in the constructor, the density
+ * MUST be explicitly computed prior to setup(). The density will be computed
+ * on-the-fly in setup() ONLY if it is not already available. After setup() the
+ * operator will be fixed until clear(), which deletes both the density and the
+ * potential.
+ *
+ * LDA and GGA functionals are supported as well as two different ways to compute
+ * the XC potentials: either with explicit derivatives or gamma-type derivatives.
+ */
+
+namespace mrchem {
+
+class XCPotentialD1 final : public XCPotential {
+public:
+    explicit XCPotentialD1(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi = nullptr, bool mpi_shared = false);
+
+private:
+    mrcpp::FunctionTreeVector<3> setupDensities(double prec, mrcpp::FunctionTree<3> &grid) override;
+};
+
+} // namespace mrchem
+
+===== END src/qmoperators/two_electron/XCPotentialD1.h =====
+
+===== BEGIN src/qmoperators/two_electron/XCPotentialD1.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
+#include "XCPotential.h"
+#include "XCPotentialD1.h"
+#include "qmfunctions/Density.h"
+#include "qmfunctions/Orbital.h"
+#include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
+#include "utils/print_utils.h"
+
+using mrcpp::Printer;
+using mrcpp::Timer;
+
+namespace mrchem {
+
+XCPotentialD1::XCPotentialD1(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, bool mpi_shared)
+        : XCPotential(F, Phi, mpi_shared) {
+    densities.push_back(Density(false)); // rho_0 total
+    densities.push_back(Density(false)); // rho_0 alpha
+    densities.push_back(Density(false)); // rho_0 beta
+}
+
+mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::FunctionTree<3> &grid) {
+    mrcpp::FunctionTreeVector<3> dens_vec;
+    if (not this->mrdft->functional().isSpin()) {
+        { // Unperturbed total density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Total, 0);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, DensityType::Total);
+            }
+            print_utils::qmfunction(3, "Compute rho", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+    } else {
+        { // Unperturbed alpha density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Alpha, 0);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, DensityType::Alpha);
+            }
+            print_utils::qmfunction(3, "Compute rho (alpha)", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+        { // Unperturbed beta density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Beta, 0);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, DensityType::Beta);
+            }
+            print_utils::qmfunction(3, "Compute rho (beta)", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+    }
+    return dens_vec;
+}
+
+} // namespace mrchem
+
+===== END src/qmoperators/two_electron/XCPotentialD1.cpp =====
+
+===== BEGIN src/qmoperators/two_electron/XCPotentialD2.h =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include "qmoperators/two_electron/XCPotential.h"
+
+/** @class XCPotential
+ *
+ * @brief Exchange-Correlation potential defined by a particular (spin) density
+ *
+ * The XC potential is computed by mapping of the density through a XC functional,
+ * provided by the XCFun library. There are two ways of defining the density:
+ *
+ *  1) Use getDensity() prior to setup() and build the density as you like.
+ *  2) Provide a default set of orbitals in the constructor that is used to
+ *     compute the density on-the-fly in setup().
+ *
+ * If a set of orbitals has NOT been given in the constructor, the density
+ * MUST be explicitly computed prior to setup(). The density will be computed
+ * on-the-fly in setup() ONLY if it is not already available. After setup() the
+ * operator will be fixed until clear(), which deletes both the density and the
+ * potential.
+ *
+ * LDA and GGA functionals are supported as well as two different ways to compute
+ * the XC potentials: either with explicit derivatives or gamma-type derivatives.
+ */
+
+namespace mrchem {
+
+class XCPotentialD2 final : public XCPotential {
+public:
+    XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_shared = false);
+
+private:
+    std::shared_ptr<OrbitalVector> orbitals_x; ///< 1st external set of perturbed orbitals used to build the density
+    std::shared_ptr<OrbitalVector> orbitals_y; ///< 2nd external set of perturbed orbitals used to build the density
+
+    mrcpp::FunctionTreeVector<3> setupDensities(double prec, mrcpp::FunctionTree<3> &grid);
+};
+
+} // namespace mrchem
+
+===== END src/qmoperators/two_electron/XCPotentialD2.h =====
+
+===== BEGIN src/qmoperators/two_electron/XCPotentialD2.cpp =====
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#include "MRCPP/MWOperators"
+#include "MRCPP/Printer"
+#include "MRCPP/Timer"
+
+#include "XCPotential.h"
+#include "XCPotentialD2.h"
+#include "qmfunctions/Density.h"
+#include "qmfunctions/density_utils.h"
+#include "qmfunctions/orbital_utils.h"
+#include "utils/print_utils.h"
+
+using mrcpp::FunctionTree;
+using mrcpp::Printer;
+using mrcpp::Timer;
+
+namespace mrchem {
+
+XCPotentialD2::XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_shared)
+        : XCPotential(F, Phi, mpi_shared)
+        , orbitals_x(X)
+        , orbitals_y(Y) {
+    densities.push_back(Density(false)); // rho_0 total
+    densities.push_back(Density(false)); // rho_0 alpha
+    densities.push_back(Density(false)); // rho_0 beta
+    densities.push_back(Density(false)); // rho_1 total
+    densities.push_back(Density(false)); // rho_1 alpha
+    densities.push_back(Density(false)); // rho_1 beta
+}
+
+/** @brief Prepare the operator for application
+ *
+ * @param[in] prec Apply precision
+ *
+ * Sequence of steps required to compute the XC potentials:
+ *
+ * 1) Compute density
+ * 2) Setup xcfun input functions (gradients etc.)
+ * 3) Evaluate xcfun
+ * 4) Compute XC energy by integrating energy density
+ * 5) Compute XC potential(s) from xcfun output functions
+ * 6) Remove excess grid nodes based on precision
+ * 7) Add extra grid nodes based on precision
+ * 8) Clear internal functions in XCFunctional (density grid is kept)
+ *
+ */
+mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::FunctionTree<3> &grid) {
+    mrcpp::FunctionTreeVector<3> dens_vec;
+    if (not this->mrdft->functional().isSpin()) {
+        { // Unperturbed total density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Total, 0);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, DensityType::Total);
+            }
+            print_utils::qmfunction(3, "Compute rho_0", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+        { // Perturbed total density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Total, 1);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Total);
+            }
+            print_utils::qmfunction(3, "Compute rho_1", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+    } else {
+        { // Unperturbed alpha density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Alpha, 0);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, DensityType::Alpha);
+            }
+            print_utils::qmfunction(3, "Compute rho_0 (alpha)", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+        { // Unperturbed beta density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Beta, 0);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, DensityType::Beta);
+            }
+            print_utils::qmfunction(3, "Compute rho_0 (beta)", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+        { // Perturbed alpha density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Alpha, 1);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Alpha);
+            }
+            print_utils::qmfunction(3, "Compute rho_1 (alpha)", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+        { // Perturbed beta density
+            Timer timer;
+            Density &rho = getDensity(DensityType::Beta, 1);
+            if (not rho.hasReal()) {
+                rho.alloc(NUMBER::Real);
+                mrcpp::copy_grid(rho.real(), grid);
+                density::compute(prec, rho, *orbitals, *orbitals_x, *orbitals_y, DensityType::Beta);
+            }
+            print_utils::qmfunction(3, "Compute rho_1 (beta)", rho, timer);
+            dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
+        }
+    }
+    return dens_vec;
+}
+
+} // namespace mrchem
+
+===== END src/qmoperators/two_electron/XCPotentialD2.cpp =====
+
+===== BEGIN CMakeLists.txt =====
+# This file is autogenerated by Autocmake v1.0.0 http://autocmake.org
+# Copyright (c) 2015-2020 by Radovan Bast, Roberto Di Remigio, Jonas Juselius, and contributors.
+
+# set minimum cmake version
+cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
+
+# project name
+project(MRChem LANGUAGES CXX)
+
+# do not rebuild if rules (compiler flags) change
+set(CMAKE_SKIP_RULE_DEPENDENCY TRUE)
+
+# if CMAKE_BUILD_TYPE undefined, we set it to Release
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release")
+endif()
+
+# Options handling utilities
+include(CMakeDependentOption)
+# Macro for printing an option in a consistent manner
+# Written by Lori A. Burns (@loriab) and Ryan M. Richard (@ryanmrichard)
+# Syntax: print_option(<option to print> <was specified>)
+macro(print_option variable default)
+  if(NOT DEFINED ${variable} OR "${${variable}}" STREQUAL "")
+    message(STATUS "Setting (unspecified) option ${variable}: ${default}")
+  else()
+    message(STATUS "Setting option ${variable}: ${${variable}}")
+  endif()
+endmacro()
+
+# Wraps an option with default ON/OFF. Adds nice messaging to option()
+# Written by Lori A. Burns (@loriab) and Ryan M. Richard (@ryanmrichard)
+# Syntax: option_with_print(<option name> <description> <default value>)
+macro(option_with_print variable msge default)
+  print_option(${variable} ${default})
+  option(${variable} ${msge} ${default})
+endmacro()
+
+# Wraps an option with a default other than ON/OFF and prints it
+# Written by Lori A. Burns (@loriab) and Ryan M. Richard (@ryanmrichard)
+# NOTE: Can't combine with above b/c CMake handles ON/OFF options specially
+# NOTE2: CMake variables are always defined so need to further check for if
+#       they are the NULL string. This is also why we need the force
+# Syntax: option_with_default(<option name> <description> <default value>)
+macro(option_with_default variable msge default)
+  print_option(${variable} "${default}")
+  if(NOT DEFINED ${variable} OR "${${variable}}" STREQUAL "")
+    set(${variable} "${default}" CACHE STRING ${msge} FORCE)
+  endif()
+endmacro()
+
+# included cmake modules
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_cxx.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/compiler_flags/CXXFlags.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_default_build_paths.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_safeguards.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_code_coverage.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/mpi.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/omp.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/sad_basis.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/hirshfeld.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/azora_potentials.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/main.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/feature_summary.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/custom/tests.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/downloaded/autocmake_save_flags.cmake)
+
+===== END CMakeLists.txt =====
+
+===== BEGIN src/mrdft/CMakeLists.txt =====
+target_sources(mrchem PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/MRDFT.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/Functional.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/LDA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpinLDA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/GGA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/SpinGGA.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/xc_utils.cpp
+)
+
+if(MRCHEM_ENABLE_LIBXC AND HAVE_LIBXC)
+    target_sources(mrchem PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/LibXCBackend.cpp
+    )
+    target_compile_definitions(mrchem PRIVATE MRCHEM_ENABLE_LIBXC)
+    target_link_libraries(mrchem PRIVATE Libxc::xc)
+endif()
+
+===== END src/mrdft/CMakeLists.txt =====
+
+===== BEGIN external/upstream/fetch_xcfun.cmake =====
+find_package(XCFun CONFIG QUIET
+  NO_CMAKE_PATH
+  NO_CMAKE_PACKAGE_REGISTRY
+  NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
+  )
+if(TARGET XCFun::xcfun)
+  get_property(_loc TARGET XCFun::xcfun PROPERTY LOCATION)
+  message(STATUS "Found XCFun: ${_loc} (found version ${XCFun_VERSION})")
+else()
+  message(STATUS "Suitable XCFun could not be located. Fetching and building!")
+  include(FetchContent)
+  FetchContent_Declare(xcfun_sources
+    QUIET
+    URL
+      https://github.com/dftlibs/xcfun/archive/v2.1.0.tar.gz
+    )
+
+  FetchContent_GetProperties(xcfun_sources)
+
+  set(CMAKE_BUILD_TYPE Release)
+  set(ENABLE_TESTALL FALSE CACHE BOOL "")
+  set(XCFUN_MAX_ORDER 3)  # TODO Maybe as a user-facing option?
+  set(XCFUN_PYTHON_INTERFACE FALSE CACHE BOOL "")
+
+  if(NOT xcfun_sources_POPULATED)
+    FetchContent_Populate(xcfun_sources)
+
+    add_subdirectory(
+      ${xcfun_sources_SOURCE_DIR}
+      ${xcfun_sources_BINARY_DIR}
+      )
+  endif()
+endif()
+
+===== END external/upstream/fetch_xcfun.cmake =====
+
+===== BEGIN cmake/custom/main.cmake =====
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
+
+file(READ "${PROJECT_SOURCE_DIR}/VERSION" MRCHEM_VERSION)
+string(STRIP "${MRCHEM_VERSION}" MRCHEM_VERSION)
+
+string(REPLACE "." ";" VERSION_LIST ${MRCHEM_VERSION})
+list(GET VERSION_LIST 0 MRCHEM_VERSION_MAJOR)
+list(GET VERSION_LIST 1 MRCHEM_VERSION_MINOR)
+
+configure_file (
+  ${PROJECT_SOURCE_DIR}/config.h.in
+  ${PROJECT_BINARY_DIR}/config.h
+  @ONLY
+  )
+
+add_custom_command(
+  OUTPUT
+    ${PROJECT_BINARY_DIR}/version.h
+  COMMAND
+    ${CMAKE_COMMAND} -DINPUT_DIR=${PROJECT_SOURCE_DIR}
+                     -DTARGET_DIR=${PROJECT_BINARY_DIR}
+                     -DCMAKE_SYSTEM=${CMAKE_SYSTEM}
+                     -DCMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}
+                     -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
+                     -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+                     -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+                     -DCMAKE_CXX_COMPILER_VERSION=${CMAKE_CXX_COMPILER_VERSION}
+                     -DMRCHEM_VERSION=${MRCHEM_VERSION}
+                     -DMW_FILTER_SOURCE_DIR=${MW_FILTER_SOURCE_DIR}
+                     -DMW_FILTER_INSTALL_DIR=${MW_FILTER_INSTALL_DIR}
+                     -P ${CMAKE_CURRENT_LIST_DIR}/binary-info.cmake
+  MAIN_DEPENDENCY
+    ${PROJECT_SOURCE_DIR}/version.h.in
+  WORKING_DIRECTORY
+    ${CMAKE_CURRENT_LIST_DIR}
+  )
+
+# rebuild version_info.h every time
+add_custom_target(
+  mrchem-info
+  ALL
+  COMMAND
+    ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_SOURCE_DIR}/version.h.in
+  DEPENDS
+    ${PROJECT_BINARY_DIR}/version.h
+  )
+
+# See here for the reason why: https://gitlab.kitware.com/cmake/cmake/issues/18399
+set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
+  PROPERTIES
+    GENERATED 1
+  )
+
+# We save CMAKE_BUILD_TYPE, as we will set it to Release for externals
+
+# === LibXC backend switch (OFF by default, XCFun remains the default backend) ===
+option(MRCHEM_ENABLE_LIBXC "Enable experimental LibXC backend (in addition to XCFun)" OFF)
+
+
+set(_build_type ${CMAKE_BUILD_TYPE})
+# Order IS important here!
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
+# Optional LibXC (only used if MRCHEM_ENABLE_LIBXC=ON and LibXC is found)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
+include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
+# reset CMAKE_BUILD_TYPE to whatever it was for MRChem
+set(CMAKE_BUILD_TYPE ${_build_type})
+
+add_subdirectory(src)
+add_subdirectory(python)
+add_subdirectory(pilot)
+
+===== END cmake/custom/main.cmake =====
+

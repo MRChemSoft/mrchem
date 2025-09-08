@@ -27,13 +27,16 @@
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
 #include <fstream>
+#include <iostream>
+#include "MRCPP/utils/parallel.h"
 
 #include "mrchem.h"
 #include "mrenv.h"
 #include "utils/print_utils.h"
+#include "utils/json_utils.h"   // robust, tolerant JSON helpers
 #include "version.h"
 
-using json = nlohmann::json;
+using json    = nlohmann::json;
 using Printer = mrcpp::Printer;
 
 namespace mrchem {
@@ -45,6 +48,9 @@ void init_mpi(const json &json_mpi);
 void print_header();
 } // namespace mrenv
 
+// -----------------------------------------------------------------------------
+// Read the program JSON and return the normalized "input" subtree
+// -----------------------------------------------------------------------------
 json mrenv::fetch_json(int argc, char **argv) {
     const char *infile = nullptr;
     if (argc == 1) {
@@ -52,41 +58,65 @@ json mrenv::fetch_json(int argc, char **argv) {
     } else if (argc == 2) {
         infile = argv[1];
     } else {
-        MSG_ERROR("Ivalid number of arguments!");
+        MSG_ERROR("Invalid number of arguments! Pass either no argument (read from stdin) or a single JSON file.");
     }
 
-    // Read JSON input
-    json input;
-    std::ifstream ifs(infile, std::ios_base::in);
-    ifs >> input;
-    ifs.close();
+    json root;
+    if (std::string(infile) == "STDIN") {
+        std::cin >> root;
+    } else {
+        std::ifstream ifs(infile, std::ios_base::in);
+        if (!ifs) MSG_ABORT("Could not open input file: " << infile);
+        ifs >> root;
+        ifs.close();
+    }
 
-    return input["input"];
+    if (!root.contains("input") || !root["input"].is_object()) {
+        MSG_ABORT(
+            "Malformed program JSON: missing object \"input\".\n"
+            "Note: mrchem.x expects the generated program JSON (with \"input\" and \"output\" sections),\n"
+            "not the user .inp/.json you write by hand. Use `mrchem --dryrun <name>` or\n"
+            "`mrchem --json --stdout <name> > <name>.json` to generate the program JSON."
+        );
+    }
+
+    // Work on a copy of the "input" subtree and normalize boolean-ish fields (0/1, on/off, etc.)
+    json j = root["input"];
+    mrchem::json_utils::sanitize_booleans(j);
+    return j;
 }
 
+// -----------------------------------------------------------------------------
+// Initialization (printer, MRA, MPI) with tolerant JSON reads
+// -----------------------------------------------------------------------------
 void mrenv::initialize(const json &json_inp) {
     auto json_print = json_inp.find("printer");
-    auto json_mra = json_inp.find("mra");
-    auto json_mpi = json_inp.find("mpi");
+    auto json_mra   = json_inp.find("mra");
+    auto json_mpi   = json_inp.find("mpi");
 
-    if (json_mra == json_inp.end()) {
-        MSG_ABORT("Missing MRA input!");
+    if (json_mra == json_inp.end() || !json_mra->is_object()) {
+        MSG_ABORT("Missing MRA input! The \"input\" JSON must contain an \"mra\" object.");
     } else {
         mrenv::init_mra(*json_mra);
     }
-    if (json_mpi != json_inp.end()) mrenv::init_mpi(*json_mpi);
-    if (json_print != json_inp.end()) mrenv::init_printer(*json_print);
+    if (json_mpi   != json_inp.end() && json_mpi->is_object())   mrenv::init_mpi(*json_mpi);
+    if (json_print != json_inp.end() && json_print->is_object()) mrenv::init_printer(*json_print);
 
     mrenv::print_header();
 }
 
 void mrenv::init_printer(const json &json_print) {
-    // Initialize printing
-    auto print_level = json_print["print_level"];
-    auto print_prec = json_print["print_prec"];
-    auto print_width = json_print["print_width"];
-    auto print_mpi = json_print["print_mpi"];
-    auto fname = json_print["file_name"].get<std::string>();
+    // Safe, typed reads with defaults
+    int  print_level = json_utils::value_loose<int>(json_print,  "print_level", 1);
+    int  print_prec  = json_utils::value_loose<int>(json_print,  "print_prec",  10);
+    int  print_width = json_utils::value_loose<int>(json_print,  "print_width", 120);
+    bool print_mpi   = json_utils::value_loose<bool>(json_print, "print_mpi",   false);
+
+    std::string fname = "mrchem.out";
+    if (json_print.contains("file_name") && json_print["file_name"].is_string()) {
+        fname = json_print["file_name"].get<std::string>();
+    }
+
     if (print_mpi) {
         Printer::init(print_level, mrcpp::mpi::world_rank, mrcpp::mpi::world_size, fname.c_str());
     } else {
@@ -97,23 +127,21 @@ void mrenv::init_printer(const json &json_print) {
 }
 
 void mrenv::init_mra(const json &json_mra) {
-    // Initialize world box
-    int min_scale = json_mra["min_scale"];
-    int max_scale = json_mra["max_scale"];
-    auto corner = json_mra["corner"];
-    auto boxes = json_mra["boxes"];
+    // Required fields: enforce exact types here (schema-generated JSON should be correct)
+    int min_scale = json_mra.at("min_scale").get<int>();
+    int max_scale = json_mra.at("max_scale").get<int>();
+    auto corner   = json_mra.at("corner");
+    auto boxes    = json_mra.at("boxes");
     mrcpp::BoundingBox<3> world(min_scale, corner, boxes);
 
-    // Initialize scaling basis
-    auto order = json_mra["basis_order"];
-    auto btype = json_mra["basis_type"];
+    int         order = json_mra.at("basis_order").get<int>();
+    std::string btype = json_mra.at("basis_type").get<std::string>();
 
     auto max_depth = max_scale - min_scale;
     if (min_scale < mrcpp::MinScale) MSG_ABORT("Root scale too large");
     if (max_scale > mrcpp::MaxScale) MSG_ABORT("Max scale too large");
     if (max_depth > mrcpp::MaxDepth) MSG_ABORT("Max depth too large");
 
-    // Initialize global MRA
     if (btype == "interpolating") {
         mrcpp::InterpolatingBasis basis(order);
         MRA = new mrcpp::MultiResolutionAnalysis<3>(world, basis, max_depth);
@@ -136,31 +164,34 @@ void mrenv::init_mpi(const json &json_mpi) {
     mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 
+// -----------------------------------------------------------------------------
+// Pretty header
+// -----------------------------------------------------------------------------
 void mrenv::print_header() {
-    auto pwidth = Printer::getWidth();
-    auto txt_width = 50;
-    auto pre_spaces = (pwidth - 6 - txt_width) / 2;
+    auto pwidth      = Printer::getWidth();
+    auto txt_width   = 50;
+    auto pre_spaces  = (pwidth - 6 - txt_width) / 2;
     auto post_spaces = pwidth - 6 - txt_width - pre_spaces;
-    std::string pre_str = std::string(3, '*') + std::string(pre_spaces, ' ');
+    std::string pre_str  = std::string(3, '*') + std::string(pre_spaces, ' ');
     std::string post_str = std::string(post_spaces, ' ') + std::string(3, '*');
     std::stringstream o_ver, o_branch, o_hash, o_author, o_date;
-    o_ver << "VERSION            " << program_version();
+    o_ver    << "VERSION            " << program_version();
     o_branch << "Git branch         " << git_branch();
-    o_hash << "Git commit hash    " << git_commit_hash();
+    o_hash   << "Git commit hash    " << git_commit_hash();
     o_author << "Git commit author  " << git_commit_author();
-    o_date << "Git commit date    " << git_commit_date();
+    o_date   << "Git commit date    " << git_commit_date();
 
-    int ver_len = o_ver.str().size();
-    int branch_len = o_branch.str().size();
-    int hash_len = o_hash.str().size();
-    int auth_len = o_author.str().size();
-    int date_len = o_date.str().size();
+    int ver_len    = static_cast<int>(o_ver.str().size());
+    int branch_len = static_cast<int>(o_branch.str().size());
+    int hash_len   = static_cast<int>(o_hash.str().size());
+    int auth_len   = static_cast<int>(o_author.str().size());
+    int date_len   = static_cast<int>(o_date.str().size());
 
-    o_ver << std::string(std::max(0, txt_width - ver_len), ' ');
+    o_ver    << std::string(std::max(0, txt_width - ver_len),    ' ');
     o_branch << std::string(std::max(0, txt_width - branch_len), ' ');
-    o_hash << std::string(std::max(0, txt_width - hash_len), ' ');
-    o_author << std::string(std::max(0, txt_width - auth_len), ' ');
-    o_date << std::string(std::max(0, txt_width - date_len), ' ');
+    o_hash   << std::string(std::max(0, txt_width - hash_len),   ' ');
+    o_author << std::string(std::max(0, txt_width - auth_len),   ' ');
+    o_date   << std::string(std::max(0, txt_width - date_len),   ' ');
 
     std::stringstream o_bank;
     if (mrcpp::mpi::bank_size > 0) {
@@ -199,7 +230,9 @@ void mrenv::print_header() {
     mrcpp::print::separator(0, '-', 1);
     print_utils::scalar(0, "MPI processes  ", mrcpp::mpi::world_size, o_bank.str(), 0, false);
     print_utils::scalar(0, "OpenMP threads ", mrcpp::omp::n_threads, "", 0, false);
-    print_utils::scalar(0, "Total cores    ", (mrcpp::mpi::world_size - mrcpp::mpi::tot_bank_size) * mrcpp::omp::n_threads + mrcpp::mpi::tot_bank_size, "", 0, false);
+    print_utils::scalar(0, "Total cores    ",
+                        (mrcpp::mpi::world_size - mrcpp::mpi::tot_bank_size) * mrcpp::omp::n_threads
+                        + mrcpp::mpi::tot_bank_size, "", 0, false);
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
     printout(0, xcfun_splash());
@@ -208,18 +241,17 @@ void mrenv::print_header() {
 }
 
 void mrenv::finalize(double wt) {
-    // Delete global MRA
     if (MRA != nullptr) delete MRA;
     MRA = nullptr;
 
-    auto pwidth = Printer::getWidth();
-    auto txt_width = 45;
-    auto pre_spaces = (pwidth - 6 - txt_width) / 2;
+    auto pwidth      = Printer::getWidth();
+    auto txt_width   = 45;
+    auto pre_spaces  = (pwidth - 6 - txt_width) / 2;
     auto post_spaces = pwidth - 6 - txt_width - pre_spaces;
-    std::string pre_str = std::string(3, '*') + std::string(pre_spaces, ' ');
+    std::string pre_str  = std::string(3, '*') + std::string(pre_spaces, ' ');
     std::string post_str = std::string(post_spaces, ' ') + std::string(3, '*');
 
-    auto hr = static_cast<int>(wt / 3600.0);
+    auto hr  = static_cast<int>(wt / 3600.0);
     auto min = static_cast<int>(std::fmod(wt, 3600.0) / 60.0);
     auto sec = static_cast<int>(std::fmod(wt, 60.0));
 
@@ -241,18 +273,29 @@ void mrenv::finalize(double wt) {
 
 void mrenv::dump_json(const json &json_inp, const json &json_out) {
     json json_tot;
-    json_tot["input"] = json_inp;
+    json_tot["input"]  = json_inp;
     json_tot["output"] = json_out;
 
-    const auto file_name = detail::remove_extension(json_inp["printer"]["file_name"].get<std::string>());
+    // Try to derive a base name from printer.file_name; fallback to "mrchem"
+    std::string base = "mrchem";
+    try {
+        if (json_inp.contains("printer") && json_inp["printer"].contains("file_name")) {
+            base = detail::remove_extension(json_inp["printer"]["file_name"].get<std::string>());
+        }
+    } catch (...) {
+        /* keep default */
+    }
+
     if (mrcpp::mpi::grand_master()) {
-        std::ofstream ofs;
-        ofs.open(file_name + ".json", std::ios::out);
+        std::ofstream ofs(base + ".json", std::ios::out);
         ofs << json_tot.dump(2) << std::endl;
         ofs.close();
     }
 }
 
+// -----------------------------------------------------------------------------
+// small helpers
+// -----------------------------------------------------------------------------
 std::string detail::remove_extension(const std::string &fname) {
     size_t lastdot = fname.find_last_of(".");
     if (lastdot == std::string::npos) return fname;
@@ -265,4 +308,5 @@ bool detail::all_success(const json &json_out) {
     for (const auto &x : json_out["rsp_calculations"]) { rsp_success &= x["success"].get<bool>(); }
     return scf_success & rsp_success;
 }
+
 } // namespace mrchem

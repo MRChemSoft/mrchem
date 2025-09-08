@@ -1,3 +1,4 @@
+// ===== BEGIN src/mrdft/Functional.h =====
 /*
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
@@ -62,8 +63,10 @@ public:
     }
     double XCenergy = 0.0;
 
-    Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
-    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
+    // MAKE THESE VIRTUAL so LibXC subclasses can override them
+    virtual Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
+    virtual Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
+
     friend class MRDFT;
 
 protected:
@@ -92,3 +95,4 @@ protected:
 };
 
 } // namespace mrdft
+// ===== END src/mrdft/Functional.h =====
