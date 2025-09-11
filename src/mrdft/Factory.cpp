@@ -75,6 +75,11 @@ void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<
         ids = {XC_LDA_X};
         coeffs = {1.0};
         return;
+    } else if (name == "BECKEX") {
+        std::cout << "!!!!BECKEX!!!!" << std::endl;
+        ids = {XC_GGA_X_B88};
+        coeffs = {1.0};
+        return;
     } else if (name == "svwn5c") {
         ids = {XC_LDA_C_VWN_RPA, XC_LDA_X};
         coeffs = {1.0, -1.0};
@@ -86,10 +91,9 @@ void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<
     } else if (name == "b3p86") {
         // ids = {XC_HYB_GGA_XC_B3P86_NWCHEM};
         ids = {XC_HYB_GGA_XC_B3P86}; // Closest to xcfun
-        // coeffs = {1.0};
+        coeffs = {1.0};
         // ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86, XC_LDA_C_PZ};
         // coeffs = {0.80, 0.72, 1.0, 0.81, -0.81};
-        
         return;
     } else if (name == "bpw91") {
         ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_PW91};
@@ -121,13 +125,21 @@ void Factory::setFunctional(const std::string &n, double c) {
 
     xc_func_type libxc_obj;
     for (size_t i = 0; i < ids.size(); i++) {
-        if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
-            std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
+        if (spin) {
+            if (xc_func_init(&libxc_obj, ids[i], XC_POLARIZED) != 0) {
+                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
+            }
+            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+            libxc_objects.push_back(libxc_obj);
+            libxc_coeffs.push_back(c * coeffs[i]);
+        } else {
+            if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
+                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
+            }
+            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+            libxc_objects.push_back(libxc_obj);
+            libxc_coeffs.push_back(c * coeffs[i]);
         }
-        xc_func_set_dens_threshold(&libxc_obj, cutoff);
-        // xc_func_set_dens_threshold(&libxc_obj, 1e-7);
-        libxc_objects.push_back(libxc_obj);
-        libxc_coeffs.push_back(c*coeffs[i]);
     }
 }
 
