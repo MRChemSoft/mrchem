@@ -101,7 +101,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
 
 
 
-    // if (Factory::libxc) {
+    if (Factory::libxc) {
         for (size_t i; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
                 case XC_FAMILY_LDA:
@@ -165,7 +165,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                 break;
             }
         }
-    // } else {
+    } else {
         inp_row = Eigen::VectorXd::Zero(nInp);
         out_row = Eigen::VectorXd::Zero(nOut);
         for (int i = 0; i < nPts; i++) {
@@ -179,76 +179,76 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
             for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
         }
+    }
+
+
+    // // !! Debug !!
+
+    // if (nInp == 1) {
+    //     if (libxc) return out_libxc;
+    //     if (!libxc) return out;
     // }
 
+    // double dx = 0.0, dy = 0.0, dz = 0.0;
 
-    // !! Debug !!
+    // for (size_t i = 0; i < nPts; i++) {
+    //     double sxc_x_xcfun = out(i, 2) / (2 * inp(i, 1));
+    //     double sxc_y_xcfun = out(i, 3) / (2 * inp(i, 2));
+    //     double sxc_z_xcfun = out(i, 4) / (2 * inp(i, 3));
 
-    if (nInp == 1) {
-        if (libxc) return out_libxc;
-        if (!libxc) return out;
-    }
+    //     dx += sxc_x_xcfun - out_sxc[i];
+    //     dy += sxc_y_xcfun - out_sxc[i];
+    //     dz += sxc_z_xcfun - out_sxc[i];
+    // }
 
-    double dx = 0.0, dy = 0.0, dz = 0.0;
+    // dx /= nPts;
+    // dy /= nPts;
+    // dz /= nPts;
 
-    for (size_t i = 0; i < nPts; i++) {
-        double sxc_x_xcfun = out(i, 2) / (2 * inp(i, 1));
-        double sxc_y_xcfun = out(i, 3) / (2 * inp(i, 2));
-        double sxc_z_xcfun = out(i, 4) / (2 * inp(i, 3));
+    // std::cout << "SXC avg dev: " << dx << " " << dy << " " << dz << std::endl;
 
-        dx += sxc_x_xcfun - out_sxc[i];
-        dy += sxc_y_xcfun - out_sxc[i];
-        dz += sxc_z_xcfun - out_sxc[i];
-    }
+    // for (size_t i = 0; i < nOut; i++) {
+    //     double max_dev = 0.0, mean_dev = 0.0;
+    //     size_t max_i = 0;
 
-    dx /= nPts;
-    dy /= nPts;
-    dz /= nPts;
+    //     for (size_t j = 0; j < nPts; j++) {
+    //         double dev = abs(out(j, i) - out_libxc(j, i));
 
-    std::cout << "SXC avg dev: " << dx << " " << dy << " " << dz << std::endl;
+    //         mean_dev += dev;
 
-    for (size_t i = 0; i < nOut; i++) {
-        double max_dev = 0.0, mean_dev = 0.0;
-        size_t max_i = 0;
+    //         if (dev > max_dev) {
+    //             max_dev = dev;
+    //             max_i = j;
+    //         }
+    //     }
 
-        for (size_t j = 0; j < nPts; j++) {
-            double dev = abs(out(j, i) - out_libxc(j, i));
+    //     mean_dev /= nPts;
 
-            mean_dev += dev;
-
-            if (dev > max_dev) {
-                max_dev = dev;
-                max_i = j;
-            }
-        }
-
-        mean_dev /= nPts;
-
-        std::cout << "Iteration nr.: " << i << " max_dev: " << max_dev << " mean_dev: " << mean_dev << std::endl;
-        std::cout << "Current max i: " << max_i << std::endl <<
-        "----------------------" << std::endl <<
-        "Input: " << std::endl <<
-        "    Density:   " << inp(max_i, 0) << std::endl <<
-        "    dr/dx:     " << inp(max_i, 1) << std::endl <<
-        "    dr/dy:     " << inp(max_i, 2) << std::endl <<
-        "    dr/dz:     " << inp(max_i, 3) << std::endl <<
-        "    sigma   :  " << sigma[max_i] << std::endl <<
-        "Output Libxc: " << std::endl <<
-        "    EXC:      " << out_libxc(max_i, 0) << std::endl <<
-        "    VXC:      " << out_libxc(max_i, 1) << std::endl <<
-        "    SXC:      " << out_libxc(max_i, 1) << std::endl <<
-        "    dEXC/dx:  " << out_libxc(max_i, 2) << std::endl <<
-        "    dEXC/dy:  " << out_libxc(max_i, 3) << std::endl <<
-        "    dEXC/dz:  " << out_libxc(max_i, 4) << std::endl <<
-        "Output XCFun: " << std::endl <<
-        "    EXC:      " << out(max_i, 0) << std::endl <<
-        "    VXC:      " << out(max_i, 1) << std::endl <<
-        "    dEXC/dx:  " << out(max_i, 2) << std::endl <<
-        "    dEXC/dy:  " << out(max_i, 3) << std::endl <<
-        "    dEXC/dz:  " << out(max_i, 4) << std::endl <<
-        "----------------------" << std::endl;
-    }
-    std::cout << std::endl;
+    //     std::cout << "Iteration nr.: " << i << " max_dev: " << max_dev << " mean_dev: " << mean_dev << std::endl;
+    //     std::cout << "Current max i: " << max_i << std::endl <<
+    //     "----------------------" << std::endl <<
+    //     "Input: " << std::endl <<
+    //     "    Density:   " << inp(max_i, 0) << std::endl <<
+    //     "    dr/dx:     " << inp(max_i, 1) << std::endl <<
+    //     "    dr/dy:     " << inp(max_i, 2) << std::endl <<
+    //     "    dr/dz:     " << inp(max_i, 3) << std::endl <<
+    //     "    sigma   :  " << sigma[max_i] << std::endl <<
+    //     "Output Libxc: " << std::endl <<
+    //     "    EXC:      " << out_libxc(max_i, 0) << std::endl <<
+    //     "    VXC:      " << out_libxc(max_i, 1) << std::endl <<
+    //     "    SXC:      " << out_libxc(max_i, 1) << std::endl <<
+    //     "    dEXC/dx:  " << out_libxc(max_i, 2) << std::endl <<
+    //     "    dEXC/dy:  " << out_libxc(max_i, 3) << std::endl <<
+    //     "    dEXC/dz:  " << out_libxc(max_i, 4) << std::endl <<
+    //     "Output XCFun: " << std::endl <<
+    //     "    EXC:      " << out(max_i, 0) << std::endl <<
+    //     "    VXC:      " << out(max_i, 1) << std::endl <<
+    //     "    dEXC/dx:  " << out(max_i, 2) << std::endl <<
+    //     "    dEXC/dy:  " << out(max_i, 3) << std::endl <<
+    //     "    dEXC/dz:  " << out(max_i, 4) << std::endl <<
+    //     "----------------------" << std::endl;
+    // }
+    // std::cout << std::endl;
 
     if (libxc) return out_libxc;
     return out;
