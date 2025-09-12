@@ -86,8 +86,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(false);
-    xc_factory.setFunctional("slaterx", 1.0);
-    xc_factory.setFunctional("svwn5c", 1.0);
+    xc_factory.setFunctional("SLATERX", 1.0);
+    xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
     MomentumOperator p(D_p);
@@ -169,8 +169,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(false);
-    xc_factory.setFunctional("slaterx", 1.0);
-    xc_factory.setFunctional("svwn5c", 1.0);
+    xc_factory.setFunctional("SLATERX", 1.0);
+    xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
     MomentumOperator p(D_p);
@@ -317,7 +317,6 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     println(2, o_row.str());
     mrcpp::print::separator(2, '-');
     print_utils::qmfunction(0, "Local density", rho_loc, t_loc);
-
     print_utils::qmfunction(0, "Allreduce density", rho_tot, t_com);
     mrcpp::print::footer(2, t_tot, 2);
 }

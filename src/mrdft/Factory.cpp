@@ -81,7 +81,7 @@ void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<
         coeffs = {1.0};
         return;
     } else if (name == "svwn5c") {
-        ids = {XC_LDA_C_VWN_RPA, XC_LDA_X};
+        ids = {XC_LDA_C_VWN, XC_LDA_X};
         coeffs = {1.0, -1.0};
         return;
     } else if (name == "svwn5") {

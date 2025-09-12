@@ -273,16 +273,13 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
+    FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
     if (json_fock.contains("xc_operator")) driver::init_properties(json_fock["properties"], mol);
-    FockBuilder F;
     driver::build_fock_operator(json_fock, mol, F, 0);
     
     // Pre-compute internal exchange contributions
     if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
-    
-
-
 
     
     ///////////////////////////////////////////////////////////
