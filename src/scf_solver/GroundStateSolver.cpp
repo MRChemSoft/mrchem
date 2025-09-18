@@ -473,17 +473,17 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
  */
 DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
     DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
-    DoubleVector occ = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
-    double occ1 = occ(0);
-    DoubleVector occNew = DoubleVector::Constant(occ.size(), occ1);
+    DoubleVector occup = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
+    double occ1 = occup(0);
+    DoubleVector occNew = DoubleVector::Constant(occup.size(), occ1);
 
     // create vector which contains the positions of the second occupation number
-    DoubleVector currOcc = DoubleVector::Zero(occ.size());
+    DoubleVector currOcc = DoubleVector::Zero(occup.size());
     unsigned int nCurrOcc = 0;
     double occ2 = 0.0;
-    for (unsigned int i = 1; i < occ.size(); i++) {
-        if (occ(i) != occ1) {
-            occ2 = occ(i);
+    for (unsigned int i = 1; i < occup.size(); i++) {
+        if (occup(i) != occ1) {
+            occ2 = occup(i);
             currOcc(i) = 1.0;
             nCurrOcc++;
         }

@@ -298,9 +298,9 @@ void Molecule::calculateOrbitalPositions(){
     OrbitalVector yPhi_Vec = r_y(Phi);
     OrbitalVector zPhi_Vec = r_z(Phi);
        
-    ComplexVector R_X = orbital::dot(Phi, xPhi_Vec);
-    ComplexVector R_Y = orbital::dot(Phi, yPhi_Vec);
-    ComplexVector R_Z = orbital::dot(Phi, zPhi_Vec);
+    ComplexVector R_X = mrcpp::dot(Phi, xPhi_Vec);
+    ComplexVector R_Y = mrcpp::dot(Phi, yPhi_Vec);
+    ComplexVector R_Z = mrcpp::dot(Phi, zPhi_Vec);
     
     this->OrbitalPositionsX = R_X;
     this->OrbitalPositionsY = R_Y;
