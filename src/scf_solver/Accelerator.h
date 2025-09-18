@@ -31,6 +31,7 @@
 #include "mrchem.h"
 
 #include "qmfunctions/qmfunction_fwd.h"
+#include "qmfunctions/Orbital.h"
 
 /** @class Acccelerator
  *

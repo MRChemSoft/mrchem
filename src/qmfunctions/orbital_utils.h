@@ -37,7 +37,7 @@ int compare_spin(const Orbital &phi_a, const Orbital &phi_b);
 int compare_occupation(const Orbital &phi_a, const Orbital &phi_b);
 
 void normalize(Orbital phi);
-OrbitalChunk get_my_chunk(OrbitalVector &Phi);
+// OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 void orthogonalize(double prec, Orbital &&phi, Orbital psi);
 
 OrbitalVector add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec = -1.0);
@@ -48,8 +48,6 @@ OrbitalVector param_copy(const OrbitalVector &Phi);
 
 OrbitalVector adjoin(OrbitalVector &Phi_a, OrbitalVector &Phi_b);
 OrbitalVector disjoin(OrbitalVector &Phi, int spin);
-
-OrbitalVector deep_copy_erase(OrbitalVector &Phi, std::map<int,int> to_erase);
 
 void save_orbitals(OrbitalVector &Phi, const std::string &file, int spin = -1, int text_format = 0);
 OrbitalVector load_orbitals(const std::string &file, int n_orbs = -1);
