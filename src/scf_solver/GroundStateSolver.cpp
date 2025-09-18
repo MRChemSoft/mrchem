@@ -331,12 +331,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
-                OrbitalVector Phi_n_copy = orbital::deep_copy(Phi_n);
-                OrbitalVector Phi_mom_copy = orbital::deep_copy(Phi_mom);
-                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n_copy, SPIN::Alpha);
-                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom_copy, SPIN::Alpha);
+                OrbitalVector Phi_n_beta = orbital::deep_copy(Phi_n);
+                OrbitalVector Phi_mom_beta = orbital::deep_copy(Phi_mom);
+                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n_beta, SPIN::Alpha);
+                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom_beta, SPIN::Alpha);
                 DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
-                DoubleVector occBeta = getNewOccupations(Phi_n_copy, Phi_mom_copy);
+                DoubleVector occBeta = getNewOccupations(Phi_n_beta, Phi_mom_beta);
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
@@ -346,11 +346,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
                 mol.printOrbitalPositions();
             }
         }
-
         // MOM: save orbitals of current iteration for next iteration
-        if (deltaSCFMethod == "MOM") {
+        if (deltaSCFMethod == "MOM")
             Phi_mom = orbital::deep_copy(Phi_n);
-        }
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
 
@@ -463,8 +461,8 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
     return diag;
 }
 
-/** @brief Determine new occupation vector according to MOM/IMOM procedure
- * 
+/** 
+ * @brief Determine new occupation vector according to MOM/IMOM procedure
  * @param Phi_n: orbitals of current iteration n.
  * @param Phi_mom: orbitals of last iteration n-1 (MOM) or first iteration (IMOM).
  * 
@@ -473,7 +471,7 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
  */
 DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
     DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
-    DoubleVector occup = orbital::get_occupations(Phi_mom);// get occupation numbers of the orbitals of the first iteration
+    DoubleVector occup = orbital::get_occupations(Phi_mom); // get occupation numbers of the orbitals of the first iteration
     double occ1 = occup(0);
     DoubleVector occNew = DoubleVector::Constant(occup.size(), occ1);
 
@@ -493,23 +491,20 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
     DoubleVector p = occOverlap.colwise().norm();
 
-    //print section
+    // debug print section
     print_utils::matrix(2, "MOM overlap matrix", overlap, 2);
     print_utils::vector(2, "MOM total overlap", p, 2);
 
     // sort by highest overlap
-    std::vector<std::pair<double, unsigned>> sortme;
-    for (unsigned int q = 0; q < p.size(); ++q) {
-        sortme.push_back(std::pair<double, unsigned>(p(q), q));
-    }
+    std::vector<std::pair<double, unsigned int>> sortme;
+    for (unsigned int q = 0; q < p.size(); q++)
+        sortme.push_back(std::pair<double, unsigned int>(p(q), q));
     std::stable_sort(sortme.begin(), sortme.end());
     std::reverse(sortme.begin(), sortme.end());
 
     // assign the second occupation number to orbitals with highest overlap
-    for (unsigned int q = 0; q < nCurrOcc; q++) {
+    for (unsigned int q = 0; q < nCurrOcc; q++)
         occNew(sortme[q].second) = occ2;
-    }
-    sortme.clear();
     return occNew;
 }
 
