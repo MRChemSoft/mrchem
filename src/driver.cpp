@@ -264,6 +264,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
     const auto &json_occ = json_scf["occupancies"];
+
     // save the orbitals for MOM/IMOM before the initial guess energy is calculated due to localization/diagonalization
     OrbitalVector Phi_mom;
     if (scf::guess_orbitals(json_guess, json_occ, mol)) {
@@ -404,71 +405,68 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     
     // Modify the occupancies, e.g. to introduce a core hole for DeltaSCF calculations of core binding energies   
     if (json_occ.size() > 0){
-      IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
-      DoubleVector core_occupancies;    // the occupancies associated with those orbitals
-      int nCH;                          // the number of orbitals whose occupancies will be modified
+        IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
+        DoubleVector core_occupancies;    // the occupancies associated with those orbitals
+        unsigned int nCH;                 // the number of orbitals whose occupancies will be modified
 
-      // In the restricted case, there is a one-to-one correspondance with the input file format
-      if (restricted){
-        nCH = json_occ.size();
-        core_orbitals = IntVector::Zero(nCH);
-        core_occupancies = DoubleVector::Zero(nCH);
+        // In the restricted case, there is a one-to-one correspondance with the input file format
+        if (restricted) {
+            nCH = json_occ.size();
+            core_orbitals = IntVector::Zero(nCH);
+            core_occupancies = DoubleVector::Zero(nCH);
 
-        for (int i = 0; i < nCH; i++){
-          if (json_occ[i]["orbital"] >= Np){
-            MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
-            return false;
-          }
-          if (json_occ[i]["occupancy"].size() == 2){
-            MSG_WARN("Occupancies for alpha and beta orbitals are added together for restricted calculations");
-          }
-          core_orbitals(i) = json_occ[i]["orbital"];
-          core_occupancies(i) = json_occ[i]["occupancy"][0];
-          double beta_occ = json_occ[i]["occupancy"][1];
-          core_occupancies(i) += beta_occ;
+            for (unsigned int i = 0; i < nCH; i++) {
+                if (json_occ[i]["orbital"] >= Np) {
+                    MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
+                    return false;
+                }
+                if (json_occ[i]["occupancy"].size() == 2)
+                    MSG_WARN("Occupancies for alpha and beta orbitals are added together for restricted calculations");
+                core_orbitals(i) = json_occ[i]["orbital"];
+                core_occupancies(i) = json_occ[i]["occupancy"][0];
+                double beta_occ = json_occ[i]["occupancy"][1];
+                core_occupancies(i) += beta_occ;
+            }
         }
-      }
       
-      // In the unrestricted case, we need to map the alpha and beta occupancies to the correct orbital number
-      else{
-        // the input number of orbitals
-        int nCH_in = json_occ.size();
-        // Accounting for alpha and beta
-        nCH = nCH_in * 2;
-        core_orbitals = IntVector::Zero(nCH);
-        core_occupancies = DoubleVector::Zero(nCH);
+        // In the unrestricted case, we need to map the alpha and beta occupancies to the correct orbital number
+        else {
+            // the input number of orbitals
+            unsigned int nCH_in = json_occ.size();
+            // Accounting for alpha and beta
+            nCH = nCH_in * 2;
+            core_orbitals = IntVector::Zero(nCH);
+            core_occupancies = DoubleVector::Zero(nCH);
 
-        // For each alpha orbital, set the orbital and take the first of the 2 occupancies
-        for (int i = 0; i < nCH_in; i++){
-          if (json_occ[i]["orbital"] >= Na){
-            MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
-            return false;
-          }
-          if (json_occ[i]["occupancy"].size() == 1){
-            MSG_ERROR("Error, occupancies for beta orbitals required for unrestricted calculations");
-            return false;
-          }
-          core_orbitals(i) = json_occ[i]["orbital"];
-          core_occupancies(i) = json_occ[i]["occupancy"][0];
+            // For each alpha orbital, set the orbital and take the first of the 2 occupancies
+            for (unsigned int i = 0; i < nCH_in; i++) {
+                if (json_occ[i]["orbital"] >= Na) {
+                    MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
+                    return false;
+                }
+                if (json_occ[i]["occupancy"].size() == 1) {
+                    MSG_ERROR("Error, occupancies for beta orbitals required for unrestricted calculations");
+                    return false;
+                }
+                core_orbitals(i) = json_occ[i]["orbital"];
+                core_occupancies(i) = json_occ[i]["occupancy"][0];
+            }
+
+            // For each beta orbital, find the corresponding orbital index and take and the second of the 2 occupancies
+            for (unsigned int i = 0; i < nCH_in; i++) {
+                core_orbitals(nCH_in + i) = Na + int(json_occ[i]["orbital"]);
+                core_occupancies(nCH_in + i) = json_occ[i]["occupancy"][1];
+            }
         }
+        // Retrieve the default occupancies, which we will then modify
+        DoubleVector default_occs = orbital::get_occupations(Phi);
+        
+        // Modify the default occupancies
+        for (unsigned int i = 0; i < nCH; i++)
+            default_occs[core_orbitals[i]] = core_occupancies[i];
 
-        // For each beta orbital, find the corresponding orbital index and take and the second of the 2 occupancies
-        for (int i = 0; i < nCH_in; i++){
-          core_orbitals(nCH_in + i) = Na + int(json_occ[i]["orbital"]);
-          core_occupancies(nCH_in + i) = json_occ[i]["occupancy"][1];
-        }
-      }
-
-      // Retrieve the default occupancies, which we will then modify
-      DoubleVector default_occs = orbital::get_occupations(Phi);
-    
-      // Modify the default occupancies
-      for (int i = 0; i < nCH; i++) {
-        default_occs[core_orbitals[i]] = core_occupancies[i];
-      }
-
-      // Update the occupancies
-      mrchem::orbital::set_occupations(Phi, default_occs);
+        // Update the occupancies
+        mrchem::orbital::set_occupations(Phi, default_occs);
     }
     
     Phi.distribute();

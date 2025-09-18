@@ -247,7 +247,7 @@ nlohmann::json Molecule::json() const {
     json_out["scf_energy"] = energy.json();
     json_out["orbital_energies"] = epsilon.json();
     json_out["orbital_positions"] = {};
-    for (auto i = 0; i < getOrbitalPositionsX().size(); i++) {
+    for (unsigned int i = 0; i < getOrbitalPositionsX().size(); i++) {
       nlohmann::json json_atom = {getOrbitalPositionsX()[i].real(), getOrbitalPositionsY()[i].real(), getOrbitalPositionsZ()[i].real()};
       json_out["orbital_positions"].push_back(json_atom);
     }
@@ -278,10 +278,10 @@ void Molecule::initCavity(const std::vector<mrcpp::Coord<3>> &coords,
     this->cavity = std::make_shared<Cavity>(coords, R, alphas, betas, sigmas);
 }
 
-
-// calculate the average orbital position, to eventually do similar for the spreads
+/**
+ * @brief Calculate the average position of each orbital
+ */
 void Molecule::calculateOrbitalPositions(){
-
     // need to work out how to define prec correctly - should be the final_prec?
     double prec = 1.0e-4;
 
@@ -293,7 +293,6 @@ void Molecule::calculateOrbitalPositions(){
     RankZeroOperator &r_z = r[2];
 
     auto &Phi = getOrbitals();
-    
     OrbitalVector xPhi_Vec = r_x(Phi);
     OrbitalVector yPhi_Vec = r_y(Phi);
     OrbitalVector zPhi_Vec = r_z(Phi);
@@ -305,16 +304,15 @@ void Molecule::calculateOrbitalPositions(){
     this->OrbitalPositionsX = R_X;
     this->OrbitalPositionsY = R_Y;
     this->OrbitalPositionsZ = R_Z; 
-    
     r_x.clear();
     r_y.clear();
     r_z.clear();
-    
 }
 
-// print the average orbital position, to eventually do similar for the spreads
+/**
+ * @brief Print the average position of each orbital to the output
+ */
 void Molecule::printOrbitalPositions() const{
-
     auto pprec = mrcpp::Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
     auto w1 = 5;
@@ -331,7 +329,7 @@ void Molecule::printOrbitalPositions() const{
     mrcpp::print::header(0, "Orbital Positions");
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');
-    for (auto i = 0; i < getOrbitalPositionsX().size(); i++) {
+    for (unsigned int i = 0; i < getOrbitalPositionsX().size(); i++) {
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
         DoubleVector orbitalPositionsVec = DoubleVector::Zero(3);
@@ -341,7 +339,6 @@ void Molecule::printOrbitalPositions() const{
         print_utils::vector(0, o_txt.str(), orbitalPositionsVec, pprec);
     }
     mrcpp::print::separator(0, '=', 2);
-
 }
 
 } // namespace mrchem
