@@ -452,12 +452,12 @@ void orbital::orthogonalize(double prec, OrbitalVector &Phi) {
     }
 }
 
-// OrbitalChunk orbital::get_my_chunk(OrbitalVector &Phi) {
-//     OrbitalChunk chunk;
-//     for (int i = 0; i < Phi.size(); i++)
-//         if (mrcpp::mpi::my_func(i)) chunk.push_back(std::make_tuple(i, Orbital(Phi[i])));
-//     return chunk;
-// }
+OrbitalChunk orbital::get_my_chunk(OrbitalVector &Phi) {
+    OrbitalChunk chunk;
+    for (int i = 0; i < Phi.size(); i++)
+        if (mrcpp::mpi::my_func(i)) chunk.push_back(std::make_tuple(i, Orbital(Phi[i])));
+    return chunk;
+}
 
 /** @brief Orthogonalize the Phi orbitals against all orbitals in Psi.
  *  orthogonal spins means orthogonal orbitals.
@@ -715,10 +715,10 @@ int orbital::get_multiplicity(const OrbitalVector &Phi) {
  *
  */
 double orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
-    double nElectrons = 0;
+    double nElectrons = 0.0;
     for (auto &phi_i : Phi) {
         if (spin == SPIN::Paired) {
-            nElectrons += (int)phi_i.occ() + 0.5; // nearest integer
+            nElectrons += phi_i.occ();
         } else if (spin == SPIN::Alpha) {
             if (phi_i.spin() == SPIN::Paired) {nElectrons += 0.5 * phi_i.occ();}
             else if (phi_i.spin() == SPIN::Alpha) {nElectrons += phi_i.occ();}
