@@ -687,10 +687,10 @@ int orbital::get_multiplicity(const OrbitalVector &Phi) {
  *
  */
 double orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
-    double nElectrons = 0;
+    double nElectrons = 0.0;
     for (auto &phi_i : Phi) {
         if (spin == SPIN::Paired) {
-            nElectrons += (int)phi_i.occ() + 0.5; // nearest integer
+            nElectrons += phi_i.occ();
         } else if (spin == SPIN::Alpha) {
             if (phi_i.spin() == SPIN::Paired) {nElectrons += 0.5 * phi_i.occ();}
             else if (phi_i.spin() == SPIN::Alpha) {nElectrons += phi_i.occ();}
