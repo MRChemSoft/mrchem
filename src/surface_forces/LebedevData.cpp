@@ -47,7 +47,7 @@ auto lebedev(size_t N) -> std::tuple<Eigen::VectorXd, Eigen::Matrix3Xd> {
 
     if (lb != available.cbegin()) {
         auto prec = lb - 1;
-        if (std::abs<int>(closest - N) > std::abs<int>(*prec - N)) closest = *prec;
+        if (std::abs<int>(closest - (int)N) > std::abs<int>(*prec - (int)N)) closest = *prec;
     }
 
     switch (closest) {
