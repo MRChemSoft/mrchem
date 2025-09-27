@@ -97,12 +97,11 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     Eigen::MatrixXd out_libxc = Eigen::MatrixXd::Zero(nPts, nOut);
     Eigen::VectorXd out_sxc   = Eigen::VectorXd::Zero(nPts);
     Eigen::VectorXd exc, vxc, sxc, xxc, yxc, zxc, sigma, inp_row, out_row;
-    
 
 
 
     if (Factory::libxc) {
-        for (size_t i; i < libxc_objects.size(); i++) {
+        for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
                 case XC_FAMILY_LDA:
                 case XC_FAMILY_HYB_LDA:
@@ -135,12 +134,12 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     break;
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
-                    exc = Eigen::VectorXd::Zero(nPts);
-                    vxc = Eigen::VectorXd::Zero(nPts);
-                    sxc = Eigen::VectorXd::Zero(nPts);
-                    xxc = Eigen::VectorXd::Zero(nPts);
-                    yxc = Eigen::VectorXd::Zero(nPts);
-                    zxc = Eigen::VectorXd::Zero(nPts);
+                    exc   = Eigen::VectorXd::Zero(nPts);
+                    vxc   = Eigen::VectorXd::Zero(nPts);
+                    sxc   = Eigen::VectorXd::Zero(nPts);
+                    xxc   = Eigen::VectorXd::Zero(nPts);
+                    yxc   = Eigen::VectorXd::Zero(nPts);
+                    zxc   = Eigen::VectorXd::Zero(nPts);
                     sigma = Eigen::VectorXd::Zero(nPts);
                     sigma = inp.col(1) * inp.col(1) + inp.col(2) * inp.col(2) + inp.col(3) * inp.col(3);
                     xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(),
@@ -160,6 +159,9 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                         out_libxc(j, 4) += zxc[j] * libxc_coeffs[i];
                         out_sxc[j]      += sxc[j];
                     }
+
+                    // cout .size of inp.col & inp_row (same == nInp) & lib obj size (1) & nPts
+
                     break;
                 default:
                 break;
@@ -177,9 +179,35 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             }
             for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
             if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+            for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); // blir ikke out_row overskrevet for hvert punkt??
         }
     }
+
+
+    // for (size_t k = 0; k < nInp; k++) {
+    //     for (size_t l = 0; l < nPts; l++) {
+    //         if (abs(inp(l, k) - inp_row(k)) < 1e-10 && abs(inp_row(k)) > 1e-15) {
+    //             std::cout << "XCFun inp row index: " << k << " = Libxc inp matrix index (row, col): " << l << ", " << k << " XCFun inp: " << inp_row(k) << std::endl;
+    //         } 
+    //     }
+    // }
+
+    // std::cout << std::endl;
+
+    // std::cout << "----------------------" << std::endl << 
+    // "XCFun inp row           : " << inp_row(0) << std::endl <<
+    // "LibXC inp row inp(0, 0) : " << inp(0, 0) << std::endl <<
+    // "LibXC inp row inp(0, 1) : " << inp(0, 1) << std::endl <<
+    // "LibXC inp row inp(0, 2) : " << inp(0, 2) << std::endl <<
+    // "LibXC inp row inp(1, 0) : " << inp(1, 0) << std::endl <<
+    // "LibXC inp row inp(1, 1) : " << inp(1, 1) << std::endl <<
+    // "LibXC inp row inp(1, 2) : " << inp(1, 2) << std::endl <<
+    // "LibXC inp row inp(2, 0) : " << inp(2, 0) << std::endl <<
+    // "LibXC inp row inp(2, 1) : " << inp(2, 1) << std::endl <<
+    // "LibXC inp row inp(2, 2) : " << inp(2, 2) << std::endl <<
+    // "----------------------" << std::endl;
+
+    
 
 
     // // !! Debug !!
@@ -205,6 +233,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     // dy /= nPts;
     // dz /= nPts;
 
+    // std::cout << "Cutoff: " << cutoff << std::endl;
     // std::cout << "SXC avg dev: " << dx << " " << dy << " " << dz << std::endl;
 
     // for (size_t i = 0; i < nOut; i++) {
@@ -228,24 +257,26 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     //     std::cout << "Current max i: " << max_i << std::endl <<
     //     "----------------------" << std::endl <<
     //     "Input: " << std::endl <<
-    //     "    Density:   " << inp(max_i, 0) << std::endl <<
-    //     "    dr/dx:     " << inp(max_i, 1) << std::endl <<
-    //     "    dr/dy:     " << inp(max_i, 2) << std::endl <<
-    //     "    dr/dz:     " << inp(max_i, 3) << std::endl <<
-    //     "    sigma   :  " << sigma[max_i] << std::endl <<
-    //     "Output Libxc: " << std::endl <<
-    //     "    EXC:      " << out_libxc(max_i, 0) << std::endl <<
-    //     "    VXC:      " << out_libxc(max_i, 1) << std::endl <<
-    //     "    SXC:      " << out_libxc(max_i, 1) << std::endl <<
-    //     "    dEXC/dx:  " << out_libxc(max_i, 2) << std::endl <<
-    //     "    dEXC/dy:  " << out_libxc(max_i, 3) << std::endl <<
-    //     "    dEXC/dz:  " << out_libxc(max_i, 4) << std::endl <<
-    //     "Output XCFun: " << std::endl <<
-    //     "    EXC:      " << out(max_i, 0) << std::endl <<
-    //     "    VXC:      " << out(max_i, 1) << std::endl <<
-    //     "    dEXC/dx:  " << out(max_i, 2) << std::endl <<
-    //     "    dEXC/dy:  " << out(max_i, 3) << std::endl <<
-    //     "    dEXC/dz:  " << out(max_i, 4) << std::endl <<
+    //     "    Density   : " << inp(max_i, 0) << std::endl <<
+    //     "    dr/dx     : " << inp(max_i, 1) << std::endl <<
+    //     "    dr/dy     : " << inp(max_i, 2) << std::endl <<
+    //     "    dr/dz     : " << inp(max_i, 3) << std::endl <<
+    //     "    sigma     : " << sigma[max_i] << std::endl <<
+    //     "Output Libxc  : " << std::endl <<
+    //     "    EXC       : " << out_libxc(max_i, 0) << std::endl <<
+    //     "    VXC       : " << out_libxc(max_i, 1) << std::endl <<
+    //     "    SXC       : " << sxc[max_i] << std::endl <<
+    //     "    SXC (est) : " << out_libxc(max_i, 2) * out_libxc(max_i, 2) + out_libxc(max_i, 3) * out_libxc(max_i, 3) +
+    //                           out_libxc(max_i, 4) * out_libxc(max_i, 4) << std::endl <<
+    //     "    dEXC/dx   : " << out_libxc(max_i, 2) << std::endl <<
+    //     "    dEXC/dy   : " << out_libxc(max_i, 3) << std::endl <<
+    //     "    dEXC/dz   : " << out_libxc(max_i, 4) << std::endl <<
+    //     "Output XCFun  : " << std::endl <<
+    //     "    EXC       : " << out(max_i, 0) << std::endl <<
+    //     "    VXC       : " << out(max_i, 1) << std::endl <<
+    //     "    dEXC/dx   : " << out(max_i, 2) << std::endl <<
+    //     "    dEXC/dy   : " << out(max_i, 3) << std::endl <<
+    //     "    dEXC/dz   : " << out(max_i, 4) << std::endl <<
     //     "----------------------" << std::endl;
     // }
     // std::cout << std::endl;

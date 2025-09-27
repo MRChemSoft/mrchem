@@ -65,39 +65,35 @@ std::vector<int> Factory::mapFunctionalName(const std::string &name) const {
 }
 
 void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<double> &coeffs) {
+    std::cout << "Name used in MapFunctionalName: " << name << std::endl;
     if (name == "pbe0") {
-        ids = {XC_GGA_X_PBE, XC_GGA_C_PBE}; // Both versions are the exact same
-        coeffs = {0.75, 1.0};
-        // ids = {XC_HYB_GGA_XC_PBEH};
-        // coeffs = {1.0};
+        // ids = {XC_GGA_X_PBE, XC_GGA_C_PBE}; // Both versions are the exact same
+        // coeffs = {0.75, 1.0};
+        ids = {XC_HYB_GGA_XC_PBEH};
+        coeffs = {1.0};
         return;
-    } else if (name == "slaterx") {
+    } else if (name == "slaterx" || name == "SLATERX") {
         ids = {XC_LDA_X};
         coeffs = {1.0};
         return;
-    } else if (name == "BECKEX") {
-        std::cout << "!!!!BECKEX!!!!" << std::endl;
+    } else if (name == "BECKEX" || name == "beckex") {
         ids = {XC_GGA_X_B88};
         coeffs = {1.0};
         return;
-    } else if (name == "svwn5c") {
-        ids = {XC_LDA_C_VWN, XC_LDA_X};
-        coeffs = {1.0, -1.0};
+    } else if (name == "svwn5c" || name == "VWN5C") {
+        ids = {XC_LDA_C_VWN};
+        coeffs = {1.0};
         return;
     } else if (name == "svwn5") {
         ids = {XC_LDA_C_VWN, XC_LDA_X};
         coeffs = {1.0, 1.0};
         return;
     } else if (name == "b3p86") {
-        // ids = {XC_HYB_GGA_XC_B3P86_NWCHEM};
-        ids = {XC_HYB_GGA_XC_B3P86}; // Closest to xcfun
+        ids = {XC_HYB_GGA_XC_B3P86}; 
         coeffs = {1.0};
-        // ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86, XC_LDA_C_PZ};
-        // coeffs = {0.80, 0.72, 1.0, 0.81, -0.81};
         return;
     } else if (name == "bpw91") {
         ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_PW91};
-        // coeffs = {1.0, 1.0, 1.0};
         coeffs = {.5, .5, 1.0}; // Closest
         return;
     } else {std::cout << "NO FUNC MAPPED" << std::endl;}
@@ -148,7 +144,8 @@ std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
     setLibxc(libxc);
-    
+    setFunctional("BECKEX", 1.0);
+
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
     bool lda = not(gga);
@@ -181,13 +178,13 @@ std::unique_ptr<MRDFT> Factory::build() {
 
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
 
-    // libxc_coeffs = {1., -0.006, 1.};
     func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
 
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
-    func_p->setDensityCutoff(cutoff);
+    // func_p->setDensityCutoff(cutoff);
+    func_p->setDensityCutoff(0.000001);
 
     auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
 

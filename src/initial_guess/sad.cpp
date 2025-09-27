@@ -87,7 +87,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
-    xc_factory.setFunctional("VWN5C", 1.0);
+    // xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
     MomentumOperator p(D_p);
@@ -170,7 +170,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
-    xc_factory.setFunctional("VWN5C", 1.0);
+    // xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
     MomentumOperator p(D_p);
