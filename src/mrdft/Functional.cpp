@@ -185,7 +185,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
         }
     }
 
-
     // for (size_t k = 0; k < nInp; k++) {
     //     for (size_t l = 0; l < nPts; l++) {
     //         if (abs(inp(l, k) - inp_row(k)) < 1e-10 && abs(inp_row(k)) > 1e-15) {
