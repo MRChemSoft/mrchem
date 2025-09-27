@@ -157,11 +157,8 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                         out_libxc(j, 2) += xxc[j] * libxc_coeffs[i];
                         out_libxc(j, 3) += yxc[j] * libxc_coeffs[i];
                         out_libxc(j, 4) += zxc[j] * libxc_coeffs[i];
-                        out_sxc[j]      += sxc[j];
+                        out_sxc[j]      += sxc[j]; // only for debugging purposes
                     }
-
-                    // cout .size of inp.col & inp_row (same == nInp) & lib obj size (1) & nPts
-
                     break;
                 default:
                 break;
@@ -180,6 +177,11 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
             if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
             for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); // blir ikke out_row overskrevet for hvert punkt??
+            // if (calc) { // This to make out be 0 when calc = false?
+            //     for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+            //     xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+            //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); // blir ikke out_row overskrevet for hvert punkt??
+            // }
         }
     }
 
