@@ -176,11 +176,11 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             }
             for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
             if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); // blir ikke out_row overskrevet for hvert punkt??
+            for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); 
             // if (calc) { // This to make out be 0 when calc = false?
             //     for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
             //     xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); // blir ikke out_row overskrevet for hvert punkt??
+            //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
             // }
         }
     }
