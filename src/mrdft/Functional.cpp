@@ -74,7 +74,6 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     return out;
 }
 
-
 /** @brief Run a collection of grid points through XCFun
  *
  * Each column corresponds to one grid point.
