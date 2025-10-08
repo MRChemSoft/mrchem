@@ -182,6 +182,9 @@ def _reaction_operator_handler(user_dict, rsp=False):
 def write_scf_guess(user_dict, wf_dict):
     guess_str = user_dict["SCF"]["guess_type"].lower()
     guess_type = guess_str.split("_")[0]
+    nmix = user_dict["SCF"]["initial_mixing_steps"]
+    alpha_mix = user_dict["SCF"]["initial_mixing_step_size"]
+    nao_directory = user_dict["SCF"]["nao_directory"]
     zeta = 0
 
     scf_dict = user_dict["SCF"]
@@ -249,7 +252,11 @@ def write_scf_guess(user_dict, wf_dict):
         "file_CUBE_p": f"{vector_dir}CUBE_p_vector.json",
         "file_CUBE_a": f"{vector_dir}CUBE_a_vector.json",
         "file_CUBE_b": f"{vector_dir}CUBE_b_vector.json",
+        "initial_mixing_steps": nmix,
+        "initial_mixing_step_size": alpha_mix,
     }
+    if nao_directory != "none":
+        guess_dict["nao_directory"] = nao_directory
     return guess_dict
 
 
@@ -497,6 +504,187 @@ def write_rsp_solver(user_dict, wf_dict, d):
         "orth_prec": 1.0e-14,
     }
     return solver_dict
+
+
+def parse_psppar(filename):
+    """
+    Parses a PSPPAR pseudopotential file and returns the data as a dictionary.
+    
+    Args:
+        filename (str): Path to the PSPPAR file.
+
+    Returns:
+        dict: Parsed pseudopotential data.
+    """
+    psppar_data = dict()
+    psppar_data["local"] = dict()
+    psppar_data["nonlocal"] = dict()
+    
+    with open(filename, 'r') as file:
+        # Skip the first line
+        next(file)
+        
+        # Read zion and zeff
+        line = file.readline().strip()
+        zion = float(line.split()[0])
+        zeff = float(line.split()[1])
+        psppar_data['zion'] = zion
+        psppar_data['zeff'] = zeff
+        
+        # Skip the next line
+        next(file)
+        
+        # Read rloc, nloc, and c coefficients
+        line = file.readline().strip()
+        tokens = line.split()
+        rloc = float(tokens[0])
+        nloc = int(tokens[1])
+        c_coefficients = list(map(float, tokens[2:2+nloc]))
+        
+        alpha_pp = 1.0 / (sqrt(2.0) * rloc)
+        psppar_data['local']['rloc'] = rloc
+        psppar_data['local']['alpha_pp'] = alpha_pp
+        psppar_data['local']['nloc'] = nloc
+        psppar_data['local']['c'] = c_coefficients
+        
+        # Read nsep
+        line = file.readline().strip()
+        nsep = int(line.split()[0])
+        if nsep < 0 or nsep > 4:
+            raise ValueError("Error: nsep must be between 0 and 4.")
+        psppar_data['nonlocal']['nsep'] = nsep
+        
+        # Initialize containers for projectors
+        rl = []
+        h = []
+        dim_h = []
+
+        
+        for l in range(nsep):
+            # Read projector radii and dimension
+            line = file.readline().strip()
+            tokens = line.split()
+            rl_l = float(tokens[0])
+            dim_h_l = int(tokens[1])
+            
+            rl.append(rl_l)
+            dim_h.append(dim_h_l)
+            
+            # Initialize h matrix
+            h_matrix = []
+            for _ in range(dim_h_l):
+                h_matrix.append([0.0] * dim_h_l)
+            # convert h_matrix to list of lists
+
+            for i in range(dim_h_l):
+                h_matrix[0][i] = float(line.split()[2 + i])
+                h_matrix[i][0] = h_matrix[0][i]
+            
+            # Fill in the upper triangle of the h matrix
+            for i in range(1, dim_h_l):
+                line = file.readline().strip()
+                values = list(map(float, line.split()))
+                for j, value in enumerate(values):
+                    h_matrix[i][i + j] = value
+                    h_matrix[i + j][i] = value
+            
+            # h_matrix = h_matrix.tolist()
+            h.append(h_matrix)
+            
+            # Skip irrelevant SOC lines if l > 0
+            if l > 0:
+                for _ in range(dim_h_l):
+                    file.readline()
+            
+        # check if file is at the end
+        line = file.readline()
+        if line: # try to read rcore and qcore
+            words = line.split()
+            if len(words) >= 2:
+                rcore = float(words[0])
+                qcore = float(words[1])
+                psppar_data['nlcc'] = dict()
+                psppar_data['nlcc']['rcore'] = rcore
+                psppar_data['nlcc']['qcore'] = qcore
+            
+        
+        psppar_data['nonlocal']['rl'] = rl
+        psppar_data['nonlocal']['dim_h'] = dim_h
+        psppar_data['nonlocal']['h'] = h
+            
+    return psppar_data
+
+
+def write_pseudo_potential(user_dict, mol_dict):
+    import json
+
+    pp_dict_out = {
+        "use_pp": False,
+        "pp_prec": user_dict["Pseudopotential"]["pp_prec"],
+    }
+
+    # if "Pseudopotential" not in user_dict:
+    #     return []
+
+    pp_dict = json.loads(user_dict['Pseudopotential']['pp_files'])
+
+    # loop over keys in pp_dict and convert them to lower case
+    pp_dict = {k.lower(): v for k, v in pp_dict.items()}
+    all_elements = {k.lower() for k in user_dict["Elements"]}
+
+    int_keys = []
+    # check if all keys in pp_dict are valid elements and collect the integer keys
+    for key in pp_dict.keys():
+        if key not in all_elements:
+            try:
+                int_keys.append(int(key))
+            except ValueError:
+                raise RuntimeError(
+                    f"Invalid key in pseudopotential dictionary (neither a numeric value or an element): {key}"
+                )
+
+    nat = len(mol_dict["coords"])
+    atomNames = []
+    atomNamesSet = set()
+    for atom in mol_dict["coords"]:
+        atomNames.append(atom["atom"])
+        atomNamesSet.add(atom["atom"])
+    
+    pps = []
+    for i in range(nat):
+        key = ''
+        if i in int_keys:
+            key = str(i)
+        # check if the key is an element
+        elif atomNames[i] in pp_dict.keys():
+            key = atomNames[i]
+        # if none of the above, all electron calculation for atom i
+        else:
+            pp = {
+                "use_pp": False,
+            }
+            pps.append(pp)
+        
+        if key != "":
+            if pp_dict[key].lower() == "none" or pp_dict[key].lower() == "":
+                pp = {
+                    "use_pp": False,
+                }
+            else:
+                pp = {
+                    "use_pp": True,
+                    "file": pp_dict[key],
+                }
+                pp_dict_out["use_pp"] = True
+                # temp_string = json.dumps(temp_pp, indent=4, cls=NumpyEncoder)
+                # print("Parsed pseudopotential for element:", key, "\n \n")
+                # print(temp_string)
+                # print("\n \n \n")
+                pp['pseuodopotential'] = parse_psppar(pp["file"])
+            pps.append(pp)
+    # print(pps)
+    pp_dict_out["pp_list"] = pps
+    return pp_dict_out
 
 
 def parse_wf_method(user_dict):

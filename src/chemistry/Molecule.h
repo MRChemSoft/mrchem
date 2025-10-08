@@ -85,7 +85,38 @@ public:
     mrcpp::Coord<3> calcCenterOfMass() const;
     mrcpp::Coord<3> calcCenterOfCharge() const;
 
+    /**
+     * @brief get all nuclei
+     */
     auto &getNuclei() { return this->nuclei; }
+
+    /**
+     * @brief get_pseudo_potential_nuclei
+     */
+    Nuclei getPseudoPotentialNuclei();
+
+
+    /**
+     * @brief return true if the molecule has a pseudopotential, false otherwise
+     */
+    bool hasPseudopotential() const;
+
+    /**
+     * @brief return true if the molecule has a NLCC pseudopotential, false otherwise
+     */
+    bool hasNLCCPseudopotential() const;
+
+    /**
+     * @brief return trun if the molecule has a pseudopotential with projectors, false otherwise
+     */
+    bool hasProjectorPseudopotential() const;
+
+    /**
+     * @brief get all electron nuclei
+     */
+    Nuclei getAllElectronNuclei();
+
+
     auto &getOrbitals() { return *this->orbitals_0; }
     auto &getOrbitalsX() { return *this->orbitals_x; }
     auto &getOrbitalsY() { return *this->orbitals_y; }

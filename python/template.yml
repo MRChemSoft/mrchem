@@ -329,6 +329,24 @@ sections:
           Point-like (numerical smoothing): HFYGB (default), parabola or minimal.
           Finite models (physical smoothing): Gaussian or Homogeneous sphere
           Finite models are derived from nuclear RMS radius, Visscher (1997)
+  - name: Pseudopotential
+    docstring: |
+      Define the pseudopotentials.
+    keywords:
+      - name: pp_files
+        type: str
+        docstring: |
+          Json string of pseudopotential files. The key can be the element symbol or a number.
+          When the key is an element symbol, all atoms of that element will use the given pseudopotential.
+          When the key is a number (index is 1 based), the corresponding atom will use the given pseudopotential.
+          When the value is an empty string, an all electron calculation will 
+          be performed for the corresponding atom or element.
+        default: '{}'
+      - name: pp_prec
+        type: float
+        default: user['world_prec']
+        docstring: |
+          Precision parameter used in construction of pseudopotentials.
   - name: ZORA
     docstring: |
       Define required parameters for the ZORA Hamiltonian.
@@ -714,7 +732,8 @@ sections:
         default: sad_gto
         predicates:
           - value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz',
-            'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']
+            'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube',
+            'nao']
         docstring: |
           Type of initial guess for ground state orbitals.
           ``chk`` restarts a previous calculation which was dumped using the
@@ -731,6 +750,24 @@ sections:
           basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic
           Densities Hamiltonian, respectively.
           ``cube`` will start from orbitals saved in cubefiles from external calculations.
+          ``nao`` will start from orbitals saved in NAO format from external calculations. 
+          It also allows for some mixing iterations to converge the initial guess within the
+          nao basis.
+      - name: nao_directory
+        type: str
+        default: none
+        docstring: |
+          Directory where NAO orbitals are stored for mrchem calculation.
+      - name: initial_mixing_steps
+        type: int
+        default: 4
+        docstring: |
+          Number of mixing iterations to converge the initial guess within the nao basis.
+      - name: initial_mixing_step_size
+        type: float
+        default: 0.4
+        docstring: |
+          Step size for the mixing iterations to converge the initial guess within the nao basis.
       - name: write_checkpoint
         type: bool
         default: false

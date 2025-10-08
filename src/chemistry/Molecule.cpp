@@ -86,8 +86,59 @@ void Molecule::initPerturbedOrbitals(bool dynamic) {
 /** @brief Return number of electrons */
 int Molecule::getNElectrons() const {
     auto totZ = 0;
-    for (auto i = 0; i < getNNuclei(); i++) totZ += getNuclei()[i].getElement().getZ();
+    for (auto i = 0; i < getNNuclei(); i++) totZ += getNuclei()[i].getCharge();
     return totZ - this->charge;
+}
+
+/** @brief Get all-electron nuclei */
+Nuclei Molecule::getAllElectronNuclei() {
+    Nuclei nuclei_ae;
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (!nuc.hasPseudopotential()) nuclei_ae.push_back(nuc);
+    }
+    return nuclei_ae;
+}
+
+/** @brief Check if molecule has pseudopotential */
+bool Molecule::hasPseudopotential() const {
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) return true;
+    }
+    return false;
+}
+
+/** @brief Check if molecule has NLCC pseudopotential */
+bool Molecule::hasNLCCPseudopotential() const {
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) {
+            if (nuc.getPseudopotentialData()->getHasNlcc()) return true;
+        }
+    }
+    return false;
+}
+
+/** @brief Check if molecule has projector pseudopotential */
+bool Molecule::hasProjectorPseudopotential() const {
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) {
+            if (nuc.getPseudopotentialData()->getNsep() > 0) return true;
+        }
+    }
+    return false;
+}
+
+/** @brief Get pseudo-potential nuclei */
+Nuclei Molecule::getPseudoPotentialNuclei() {
+    Nuclei nuclei_pp;
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) nuclei_pp.push_back(nuc);
+    }
+    return nuclei_pp;
 }
 
 /** @brief Compute nuclear center of mass */
