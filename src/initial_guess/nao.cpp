@@ -127,7 +127,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
 
     // Compute XC density
     Density &rho_xc = XC.getDensity(DensityType::Total);
-    // mrcpp::cplxfunc::deep_copy(rho_j, rho_j);
+    // mrcpp::deep_copy(rho_j, rho_j);
 
     std::shared_ptr<NuclearOperator> V_nuc;
     std::shared_ptr<ProjectorOperator> P;
@@ -187,8 +187,8 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
         // Compute Fock matrix
         mrcpp::print::header(2, "Diagonalizing Fock matrix");
 
-        mrcpp::cplxfunc::deep_copy(rho_j, rho_new);
-        mrcpp::cplxfunc::deep_copy(rho_xc, rho_new);
+        mrcpp::deep_copy(rho_j, rho_new);
+        mrcpp::deep_copy(rho_xc, rho_new);
 
         V.setup(prec);
 
@@ -208,7 +208,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
             std::cout << "Initial LDA energy: " << e_tot << std::endl;
             mrcpp::print::time(1, "Computing nao energy", t_energy);
         }
-        
+
         Timer t1;
         ComplexMatrix f_tilde = kin_and_nuc_mat + V(Psi, Psi);
         ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
@@ -269,40 +269,40 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
         atomic_densities.push_back(atomic_density);
     }
 
+    int N_nucs = nucs.size();
     for (int i = 0; i < nucs.size(); i++) {
+        if (mrcpp::mpi::wrk_rank != i % mrcpp::mpi::wrk_size) continue;
 
-        if (mrcpp::my_orb(i)) {
-            bool need_rescale = nucs[i].getCharge() != nucs[i].getAtomicNumber();
-            mrcpp::ComplexFunction atomic_density_mw;
+        bool need_rescale = nucs[i].getCharge() != nucs[i].getAtomicNumber();
+        mrcpp::CompFunction<3> atomic_density_mw;
 
-            if (need_rescale) {
-                double cm = nucs[i].getPseudopotentialData()->getMaxRpp() * .5;
-                double k = 10;
-                double temp = - (1.0 / (1.0 + std::exp(cm * k)));
-                mrcpp::Coord<3> nucPos = nucs[i].getCoord();
-                auto rho_analytic = [atomic_densities, nucPos, cm, k, i, temp](const mrcpp::Coord<3> &r) {
-                    double rr = std::sqrt((r[0] - nucPos[0]) * (r[0] - nucPos[0])
-                        + (r[1] - nucPos[1]) * (r[1] - nucPos[1])
-                        + (r[2] - nucPos[2]) * (r[2] - nucPos[2]));
-                    return atomic_densities[i].evalfLeftNoRightZero(rr) * ((1.0 / (1.0 + std::exp(-k * (rr - cm)))) + temp);
-                };
-                mrcpp::cplxfunc::project(atomic_density_mw, rho_analytic, mrcpp::NUMBER::Real, prec);
-                ComplexDouble integral = atomic_density_mw.integrate();
-                double rescale = nucs[i].getCharge() / integral.real();
-                // std::cout << "rescale: " << rescale << " integral: " << integral.real() << std::endl;
-                atomic_density_mw.rescale(rescale);
-            } else {
-                mrcpp::Coord<3> nucPos = nucs[i].getCoord();
-                auto rho_analytic = [atomic_densities, nucPos, i](const mrcpp::Coord<3> &r) {
-                    double rr = std::sqrt((r[0] - nucPos[0]) * (r[0] - nucPos[0])
-                        + (r[1] - nucPos[1]) * (r[1] - nucPos[1])
-                        + (r[2] - nucPos[2]) * (r[2] - nucPos[2]));
-                    return atomic_densities[i].evalfLeftNoRightZero(rr);
-                };
-                mrcpp::cplxfunc::project(atomic_density_mw, rho_analytic, mrcpp::NUMBER::Real, prec);
-            }
-            rho_loc.add(1.0, atomic_density_mw);
+        if (need_rescale) {
+            double cm = nucs[i].getPseudopotentialData()->getMaxRpp() * .5;
+            double k = 10;
+            double temp = - (1.0 / (1.0 + std::exp(cm * k)));
+            mrcpp::Coord<3> nucPos = nucs[i].getCoord();
+            auto rho_analytic = [atomic_densities, nucPos, cm, k, i, temp](const mrcpp::Coord<3> &r) {
+                double rr = std::sqrt((r[0] - nucPos[0]) * (r[0] - nucPos[0])
+                                      + (r[1] - nucPos[1]) * (r[1] - nucPos[1])
+                                      + (r[2] - nucPos[2]) * (r[2] - nucPos[2]));
+                return atomic_densities[i].evalfLeftNoRightZero(rr) * ((1.0 / (1.0 + std::exp(-k * (rr - cm)))) + temp);
+            };
+            mrcpp::project(atomic_density_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(rho_analytic), prec);
+            ComplexDouble integral = atomic_density_mw.integrate();
+            double rescale = nucs[i].getCharge() / integral.real();
+            // std::cout << "rescale: " << rescale << " integral: " << integral.real() << std::endl;
+            atomic_density_mw.rescale(rescale);
+        } else {
+            mrcpp::Coord<3> nucPos = nucs[i].getCoord();
+            auto rho_analytic = [atomic_densities, nucPos, i](const mrcpp::Coord<3> &r) {
+                double rr = std::sqrt((r[0] - nucPos[0]) * (r[0] - nucPos[0])
+                                      + (r[1] - nucPos[1]) * (r[1] - nucPos[1])
+                                      + (r[2] - nucPos[2]) * (r[2] - nucPos[2]));
+                return atomic_densities[i].evalfLeftNoRightZero(rr);
+            };
+            mrcpp::project(atomic_density_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(rho_analytic), prec);
         }
+        rho_loc.add(1.0, atomic_density_mw);
     }
     density::allreduce_density(prec, rho, rho_loc);
 }
@@ -329,7 +329,7 @@ public:
             rnormp = {1, 0, 0};
         }
         return radial_function->evalfLeftNoRightZero(rnorm) * spherical_harmonic(rnormp, 1.0);
-        
+
     }
     protected:
     // bool isVisibleAtScale(int scale, int nQuadPts) const override {
@@ -416,7 +416,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                     return std::exp(- 0.5 * normr * normr / (sigma * sigma) ) * spherical_harmonic(rprime, normr) / normr;
                 };
 
-                mrcpp::cplxfunc::project(orb_mw, gauss, mrcpp::NUMBER::Real, prec);
+                mrcpp::project(orb_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
                 sigma = 0.6;
 
                 auto gauss2 = [pos, sigma, spherical_harmonic](const std::array<double, 3> &r) -> double {
@@ -425,14 +425,14 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                     double gaussNormalization = 1.0 / std::pow(2.0 * M_PI * sigma * sigma, 1.5);
                     return std::exp(- 0.5 * normr * normr / (sigma * sigma) ) * spherical_harmonic(rprime, normr) / normr;
                 };
-                mrcpp::cplxfunc::project(orb_mw, gauss2, mrcpp::NUMBER::Real, prec);
+                mrcpp::project(orb_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss2), prec);
 
-                mrcpp::cplxfunc::project(orb_mw, orb, mrcpp::NUMBER::Real, prec);
+                mrcpp::project(orb_mw, orb, prec);
                 // std::cout << "n nodes " << orb_mw.getNNodes(mrcpp::NUMBER::Total) << std::endl;
                 double nrm1 = orb_mw.norm();
                 // orb_mw.crop(prec);
                 double nrm = orb_mw.norm();
-                int nnodes = orb_mw.getNNodes(mrcpp::NUMBER::Total);
+                int nnodes = orb_mw.getNNodes();
                 if (nnodes < 10) {
                     std::cout << "l = " << l << " m = " << m << std::endl;
                     std::cout << "key " << it.key() << std::endl;
@@ -444,7 +444,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                 // std::cout << "norm " << orb_mw.norm() << std::endl;
                 Phi.push_back(orb_mw);
             }
-        } 
+        }
     }
 }
 

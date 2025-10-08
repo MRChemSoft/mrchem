@@ -54,7 +54,7 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
     };
     // auto op = (*this);
     // mrcpp::ComplexFunction f;
-    projector_ptr = std::make_shared<mrcpp::ComplexFunction>();
+    projector_ptr = std::make_shared<mrcpp::CompFunction<3>>();
 
     double sigma = 0.6;
     auto gauss = [this, sigma](const std::array<double, 3> &r) -> double {
@@ -64,8 +64,8 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
         return std::exp(- 0.5 * normr * normr / (sigma * sigma) );
     };
 
-    mrcpp::cplxfunc::project(*projector_ptr, gauss, mrcpp::NUMBER::Real, prec);
-    mrcpp::cplxfunc::project(*projector_ptr, project_analytic, mrcpp::NUMBER::Real, prec);
+    mrcpp::project(*projector_ptr, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
+    mrcpp::project(*projector_ptr,  static_cast<std::function<double(const mrcpp::Coord<3>&)>>(project_analytic), prec);
     // mrcpp::cplxfunc::deep_copy(op, f);
 
     double nrm = projector_ptr->norm();
@@ -73,7 +73,7 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
 
     if (std::abs(nrm - 1.0) > 10 * prec) {
         std::cout << "Norm of projector " << nrm << std::endl;
-        std::cout << "Number of nodes " << projector_ptr->getNNodes(mrcpp::NUMBER::Total);
+        std::cout << "Number of nodes " << projector_ptr->getNNodes();
         std::cout << "l: " << l << " m: " << m << std::endl;
         std::cout << "rl: " << rl << std::endl;
         std::cout << "i: " << i << std::endl;

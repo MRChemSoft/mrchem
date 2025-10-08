@@ -83,7 +83,7 @@ void XCPotential::setup(double prec) {
                     prefacts.push_back(prefact); // minus because rho is electron density not charge density
                     nlccrs.push_back(nuc.getPseudopotentialData()->getRnlcc());
                 }
-            } 
+            }
         }
         bool hasnlcc = prefacts.size() > 0;
         if (hasnlcc) {
@@ -112,9 +112,9 @@ void XCPotential::setup(double prec) {
                 return rho * gaussNormalization;
             };
             mrcpp::AnalyticFunction<3> rho_analytic_func(rho_analytic);
-            mrcpp::ComplexFunction rho_nlcc;
-            mrcpp::cplxfunc::project(rho_nlcc, gauss, mrcpp::NUMBER::Real, prec);
-            mrcpp::cplxfunc::project(rho_nlcc, rho_analytic_func, mrcpp::NUMBER::Real, prec);
+            mrcpp::CompFunction rho_nlcc;
+            mrcpp::project(rho_nlcc, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
+            mrcpp::project(rho_nlcc, rho_analytic_func, prec);
 
             if (pairedDensity) {
                 mrcpp::get_func(xc_inp, 0).add(1.0, rho_nlcc.real());
