@@ -55,7 +55,7 @@ jobs:
     <<: *ubuntu-2204
     steps:
       - checkout
-        method: blobless
+         method: blobless
       - *configure-serial
       - *build
       - *tests
@@ -65,15 +65,15 @@ jobs:
       - OMP_NUM_THREADS: '2'
     steps:
       - checkout
-        method: blobless
+         method: blobless
       - *configure-omp
       - *build
       - *tests
   mpi-py3:
     <<: *ubuntu-2204
     steps:
-      - checkout
-        method: blobless
+      - checkout:
+         method: blobless
       - *configure-mpi
       - *build
       - *tests
