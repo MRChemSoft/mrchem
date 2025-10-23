@@ -25,6 +25,7 @@
 
 #include <MRCPP/Printer>
 
+#include <stdlib.h>
 #include "Functional.h"
 #include "Factory.h"
 
@@ -94,10 +95,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
 
     Eigen::MatrixXd out       = Eigen::MatrixXd::Zero(nPts, nOut);
     Eigen::MatrixXd out_libxc = Eigen::MatrixXd::Zero(nPts, nOut);
-    Eigen::VectorXd out_sxc   = Eigen::VectorXd::Zero(nPts);
-    Eigen::VectorXd exc, vxc, sxc, xxc, yxc, zxc, sigma, inp_row, out_row;
-
-
+    Eigen::VectorXd exc, vxc, sxc, sigma, inp_row, out_row;
 
     if (Factory::libxc) {
         for (size_t i = 0; i < libxc_objects.size(); i++) {
@@ -136,27 +134,25 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     exc   = Eigen::VectorXd::Zero(nPts);
                     vxc   = Eigen::VectorXd::Zero(nPts);
                     sxc   = Eigen::VectorXd::Zero(nPts);
-                    xxc   = Eigen::VectorXd::Zero(nPts);
-                    yxc   = Eigen::VectorXd::Zero(nPts);
-                    zxc   = Eigen::VectorXd::Zero(nPts);
                     sigma = Eigen::VectorXd::Zero(nPts);
-                    sigma = inp.col(1) * inp.col(1) + inp.col(2) * inp.col(2) + inp.col(3) * inp.col(3);
+                    // sigma = inp.col(1) * inp.col(1) + inp.col(2) * inp.col(2) + inp.col(3) * inp.col(3); // This does not work!!!
+
+                    for (size_t j = 0; j < nPts; j++) {
+                        sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3);
+                    }
+
                     xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(),
                         exc.data(), vxc.data(), sxc.data());
-                    // Convert sxc to derivatives of x, y and z so output are similar to xcfun
-                    xxc = 2 * sxc * inp.col(1);
-                    yxc = 2 * sxc * inp.col(2);
-                    zxc = 2 * sxc * inp.col(3);
+
                     for (size_t j = 0; j < nPts; ++j) {
                         //  xcfun computes rho * exc for energy density, so we do the same
                         //    aka xcfun calculates actual energy density while libxc calculates 
                         //    energy density per electron density
                         out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
                         out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
-                        out_libxc(j, 2) += xxc[j] * libxc_coeffs[i];
-                        out_libxc(j, 3) += yxc[j] * libxc_coeffs[i];
-                        out_libxc(j, 4) += zxc[j] * libxc_coeffs[i];
-                        out_sxc[j]      += sxc[j]; // only for debugging purposes
+                        out_libxc(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
+                        out_libxc(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
+                        out_libxc(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
                     }
                     break;
                 default:
@@ -173,16 +169,117 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             } else {
                 if (inp(i, 0) < cutoff) calc = false;
             }
-            for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
-            if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); 
-            // if (calc) { // This to make out be 0 when calc = false?
-            //     for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
-            //     xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            //     for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
-            // }
+            // for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+            // if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+            // for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); 
+            if (calc) { // Change to this?
+                for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+                xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+                for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+            }
         }
     }
+
+    // for (size_t i = 0; i < nPts; i++) {
+    //     if (inp(i, 0) > cutoff) {
+    //         std::cout << "---------------------------" << std::endl <<
+    //         "for point: " << i << " of " << nPts << std::endl <<
+    //         "Input, libxc out, primitive libxc out point, primitive libxc out vector, xcfun out, primitive xcfun out" << std::endl <<
+    //         "---------------------------" << std::endl <<
+
+    //         inp(i, 0) << " " << inp(i, 1) << " " << inp(i, 2) << " " << inp(i, 3) << std::endl <<
+    //         out_libxc(i, 0) << " " << out_libxc(i, 1) << " " << out_libxc(i, 2) << " " << out_libxc(i, 3) << " " << out_libxc(i, 4) << std::endl <<
+    //         new_out_libxc(i, 0) << " " << new_out_libxc(i, 1) << " " << new_out_libxc(i, 2) << " " << new_out_libxc(i, 3) << " " << new_out_libxc(i, 4) << std::endl <<
+    //         new2_out_libxc(i, 0) << " " << new2_out_libxc(i, 1) << " " << new2_out_libxc(i, 2) << " " << new2_out_libxc(i, 3) << " " << new2_out_libxc(i, 4) << std::endl <<
+    //         out(i, 0) << " " << out(i, 1) << " " << out(i, 2) << " " << out(i, 3) << " " << out(i, 4) << std::endl <<
+    //         new_out(i, 0) << " " << new_out(i, 1) << " " << new_out(i, 2) << " " << new_out(i, 3) << " " << new_out(i, 4) << std::endl <<
+    //         "---------------------------" << std::endl <<
+
+
+    //         std::endl;
+    //     }
+    // }
+
+
+
+
+    // for (size_t i = 0; i < nPts; i++) {
+    //     if (inp(i, 0) > cutoff) {
+    //         std::cout << "---------------------------" << std::endl <<
+    //         "for point: " << i << " of " << nPts << std::endl <<
+    //         "---------------------------" << std::endl <<
+    //         inp(i, 0) << " " << inp(i, 1)  << std::endl <<
+
+    //         // "Xcfun input data for point: " << i << std::endl <<
+    //         // "rho:         " << "v:          " << "v_x:         " << "v_y:         " << "v_z:         " << std::endl << 
+    //         // out_libxc(i, 0) << " " << out_libxc(i, 1) << " " << xxc[i] << " " << yxc[i] << " " << zxc[i] << std::endl <<
+    //         // "---------------------------" << std::endl <<
+
+    //         out_libxc(i, 0) << " " << out_libxc(i, 1) << std::endl <<
+
+
+    //         out(i, 0) << " " << out(i, 1) << std::endl <<
+    //         "---------------------------" << std::endl <<
+
+
+    //         std::endl;
+    //     }
+    // }
+
+
+
+
+    // double max_dev = 0.0;
+    // size_t max_dev_ind = 0;
+    // size_t n_dev_more_than_thresh = 0;
+    // double thresh = 1e-6;
+
+    // for (size_t i = 0; i < nPts; i++) {
+    //     double dev = abs(out(i, 0) - out_libxc(i, 0));
+
+    //     if (dev > thresh) n_dev_more_than_thresh++;
+
+    //     if (dev > max_dev) {
+    //         max_dev = dev;
+    //         max_dev_ind = i;
+    //     }
+    // }
+
+    // std::cout << "n_dev_more_than_thresh: " << n_dev_more_than_thresh << std::endl;
+    // std::cout << "max_dev_ind: " << max_dev_ind << std::endl;
+    // std::cout << "max_dev:     " << max_dev << std::endl;
+    // std::cout << "rho: " << inp(max_dev_ind, 0) << std::endl;
+    // std::cout << "drho/dxyz: " << inp(max_dev_ind, 1) << ", " << inp(max_dev_ind, 2) << ", " << inp(max_dev_ind, 3) << std::endl;
+    // std::cout << "xcfun: " << std::endl;
+    // std::cout << "exc: " << out(max_dev_ind, 0) << std::endl;
+    // std::cout << "vxc: " << out(max_dev_ind, 1) << std::endl;
+    // std::cout << "sxc: " << out(max_dev_ind, 2) << ", " << out(max_dev_ind, 3) << ", " << out(max_dev_ind, 4) << std::endl << std::endl;
+    // std::cout << "libxc: " << std::endl;
+    // std::cout << "exc: " << out_libxc(max_dev_ind, 0) << std::endl;
+    // std::cout << "vxc: " << out_libxc(max_dev_ind, 1) << std::endl;
+    // std::cout << "sxc: " << out_libxc(max_dev_ind, 2) << ", " << out_libxc(max_dev_ind, 3) << ", " << out_libxc(max_dev_ind, 4) << std::endl << std::endl << std::endl;
+
+    // if (Factory::libxc) {
+    //     for (size_t r = 0; r < nPts; r++) {
+    //         if (inp(r, 0) > 1e-5) {
+    //             std::cout << "Libxc rho: " << inp(r, 0) << std::endl <<
+    //             "Libxc EXC: " << out_libxc(r, 0) << std::endl <<
+    //             "Libxc VXC: " << out_libxc(r, 1) << std::endl <<
+    //             "Libxc sig: " <<
+    //             inp(r, 1) * inp(r, 1) + inp(r, 2) * inp(r, 2) + inp(r, 3) * inp(r, 3) <<
+    //             std::endl << std::endl;
+    //         } 
+    //     }
+    // } else {
+    //     for (size_t r = 0; r < nPts; r++) {
+    //         if (inp(r, 0) > 1e-4) {
+    //             std::cout << "XCFun rho: " << inp(r, 0) << std::endl <<
+    //             "XCFun EXC: " << out(r, 0) << std::endl <<
+    //             "XCFun VXC: " << out(r, 1) << std::endl << std::endl;
+    //         } 
+    //     }
+    // }
+
 
     // for (size_t k = 0; k < nInp; k++) {
     //     for (size_t l = 0; l < nPts; l++) {

@@ -133,6 +133,8 @@ void Factory::setFunctional(const std::string &n, double c) {
                 std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
             }
             xc_func_set_dens_threshold(&libxc_obj, cutoff);
+
+            std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
             libxc_objects.push_back(libxc_obj);
             libxc_coeffs.push_back(c * coeffs[i]);
         }
@@ -157,7 +159,8 @@ std::unique_ptr<MRDFT> Factory::build() {
     unsigned int current = 0;                 //!< no current density
     unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
     if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
-    xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+    // xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+    xcfun_eval_setup(xcfun_p.get(), XC_N_NX_NY_NZ, XC_PARTIAL_DERIVATIVES, 1);
 
     // Init MW derivative
     if (gga) {
