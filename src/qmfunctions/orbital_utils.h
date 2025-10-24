@@ -43,6 +43,7 @@ void orthogonalize(double prec, Orbital &&phi, Orbital psi);
 OrbitalVector add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec = -1.0);
 OrbitalVector rotate(OrbitalVector &Phi, const ComplexMatrix &U, double prec = -1.0);
 
+OrbitalVector CopyToComplex(OrbitalVector &Phi);
 OrbitalVector deep_copy(OrbitalVector &Phi);
 OrbitalVector param_copy(const OrbitalVector &Phi);
 
