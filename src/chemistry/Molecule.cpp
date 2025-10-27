@@ -315,23 +315,27 @@ void Molecule::calculateOrbitalPositions(){
 void Molecule::printOrbitalPositions() const{
     auto pprec = mrcpp::Printer::getPrecision();
     auto w0 = Printer::getWidth() - 1;
-    auto w1 = 5;
+    auto w1 = 7;
     auto w2 = 2 * w0 / 9;
     auto w3 = w0 - w1 - 3 * w2;
     
     std::stringstream o_head;
     o_head << std::setw(w1) << "Index";
-    o_head << std::string(w3 - 1, ' ') << ':';
+    o_head << std::setw(w1 + 3) << "Occ";
+    o_head << std::string(w3 - 11, ' ') << ':';
     o_head << std::setw(w2) << "x";
     o_head << std::setw(w2) << "y";
     o_head << std::setw(w2) << "z";
+
+    auto &Phi = getOrbitals();
+    DoubleVector occup = orbital::get_occupations(Phi);
 
     mrcpp::print::header(0, "Orbital Positions");
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');
     for (unsigned int i = 0; i < getOrbitalPositionsX().size(); i++) {
         std::stringstream o_txt;
-        o_txt << std::setw(w1 - 1) << i;
+        o_txt << std::setw(w1 - 1) << i << std::setw(w1 + 3) << std::setprecision(2) << std::fixed << occup[i];
         DoubleVector orbitalPositionsVec = DoubleVector::Zero(3);
         orbitalPositionsVec[0] = getOrbitalPositionsX()[i].real();
         orbitalPositionsVec[1] = getOrbitalPositionsY()[i].real();
