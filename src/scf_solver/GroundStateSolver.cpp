@@ -324,10 +324,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
             if (restricted) {
                 DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
                 orbital::set_occupations(Phi_n, occNew);
-                // ToDo: output depending on print level
-                orbital::print(Phi_n);
                 mol.calculateOrbitalPositions();
-                mol.printOrbitalPositions();
+                if (plevel >= 2)
+                    mol.printOrbitalPositions();
             }
             else {
                 // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
@@ -340,13 +339,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
                 DoubleVector occNew(occAlpha.size() + occBeta.size());
                 occNew << occAlpha, occBeta;
                 orbital::set_occupations(Phi_n, occNew);
-                // ToDo: output depending on print level
-                orbital::print(Phi_n);
                 mol.calculateOrbitalPositions();
-                mol.printOrbitalPositions();
+                if (plevel >= 2)
+                    mol.printOrbitalPositions();
             }
         }
-        // MOM: save orbitals of current iteration for next iteration
+        // MOM: save orbitals of current iteration for next iteration of the SCF procedure
         if (deltaSCFMethod == "MOM")
             Phi_mom = orbital::deep_copy(Phi_n);
 
@@ -492,8 +490,8 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     DoubleVector p = occOverlap.colwise().norm();
 
     // debug print section
-    print_utils::matrix(2, "MOM overlap matrix", overlap, 2);
-    print_utils::vector(2, "MOM total overlap", p, 2);
+    print_utils::matrix(3, "MOM overlap matrix", overlap, 2);
+    print_utils::vector(3, "MOM total overlap", p, 2);
 
     // sort by highest overlap
     std::vector<std::pair<double, unsigned int>> sortme;
