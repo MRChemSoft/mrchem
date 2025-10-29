@@ -2,10 +2,11 @@
 
 #include <MRCPP/MWOperators>
 #include <XCFun/xcfun.h>
-
 #include "MRDFT.h"
 
 namespace mrdft {
+
+using XC_p = std::unique_ptr<xcfun_t, decltype(&xcfun_delete)>;
 
 class Factory final {
 public:
@@ -20,7 +21,9 @@ public:
     void setDerivative(const std::string &n) { diff_s = n; }
     void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
 
-    // Optional: select backend and (for LibXC) functional IDs via code (we also read env vars)
+    // Optional backend controls (env can override):
+    //   MRCHEM_XC_BACKEND=libxc|xcfun
+    //   MRCHEM_LIBXC_IDS="ID[,ID,...]"  (or family-specific envs)
     void setBackend(const std::string &b) { backend = b; }
     void setLibXCIDs(const std::vector<int> &ids_in) { libxc_ids = ids_in; }
 
