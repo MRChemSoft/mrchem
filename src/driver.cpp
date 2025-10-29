@@ -1122,9 +1122,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             int adap = 0;
             bool share = false;
 
-            mrchem::Nuclei nuclei = mol.getNuclei();
-            F.getAZoraChiPotential() = std::make_shared<AZoraPotential>(nuclei, adap, azora_dir_final, share, c);
-            F.setNucs(nuclei);
+            mrchem::Nuclei nuclei_copy = mol.getNuclei();
+            F.getAZoraChiPotential() = std::make_shared<AZoraPotential>(nuclei_copy, adap, azora_dir_final, share, c);
+            F.setNucs(nuclei_copy);
         }
     }
     ///////////////////////////////////////////////////////////
@@ -1163,68 +1163,50 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto kain = json_fock["reaction_operator"]["kain"];
         auto max_iter = json_fock["reaction_operator"]["max_iter"];
         auto dynamic_thrs = json_fock["reaction_operator"]["dynamic_thrs"];
-        // the input parser helpers have converted this parameter from string
-        // to integer, compatibly with the DensityType enum
         auto density_type = json_fock["reaction_operator"]["density_type"];
-        // permittivity inside the cavity
         auto eps_i = json_fock["reaction_operator"]["epsilon_in"];
-        // static permittivity outside the cavity
         auto eps_s = json_fock["reaction_operator"]["epsilon_static"];
-        // dynamic permittivity outside the cavity
         auto eps_d = json_fock["reaction_operator"]["epsilon_dynamic"];
-        // whether nonequilibrium response was requested
         auto noneq = json_fock["reaction_operator"]["nonequilibrium"];
         auto formulation = json_fock["reaction_operator"]["formulation"];
 
-        // info for the poisson-boltzmann solver, this will anyways be ignored if we are not using it
+        // info for PB/LPBE
         double ion_radius = json_fock["reaction_operator"]["ion_radius"];
         auto kappa_o = json_fock["reaction_operator"]["kappa_out"];
         auto width_ion = json_fock["reaction_operator"]["ion_width"];
         auto kformulation = json_fock["reaction_operator"]["formulation"];
 
-        // compute nuclear charge density
+        // nuclear charge density
         Density rho_nuc(false);
         rho_nuc = chemistry::compute_nuclear_density(poisson_prec, nuclei, 100);
 
-        // decide which permittivity to use outside of the cavity
+        // choose outer permittivity
         auto eps_o = [order, is_dynamic, noneq, eps_s, eps_d] {
-            if (order >= 1 && noneq && is_dynamic) {
-                // in response (order >= 1), use dynamic permittivity if:
-                // a. nonequilibrium was requested (noneq is true), and
-                // b. the frequency is nonzero (is_dynamic is true)
-                return eps_d;
-            } else {
-                // for the ground state, always use the static permittivity
-                return eps_s;
-            }
+            if (order >= 1 && noneq && is_dynamic) return eps_d;
+            return eps_s;
         }();
 
-        // initialize Permittivity function with static or dynamic epsilon, based on perturbation order
         Permittivity dielectric_func(cavity_p, eps_i, eps_o, formulation);
         dielectric_func.printParameters();
 
-        // initialize SCRF object
         std::unique_ptr<GPESolver> scrf_p;
 
         std::shared_ptr<Cavity> cavity_ion;
         if (ion_radius != 0.0) {
             auto radii_0 = cavity_p->getOriginalRadii();
             auto radii_ion = std::vector<double>(radii_0.size());
-
-            for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
+            for (int i = 0; i < (int)radii_0.size(); i++) radii_ion[i] = radii_0[i] + ion_radius;
             auto cavity_centers = cavity_p->getCoordinates();
             cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
         } else {
             cavity_ion = cavity_p;
         }
         if (solver_type == "Poisson-Boltzmann") {
-            DHScreening dhscreening(cavity_ion, kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we
-                                                                        // have 4 different parametrizations, not all implemented yet.
+            DHScreening dhscreening(cavity_ion, kappa_o, kformulation);
             dhscreening.printParameters();
             scrf_p = std::make_unique<PBESolver>(dielectric_func, dhscreening, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
         } else if (solver_type == "Linearized_Poisson-Boltzmann") {
-            DHScreening dhscreening(cavity_ion, kappa_o, kformulation); // this is now deciding the pb formulation, but it really shouldn't, the formulation here is for the DHScreening where we
-                                                                        // have 4 different parametrizations, not all implemented yet.
+            DHScreening dhscreening(cavity_ion, kappa_o, kformulation);
             dhscreening.printParameters();
             scrf_p = std::make_unique<LPBESolver>(dielectric_func, dhscreening, rho_nuc, P_p, D_p, kain, max_iter, dynamic_thrs, density_type);
         } else if (solver_type == "Generalized_Poisson") {
@@ -1233,7 +1215,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             MSG_ERROR("Solver type not implemented");
         }
 
-        // initialize reaction potential object
         auto V_R = [&] {
             if (order == 0) {
                 return std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p);
@@ -1241,14 +1222,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
                 return std::make_shared<ReactionOperator>(std::move(scrf_p), Phi_p, X_p, Y_p);
             }
         }();
-
-        // set reaction potential in FockBuilder object
         F.getReactionOperator() = V_R;
     }
+
     ///////////////////////////////////////////////////////////
     ////////////////////   XC Operator   //////////////////////
     ///////////////////////////////////////////////////////////
-    double exx = 1.0;
+    double exx = 0.0; // default to zero (pure DFT unless hybrid says otherwise)
     if (json_fock.contains("xc_operator")) {
         auto shared_memory = json_fock["xc_operator"]["shared_memory"];
         auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
@@ -1261,6 +1241,17 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         xc_factory.setSpin(xc_spin);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
+
+        // ---- NEW: runtime backend + IDs from input (optional) ----
+        if (json_xcfunc.contains("backend")) {
+            xc_factory.setBackend(json_xcfunc["backend"].get<std::string>());
+        }
+        if (json_xcfunc.contains("libxc_ids")) {
+            std::vector<int> ids = json_xcfunc["libxc_ids"].get<std::vector<int>>();
+            xc_factory.setLibXCIDs(ids);
+        }
+        // ----------------------------------------------------------
+
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
             auto coef = f["coef"];
@@ -1282,9 +1273,21 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     /////////////////   Exchange Operator   ///////////////////
     ///////////////////////////////////////////////////////////
-    if (json_fock.contains("exchange_operator") and exx > mrcpp::MachineZero) {
-        auto exchange_prec = json_fock["exchange_operator"]["exchange_prec"];
-        auto poisson_prec = json_fock["exchange_operator"]["poisson_prec"];
+    if (json_fock.contains("exchange_operator") && exx > mrcpp::MachineZero) {
+        double exchange_prec = json_fock["exchange_operator"]["exchange_prec"];
+        double poisson_prec  = json_fock["exchange_operator"]["poisson_prec"];
+
+        // ---- Safety: sanitize bad inputs to avoid HF path crashes ----
+        if (exchange_prec <= 0.0) {
+            MSG_WARN("exchange_operator.exchange_prec <= 0; falling back to exchange_prec = max(poisson_prec, 1e-6)");
+            exchange_prec = (poisson_prec > 0.0) ? poisson_prec : 1.0e-6;
+        }
+        if (poisson_prec <= 0.0) {
+            MSG_WARN("exchange_operator.poisson_prec <= 0; using 1.0e-6");
+            poisson_prec = 1.0e-6;
+        }
+        // ---------------------------------------------------------------
+
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         if (order == 0) {
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, exchange_prec);
@@ -1293,7 +1296,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         }
+    } else if (exx > mrcpp::MachineZero) {
+        // Hybrid functional requested but no exchange_operator block
+        MSG_WARN("Hybrid functional requested (EXX > 0) but no exchange_operator block present; exact exchange will be skipped.");
     }
+
     ///////////////////////////////////////////////////////////
     /////////////////   External Operator   ///////////////////
     ///////////////////////////////////////////////////////////
@@ -1303,6 +1310,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
+
+    // Mix in exact exchange if any (0.0 for pure GGAs)
     F.build(exx);
 }
 
