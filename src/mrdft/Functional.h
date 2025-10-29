@@ -50,7 +50,6 @@ public:
 
     double XCenergy = 0.0;
 
-    // Public façade: dispatch to LDA/GGA hook
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
 
