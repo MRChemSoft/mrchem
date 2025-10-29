@@ -1,42 +1,90 @@
 /*
- * MRChem, a numerical real-space code for molecular electronic structure
- * calculations within the self-consistent field (SCF) approximations of quantum
- * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) ...
+ * MRChem — XC Functional base (hook pattern + default XCFun behavior)
  */
-
-#include <MRCPP/Printer>
 
 #include "Functional.h"
 
+#include <MRCPP/Printer>
+#include <cstdlib>
+#include <iostream>
+
 namespace mrdft {
 
-namespace {
-// Put XCFun into a valid “user eval” mode so input_length/output_length work.
-inline void ensure_xcfun_user_setup(xcfun_t* xf, int order, bool spin, bool is_gga) {
-    const unsigned int mode      = 1u;                    // partial derivatives
-    const unsigned int func_type = is_gga ? 1u : 0u;      // 0=LDA, 1=GGA
-    const unsigned int dens_type = spin ? 2u : 1u;        // 1 (unpol) or 2 (pol)
+/* static */ void Functional::ensure_xcfun_user_setup(xcfun_t* xf, int order, bool spin, bool is_gga) {
+    const unsigned int mode      = 1u;               // partial derivatives
+    const unsigned int func_type = is_gga ? 1u : 0u; // 0=LDA, 1=GGA
+    const unsigned int dens_type = spin ? 2u : 1u;   // 1 (unpol) or 2 (pol)
     const unsigned int laplacian = 0u;
     const unsigned int kinetic   = 0u;
     const unsigned int current   = 0u;
-    const unsigned int exp_deriv = is_gga ? 1u : 0u;      // explicit derivs for GGA only
-
+    const unsigned int exp_deriv = is_gga ? 1u : 0u; // explicit derivs for GGA only
     xcfun_user_eval_setup(xf, order, func_type, dens_type,
                           mode, laplacian, kinetic, current, exp_deriv);
 }
-} // namespace
 
-/** @brief Run a collection of grid points through XCFun
- *
- * Each row corresponds to one grid point.
- */
-Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
+/** @brief Default XCFun LDA implementation (column-major) */
+Eigen::MatrixXd Functional::eval_lda_transposed(Eigen::MatrixXd &inp) const {
     // Make sure XCFun knows what shape to expect/produce
-    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), isGGA());
+    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), /*is_gga=*/false);
 
     int nInp = xcfun_input_length(xcfun.get());   // input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get());  // output parameters from XCFun
+    int nPts = inp.rows();
+    if (nInp != inp.cols()) MSG_ABORT("Invalid input (LDA)");
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
+    Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
+
+    for (int i = 0; i < nPts; i++) {
+        bool calc = true;
+        if (isSpin()) {
+            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+        } else {
+            if (inp(i, 0) < cutoff) calc = false;
+        }
+        for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+        for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+    }
+    return out;
+}
+
+/** @brief Default XCFun GGA implementation (column-major) */
+Eigen::MatrixXd Functional::eval_gga_transposed(Eigen::MatrixXd &inp) const {
+    // Make sure XCFun knows what shape to expect/produce
+    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), /*is_gga=*/true);
+
+    int nInp = xcfun_input_length(xcfun.get());   // input parameters to XCFun
+    int nOut = xcfun_output_length(xcfun.get());  // output parameters from XCFun
+    int nPts = inp.rows();
+    if (nInp != inp.cols()) MSG_ABORT("Invalid input (GGA)");
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
+    Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
+
+    for (int i = 0; i < nPts; i++) {
+        bool calc = true;
+        if (isSpin()) {
+            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+        } else {
+            if (inp(i, 0) < cutoff) calc = false;
+        }
+        for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+        if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+        for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+    }
+    return out;
+}
+
+/** @brief Public row-major façade (kept for completeness) */
+Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
+    // For row-major, just reuse the previous, original implementation
+    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), isGGA());
+
+    int nInp = xcfun_input_length(xcfun.get());
+    int nOut = xcfun_output_length(xcfun.get());
     int nPts = inp.cols();
     if (nInp != inp.rows()) MSG_ABORT("Invalid input");
 
@@ -53,36 +101,13 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     return out;
 }
 
-/** @brief Run a collection of grid points through XCFun
- *
- * Each column corresponds to one grid point.
- */
+/** @brief Public col-major façade (dispatches to LDA/GGA hooks) */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
-    // Make sure XCFun knows what shape to expect/produce
-    ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), isGGA());
-
-    int nInp = xcfun_input_length(xcfun.get());   // input parameters to XCFun
-    int nOut = xcfun_output_length(xcfun.get());  // output parameters from XCFun
-    int nPts = inp.rows();
-    if (nInp != inp.cols()) MSG_ABORT("Invalid input");
-
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
-    Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
-    Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
-    for (int i = 0; i < nPts; i++) {
-        bool calc = true;
-        if (isSpin()) {
-            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
-        } else {
-            if (inp(i, 0) < cutoff) calc = false;
-        }
-        if (calc) {
-            inp_row = inp.row(i);
-            xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            out.row(i) = out_row;
-        }
+    if (isGGA()) {
+        return eval_gga_transposed(inp);
+    } else {
+        return eval_lda_transposed(inp);
     }
-    return out;
 }
 
 /** @brief Contract (row-major) */
@@ -92,13 +117,26 @@ Eigen::MatrixXd Functional::contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &
     Eigen::MatrixXd out_data = Eigen::MatrixXd::Zero(nFcs, nPts);
     out_data.row(0) = xc_data.row(0); // keep energy functional
 
+    const int xc_rows = static_cast<int>(xc_data.rows());
+    const int d_rows  = static_cast<int>(d_data.rows());
+
     for (int i = 0; i < this->xc_mask.rows(); i++) {
         Eigen::VectorXd cont_i = Eigen::VectorXd::Zero(nPts);
         for (int j = 0; j < this->xc_mask.cols(); j++) {
-            Eigen::VectorXd cont_ij = Eigen::VectorXd::Zero(nPts);
             int xc_idx = this->xc_mask(i, j);
-            int d_idx = this->d_mask(j);
+            int d_idx  = this->d_mask(j);
+            if (xc_idx < 0 || xc_idx >= xc_rows) {
+                MSG_ABORT("XC mask index out of range (row-major): xc_idx="
+                          << xc_idx << " but xc_data has " << xc_rows << " rows"
+                          << " (i=" << i << ", j=" << j << ")");
+            }
+            Eigen::VectorXd cont_ij = Eigen::VectorXd::Zero(nPts);
             if (d_idx >= 0) {
+                if (d_idx >= d_rows) {
+                    MSG_ABORT("Density mask index out of range (row-major): d_idx="
+                              << d_idx << " but d_data has " << d_rows << " rows"
+                              << " (j=" << j << ")");
+                }
                 cont_ij = xc_data.row(xc_idx).array() * d_data.row(d_idx).array();
             } else {
                 cont_ij = xc_data.row(xc_idx);
@@ -117,10 +155,25 @@ Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen:
     Eigen::MatrixXd out_data = Eigen::MatrixXd::Zero(nPts, nFcs);
     out_data.col(0) = xc_data.col(0); // keep energy functional
 
+    const int xc_cols = static_cast<int>(xc_data.cols());
+    const int d_cols  = static_cast<int>(d_data.cols());
+
     for (int i = 0; i < this->xc_mask.rows(); i++) {
         for (int j = 0; j < this->xc_mask.cols(); j++) {
             int xc_idx = this->xc_mask(i, j);
-            int d_idx = this->d_mask(j);
+            int d_idx  = this->d_mask(j);
+
+            if (xc_idx < 0 || xc_idx >= xc_cols) {
+                MSG_ABORT("XC mask index out of range (col-major): xc_idx="
+                          << xc_idx << " but xc_data has " << xc_cols << " cols"
+                          << " (i=" << i << ", j=" << j << ")");
+            }
+            if (d_idx >= 0 && d_idx >= d_cols) {
+                MSG_ABORT("Density mask index out of range (col-major): d_idx="
+                          << d_idx << " but d_data has " << d_cols << " cols"
+                          << " (j=" << j << ")");
+            }
+
             if (d_idx >= 0) {
                 out_data.col(i + 1) += xc_data.col(xc_idx).cwiseProduct(d_data.col(d_idx));
             } else {
@@ -132,7 +185,8 @@ Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen:
 }
 
 /** @brief makepot: compute XC and contract */
-void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes)  const {
+void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp,
+                         std::vector<mrcpp::FunctionNode<3> *> xcNodes) const {
     if (this->log_grad){
         MSG_ERROR("log_grad not implemented");
     }
@@ -168,7 +222,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
        }
     }
 
-    // NB: VIRTUAL DISPATCH here (so LibXC adapters can override)!
+    // Hook-dispatch (LibXC subclasses override these)
     Eigen::MatrixXd xc_out = this->evaluate_transposed(xcfun_inp);
 
     int ctrsize = inp.size()-spinsize;
