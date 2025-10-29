@@ -1,33 +1,6 @@
-// ===== BEGIN src/mrdft/Functional.h =====
-/*
- * MRChem, a numerical real-space code for molecular electronic structure
- * calculations within the self-consistent field (SCF) approximations of quantum
- * chemistry (Hartree-Fock and Density Functional Theory).
- * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
- *
- * This file is part of MRChem.
- *
- * MRChem is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * MRChem is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
- *
- * For information on the complete list of contributors to MRChem, see:
- * <https://mrchem.readthedocs.io/>
- */
-
 #pragma once
 
 #include <memory>
-
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
@@ -41,31 +14,45 @@ using XC_p = std::unique_ptr<xcfun_t, decltype(&xcfun_delete)>;
 class Functional {
 public:
     Functional(int k, XC_p &f)
-            : order(k)
-            , xcfun(std::move(f)) {}
+        : order(k)
+        , xcfun(std::move(f)) {}
     virtual ~Functional() = default;
 
-    void makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes) const;
+    void makepot(mrcpp::FunctionTreeVector<3> &inp,
+                 std::vector<mrcpp::FunctionNode<3> *> xcNodes) const;
 
     void setLogGradient(bool log) { log_grad = log; }
     void setDensityCutoff(double cut) { cutoff = cut; }
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }
 
+    // What kind of functional?
     virtual bool isSpin() const = 0;
-    bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
-    bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
-    bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
-    bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
-    double amountEXX() const {
+
+    // Virtual + safe default implementations (so LibXC backends don’t poke XCFun).
+    virtual bool isGGA() const {
+        if (!xcfun) return false;
+        return xcfun_is_gga(xcfun.get());
+    }
+    virtual bool isMetaGGA() const {
+        if (!xcfun) return false;
+        return xcfun_is_metagga(xcfun.get());
+    }
+    virtual bool isLDA() const { return !(isGGA() || isMetaGGA()); }
+    virtual bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
+
+    // Virtual so LibXC subclasses can override (e.g., return 0.0 for LDA/GGA).
+    virtual double amountEXX() const {
+        if (!xcfun) return 0.0;
         double exx = 0.0;
         xcfun_get(xcfun.get(), "exx", &exx);
         return exx;
     }
+
     double XCenergy = 0.0;
 
-    // MAKE THESE VIRTUAL so LibXC subclasses can override them
-    virtual Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
-    virtual Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
+    // Public façade: dispatch to LDA/GGA hook
+    Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
+    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
 
     friend class MRDFT;
 
@@ -78,8 +65,8 @@ protected:
     XC_p xcfun;
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};
 
-    int getXCInputLength() const { return xcfun_input_length(xcfun.get()); }
-    int getXCOutputLength() const { return xcfun_output_length(xcfun.get()); }
+    int getXCInputLength() const { return xcfun ? xcfun_input_length(xcfun.get()) : 0; }
+    int getXCOutputLength() const { return xcfun ? xcfun_output_length(xcfun.get()) : 0; }
     virtual int getCtrInputLength() const = 0;
     virtual int getCtrOutputLength() const = 0;
 
@@ -92,7 +79,13 @@ protected:
 
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+
+    // ---- Hook pattern: LibXC backends override these ----
+    virtual Eigen::MatrixXd eval_lda_transposed(Eigen::MatrixXd &inp) const;
+    virtual Eigen::MatrixXd eval_gga_transposed(Eigen::MatrixXd &inp) const;
+
+    // Helper to put XCFun in a consistent user-eval mode
+    static void ensure_xcfun_user_setup(xcfun_t* xf, int order, bool spin, bool is_gga);
 };
 
 } // namespace mrdft
-// ===== END src/mrdft/Functional.h =====
