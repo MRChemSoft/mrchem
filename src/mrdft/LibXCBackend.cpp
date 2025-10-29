@@ -1,373 +1,406 @@
-// src/mrdft/LibXCBackend.cpp
+// MRChem — LibXC backend (batched + thread-local)
 #include "LibXCBackend.h"
 
 #include <vector>
 #include <stdexcept>
 #include <cmath>
-#include <algorithm>   // std::max
-
-// If xc.h isn't included by the header, uncomment the next line:
-// #include <xc.h>
+#include <algorithm>
+#include <limits>
+#include <cstdlib>
 
 namespace mrdft {
 
-// ======================= helpers (unpolarized) =======================
+// =================== small helpers ===================
 
-static void split_gga_inputs_unpolarized(const Eigen::MatrixXd &inp,
-                                         Eigen::VectorXd &rho,
-                                         Eigen::VectorXd &sigma)
-{
-    const int n = static_cast<int>(inp.rows());
-    const int m = static_cast<int>(inp.cols());
+static inline double finite_or_zero(double x) { return std::isfinite(x) ? x : 0.0; }
 
-    if (n == 0) { rho.resize(0); sigma.resize(0); return; }
+static inline void assert_gga_like(const xc_func_type& f) {
+    if (!f.info) {
+        throw std::runtime_error("LibXC: functional has null info pointer");
+    }
+    const int fam = f.info->family;
+    if (fam != XC_FAMILY_GGA && fam != XC_FAMILY_HYB_GGA) {
+        throw std::runtime_error(
+            std::string("LibXC: functional family mismatch in GGA backend. Got family=") +
+            std::to_string(fam) + " (expected GGA or HYB-GGA). "
+            "Use an LDA/MGGA backend class for other families.");
+    }
+}
 
-    if (m == 2) {
-        // layout: [rho, sigma] where sigma = |∇rho|^2 (or gamma)
-        rho   = inp.col(0);
-        sigma = inp.col(1);
-        return;
+static double read_env_thresh() {
+    if (const char* v = std::getenv("MRCHEM_LIBXC_DENS_THRESH")) {
+        try {
+            double t = std::stod(v);
+            return (t > 0.0 ? t : 0.0);
+        } catch (...) { /* ignore */ }
+    }
+    return 1e-12; // sensible default
+}
+
+// Thread-local LibXC context (one per OpenMP thread)
+struct XCTLS {
+    std::vector<xc_func_type> funcs;
+    std::vector<int> ids;
+    int nspin = -1;
+    double dens_thresh = -1.0;
+
+    void clear() {
+        for (auto &f : funcs) xc_func_end(&f);
+        funcs.clear();
+        ids.clear();
+        nspin = -1;
+        dens_thresh = -1.0;
     }
 
-    if (m == 4) {
-        // layout: [rho, gradx, grady, gradz]  -> sigma = |∇rho|^2
-        rho   = inp.col(0);
-        sigma.resize(n);
-        for (int i = 0; i < n; ++i) {
-            const double gx = inp(i, 1);
-            const double gy = inp(i, 2);
-            const double gz = inp(i, 3);
-            sigma(i) = gx*gx + gy*gy + gz*gz;
+    void ensure(const std::vector<int>& want_ids, int want_nspin, double want_thresh) {
+        bool same_ids = (ids.size() == want_ids.size()) &&
+                        std::equal(ids.begin(), ids.end(), want_ids.begin());
+        if (!same_ids || nspin != want_nspin || dens_thresh != want_thresh) {
+            clear();
+            ids = want_ids;
+            nspin = want_nspin;
+            dens_thresh = want_thresh;
+
+            funcs.resize(ids.size());
+            for (size_t i = 0; i < ids.size(); ++i) {
+                if (xc_func_init(&funcs[i], ids[i], nspin) != 0) {
+                    throw std::runtime_error("LibXC: could not initialize functional id=" + std::to_string(ids[i]));
+                }
+                if (dens_thresh > 0.0) {
+                    xc_func_set_dens_threshold(&funcs[i], dens_thresh);
+                }
+            }
         }
-        return;
     }
 
-    throw std::runtime_error(
-        "LibXCGGA: unsupported input layout. "
-        "Expected (rho,sigma) or (rho,gradx,grady,gradz). "
-        "Got " + std::to_string(m) + " columns.");
-}
+    ~XCTLS() { clear(); }
+};
 
-// Accumulate one LibXC GGA functional into (exc, vrho, vsigma)
-// note: LibXC API takes a non-const xc_func_type*; we const_cast safely.
-static void add_gga_unpolarized(const xc_func_type &f,
-                                int n,
-                                const double *rho,   // len n
-                                const double *sigma, // len n
-                                double *exc,         // len n (accum)
-                                double *vrho,        // len n (accum)
-                                double *vsigma)      // len n (accum)
-{
-    std::vector<double> exc_i(n, 0.0), vrho_i(n, 0.0), vsigma_i(n, 0.0);
-    xc_func_type *fp = const_cast<xc_func_type*>(&f);
-    xc_gga_exc_vxc(fp, n, rho, sigma, exc_i.data(), vrho_i.data(), vsigma_i.data());
-    for (int i = 0; i < n; ++i) {
-        exc[i]    += exc_i[i];
-        vrho[i]   += vrho_i[i];
-        vsigma[i] += vsigma_i[i];
-    }
-}
+static thread_local XCTLS xc_tls;
 
-// ======================= helpers (polarized) =======================
+// =====================================================
+// =============== LDA (unpolarized) ===================
+// =====================================================
 
-static void split_lda_inputs_polarized(const Eigen::MatrixXd &inp,
-                                       Eigen::VectorXd &rho_up,
-                                       Eigen::VectorXd &rho_dn)
-{
-    const int n = static_cast<int>(inp.rows());
-    const int m = static_cast<int>(inp.cols());
-    if (n == 0) { rho_up.resize(0); rho_dn.resize(0); return; }
-
-    if (m == 2) {           // [rho_up, rho_dn]
-        rho_up = inp.col(0);
-        rho_dn = inp.col(1);
-        return;
-    }
-
-    throw std::runtime_error(
-        "LibXCSpinLDA: unsupported input layout. "
-        "Expected 2 columns (rho_up, rho_dn). Got " + std::to_string(m));
-}
-
-static void split_gga_inputs_polarized(const Eigen::MatrixXd &inp,
-                                       Eigen::VectorXd &rho_up,
-                                       Eigen::VectorXd &rho_dn,
-                                       Eigen::VectorXd &sigma_uu,
-                                       Eigen::VectorXd &sigma_ud,
-                                       Eigen::VectorXd &sigma_dd)
-{
-    const int n = static_cast<int>(inp.rows());
-    const int m = static_cast<int>(inp.cols());
-    if (n == 0) {
-        rho_up.resize(0); rho_dn.resize(0);
-        sigma_uu.resize(0); sigma_ud.resize(0); sigma_dd.resize(0);
-        return;
-    }
-
-    if (m == 5) {
-        // [rho_up, rho_dn, sigma_uu, sigma_ud, sigma_dd]
-        rho_up   = inp.col(0);
-        rho_dn   = inp.col(1);
-        sigma_uu = inp.col(2);
-        sigma_ud = inp.col(3);
-        sigma_dd = inp.col(4);
-        return;
-    }
-
-    if (m == 8) {
-        // [rho_up, rho_dn, gx_u, gy_u, gz_u, gx_d, gy_d, gz_d]
-        rho_up = inp.col(0);
-        rho_dn = inp.col(1);
-        const Eigen::VectorXd gx_u = inp.col(2), gy_u = inp.col(3), gz_u = inp.col(4);
-        const Eigen::VectorXd gx_d = inp.col(5), gy_d = inp.col(6), gz_d = inp.col(7);
-
-        sigma_uu.resize(n);
-        sigma_ud.resize(n);
-        sigma_dd.resize(n);
-        for (int i = 0; i < n; ++i) {
-            const double gux = gx_u(i), guy = gy_u(i), guz = gz_u(i);
-            const double gdx = gx_d(i), gdy = gy_d(i), gdz = gz_d(i);
-            sigma_uu(i) = gux*gux + guy*guy + guz*guz;
-            sigma_dd(i) = gdx*gdx + gdy*gdy + gdz*gdz;
-            sigma_ud(i) = gux*gdx + guy*gdy + guz*gdz; // can be negative
-        }
-        return;
-    }
-
-    throw std::runtime_error(
-        "LibXCSpinGGA: unsupported input layout. "
-        "Expected 5 columns (rho_up,rho_dn,sigma_uu,sigma_ud,sigma_dd) "
-        "or 8 columns (rho_up,rho_dn,gx_u,gy_u,gz_u,gx_d,gy_d,gz_d). "
-        "Got " + std::to_string(m));
-}
-
-// ======================= LDA (unpolarized) =======================
-
-Eigen::MatrixXd LibXCLDA::evaluate_transposed(Eigen::MatrixXd &inp) const {
-    // Expect a single column: rho
+Eigen::MatrixXd LibXCLDA::eval_lda_transposed(Eigen::MatrixXd &inp) const {
     const int n = static_cast<int>(inp.rows());
     const int m = static_cast<int>(inp.cols());
     if (m != 1) {
-        throw std::runtime_error(
-            "LibXCLDA: unsupported input layout. Expected 1 column (rho), got " +
-            std::to_string(m));
+        throw std::runtime_error("LibXCLDA: unsupported input layout. Expected 1 column (rho), got " +
+                                 std::to_string(m));
     }
+    if (n == 0) return Eigen::MatrixXd(0, 2);
 
-    std::vector<double> rho(n), exc(n, 0.0), vrho(n, 0.0);
-    for (int i = 0; i < n; ++i) rho[i] = inp(i, 0);
+    // Prepare arrays
+    static thread_local std::vector<double> rho, eps, vrho, tmp_eps, tmp_vrho;
+    rho.resize(n);
+    eps.assign(n, 0.0);
+    vrho.assign(n, 0.0);
+    tmp_eps.resize(n);
+    tmp_vrho.resize(n);
 
-    for (auto &func : handle.funcs) {
-        std::vector<double> exc_i(n, 0.0), vrho_i(n, 0.0);
-        xc_lda_exc_vxc(&func, n, rho.data(), exc_i.data(), vrho_i.data());
+    for (int i = 0; i < n; ++i) rho[i] = finite_or_zero(inp(i, 0));
+
+    // Ensure TLS contexts
+    xc_tls.ensure(ids_, nspin_, read_env_thresh());
+
+    // Accumulate all functionals
+    for (auto &f : xc_tls.funcs) {
+        xc_lda_exc_vxc(&f, n, rho.data(), tmp_eps.data(), tmp_vrho.data());
         for (int i = 0; i < n; ++i) {
-            exc[i]  += exc_i[i];
-            vrho[i] += vrho_i[i];
+            eps[i]  += tmp_eps[i];
+            vrho[i] += tmp_vrho[i];
         }
     }
 
-    // MRChem expects energy density per volume: F = n * exc
+    // Output: [F, dF/dn] with F = n * εxc
     Eigen::MatrixXd out(n, 2);
     for (int i = 0; i < n; ++i) {
-        out(i, 0) = rho[i] * exc[i];  // F
-        out(i, 1) = vrho[i];          // dF/dn
+        out(i, 0) = rho[i] * eps[i];
+        out(i, 1) = vrho[i];
     }
     return out;
 }
 
-// ======================= GGA (unpolarized) =======================
+// =====================================================
+// ================ GGA (unpolarized) ==================
+// =====================================================
 
-Eigen::MatrixXd LibXCGGA::evaluate_transposed(Eigen::MatrixXd &inp) const {
+Eigen::MatrixXd LibXCGGA::eval_gga_transposed(Eigen::MatrixXd &inp) const {
     const int n = static_cast<int>(inp.rows());
     const int m = static_cast<int>(inp.cols());
-
-    Eigen::VectorXd rho_v, sigma_v;
-    Eigen::VectorXd gx_v, gy_v, gz_v;
-
-    if (m == 2) {
-        rho_v   = inp.col(0);
-        sigma_v = inp.col(1);                 // σ = |∇ρ|² (or gamma)
-    } else if (m == 4) {
-        rho_v = inp.col(0);
-        gx_v  = inp.col(1);
-        gy_v  = inp.col(2);
-        gz_v  = inp.col(3);
-        sigma_v.resize(n);
-        for (int i = 0; i < n; ++i) {
-            const double gx = gx_v(i), gy = gy_v(i), gz = gz_v(i);
-            sigma_v(i) = gx*gx + gy*gy + gz*gz;
-        }
-    } else {
+    if (n == 0) {
+        return (m == 2 ? Eigen::MatrixXd(0, 3) : Eigen::MatrixXd(0, 5));
+    }
+    if (m != 2 && m != 4) {
         throw std::runtime_error(
             "LibXCGGA: unsupported input layout. "
             "Expected (rho,sigma) or (rho,gradx,grady,gradz). "
             "Got " + std::to_string(m) + " columns.");
     }
 
-    std::vector<double> rho(n), sigma(n), exc(n, 0.0), vrho(n, 0.0), vsigma(n, 0.0);
-    for (int i = 0; i < n; ++i) { rho[i] = rho_v(i); sigma[i] = sigma_v(i); }
+    // Prepare arrays
+    static thread_local std::vector<double> rho, sigma, gx, gy, gz;
+    static thread_local std::vector<double> eps, vrho, vsigma;
+    static thread_local std::vector<double> teps, tvrho, tvsigma;
 
-    for (auto &func : handle.funcs) {
-        std::vector<double> exc_i(n, 0.0), vrho_i(n, 0.0), vsigma_i(n, 0.0);
-        xc_gga_exc_vxc(&func, n, rho.data(), sigma.data(),
-                       exc_i.data(), vrho_i.data(), vsigma_i.data());
+    rho.resize(n);
+    if (m == 2) {
+        sigma.resize(n);
+    } else {
+        gx.resize(n); gy.resize(n); gz.resize(n);
+        sigma.resize(n);
+    }
+    eps.assign(n, 0.0);
+    vrho.assign(n, 0.0);
+    vsigma.assign(n, 0.0);
+    teps.resize(n);
+    tvrho.resize(n);
+    tvsigma.resize(n);
+
+    // Fill inputs
+    if (m == 2) {
         for (int i = 0; i < n; ++i) {
-            exc[i]    += exc_i[i];
-            vrho[i]   += vrho_i[i];
-            vsigma[i] += vsigma_i[i];
+            rho[i]   = finite_or_zero(inp(i, 0));
+            sigma[i] = std::max(0.0, finite_or_zero(inp(i, 1)));
+        }
+    } else { // m == 4
+        for (int i = 0; i < n; ++i) {
+            rho[i] = finite_or_zero(inp(i, 0));
+            gx[i]  = finite_or_zero(inp(i, 1));
+            gy[i]  = finite_or_zero(inp(i, 2));
+            gz[i]  = finite_or_zero(inp(i, 3));
+            sigma[i] = std::max(0.0, gx[i]*gx[i] + gy[i]*gy[i] + gz[i]*gz[i]);
+        }
+    }
+
+    // TLS contexts
+    xc_tls.ensure(ids_, nspin_, read_env_thresh());
+    for (auto &f : xc_tls.funcs) {
+        assert_gga_like(f);
+        xc_gga_exc_vxc(&f, n, rho.data(), sigma.data(),
+                       teps.data(), tvrho.data(), tvsigma.data());
+        for (int i = 0; i < n; ++i) {
+            eps[i]    += teps[i];
+            vrho[i]   += tvrho[i];
+            vsigma[i] += tvsigma[i];
         }
     }
 
     if (m == 2) {
-        // sigma layout: [F, dF/dn, dF/dsigma]
+        // sigma-layout output: [F, dF/dn, dF/dsigma]
         Eigen::MatrixXd out(n, 3);
         for (int i = 0; i < n; ++i) {
-            out(i, 0) = rho[i] * exc[i];  // F = n * exc
-            out(i, 1) = vrho[i];          // dF/dn
-            out(i, 2) = vsigma[i];        // dF/dsigma
+            out(i, 0) = rho[i] * eps[i];
+            out(i, 1) = vrho[i];
+            out(i, 2) = vsigma[i];
         }
         return out;
     } else {
-        // gradient layout: [F, dF/dn, dF/dgx, dF/dgy, dF/dgz]
+        // gradient layout output: [F, dF/dn, dF/dgx, dF/dgy, dF/dgz]
         Eigen::MatrixXd out(n, 5);
         for (int i = 0; i < n; ++i) {
-            const double gx = gx_v(i), gy = gy_v(i), gz = gz_v(i);
-            out(i, 0) = rho[i] * exc[i];       // F
-            out(i, 1) = vrho[i];               // dF/dn
-            // chain rule: sigma = gx^2 + gy^2 + gz^2  => dF/dgk = 2*vsigma*gk
-            out(i, 2) = 2.0 * vsigma[i] * gx;  // dF/dgx
-            out(i, 3) = 2.0 * vsigma[i] * gy;  // dF/dgy
-            out(i, 4) = 2.0 * vsigma[i] * gz;  // dF/dgz
+            const double s2 = 2.0 * vsigma[i];
+            out(i, 0) = rho[i] * eps[i];
+            out(i, 1) = vrho[i];
+            out(i, 2) = s2 * gx[i];
+            out(i, 3) = s2 * gy[i];
+            out(i, 4) = s2 * gz[i];
         }
         return out;
     }
 }
 
-// ======================= Spin LDA (polarized) =======================
+// =====================================================
+// ============== Spin LDA (polarized) =================
+// =====================================================
 
-Eigen::MatrixXd LibXCSpinLDA::evaluate_transposed(Eigen::MatrixXd &inp) const {
-    const int n = static_cast<int>(inp.rows());
-
-    Eigen::VectorXd rho_up_v, rho_dn_v;
-    split_lda_inputs_polarized(inp, rho_up_v, rho_dn_v);
-
-    std::vector<double> rho(2*n);
-    for (int i = 0; i < n; ++i) {
-        rho[2*i + 0] = std::max(0.0, rho_up_v(i));
-        rho[2*i + 1] = std::max(0.0, rho_dn_v(i));
-    }
-
-    std::vector<double> exc(n, 0.0);
-    std::vector<double> vrho(2*n, 0.0);
-
-    for (auto &func : handle.funcs) {
-        std::vector<double> exc_i(n, 0.0), vrho_i(2*n, 0.0);
-        xc_lda_exc_vxc(&func, n, rho.data(), exc_i.data(), vrho_i.data());
-        for (int i = 0; i < n; ++i) {
-            exc[i]      += exc_i[i];
-            vrho[2*i+0] += vrho_i[2*i+0];
-            vrho[2*i+1] += vrho_i[2*i+1];
-        }
-    }
-
-    // Output: [F, dF/d(rho_up), dF/d(rho_dn)] with F = (rho_up+rho_dn)*exc
-    Eigen::MatrixXd out(n, 3);
-    for (int i = 0; i < n; ++i) {
-        const double n_tot = rho[2*i+0] + rho[2*i+1];
-        out(i, 0) = n_tot * exc[i];
-        out(i, 1) = vrho[2*i + 0];
-        out(i, 2) = vrho[2*i + 1];
-    }
-    return out;
-}
-
-// ======================= Spin GGA (polarized) =======================
-
-Eigen::MatrixXd LibXCSpinGGA::evaluate_transposed(Eigen::MatrixXd &inp) const {
+Eigen::MatrixXd LibXCSpinLDA::eval_lda_transposed(Eigen::MatrixXd &inp) const {
     const int n = static_cast<int>(inp.rows());
     const int m = static_cast<int>(inp.cols());
+    if (m != 2) {
+        throw std::runtime_error(
+            "LibXCSpinLDA: unsupported input layout. "
+            "Expected 2 columns (rho_up, rho_dn). Got " + std::to_string(m));
+    }
+    if (n == 0) return Eigen::MatrixXd(0, 3);
 
-    Eigen::VectorXd rho_up_v, rho_dn_v, sigma_uu_v, sigma_ud_v, sigma_dd_v;
-    split_gga_inputs_polarized(inp, rho_up_v, rho_dn_v, sigma_uu_v, sigma_ud_v, sigma_dd_v);
+    // Prepare arrays
+    static thread_local std::vector<double> rho2, eps, vrho2, teps, tvrho2;
+    rho2.resize(2*n);
+    eps.assign(n, 0.0);
+    vrho2.assign(2*n, 0.0);
+    teps.resize(n);
+    tvrho2.resize(2*n);
 
-    // Flattened LibXC layout:
-    //   rho[2*i+0]=rho_up, rho[2*i+1]=rho_dn
-    //   sigma[3*i+0]=sigma_uu, [3*i+1]=sigma_ud, [3*i+2]=sigma_dd
-    std::vector<double> rho(2*n);
-    std::vector<double> sigma(3*n);
     for (int i = 0; i < n; ++i) {
-        rho[2*i + 0] = std::max(0.0, rho_up_v(i));
-        rho[2*i + 1] = std::max(0.0, rho_dn_v(i));
-        sigma[3*i + 0] = std::max(0.0, sigma_uu_v(i));
-        sigma[3*i + 1] =           sigma_ud_v(i);  // can be negative
-        sigma[3*i + 2] = std::max(0.0, sigma_dd_v(i));
+        const double up_raw = inp(i, 0);
+        const double dn_raw = inp(i, 1);
+        const double up = std::max(0.0, finite_or_zero(up_raw));
+        const double dn = std::max(0.0, finite_or_zero(dn_raw));
+        rho2[2*i + 0] = up;
+        rho2[2*i + 1] = dn; 
     }
 
-    std::vector<double> exc(n, 0.0);
-    std::vector<double> vrho(2*n, 0.0);
-    std::vector<double> vsigma(3*n, 0.0);
+    xc_tls.ensure(ids_, nspin_, read_env_thresh());
 
-    for (auto &func : handle.funcs) {
-        std::vector<double> exc_i(n, 0.0), vrho_i(2*n, 0.0), vsigma_i(3*n, 0.0);
-        xc_gga_exc_vxc(&func, n, rho.data(), sigma.data(),
-                       exc_i.data(), vrho_i.data(), vsigma_i.data());
+    for (auto &f : xc_tls.funcs) {
+        xc_lda_exc_vxc(&f, n, rho2.data(), teps.data(), tvrho2.data());
         for (int i = 0; i < n; ++i) {
-            exc[i]        += exc_i[i];
-            vrho[2*i+0]   += vrho_i[2*i+0];
-            vrho[2*i+1]   += vrho_i[2*i+1];
-            vsigma[3*i+0] += vsigma_i[3*i+0];
-            vsigma[3*i+1] += vsigma_i[3*i+1];
-            vsigma[3*i+2] += vsigma_i[3*i+2];
+            eps[i]         += teps[i];
+            vrho2[2*i + 0] += tvrho2[2*i + 0];
+            vrho2[2*i + 1] += tvrho2[2*i + 1];
         }
     }
 
-    // If caller provided gradients (8-col input), expose gradient derivatives via chain rule:
-    //   dF/d(∇ρ↑) = 2*vsigma_uu*∇ρ↑ + vsigma_ud*∇ρ↓
-    //   dF/d(∇ρ↓) = 2*vsigma_dd*∇ρ↓ + vsigma_ud*∇ρ↑
-    if (m == 8) {
-        const Eigen::VectorXd gx_u = inp.col(2), gy_u = inp.col(3), gz_u = inp.col(4);
-        const Eigen::VectorXd gx_d = inp.col(5), gy_d = inp.col(6), gz_d = inp.col(7);
+    // Output: [F, dF/d rho_up, dF/d rho_dn] with F = (rho_up+rho_dn)*εxc
+    Eigen::MatrixXd out(n, 3);
+    for (int i = 0; i < n; ++i) {
+        const double up = rho2[2*i + 0];
+        const double dn = rho2[2*i + 1];
+        out(i, 0) = (up + dn) * eps[i];
+        out(i, 1) = vrho2[2*i + 0];
+        out(i, 2) = vrho2[2*i + 1];
+    }
+    return out;
+}
 
+// =====================================================
+// ============== Spin GGA (polarized) =================
+// =====================================================
+
+Eigen::MatrixXd LibXCSpinGGA::eval_gga_transposed(Eigen::MatrixXd &inp) const {
+    const int n = static_cast<int>(inp.rows());
+    const int m = static_cast<int>(inp.cols());
+    if (n == 0) {
+        return (m == 5 ? Eigen::MatrixXd(0, 6)
+                       : (m == 8 ? Eigen::MatrixXd(0, 9)
+                                 : Eigen::MatrixXd(0, 0)));
+    }
+    if (m != 5 && m != 8) {
+        throw std::runtime_error(
+            "LibXCSpinGGA: unsupported input layout. "
+            "Expected 5 columns (rho_up,rho_dn,sigma_uu,sigma_ud,sigma_dd) "
+            "or 8 columns (rho_up,rho_dn,gx_u,gy_u,gz_u,gx_d,gy_d,gz_d). "
+            "Got " + std::to_string(m));
+    }
+
+    // Prepare arrays
+    static thread_local std::vector<double> rho2;      // [up, dn] per point
+    static thread_local std::vector<double> sigma3;    // [uu, ud, dd] per point
+    static thread_local std::vector<double> gax, gay, gaz, gbx, gby, gbz;
+
+    static thread_local std::vector<double> eps, vrho2, vs3;
+    static thread_local std::vector<double> teps, tvrho2, tvs3;
+
+    rho2.resize(2*n);
+    sigma3.resize(3*n);
+
+    if (m == 8) {
+        gax.resize(n); gay.resize(n); gaz.resize(n);
+        gbx.resize(n); gby.resize(n); gbz.resize(n);
+    }
+
+    eps.assign(n, 0.0);
+    vrho2.assign(2*n, 0.0);
+    vs3.assign(3*n, 0.0);
+    teps.resize(n);
+    tvrho2.resize(2*n);
+    tvs3.resize(3*n);
+
+    if (m == 5) {
+        for (int i = 0; i < n; ++i) {
+            const double up = std::max(0.0, finite_or_zero(inp(i, 0)));
+            const double dn = std::max(0.0, finite_or_zero(inp(i, 1)));
+            rho2[2*i + 0] = up;
+            rho2[2*i + 1] = dn;
+
+            sigma3[3*i + 0] = std::max(0.0, finite_or_zero(inp(i, 2))); // uu
+            sigma3[3*i + 1] =              finite_or_zero(inp(i, 3));   // ud (can be negative)
+            sigma3[3*i + 2] = std::max(0.0, finite_or_zero(inp(i, 4))); // dd
+        }
+    } else { // m == 8 (gradients)
+        for (int i = 0; i < n; ++i) {
+            const double up = std::max(0.0, finite_or_zero(inp(i, 0)));
+            const double dn = std::max(0.0, finite_or_zero(inp(i, 1)));
+            rho2[2*i + 0] = up;
+            rho2[2*i + 1] = dn;
+
+            gax[i] = finite_or_zero(inp(i, 2));
+            gay[i] = finite_or_zero(inp(i, 3));
+            gaz[i] = finite_or_zero(inp(i, 4));
+            gbx[i] = finite_or_zero(inp(i, 5));
+            gby[i] = finite_or_zero(inp(i, 6));
+            gbz[i] = finite_or_zero(inp(i, 7));
+
+            sigma3[3*i + 0] = std::max(0.0, gax[i]*gax[i] + gay[i]*gay[i] + gaz[i]*gaz[i]); // uu
+            sigma3[3*i + 1] = gax[i]*gbx[i] + gay[i]*gby[i] + gaz[i]*gbz[i];                // ud
+            sigma3[3*i + 2] = std::max(0.0, gbx[i]*gbx[i] + gby[i]*gby[i] + gbz[i]*gbz[i]); // dd
+        }
+    }
+
+    xc_tls.ensure(ids_, nspin_, read_env_thresh());
+    for (auto &f : xc_tls.funcs) {
+        assert_gga_like(f);
+        xc_gga_exc_vxc(&f, n, rho2.data(), sigma3.data(),
+                       teps.data(), tvrho2.data(), tvs3.data());
+        for (int i = 0; i < n; ++i) {
+            eps[i]         += teps[i];
+            vrho2[2*i + 0] += tvrho2[2*i + 0];
+            vrho2[2*i + 1] += tvrho2[2*i + 1];
+            vs3[3*i + 0]   += tvs3[3*i + 0];
+            vs3[3*i + 1]   += tvs3[3*i + 1];
+            vs3[3*i + 2]   += tvs3[3*i + 2];
+        }
+    }
+
+    if (m == 8) {
+        // gradient form output:
+        // [F, dF/drho_up, dF/drho_dn, dF/dgx_up, dF/dgy_up, dF/dgz_up, dF/dgx_dn, dF/dgy_dn, dF/dgz_dn]
         Eigen::MatrixXd out(n, 9);
         for (int i = 0; i < n; ++i) {
-            const double n_tot = rho[2*i+0] + rho[2*i+1];
-            const double vuu = vsigma[3*i+0];
-            const double vud = vsigma[3*i+1];
-            const double vdd = vsigma[3*i+2];
+            const double up = rho2[2*i + 0];
+            const double dn = rho2[2*i + 1];
 
-            // dF/d(grad up)
-            const double dFx_u = 2.0*vuu*gx_u(i) + vud*gx_d(i);
-            const double dFy_u = 2.0*vuu*gy_u(i) + vud*gy_d(i);
-            const double dFz_u = 2.0*vuu*gz_u(i) + vud*gz_d(i);
-            // dF/d(grad down)
-            const double dFx_d = 2.0*vdd*gx_d(i) + vud*gx_u(i);
-            const double dFy_d = 2.0*vdd*gy_d(i) + vud*gy_u(i);
-            const double dFz_d = 2.0*vdd*gz_d(i) + vud*gz_u(i);
+            const double vuu = vs3[3*i + 0];
+            const double vud = vs3[3*i + 1];
+            const double vdd = vs3[3*i + 2];
 
-            out(i, 0) = n_tot * exc[i];     // F
-            out(i, 1) = vrho[2*i + 0];      // dF/d rho_up
-            out(i, 2) = vrho[2*i + 1];      // dF/d rho_dn
-            out(i, 3) = dFx_u;              // dF/d gx_up
-            out(i, 4) = dFy_u;              // dF/d gy_up
-            out(i, 5) = dFz_u;              // dF/d gz_up
-            out(i, 6) = dFx_d;              // dF/d gx_dn
-            out(i, 7) = dFy_d;              // dF/d gy_dn
-            out(i, 8) = dFz_d;              // dF/d gz_dn
+            // ∂F/∂∇ρa = 2*vuu*∇ρa + vud*∇ρb
+            const double dFax = 2.0*vuu*gax[i] + vud*gbx[i];
+            const double dFay = 2.0*vuu*gay[i] + vud*gby[i];
+            const double dFaz = 2.0*vuu*gaz[i] + vud*gbz[i];
+            // ∂F/∂∇ρb = 2.0*vdd*∇ρb + vud*∇ρa
+            const double dFbx = 2.0*vdd*gbx[i] + vud*gax[i];
+            const double dFby = 2.0*vdd*gby[i] + vud*gay[i];
+            const double dFbz = 2.0*vdd*gbz[i] + vud*gaz[i];
+
+            out(i, 0) = (up + dn) * eps[i];
+            out(i, 1) = vrho2[2*i + 0];
+            out(i, 2) = vrho2[2*i + 1];
+            out(i, 3) = dFax;
+            out(i, 4) = dFay;
+            out(i, 5) = dFaz;
+            out(i, 6) = dFbx;
+            out(i, 7) = dFby;
+            out(i, 8) = dFbz;
+        }
+        return out;
+    } else { // m == 5 (sigma layout)
+        // [F, dF/drho_up, dF/drho_dn, dF/dsigma_uu, dF/dsigma_ud, dF/dsigma_dd]
+        Eigen::MatrixXd out(n, 6);
+        for (int i = 0; i < n; ++i) {
+            const double up = rho2[2*i + 0];
+            const double dn = rho2[2*i + 1];
+            out(i, 0) = (up + dn) * eps[i];
+            out(i, 1) = vrho2[2*i + 0];
+            out(i, 2) = vrho2[2*i + 1];
+            out(i, 3) = vs3[3*i + 0];
+            out(i, 4) = vs3[3*i + 1];
+            out(i, 5) = vs3[3*i + 2];
         }
         return out;
     }
-
-    // Otherwise (5-col sigma layout): [F, dF/drho_up, dF/drho_dn, dF/dsigma_uu, dF/dsigma_ud, dF/dsigma_dd]
-    Eigen::MatrixXd out(n, 6);
-    for (int i = 0; i < n; ++i) {
-        const double n_tot = rho[2*i+0] + rho[2*i+1];
-        out(i, 0) = n_tot * exc[i];
-        out(i, 1) = vrho[2*i + 0];
-        out(i, 2) = vrho[2*i + 1];
-        out(i, 3) = vsigma[3*i + 0];
-        out(i, 4) = vsigma[3*i + 1];
-        out(i, 5) = vsigma[3*i + 2];
-    }
-    return out;
 }
 
 } // namespace mrdft
