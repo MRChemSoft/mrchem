@@ -145,6 +145,20 @@ def write_scf_calculation(user_dict, origin):
 
     scf_dict = {}
     scf_dict["fock_operator"] = write_scf_fock(user_dict, wf_dict, origin)
+    # Wire DFT.{xc_backend, libxc_ids} into the runtime JSON
+    if "DFT" in user_dict:
+        xc_backend = user_dict["DFT"].get("xc_backend", None)
+        libxc_ids = user_dict["DFT"].get("libxc_ids", None)
+        try:
+            xc_func = scf_dict["fock_operator"]["xc_operator"]["xc_functional"]
+        except KeyError:
+            xc_func = None
+        if xc_func is not None:
+            if xc_backend is not None:
+                xc_func["backend"] = xc_backend
+            if libxc_ids is not None:
+                xc_func["libxc_ids"] = libxc_ids
+
     scf_dict["initial_guess"] = write_scf_guess(user_dict, wf_dict)
 
     path_orbitals = user_dict["SCF"]["path_orbitals"]
