@@ -375,6 +375,18 @@ sections:
           List of density functionals with numerical coefficient. E.g. for PBE0
           ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun
           documentation <https://xcfun.readthedocs.io/>_.
+      - name: xc_backend
+        type: str
+        default: "xcfun"
+        predicates:
+          - value.lower() in ["xcfun", "libxc"]
+        docstring: |
+          XC backend library to use at runtime ("xcfun" or "libxc").
+      - name: libxc_ids
+        type: List[int]
+        default: []
+        docstring: |
+          LibXC functional IDs used when xc_backend is "libxc". See LibXC documentation <https://libxc.gitlab.io/manual/libxc-5.1.x/>_.
   - name: Properties
     docstring: |
       Provide a list of properties to compute (total SCF energy and orbital
