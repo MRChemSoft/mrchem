@@ -36,6 +36,11 @@
 #include "utils/json_utils.h"   // robust, tolerant JSON helpers
 #include "version.h"
 
+// #ifdef MRCHEM_ENABLE_LIBXC
+// #  include "LibXCBackend.h"
+// #  include <xc.h>
+// #endif
+
 using json    = nlohmann::json;
 using Printer = mrcpp::Printer;
 
@@ -235,6 +240,13 @@ void mrenv::print_header() {
                         + mrcpp::mpi::tot_bank_size, "", 0, false);
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
+    //     #ifdef MRCHEM_ENABLE_LIBXC
+    // if (mrcpp::mpi::grand_master()) {
+    //     println(0, "LibXC version " << XC_VERSION << " (" << XC_RELEASE_DATE << ")");
+    //     println(0, "LibXC compiled with " << xc_compiled_functionals() << " functionals");
+    // }
+    // else printout(0, xcfun_splash());
+    // #endif
     printout(0, xcfun_splash());
     mrcpp::print::environment(0);
     MRA->print();
