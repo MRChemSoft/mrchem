@@ -14,70 +14,64 @@
 
 namespace mrdft {
 
-/* Minimal RAII wrapper for LibXC function handles */
-class LibXCHandle {
-public:
-    LibXCHandle(const std::vector<int>& ids, int nspin)
-        : funcs(ids.size()), nspin(nspin) {
-        for (size_t k = 0; k < ids.size(); ++k) {
-            if (xc_func_init(&funcs[k], ids[k], nspin) != 0) {
-                throw std::runtime_error("LibXC: could not initialize functional id=" + std::to_string(ids[k]));
-            }
-        }
-    }
-    ~LibXCHandle() {
-        for (auto &f : funcs) xc_func_end(&f);
-    }
-    std::vector<xc_func_type> funcs;
-    int nspin{XC_UNPOLARIZED};
-};
-
 /* -------- Unpolarized LDA -------- */
 class LibXCLDA : public LDA {
 public:
     LibXCLDA(int k, XC_p &f, const std::vector<int>& ids)
-        : LDA(k, f), handle(ids, XC_UNPOLARIZED) {}
+        : LDA(k, f), ids_(ids), nspin_(XC_UNPOLARIZED) {}
 
-    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+protected:
+    // Hook override
+    Eigen::MatrixXd eval_lda_transposed(Eigen::MatrixXd &inp) const override;
 
 private:
-    LibXCHandle handle;
+    std::vector<int> ids_;
+    int nspin_;
 };
 
 /* -------- Unpolarized GGA -------- */
 class LibXCGGA : public GGA {
 public:
     LibXCGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d, const std::vector<int>& ids)
-        : GGA(k, f, d), handle(ids, XC_UNPOLARIZED) {}
+        : GGA(k, f, d), ids_(ids), nspin_(XC_UNPOLARIZED) {}
 
-    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+protected:
+    // Hook override
+    Eigen::MatrixXd eval_gga_transposed(Eigen::MatrixXd &inp) const override;
 
 private:
-    LibXCHandle handle;
+    std::vector<int> ids_;
+    int nspin_;
 };
 
 /* -------- Spin LDA -------- */
 class LibXCSpinLDA : public SpinLDA {
 public:
     LibXCSpinLDA(int k, XC_p &f, const std::vector<int>& ids)
-        : SpinLDA(k, f), handle(ids, XC_POLARIZED) {}
+        : SpinLDA(k, f), ids_(ids), nspin_(XC_POLARIZED) {}
 
-    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+protected:
+    // Hook override
+    Eigen::MatrixXd eval_lda_transposed(Eigen::MatrixXd &inp) const override;
 
 private:
-    LibXCHandle handle;
+    std::vector<int> ids_;
+    int nspin_;
 };
 
 /* -------- Spin GGA -------- */
 class LibXCSpinGGA : public SpinGGA {
 public:
     LibXCSpinGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d, const std::vector<int>& ids)
-        : SpinGGA(k, f, d), handle(ids, XC_POLARIZED) {}
+        : SpinGGA(k, f, d), ids_(ids), nspin_(XC_POLARIZED) {}
 
-    Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const override;
+protected:
+    // Hook override
+    Eigen::MatrixXd eval_gga_transposed(Eigen::MatrixXd &inp) const override;
 
 private:
-    LibXCHandle handle;
+    std::vector<int> ids_;
+    int nspin_;
 };
 
 } // namespace mrdft
