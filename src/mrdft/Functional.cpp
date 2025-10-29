@@ -22,7 +22,7 @@ namespace mrdft {
                           mode, laplacian, kinetic, current, exp_deriv);
 }
 
-/** @brief Default XCFun LDA implementation (column-major) */
+/** @brief Default XCFun LDA implementation */
 Eigen::MatrixXd Functional::eval_lda_transposed(Eigen::MatrixXd &inp) const {
     // Make sure XCFun knows what shape to expect/produce
     ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), /*is_gga=*/false);
@@ -50,7 +50,7 @@ Eigen::MatrixXd Functional::eval_lda_transposed(Eigen::MatrixXd &inp) const {
     return out;
 }
 
-/** @brief Default XCFun GGA implementation (column-major) */
+/** @brief Default XCFun GGA implementation */
 Eigen::MatrixXd Functional::eval_gga_transposed(Eigen::MatrixXd &inp) const {
     // Make sure XCFun knows what shape to expect/produce
     ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), /*is_gga=*/true);
@@ -78,7 +78,7 @@ Eigen::MatrixXd Functional::eval_gga_transposed(Eigen::MatrixXd &inp) const {
     return out;
 }
 
-/** @brief Public row-major façade (kept for completeness) */
+/** @brief Kept for completeness */
 Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     // For row-major, just reuse the previous, original implementation
     ensure_xcfun_user_setup(xcfun.get(), order, isSpin(), isGGA());
@@ -101,7 +101,7 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     return out;
 }
 
-/** @brief Public col-major façade (dispatches to LDA/GGA hooks) */
+/** @brief Dispatches for LDA/GGA hooks */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     if (isGGA()) {
         return eval_gga_transposed(inp);
@@ -110,7 +110,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     }
 }
 
-/** @brief Contract (row-major) */
+/** @brief Contract */
 Eigen::MatrixXd Functional::contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
     auto nPts = xc_data.cols();
     auto nFcs = getCtrOutputLength();
