@@ -128,6 +128,7 @@ bool guess_orbitals(const json &input, Molecule &mol);
 void write_orbitals(const json &input, Molecule &mol, bool dynamic);
 void calc_properties(const json &input, Molecule &mol, int dir, double omega);
 } // namespace rsp
+
 } // namespace driver
 
 /** @brief Initialize a molecule from input
@@ -166,6 +167,7 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
             betas.push_back(sphere["beta"]);
             sigmas.push_back(sphere["sigma"]);
         }
+
         mol.initCavity(coords, radii, alphas, betas, sigmas);
     }
 }
@@ -1083,8 +1085,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     auto X_p = mol.getOrbitalsX_p();
     auto Y_p = mol.getOrbitalsY_p();
 
-
-
     ///////////////////////////////////////////////////////////
     ///////////////      Momentum Operator    /////////////////
     ///////////////////////////////////////////////////////////
@@ -1277,13 +1277,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-        // bool xc_libxc;
-        
-        // if (xc_lib == "xcfun") {xc_libxc = false;
-        // } else if (xc_lib == "libxc") {xc_libxc = true;
-        // } else { std::cout << "some ERROR" << std::endl;}
-        
-        
+
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
         xc_factory.setLibxc((xc_lib == "libxc") ? true : false);
@@ -1392,5 +1386,5 @@ json driver::print_properties(const Molecule &mol) {
     mol.printEnergies("final");
     mol.printProperties();
     return mol.json();
-}
+
 } // namespace mrchem
