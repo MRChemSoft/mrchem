@@ -36,10 +36,9 @@
 #include "utils/json_utils.h"   // robust, tolerant JSON helpers
 #include "version.h"
 
-// #ifdef MRCHEM_ENABLE_LIBXC
-// #  include "LibXCBackend.h"
-// #  include <xc.h>
-// #endif
+#ifdef MRCHEM_ENABLE_LIBXC
+    #include <xc.h>
+#endif
 
 using json    = nlohmann::json;
 using Printer = mrcpp::Printer;
@@ -247,7 +246,43 @@ void mrenv::print_header() {
     // }
     // else printout(0, xcfun_splash());
     // #endif
-    printout(0, xcfun_splash());
+
+    #ifdef MRCHEM_ENABLE_LIBXC
+        int vmajor, vminor, vmicro = 1;
+        xc_version(&vmajor, &vminor, &vmicro);
+        printf("LibXC version: %d.%d.%d\n", vmajor, vminor, vmicro);
+        printf("%s\n", xc_reference());
+        printf("doi: %s\n", xc_reference_doi());
+    #else
+        printout(0, xcfun_splash());
+    #endif
+
+    // std::string backend_eff;
+    // if (const char* be = std::getenv("MRCHEM_XC_BACKEND")) backend_eff = std::string(be);
+    // const bool want_libxc  = (backend_eff == "libxc");
+    // printf(backend_eff);
+
+    // #ifdef MRCHEM_ENABLE_LIBXC
+    //     const bool libxc_available = true;
+    // #else
+    //     const bool libxc_available = false;
+    // #endif
+    //     const bool use_libxc = (want_libxc && libxc_available);
+
+    // if (want_libxc==true)
+    // {
+    //     int vmajor, vminor, vmicro = 1;
+    //     xc_version(&vmajor, &vminor, &vmicro);
+    //     printf("LibXC version: %d.%d.%d\n", vmajor, vminor, vmicro);
+    //     printf("%s\n", xc_reference());
+    //     printf("doi: %s\n", xc_reference_doi());
+    // }
+    // else
+    // {
+    //     printout(0, xcfun_splash());
+    // }
+    
+
     mrcpp::print::environment(0);
     MRA->print();
 }
