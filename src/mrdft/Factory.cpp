@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -117,6 +118,24 @@ static std::vector<int> pick_ids_for_family(int requested_family, bool /*spin*/)
         }
     }
     return filtered;
+}
+
+// ---- NEW: Human-readable LibXC tokens -> numeric IDs ----
+static int libxc_id_from_token(const std::string &tok) {
+    // 1) try integer form
+    try {
+        size_t pos = 0;
+        long id = std::stol(tok, &pos, 10);
+        if (pos == tok.size() && id > 0 && id <= std::numeric_limits<int>::max()) {
+            return static_cast<int>(id);
+        }
+    } catch (...) { /* not an integer */ }
+    // 2) LibXC’s name->id lookup
+    int id = xc_functional_get_number(tok.c_str());
+    if (id <= 0) {
+        throw std::runtime_error("LibXC: unknown functional token '" + tok + "'");
+    }
+    return id;
 }
 #endif // MRCHEM_ENABLE_LIBXC
 
@@ -236,5 +255,20 @@ std::unique_ptr<MRDFT> Factory::build() {
 
     return std::make_unique<MRDFT>(grid_p, func_p);
 }
+
+#ifdef MRCHEM_ENABLE_LIBXC
+void Factory::setLibXCTokens(const std::vector<std::string> &tokens) {
+    std::vector<int> ids;
+    ids.reserve(tokens.size());
+    for (const auto &t : tokens) {
+        ids.push_back(libxc_id_from_token(t));
+    }
+    libxc_ids = std::move(ids);
+}
+#else
+void Factory::setLibXCTokens(const std::vector<std::string> &) {
+    MSG_ABORT("LibXC token support requested but MRCHEM_ENABLE_LIBXC is not enabled at build time.");
+}
+#endif
 
 } // namespace mrdft
