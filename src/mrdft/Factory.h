@@ -4,6 +4,10 @@
 #include <XCFun/xcfun.h>
 #include "MRDFT.h"
 
+#include <memory>
+#include <string>
+#include <vector>
+
 namespace mrdft {
 
 using XC_p = std::unique_ptr<xcfun_t, decltype(&xcfun_delete)>;
@@ -26,6 +30,9 @@ public:
     //   MRCHEM_LIBXC_IDS="ID[,ID,...]"  (or family-specific envs)
     void setBackend(const std::string &b) { backend = b; }
     void setLibXCIDs(const std::vector<int> &ids_in) { libxc_ids = ids_in; }
+
+    // NEW: accept human-readable LibXC tokens (e.g., "GGA_X_PBE") or numeric strings
+    void setLibXCTokens(const std::vector<std::string> &tokens);
 
     std::unique_ptr<MRDFT> build();
 
