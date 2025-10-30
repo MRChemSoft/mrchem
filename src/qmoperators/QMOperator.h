@@ -85,9 +85,7 @@ protected:
         return (dPrec < thrs) ? true : false;
     }
 
-    virtual void setup(double prec) {
-        setApplyPrec(prec);
-    }
+    virtual void setup(double prec) { setApplyPrec(prec); }
     virtual void clear() { clearApplyPrec(); }
 
     virtual ComplexDouble evalf(const mrcpp::Coord<3> &r) const = 0;

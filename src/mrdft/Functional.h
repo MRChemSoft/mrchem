@@ -35,6 +35,8 @@
 
 
 // LibXC
+// #include <xc_funcs.h>
+// #include <xc.h>
 #include </home/ylvaos/work/libxc/install/include/xc.h>
 #include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
 
@@ -105,5 +107,4 @@ protected:
     std::vector<xc_func_type> libxc_objects;
     std::vector<double> libxc_coeffs;
 };
-
 } // namespace mrdft

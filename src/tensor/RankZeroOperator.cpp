@@ -202,7 +202,7 @@ void RankZeroOperator::setup(double prec) {
     for (auto &i : this->oper_exp) {
         for (int j = 0; j < i.size(); j++) {
             i[j]->setup(prec); }
-        }
+    }
 }
 
 /** @brief run clear on all operators in the expansion
