@@ -382,6 +382,11 @@ sections:
           - value.lower() in ["xcfun", "libxc"]
         docstring: |
           XC backend library to use at runtime ("xcfun" or "libxc").
+      - name: libxc_funcs
+        type: List[str]
+        default: []
+        docstring: |
+          LibXC functional keywords used when xc_backend is "libxc". See LibXC documentation <https://libxc.gitlab.io/manual/libxc-5.1.x/>_.
       - name: libxc_ids
         type: List[int]
         default: []
