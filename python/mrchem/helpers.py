@@ -255,6 +255,7 @@ def write_scf_guess(user_dict, wf_dict):
         "file_CUBE_a": f"{vector_dir}CUBE_a_vector.json",
         "file_CUBE_b": f"{vector_dir}CUBE_b_vector.json",
         "xc_library": user_dict["DFT"]["xc_library"],
+        "cutoff": user_dict["DFT"]["density_cutoff"],
     }
     return guess_dict
 
@@ -510,6 +511,7 @@ def write_rsp_solver(user_dict, wf_dict, d):
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
         "orth_prec": 1.0e-14,
         "xc_library": user_dict["DFT"]["xc_library"],
+        "cutoff": user_dict["DFT"]["density_cutoff"],
     }
     return solver_dict
 

@@ -440,6 +440,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
     auto xc_lib = json_guess["xc_library"];
+    auto cutoff = json_guess["cutoff"];
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
@@ -449,6 +450,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
     print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Density cutoff ", print_utils::dbl_to_str(cutoff, 5, true));
     print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 
@@ -1386,5 +1388,5 @@ json driver::print_properties(const Molecule &mol) {
     mol.printEnergies("final");
     mol.printProperties();
     return mol.json();
-
+}
 } // namespace mrchem
