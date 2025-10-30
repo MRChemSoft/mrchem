@@ -1242,15 +1242,37 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
 
-        // ---- NEW: runtime backend + IDs from input (optional) ----
+        // ---- runtime backend + LibXC IDs/names (optional) ----
         if (json_xcfunc.contains("backend")) {
             xc_factory.setBackend(json_xcfunc["backend"].get<std::string>());
         }
-        if (json_xcfunc.contains("libxc_ids")) {
-            std::vector<int> ids = json_xcfunc["libxc_ids"].get<std::vector<int>>();
-            xc_factory.setLibXCIDs(ids);
+
+        // Prefer explicit string tokens in "libxc_funcs", else allow "libxc_ids" (ints or mixed)
+        if (json_xcfunc.contains("libxc_funcs")) {
+            std::vector<std::string> toks = json_xcfunc["libxc_funcs"].get<std::vector<std::string>>();
+            xc_factory.setLibXCTokens(toks);
+        } else if (json_xcfunc.contains("libxc_ids")) {
+            const auto &arr = json_xcfunc["libxc_ids"];
+            if (!arr.is_array()) {
+                MSG_ABORT("xc_functional.libxc_ids must be an array");
+            }
+            bool any_string = false;
+            for (const auto &v : arr) if (v.is_string()) { any_string = true; break; }
+            if (any_string) {
+                std::vector<std::string> toks;
+                toks.reserve(arr.size());
+                for (const auto &v : arr) {
+                    if (v.is_string()) toks.push_back(v.get<std::string>());
+                    else if (v.is_number_integer()) toks.push_back(std::to_string(v.get<int>()));
+                    else MSG_ABORT("xc_functional.libxc_ids: only strings/integers allowed");
+                }
+                xc_factory.setLibXCTokens(toks);
+            } else {
+                std::vector<int> ids = arr.get<std::vector<int>>();
+                xc_factory.setLibXCIDs(ids);
+            }
         }
-        // ----------------------------------------------------------
+        // ------------------------------------------------------
 
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
@@ -1270,6 +1292,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             MSG_ABORT("Invalid perturbation order");
         }
     }
+
     ///////////////////////////////////////////////////////////
     /////////////////   Exchange Operator   ///////////////////
     ///////////////////////////////////////////////////////////
@@ -1300,6 +1323,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         // Hybrid functional requested but no exchange_operator block
         MSG_WARN("Hybrid functional requested (EXX > 0) but no exchange_operator block present; exact exchange will be skipped.");
     }
+
 
     ///////////////////////////////////////////////////////////
     /////////////////   External Operator   ///////////////////
