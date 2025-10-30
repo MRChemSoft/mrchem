@@ -128,10 +128,7 @@ bool guess_orbitals(const json &input, Molecule &mol);
 void write_orbitals(const json &input, Molecule &mol, bool dynamic);
 void calc_properties(const json &input, Molecule &mol, int dir, double omega);
 } // namespace rsp
-
 } // namespace driver
-
-
 
 /** @brief Initialize a molecule from input
  *
@@ -169,7 +166,6 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
             betas.push_back(sphere["beta"]);
             sigmas.push_back(sphere["sigma"]);
         }
-
         mol.initCavity(coords, radii, alphas, betas, sigmas);
     }
 }
@@ -250,7 +246,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     json json_out = {{"success", true}};
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
 
-
     ///////////////////////////////////////////////////////////
     //////////////////   Setting XC Library  //////////////////
     ///////////////////////////////////////////////////////////
@@ -268,8 +263,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         } else { std::cout << "some ERROR" << std::endl;
     }
 
-
-
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
@@ -281,7 +274,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     // Pre-compute internal exchange contributions
     if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
 
-    
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
@@ -294,7 +286,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         json_out["success"] = false;
         return json_out;
     }
-
 
     ///////////////////////////////////////////////////////////
     //////////   Optimizing Ground State Orbitals  ////////////
@@ -1402,5 +1393,4 @@ json driver::print_properties(const Molecule &mol) {
     mol.printProperties();
     return mol.json();
 }
-
 } // namespace mrchem

@@ -40,8 +40,7 @@ namespace mrdft {
 
 Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         : mra(MRA)
-        , xcfun_p(xcfun_new(), xcfun_delete) {
-}
+        , xcfun_p(xcfun_new(), xcfun_delete) {}
 
 bool Factory::libxc;
 
@@ -98,15 +97,6 @@ void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<
         return;
     } else {std::cout << "NO FUNC MAPPED" << std::endl;}
 }
-
-// b3lyp in xcfun:
-//     {"b3lyp",
-//      "Becke-3-paramater-LYP (VWN5 form)",
-//      {{"slaterx", 0.80},
-//       {"beckecorrx", 0.72},
-//       {"lypc", 0.81},
-//       {"vwn5c", 0.19},
-//       {"exx", 0.20}}},
 
 void Factory::setFunctional(const std::string &n, double c) {
     xcfun_set(xcfun_p.get(), n.c_str(), c);

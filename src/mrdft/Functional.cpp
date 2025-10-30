@@ -70,8 +70,6 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
         // That means that we cannot extract the energy density data with out.row(0).data() for example.
         if (calc) xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
     }
-
-
     return out;
 }
 
@@ -179,7 +177,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             }
         }
     }
-
     if (libxc) return out_libxc;
     return out;
 }
