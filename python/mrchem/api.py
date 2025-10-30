@@ -149,6 +149,7 @@ def write_scf_calculation(user_dict, origin):
     if "DFT" in user_dict:
         xc_backend = user_dict["DFT"].get("xc_backend", None)
         libxc_ids = user_dict["DFT"].get("libxc_ids", None)
+        libxc_funcs = user_dict["DFT"].get("libxc_funcs", None)
         try:
             xc_func = scf_dict["fock_operator"]["xc_operator"]["xc_functional"]
         except KeyError:
@@ -158,6 +159,8 @@ def write_scf_calculation(user_dict, origin):
                 xc_func["backend"] = xc_backend
             if libxc_ids is not None:
                 xc_func["libxc_ids"] = libxc_ids
+            if libxc_funcs is not None:
+                xc_func["libxc_funcs"] = libxc_funcs
 
     scf_dict["initial_guess"] = write_scf_guess(user_dict, wf_dict)
 
