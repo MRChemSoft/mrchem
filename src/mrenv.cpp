@@ -25,6 +25,10 @@
 
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
+
+#include </home/ylvaos/work/libxc/install/include/xc.h>
+#include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
+
 #include <fstream>
 #include "MRCPP/utils/parallel.h"
 
@@ -134,6 +138,19 @@ void mrenv::init_mpi(const json &json_mpi) {
     mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 
+// Temporary function for making the libxc reference print
+void print_libxc_reference() {
+    std::cout <<
+    "Libxc (" << xc_version_string() << ") " << "is free software." << std::endl << 
+    "It is distributed under the Mozilla Public" << std::endl <<
+    "License, version 2.0, see https://www.mozilla.org/en-US/MPL/2.0/." << std::endl <<
+    "For more information, please check the manual at" << std::endl <<
+    "http://libxc.gitlab.io" << std::endl <<
+    "Scientific users of this library should cite" << std::endl <<
+    "S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques;" << std::endl <<
+    "SoftwareX 7, 1-5 (2018), DOI: " << xc_reference_doi() << std::endl;
+}
+
 void mrenv::print_header() {
     auto pwidth = Printer::getWidth();
     auto txt_width = 50;
@@ -201,6 +218,8 @@ void mrenv::print_header() {
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
     printout(0, xcfun_splash());
+    mrcpp::print::separator(0, ' ');
+    print_libxc_reference();
     mrcpp::print::environment(0);
     MRA->print();
 }
