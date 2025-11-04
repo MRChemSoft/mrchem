@@ -27,13 +27,11 @@
 
 #include <MRCPP/MWOperators>
 #include <XCFun/xcfun.h>
+#include <xc_funcs.h>
+#include <xc.h>
 
 #include "MRDFT.h"
 
-// #include <xc_funcs.h>
-// #include <xc.h>
-#include </home/ylvaos/work/libxc/install/include/xc.h>
-#include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
 
 namespace mrdft {
     

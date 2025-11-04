@@ -150,7 +150,6 @@ std::unique_ptr<MRDFT> Factory::build() {
     unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
     if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
     xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
-    // xcfun_eval_setup(xcfun_p.get(), XC_N_NX_NY_NZ, XC_PARTIAL_DERIVATIVES, 1);
 
     // Init MW derivative
     if (gga) {
