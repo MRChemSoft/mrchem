@@ -32,8 +32,10 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
 #include <XCFun/xcfun.h>
-#include <xc_funcs.h>
-#include <xc.h>
+// #include <xc_funcs.h>
+// #include <xc.h>
+#include </home/ylvaos/work/libxc/install/include/xc.h>
+#include </home/ylvaos/work/libxc/install/include/xc_funcs.h>
 
 namespace mrdft {
 
