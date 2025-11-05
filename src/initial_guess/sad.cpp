@@ -107,7 +107,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     // Compute XC density
     Density &rho_xc = XC_.getDensity(DensityType::Total);
-    mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
+    mrcpp::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
     // Project AO basis of hydrogen functions
@@ -193,7 +193,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     // Compute XC density
     Density &rho_xc = XC_.getDensity(DensityType::Total);
-    mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
+    mrcpp::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
 

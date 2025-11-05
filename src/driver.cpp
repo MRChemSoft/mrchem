@@ -253,8 +253,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     //////////////////   Setting XC Library  //////////////////
     ///////////////////////////////////////////////////////////
     
-    // xc_libxc = false;
-    bool xc_libxc;
+    bool xc_libxc = false;
     nlohmann::json xc_lib;
 
     if (json_scf["fock_operator"].contains("xc_library")) {

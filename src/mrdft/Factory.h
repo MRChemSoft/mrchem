@@ -32,7 +32,6 @@
 
 #include "MRDFT.h"
 
-
 namespace mrdft {
     
     class Factory final {
