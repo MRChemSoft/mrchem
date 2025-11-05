@@ -6,7 +6,7 @@ add_library(mrchem
   )
 
 add_dependencies(mrchem mrchem-info)
-add_dependencies(mrchem xc)
+#add_dependencies(mrchem xc)
 
 target_compile_definitions(mrchem
   PUBLIC
@@ -20,10 +20,10 @@ target_include_directories(mrchem
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 
-    # LibXC include roots (generated + sources)
-    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/include
-    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/
-    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-src/src
+    # # LibXC include roots (generated + sources)
+    # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/include
+    # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/
+    # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-src/src
 )
 
 list(APPEND _public_headers
