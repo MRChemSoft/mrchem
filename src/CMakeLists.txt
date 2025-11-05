@@ -6,23 +6,24 @@ add_library(mrchem
   )
 
 add_dependencies(mrchem mrchem-info)
+add_dependencies(mrchem xc)
 
 target_compile_definitions(mrchem
   PUBLIC
     $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:MRCHEM_HAS_OMP>
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MRCHEM_HAS_MPI>
-  PRIVATE USING_Libxc
-    $<TARGET_PROPERTY:Libxc::xc,INTERFACE_COMPILE_DEFINITIONS>
   )
 
 target_include_directories(mrchem
-
-  PRIVATE 
-    $<TARGET_PROPERTY:Libxc::xc,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+
+    # LibXC include roots (generated + sources)
+    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/include
+    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/
+    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-src/src
 )
 
 list(APPEND _public_headers
@@ -56,8 +57,8 @@ target_compile_definitions(mrchem PRIVATE
 target_link_libraries(mrchem
   PRIVATE
     Eigen3::Eigen
-    Libxc::xc
   PUBLIC
+    Libxc::xc
     XCFun::xcfun
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json

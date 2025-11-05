@@ -29,5 +29,7 @@ else()
       ${xcfun_sources_SOURCE_DIR}
       ${xcfun_sources_BINARY_DIR}
       )
+      message(xcfun_sources_SOURCE_DIR="${xcfun_sources_SOURCE_DIR}")
+      message(xcfun_sources_BINARY_DIR="${xcfun_sources_BINARY_DIR}")
   endif()
 endif()

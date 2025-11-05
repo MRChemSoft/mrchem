@@ -254,7 +254,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     
     // xc_libxc = false;
-    bool xc_libxc = false;
+    bool xc_libxc;
     nlohmann::json xc_lib;
 
     if (json_scf["fock_operator"].contains("xc_library")) {
