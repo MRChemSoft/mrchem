@@ -170,17 +170,11 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             // for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
             // if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
             // for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); 
-            if (calc) { // Change to this?
-                for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
+            if (calc) {
+                inp_row = inp.row(i);
                 xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-                for (int j = 0; j < nOut; j++) out(i, j) = out_row(j);
+                out.row(i) = out_row;
             }
-        }
-
-        if (calc) {
-            inp_row = inp.row(i);
-            xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            out.row(i) = out_row;
         }
     }
     if (libxc) return out_libxc;
