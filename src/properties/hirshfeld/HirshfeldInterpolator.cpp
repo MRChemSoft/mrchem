@@ -27,9 +27,7 @@ HirshfeldRadInterpolater::HirshfeldRadInterpolater(const std::string element, st
     rhoGrid = rhoGrid.array().log();
 
     lnRho = std::make_shared<interpolation_utils::PolyInterpolator>(rGrid, rhoGrid);
-    if (writeToFile) {
-        writeInterpolatedDensity(element + ".interpolated");
-    }
+    if (writeToFile) { writeInterpolatedDensity(element + ".interpolated"); }
 }
 
 // Function to evaluate the interpolated function

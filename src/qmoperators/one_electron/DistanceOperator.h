@@ -57,7 +57,7 @@ public:
 
         // Project analytic potential, building grid for 1/r
         auto r_pow = std::make_shared<QMPotential>(1);
-        r_pow->alloc(NUMBER::Real);
+        r_pow->alloc(1);
         mrcpp::build_grid(r_pow->real(), nuc_func);
         mrcpp::project<3>(proj_prec, r_pow->real(), f);
 

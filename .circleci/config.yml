@@ -54,7 +54,8 @@ jobs:
   serial-py3:
     <<: *ubuntu-2204
     steps:
-      - checkout
+      - checkout:
+         method: blobless
       - *configure-serial
       - *build
       - *tests
@@ -63,14 +64,16 @@ jobs:
     environment:
       - OMP_NUM_THREADS: '2'
     steps:
-      - checkout
+      - checkout:
+         method: blobless
       - *configure-omp
       - *build
       - *tests
   mpi-py3:
     <<: *ubuntu-2204
     steps:
-      - checkout
+      - checkout:
+         method: blobless
       - *configure-mpi
       - *build
       - *tests

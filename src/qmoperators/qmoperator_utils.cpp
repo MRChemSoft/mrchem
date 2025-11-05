@@ -129,7 +129,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
         OrbitalVector dKet = p[d](ket);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
-        T = orbital::calc_overlap_matrix(dKet);
+        T = mrcpp::calc_overlap_matrix(dKet);
     } else {
         OrbitalVector dBra = p[d](bra);
         OrbitalVector dKet = p[d](ket);
@@ -137,7 +137,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
         sNodes += orbital::get_size_nodes(dKet);
-        T = orbital::calc_overlap_matrix(dBra, dKet);
+        T = mrcpp::calc_overlap_matrix(dBra, dKet);
     }
     if (d == 0) mrcpp::print::tree(2, "<i|p[x]p[x]|j>", nNodes, sNodes, timer.elapsed());
     if (d == 1) mrcpp::print::tree(2, "<i|p[y]p[y]|j>", nNodes, sNodes, timer.elapsed());
@@ -156,7 +156,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, Momen
         OrbitalVector dKet = (V * p[d])(ket);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
-        T = orbital::calc_overlap_matrix(dKet, dKet);
+        T = mrcpp::calc_overlap_matrix(dKet, dKet);
     } else {
         OrbitalVector dBra = (V * p[d])(bra);
         OrbitalVector dKet = (V * p[d])(ket);
@@ -164,7 +164,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, Momen
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
         sNodes += orbital::get_size_nodes(dKet);
-        T = orbital::calc_overlap_matrix(dBra, dKet);
+        T = mrcpp::calc_overlap_matrix(dBra, dKet);
     }
     if (d == 0) mrcpp::print::tree(2, "<i|p[x]p[x]|j>", nNodes, sNodes, timer.elapsed());
     if (d == 1) mrcpp::print::tree(2, "<i|p[y]p[y]|j>", nNodes, sNodes, timer.elapsed());

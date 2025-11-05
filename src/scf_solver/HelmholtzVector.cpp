@@ -75,7 +75,7 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
     int pprec = Printer::getPrecision();
     OrbitalVector out = orbital::param_copy(Phi);
     for (int i = 0; i < Phi.size(); i++) {
-        if (not mrcpp::mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_func(out[i])) continue;
 
         t_lap.start();
         out[i] = apply(i, Phi[i]);
@@ -114,7 +114,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
 
     OrbitalVector out = orbital::param_copy(Phi);
     for (int i = 0; i < Phi.size(); i++) {
-        if (not mrcpp::mpi::my_orb(out[i])) continue;
+        if (not mrcpp::mpi::my_func(out[i])) continue;
 
         t_lap.start();
         Orbital Vphi_i = V(Phi[i]);
@@ -138,23 +138,24 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
  *
  * Computes output as: out_i = -2H_i[phi_i]
  */
-Orbital HelmholtzVector::apply(int i, Orbital &phi) const {
+Orbital HelmholtzVector::apply(int i, const Orbital &phi) const {
     ComplexDouble mu_i = std::sqrt(-2.0 * this->lambda(i));
     if (std::abs(mu_i.imag()) > mrcpp::MachineZero) MSG_ABORT("Mu cannot be complex");
     mrcpp::HelmholtzOperator H(*MRA, mu_i.real(), this->prec);
 
-    Orbital out = phi.paramCopy();
-    if (phi.hasReal()) {
-        out.alloc(NUMBER::Real);
-        mrcpp::apply(this->prec, out.real(), H, phi.real(), -1, true); // Absolute prec
-        out.real().rescale(-1.0 / (2.0 * mrcpp::pi));
+    Orbital out = phi.paramCopy(true);
+    ComplexDouble metric[4][4];
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            if (i == j)
+                metric[i][j] = 1.0;
+            else
+                metric[i][j] = 0.0;
+        }
     }
-    if (phi.hasImag()) {
-        out.alloc(NUMBER::Imag);
-        mrcpp::apply(this->prec, out.imag(), H, phi.imag(), -1, true); // Absolute prec
-        double sign = (phi.conjugate()) ? 1.0 : -1.0;
-        out.imag().rescale(sign / (2.0 * mrcpp::pi));
-    }
+    mrcpp::apply(this->prec, out, H, phi, metric, -1, true); // Absolute prec
+    out.rescale(-1.0 / (2.0 * mrcpp::pi));
+
     return out;
 }
 } // namespace mrchem

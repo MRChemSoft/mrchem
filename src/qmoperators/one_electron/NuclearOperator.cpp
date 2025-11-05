@@ -30,21 +30,20 @@
 
 #include "NuclearOperator.h"
 
-#include<fstream>
-#include<limits>
-#include<nlohmann/json.hpp>
+#include <fstream>
+#include <limits>
+#include <nlohmann/json.hpp>
 
-#include "analyticfunctions/PointNucleusHFYGB.h"
-#include "analyticfunctions/PointNucleusParabola.h"
-#include "analyticfunctions/PointNucleusMinimum.h"
-#include "analyticfunctions/FiniteNucleusSphere.h"
 #include "analyticfunctions/FiniteNucleusGaussian.h"
+#include "analyticfunctions/FiniteNucleusSphere.h"
+#include "analyticfunctions/PointNucleusHFYGB.h"
+#include "analyticfunctions/PointNucleusMinimum.h"
+#include "analyticfunctions/PointNucleusParabola.h"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Density.h"
 #include "qmoperators/QMPotential.h"
-#include "utils/print_utils.h"
 #include "utils/math_utils.h"
-
+#include "utils/print_utils.h"
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -99,8 +98,8 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     loc_prec /= pow(vol, 1.0 / 6.0); // norm of 1/r over the box ~ root_6(Volume)
 
     // Project local potential
-    mrcpp::ComplexFunction V_loc(false);
-    mrcpp::cplxfunc::project(V_loc, *f_loc, NUMBER::Real, loc_prec);
+    mrcpp::CompFunction<3> V_loc(false);
+    mrcpp::project(V_loc, *f_loc, loc_prec);
     t_loc.stop();
     mrcpp::print::separator(1, '-');
     print_utils::qmfunction(1, "Local potential", V_loc, t_loc);
@@ -162,7 +161,7 @@ void NuclearOperator::setupLocalPotential(NuclearFunction &f_loc, const Nuclei &
     }
 }
 
-void NuclearOperator::allreducePotential(double prec, mrcpp::ComplexFunction &V_tot, mrcpp::ComplexFunction &V_loc) const {
+void NuclearOperator::allreducePotential(double prec, mrcpp::CompFunction<3> &V_tot, mrcpp::CompFunction<3> &V_loc) const {
     // Add up local contributions into the grand master
     mrcpp::mpi::reduce_function(prec, V_loc, mrcpp::mpi::comm_wrk);
     if (mrcpp::mpi::grand_master()) {
@@ -170,7 +169,7 @@ void NuclearOperator::allreducePotential(double prec, mrcpp::ComplexFunction &V_
         if (mrcpp::mpi::numerically_exact) V_loc.crop(prec);
     }
 
-    if (not V_tot.hasReal()) V_tot.alloc(NUMBER::Real);
+    if (not V_tot.hasReal()) V_tot.alloc(1);
     if (V_tot.isShared()) {
         int tag = 3141;
         // MPI grand master distributes to shared masters

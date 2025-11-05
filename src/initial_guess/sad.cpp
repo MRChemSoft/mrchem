@@ -213,8 +213,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
-
-
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
@@ -266,7 +264,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
 
     Timer t_tot;
     Density rho_loc(false);
-    rho_loc.alloc(NUMBER::Real);
+    rho_loc.alloc(1);
     rho_loc.real().setZero();
 
     Timer t_loc;

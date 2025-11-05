@@ -53,11 +53,11 @@ TEST_CASE("Operator composition", "[operator_composition]") {
     Phi.push_back(Orbital{SPIN::Alpha});
     Phi.push_back(Orbital{SPIN::Alpha});
     Phi.push_back(Orbital{SPIN::Alpha});
-    Phi.distribute();
+
     for (int i = 0; i < 3; i++) {
         int nu[3] = {i, 0, 0};
         HarmonicOscillatorFunction f(nu);
-        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
     SECTION("identity operator") {
@@ -384,7 +384,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(SI.size(0) == 2);
 
             SI.setup(prec);
-            const ComplexDouble ref = {0.0, 0.5};
+            const ComplexDouble ref = {0.0, 0.0}; // spin is flipped->orthogonal
             const ComplexMatrix val = SI(Phi, Phi);
             REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
             REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
@@ -397,7 +397,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(SI.size(0) == 1);
 
             SI.setup(prec);
-            const ComplexDouble ref = {0.0, 0.5};
+            const ComplexDouble ref = {0.0, 0.0}; // spin is flipped->orthogonal
             const ComplexMatrix val = SI(Phi, Phi);
             REQUIRE(val(0, 0).real() == Catch::Approx(ref.real()).margin(thrs));
             REQUIRE(val(0, 0).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
@@ -436,7 +436,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(SD.size(0) == 2);
 
             SD.setup(prec);
-            const ComplexDouble ref = {0.0, -std::sqrt(2.0) / 4.0};
+            const ComplexDouble ref = {0.0, 0.0}; // spin is flipped->orthogonal
             const ComplexMatrix val = SD(Phi, Phi);
             REQUIRE(val(0, 1).real() == Catch::Approx(ref.real()).margin(thrs));
             REQUIRE(val(0, 1).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
@@ -449,7 +449,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(SD.size(0) == 2);
 
             SD.setup(prec);
-            const ComplexDouble ref = {0.0, -std::sqrt(2.0) / 4.0};
+            const ComplexDouble ref = {0.0, 0.0}; // spin is flipped->orthogonal
             const ComplexMatrix val = SD(Phi, Phi);
             REQUIRE(val(0, 1).real() == Catch::Approx(ref.real()).margin(thrs));
             REQUIRE(val(0, 1).imag() == Catch::Approx(ref.imag()).epsilon(thrs));
@@ -495,8 +495,8 @@ TEST_CASE("Operator composition", "[operator_composition]") {
             REQUIRE(gradV[2].size(0) == 1);
 
             gradV.setup(prec);
-            if (mrcpp::mpi::my_orb(Phi[0])) {
-                OrbitalVector dPhi_0 = gradV(Phi[0]);
+            if (mrcpp::mpi::my_func(Phi[0])) {
+                std::vector<Orbital> dPhi_0 = gradV(Phi[0]);
                 REQUIRE(dPhi_0.size() == 3);
                 REQUIRE(dPhi_0[0].norm() == Catch::Approx(1.0).epsilon(thrs));
                 REQUIRE(dPhi_0[1].norm() == Catch::Approx(0.0).margin(thrs));

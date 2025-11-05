@@ -1,4 +1,4 @@
-find_package(Eigen3 3.4 CONFIG QUIET
+find_package(Eigen3 CONFIG QUIET
   NO_CMAKE_PATH
   NO_CMAKE_PACKAGE_REGISTRY
   )

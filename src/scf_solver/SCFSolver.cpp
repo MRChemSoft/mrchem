@@ -197,8 +197,8 @@ void SCFSolver::printOrbitals(const DoubleVector &norms, const DoubleVector &err
         bool conv_i = (errors(i) < this->orbThrs) or (this->orbThrs < 0.0);
         std::stringstream o_row;
         o_row << std::setw(w1) << i;
-        o_row << std::setw(w2) << Phi[i].printSpin();
-        o_row << std::setw(w3) << Phi[i].getNNodes(NUMBER::Total);
+        o_row << std::setw(w2) << Orbital(Phi[i]).printSpin();
+        o_row << std::setw(w3) << Phi[i].getNNodes();
         o_row << std::setw(w4) << std::setprecision(2 * pprec) << std::fixed << norms(i);
         o_row << std::setw(w6) << std::setprecision(pprec) << std::scientific << errors(i);
         o_row << std::setw(w5) << conv_i;

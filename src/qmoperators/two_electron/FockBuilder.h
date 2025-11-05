@@ -26,11 +26,11 @@
 
 #pragma once
 
+#include "chemistry/Nucleus.h"
 #include "qmoperators/QMPotential.h"
 #include "tensor/RankOneOperator.h"
 #include "tensor/RankZeroOperator.h"
 #include <string>
-#include "chemistry/Nucleus.h"
 
 /** @class FockOperator
  *
@@ -84,8 +84,8 @@ public:
     bool isAZora() const { return zora_is_azora; }
     bool isZora() const { return (zora_has_nuc || zora_has_coul || zora_has_xc); }
     void setZoraType(bool has_nuc, bool has_coul, bool has_xc, bool is_azora);
-    void setAZORADirectory(const std::string &dir) {azora_dir = dir;}
-    void setNucs(const Nuclei &nucs) { this->nucs = nucs;}
+    void setAZORADirectory(const std::string &dir) { azora_dir = dir; }
+    void setNucs(const Nuclei &nucs) { this->nucs = nucs; }
 
     SCFEnergy trace(OrbitalVector &Phi, const Nuclei &nucs);
     ComplexMatrix operator()(OrbitalVector &bra, OrbitalVector &ket);

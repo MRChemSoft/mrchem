@@ -74,11 +74,11 @@ public:
      * @brief Compute the variance of the total force using the formula
      * sigma = sqrt(1/(3N) * sum_i sum_j (F_{ij})^2) presented in
      * Gubler et al.: Journal of Computational Physics: X Volume 17, November 2023, 100131
-    */
+     */
     double variance() const {
         DoubleMatrix forces = getTensor();
         Eigen::Vector3d total_force = forces.colwise().sum();
-        double force_variance = total_force.norm() * std::sqrt( 1.0 / (3.0 * forces.rows()) );
+        double force_variance = total_force.norm() * std::sqrt(1.0 / (3.0 * forces.rows()));
         return force_variance;
     }
 
