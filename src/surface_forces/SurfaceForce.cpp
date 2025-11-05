@@ -10,8 +10,8 @@
 #include "qmfunctions/orbital_utils.h"
 
 #include "qmoperators/one_electron/NablaOperator.h"
-#include <vector>
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
+#include <vector>
 
 #include "chemistry/Molecule.h"
 #include "chemistry/Nucleus.h"
@@ -20,19 +20,19 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include "mrdft/Factory.h"
+#include "mrdft/Functional.h"
 #include "mrdft/MRDFT.h"
 #include "mrdft/xc_utils.h"
 #include "qmoperators/two_electron/XCOperator.h"
-#include "mrdft/Functional.h"
 
 #include "qmoperators/one_electron/HessianOperator.h"
 #include "tensor/RankOneOperator.h"
 
 #include "surface_forces/lebedev.h"
 #include "surface_forces/xcStress.h"
-#include <string>
-#include <iostream>
 #include <filesystem>
+#include <iostream>
+#include <string>
 
 #include <MRCPP/Timer>
 
@@ -50,7 +50,7 @@ namespace surface_force {
  * @param nucCharge The charges of the nuclei. Shape (nNuc,).
  * @param nucSmoothing The smoothing parameter for the nuclei. Shape (nNuc,).
  * @param gridPos The positions of the grid points where the field should be evaluated. Shape (nGrid, 3).
-*/
+ */
 MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const VectorXd &nucSmoothing, const MatrixXd gridPos) {
     int nGrid = gridPos.rows();
     int nNuc = nucPos.rows();
@@ -69,8 +69,7 @@ MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const 
         c2 = c * c;
         c3 = c2 * c;
         c3_times_sqrt_pi_times_three = 3. * std::sqrt(M_PI) * c3;
-        for (int j = 0; j < nGrid; j++)
-        {
+        for (int j = 0; j < nGrid; j++) {
             r_vect = nucPos.row(i) - gridPos.row(j);
             r = r_vect.norm();
             r2 = r * r;
@@ -78,7 +77,7 @@ MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const 
             Efield.row(j) += q * r_vect / r3;
             // This would compute the electric field for the finite point like nucleus. It does not improve accuracy since the integration speres
             // are large enough to not be affected by the finite point like nucleus. It is kept here for reference.
-            // Efield.row(j) += q * r_vect / r * (std::erf(r / c) / r2 - 2 * std::exp(-r2/c2)/(sqrt_pi * c * r) + 2.0 * r * std::exp(-r2 / c2) / c3_times_sqrt_pi_times_three 
+            // Efield.row(j) += q * r_vect / r * (std::erf(r / c) / r2 - 2 * std::exp(-r2/c2)/(sqrt_pi * c * r) + 2.0 * r * std::exp(-r2 / c2) / c3_times_sqrt_pi_times_three
             //     + 128.0 * r * std::exp(-4.0 * r2 / c2) / c3_times_sqrt_pi_times_three);
         }
     }
@@ -87,9 +86,9 @@ MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const 
 
 /**
  * @brief Calculates the coulomb potential due to the given density.
-*/
-mrcpp::ComplexFunction calcPotential(Density &rho, mrcpp::PoissonOperator &poisson, double prec) {
-    mrcpp::ComplexFunction V(false);
+ */
+mrcpp::CompFunction<3> calcPotential(Density &rho, mrcpp::PoissonOperator &poisson, double prec) {
+    mrcpp::CompFunction<3> V(false);
     V.alloc(mrchem::NUMBER::Real);
     mrcpp::apply(prec, V.real(), poisson, rho.real());
     return V;
@@ -99,12 +98,11 @@ mrcpp::ComplexFunction calcPotential(Density &rho, mrcpp::PoissonOperator &poiss
  * @brief Calculates the electric field due to the electrons.
  * @param negEfield The negative gradient of the electric field. Shape (3,).
  * @param gridPos The positions of the grid points where the field should be evaluated. Shape (nGrid, 3).
-*/
-MatrixXd electronicEfield(mrchem::OrbitalVector &negEfield, const MatrixXd &gridPos) {
+ */
+MatrixXd electronicEfield(std::vector<Orbital> &negEfield, const MatrixXd &gridPos) {
     int nGrid = gridPos.rows();
     MatrixXd Efield = MatrixXd::Zero(nGrid, 3);
-    for (int i = 0; i < nGrid; i++)
-    {
+    for (int i = 0; i < nGrid; i++) {
         std::array<double, 3> pos = {gridPos(i, 0), gridPos(i, 1), gridPos(i, 2)};
         Efield(i, 0) = -negEfield[0].real().evalf(pos);
         Efield(i, 1) = -negEfield[1].real().evalf(pos);
@@ -119,23 +117,22 @@ MatrixXd electronicEfield(mrchem::OrbitalVector &negEfield, const MatrixXd &grid
  * @param negEfield Negative electric field (gradient of potential)
  * @param gridPos The positions of the grid points where the field should be evaluated. Shape (nGrid, 3).
  * @param prec The precision value used in the calculation.
-*/
-std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, mrchem::OrbitalVector &negEfield, const MatrixXd &gridPos, double prec){
+ */
+std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, std::vector<Orbital> &negEfield, const MatrixXd &gridPos, double prec) {
     int nGrid = gridPos.rows();
     int nNuc = mol.getNNuclei();
 
     Eigen::MatrixXd nucPos(nNuc, 3);
     Eigen::VectorXd nucCharge(nNuc);
     Eigen::VectorXd nucSmoothing(nNuc);
-    for (int i = 0; i < nNuc; i++)
-    {
+    for (int i = 0; i < nNuc; i++) {
         std::array<double, 3> coord = mol.getNuclei()[i].getCoord();
         nucPos(i, 0) = coord[0];
         nucPos(i, 1) = coord[1];
         nucPos(i, 2) = coord[2];
         nucCharge(i) = mol.getNuclei()[i].getCharge();
         double tmp = 0.00435 * prec / std::pow(nucCharge(i), 5.0);
-        nucSmoothing(i) =  std::cbrt(tmp);
+        nucSmoothing(i) = std::cbrt(tmp);
     }
 
     MatrixXd Efield = electronicEfield(negEfield, gridPos) + nuclearEfield(nucPos, nucCharge, nucSmoothing, gridPos);
@@ -143,17 +140,11 @@ std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, mrchem::OrbitalV
     std::vector<Eigen::Matrix3d> stress(nGrid);
     for (int i = 0; i < nGrid; i++) {
         for (int i1 = 0; i1 < 3; i1++) {
-            for (int i2 = 0; i2 < 3; i2++) {
-                stress[i](i1, i2) = Efield(i, i1) * Efield(i, i2);
-            }
+            for (int i2 = 0; i2 < 3; i2++) { stress[i](i1, i2) = Efield(i, i1) * Efield(i, i2); }
         }
-        for (int i1 = 0; i1 < 3; i1++){
-            stress[i](i1, i1) = stress[i](i1, i1) - 0.5 * (Efield(i, 0) * Efield(i, 0) + Efield(i, 1) * Efield(i, 1) + Efield(i, 2) * Efield(i, 2));
-        }
-        for (int i1 = 0; i1 < 3; i1++){
-            for (int i2 = 0; i2 < 3; i2++){
-                stress[i](i1, i2) *= 1.0 / (4 * M_PI);
-            }
+        for (int i1 = 0; i1 < 3; i1++) { stress[i](i1, i1) = stress[i](i1, i1) - 0.5 * (Efield(i, 0) * Efield(i, 0) + Efield(i, 1) * Efield(i, 1) + Efield(i, 2) * Efield(i, 2)); }
+        for (int i1 = 0; i1 < 3; i1++) {
+            for (int i2 = 0; i2 < 3; i2++) { stress[i](i1, i2) *= 1.0 / (4 * M_PI); }
         }
     }
     return stress;
@@ -161,9 +152,8 @@ std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, mrchem::OrbitalV
 
 /**
  * @brief Calculates the kinetic stress tensor for the given molecule. See the function description for the formula.
-*/
-std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std::vector<std::vector<mrchem::Orbital>> &nablaPhi
-        , std::vector<Orbital> &hessRho, double prec, const MatrixXd &gridPos){
+ */
+std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std::vector<std::vector<mrchem::Orbital>> &nablaPhi, std::vector<Orbital> &hessRho, double prec, const MatrixXd &gridPos) {
 
     // original formula for kinetic stress:
     // sigma_ij = 0.5 \sum_k phi_k del_i del_j phi_k - (del_i phi_k) (del_j phi_k)
@@ -183,26 +173,25 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
 
     std::array<double, 3> pos;
     double n1, n2, n3;
-    int occ;
+    double occ;
     for (int iOrb = 0; iOrb < Phi.size(); iOrb++) {
         occ = Phi[iOrb].occ();
-    
-        for (int i = 0; i < nGrid; i++) {
-            if (mrcpp::mpi::my_orb(iOrb)) {  
-            pos[0] = gridPos(i, 0);
-            pos[1] = gridPos(i, 1);
-            pos[2] = gridPos(i, 2);
-            n1 = nablaPhi[iOrb][0].real().evalf(pos);
-            n2 = nablaPhi[iOrb][1].real().evalf(pos);
-            n3 = nablaPhi[iOrb][2].real().evalf(pos);
-            voigtStress(i, 0) -= occ * n1 * n1;
-            voigtStress(i, 1) -= occ * n2 * n2;
-            voigtStress(i, 2) -= occ * n3 * n3;
-            voigtStress(i, 5) -= occ * n1 * n2;
-            voigtStress(i, 4) -= occ * n1 * n3;
-            voigtStress(i, 3) -= occ * n2 * n3;
-            }
 
+        for (int i = 0; i < nGrid; i++) {
+            if (mrcpp::mpi::my_func(iOrb)) {
+                pos[0] = gridPos(i, 0);
+                pos[1] = gridPos(i, 1);
+                pos[2] = gridPos(i, 2);
+                n1 = nablaPhi[iOrb][0].real().evalf(pos);
+                n2 = nablaPhi[iOrb][1].real().evalf(pos);
+                n3 = nablaPhi[iOrb][2].real().evalf(pos);
+                voigtStress(i, 0) -= occ * n1 * n1;
+                voigtStress(i, 1) -= occ * n2 * n2;
+                voigtStress(i, 2) -= occ * n3 * n3;
+                voigtStress(i, 5) -= occ * n1 * n2;
+                voigtStress(i, 4) -= occ * n1 * n3;
+                voigtStress(i, 3) -= occ * n2 * n3;
+            }
         }
     }
     mrcpp::mpi::allreduce_matrix(voigtStress, mrcpp::mpi::comm_wrk);
@@ -219,9 +208,7 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
     }
 
     for (int i = 0; i < nGrid; i++) {
-        stress[i] << voigtStress(i, 0), voigtStress(i, 5), voigtStress(i, 4),
-                     voigtStress(i, 5), voigtStress(i, 1), voigtStress(i, 3),
-                     voigtStress(i, 4), voigtStress(i, 3), voigtStress(i, 2);
+        stress[i] << voigtStress(i, 0), voigtStress(i, 5), voigtStress(i, 4), voigtStress(i, 5), voigtStress(i, 1), voigtStress(i, 3), voigtStress(i, 4), voigtStress(i, 3), voigtStress(i, 2);
     }
     return stress;
 }
@@ -232,21 +219,19 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
  * @param pos The matrix containing the positions of the points. Shape (nPoints, 3).
  * @return A vector containing the distances to the nearest neighbor for each point.
  */
-VectorXd distanceToNearestNeighbour(MatrixXd pos){
+VectorXd distanceToNearestNeighbour(MatrixXd pos) {
     int n = pos.rows();
     VectorXd dist(n);
     double temp;
-    if (n == 1){
+    if (n == 1) {
         dist(0) = 1.0;
     } else {
-        for (int i = 0; i < n; i++){
+        for (int i = 0; i < n; i++) {
             dist(i) = (pos.row(i) - pos.row((i + 1) % n)).norm();
-            for (int j = 0; j < n; j++){
-                if (i != j){
+            for (int j = 0; j < n; j++) {
+                if (i != j) {
                     temp = (pos.row(i) - pos.row(j)).norm();
-                    if (temp < dist(i)){
-                        dist(i) = temp;
-                    }
+                    if (temp < dist(i)) { dist(i) = temp; }
                 }
             }
         }
@@ -263,12 +248,9 @@ VectorXd distanceToNearestNeighbour(MatrixXd pos){
  * @param json_fock The JSON object containing the Fock matrix settings.
  * @return The matrix of forces, shape (nAtoms, 3).
  */
-Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi, double prec, const json &json_fock
-        , std::string leb_prec, double radius_factor) {
+Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi, double prec, const json &json_fock, std::string leb_prec, double radius_factor) {
 
-    if (radius_factor > 0.95 && radius_factor < 0.05){
-        MSG_ABORT("Invalid value of radius_factor")
-    }
+    if (radius_factor > 0.95 && radius_factor < 0.05) { MSG_ABORT("Invalid value of radius_factor") }
 
     // setup density
     mrchem::Density rho(false);
@@ -283,8 +265,8 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     mrchem::NablaOperator nabla(mrcd);
     nabla.setup(prec);
     double abs_prec = prec / mrchem::orbital::get_electron_number(Phi);
-    mrcpp::ComplexFunction pot = calcPotential(rho, poisson_op, abs_prec);
-    mrchem::OrbitalVector negEfield = nabla(pot);
+    mrcpp::CompFunction<3> pot = calcPotential(rho, poisson_op, abs_prec);
+    std::vector<Orbital> negEfield = nabla(pot);
 
     // set up operators for kinetic stress:
     int derivOrder1 = 1;
@@ -297,9 +279,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     std::vector<std::vector<Orbital>> nablaPhi(Phi.size());
     std::vector<Orbital> hessRho = hess(rho);
     for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_orb(i)) {
-            nablaPhi[i] = nabla(Phi[i]);
-        }
+        if (mrcpp::mpi::my_func(i)) { nablaPhi[i] = nabla(Phi[i]); }
     }
     // setup xc stuff:
     int order = 0;
@@ -309,7 +289,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     auto xc_cutoff = json_xcfunc["cutoff"];
     auto xc_funcs = json_xcfunc["functionals"];
     auto xc_order = order + 1;
-    auto funcVectorShared = std::make_shared<mrcpp::MPI_FuncVector>(Phi);
+    auto funcVectorShared = std::make_shared<OrbitalVector>(Phi);
 
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(xc_spin);
@@ -355,14 +335,11 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     int nTinyPoints = 1;
     if (leb_prec == "low") {
         nLebPoints = 194;
-    }
-    else if (leb_prec == "medium"){
+    } else if (leb_prec == "medium") {
         nLebPoints = 434;
-    }
-    else if (leb_prec == "high") {
+    } else if (leb_prec == "high") {
         nLebPoints = 770;
-    }
-    else {
+    } else {
         MSG_ABORT("Invalid lebedev precision");
     }
 
@@ -379,14 +356,12 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
         MatrixXd gridPos = integrator.getPoints();
         VectorXd weights = integrator.getWeights();
         MatrixXd normals = integrator.getNormals();
-        std::vector<Matrix3d> xcStress = getXCStress(mrdft_p, *xc_pot_vector, std::make_shared<mrchem::OrbitalVector>(Phi), 
-            std::make_shared<mrchem::NablaOperator>(nabla), gridPos, xc_spin, prec);
-        
-        
+        std::vector<Matrix3d> xcStress = getXCStress(mrdft_p, *xc_pot_vector, std::make_shared<mrchem::OrbitalVector>(Phi), std::make_shared<mrchem::NablaOperator>(nabla), gridPos, xc_spin, prec);
+
         std::vector<Matrix3d> kstress = kineticStress(mol, Phi, nablaPhi, hessRho, prec, gridPos);
         std::vector<Matrix3d> mstress = maxwellStress(mol, negEfield, gridPos, prec);
         std::vector<Matrix3d> stress(integrator.n);
-        for (int i = 0; i < integrator.n; i++){
+        for (int i = 0; i < integrator.n; i++) {
             stress[i] = xcStress[i] + kstress[i] + mstress[i];
             forces.row(iAtom) -= stress[i] * normals.row(i).transpose() * weights(i);
         }

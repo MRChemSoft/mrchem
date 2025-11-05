@@ -48,7 +48,6 @@ bool project_mo(OrbitalVector &Phi, double prec, const std::string &mo_file);
 
 bool initial_guess::mw::setup(OrbitalVector &Phi, double prec, const std::string &file_p, const std::string &file_a, const std::string &file_b) {
     if (Phi.size() == 0) return false;
-
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation   ", "Compute initial orbitals");
     print_utils::text(0, "Method        ", "Project MW molecular orbitals");
@@ -104,27 +103,25 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
     bool success = true;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        if (mrcpp::mpi::my_orb(Phi[i])) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
             std::stringstream orbname;
             orbname << mo_file << "_idx_" << i;
 
             Orbital phi_i;
             orbital::loadOrbital(orbname.str(), phi_i);
-            if (phi_i.squaredNorm() < 0.0) {
+            if (phi_i.getSquareNorm() < 0.0) {
                 MSG_ERROR("Guess orbital not found: " << orbname.str());
                 success &= false;
             }
-            if (phi_i.hasReal()) {
-                Phi[i].alloc(NUMBER::Real);
+            if (phi_i.isreal()) {
                 // Refine to get accurate function values
                 mrcpp::refine_grid(phi_i.real(), 1);
                 mrcpp::project(prec, Phi[i].real(), phi_i.real());
             }
-            if (phi_i.hasImag()) {
-                Phi[i].alloc(NUMBER::Imag);
+            if (phi_i.iscomplex()) {
                 // Refine to get accurate function values
-                mrcpp::refine_grid(phi_i.imag(), 1);
-                mrcpp::project(prec, Phi[i].imag(), phi_i.imag());
+                mrcpp::refine_grid(phi_i.complex(), 1);
+                mrcpp::project(prec, Phi[i].complex(), phi_i.complex());
             }
             std::stringstream o_txt;
             o_txt << std::setw(w1 - 1) << i;

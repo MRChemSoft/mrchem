@@ -106,8 +106,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);
 
     // Compute XC density
-    Density &rho_xc = XC_.getDensity(DensityType::Total);
-    mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
+    Density &rho_xc = XC.getDensity(DensityType::Total);
+    mrcpp::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
     // Project AO basis of hydrogen functions
@@ -192,8 +192,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
 
     // Compute XC density
-    Density &rho_xc = XC_.getDensity(DensityType::Total);
-    mrcpp::cplxfunc::deep_copy(rho_xc, rho_j);
+    Density &rho_xc = XC.getDensity(DensityType::Total);
+    mrcpp::deep_copy(rho_xc, rho_j);
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
 
@@ -213,7 +213,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     // Compute Fock matrix
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
-
 
     // Rotate orbitals and fill electrons by Aufbau
     t_lap.start();
@@ -266,7 +265,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
 
     Timer t_tot;
     Density rho_loc(false);
-    rho_loc.alloc(NUMBER::Real);
+    rho_loc.alloc(1);
     rho_loc.real().setZero();
 
     Timer t_loc;

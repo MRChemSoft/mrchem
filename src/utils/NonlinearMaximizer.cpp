@@ -25,6 +25,7 @@
 
 #include <Eigen/Eigenvalues>
 
+#include "MRCPP/Parallel"
 #include "MRCPP/Printer"
 #include <MRCPP/Timer>
 

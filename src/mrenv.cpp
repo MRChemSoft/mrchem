@@ -23,13 +23,13 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "MRCPP/utils/parallel.h"
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
 #include <xc_funcs.h>
 #include <xc.h>
 
 #include <fstream>
-#include "MRCPP/utils/parallel.h"
 
 #include "mrchem.h"
 #include "mrenv.h"
@@ -126,14 +126,16 @@ void mrenv::init_mra(const json &json_mra) {
     } else {
         MSG_ABORT("Invalid basis type!");
     }
-    mrcpp::cplxfunc::SetdefaultMRA(MRA);
+    mrcpp::SetdefaultMRA(MRA);
 }
 
 void mrenv::init_mpi(const json &json_mpi) {
     mrcpp::mpi::numerically_exact = json_mpi["numerically_exact"];
     mrcpp::mpi::shared_memory_size = json_mpi["shared_memory_size"];
     mrcpp::mpi::bank_size = json_mpi["bank_size"];
+    mrcpp::mpi::bank_per_node = json_mpi["bank_per_node"];
     mrcpp::mpi::omp_threads = json_mpi["omp_threads"];
+    mrcpp::mpi::use_omp_num_threads = json_mpi["use_omp_num_threads"];
     mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 

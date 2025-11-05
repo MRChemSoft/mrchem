@@ -79,23 +79,23 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
 
     for (int i = 0; i < nFuncs; i++) {
         HydrogenFunction f(std::get<0>(qn[i]), std::get<1>(qn[i]), std::get<2>(qn[i]), 1.0, o);
-        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
     SECTION("apply") {
         // update ref based on MPI
         for (int i = 0; i < nFuncs; i++) {
             for (int j = 0; j < nFuncs; j++) {
-                if (not(mrcpp::mpi::my_orb(Phi[i])) or not(mrcpp::mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
+                if (not(mrcpp::mpi::my_func(Phi[i])) or not(mrcpp::mpi::my_func(Phi[j]))) ref(i, j) = 0.0;
             }
         }
 
         Orbital phi_x = EF(Phi[0]);
-        ComplexDouble X_00 = orbital::dot(Phi[0], phi_x);
-        ComplexDouble X_10 = orbital::dot(Phi[1], phi_x);
-        ComplexDouble X_20 = orbital::dot(Phi[2], phi_x);
-        ComplexDouble X_30 = orbital::dot(Phi[3], phi_x);
-        ComplexDouble X_40 = orbital::dot(Phi[4], phi_x);
+        ComplexDouble X_00 = mrcpp::dot(Phi[0], phi_x);
+        ComplexDouble X_10 = mrcpp::dot(Phi[1], phi_x);
+        ComplexDouble X_20 = mrcpp::dot(Phi[2], phi_x);
+        ComplexDouble X_30 = mrcpp::dot(Phi[3], phi_x);
+        ComplexDouble X_40 = mrcpp::dot(Phi[4], phi_x);
         REQUIRE(X_00.real() == Catch::Approx(ref(0, 0)).margin(thrs));
         REQUIRE(X_10.real() == Catch::Approx(ref(0, 1)).margin(thrs));
         REQUIRE(X_20.real() == Catch::Approx(ref(0, 2)).margin(thrs));
@@ -107,21 +107,21 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
         // update ref based on MPI
         for (int i = 0; i < nFuncs; i++) {
             for (int j = 0; j < nFuncs; j++) {
-                if (not(mrcpp::mpi::my_orb(Phi[i])) or not(mrcpp::mpi::my_orb(Phi[j]))) ref(i, j) = 0.0;
+                if (not(mrcpp::mpi::my_func(Phi[i])) or not(mrcpp::mpi::my_func(Phi[j]))) ref(i, j) = 0.0;
             }
         }
 
         OrbitalVector xPhi = EF(Phi);
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j < xPhi.size(); j++) {
-                ComplexDouble X_ij = orbital::dot(Phi[i], xPhi[j]);
+                ComplexDouble X_ij = mrcpp::dot(Phi[i], xPhi[j]);
                 REQUIRE(std::abs(X_ij.real()) == Catch::Approx(ref(i, j)).margin(thrs));
             }
         }
     }
     SECTION("expectation value") {
         ComplexDouble X_00 = EF(Phi[0], Phi[0]);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(X_00.real() == Catch::Approx(ref(0, 0)));
         } else {
             REQUIRE(X_00.real() == Catch::Approx(0.0).margin(thrs));
@@ -158,13 +158,13 @@ TEST_CASE("ElectricFieldEnergy", "[electric_field_energy]") {
 
     // Setting up the 1s orbital on H
     HydrogenFunction sh(1, 0, 0, 1.0, {1.0, 0.0, 0.0});
-    Orbital &phi_h = Phi[0];
-    if (mrcpp::mpi::my_orb(phi_h)) mrcpp::cplxfunc::project(phi_h, sh, NUMBER::Real, prec);
+    Orbital phi_h = Phi[0];
+    if (mrcpp::mpi::my_func(phi_h)) mrcpp::project(phi_h, sh, prec);
 
     // Setting up the 1s orbital on Li
     HydrogenFunction sli(1, 0, 0, 3.0, {-1.0, 0.0, 0.0});
-    Orbital &phi_li = Phi[1];
-    if (mrcpp::mpi::my_orb(phi_li)) mrcpp::cplxfunc::project(phi_li, sli, NUMBER::Real, prec);
+    Orbital phi_li = Phi[1];
+    if (mrcpp::mpi::my_func(phi_li)) mrcpp::project(phi_li, sli, prec);
 
     SECTION("energy in the external field") {
         double E_ext = EF.trace(Phi).real();

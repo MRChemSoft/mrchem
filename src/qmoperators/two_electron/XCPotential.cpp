@@ -85,7 +85,6 @@ void XCPotential::setup(double prec) {
         this->potentials.push_back(std::make_tuple(1.0, v_global));
     }
 
-
     if (plevel == 2) {
         int totNodes = 0;
         int totSize = 0;
@@ -104,7 +103,7 @@ void XCPotential::setup(double prec) {
 /** @brief Clears all data in the XCPotential object */
 void XCPotential::clear() {
     this->energy = 0.0;
-    for (auto &rho : this->densities) rho.free(NUMBER::Total);
+    for (auto &rho : this->densities) rho.free();
     mrcpp::clear(this->potentials, true);
     clearApplyPrec();
 }

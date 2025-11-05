@@ -36,10 +36,10 @@ public:
     NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec = -1.0, bool mpi_share = false, const std::string &model = "point_like");
 
 private:
-    mrcpp::ComplexFunction V_func; // The MW Function representation of the potential
+    mrcpp::CompFunction<3> V_func; // The MW Function representation of the potential
 
     void setupLocalPotential(NuclearFunction &f_loc, const Nuclei &nucs, double smooth_prec) const;
-    void allreducePotential(double prec, mrcpp::ComplexFunction &V_tot, mrcpp::ComplexFunction &V_loc) const;
+    void allreducePotential(double prec, mrcpp::CompFunction<3> &V_tot, mrcpp::CompFunction<3> &V_loc) const;
 };
 
 } // namespace mrchem

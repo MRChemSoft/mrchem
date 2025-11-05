@@ -35,7 +35,7 @@ using mrcpp::Printer;
 using mrcpp::Timer;
 
 namespace mrchem {
-mrcpp::ComplexFunction &ReactionPotentialD2::computePotential(double prec) const {
+mrcpp::CompFunction<3> &ReactionPotentialD2::computePotential(double prec) const {
     // construct perturbed density from the orbitals
     if (this->orbitals == nullptr) MSG_ERROR("Orbitals not initialized");
     if (this->orbitals_x == nullptr) MSG_ERROR("Perturbed X orbitals not initialized");

@@ -81,12 +81,10 @@ TEST_CASE("ReactionOperator", "[reaction_operator]") {
     auto Phi_p = std::make_shared<OrbitalVector>();
     auto &Phi = *Phi_p;
     Phi.push_back(Orbital(SPIN::Paired));
-    Phi.distribute();
 
     // project analytic 1s orbital
     HydrogenFunction f(1, 0, 0);
-    if (mrcpp::mpi::my_orb(Phi[0])) mrcpp::cplxfunc::project(Phi[0], f, NUMBER::Real, prec);
-
+    if (mrcpp::mpi::my_func(Phi[0])) mrcpp::project(Phi[0], f, prec);
     auto rho_nuc = chemistry::compute_nuclear_density(prec, molecule, 100);
 
     int kain = 4;

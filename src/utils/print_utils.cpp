@@ -243,9 +243,9 @@ void print_utils::matrix(int level, const std::string &txt, const DoubleMatrix &
     printout(level, o.str());
 }
 
-void print_utils::qmfunction(int level, const std::string &txt, const mrcpp::ComplexFunction &func, mrcpp::Timer &timer) {
-    auto nodes = func.getNNodes(NUMBER::Total);
-    auto memory = func.getSizeNodes(NUMBER::Total);
+void print_utils::qmfunction(int level, const std::string &txt, const mrcpp::CompFunction<3> &func, mrcpp::Timer &timer) {
+    auto nodes = func.getNNodes();
+    auto memory = func.getSizeNodes();
     auto time = timer.elapsed();
     mrcpp::print::tree(level, txt, nodes, memory, time);
 }

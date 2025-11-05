@@ -56,9 +56,9 @@ LPBESolver::LPBESolver(const Permittivity &e,
                        SCRFDensityType density_type)
         : PBESolver(e, k, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type) {}
 // TODO separate this for the linear and non-linear solver
-void LPBESolver::computePBTerm(mrcpp::ComplexFunction &V_tot, const double salt_factor, mrcpp::ComplexFunction &pb_term) {
+void LPBESolver::computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_factor, mrcpp::CompFunction<3> &pb_term) {
     resetComplexFunction(pb_term);
-    mrcpp::cplxfunc::multiply(pb_term, V_tot, this->kappa, this->apply_prec);
+    mrcpp::multiply(pb_term, V_tot, this->kappa, this->apply_prec);
     pb_term.rescale(salt_factor / (4.0 * mrcpp::pi));
 }
 

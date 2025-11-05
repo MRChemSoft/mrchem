@@ -1,4 +1,4 @@
- /*
+/*
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
  * chemistry (Hartree-Fock and Density Functional Theory).
@@ -24,10 +24,10 @@
  */
 
 #include "MRCPP/Gaussians"
+#include "MRCPP/MWFunctions"
+#include "MRCPP/Parallel"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
-#include "MRCPP/Parallel"
-#include "MRCPP/MWFunctions"
 
 #include "Density.h"
 #include "Orbital.h"
@@ -51,12 +51,27 @@ namespace density {
 Density compute(double prec, Orbital phi, DensityType spin);
 void compute_local_X(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, DensityType spin);
 void compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin);
-double compute_occupation(Orbital &phi, DensityType dens_spin);
+double compute_occupation(const Orbital &phi, DensityType dens_spin);
 } // namespace density
+
+double density::compute_occupation(const Orbital &phi, DensityType dens_spin) {
+    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
+    if (phi.spin() == SPIN::Alpha) occ_a = static_cast<double>(phi.occ());
+    if (phi.spin() == SPIN::Beta) occ_b = static_cast<double>(phi.occ());
+    if (phi.spin() == SPIN::Paired) occ_p = static_cast<double>(phi.occ());
+
+    double occup(0.0);
+    if (dens_spin == DensityType::Total) occup = occ_a + occ_b + occ_p;
+    if (dens_spin == DensityType::Alpha) occup = occ_a + 0.5 * occ_p;
+    if (dens_spin == DensityType::Beta) occup = occ_b + 0.5 * occ_p;
+    if (dens_spin == DensityType::Spin) occup = occ_a - occ_b;
+
+    return occup;
+}
 
 /** @brief Compute density as the square of an orbital
  *
- * This routine is similar to mrcpp::cplxfunc::multiply_real(), but it uses
+ * This routine is similar to mrcpp::multiply_real(), but it uses
  * mrcpp::square(phi) instead of mrcpp::multiply(phi, phi), which makes it
  * slightly faster.
  *
@@ -64,30 +79,9 @@ double compute_occupation(Orbital &phi, DensityType dens_spin);
 Density density::compute(double prec, Orbital phi, DensityType spin) {
     double occ = density::compute_occupation(phi, spin);
     if (std::abs(occ) < mrcpp::MachineZero) return Density(false);
-
     Density rho(false);
-    FunctionTreeVector<3> sum_vec;
-    if (phi.hasReal()) {
-        auto *real_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*real_2, phi.real());
-        mrcpp::square(prec, *real_2, phi.real());
-        sum_vec.push_back(std::make_tuple(occ, real_2));
-    }
-    if (phi.hasImag()) {
-        auto *imag_2 = new FunctionTree<3>(*MRA);
-        mrcpp::copy_grid(*imag_2, phi.imag());
-        mrcpp::square(prec, *imag_2, phi.imag());
-        sum_vec.push_back(std::make_tuple(occ, imag_2));
-    }
-
-    rho.alloc(NUMBER::Real);
-    if (sum_vec.size() > 0) {
-        mrcpp::build_grid(rho.real(), sum_vec);
-        mrcpp::add(-1.0, rho.real(), sum_vec, 0);
-        mrcpp::clear(sum_vec, true);
-    } else {
-        rho.real().setZero();
-    }
+    mrcpp::copy_grid(rho, phi);
+    mrcpp::multiply(prec, rho, occ, phi, phi, -1, false, false, true); // the last "true" means use complex conjugate of the first phi
 
     return rho;
 }
@@ -135,13 +129,9 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
     int N_el = orbital::get_electron_number(Phi);
     double abs_prec = (mrcpp::mpi::numerically_exact) ? -1.0 : prec / N_el;
-    if (not rho.hasReal()) rho.alloc(NUMBER::Real);
-
-    if (rho.hasReal()) rho.real().setZero();
-    if (rho.hasImag()) rho.imag().setZero();
 
     for (auto &phi_i : Phi) {
-        if (mrcpp::mpi::my_orb(phi_i)) {
+        if (mrcpp::mpi::my_func(phi_i)) {
             Density rho_i = density::compute(prec, phi_i, spin);
             rho.add(1.0, rho_i); // Extends to union grid
             rho.crop(abs_prec);  // Truncates to given precision
@@ -165,19 +155,17 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
 
-    if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+    if (rho.Ncomp() == 0) rho.alloc(1);
 
     // Compute local density from own orbitals
-    rho.real().setZero();
     for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_orb(Phi[i])) {
-            if (not mrcpp::mpi::my_orb(X[i])) MSG_ABORT("Inconsistent MPI distribution");
-
-            double occ = density::compute_occupation(Phi[i], spin);
+        if (mrcpp::mpi::my_func(Phi[i])) {
+            if (not mrcpp::mpi::my_func(X[i])) MSG_ABORT("Inconsistent MPI distribution");
+            Orbital phi_i = Phi[i];
+            double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; // next orbital if this one is not occupied!
-
             Density rho_i(false);
-            mrcpp::cplxfunc::multiply_real(rho_i, Phi[i], X[i], mult_prec);
+            mrcpp::multiply(rho_i, phi_i, X[i], mult_prec);
             rho.add(2.0 * occ, rho_i);
             rho.crop(add_prec);
         }
@@ -188,25 +176,27 @@ void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, Or
     int N_el = orbital::get_electron_number(Phi);
     double mult_prec = prec;       // prec for rho_i = |x_i><phi_i| + |phi_i><y_i|
     double add_prec = prec / N_el; // prec for rho = sum_i rho_i
+
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
     if (Phi.size() != Y.size()) MSG_ERROR("Size mismatch");
 
-    if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+    if (rho.Ncomp() == 0) rho.alloc(1);
 
     // Compute local density from own orbitals
     rho.real().setZero();
     for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_orb(Phi[i])) {
-            if (not mrcpp::mpi::my_orb(X[i])) MSG_ABORT("Inconsistent MPI distribution");
-            if (not mrcpp::mpi::my_orb(Y[i])) MSG_ABORT("Inconsistent MPI distribution");
+        if (mrcpp::mpi::my_func(Phi[i])) {
+            Orbital phi_i = Phi[i];
+            if (not mrcpp::mpi::my_func(X[i])) MSG_ABORT("Inconsistent MPI distribution");
+            if (not mrcpp::mpi::my_func(Y[i])) MSG_ABORT("Inconsistent MPI distribution");
 
-            double occ = density::compute_occupation(Phi[i], spin);
+            double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; // next orbital if this one is not occupied!
 
             Density rho_x(false);
             Density rho_y(false);
-            mrcpp::cplxfunc::multiply(rho_x, X[i], Phi[i].dagger(), mult_prec);
-            mrcpp::cplxfunc::multiply(rho_y, Phi[i], Y[i].dagger(), mult_prec);
+            mrcpp::multiply(rho_x, Phi[i], X[i], mult_prec, false, false, true); // last true means complex conjugate of Phi[i]
+            mrcpp::multiply(rho_y, Y[i], Phi[i], mult_prec, false, false, true); // last true means complex conjugate of Y[i]
             rho.add(occ, rho_x);
             rho.add(occ, rho_y);
             rho.crop(add_prec);
@@ -215,24 +205,9 @@ void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, Or
 }
 
 void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp) {
-    if (not rho.hasReal()) rho.alloc(NUMBER::Real);
+    if (not rho.hasReal()) rho.alloc(1);
     mrcpp::build_grid(rho.real(), dens_exp);
     mrcpp::project(prec, rho.real(), dens_exp);
-}
-
-double density::compute_occupation(Orbital &phi, DensityType dens_spin) {
-    double occ_a(0.0), occ_b(0.0), occ_p(0.0);
-    if (phi.spin() == SPIN::Alpha) occ_a = (double)phi.occ();
-    if (phi.spin() == SPIN::Beta) occ_b = (double)phi.occ();
-    if (phi.spin() == SPIN::Paired) occ_p = (double)phi.occ();
-
-    double occ(0.0);
-    if (dens_spin == DensityType::Total) occ = occ_a + occ_b + occ_p;
-    if (dens_spin == DensityType::Alpha) occ = occ_a + 0.5 * occ_p;
-    if (dens_spin == DensityType::Beta) occ = occ_b + 0.5 * occ_p;
-    if (dens_spin == DensityType::Spin) occ = occ_a - occ_b;
-
-    return occ;
 }
 
 /** @brief Add up local density contributions and broadcast
@@ -253,7 +228,7 @@ void density::allreduce_density(double prec, Density &rho_tot, Density &rho_loc)
         if (mrcpp::mpi::numerically_exact) rho_loc.crop(prec);
     }
 
-    if (not rho_tot.hasReal()) rho_tot.alloc(NUMBER::Real);
+    if (not rho_tot.hasReal()) rho_tot.alloc(1);
 
     if (rho_tot.isShared()) {
         int tag = 2002;
@@ -269,12 +244,11 @@ void density::allreduce_density(double prec, Density &rho_tot, Density &rho_loc)
     } else {
         // MPI grand master distributes to all ranks
         mrcpp::mpi::broadcast_function(rho_loc, mrcpp::mpi::comm_wrk);
-       // All MPI ranks copies the function into final memory
+        // All MPI ranks copies the function into final memory
         mrcpp::copy_grid(rho_tot.real(), rho_loc.real());
         mrcpp::copy_func(rho_tot.real(), rho_loc.real());
     }
 }
-
 
 // Function to read atomic density data from a file
 void density::readAtomicDensity(const std::string path, Eigen::VectorXd &rGrid, Eigen::VectorXd &rhoGrid) {

@@ -31,7 +31,7 @@
 
 namespace mrchem {
 
-class NuclearGradientFunction : public mrcpp::RepresentableFunction<3> {
+class NuclearGradientFunction : public mrcpp::RepresentableFunction<3, double> {
 public:
     /*!
      *  @brief NuclearGradientFunction represents the function: Z * [x,y,z]/|r - o|^3

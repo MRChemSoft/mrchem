@@ -41,7 +41,7 @@ void coord(int level, const std::string &txt, const mrcpp::Coord<3> &val, int p 
 void scalar(int level, const std::string &txt, double val, const std::string &unit = "", int p = -1, bool s = false);
 void vector(int level, const std::string &txt, const DoubleVector &val, int p = -1, bool s = false);
 void matrix(int level, const std::string &txt, const DoubleMatrix &val, int p = -1, bool s = false);
-void qmfunction(int level, const std::string &txt, const mrcpp::ComplexFunction &func, mrcpp::Timer &t);
+void qmfunction(int level, const std::string &txt, const mrcpp::CompFunction<3> &func, mrcpp::Timer &t);
 std::string dbl_to_str(double d, int p, bool sci);
 std::vector<double> eigen_to_vector(const DoubleVector &inp, double thrs);
 std::vector<double> eigen_to_vector(const DoubleMatrix &inpm, double thrs);

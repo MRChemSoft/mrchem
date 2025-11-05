@@ -54,7 +54,7 @@ public:
 private:
     mrcpp::BankAccount PhiBank; // to put the Orbitals
     void setupBank() override;
-    void clearBank();
+    void clearBank() override;
     int testInternal(Orbital phi_p) const override;
     void setupInternal(double prec) override;
     Orbital calcExchange(Orbital phi_p);

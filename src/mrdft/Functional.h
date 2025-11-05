@@ -51,7 +51,7 @@ public:
     void setLogGradient(bool log) { log_grad = log; }
     void setDensityCutoff(double cut) { cutoff = cut; }
     void setLibxc(bool libxc_) { libxc = libxc_; }
-    void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) {derivOp = std::move(d);}
+    void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }
 
     virtual bool isSpin() const = 0;
     bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
