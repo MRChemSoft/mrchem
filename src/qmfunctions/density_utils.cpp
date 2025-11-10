@@ -135,6 +135,7 @@ void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, Densi
             double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue;
             Density rho_i;
+            mrcpp::copy_grid(rho_i, phi_i);
             mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
             rho.add(occ, rho_i); // Extends to union grid
             rho.crop(abs_prec);  // Truncates to given precision
