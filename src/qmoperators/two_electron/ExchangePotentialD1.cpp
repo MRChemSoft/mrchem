@@ -85,7 +85,7 @@ int ExchangePotentialD1::testInternal(Orbital phi_p) const {
     int out = -1;
     if (Kphi.size() == Phi.size()) {
         for (int i = 0; i < Phi.size(); i++) {
-            if (&Phi[i].real() == &phi_p.real() and &Phi[i].imag() == &phi_p.imag()) {
+            if (Phi[i].CompD[0] == phi_p.CompD[0] and Phi[i].CompC[0] == phi_p.CompC[0]) {
                 out = i;
                 break;
             }
