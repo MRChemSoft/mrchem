@@ -147,13 +147,13 @@ bool orbital::compare(const OrbitalVector &Phi_a, const OrbitalVector &Phi_b) {
 
     for (auto &phi_a : Phi_a) {
         const mrcpp::MultiResolutionAnalysis<3> *mra_a{nullptr};
-        if (phi_a.hasReal()) mra_a = &phi_a.real().getMRA();
-        if (phi_a.hasImag()) mra_a = &phi_a.imag().getMRA();
+        if (phi_a.isreal()) mra_a = &phi_a.CompD[0]->getMRA();
+        if (phi_a.iscomplex()) mra_a = &phi_a.CompC[0]->getMRA();
         if (mra_a == nullptr) continue;
         for (auto &phi_b : Phi_b) {
             const mrcpp::MultiResolutionAnalysis<3> *mra_b{nullptr};
-            if (phi_b.hasReal()) mra_b = &phi_a.real().getMRA();
-            if (phi_b.hasImag()) mra_b = &phi_a.imag().getMRA();
+            if (phi_b.isreal()) mra_b = &phi_a.CompD[0]->getMRA();
+            if (phi_b.iscomplex()) mra_b = &phi_a.CompC[0]->getMRA();
             if (mra_b == nullptr) continue;
             if (*mra_a != *mra_b) {
                 MSG_WARN("Different MRA");
@@ -195,50 +195,6 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
     OrbitalVector Psi = orbital::deep_copy(Phi);
     mrcpp::rotate(Psi, U, prec);
     return Psi;
-}
-
-/** @brief Save all nodes in bank; identify them using serialIx from refTree
- * shift is a shift applied in the id
- */
-void orbital::save_nodes(OrbitalVector Phi, mrcpp::FunctionTree<3> &refTree, mrcpp::BankAccount &account) {
-    int sizecoeff = (1 << refTree.getDim()) * refTree.getKp1_d();
-    int sizecoeffW = ((1 << refTree.getDim()) - 1) * refTree.getKp1_d();
-    int max_nNodes = refTree.getNNodes();
-    std::vector<double *> coeffVec;
-    std::vector<double> scalefac;
-    std::vector<int> indexVec;    // SerialIx of the node in refOrb
-    std::vector<int> parindexVec; // SerialIx of the parent node
-    int N = Phi.size();
-    int max_ix;
-    for (int j = 0; j < N; j++) {
-        if (not mrcpp::mpi::my_func(Phi[j])) continue;
-        // make vector with all coef address and their index in the union grid
-        if (Phi[j].hasReal()) {
-            Phi[j].real().makeCoeffVector(coeffVec, indexVec, parindexVec, scalefac, max_ix, refTree);
-            int max_n = indexVec.size();
-            // send node coefs from Phi[j] to bank
-            // except for the root nodes, only wavelets are sent
-            for (int i = 0; i < max_n; i++) {
-                if (indexVec[i] < 0) continue; // nodes that are not in refOrb
-                int csize = sizecoeffW;
-                if (parindexVec[i] < 0) csize = sizecoeff;
-                account.put_nodedata(j, indexVec[i], csize, &(coeffVec[i][sizecoeff - csize]));
-            }
-        }
-        // Imaginary parts are considered as orbitals with an orbid shifted by N
-        if (Phi[j].hasImag()) {
-            Phi[j].imag().makeCoeffVector(coeffVec, indexVec, parindexVec, scalefac, max_ix, refTree);
-            int max_n = indexVec.size();
-            // send node coefs from Phi[j] to bank
-            for (int i = 0; i < max_n; i++) {
-                if (indexVec[i] < 0) continue; // nodes that are not in refOrb
-                // NB: the identifier (indexVec[i]) must be shifted for not colliding with the nodes from the real part
-                int csize = sizecoeffW;
-                if (parindexVec[i] < 0) csize = sizecoeff;
-                account.put_nodedata(j + N, indexVec[i], csize, &(coeffVec[i][sizecoeff - csize]));
-            }
-        }
-    }
 }
 
 /** @brief Deep copy that changes type from real to complex
