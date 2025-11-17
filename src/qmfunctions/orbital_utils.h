@@ -37,7 +37,6 @@ int compare_spin(const Orbital &phi_a, const Orbital &phi_b);
 int compare_occupation(const Orbital &phi_a, const Orbital &phi_b);
 
 void normalize(Orbital phi);
-OrbitalChunk get_my_chunk(OrbitalVector &Phi);
 void orthogonalize(double prec, Orbital &&phi, Orbital psi);
 
 OrbitalVector add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec = -1.0);
