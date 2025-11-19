@@ -1,6 +1,3 @@
-# Allow the project to control the version from the top-level
-set(LIBXC_VERSION "7.0.0" CACHE STRING "LibXC version to fetch if not found on the system")
-
 # 1) Prefer a system-provided LibXC with a proper CMake config package
 find_package(Libxc QUIET CONFIG)
 
@@ -14,8 +11,6 @@ endif()
 
 include(FetchContent)
 
-set(LIBXC_VERSION "7.0.0" CACHE STRING "LibXC version to fetch")
-
 # Build settings
 set(BUILD_SHARED_LIBS ON  CACHE BOOL "Build LibXC shared libs")
 set(BUILD_TESTING     OFF CACHE BOOL "Build LibXC tests")
@@ -25,9 +20,11 @@ set(DISABLE_KXC       ON CACHE BOOL "Disable 3rd derivatives (Kxc)")
 set(DISABLE_LXC       ON CACHE BOOL "Disable 4th derivatives (Lxc)")  # keep 4th derivs
 
 FetchContent_Declare(libxc_sources
-  URL "https://gitlab.com/libxc/libxc/-/archive/${LIBXC_VERSION}/libxc-${LIBXC_VERSION}.tar.gz"
-  DOWNLOAD_EXTRACT_TIMESTAMP ON
   QUIET
+  GIT_REPOSITORY
+    https://gitlab.com/libxc/libxc
+  GIT_TAG
+  7bd5bb41415968db94c499a2f093309c9a2dcf53
 )
 
 FetchContent_MakeAvailable(libxc_sources)
