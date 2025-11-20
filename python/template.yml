@@ -370,7 +370,7 @@ sections:
           Hard cutoff for passing density values to XCFun.
       - name: xc_library
         type: str
-        default: libxc
+        default: xcfun
         docstring: |
           Runs Libxc or XCFun
       - name: functionals

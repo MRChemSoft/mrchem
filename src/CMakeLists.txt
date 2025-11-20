@@ -21,7 +21,7 @@ target_include_directories(mrchem
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 
     # LibXC include roots (generated + sources)
-    ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/include
+    # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/include
     ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/
     ${PROJECT_BINARY_DIR}/_deps/libxc_sources-src/src
 )
