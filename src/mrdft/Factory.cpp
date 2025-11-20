@@ -103,30 +103,34 @@ void Factory::setFunctional(const std::string &n, double c) {
     std::string name = n;
     std::cout << "xcfun func: " << n << std::endl;
     // std::vector<int> ids = this->mapFunctionalName(name);
-    std::vector<int> ids;
-    std::vector<double> coeffs;
-    newMapFuncName(name, ids, coeffs);
-    std::cout << "name sat" << std::endl;
-    setLibxc(libxc);
 
-    xc_func_type libxc_obj;
-    for (size_t i = 0; i < ids.size(); i++) {
-        if (spin) {
-            if (xc_func_init(&libxc_obj, ids[i], XC_POLARIZED) != 0) {
-                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
-            }
-            xc_func_set_dens_threshold(&libxc_obj, cutoff);
-            libxc_objects.push_back(libxc_obj);
-            libxc_coeffs.push_back(c * coeffs[i]);
-        } else {
-            if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
-                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
-            }
-            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+    if (libxc) {
+        std::vector<int> ids;
+        std::vector<double> coeffs;
 
-            std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
-            libxc_objects.push_back(libxc_obj);
-            libxc_coeffs.push_back(c * coeffs[i]);
+        newMapFuncName(name, ids, coeffs);
+        std::cout << "name sat" << std::endl;
+        setLibxc(libxc);
+        
+        xc_func_type libxc_obj;
+        for (size_t i = 0; i < ids.size(); i++) {
+            if (spin) {
+                if (xc_func_init(&libxc_obj, ids[i], XC_POLARIZED) != 0) {
+                    std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
+                }
+                xc_func_set_dens_threshold(&libxc_obj, cutoff);
+                libxc_objects.push_back(libxc_obj);
+                libxc_coeffs.push_back(c * coeffs[i]);
+            } else {
+                if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
+                    std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
+                }
+                xc_func_set_dens_threshold(&libxc_obj, cutoff);
+                
+                std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
+                libxc_objects.push_back(libxc_obj);
+                libxc_coeffs.push_back(c * coeffs[i]);
+            }
         }
     }
 }
@@ -135,8 +139,10 @@ void Factory::setFunctional(const std::string &n, double c) {
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
-    setLibxc(libxc);
-    setFunctional("BECKEX", 1.0);
+    if (libxc) {
+        setLibxc(libxc);
+        setFunctional("BECKEX", 1.0);
+    }
 
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
@@ -170,7 +176,10 @@ std::unique_ptr<MRDFT> Factory::build() {
 
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
 
-    func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
+    if (libxc){
+        func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
+    }
+
 
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
