@@ -184,9 +184,7 @@ std::unique_ptr<MRDFT> Factory::build() {
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
-    // func_p->setDensityCutoff(cutoff);
-    std::cout << "cutoff: " << cutoff << std::endl; // != cutoff set in input
-    func_p->setDensityCutoff(1e-6);
+    func_p->setDensityCutoff(cutoff);
 
     auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
 
