@@ -139,10 +139,8 @@ void Factory::setFunctional(const std::string &n, double c) {
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
-    if (libxc) {
-        setLibxc(libxc);
-        setFunctional("BECKEX", 1.0);
-    }
+    setLibxc(libxc);
+        // setFunctional("BECKEX", 1.0);
 
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
