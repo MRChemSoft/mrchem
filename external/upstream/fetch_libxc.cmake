@@ -32,7 +32,5 @@ else()
       ${libxc_sources_SOURCE_DIR}
       ${libxc_sources_BINARY_DIR}
       )
-    message(libxc_sources_SOURCE_DIR="${libxc_sources_SOURCE_DIR}")
-    message(libxc_sources_BINARY_DIR="${libxc_sources_BINARY_DIR}")
   endif()
 endif()
