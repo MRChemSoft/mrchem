@@ -98,7 +98,7 @@ protected:
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
 
 // Libxc
-    bool libxc;
+    bool libxc{false};
     std::vector<xc_func_type> libxc_objects;
     std::vector<double> libxc_coeffs;
 };

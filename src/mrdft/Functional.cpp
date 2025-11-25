@@ -32,8 +32,8 @@
 namespace mrdft {
 
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
-    libxc_objects = libxc_objects_;
-    libxc_coeffs  = libxc_coeffs_;
+    libxc_objects = std::move(libxc_objects_);
+    libxc_coeffs  = std::move(libxc_coeffs_);
 }
 
 /** @brief Run a collection of grid points through XCFun

@@ -42,7 +42,7 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         : mra(MRA)
         , xcfun_p(xcfun_new(), xcfun_delete) {}
 
-bool Factory::libxc;
+bool Factory::libxc = false;
 
 void MapFuncName(const std::string &name, std::vector<int> &ids, std::vector<double> &coeffs) {
     std::cout << "Name used in MapFunctionalName: " << name << std::endl;
@@ -157,8 +157,10 @@ std::unique_ptr<MRDFT> Factory::build() {
 
     if (libxc){
         func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
-    }
-
+        func_p->setLibxc(true);
+    } else{
+        func_p->setLibxc(false);
+    }   
 
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
