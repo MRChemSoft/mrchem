@@ -1,4 +1,3 @@
-cmake_policy(SET CMP0144 NEW)
 find_package(Libxc QUIET CONFIG)
 
 if(TARGET Libxc::xc)

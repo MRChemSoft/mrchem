@@ -263,7 +263,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
     driver::build_fock_operator(json_fock, mol, F, 0);
-    
+
     // Pre-compute internal exchange contributions
     if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
 
@@ -367,8 +367,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
-    // auto xc_lib = json_guess["xc_library"];
-    
+
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
         MSG_ERROR("Restricted open-shell not supported");

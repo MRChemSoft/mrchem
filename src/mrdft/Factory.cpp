@@ -152,23 +152,24 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (gga) func_p = std::make_unique<GGA>(order, xcfun_p, diff_p);
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
-
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-
     if (libxc){
         func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
+<<<<<<< HEAD
         func_p->setLibxc(true);
     } else{
         func_p->setLibxc(false);
     }   
 
+=======
+    }
+>>>>>>> refs/remotes/mrchem/libxc
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);
 
     auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
-
     return mrdft_p;
 }
 
