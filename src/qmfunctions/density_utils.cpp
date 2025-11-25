@@ -95,11 +95,10 @@ Density density::compute(double prec, Orbital phi, DensityType spin) {
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
     int N_el = orbital::get_electron_number(Phi);
     double rel_prec = prec;        // prec for rho_i = |phi_i|^2
-    double abs_prec = prec / N_el; // prec for rho = sum_i rho_i
 
     Density rho_loc(false);
     density::compute_local(rel_prec, rho_loc, Phi, spin);
-    density::allreduce_density(abs_prec, rho, rho_loc);
+    density::allreduce_density(rho, rho_loc);
 }
 
 /** @brief Compute transition density as rho = sum_i |x_i><phi_i| + |phi_i><y_i|
@@ -121,15 +120,12 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
     } else {
         density::compute_local_XY(rel_prec, rho_loc, Phi, X, Y, spin);
     }
-    density::allreduce_density(abs_prec, rho, rho_loc);
+    density::allreduce_density(rho, rho_loc);
 }
 
 /** @brief Compute local density as the sum of own (MPI) orbitals
  */
 void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
-    int N_el = orbital::get_electron_number(Phi);
-    double abs_prec = (mrcpp::mpi::numerically_exact) ? -1.0 : prec / N_el;
-
     for (auto &phi_i : Phi) {
         if (mrcpp::mpi::my_func(phi_i)) {
             double occ = density::compute_occupation(phi_i, spin);
@@ -137,8 +133,10 @@ void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, Densi
             Density rho_i;
             mrcpp::copy_grid(rho_i, phi_i);
             mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
+            //note that we crop the phi_i*phi_i, because the square makes small smaller
+            rho_i.crop(prec);  // Truncates to given precision
+            // we do not crop rho, since the rho_i do not cancel out
             rho.add(occ, rho_i); // Extends to union grid
-            rho.crop(abs_prec);  // Truncates to given precision
         }
     }
 }
@@ -169,6 +167,7 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
             double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue; // next orbital if this one is not occupied!
             Density rho_i(false);
+            mrcpp::copy_grid(rho_i, phi_i);
             mrcpp::multiply(rho_i, phi_i, X[i], mult_prec);
             rho.add(2.0 * occ, rho_i);
             rho.crop(add_prec);
@@ -184,7 +183,7 @@ void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, Or
     if (Phi.size() != X.size()) MSG_ERROR("Size mismatch");
     if (Phi.size() != Y.size()) MSG_ERROR("Size mismatch");
 
-    if (rho.Ncomp() == 0) rho.alloc(1);
+    if (rho.Ncomp() == 0) rho.alloc(1, true);
 
     // Compute local density from own orbitals
     rho.real().setZero();
@@ -199,6 +198,8 @@ void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, Or
 
             Density rho_x(false);
             Density rho_y(false);
+            mrcpp::copy_grid(rho_x, phi_i);
+            mrcpp::copy_grid(rho_y, phi_i);
             mrcpp::multiply(rho_x, Phi[i], X[i], mult_prec, false, false, true); // last true means complex conjugate of Phi[i]
             mrcpp::multiply(rho_y, Y[i], Phi[i], mult_prec, false, false, true); // last true means complex conjugate of Y[i]
             rho.add(occ, rho_x);
@@ -220,19 +221,14 @@ void density::compute(double prec, Density &rho, mrcpp::GaussExp<3> &dens_exp) {
  *      to rank = 0 and broadcasted to all ranks.
  *
  */
-void density::allreduce_density(double prec, Density &rho_tot, Density &rho_loc) {
-    // For numerically identical results in MPI we must first add
-    // up orbital contributions onto their union grid, and THEN
-    // crop the resulting density tree to the desired precision
-    double part_prec = (mrcpp::mpi::numerically_exact) ? -1.0 : prec;
-    // Add up local contributions into the grand master
-    mrcpp::mpi::reduce_function(part_prec, rho_loc, mrcpp::mpi::comm_wrk);
-    if (mrcpp::mpi::grand_master()) {
-        // If numerically exact the grid is huge at this point
-        if (mrcpp::mpi::numerically_exact) rho_loc.crop(prec);
-    }
+void density::allreduce_density(Density &rho_tot, Density &rho_loc) {
+    // We do not expect the rho_loc to cancel out, therefore we keep everything (no crop)
+    double prec = -1.0;
 
-    if (not rho_tot.hasReal()) rho_tot.alloc(1);
+    // Add up local contributions into the grand master
+    mrcpp::mpi::reduce_function(prec, rho_loc, mrcpp::mpi::comm_wrk);
+
+    if (not rho_tot.hasReal()) rho_tot.alloc(1, true);
 
     if (rho_tot.isShared()) {
         int tag = 2002;

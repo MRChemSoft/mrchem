@@ -88,7 +88,7 @@ void CoulombPotential::setup(double prec) {
         // more precise than strictly necessary
         setupLocalDensity(0.1 * prec);
         mrcpp::CompFunction<3> V = setupLocalPotential(0.1 * prec);
-        allreducePotential(0.1 * prec, V);
+        allreducePotential(V);
     }
     if (plevel == 2) print_utils::qmfunction(2, "Coulomb operator", *this, timer);
     mrcpp::print::footer(3, timer, 2);
@@ -146,28 +146,28 @@ mrcpp::CompFunction<3> CoulombPotential::setupLocalPotential(double prec) {
     OrbitalVector &Phi = *this->orbitals;
     mrcpp::CompFunction<3> &rho = this->density;
 
-    // Adjust precision by system size
-    double abs_prec = prec / orbital::get_electron_number(Phi);
-
     Timer timer;
     mrcpp::CompFunction<3> V(false);
     V.alloc(1);
-    mrcpp::apply(abs_prec, V.real(), P, rho.real());
+    // We use absolute precision, so that the final precision does not dependend
+    // on the number of local orbitals
+    mrcpp::apply(prec, V.real(), P, rho.real(), -1, true);
     print_utils::qmfunction(3, "Compute local potential", V, timer);
 
     return V;
 }
 
-void CoulombPotential::allreducePotential(double prec, mrcpp::CompFunction<3> &V_loc) {
+void CoulombPotential::allreducePotential(mrcpp::CompFunction<3> &V_loc) {
     Timer t_com;
 
     mrcpp::CompFunction<3> &V_tot = *this;
     OrbitalVector &Phi = *this->orbitals;
 
-    double abs_prec = prec / orbital::get_electron_number(Phi);
+    // We do not expect the V_loc to cancel out, therefore we keep everything (no crop)
+    double prec = -1.0;
 
     // Add up local contributions into the grand master
-    mrcpp::mpi::reduce_function(abs_prec, V_loc, mrcpp::mpi::comm_wrk);
+    mrcpp::mpi::reduce_function(prec, V_loc, mrcpp::mpi::comm_wrk);
 
     if (not V_tot.hasReal()) V_tot.alloc(1);
     if (V_tot.isShared()) {
