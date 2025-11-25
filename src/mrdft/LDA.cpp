@@ -94,7 +94,7 @@ mrcpp::FunctionTreeVector<3> LDA::setupCtrInput() {
 void LDA::preprocess(mrcpp::FunctionTreeVector<3> &inp_vec) {
     if (inp_vec.size() != this->order) MSG_ERROR("Invalid input length");
     if (this->rho.size() > 0) MSG_ERROR("Density not empty");
-    
+
     for (auto i = 0; i < this->order; i++) this->rho.push_back(inp_vec[i]);
 }
 
@@ -120,4 +120,5 @@ mrcpp::FunctionTreeVector<3> LDA::postprocess(mrcpp::FunctionTreeVector<3> &inp_
     out_vec.push_back(std::make_tuple(1.0, &v_xc));
     return out_vec;
 }
+
 } // namespace mrdft

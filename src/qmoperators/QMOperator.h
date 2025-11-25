@@ -80,7 +80,6 @@ protected:
             MSG_ERROR("Clear operator before setup with different prec!");
         }
     }
-
     void clearApplyPrec() { this->apply_prec = -1.0; }
 
     bool isSetup(double prec) const {

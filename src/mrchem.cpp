@@ -64,6 +64,7 @@ int main(int argc, char **argv) {
     // Instantiate the physical constants singleton
     PhysicalConstants::Initialize(con_inp);
     if (json_inp["printer"]["print_constants"]) PhysicalConstants::Print();
+
     Timer timer;
     json json_out;
 

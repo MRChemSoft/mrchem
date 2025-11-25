@@ -28,7 +28,6 @@
 #include <XCFun/xcfun.h>
 #include <xc_funcs.h>
 #include <xc.h>
-
 #include <fstream>
 
 #include "mrchem.h"
@@ -219,8 +218,6 @@ void mrenv::print_header() {
     mrcpp::print::separator(0, '-', 1);
     printout(0, xcfun_splash());
     print_libxc_reference();
-    // std::string libxc_ref = xc_reference();
-    // print_utils::text(0, libxc_ref, "val");
     mrcpp::print::environment(0);
     MRA->print();
 }

@@ -31,19 +31,10 @@
 
 namespace mrdft {
 
-
-
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
-    libxc = Factory::libxc;
     libxc_objects = libxc_objects_;
     libxc_coeffs  = libxc_coeffs_;
-    if (libxc) {
-        std::cout << "RUNNING LIBXC" << std::endl;
-    } else {
-        std::cout << "RUNNING XCFUN" << std::endl;
-    }
 }
-
 
 /** @brief Run a collection of grid points through XCFun
  *
@@ -87,8 +78,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
-    // std::cout << "nInp: " << nInp << ", nOut: " << nOut << std::endl;
-    
+
     Eigen::MatrixXd rho_spin  = Eigen::MatrixXd::Zero(nPts, 1);
 
     Eigen::MatrixXd out       = Eigen::MatrixXd::Zero(nPts, nOut);
@@ -133,7 +123,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     vxc   = Eigen::VectorXd::Zero(nPts);
                     sxc   = Eigen::VectorXd::Zero(nPts);
                     sigma = Eigen::VectorXd::Zero(nPts);
-                    // sigma = inp.col(1) * inp.col(1) + inp.col(2) * inp.col(2) + inp.col(3) * inp.col(3); // This does not work!!!
 
                     for (size_t j = 0; j < nPts; j++) {
                         sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3);
@@ -157,6 +146,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                 break;
             }
         }
+    return out_libxc; // does this do what i hope it does?
     } else {
         inp_row = Eigen::VectorXd::Zero(nInp);
         out_row = Eigen::VectorXd::Zero(nOut);
@@ -167,9 +157,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             } else {
                 if (inp(i, 0) < cutoff) calc = false;
             }
-            // for (int j = 0; j < nInp; j++) inp_row(j) = inp(i, j);
-            // if (calc) xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            // for (int j = 0; j < nOut; j++) out(i, j) = out_row(j); 
             if (calc) {
                 inp_row = inp.row(i);
                 xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
@@ -177,7 +164,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             }
         }
     }
-    if (libxc) return out_libxc;
     return out;
 }
 

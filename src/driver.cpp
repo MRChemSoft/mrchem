@@ -88,7 +88,6 @@
 #include "surface_forces/SurfaceForce.h"
 
 #include "mrdft/Factory.h"
-// #include "mrdft/Functional.h"
 
 using mrcpp::ABGVOperator;
 using mrcpp::Coord;
@@ -252,25 +251,17 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////////////   Setting XC Library  //////////////////
     ///////////////////////////////////////////////////////////
-    
-    bool xc_libxc = false;
     nlohmann::json xc_lib;
 
     if (json_scf["fock_operator"].contains("xc_library")) {
-        xc_lib = json_scf["fock_operator"]["xc_library"][0];
+        xc_lib = json_scf["fock_operator"]["xc_library"];
     } else {xc_lib = "xcfun";}
-
-    if (xc_lib == "xcfun") {xc_libxc = false;
-        } else if (xc_lib == "libxc") {xc_libxc = true;
-        } else { std::cout << "some ERROR" << std::endl;
-    }
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
     FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
-    if (json_fock.contains("xc_operator")) driver::init_properties(json_fock["properties"], mol);
     driver::build_fock_operator(json_fock, mol, F, 0);
     
     // Pre-compute internal exchange contributions
@@ -312,13 +303,15 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
+        // maybe add this instead of the setting xc library section? line might not work
+        // auto xc_lib = (json_scf.contains("xc_library") ? json_scf["xc_library"] : "xcfun");
 
         GroundStateSolver solver;
         solver.setHistory(kain);
         solver.setRotation(rotation);
         solver.setLocalize(localize);
         solver.setMethodName(method);
-        solver.setLibxc(xc_libxc);
+        solver.setLibxc((xc_lib == "libxc") ? true : false);
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
@@ -374,7 +367,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
-    auto xc_lib = json_guess["xc_library"];
+    // auto xc_lib = json_guess["xc_library"];
     
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
@@ -482,7 +475,6 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     eps.getSpin() = orbital::get_spins(Phi);
     mrcpp::print::footer(1, t_eps, 2);
     mol.printEnergies("initial");
-
     return true;
 }
 
@@ -1278,11 +1270,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     if (json_fock.contains("xc_operator")) {
         auto shared_memory = json_fock["xc_operator"]["shared_memory"];
         auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
-        auto xc_lib = json_fock["xc_library"][0];
         auto xc_spin = json_xcfunc["spin"];
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
+        auto xc_lib = (json_fock.contains("xc_library") ? json_fock["xc_library"] : "xcfun");
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
@@ -1292,8 +1284,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
             auto coef = f["coef"];
-            std::cout << "Name is: " << name << std::endl;
-            std::cout << "Coef is: " << coef << std::endl;
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
@@ -1393,4 +1383,5 @@ json driver::print_properties(const Molecule &mol) {
     mol.printProperties();
     return mol.json();
 }
+
 } // namespace mrchem
