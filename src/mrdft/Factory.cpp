@@ -44,7 +44,26 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
 
 bool Factory::libxc = false;
 
-void MapFuncName(const std::string &name, std::vector<int> &ids, std::vector<double> &coeffs) {
+// Todo: det finnes sikkert gode util funksjoner i libxc for dette
+std::vector<int> Factory::mapFunctionalName(const std::string &name) const {
+    // Map common functional names from XCFun to LibXC IDs, only LDAs for now
+    if (name == "slaterx")                  return {XC_LDA_X};
+    if (name == "svwn3")                    return {XC_LDA_X, XC_LDA_C_VWN_3};
+    if (name == "svwn5c" || name == "VWN5") return {XC_LDA_C_VWN};
+    if (name == "svwn5")                    return {XC_LDA_X, XC_LDA_C_VWN};
+    if (name == "pbe")                      return {XC_GGA_X_PBE, XC_GGA_C_PBE};
+    // if (name == "b3lyp-g")                  return {XC_HYB_GGA_XC_B3LYP3};
+    if (name == "b3lyp-g")                  return {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_LYP, XC_LDA_C_VWN}; // not right
+    if (name == "b3lyp")                    return {XC_HYB_GGA_XC_B3LYP};
+    if (name == "pbe0")                     return {XC_HYB_GGA_XC_PBEH};
+    if (name == "kt1")                      return {XC_LDA_X, XC_GGA_X_KT1, XC_LDA_C_VWN};
+
+    std::cout << "!!!!! Add functional to mapFunctionalName(): " << name << std::endl;
+    MSG_ABORT("Unknown functional for libxc")
+    return {1};
+}
+
+void newMapFuncName(const std::string &name, std::vector<int> &ids, std::vector<double> &coeffs) {
     std::cout << "Name used in MapFunctionalName: " << name << std::endl;
     if (name == "pbe0") {
         // ids = {XC_GGA_X_PBE, XC_GGA_C_PBE}; // Both versions are the exact same
@@ -84,14 +103,14 @@ void Factory::setFunctional(const std::string &n, double c) {
     std::string name = n;
     std::cout << "xcfun func: " << n << std::endl;
     // std::vector<int> ids = this->mapFunctionalName(name);
-    setLibxc(libxc); // should probably be where setFunctional is called
 
     if (libxc) {
         std::vector<int> ids;
         std::vector<double> coeffs;
 
-        MapFuncName(name, ids, coeffs);
+        newMapFuncName(name, ids, coeffs);
         std::cout << "name sat" << std::endl;
+        setLibxc(libxc);
         
         xc_func_type libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
@@ -152,24 +171,21 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (gga) func_p = std::make_unique<GGA>(order, xcfun_p, diff_p);
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
+
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
+
     if (libxc){
         func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
-<<<<<<< HEAD
-        func_p->setLibxc(true);
-    } else{
-        func_p->setLibxc(false);
-    }   
-
-=======
     }
->>>>>>> refs/remotes/mrchem/libxc
+
+
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);
 
     auto mrdft_p = std::make_unique<MRDFT>(grid_p, func_p);
+
     return mrdft_p;
 }
 
