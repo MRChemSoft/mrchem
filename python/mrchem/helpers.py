@@ -469,7 +469,6 @@ def write_rsp_fock(user_dict, wf_dict):
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                # "libxc": user_dict["DFT"]["libxc"],
                 "functionals": func_dict,
             },
         }

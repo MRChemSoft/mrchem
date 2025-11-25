@@ -6,7 +6,6 @@ add_library(mrchem
   )
 
 add_dependencies(mrchem mrchem-info)
-# add_dependencies(mrchem xc)
 
 target_compile_definitions(mrchem
   PUBLIC
@@ -24,7 +23,7 @@ target_include_directories(mrchem
     # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/include
     ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/
     ${PROJECT_BINARY_DIR}/_deps/libxc_sources-src/src
-)
+  )
 
 list(APPEND _public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/driver.h
