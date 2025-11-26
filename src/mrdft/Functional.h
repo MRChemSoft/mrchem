@@ -50,7 +50,6 @@ public:
 
     void setLogGradient(bool log) { log_grad = log; }
     void setDensityCutoff(double cut) { cutoff = cut; }
-    // void setLibxc(bool libxc_) { libxc = libxc_; }
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }
 
     virtual bool isSpin() const = 0;
@@ -58,34 +57,16 @@ public:
     bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
     bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
-    double amountEXX() const {
-
-        if (libxc) {
-        double exx = 0.0;
-
-        for (std::size_t i = 0; i < libxc_objects.size(); ++i) {
-            const xc_func_type &f = libxc_objects[i];
-            double fac = xc_hyb_exx_coef(&f);
-            exx += libxc_coeffs[i] * fac;
-        }
-        return exx;
-    }
-
-        double exx = 0.0;
-        xcfun_get(xcfun.get(), "exx", &exx);
-        return exx;
-    }
+    double amountEXX() const;
     double XCenergy = 0.0;
 
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     friend class MRDFT;
 
-    // Libxc
     void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_);
 
 protected:
-// XCfun
     const int order;
     bool log_grad{false};
     double cutoff{-1.0};
@@ -109,9 +90,8 @@ protected:
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
 
-// Libxc
-    bool libxc{false};
     std::vector<xc_func_type> libxc_objects;
     std::vector<double> libxc_coeffs;
 };
+
 } // namespace mrdft

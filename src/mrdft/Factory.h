@@ -35,7 +35,7 @@
 namespace mrdft {
 
 class Factory final {
-    public:
+public:
     Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
     ~Factory() = default;
 
