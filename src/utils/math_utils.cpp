@@ -175,7 +175,7 @@ void diagonalize_block(ComplexMatrix &A, ComplexMatrix &U, int nstart, int nsize
  * Numerically stable for large and small x.
  * @param x Vector of values where the logsumexp is to be computed.
  */
-double logsumexp(const Eigen::VectorXd &x){
+double logsumexp(const Eigen::VectorXd &x) {
     double max = x.maxCoeff();
     return max + std::log((x.array() - max).exp().sum());
 }

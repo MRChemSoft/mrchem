@@ -49,11 +49,12 @@ XCPotentialD1::XCPotentialD1(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<O
 mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::FunctionTree<3> &grid) {
     mrcpp::FunctionTreeVector<3> dens_vec;
     if (not this->mrdft->functional().isSpin()) {
+
         { // Unperturbed total density
             Timer timer;
             Density &rho = getDensity(DensityType::Total, 0);
-            if (not rho.hasReal()) {
-                rho.alloc(NUMBER::Real);
+            if (rho.Ncomp() == 0) {
+                rho.alloc(1);
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Total);
             }
@@ -64,8 +65,8 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
         { // Unperturbed alpha density
             Timer timer;
             Density &rho = getDensity(DensityType::Alpha, 0);
-            if (not rho.hasReal()) {
-                rho.alloc(NUMBER::Real);
+            if (rho.Ncomp() == 0) {
+                rho.alloc(1);
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Alpha);
             }
@@ -75,8 +76,8 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
         { // Unperturbed beta density
             Timer timer;
             Density &rho = getDensity(DensityType::Beta, 0);
-            if (not rho.hasReal()) {
-                rho.alloc(NUMBER::Real);
+            if (rho.Ncomp() == 0) {
+                rho.alloc(1);
                 mrcpp::copy_grid(rho.real(), grid);
                 density::compute(prec, rho, *orbitals, DensityType::Beta);
             }

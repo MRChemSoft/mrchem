@@ -6,7 +6,6 @@
 #include "pseudopotential/projector.h"
 #include "qmfunctions/Orbital.h"
 #include "chemistry/Molecule.h"
-#include "qmfunctions/qmfunction_utils.h"
 #include "qmoperators/QMOperator.h"
 #include <string>
 
@@ -110,7 +109,8 @@ mrchem::Orbital apply(mrchem::Orbital phi) {
     ComplexDouble dotComplex;
 
     std::vector<ComplexDouble> complexCoefficients;
-    mrchem::ComplexFunctionVector complexFunctionVector;
+    // Note that mrcpp::CompFunctionVector is more than just a vector of CompFunction
+    std::vector<mrcpp::CompFunction<3>> complexFunctionVector;
 
     for (int iat = 0; iat < proj.size(); iat++) {
         // loop over all angular momenta
@@ -128,7 +128,7 @@ mrchem::Orbital apply(mrchem::Orbital phi) {
                     // std::cout << "computing dot product " << ip << std::endl;
                     mrcpp::Coord<3> r = {0.0, 0.0, 0.3};
                     // std::cout << "projector value at origin: " << proj[iat].lProj[l].mProj[mm].iProj[ip].real().evalf(r) << std::endl;
-                    dotComplex = mrcpp::cplxfunc::dot(phi, *proj[iat].lProj[l].mProj[mm].iProj[ip].projector_ptr);
+                    dotComplex = mrcpp::dot(phi, *proj[iat].lProj[l].mProj[mm].iProj[ip].projector_ptr);
                     dot_products(ip) = dotComplex.real();
                     // std::cout << "Dot product " << ip << " " << dotComplex << std::endl;
                 }
@@ -140,7 +140,7 @@ mrchem::Orbital apply(mrchem::Orbital phi) {
                 }
             }
         }
-        
+
     }
     // convert complexCoefficients to Eigen Vector:
     mrchem::ComplexVector complexCoefficientsEigen = Eigen::Map<Eigen::VectorXcd>(complexCoefficients.data(), complexCoefficients.size());

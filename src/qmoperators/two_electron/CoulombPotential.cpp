@@ -87,7 +87,7 @@ void CoulombPotential::setup(double prec) {
         // Keep each local contribution a bit
         // more precise than strictly necessary
         setupLocalDensity(0.1 * prec);
-        mrcpp::ComplexFunction V = setupLocalPotential(0.1 * prec);
+        mrcpp::CompFunction<3> V = setupLocalPotential(0.1 * prec);
         allreducePotential(0.1 * prec, V);
     }
     if (plevel == 2) print_utils::qmfunction(2, "Coulomb operator", *this, timer);
@@ -100,9 +100,9 @@ void CoulombPotential::setup(double prec) {
  * The operator can now be reused after another setup.
  */
 void CoulombPotential::clear() {
-    mrcpp::ComplexFunction::free(NUMBER::Total); // delete FunctionTree pointers
-    this->density.free(NUMBER::Total);           // delete FunctionTree pointers
-    clearApplyPrec();                            // apply_prec = -1
+    mrcpp::CompFunction<3>::free(); // delete FunctionTree pointers
+    this->density.free();           // delete FunctionTree pointers
+    clearApplyPrec();               // apply_prec = -1
 }
 
 /** @brief compute Coulomb potential
@@ -116,18 +116,17 @@ void CoulombPotential::setupGlobalPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
-    mrcpp::ComplexFunction &V = *this;
-    mrcpp::ComplexFunction &rho = this->density;
+    mrcpp::CompFunction<3> &V = *this;
+    mrcpp::CompFunction<3> &rho = this->density;
 
-    if (V.hasReal()) MSG_ERROR("Potential not properly cleared");
-    if (V.hasImag()) MSG_ERROR("Potential not properly cleared");
+    if (V.getNNodes() > 8) MSG_ERROR("Potential not properly cleared");
 
     // Adjust precision by system size
     double abs_prec = prec / rho.norm();
     bool need_to_apply = not(V.isShared()) or mrcpp::mpi::share_master();
 
     Timer timer;
-    V.alloc(NUMBER::Real);
+    V.alloc(1);
     if (need_to_apply) mrcpp::apply(abs_prec, V.real(), P, rho.real());
     mrcpp::mpi::share_function(V, 0, 22445, mrcpp::mpi::comm_share);
     print_utils::qmfunction(3, "Compute global potential", V, timer);
@@ -140,29 +139,29 @@ void CoulombPotential::setupGlobalPotential(double prec) {
  * This will compute the Coulomb potential by application o the Poisson operator
  * to the precomputed electron density.
  */
-mrcpp::ComplexFunction CoulombPotential::setupLocalPotential(double prec) {
+mrcpp::CompFunction<3> CoulombPotential::setupLocalPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
     OrbitalVector &Phi = *this->orbitals;
-    mrcpp::ComplexFunction &rho = this->density;
+    mrcpp::CompFunction<3> &rho = this->density;
 
     // Adjust precision by system size
     double abs_prec = prec / orbital::get_electron_number(Phi);
 
     Timer timer;
-    mrcpp::ComplexFunction V(false);
-    V.alloc(NUMBER::Real);
+    mrcpp::CompFunction<3> V(false);
+    V.alloc(1);
     mrcpp::apply(abs_prec, V.real(), P, rho.real());
     print_utils::qmfunction(3, "Compute local potential", V, timer);
 
     return V;
 }
 
-void CoulombPotential::allreducePotential(double prec, mrcpp::ComplexFunction &V_loc) {
+void CoulombPotential::allreducePotential(double prec, mrcpp::CompFunction<3> &V_loc) {
     Timer t_com;
 
-    mrcpp::ComplexFunction &V_tot = *this;
+    mrcpp::CompFunction<3> &V_tot = *this;
     OrbitalVector &Phi = *this->orbitals;
 
     double abs_prec = prec / orbital::get_electron_number(Phi);
@@ -170,7 +169,7 @@ void CoulombPotential::allreducePotential(double prec, mrcpp::ComplexFunction &V
     // Add up local contributions into the grand master
     mrcpp::mpi::reduce_function(abs_prec, V_loc, mrcpp::mpi::comm_wrk);
 
-    if (not V_tot.hasReal()) V_tot.alloc(NUMBER::Real);
+    if (not V_tot.hasReal()) V_tot.alloc(1);
     if (V_tot.isShared()) {
         int tag = 3141;
         // MPI grand master distributes to shared masters

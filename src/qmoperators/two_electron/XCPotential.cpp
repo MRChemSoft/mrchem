@@ -83,7 +83,7 @@ void XCPotential::setup(double prec) {
                     prefacts.push_back(prefact); // minus because rho is electron density not charge density
                     nlccrs.push_back(nuc.getPseudopotentialData()->getRnlcc());
                 }
-            } 
+            }
         }
         bool hasnlcc = prefacts.size() > 0;
         if (hasnlcc) {
@@ -112,9 +112,9 @@ void XCPotential::setup(double prec) {
                 return rho * gaussNormalization;
             };
             mrcpp::AnalyticFunction<3> rho_analytic_func(rho_analytic);
-            mrcpp::ComplexFunction rho_nlcc;
-            mrcpp::cplxfunc::project(rho_nlcc, gauss, mrcpp::NUMBER::Real, prec);
-            mrcpp::cplxfunc::project(rho_nlcc, rho_analytic_func, mrcpp::NUMBER::Real, prec);
+            mrcpp::CompFunction rho_nlcc;
+            mrcpp::project(rho_nlcc, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
+            mrcpp::project(rho_nlcc, rho_analytic_func, prec);
 
             if (pairedDensity) {
                 mrcpp::get_func(xc_inp, 0).add(1.0, rho_nlcc.real());
@@ -147,7 +147,6 @@ void XCPotential::setup(double prec) {
         this->potentials.push_back(std::make_tuple(1.0, v_global));
     }
 
-
     if (plevel == 2) {
         int totNodes = 0;
         int totSize = 0;
@@ -166,7 +165,7 @@ void XCPotential::setup(double prec) {
 /** @brief Clears all data in the XCPotential object */
 void XCPotential::clear() {
     this->energy = 0.0;
-    for (auto &rho : this->densities) rho.free(NUMBER::Total);
+    for (auto &rho : this->densities) rho.free();
     mrcpp::clear(this->potentials, true);
     clearApplyPrec();
 }

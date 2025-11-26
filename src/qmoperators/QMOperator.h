@@ -30,6 +30,7 @@
 #include <MRCPP/Printer>
 
 #include "mrchem.h"
+#include "qmfunctions/Orbital.h"
 #include "tensor/tensor_fwd.h"
 
 /** @class QMOperator
@@ -40,6 +41,10 @@
  * build more complicated operators through the TensorOperator classes. This class
  * hierarchy should NOT be used directly, as the most important functionality is
  * protected. A proper interface is provided through RankZeroOperator.
+ *
+ * Note that operators are treated as real, with possibly a Complex scalar factor,
+ * this factor is applied only if the function the ooperator is applied to is complex,
+ * if the function is real, only the soft factor (out.func_ptr->data.c1[0]) is multiplied.
  *
  * Notes on naming conventions of derived operator classes:
  * Direct decendants of QMOperator should START with "QM", like QMPotential, QMSpin,
@@ -53,16 +58,15 @@
  */
 namespace mrchem {
 
-using Orbital = mrcpp::ComplexFunction;
-
 class QMOperator {
 public:
     QMOperator() = default;
     virtual ~QMOperator() {
-        if (prec() > 0.0) MSG_ERROR("Operator not properly cleared");
+        if (prec() > 0.0) MSG_ERROR("QMOperator not properly cleared");
     }
 
     double prec() { return this->apply_prec; }
+    bool isImag() { return this->imag; }
 
     friend RankZeroOperator;
 
@@ -92,6 +96,7 @@ protected:
     virtual Orbital apply(Orbital inp) = 0;
     virtual Orbital dagger(Orbital inp) = 0;
     virtual QMOperatorVector apply(std::shared_ptr<QMOperator> &O) = 0;
+    bool imag = false; // add imaginary unit prefactor, for faster application
 };
 
 } // namespace mrchem

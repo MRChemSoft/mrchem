@@ -101,7 +101,7 @@ private:
  * @brief Spin beta operator
  *
  * Operator that acts as Identity when applied on beta (or paired) orbitals,
- * and as Zero when applid on alpha orbitals.
+ * and as Zero when applied on alpha orbitals.
  *
  * Can be defined as:
  *

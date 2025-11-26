@@ -29,86 +29,82 @@
 
 #include "Orbital.h"
 #include "orbital_utils.h"
-#include "qmfunction_utils.h"
 
 namespace mrchem {
 
 /** @brief Default constructor
  *
- * Initializes the QMFunction with NULL pointers for both real and imaginary part.
+ * Initializes with NULL tree pointers.
  */
 Orbital::Orbital()
-        : QMFunction(false)
-        , orb_data({-1, 0, 0}) {}
+        : mrcpp::CompFunction<3>() {}
+
+/** @brief Constructor with only spin
+ *
+ * Initializes with NULL tree pointers.
+ */
+Orbital::Orbital(SPIN::type spin)
+        : mrcpp::CompFunction<3>(spin) {
+    if (this->spin() < 0) INVALID_ARG_ABORT;
+    // d1 is used to store occupancy
+    if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2;
+    if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1;
+    if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[0] = 1;
+}
 
 /** @brief Constructor
  *
  * @param spin: electron spin (SPIN::Alpha/Beta/Paired)
  * @param occ: occupation
- * @param rank: MPI ownership (-1 means all MPI ranks)
+ * @param rank: position in vector if part of a vector
  *
- * Initializes the QMFunction with NULL pointers for both real and imaginary part.
  */
-Orbital::Orbital(int spin, int occ, int rank)
-        : QMFunction(false)
-        , orb_data({rank, spin, occ}) {
+Orbital::Orbital(int spin, double occ, int rank)
+        : mrcpp::CompFunction<3>(spin) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
-        if (this->spin() == SPIN::Paired) this->orb_data.occ = 2;
-        if (this->spin() == SPIN::Alpha) this->orb_data.occ = 1;
-        if (this->spin() == SPIN::Beta) this->orb_data.occ = 1;
+        // d1 is defined as occupancy
+        if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2;
+        if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1;
+        if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[0] = 1;
     }
+    this->func_ptr->rank = rank;
 }
 
 /** @brief Copy constructor
  *
  * @param orb: orbital to copy
  *
- * Shallow copy: meta data is copied along with the *re and *im pointers,
- * NO transfer of ownership.
+ * Shallow copy: meta data is copied along with the pointers,
+ * NO transfer of ownership:
+ * both orbitals are pointing to the same tree
  */
-Orbital::Orbital(const Orbital &orb)
-        : QMFunction(orb)
-        , orb_data(orb.orb_data) {}
+Orbital::Orbital(Orbital &orb)
+        : mrcpp::CompFunction<3>(orb) {}
 
-/** @brief Assignment operator
+/** @brief Copy constructor
  *
  * @param orb: orbital to copy
  *
- * Shallow copy: meta data is copied along with the *re and *im pointers,
- * NO transfer of ownership.
+ * Shallow copy: meta data is copied along with the pointers,
+ * NO transfer of ownership:
+ * both orbitals are pointing to the same tree
  */
-Orbital &Orbital::operator=(const Orbital &orb) {
-    if (this != &orb) {
-        QMFunction::operator=(orb);
-        this->orb_data = orb.orb_data;
-    }
-    return *this;
-}
-
-Orbital &Orbital::operator=(const QMFunction &func) {
-    if (this != &func) QMFunction::operator=(func);
-    return *this;
-}
-
-/** @brief Parameter copy
- *
- * Returns a new orbital with the same spin, occupation and rank_id as *this orbital.
- */
-Orbital Orbital::paramCopy() const {
-    return Orbital(this->spin(), this->occ(), this->rankID());
-}
+// Orbital::Orbital(const mrcpp::CompFunction<3> &orb)
+//         : mrcpp::CompFunction<3>(orb) {}
+Orbital::Orbital(const mrcpp::CompFunction<3> &orb)
+        : mrcpp::CompFunction<3>(orb) {}
 
 /** @brief Complex conjugation
  *
  * Returns a new orbital which is a shallow copy of *this orbital, with a flipped
  * conjugate parameter. Pointer ownership is not transferred, so *this and the output
- * orbital points to the same MW representations of the real and imaginary parts,
+ * orbital points to the same MW representations of the function tree,
  * however, they interpret the imaginary part with opposite sign.
  */
 Orbital Orbital::dagger() const {
     Orbital out(*this); // Shallow copy
-    out.conj = not this->conjugate();
+    out.func_ptr->conj = not this->conjugate();
     return out; // Return shallow copy
 }
 
@@ -121,34 +117,8 @@ Orbital Orbital::dagger() const {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::saveOrbital(const std::string &file) {
-    // writing meta data
-    std::stringstream metafile;
-    metafile << file << ".meta";
-
-    // this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
-    OrbitalData &orb_data = getOrbitalData();
-
-    std::fstream f;
-    f.open(metafile.str(), std::ios::out | std::ios::binary);
-    if (not f.is_open()) MSG_ERROR("Unable to open file");
-    f.write((char *)&func_data, sizeof(FunctionData));
-    f.write((char *)&orb_data, sizeof(OrbitalData));
-    f.close();
-
-    // writing real part
-    if (hasReal()) {
-        std::stringstream fname;
-        fname << file << "_re";
-        real().saveTree(fname.str());
-    }
-
-    // writing imaginary part
-    if (hasImag()) {
-        std::stringstream fname;
-        fname << file << "_im";
-        imag().saveTree(fname.str());
-    }
+    if (isreal()) CompD[0]->saveTree(file);
+    if (iscomplex()) CompC[0]->saveTree(file);
 }
 
 /** @brief Read orbital from disk
@@ -160,54 +130,8 @@ void Orbital::saveOrbital(const std::string &file) {
  * and imaginary ("phi_0_im.tree") parts.
  */
 void Orbital::loadOrbital(const std::string &file) {
-    if (hasReal()) MSG_ERROR("Orbital not empty");
-    if (hasImag()) MSG_ERROR("Orbital not empty");
-
-    // reading meta data
-    std::stringstream fmeta;
-    fmeta << file << ".meta";
-
-    // this flushes tree sizes
-    FunctionData &func_data = getFunctionData();
-    OrbitalData &orb_data = getOrbitalData();
-
-    std::fstream f;
-    f.open(fmeta.str(), std::ios::in | std::ios::binary);
-    if (f.is_open()) f.read((char *)&func_data, sizeof(FunctionData));
-    if (f.is_open()) f.read((char *)&orb_data, sizeof(OrbitalData));
-    f.close();
-
-    std::array<int, 3> corner{func_data.corner[0], func_data.corner[1], func_data.corner[2]};
-    std::array<int, 3> boxes{func_data.boxes[0], func_data.boxes[1], func_data.boxes[2]};
-    mrcpp::BoundingBox<3> world(func_data.scale, corner, boxes);
-
-    mrcpp::MultiResolutionAnalysis<3> *mra = nullptr;
-    if (func_data.type == mrcpp::Interpol) {
-        mrcpp::InterpolatingBasis basis(func_data.order);
-        mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, func_data.depth);
-    } else if (func_data.type == mrcpp::Legendre) {
-        mrcpp::LegendreBasis basis(func_data.order);
-        mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, func_data.depth);
-    } else {
-        MSG_ABORT("Invalid basis type!");
-    }
-
-    // reading real part
-    if (func_data.real_size > 0) {
-        std::stringstream fname;
-        fname << file << "_re";
-        alloc(NUMBER::Real, mra);
-        real().loadTree(fname.str());
-    }
-
-    // reading imaginary part
-    if (func_data.imag_size > 0) {
-        std::stringstream fname;
-        fname << file << "_im";
-        alloc(NUMBER::Imag, mra);
-        imag().loadTree(fname.str());
-    }
-    delete mra;
+    if (isreal()) CompD[0]->loadTree(file);
+    if (iscomplex()) CompC[0]->loadTree(file);
 }
 
 /** @brief Returns a character representing the spin (a/b/p) */

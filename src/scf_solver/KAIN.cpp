@@ -61,23 +61,23 @@ void KAIN::setupLinearSystem() {
 
         auto &phi_m = this->orbitals[nHistory][n];
         auto &fPhi_m = this->dOrbitals[nHistory][n];
-        if (mrcpp::mpi::my_orb(phi_m)) {
+        if (mrcpp::mpi::my_func(phi_m)) {
 
             for (int i = 0; i < nHistory; i++) {
                 auto &phi_i = this->orbitals[i][n];
-                auto dPhi_im = phi_m.paramCopy();
-                mrcpp::cplxfunc::add(dPhi_im, 1.0, phi_i, -1.0, phi_m, -1.0);
+                auto dPhi_im = phi_m.paramCopy(true);
+                mrcpp::add(dPhi_im, 1.0, phi_i, -1.0, phi_m, -1.0);
 
                 for (int j = 0; j < nHistory; j++) {
                     auto &fPhi_j = this->dOrbitals[j][n];
-                    auto dfPhi_jm = fPhi_m.paramCopy();
-                    mrcpp::cplxfunc::add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, -1.0);
+                    auto dfPhi_jm = fPhi_m.paramCopy(true);
+                    mrcpp::add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, -1.0);
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
-                    orbA(i, j) -= orbital::dot(dPhi_im, dfPhi_jm);
+                    orbA(i, j) -= mrcpp::dot(dPhi_im, dfPhi_jm);
                 }
-                orbB(i) += orbital::dot(dPhi_im, fPhi_m);
+                orbB(i) += mrcpp::dot(dPhi_im, fPhi_m);
             }
         }
         double alpha = (this->scaling.size() == nOrbitals) ? scaling[n] : 1.0;
@@ -136,9 +136,9 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
     int m = 0;
     for (int n = 0; n < nOrbitals; n++) {
         if (this->sepOrbitals) m = n;
-        if (mrcpp::mpi::my_orb(Phi[n])) {
+        if (mrcpp::mpi::my_func(Phi[n])) {
             std::vector<ComplexDouble> totCoefs;
-            std::vector<mrcpp::ComplexFunction> totOrbs;
+            std::vector<mrcpp::CompFunction<3>> totOrbs;
 
             auto &phi_m = this->orbitals[nHistory][n];
             auto &fPhi_m = this->dOrbitals[nHistory][n];
@@ -149,37 +149,36 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             // but we define the updates (lowercase f) with opposite sign
             // (but not the orbitals themselves).
             for (int j = 0; j < nHistory; j++) {
-                ComplexVector partCoefs(4);
-                std::vector<mrcpp::ComplexFunction> partOrbs;
+                std::vector<ComplexDouble> partCoefs(4);
+                std::vector<mrcpp::CompFunction<3>> partOrbs;
 
-                partCoefs(0) = {1.0, 0.0};
+                partCoefs[0] = {1.0, 0.0};
                 auto &phi_j = this->orbitals[j][n];
                 partOrbs.push_back(phi_j);
 
-                partCoefs(1) = {1.0, 0.0};
+                partCoefs[1] = {1.0, 0.0};
                 auto &fPhi_j = this->dOrbitals[j][n];
                 partOrbs.push_back(fPhi_j);
 
-                partCoefs(2) = {-1.0, 0.0};
+                partCoefs[2] = {-1.0, 0.0};
                 partOrbs.push_back(phi_m);
 
-                partCoefs(3) = {-1.0, 0.0};
+                partCoefs[3] = {-1.0, 0.0};
                 partOrbs.push_back(fPhi_m);
 
-                auto partStep = phi_m.paramCopy();
-                mrcpp::cplxfunc::linear_combination(partStep, partCoefs, partOrbs, prec);
+                auto partStep = phi_m.paramCopy(true);
+                mrcpp::linear_combination(partStep, partCoefs, partOrbs, prec);
 
                 auto c_j = this->c[m](j);
                 totCoefs.push_back(c_j);
                 totOrbs.push_back(partStep);
             }
 
-            // std::vector -> ComplexVector
-            ComplexVector coefsVec(totCoefs.size());
-            for (int i = 0; i < totCoefs.size(); i++) coefsVec(i) = totCoefs[i];
+            std::vector<ComplexDouble> coefsVec(totCoefs.size());
+            for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
 
-            dPhi[n] = Phi[n].paramCopy();
-            mrcpp::cplxfunc::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
+            dPhi[n] = Phi[n].paramCopy(true);
+            mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
         }
     }
 

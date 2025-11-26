@@ -1,7 +1,6 @@
 #pragma once
 #include <mrchem.h>
 #include "pseudopotential/sphericalHarmonics.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 class ProjectorFunction{
 
@@ -15,9 +14,9 @@ public:
     double rl;
     double prec;
     // mrcpp::ComplexFunction projector;
-    std::shared_ptr<mrcpp::ComplexFunction> projector_ptr;
+    std::shared_ptr<mrcpp::CompFunction<3>> projector_ptr;
 
-    
+
 
     // destructor
     // ~ProjectorFunction(){
@@ -32,5 +31,5 @@ private:
     double (*s)(const std::array<double, 3> &r, const double &normr);
 
     void switch_sperics(int l, int m);
-    
+
 };

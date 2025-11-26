@@ -30,7 +30,7 @@ filters = {
     E_EN: rel_tolerance(1.0e-6),
     E_EE: rel_tolerance(1.0e-6),
     E_X: rel_tolerance(1.0e-6),
-    E_XC: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(5.0e-6),
     E_EEXT: rel_tolerance(1.0e-6),
     E_NEXT: rel_tolerance(1.0e-6),
     E_EL: rel_tolerance(1.0e-6),

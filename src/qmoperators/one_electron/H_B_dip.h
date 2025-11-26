@@ -59,6 +59,9 @@ public:
         h[0].name() = "h_B_dip[x]";
         h[1].name() = "h_B_dip[y]";
         h[2].name() = "h_B_dip[z]";
+        h[0].setImag(l[0].isImag());
+        h[1].setImag(l[1].isImag());
+        h[2].setImag(l[2].isImag());
     }
 };
 

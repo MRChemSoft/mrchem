@@ -1,6 +1,5 @@
 #include "catch2/catch_all.hpp"
 #include "pseudopotential/sphericalHarmonics.h"
-#include "qmfunctions/qmfunction_utils.h"
 
 #include "pseudopotential/projector.h"
 
@@ -37,7 +36,7 @@ TEST_CASE("sperical_harmonics", "[spherical_harmonics]") {
         for (int i = 0; i < pps.size(); i++) {
             for (int j = 0; j < pps.size(); j++) {
                 // S(i, j) = qmfunction::dot(Phi[i], Phi[j]).real();
-                S(i, j) = mrcpp::cplxfunc::dot(*pps[i].projector_ptr, *pps[j].projector_ptr).real();
+                S(i, j) = mrcpp::dot(*pps[i].projector_ptr, *pps[j].projector_ptr).real();
                 // std::cout << i << " " << j << " " << S(i, j) << " " << pps[i].projector_ptr->norm() << std::endl;
             }
         }

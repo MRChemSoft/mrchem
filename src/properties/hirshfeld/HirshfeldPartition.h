@@ -1,19 +1,19 @@
 #pragma once
 
-#include <Eigen/Dense>
-#include <mrchem.h>
 #include "chemistry/Molecule.h"
-#include <string>
 #include "chemistry/Nucleus.h"
 #include "properties/hirshfeld/HirshfeldInterpolator.h"
+#include <Eigen/Dense>
+#include <mrchem.h>
+#include <string>
 
 /**
  * @brief Class for computing the Hirshfeld partitioning of a molecule. Reads and interpolates the Hirshfeld partitioning data.
  * can create MW representation of the Hirshfeld partitioning functions.
  */
-class HirshfeldPartition{
+class HirshfeldPartition {
 
-    public:
+public:
     /**
      * @brief Construct a new Hirshfeld Partition object
      * @param mol The molecule for which the Hirshfeld partitioning is to be computed
@@ -24,10 +24,9 @@ class HirshfeldPartition{
     /**
      * @brief Get the integral rho * w_i for a given atom i
      */
-    double getHirshfeldPartitionIntegral(int index, mrcpp::ComplexFunction &rho, double prec) const;
+    double getHirshfeldPartitionIntegral(int index, mrcpp::CompFunction<3> &rho, double prec) const;
 
-    protected:
-
+protected:
     /**
      * @brief Evaluate the analytic, interpolated Hirshfeld partitioning function at a given point
      */
@@ -52,6 +51,4 @@ class HirshfeldPartition{
      * @brief The atomic density interpolators for the nuclei
      */
     std::vector<HirshfeldRadInterpolater> logDensities;
-
-
 };

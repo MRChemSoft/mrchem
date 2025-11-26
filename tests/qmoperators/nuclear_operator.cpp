@@ -66,7 +66,7 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
     // reference values for hydrogen eigenfunctions
@@ -90,8 +90,8 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
-        ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        ComplexDouble V_00 = mrcpp::dot(Phi[0], Vphi_0);
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -102,8 +102,8 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
         for (int i = 0; i < Phi.size(); i++) {
-            ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
-            if (mrcpp::mpi::my_orb(Phi[i])) {
+            ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
+            if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i)).epsilon(prec));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
@@ -114,7 +114,7 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -131,7 +131,6 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     }
     V.clear();
 }
-
 
 TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     const double prec = 1.0e-3;
@@ -159,7 +158,7 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
     // reference values for hydrogen eigenfunctions
@@ -183,8 +182,8 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
-        ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        ComplexDouble V_00 = mrcpp::dot(Phi[0], Vphi_0);
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -195,8 +194,8 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
         for (int i = 0; i < Phi.size(); i++) {
-            ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
-            if (mrcpp::mpi::my_orb(Phi[i])) {
+            ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
+            if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i)).epsilon(prec));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
@@ -207,7 +206,7 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -224,7 +223,6 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     }
     V.clear();
 }
-
 
 TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     const double prec = 1.0e-3;
@@ -252,7 +250,7 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
 
     for (int i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
-        if (mrcpp::mpi::my_orb(Phi[i])) mrcpp::cplxfunc::project(Phi[i], f, NUMBER::Real, prec);
+        if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
     // reference values for hydrogen eigenfunctions
@@ -276,8 +274,8 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     V.setup(prec);
     SECTION("apply") {
         Orbital Vphi_0 = V(Phi[0]);
-        ComplexDouble V_00 = orbital::dot(Phi[0], Vphi_0);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        ComplexDouble V_00 = mrcpp::dot(Phi[0], Vphi_0);
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -288,8 +286,8 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
         for (int i = 0; i < Phi.size(); i++) {
-            ComplexDouble V_ii = orbital::dot(Phi[i], VPhi[i]);
-            if (mrcpp::mpi::my_orb(Phi[i])) {
+            ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
+            if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i)).epsilon(prec));
                 REQUIRE(V_ii.imag() < thrs);
             } else {
@@ -300,7 +298,7 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     }
     SECTION("expectation value") {
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
-        if (mrcpp::mpi::my_orb(Phi[0])) {
+        if (mrcpp::mpi::my_func(Phi[0])) {
             REQUIRE(V_00.real() == Catch::Approx(E_P(0)).epsilon(prec));
             REQUIRE(V_00.imag() < thrs);
         } else {
