@@ -155,7 +155,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
     Timer t_diag;
     int i = 0;
     for (auto &phi_i : Phi) {
-        Orbital ex_iii(phi_i.spin(), phi_i.occ(), phi_i.getRank());
+        Orbital ex_iii = phi_i.paramCopy();
         t_calc.resume();
         if (mrcpp::mpi::my_func(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
         t_calc.stop();
