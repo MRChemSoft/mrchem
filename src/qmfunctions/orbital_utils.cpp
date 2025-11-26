@@ -244,13 +244,14 @@ void orbital::save_nodes(OrbitalVector Phi, mrcpp::FunctionTree<3> &refTree, mrc
 /** @brief Deep copy
  *
  * New orbitals are constructed as deep copies of the input set.
+ * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
  *
  */
 OrbitalVector orbital::deep_copy(OrbitalVector &Phi) {
     OrbitalVector out;
     for (auto &i : Phi) {
         Orbital out_i;
-        if (mrcpp::mpi::my_func(i)) mrcpp::deep_copy(out_i, i);
+        mrcpp::deep_copy(out_i, i);
         out.push_back(out_i);
     }
     return out;
