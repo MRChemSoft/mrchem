@@ -146,20 +146,24 @@ bool orbital::compare(const OrbitalVector &Phi_a, const OrbitalVector &Phi_b) {
     }
 
     for (auto &phi_a : Phi_a) {
+        if (not mrcpp::mpi::my_func(phi_a)) continue;
         const mrcpp::MultiResolutionAnalysis<3> *mra_a{nullptr};
         if (phi_a.isreal()) mra_a = &phi_a.CompD[0]->getMRA();
         if (phi_a.iscomplex()) mra_a = &phi_a.CompC[0]->getMRA();
         if (mra_a == nullptr) continue;
         for (auto &phi_b : Phi_b) {
+            if (not mrcpp::mpi::my_func(phi_b)) continue;
             const mrcpp::MultiResolutionAnalysis<3> *mra_b{nullptr};
-            if (phi_b.isreal()) mra_b = &phi_a.CompD[0]->getMRA();
-            if (phi_b.iscomplex()) mra_b = &phi_a.CompC[0]->getMRA();
+            if (phi_b.isreal() and phi_b.CompD[0] == nullptr) continue;
+            if (phi_b.isreal()) mra_b = &phi_b.CompD[0]->getMRA();
+            if (phi_b.iscomplex() and phi_b.CompC[0] == nullptr) continue;
+            if (phi_b.iscomplex()) mra_b = &phi_b.CompC[0]->getMRA();
             if (mra_b == nullptr) continue;
             if (*mra_a != *mra_b) {
                 MSG_WARN("Different MRA");
                 comp = false;
             }
-        }
+       }
     }
     return comp;
 }
