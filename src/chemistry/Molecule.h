@@ -49,6 +49,7 @@
 #include "properties/NMRShielding.h"
 #include "properties/OrbitalEnergies.h"
 #include "properties/Polarizability.h"
+#include "properties/PopulationAnalysis.h"
 #include "properties/QuadrupoleMoment.h"
 #include "properties/SCFEnergy.h"
 #include "qmfunctions/Orbital.h"
@@ -120,6 +121,7 @@ public:
     NMRShielding &getNMRShielding(const std::string &id) { return this->nmr_shielding.at(id); }
     GeometricDerivative &getGeometricDerivative(const std::string &id) { return this->geometric_derivative.at(id); }
     HirshfeldCharges &getHirshfeldCharges(const std::string &id) { return this->hirshfeld_charges.at(id); }
+    PopulationAnalysis &getPopulationAnalysis(const std::string &id) { return this->population_analysis.at(id); }
 
     PropertyMap<DipoleMoment> &getDipoleMoments() { return this->dipole; }
     PropertyMap<QuadrupoleMoment> &getQuadrupoleMoments() { return this->quadrupole; }
@@ -128,6 +130,7 @@ public:
     PropertyMap<NMRShielding> &getNMRShieldings() { return this->nmr_shielding; }
     PropertyMap<GeometricDerivative> &getGeometricDerivatives() { return this->geometric_derivative; }
     PropertyMap<HirshfeldCharges> &getHirshfeldCharges() { return this->hirshfeld_charges; }
+    PropertyMap<PopulationAnalysis> &getPopulationAnalyses() { return this->population_analysis; }
 
 protected:
     int charge{0};
@@ -150,6 +153,7 @@ protected:
     PropertyMap<NMRShielding> nmr_shielding{};
     PropertyMap<GeometricDerivative> geometric_derivative{};
     PropertyMap<HirshfeldCharges> hirshfeld_charges{};
+    PropertyMap<PopulationAnalysis> population_analysis{};
 
     void readCoordinateFile(const std::string &file);
     void readCoordinateString(const std::vector<std::string> &coord_str);

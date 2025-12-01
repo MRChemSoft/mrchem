@@ -315,6 +315,12 @@ def write_scf_properties(user_dict, origin):
         prop_dict["hirshfeld_charges"]["hirshfeld-1"] = {
             'precision': user_dict["world_prec"]
         }
+    if user_dict["Properties"]["population_analysis"]:
+        prop_dict["population_analysis"] = {}
+        prop_dict["population_analysis"]["pop-1"] = {
+            'dimension': user_dict["Properties"]["population_dimension"],
+            'precision': user_dict["world_prec"]
+        }
 
     return prop_dict
 
