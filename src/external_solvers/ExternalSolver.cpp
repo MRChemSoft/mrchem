@@ -26,51 +26,48 @@
 #include "MRCPP/MWOperators"
 
 #include "ExternalSolver.h"
+#include "qmfunctions/orbital_utils.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/GenericTwoOrbitalsOperator.h"
-#include "qmfunctions/orbital_utils.h"
 
 namespace mrchem {
 
 class FockBuilder;
-//class PoissonOperator;
+// class PoissonOperator;
 
- /** @brief Calculates and stores the one- and two-electron integrals for given orbitals
+/** @brief Calculates and stores the one- and two-electron integrals for given orbitals
  *
  * @param Phi: Vector of orbitals
  *
  * Calculates the one- and two-electron integrals for the orbitals in Phi, and stores them
  * in the class members one_body_integrals and two_body_integrals.
- * 
+ *
  */
 
- // TODO: more efficient without defining new operators?
-void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F){
+// TODO: more efficient without defining new operators?
+void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F) {
     F.setup(this->prec);
     // operators
     KineticOperator K(F.momentum());
     NuclearOperator V = *(F.getNuclearOperator());
     GenericTwoOrbitalsOperator g = *(F.getGenericTwoOrbitalsOperator());
 
-    g.setup(std::make_shared<OrbitalVector>(Phi), this->prec); 
+    g.setup(std::make_shared<OrbitalVector>(Phi), this->prec);
     // set the one- and two-body integrals
     ExternalSolver::set_one_body_integrals(Phi, K, V);
     ExternalSolver::set_two_body_integrals(Phi, g);
-
 }
-
 
 // Private
 
-void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, KineticOperator &K, NuclearOperator &V){
+void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, KineticOperator &K, NuclearOperator &V) {
     OrbitalVector KPhi = K(Phi);
     OrbitalVector VPhi = V(Phi);
-    this->one_body_integrals = std::make_shared<ComplexMatrix>(orbital::calc_overlap_matrix(Phi, KPhi)
-                                                             + orbital::calc_overlap_matrix(Phi, VPhi));
+    this->one_body_integrals = std::make_shared<ComplexMatrix>(orbital::calc_overlap_matrix(Phi, KPhi) + orbital::calc_overlap_matrix(Phi, VPhi));
 }
 
-void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi,  GenericTwoOrbitalsOperator &g){
+void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi, GenericTwoOrbitalsOperator &g) {
     int n_orb = Phi.size();
     this->two_body_integrals = std::make_shared<ComplexTensorR4>(n_orb, n_orb, n_orb, n_orb);
     this->two_body_integrals->setZero();
@@ -78,16 +75,16 @@ void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi,  GenericTwoOrbit
     // TODO: use 8-fold symmetry
     for (int j = 0; j < n_orb; j++) {
         for (int l = 0; l < n_orb; l++) {
-            g.set_pair(j,l);
+            g.set_pair(j, l);
             for (int k = 0; k < n_orb; k++) {
                 // calculate |g_jl|Phi_k>
-                //Orbital tmp_k = Phi[k].paramCopy();
-                //mrcpp::cplxfunc::multiply(tmp_i, Phi[i].dagger(), Vjl, this->prec, true, true);
+                // Orbital tmp_k = Phi[k].paramCopy();
+                // mrcpp::cplxfunc::multiply(tmp_i, Phi[i].dagger(), Vjl, this->prec, true, true);
                 Orbital tmp_k = g.apply(Phi[k]);
                 for (int i = 0; i < n_orb; i++) {
                     // calculate (ij|kl) = <Phi_i|V_jl|Phi_k>
                     // BUG: add factor 4pi??
-                    (*this->two_body_integrals)(i,j,k,l) = mrcpp::dot(Phi[i], tmp_k);
+                    (*this->two_body_integrals)(i, j, k, l) = mrcpp::dot(Phi[i], tmp_k);
                 }
             }
         }

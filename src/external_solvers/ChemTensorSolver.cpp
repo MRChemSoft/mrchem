@@ -23,19 +23,16 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-
 #include "ChemTensorSolver.h"
-
 
 namespace mrchem {
 
-
-void ChemTensorSolver::optimize(){
+void ChemTensorSolver::optimize() {
     this->energy = 1.0; // dummy
     calculate_rdms();
 }
 
-void ChemTensorSolver::calculate_rdms(){
+void ChemTensorSolver::calculate_rdms() {
     *(this->one_rdm) = *(this->one_body_integrals);
     *(this->two_rdm) = *(this->two_body_integrals);
     // dummy (dimensions are the same)

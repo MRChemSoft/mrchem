@@ -25,14 +25,14 @@
 
 #pragma once
 
+#include "ExternalSolver.h"
 #include "mrchem.h"
 #include "qmfunctions/Orbital.h"
 #include "qmoperators/two_electron/FockBuilder.h"
-#include "ExternalSolver.h"
 
 namespace mrchem {
 
-class ChemTensorSolver: public ExternalSolver {
+class ChemTensorSolver : public ExternalSolver {
 public:
     ChemTensorSolver() = default;
     ~ChemTensorSolver() override = default;
@@ -41,7 +41,6 @@ public:
 
 private:
     void calculate_rdms() override;
-
 };
 
-}
+} // namespace mrchem

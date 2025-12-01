@@ -31,31 +31,31 @@
 #include "qmfunctions/Orbital.h"
 #include "qmoperators/two_electron/FockBuilder.h"
 
-//using PoissonOperator = mrcpp::PoissonOperator;
+// using PoissonOperator = mrcpp::PoissonOperator;
 
 namespace mrchem {
 
 class FockBuilder;
 
-class ExternalSolver{
+class ExternalSolver {
 public:
     ExternalSolver() = default;
     virtual ~ExternalSolver() = default;
 
-    double get_energy(){return this->energy;}
-    //void set_precision(double p){this->prec=p;}
+    double get_energy() { return this->energy; }
+    // void set_precision(double p){this->prec=p;}
 
     void set_integrals(OrbitalVector &Phi, FockBuilder &F);
-    std::shared_ptr<ComplexMatrix> get_one_body_integrals(){return this->one_body_integrals;}
-    std::shared_ptr<ComplexTensorR4> get_two_body_integrals(){return this->two_body_integrals;}
-    std::shared_ptr<ComplexMatrix> get_one_rdm(){return this->one_rdm;}
-    std::shared_ptr<ComplexTensorR4> get_two_rdm(){return this->two_rdm;}
+    std::shared_ptr<ComplexMatrix> get_one_body_integrals() { return this->one_body_integrals; }
+    std::shared_ptr<ComplexTensorR4> get_two_body_integrals() { return this->two_body_integrals; }
+    std::shared_ptr<ComplexMatrix> get_one_rdm() { return this->one_rdm; }
+    std::shared_ptr<ComplexTensorR4> get_two_rdm() { return this->two_rdm; }
 
     virtual void optimize() = 0;
 
 protected:
     // Dummy default precision
-    double prec=1e-3;
+    double prec = 1e-3;
     double energy{};
 
     std::shared_ptr<ComplexMatrix> one_body_integrals{};
