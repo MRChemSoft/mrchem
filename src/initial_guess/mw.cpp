@@ -133,7 +133,9 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
         }
     }
     // if any orbital of "master" is complex, all are set complex (also the one which are not "mine")
+#ifdef MRCHEM_HAS_MPI
     MPI_Bcast(&iscomplex, 1, MPI_C_BOOL, 0, mrcpp::mpi::comm_wrk);
+#endif
     if (iscomplex) {
         for (int i = 0; i < Phi.size(); i++) Phi[i].defcomplex();
     }
