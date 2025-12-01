@@ -101,6 +101,7 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
     mrcpp::print::separator(2, '-');
 
     bool success = true;
+    bool iscomplex = false;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
         if (mrcpp::mpi::my_func(Phi[i])) {
@@ -121,6 +122,8 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
             if (phi_i.iscomplex()) {
                 // Refine to get accurate function values
                 mrcpp::refine_grid(phi_i.complex(), 1);
+                iscomplex = true;
+                Phi[i].defcomplex();
                 mrcpp::project(prec, Phi[i].complex(), phi_i.complex());
             }
             std::stringstream o_txt;
@@ -128,6 +131,11 @@ bool initial_guess::mw::project_mo(OrbitalVector &Phi, double prec, const std::s
             o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
             print_utils::qmfunction(1, o_txt.str(), Phi[i], t_i);
         }
+    }
+    // if any orbital of "master" is complex, all are set complex (also the one which are not "mine")
+    MPI_Bcast(&iscomplex, 1, MPI_C_BOOL, 0, mrcpp::mpi::comm_wrk);
+    if (iscomplex) {
+        for (int i = 0; i < Phi.size(); i++) Phi[i].defcomplex();
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     mrcpp::print::footer(1, t_tot, 2);
