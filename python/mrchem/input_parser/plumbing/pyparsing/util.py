@@ -5,10 +5,15 @@ from functools import lru_cache, wraps
 import inspect
 import itertools
 import types
+<<<<<<< HEAD
 from typing import Callable, Union, Iterable, TypeVar, cast, Any
 import warnings
 
 from .warnings import PyparsingDeprecationWarning, PyparsingDiagnosticWarning
+=======
+from typing import Callable, Union, Iterable, TypeVar, cast
+import warnings
+>>>>>>> added population analysis based on the grid
 
 _bslash = chr(92)
 C = TypeVar("C", bound=Callable)
@@ -189,6 +194,7 @@ class _GroupConsecutive:
     """
     Used as a callable `key` for itertools.groupby to group
     characters that are consecutive:
+<<<<<<< HEAD
 
     .. testcode::
 
@@ -207,6 +213,14 @@ class _GroupConsecutive:
        (1, ['j', 'k'])
        (2, ['m'])
        (3, ['p', 'q', 'r', 's'])
+=======
+        itertools.groupby("abcdejkmpqrs", key=IsConsecutive())
+        yields:
+            (0, iter(['a', 'b', 'c', 'd', 'e']))
+            (1, iter(['j', 'k']))
+            (2, iter(['m']))
+            (3, iter(['p', 'q', 'r', 's']))
+>>>>>>> added population analysis based on the grid
     """
 
     def __init__(self) -> None:
@@ -222,6 +236,7 @@ class _GroupConsecutive:
         return self.value
 
 
+<<<<<<< HEAD
 def _is_iterable(obj, _str_type=(str, bytes), _iter_exception=Exception):
     # str's are iterable, but in pyparsing, we don't want to iterate over them
     if isinstance(obj, _str_type):
@@ -239,6 +254,8 @@ def _escape_re_range_char(c: str) -> str:
     return fr"\{c}" if c in r"\^-][" else c
 
 
+=======
+>>>>>>> added population analysis based on the grid
 def _collapse_string_to_ranges(
     s: Union[str, Iterable[str]], re_escape: bool = True
 ) -> str:
@@ -246,13 +263,18 @@ def _collapse_string_to_ranges(
     Take a string or list of single-character strings, and return
     a string of the consecutive characters in that string collapsed
     into groups, as might be used in a regular expression '[a-z]'
+<<<<<<< HEAD
     character set::
 
+=======
+    character set:
+>>>>>>> added population analysis based on the grid
         'a' -> 'a' -> '[a]'
         'bc' -> 'bc' -> '[bc]'
         'defgh' -> 'd-h' -> '[d-h]'
         'fdgeh' -> 'd-h' -> '[d-h]'
         'jklnpqrtu' -> 'j-lnp-rtu' -> '[j-lnp-rtu]'
+<<<<<<< HEAD
 
     Duplicates get collapsed out::
 
@@ -262,6 +284,32 @@ def _collapse_string_to_ranges(
         'jklnpqrjjjtu' -> 'j-lnp-rtu' -> '[j-lnp-rtu]'
 
     Spaces are preserved::
+=======
+    Duplicates get collapsed out:
+        'aaa' -> 'a' -> '[a]'
+        'bcbccb' -> 'bc' -> '[bc]'
+        'defghhgf' -> 'd-h' -> '[d-h]'
+        'jklnpqrjjjtu' -> 'j-lnp-rtu' -> '[j-lnp-rtu]'
+    Spaces are preserved:
+        'ab c' -> ' a-c' -> '[ a-c]'
+    Characters that are significant when defining regex ranges
+    get escaped:
+        'acde[]-' -> r'\-\[\]ac-e' -> r'[\-\[\]ac-e]'
+    """
+
+    # Developer notes:
+    # - Do not optimize this code assuming that the given input string
+    #   or internal lists will be short (such as in loading generators into
+    #   lists to make it easier to find the last element); this method is also
+    #   used to generate regex ranges for character sets in the pyparsing.unicode
+    #   classes, and these can be _very_ long lists of strings
+
+    def escape_re_range_char(c: str) -> str:
+        return "\\" + c if c in r"\^-][" else c
+
+    def no_escape_re_range_char(c: str) -> str:
+        return c
+>>>>>>> added population analysis based on the grid
 
         'ab c' -> ' a-c' -> '[ a-c]'
 
@@ -329,6 +377,7 @@ def _collapse_string_to_ranges(
 
 def _flatten(ll: Iterable) -> list:
     ret = []
+<<<<<<< HEAD
     for i in ll:
         # Developer notes:
         # - do not collapse this section of code, isinstance checks are done
@@ -337,11 +386,19 @@ def _flatten(ll: Iterable) -> list:
             ret.append(i)
         elif isinstance(i, Iterable):
             ret.extend(_flatten(i))
+=======
+    to_visit = [*ll]
+    while to_visit:
+        i = to_visit.pop(0)
+        if isinstance(i, Iterable) and not isinstance(i, str):
+            to_visit[:0] = i
+>>>>>>> added population analysis based on the grid
         else:
             ret.append(i)
     return ret
 
 
+<<<<<<< HEAD
 def _convert_escaped_numerics_to_char(s: str) -> str:
     if s == "0":
         return "\0"
@@ -352,6 +409,8 @@ def _convert_escaped_numerics_to_char(s: str) -> str:
     return s
 
 
+=======
+>>>>>>> added population analysis based on the grid
 def make_compressed_re(
     word_list: Iterable[str],
     max_level: int = 2,

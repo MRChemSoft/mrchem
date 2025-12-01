@@ -282,7 +282,11 @@ def one_of(
                 patt = rf"\b(?:{patt})\b"
 
             ret = Regex(patt, flags=re_flags)
+<<<<<<< HEAD
             ret.set_name(" | ".join(repr(s) for s in symbols))
+=======
+            ret.set_name(" | ".join(re.escape(s) for s in symbols))
+>>>>>>> added population analysis based on the grid
 
             if caseless:
                 # add parse action to return symbols as specified, not in random
@@ -477,8 +481,14 @@ def nested_expr(
     opener: Union[str, ParserElement] = "(",
     closer: Union[str, ParserElement] = ")",
     content: typing.Optional[ParserElement] = None,
+<<<<<<< HEAD
     ignore_expr: typing.Optional[ParserElement] = _NO_IGNORE_EXPR_GIVEN,
     **kwargs,
+=======
+    ignore_expr: ParserElement = _NO_IGNORE_EXPR_GIVEN,
+    *,
+    ignoreExpr: ParserElement = _NO_IGNORE_EXPR_GIVEN,
+>>>>>>> added population analysis based on the grid
 ) -> ParserElement:
     """Helper method for defining nested lists enclosed in opening and
     closing delimiters (``"("`` and ``")"`` are the default).
@@ -557,7 +567,11 @@ def nested_expr(
     )
 
     if ignoreExpr != ignore_expr:
+<<<<<<< HEAD
         ignoreExpr = ignore_expr if ignoreExpr is _NO_IGNORE_EXPR_GIVEN else ignoreExpr  # type: ignore [assignment]
+=======
+        ignoreExpr = ignore_expr if ignoreExpr is _NO_IGNORE_EXPR_GIVEN else ignoreExpr
+>>>>>>> added population analysis based on the grid
 
     if ignoreExpr is _NO_IGNORE_EXPR_GIVEN:
         ignoreExpr = quoted_string()
@@ -624,9 +638,13 @@ def nested_expr(
             + _suppression(closer)
         )
     else:
+<<<<<<< HEAD
         ret <<= Group(
             _suppression(opener) + ZeroOrMore(ret | content) + _suppression(closer)
         )
+=======
+        ret <<= Group(Suppress(opener) + ZeroOrMore(ret | content) + Suppress(closer))
+>>>>>>> added population analysis based on the grid
 
     ret.set_name(f"nested {opener}{closer} expression")
 
@@ -890,7 +908,11 @@ def infix_notation(
     if isinstance(rpar, str):
         rpar = Suppress(rpar)
 
+<<<<<<< HEAD
     nested_expr = (lpar + ret + rpar).set_name(f"nested_{base_expr.name}_expression")
+=======
+    nested_expr = (lpar + ret + rpar).set_name(f"nested_{base_expr.name}")
+>>>>>>> added population analysis based on the grid
 
     # if lpar and rpar are not suppressed, wrap in group
     if not (isinstance(lpar, Suppress) and isinstance(rpar, Suppress)):
@@ -980,7 +1002,11 @@ def infix_notation(
             else:
                 matchExpr.set_parse_action(pa)
 
+<<<<<<< HEAD
         thisExpr <<= (matchExpr | lastExpr).set_name(term_name)
+=======
+        thisExpr <<= (matchExpr | lastExpr).setName(term_name)
+>>>>>>> added population analysis based on the grid
         lastExpr = thisExpr
 
     ret <<= lastExpr
