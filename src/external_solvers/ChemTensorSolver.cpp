@@ -23,12 +23,15 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+// This include must come first due to name clashes
+#include "qnumber.h"
+
 #include "ChemTensorSolver.h"
 
 namespace mrchem {
 
 void ChemTensorSolver::optimize() {
-    this->energy = 1.0; // dummy
+    this->energy = encode_quantum_number_pair(4, 2); // dummy
     calculate_rdms();
 }
 
