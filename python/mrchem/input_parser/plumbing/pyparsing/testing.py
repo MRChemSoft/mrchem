@@ -292,6 +292,7 @@ class pyparsing_test:
         (Line and column numbers are 1-based by default - if debugging a parse action,
         pass base_1=False, to correspond to the loc value passed to the parse action.)
 
+<<<<<<< HEAD
         :param s: string to be printed with line and column numbers
         :param start_line: starting line number in s to print (default=1)
         :param end_line: ending line number in s to print (default=len(s))
@@ -315,6 +316,25 @@ class pyparsing_test:
 
         .. versionchanged:: 3.2.0
            New ``indent`` and ``base_1`` arguments.
+=======
+        :param s: tuple(bool, str - string to be printed with line and column numbers
+        :param start_line: int - (optional) starting line number in s to print (default=1)
+        :param end_line: int - (optional) ending line number in s to print (default=len(s))
+        :param expand_tabs: bool - (optional) expand tabs to spaces, to match the pyparsing default
+        :param eol_mark: str - (optional) string to mark the end of lines, helps visualize trailing spaces (default="|")
+        :param mark_spaces: str - (optional) special character to display in place of spaces
+        :param mark_control: str - (optional) convert non-printing control characters to a placeholding
+                                 character; valid values:
+                                 - "unicode" - replaces control chars with Unicode symbols, such as "␍" and "␊"
+                                 - any single character string - replace control characters with given string
+                                 - None (default) - string is displayed as-is
+        :param indent: str | int - (optional) string to indent with line and column numbers; if an int
+                                   is passed, converted to " " * indent
+        :param base_1: bool - (optional) whether to label string using base 1; if False, string will be
+                              labeled based at 0 (default=True)
+
+        :return: str - input string with leading line numbers and column number headers
+>>>>>>> added population analysis based on the grid
         """
         if expand_tabs:
             s = s.expandtabs()
@@ -345,6 +365,7 @@ class pyparsing_test:
         if start_line is None:
             start_line = 0
         if end_line is None:
+<<<<<<< HEAD
             end_line = len(s.splitlines())
         end_line = min(end_line, len(s.splitlines()))
         start_line = min(max(0, start_line), end_line)
@@ -355,21 +376,36 @@ class pyparsing_test:
             s_lines = [
                 line + "␊"
                 for line in s.split("␊")[max(start_line - base_1, 0) : end_line]
+=======
+            end_line = len(s)
+        end_line = min(end_line, len(s))
+        start_line = min(max(0, start_line), end_line)
+
+        if mark_control != "unicode":
+            s_lines = s.splitlines()[start_line - base_1 : end_line]
+        else:
+            s_lines = [
+                line + "␊" for line in s.split("␊")[start_line - base_1 : end_line]
+>>>>>>> added population analysis based on the grid
             ]
         if not s_lines:
             return ""
 
         lineno_width = len(str(end_line))
         max_line_len = max(len(line) for line in s_lines)
+<<<<<<< HEAD
         lead = f"{indent}{' ' * (lineno_width + 1)}"
 
+=======
+        lead = indent + " " * (lineno_width + 1)
+>>>>>>> added population analysis based on the grid
         if max_line_len >= 99:
             header0 = (
                 lead
                 + ("" if base_1 else " ")
                 + "".join(
                     f"{' ' * 99}{(i + 1) % 100}"
-                    for i in range(max(max_line_len // 100, 1))
+                    for i in range(1 if base_1 else 0, max(max_line_len // 100, 1))
                 )
                 + "\n"
             )
