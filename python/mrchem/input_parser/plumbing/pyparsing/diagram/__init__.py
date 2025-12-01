@@ -241,6 +241,7 @@ def to_railroad(
     creation if you want to access the Railroad tree before it is converted to HTML
 
     :param element: base element of the parser being diagrammed
+<<<<<<< HEAD
 
     :param diagram_kwargs: kwargs to pass to the :meth:`Diagram` constructor
 
@@ -255,6 +256,17 @@ def to_railroad(
 
     :param show_hidden: bool to indicate whether internal elements that are
         typically hidden should be shown
+=======
+    :param diagram_kwargs: kwargs to pass to the Diagram() constructor
+    :param vertical: (optional) - int - limit at which number of alternatives should be
+       shown vertically instead of horizontally
+    :param show_results_names - bool to indicate whether results name annotations should be
+       included in the diagram
+    :param show_groups - bool to indicate whether groups should be highlighted with an unlabeled
+       surrounding box
+    :param show_hidden - bool to indicate whether internal elements that are typically hidden
+       should be shown
+>>>>>>> added population analysis based on the grid
     """
     # Convert the whole tree underneath the root
     lookup = ConverterState(diagram_kwargs=diagram_kwargs or {})
@@ -372,6 +384,11 @@ class ConverterState:
         self._element_diagram_states: dict[int, ElementState] = {}
         #: A dictionary mapping ParserElement IDs to subdiagrams generated from them
         self.diagrams: dict[int, EditablePartial[NamedDiagram]] = {}
+<<<<<<< HEAD
+=======
+        #: The index of the next unnamed element
+        self.unnamed_index: int = 1
+>>>>>>> added population analysis based on the grid
         #: The index of the next element. This is used for sorting
         self.index: int = 0
         #: Shared kwargs that are used to customize the construction of diagrams
@@ -395,6 +412,16 @@ class ConverterState:
             return self[key]
         except KeyError:
             return default
+<<<<<<< HEAD
+=======
+
+    def generate_unnamed(self) -> int:
+        """
+        Generate a number used in the name of an otherwise unnamed diagram
+        """
+        self.unnamed_index += 1
+        return self.unnamed_index
+>>>>>>> added population analysis based on the grid
 
     def generate_index(self) -> int:
         """

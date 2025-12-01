@@ -56,7 +56,11 @@ def match_only_at_col(n: int) -> ParseAction:
     return verify_col
 
 
+<<<<<<< HEAD
 def replace_with(repl_str: Any) -> ParseAction:
+=======
+def replace_with(repl_str: str) -> ParseAction:
+>>>>>>> added population analysis based on the grid
     """
     Helper method for common parse actions that simply return
     a literal value.  Especially useful when used with
@@ -77,7 +81,11 @@ def replace_with(repl_str: Any) -> ParseAction:
 
 
 def remove_quotes(s: str, l: int, t: ParseResults) -> Any:
+<<<<<<< HEAD
     r"""
+=======
+    """
+>>>>>>> added population analysis based on the grid
     Helper parse action for removing quotation marks from parsed
     quoted strings, that use a single character for quoting. For parsing
     strings that may have multiple characters, use the :class:`QuotedString`
@@ -181,7 +189,11 @@ def with_attribute(*args: tuple[str, str], **attr_dict) -> ParseAction:
     def pa(s: str, l: int, tokens: ParseResults) -> None:
         for attrName, attrValue in attrs_list:
             if attrName not in tokens:
+<<<<<<< HEAD
                 raise ParseException(s, l, f"no matching attribute {attrName!r}")
+=======
+                raise ParseException(s, l, "no matching attribute " + attrName)
+>>>>>>> added population analysis based on the grid
             if attrValue != with_attribute.ANY_VALUE and tokens[attrName] != attrValue:  # type: ignore [attr-defined]
                 raise ParseException(
                     s,

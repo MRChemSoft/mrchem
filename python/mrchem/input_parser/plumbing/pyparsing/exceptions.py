@@ -5,10 +5,15 @@ import copy
 import re
 import sys
 import typing
+<<<<<<< HEAD
 import warnings
 from functools import cached_property
 
 from .warnings import PyparsingDeprecationWarning
+=======
+from functools import cached_property
+
+>>>>>>> added population analysis based on the grid
 from .unicode import pyparsing_unicode as ppu
 from .util import (
     _collapse_string_to_ranges,
@@ -176,7 +181,11 @@ class ParseBaseException(Exception):
         # pull out next word at error location
         found_match = _exception_word_extractor.match(self.pstr, self.loc)
         if found_match is not None:
+<<<<<<< HEAD
             found_text = found_match[0]
+=======
+            found_text = found_match.group(0)
+>>>>>>> added population analysis based on the grid
         else:
             found_text = self.pstr[self.loc : self.loc + 1]
 
@@ -205,16 +214,20 @@ class ParseBaseException(Exception):
         return copy.copy(self)
 
     def formatted_message(self) -> str:
+<<<<<<< HEAD
         """
         Output the formatted exception message.
         Can be overridden to customize the message formatting or contents.
 
         .. versionadded:: 3.2.0
         """
+=======
+>>>>>>> added population analysis based on the grid
         found_phrase = f", found {self.found}" if self.found else ""
         return f"{self.msg}{found_phrase}  (at char {self.loc}), (line:{self.lineno}, col:{self.column})"
 
     def __str__(self) -> str:
+<<<<<<< HEAD
         """
         .. versionchanged:: 3.2.0
            Now uses :meth:`formatted_message` to format message.
@@ -226,6 +239,9 @@ class ParseBaseException(Exception):
                 f"{type(self).__name__}: {self.msg}"
                 f" ({type(ex).__name__}: {ex} while formatting message)"
             )
+=======
+        return self.formatted_message()
+>>>>>>> added population analysis based on the grid
 
     def __repr__(self):
         return str(self)
@@ -313,8 +329,11 @@ class ParseException(ParseBaseException):
 
     prints:
 
+<<<<<<< HEAD
     .. testoutput::
 
+=======
+>>>>>>> added population analysis based on the grid
        Expected integer, found 'ABC'  (at char 0), (line:1, col:1) column: 1
 
     """
@@ -344,6 +363,8 @@ class RecursiveGrammarException(Exception):
     Exception thrown by :class:`ParserElement.validate` if the
     grammar could be left-recursive; parser may need to enable
     left recursion using :class:`ParserElement.enable_left_recursion<ParserElement.enable_left_recursion>`
+
+    Deprecated: only used by deprecated method ParserElement.validate.
     """
 
     def __init__(self, parseElementList) -> None:

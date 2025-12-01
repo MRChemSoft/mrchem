@@ -232,6 +232,7 @@ DebugSuccessAction = Callable[
 DebugExceptionAction = Callable[[str, int, "ParserElement", Exception, bool], None]
 
 
+<<<<<<< HEAD
 alphas: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 identchars: str = pyparsing_unicode.Latin1.identchars
 identbodychars: str = pyparsing_unicode.Latin1.identbodychars
@@ -243,6 +244,15 @@ printables: str = (
     "#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
 )
+=======
+alphas: str = string.ascii_uppercase + string.ascii_lowercase
+identchars: str = pyparsing_unicode.Latin1.identchars
+identbodychars: str = pyparsing_unicode.Latin1.identbodychars
+nums: str = "0123456789"
+hexnums: str = nums + "ABCDEFabcdef"
+alphanums: str = alphas + nums
+printables: str = "".join([c for c in string.printable if c not in string.whitespace])
+>>>>>>> added population analysis based on the grid
 
 
 class _ParseActionIndexError(Exception):
@@ -499,6 +509,7 @@ class ParserElement(ABC):
         self.whiteChars: set[str] = set(ParserElement.DEFAULT_WHITE_CHARS)
         self.copyDefaultWhiteChars: bool = True
         # used when checking for left-recursion
+<<<<<<< HEAD
         self._may_return_empty: bool = False
         self.keepTabs: bool = False
         self.ignoreExprs: list[ParserElement] = list()
@@ -506,12 +517,22 @@ class ParserElement(ABC):
         self.streamlined: bool = False
         # optimize exception handling for subclasses that don't advance parse index
         self.mayIndexError: bool = True
+=======
+        self._may_return_empty = False
+        self.keepTabs = False
+        self.ignoreExprs: list[ParserElement] = list()
+        self.debug = False
+        self.streamlined = False
+        # optimize exception handling for subclasses that don't advance parse index
+        self.mayIndexError = True
+>>>>>>> added population analysis based on the grid
         self.errmsg: Union[str, None] = ""
         # mark results names as modal (report only last) or cumulative (list all)
         self.modalResults: bool = True
         # custom debug actions
         self.debugActions = self.DebugActions(None, None, None)
         # avoid redundant calls to preParse
+<<<<<<< HEAD
         self.callPreparse: bool = True
         self.callDuringTry: bool = False
         self.suppress_warnings_: list[Diagnostics] = []
@@ -531,6 +552,19 @@ class ParserElement(ABC):
         .. deprecated:: 3.3.0
         use _may_return_empty instead.
         """
+=======
+        self.callPreparse = True
+        self.callDuringTry = False
+        self.suppress_warnings_: list[Diagnostics] = []
+        self.show_in_diagram = True
+
+    @property
+    def mayReturnEmpty(self):
+        return self._may_return_empty
+
+    @mayReturnEmpty.setter
+    def mayReturnEmpty(self, value):
+>>>>>>> added population analysis based on the grid
         self._may_return_empty = value
 
     def suppress_warning(self, warning_type: Diagnostics) -> ParserElement:
@@ -615,7 +649,11 @@ class ParserElement(ABC):
         return cpy
 
     def set_results_name(
+<<<<<<< HEAD
         self, name: str, list_all_matches: bool = False, **kwargs
+=======
+        self, name: str, list_all_matches: bool = False, *, listAllMatches: bool = False
+>>>>>>> added population analysis based on the grid
     ) -> ParserElement:
         """
         Define name for referencing matching tokens as a nested attribute
@@ -649,9 +687,12 @@ class ParserElement(ABC):
         """
         listAllMatches: bool = deprecate_argument(kwargs, "listAllMatches", False)
 
+<<<<<<< HEAD
         list_all_matches = listAllMatches or list_all_matches
         return self._setResultsName(name, list_all_matches)
 
+=======
+>>>>>>> added population analysis based on the grid
     def _setResultsName(self, name, list_all_matches=False) -> ParserElement:
         if name is None:
             return self
@@ -683,9 +724,13 @@ class ParserElement(ABC):
             self._parse = self._parse._originalParseMethod  # type: ignore [method-assign]
         return self
 
+<<<<<<< HEAD
     def set_parse_action(
         self, *fns: ParseAction, call_during_try: bool = False, **kwargs: Any
     ) -> ParserElement:
+=======
+    def set_parse_action(self, *fns: ParseAction, **kwargs: Any) -> ParserElement:
+>>>>>>> added population analysis based on the grid
         """
         Define one or more actions to perform when successfully matching parse element definition.
 
@@ -795,6 +840,7 @@ class ParserElement(ABC):
         if not all(callable(fn) for fn in fns):
             raise TypeError("parse actions must be callable")
         self.parseAction[:] = [_trim_arity(fn) for fn in fns]
+<<<<<<< HEAD
         self.callDuringTry = self.callDuringTry or call_during_try or callDuringTry
 
         return self
@@ -802,6 +848,15 @@ class ParserElement(ABC):
     def add_parse_action(
         self, *fns: ParseAction, call_during_try: bool = False, **kwargs: Any
     ) -> ParserElement:
+=======
+        self.callDuringTry = kwargs.get(
+            "call_during_try", kwargs.get("callDuringTry", False)
+        )
+
+        return self
+
+    def add_parse_action(self, *fns: ParseAction, **kwargs: Any) -> ParserElement:
+>>>>>>> added population analysis based on the grid
         """
         Add one or more parse actions to expression's list of parse actions. See :class:`set_parse_action`.
 
@@ -813,9 +868,13 @@ class ParserElement(ABC):
         self.callDuringTry = self.callDuringTry or callDuringTry or call_during_try
         return self
 
+<<<<<<< HEAD
     def add_condition(
         self, *fns: ParseCondition, call_during_try: bool = False, **kwargs: Any
     ) -> ParserElement:
+=======
+    def add_condition(self, *fns: ParseCondition, **kwargs: Any) -> ParserElement:
+>>>>>>> added population analysis based on the grid
         """Add a boolean predicate function to expression's list of parse actions. See
         :class:`set_parse_action` for function call signatures. Unlike ``set_parse_action``,
         functions passed to ``add_condition`` need to return boolean success/fail of the condition.
@@ -1065,6 +1124,7 @@ class ParserElement(ABC):
         """
 
         not_in_cache: bool = True
+<<<<<<< HEAD
 
         def get(self, *args) -> typing.Any: ...
 
@@ -1072,6 +1132,15 @@ class ParserElement(ABC):
 
         def clear(self) -> None: ...
 
+=======
+
+        def get(self, *args) -> typing.Any: ...
+
+        def set(self, *args) -> None: ...
+
+        def clear(self) -> None: ...
+
+>>>>>>> added population analysis based on the grid
     # class-level argument cache for optimizing repeated calls when backtracking
     # through recursive expressions
     packrat_cache: _CacheType = NullCache()
@@ -1206,6 +1275,7 @@ class ParserElement(ABC):
         thus the two cannot be used together. Use ``force=True`` to disable any
         previous, conflicting settings.
         """
+<<<<<<< HEAD
         with ParserElement.packrat_cache_lock:
             if force:
                 ParserElement.disable_memoization()
@@ -1218,6 +1288,19 @@ class ParserElement(ABC):
             else:
                 raise NotImplementedError(f"Memo size of {cache_size_limit}")
             ParserElement._left_recursion_enabled = True
+=======
+        if force:
+            ParserElement.disable_memoization()
+        elif ParserElement._packratEnabled:
+            raise RuntimeError("Packrat and Bounded Recursion are not compatible")
+        if cache_size_limit is None:
+            ParserElement.recursion_memos = _UnboundedMemo()
+        elif cache_size_limit > 0:
+            ParserElement.recursion_memos = _LRUMemo(capacity=cache_size_limit)  # type: ignore[assignment]
+        else:
+            raise NotImplementedError(f"Memo size of {cache_size_limit}")
+        ParserElement._left_recursion_enabled = True
+>>>>>>> added population analysis based on the grid
 
     @staticmethod
     def enable_packrat(
@@ -1264,12 +1347,21 @@ class ParserElement(ABC):
             if ParserElement._packratEnabled:
                 return
 
+<<<<<<< HEAD
             ParserElement._packratEnabled = True
             if cache_size_limit is None:
                 ParserElement.packrat_cache = _UnboundedCache()
             else:
                 ParserElement.packrat_cache = _FifoCache(cache_size_limit)
             ParserElement._parse = ParserElement._parseCache
+=======
+        ParserElement._packratEnabled = True
+        if cache_size_limit is None:
+            ParserElement.packrat_cache = _UnboundedCache()
+        else:
+            ParserElement.packrat_cache = _FifoCache(cache_size_limit)
+        ParserElement._parse = ParserElement._parseCache
+>>>>>>> added population analysis based on the grid
 
     def parse_string(
         self, instring: str, parse_all: bool = False, **kwargs
@@ -1355,7 +1447,11 @@ class ParserElement(ABC):
         always_skip_whitespace=True,
         *,
         debug: bool = False,
+<<<<<<< HEAD
         **kwargs,
+=======
+        maxMatches: int = _MAX_INT,
+>>>>>>> added population analysis based on the grid
     ) -> Generator[tuple[ParseResults, int, int], None, None]:
         """
         Scan the input string for expression matches.  Each match will return the
@@ -1555,10 +1651,14 @@ class ParserElement(ABC):
                 [
                     t
                     for t, s, e in self.scan_string(
+<<<<<<< HEAD
                         instring,
                         max_matches=max_matches,
                         always_skip_whitespace=False,
                         debug=debug,
+=======
+                        instring, maxMatches, always_skip_whitespace=False, debug=debug
+>>>>>>> added population analysis based on the grid
                     )
                 ]
             )
@@ -2141,6 +2241,12 @@ class ParserElement(ABC):
         Define name for this expression, makes debugging and exception messages clearer. If
         `__diag__.enable_debug_on_named_expressions` is set to True, setting a name will also
         enable debug for this expression.
+<<<<<<< HEAD
+=======
+
+        If `name` is None, clears any custom name for this expression, and clears the
+        debug flag is it was enabled via `__diag__.enable_debug_on_named_expressions`.
+>>>>>>> added population analysis based on the grid
 
         If `name` is None, clears any custom name for this expression, and clears the
         debug flag is it was enabled via `__diag__.enable_debug_on_named_expressions`.
@@ -2732,9 +2838,13 @@ class Literal(Token):
     def __getnewargs__(self):
         return (self.match,)
 
+<<<<<<< HEAD
     def __init__(self, match_string: str = "", **kwargs) -> None:
         matchString: str = deprecate_argument(kwargs, "matchString", "")
 
+=======
+    def __init__(self, match_string: str = "", *, matchString: str = "") -> None:
+>>>>>>> added population analysis based on the grid
         super().__init__()
         match_string = matchString or match_string
         self.match = match_string
@@ -2831,11 +2941,18 @@ class Keyword(Token):
         match_string: str = "",
         ident_chars: typing.Optional[str] = None,
         caseless: bool = False,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         matchString = deprecate_argument(kwargs, "matchString", "")
         identChars = deprecate_argument(kwargs, "identChars", None)
 
+=======
+        *,
+        matchString: str = "",
+        identChars: typing.Optional[str] = None,
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         super().__init__()
         identChars = identChars or ident_chars
         if identChars is None:
@@ -2941,9 +3058,13 @@ class CaselessLiteral(Literal):
     (Contrast with example for :class:`CaselessKeyword`.)
     """
 
+<<<<<<< HEAD
     def __init__(self, match_string: str = "", **kwargs) -> None:
         matchString: str = deprecate_argument(kwargs, "matchString", "")
 
+=======
+    def __init__(self, match_string: str = "", *, matchString: str = "") -> None:
+>>>>>>> added population analysis based on the grid
         match_string = matchString or match_string
         super().__init__(match_string.upper())
         # Preserve the defining literal.
@@ -2971,6 +3092,7 @@ class CaselessKeyword(Keyword):
     """
 
     def __init__(
+<<<<<<< HEAD
         self, match_string: str = "", ident_chars: typing.Optional[str] = None, **kwargs
     ) -> None:
         matchString: str = deprecate_argument(kwargs, "matchString", "")
@@ -2978,6 +3100,15 @@ class CaselessKeyword(Keyword):
             kwargs, "identChars", None
         )
 
+=======
+        self,
+        match_string: str = "",
+        ident_chars: typing.Optional[str] = None,
+        *,
+        matchString: str = "",
+        identChars: typing.Optional[str] = None,
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         identChars = identChars or ident_chars
         match_string = matchString or match_string
         super().__init__(match_string, identChars, caseless=True)
@@ -3037,10 +3168,14 @@ class CloseMatch(Token):
         max_mismatches: typing.Optional[int] = None,
         *,
         caseless=False,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         maxMismatches: int = deprecate_argument(kwargs, "maxMismatches", 1)
 
+=======
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         maxMismatches = max_mismatches if max_mismatches is not None else maxMismatches
         super().__init__()
         self.match_string = match_string
@@ -3173,6 +3308,7 @@ class Word(Token):
         exact: int = 0,
         as_keyword: bool = False,
         exclude_chars: typing.Optional[str] = None,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         initChars: typing.Optional[str] = deprecate_argument(kwargs, "initChars", None)
@@ -3182,6 +3318,14 @@ class Word(Token):
             kwargs, "excludeChars", None
         )
 
+=======
+        *,
+        initChars: typing.Optional[str] = None,
+        bodyChars: typing.Optional[str] = None,
+        asKeyword: bool = False,
+        excludeChars: typing.Optional[str] = None,
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         initChars = initChars or init_chars
         bodyChars = bodyChars or body_chars
         asKeyword = asKeyword or as_keyword
@@ -3284,6 +3428,7 @@ class Word(Token):
             else:
                 self.re_match = self.re.match
                 self.parseImpl = self.parseImpl_regex  # type: ignore[method-assign]
+<<<<<<< HEAD
 
     @property
     def initChars(self) -> set[str]:
@@ -3308,6 +3453,8 @@ class Word(Token):
             ret.re_match = self.re_match
             ret.parseImpl = ret.parseImpl_regex  # type: ignore[method-assign]
         return ret
+=======
+>>>>>>> added population analysis based on the grid
 
     def _generateDefaultName(self) -> str:
         def charsAsStr(s):
@@ -3386,6 +3533,7 @@ class Char(Word):
         charset: str,
         as_keyword: bool = False,
         exclude_chars: typing.Optional[str] = None,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         asKeyword: bool = deprecate_argument(kwargs, "asKeyword", False)
@@ -3393,6 +3541,12 @@ class Char(Word):
             kwargs, "excludeChars", None
         )
 
+=======
+        *,
+        asKeyword: bool = False,
+        excludeChars: typing.Optional[str] = None,
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         asKeyword = asKeyword or as_keyword
         excludeChars = excludeChars or exclude_chars
         super().__init__(
@@ -3439,8 +3593,20 @@ class Regex(Token):
         flags: Union[re.RegexFlag, int] = 0,
         as_group_list: bool = False,
         as_match: bool = False,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
+=======
+        *,
+        asGroupList: bool = False,
+        asMatch: bool = False,
+    ) -> None:
+        """The parameters ``pattern`` and ``flags`` are passed
+        to the ``re.compile()`` function as-is. See the Python
+        `re module <https://docs.python.org/3/library/re.html>`_ module for an
+        explanation of the acceptable patterns and flags.
+        """
+>>>>>>> added population analysis based on the grid
         super().__init__()
         asGroupList: bool = deprecate_argument(kwargs, "asGroupList", False)
         asMatch: bool = deprecate_argument(kwargs, "asMatch", False)
@@ -3481,6 +3647,7 @@ class Regex(Token):
         self.asMatch = asMatch
         if self.asGroupList:
             self.parseImpl = self.parseImplAsGroupList  # type: ignore [method-assign]
+<<<<<<< HEAD
         if self.asMatch:
             self.parseImpl = self.parseImplAsMatch  # type: ignore [method-assign]
 
@@ -3504,6 +3671,13 @@ class Regex(Token):
 
         Generally only used internally by pyparsing.
         """
+=======
+        if self.asMatch:
+            self.parseImpl = self.parseImplAsMatch  # type: ignore [method-assign]
+
+    @cached_property
+    def re(self) -> re.Pattern:
+>>>>>>> added population analysis based on the grid
         if self._re:
             return self._re
 
@@ -3680,7 +3854,17 @@ class QuotedString(Token):
         unquote_results: bool = True,
         end_quote_char: typing.Optional[str] = None,
         convert_whitespace_escapes: bool = True,
+<<<<<<< HEAD
         **kwargs,
+=======
+        *,
+        quoteChar: str = "",
+        escChar: typing.Optional[str] = None,
+        escQuote: typing.Optional[str] = None,
+        unquoteResults: bool = True,
+        endQuoteChar: typing.Optional[str] = None,
+        convertWhitespaceEscapes: bool = True,
+>>>>>>> added population analysis based on the grid
     ) -> None:
         super().__init__()
         quoteChar: str = deprecate_argument(kwargs, "quoteChar", "")
@@ -3821,6 +4005,16 @@ class QuotedString(Token):
         loc = result.end()
         ret = result[0]
 
+        def convert_escaped_numerics(s: str) -> str:
+            if s == "0":
+                return "\0"
+            if s.isdigit() and len(s) == 3:
+                return chr(int(s, base=8))
+            elif s.startswith(("u", "x")):
+                return chr(int(s[1:], base=16))
+            else:
+                return s
+
         if self.unquote_results:
             # strip off quotes
             ret = ret[self.quote_char_len : -self.end_quote_char_len]
@@ -3833,6 +4027,7 @@ class QuotedString(Token):
                     # regex matches (only 1 group will match at any given time)
                     ret = "".join(
                         # match group 1 matches \t, \n, etc.
+<<<<<<< HEAD
                         self.ws_map[g] if (g := match[1])
                         # match group 2 matches escaped octal, null, hex, and Unicode
                         # sequences
@@ -3841,6 +4036,16 @@ class QuotedString(Token):
                         else g[-1] if (g := match[3])
                         # match group 4 matches any character
                         else match[4]
+=======
+                        self.ws_map[match.group(1)] if match.group(1)
+                        # match group 2 matches escaped octal, null, hex, and Unicode
+                        # sequences
+                        else convert_escaped_numerics(match.group(2)[1:]) if match.group(2)
+                        # match group 3 matches escaped characters
+                        else match.group(3)[-1] if match.group(3)
+                        # match group 4 matches any character
+                        else match.group(4)
+>>>>>>> added population analysis based on the grid
                         for match in self.unquote_scan_re.finditer(ret)
                     )
                 else:
@@ -3890,7 +4095,17 @@ class CharsNotIn(Token):
     """
 
     def __init__(
+<<<<<<< HEAD
         self, not_chars: str = "", min: int = 1, max: int = 0, exact: int = 0, **kwargs
+=======
+        self,
+        not_chars: str = "",
+        min: int = 1,
+        max: int = 0,
+        exact: int = 0,
+        *,
+        notChars: str = "",
+>>>>>>> added population analysis based on the grid
     ) -> None:
         super().__init__()
         notChars: str = deprecate_argument(kwargs, "notChars", "")
@@ -4188,9 +4403,15 @@ class WordStart(PositionToken):
     a line.
     """
 
+<<<<<<< HEAD
     def __init__(self, word_chars: str = printables, **kwargs) -> None:
         wordChars: str = deprecate_argument(kwargs, "wordChars", printables)
 
+=======
+    def __init__(
+        self, word_chars: str = printables, *, wordChars: str = printables
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         wordChars = word_chars if wordChars == printables else wordChars
         super().__init__()
         self.wordChars = set(wordChars)
@@ -4215,9 +4436,15 @@ class WordEnd(PositionToken):
     of a line.
     """
 
+<<<<<<< HEAD
     def __init__(self, word_chars: str = printables, **kwargs) -> None:
         wordChars: str = deprecate_argument(kwargs, "wordChars", printables)
 
+=======
+    def __init__(
+        self, word_chars: str = printables, *, wordChars: str = printables
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         wordChars = word_chars if wordChars == printables else wordChars
         super().__init__()
         self.wordChars = set(wordChars)
@@ -4242,6 +4469,7 @@ class Tag(Token):
     processing the parsed results. Accepts an optional tag value,
     defaulting to `True`.
 
+<<<<<<< HEAD
     Example:
 
     .. doctest::
@@ -4259,6 +4487,25 @@ class Tag(Token):
         - enthusiastic: True
 
         .. versionadded:: 3.1.0
+=======
+    Example::
+
+        end_punc = "." | ("!" + Tag("enthusiastic")))
+        greeting = "Hello," + Word(alphas) + end_punc
+
+        result = greeting.parse_string("Hello, World.")
+        print(result.dump())
+
+        result = greeting.parse_string("Hello, World!")
+        print(result.dump())
+
+    prints::
+
+        ['Hello,', 'World', '.']
+
+        ['Hello,', 'World', '!']
+        - enthusiastic: True
+>>>>>>> added population analysis based on the grid
     """
 
     def __init__(self, tag_name: str, value: Any = True) -> None:
@@ -5638,12 +5885,18 @@ class _MultipleMatch(ParseElementEnhance):
         self,
         expr: Union[str, ParserElement],
         stop_on: typing.Optional[Union[ParserElement, str]] = None,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         stopOn: typing.Optional[Union[ParserElement, str]] = deprecate_argument(
             kwargs, "stopOn", None
         )
 
+=======
+        *,
+        stopOn: typing.Optional[Union[ParserElement, str]] = None,
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         super().__init__(expr)
         stopOn = stopOn or stop_on
         self.saveAsList = True
@@ -5658,8 +5911,11 @@ class _MultipleMatch(ParseElementEnhance):
         self.not_ender = ~ender if ender is not None else None
         return self
 
+<<<<<<< HEAD
     stopOn = stop_on
 
+=======
+>>>>>>> added population analysis based on the grid
     def parseImpl(self, instring, loc, do_actions=True) -> ParseImplReturnType:
         self_expr_parse = self.expr._parse
         self_skip_ignorables = self._skipIgnorables
@@ -5778,11 +6034,18 @@ class ZeroOrMore(_MultipleMatch):
         self,
         expr: Union[str, ParserElement],
         stop_on: typing.Optional[Union[ParserElement, str]] = None,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         stopOn: Union[ParserElement, str] = deprecate_argument(kwargs, "stopOn", None)
 
         super().__init__(expr, stop_on=stopOn or stop_on)
+=======
+        *,
+        stopOn: typing.Optional[Union[ParserElement, str]] = None,
+    ) -> None:
+        super().__init__(expr, stopOn=stopOn or stop_on)
+>>>>>>> added population analysis based on the grid
         self._may_return_empty = True
 
     def parseImpl(self, instring, loc, do_actions=True) -> ParseImplReturnType:
@@ -5831,6 +6094,26 @@ class DelimitedList(ParseElementEnhance):
         *,
         allow_trailing_delim: bool = False,
     ) -> None:
+<<<<<<< HEAD
+=======
+        """Helper to define a delimited list of expressions - the delimiter
+        defaults to ','. By default, the list elements and delimiters can
+        have intervening whitespace, and comments, but this can be
+        overridden by passing ``combine=True`` in the constructor. If
+        ``combine`` is set to ``True``, the matching tokens are
+        returned as a single token string, with the delimiters included;
+        otherwise, the matching tokens are returned as a list of tokens,
+        with the delimiters suppressed.
+
+        If ``allow_trailing_delim`` is set to True, then the list may end with
+        a delimiter.
+
+        Example::
+
+            DelimitedList(Word(alphas)).parse_string("aa,bb,cc") # -> ['aa', 'bb', 'cc']
+            DelimitedList(Word(hexnums), delim=':', combine=True).parse_string("AA:BB:CC:DD:EE") # -> ['AA:BB:CC:DD:EE']
+        """
+>>>>>>> added population analysis based on the grid
         if isinstance(expr, str_type):
             expr = ParserElement._literalStringClass(expr)
         expr = typing.cast(ParserElement, expr)
@@ -6036,12 +6319,18 @@ class SkipTo(ParseElementEnhance):
         include: bool = False,
         ignore: typing.Optional[Union[ParserElement, str]] = None,
         fail_on: typing.Optional[Union[ParserElement, str]] = None,
+<<<<<<< HEAD
         **kwargs,
     ) -> None:
         failOn: typing.Optional[Union[ParserElement, str]] = deprecate_argument(
             kwargs, "failOn", None
         )
 
+=======
+        *,
+        failOn: typing.Optional[Union[ParserElement, str]] = None,
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         super().__init__(other)
         failOn = failOn or fail_on
         self.ignoreExpr = ignore
@@ -6206,7 +6495,10 @@ class Forward(ParseElementEnhance):
             warnings.warn(
                 "warn_on_match_first_with_lshift_operator:"
                 " using '<<' operator with '|' is probably an error, use '<<='",
+<<<<<<< HEAD
                 PyparsingDiagnosticWarning,
+=======
+>>>>>>> added population analysis based on the grid
                 stacklevel=2,
             )
         ret = super().__or__(other)
@@ -6251,7 +6543,10 @@ class Forward(ParseElementEnhance):
             warnings.warn(
                 "warn_on_parse_using_empty_Forward:"
                 " Forward expression was never assigned a value, will not parse any input",
+<<<<<<< HEAD
                 PyparsingDiagnosticWarning,
+=======
+>>>>>>> added population analysis based on the grid
                 stacklevel=stacklevel,
             )
         if not ParserElement._left_recursion_enabled:

@@ -1,5 +1,8 @@
 # results.py
+<<<<<<< HEAD
 
+=======
+>>>>>>> added population analysis based on the grid
 from __future__ import annotations
 
 import collections
@@ -13,9 +16,15 @@ from collections.abc import (
 import pprint
 from typing import Any
 
+<<<<<<< HEAD
 from .util import deprecate_argument, _is_iterable, _flatten
 
 
+=======
+from .util import replaced_by_pep8
+
+
+>>>>>>> added population analysis based on the grid
 str_type: tuple[type, ...] = (str, bytes)
 _generator_type = type((_ for _ in ()))
 NULL_SLICE: slice = slice(None)
@@ -203,6 +212,7 @@ class ParseResults:
     # Performance tuning: we construct a *lot* of these, so keep this
     # constructor as small and fast as possible
     def __init__(
+<<<<<<< HEAD
         self,
         toklist=None,
         name=None,
@@ -214,6 +224,10 @@ class ParseResults:
         asList = deprecate_argument(kwargs, "asList", True, new_name="aslist")
 
         asList = asList and aslist
+=======
+        self, toklist=None, name=None, asList=True, modal=True, isinstance=isinstance
+    ) -> None:
+>>>>>>> added population analysis based on the grid
         self._tokdict: dict[str, _ParseResultsWithOffset]
         self._modal = modal
 
@@ -589,12 +603,17 @@ class ParseResults:
     def as_list(self, *, flatten: bool = False) -> list:
         """
         Returns the parse results as a nested list of matching tokens, all converted to strings.
+<<<<<<< HEAD
         If ``flatten`` is True, all the nesting levels in the returned list are collapsed.
+=======
+        If flatten is True, all the nesting levels in the returned list are collapsed.
+>>>>>>> added population analysis based on the grid
 
         Example:
 
         .. doctest::
 
+<<<<<<< HEAD
            >>> patt = Word(alphas)[1, ...]
            >>> result = patt.parse_string("sldkj lsdkj sldkj")
            >>> # even though the result prints in string-like form,
@@ -603,6 +622,29 @@ class ParseResults:
            <class 'pyparsing.results.ParseResults'>
            >>> print(result)
            ['sldkj', 'lsdkj', 'sldkj']
+=======
+            # Use as_list() to create an actual list
+            result_list = result.as_list()
+            print(type(result_list), result_list) # -> <class 'list'> ['sldkj', 'lsdkj', 'sldkj']
+        """
+
+        def flattened(pr):
+            to_visit = collections.deque([*self])
+            while to_visit:
+                to_do = to_visit.popleft()
+                if isinstance(to_do, ParseResults):
+                    to_visit.extendleft(to_do[::-1])
+                else:
+                    yield to_do
+
+        if flatten:
+            return [*flattened(self)]
+        else:
+            return [
+                res.as_list() if isinstance(res, ParseResults) else res
+                for res in self._toklist
+            ]
+>>>>>>> added population analysis based on the grid
 
         .. doctest::
 

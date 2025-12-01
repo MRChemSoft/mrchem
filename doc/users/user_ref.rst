@@ -365,6 +365,7 @@ User input reference
     **Predicates**
       - ``value.lower() in ['point_like', 'point_parabola', 'point_minimal', 'finite_gaussian', 'finite_sphere']``
   
+<<<<<<< HEAD
  :Pseudopotential: Define the pseudopotentials. 
 
   :red:`Keywords`
@@ -383,6 +384,11 @@ User input reference
  :ZORA: Define required parameters for the ZORA Hamiltonian. 
 
   :red:`Keywords`
+=======
+ :ZORA: Define required parameters for the ZORA Hamiltonian. 
+
+  :red:`Keywords`
+>>>>>>> added population analysis based on the grid
    :include_nuclear: Include the nuclear potential ``V_nuc`` in the ZORA potential. 
   
     **Type** ``bool``
@@ -479,10 +485,32 @@ User input reference
   
     **Default** ``False``
   
+<<<<<<< HEAD
    :geometric_derivative: Compute geometric derivative. 
   
     **Type** ``bool``
   
+=======
+   :population_analysis: Compute population analysis. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :population_dimension: Dimension for population analysis. 0: total, 1: x, 2: y, 3: z. 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+    **Predicates**
+      - ``value in [0, 1, 2, 3]``
+  
+   :geometric_derivative: Compute geometric derivative. 
+  
+    **Type** ``bool``
+  
+>>>>>>> added population analysis based on the grid
     **Default** ``user['GeometryOptimizer']['run']``
   
  :Forces: Define parameters for the computation of forces. 
@@ -683,7 +711,11 @@ User input reference
   
     **Default** ``initial_guess/y_b``
   
+<<<<<<< HEAD
    :cube_vectors: Directory where cube vectors are stored for MRChem calculation. 
+=======
+   :cube_vectors: Directory where cube vectors are stored for mrchem calculation. 
+>>>>>>> added population analysis based on the grid
   
     **Type** ``str``
   
@@ -755,13 +787,18 @@ User input reference
   
     **Default** ``-1.0``
   
+<<<<<<< HEAD
    :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. ``nao`` will start from orbitals saved in NAO format from external calculations.  It also allows for some mixing iterations to converge the initial guess within the nao basis. 
+=======
+   :guess_type: Type of initial guess for ground state orbitals. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. 
+>>>>>>> added population analysis based on the grid
   
     **Type** ``str``
   
     **Default** ``sad_gto``
   
     **Predicates**
+<<<<<<< HEAD
       - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube', 'nao']``
   
    :nao_directory: Directory where NAO orbitals are stored for MRChem calculation. 
@@ -781,6 +818,9 @@ User input reference
     **Type** ``float``
   
     **Default** ``0.4``
+=======
+      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube']``
+>>>>>>> added population analysis based on the grid
   
    :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/phi_scf_idx_<0..N>``. Can be used as ``chk`` initial guess in subsequent calculations. Note: must be given in quotes if there are slashes in the path "path/to/checkpoint". 
   
@@ -818,12 +858,15 @@ User input reference
   
     **Default** ``True``
   
+<<<<<<< HEAD
    :deltascf_method: Method to use for a DeltaSCF calculation. Options are ``none`` for a normal SCF run, ``MOM`` for a run using the MOM method and ``IMOM`` for a run using the IMOM method. 
   
     **Type** ``str``
   
     **Default** ``none``
   
+=======
+>>>>>>> added population analysis based on the grid
    :write_orbitals: Write final orbitals to disk, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
   
     **Type** ``bool``
