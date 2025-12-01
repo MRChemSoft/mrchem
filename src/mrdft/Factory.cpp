@@ -93,23 +93,15 @@ void Factory::setFunctional(const std::string &n, double c) {
         MapFuncName(name, ids, coeffs);
         xc_func_type libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
-            if (spin) {
-                if (xc_func_init(&libxc_obj, ids[i], XC_POLARIZED) != 0) {
-                    std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
-                }
-                xc_func_set_dens_threshold(&libxc_obj, cutoff);
-                libxc_objects.push_back(libxc_obj);
-                libxc_coeffs.push_back(c * coeffs[i]);
-            } else {
-                if (xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) != 0) {
-                    std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << xc_func_init(&libxc_obj, ids[i], XC_UNPOLARIZED) << std::endl;
-                }
-                xc_func_set_dens_threshold(&libxc_obj, cutoff);
-                
-                std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
-                libxc_objects.push_back(libxc_obj);
-                libxc_coeffs.push_back(c * coeffs[i]);
+            auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
+            if (return_code != 0) {
+                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << return_code << std::endl;
             }
+            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+            
+            std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
+            libxc_objects.push_back(libxc_obj);
+            libxc_coeffs.push_back(c * coeffs[i]);
         }
     }
 }
