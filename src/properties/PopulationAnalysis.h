@@ -32,13 +32,24 @@
 #include <string>
 
 namespace mrchem {
-
+/**
+ * @class PopulationAnalysis
+ * @brief Store and print population analysis results
+ */
 class PopulationAnalysis final {
 public:
-    DoubleMatrix getMatrix() const { return this->populations; }
+    DoubleMatrix getMatrix() const { return this->populations; } ///< @return Population values
 
+    /**
+     * @brief Set population value matrix
+     * @param v: population value matrix
+     */
     void setMatrix(const DoubleMatrix &v) { this->populations = v; }
 
+    /**
+     * @brief Print population analysis
+     * @param id: identifier string
+     */
     void print(const std::string &id) const {
         auto w0 = mrcpp::Printer::getWidth() - 1;
         auto w1 = 13;
@@ -73,11 +84,11 @@ public:
         }
         mrcpp::print::separator(0, '=');
     }
-
+    /// @brief Convert the population values to json
     nlohmann::json json() const { return {{"total", print_utils::eigen_to_vector(getMatrix(), 1.0e-12)}}; }
 
 protected:
-    DoubleMatrix populations;
+    DoubleMatrix populations; ///< Population matrix with cols for the different parts of the space
 };
 
 } // namespace mrchem
