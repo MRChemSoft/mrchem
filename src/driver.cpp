@@ -669,16 +669,16 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
                 for (unsigned int i = 0; i < p.rows(); i++) {
                     Orbital density = Orbital();
                     mrcpp::multiply(density, Phi[i], Phi[i], prec);
-                    p(i, 0) = density.integrate().real();
+                    p(i, 0) = density.integrate().real(); // Integrate over full space
                 }
             }
             else {
                 for (unsigned int i = 0; i < p.rows(); i++) {
                     Orbital density = Orbital();
                     mrcpp::multiply(density, Phi[i], Phi[i], prec);
-                    p(i, 0) = density.integrate(dim - 1, false).real();
-                    p(i, 1) = density.integrate(dim - 1, true).real();
-                    p(i, 2) = p(i, 0) + p(i, 1);
+                    p(i, 0) = density.integrate(dim - 1, false).real(); // Integrate over lower half of the space
+                    p(i, 1) = density.integrate(dim - 1, true).real(); // Integrate over upper half of the space
+                    p(i, 2) = density.integrate().real(); // Integrate over full space
                 }
             }
             PopulationAnalysis &pop = mol.getPopulationAnalysis(id);
