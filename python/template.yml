@@ -431,14 +431,14 @@ sections:
         type: bool
         default: false
         docstring: |
-          Compute population analysis.
+          Compute population analysis, also possible for half of the space.
       - name: population_dimension
         type: int
         default: 0
         predicates:
           - value in [0, 1, 2, 3]
         docstring: |
-          Dimension for population analysis. 0: total, 1: x, 2: y, 3: z.
+          Dimension for population analysis. 0: total, 1: split x, 2: split y, 3: split z.
   - name: Forces
     docstring: |
       Define parameters for the computation of forces.

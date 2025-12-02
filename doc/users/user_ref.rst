@@ -464,13 +464,13 @@ User input reference
   
     **Default** ``False``
   
-   :population_analysis: Compute population analysis. 
+   :population_analysis: Compute population analysis, also possible for half of the space. 
   
     **Type** ``bool``
   
     **Default** ``False``
   
-   :population_dimension: Dimension for population analysis. 0: total, 1: x, 2: y, 3: z. 
+   :population_dimension: Dimension for population analysis. 0: total, 1: split x, 2: split y, 3: split z. 
   
     **Type** ``int``
   
