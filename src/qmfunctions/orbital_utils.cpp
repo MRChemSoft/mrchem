@@ -456,7 +456,7 @@ void orbital::orthogonalize(double prec, OrbitalVector &Phi) {
 OrbitalChunk orbital::get_my_chunk(OrbitalVector &Phi) {
     OrbitalChunk chunk;
     for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_func(i)) chunk.push_back(std::make_tuple(i, Orbital(Phi[i])));
+        if (mrcpp::mpi::my_func(i)) chunk.emplace_back(i, Orbital(Phi[i]));
     }
     return chunk;
 }
