@@ -431,6 +431,14 @@ void orbital::orthogonalize(double prec, OrbitalVector &Phi) {
     }
 }
 
+OrbitalChunk orbital::get_my_chunk(OrbitalVector &Phi) {
+    OrbitalChunk chunk;
+    for (int i = 0; i < Phi.size(); i++) {
+        if (mrcpp::mpi::my_func(i)) chunk.emplace_back(i, Orbital(Phi[i]));
+    }
+    return chunk;
+}
+
 /** @brief Orthogonalize the Phi orbitals against all orbitals in Psi.
  *  orthogonal spins means orthogonal orbitals.
  */
