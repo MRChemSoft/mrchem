@@ -30,6 +30,7 @@
 
 #include "mrchem.h"
 
+#include "qmfunctions/Orbital.h"
 #include "qmfunctions/qmfunction_fwd.h"
 
 namespace mrchem {
