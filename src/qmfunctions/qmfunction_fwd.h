@@ -50,7 +50,6 @@ class CompFunction;
 
 // class Orbital;
 class Orbital;
-using OrbitalChunk = std::vector<std::tuple<int, Orbital>>;
 
 // using OrbitalVector = mrcpp::CompFunctionVector<3>;
 class OrbitalVector;
