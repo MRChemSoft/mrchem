@@ -26,6 +26,8 @@
 #pragma once
 
 #include <memory>
+#include <iostream>
+#include <set>
 
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
@@ -64,6 +66,12 @@ public:
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     friend class MRDFT;
 
+    bool libxc;
+    std::vector<xc_func_type> libxc_objects;
+    std::vector<double> libxc_coeffs;
+
+    void print_libxc_functional_references(int rank = 2) const;
+
     void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_);
 
 protected:
@@ -90,8 +98,6 @@ protected:
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
 
-    std::vector<xc_func_type> libxc_objects;
-    std::vector<double> libxc_coeffs;
 };
 
 } // namespace mrdft

@@ -31,6 +31,36 @@
 
 namespace mrdft {
 
+void Functional::print_libxc_functional_references(int rank) const {
+    // Only relevant if LibXC is actually in use for this functional
+    if (!libxc) return;
+
+    // Optional: only print from the chosen MPI rank (default 0)
+    if (mrcpp::mpi::world_rank != rank) return;
+
+    // Avoid printing the same LibXC functional multiple times
+    std::set<int> printed_ids;
+
+    std::cout << "\nLibxc functionals used in this calculation:\n";
+
+    for (const auto &func : libxc_objects) {
+        if (func.info == nullptr) continue;  // safety
+
+        int id = func.info->number;
+        if (!printed_ids.insert(id).second) {
+            // Already printed this ID
+            continue;
+        }
+
+        std::cout << "  - " << func.info->name
+                  << " (ID " << id << ")\n";
+    }
+
+    std::cout << "  For recommended references for each functional, see the Libxc manual\n"
+              << "  or the Libxc website (functionals are indexed by the IDs above).\n"
+              << std::endl;
+}
+    
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
     libxc_objects = std::move(libxc_objects_);
     libxc_coeffs  = std::move(libxc_coeffs_);
