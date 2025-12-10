@@ -61,10 +61,9 @@ void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F) {
 
 // Private
 
+// TODO: change 'NuclearOperator' to 'RankZeroOperator'
 void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, KineticOperator &K, NuclearOperator &V) {
-    OrbitalVector KPhi = K(Phi);
-    OrbitalVector VPhi = V(Phi);
-    this->one_body_integrals = std::make_shared<ComplexMatrix>(orbital::calc_overlap_matrix(Phi, KPhi) + orbital::calc_overlap_matrix(Phi, VPhi));
+    this->one_body_integrals = std::make_shared<ComplexMatrix>(K(Phi, Phi) + V(Phi, Phi));
 }
 
 void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi, GenericTwoOrbitalsOperator &g) {
