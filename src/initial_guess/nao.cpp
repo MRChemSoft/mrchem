@@ -304,7 +304,7 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
         }
         rho_loc.add(1.0, atomic_density_mw);
     }
-    density::allreduce_density(prec, rho, rho_loc);
+    density::allreduce_density(rho, rho_loc);
 }
 
 class AnalyticOrbital : public mrcpp::RepresentableFunction<3> {
