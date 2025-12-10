@@ -1,4 +1,4 @@
-world_prec = 1e-5
+world_prec = 1e-4
 world_unit = bohr
 
 WaveFunction {
