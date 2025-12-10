@@ -63,7 +63,7 @@ protected:
     std::shared_ptr<ComplexMatrix> one_rdm{};
     std::shared_ptr<ComplexTensorR4> two_rdm{};
 
-    void set_one_body_integrals(OrbitalVector &Phi, KineticOperator &K, NuclearOperator &V);
+    void set_one_body_integrals(OrbitalVector &Phi, MomentumOperator &P, NuclearOperator &V);
     void set_two_body_integrals(OrbitalVector &Phi, GenericTwoOrbitalsOperator &g);
 
     virtual void calculate_rdms() = 0;
