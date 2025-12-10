@@ -1,22 +1,38 @@
 {
   "input": {
     "constants": {
+      "N_a": 6.02214076e+23,
       "angstrom2bohrs": 1.8897261246257702,
+      "boltzmann_constant": 1.380649e-23,
       "dipmom_au2debye": 2.5417464739297717,
+      "e0": 8.8541878128e-12,
       "electron_g_factor": -2.00231930436256,
+      "elementary_charge": 1.602176634e-19,
       "fine_structure_constant": 0.0072973525693,
       "hartree2ev": 27.211386245988,
       "hartree2kcalmol": 627.5094740630558,
       "hartree2kjmol": 2625.4996394798254,
       "hartree2simagnetizability": 78.9451185,
       "hartree2wavenumbers": 219474.6313632,
-      "light_speed": 137.035999084
+      "light_speed": 137.035999084,
+      "meter2bohr": 18897261246.2577
+    },
+    "geom_opt": {
+      "init_step_size": -0.5,
+      "max_force_component": 0.005,
+      "max_history_length": 10,
+      "max_iter": 100,
+      "minimal_step_size": 0.01,
+      "run": false,
+      "subspace_tolerance": 0.001,
+      "use_previous_guess": false
     },
     "molecule": {
       "charge": 0,
       "coords": [
         {
           "atom": "h",
+          "r_rms": 2.6569547399e-05,
           "xyz": [
             0.0,
             0.0,
@@ -25,6 +41,7 @@
         },
         {
           "atom": "h",
+          "r_rms": 2.6569547399e-05,
           "xyz": [
             0.0,
             0.0,
@@ -35,9 +52,12 @@
       "multiplicity": 1
     },
     "mpi": {
+      "bank_per_node": -1,
       "bank_size": -1,
       "numerically_exact": true,
-      "shared_memory_size": 10000
+      "omp_threads": -1,
+      "shared_memory_size": 10000,
+      "use_omp_num_threads": false
     },
     "mra": {
       "basis_order": 5,
@@ -83,7 +103,7 @@
               "file_y_b": "initial_guess/Y_b_rsp_0",
               "file_y_p": "initial_guess/Y_p_rsp_0",
               "prec": 0.001,
-              "type": "cube"
+              "type": "none"
             }
           },
           {
@@ -103,7 +123,7 @@
               "file_y_b": "initial_guess/Y_b_rsp_1",
               "file_y_p": "initial_guess/Y_p_rsp_1",
               "prec": 0.001,
-              "type": "cube"
+              "type": "none"
             }
           },
           {
@@ -197,6 +217,7 @@
               "derivative": "abgv_55"
             },
             "nuclear_operator": {
+              "nuclear_model": "point_like",
               "proj_prec": 0.001,
               "shared_memory": false,
               "smooth_prec": 0.001
@@ -233,7 +254,7 @@
               "file_y_b": "initial_guess/Y_b_rsp_0",
               "file_y_p": "initial_guess/Y_p_rsp_0",
               "prec": 0.001,
-              "type": "cube"
+              "type": "none"
             }
           },
           {
@@ -253,7 +274,7 @@
               "file_y_b": "initial_guess/Y_b_rsp_1",
               "file_y_p": "initial_guess/Y_p_rsp_1",
               "prec": 0.001,
-              "type": "cube"
+              "type": "none"
             }
           },
           {
@@ -347,6 +368,7 @@
               "derivative": "abgv_55"
             },
             "nuclear_operator": {
+              "nuclear_model": "point_like",
               "proj_prec": 0.001,
               "shared_memory": false,
               "smooth_prec": 0.001
@@ -379,6 +401,7 @@
           "derivative": "abgv_55"
         },
         "nuclear_operator": {
+          "nuclear_model": "point_like",
           "proj_prec": 0.001,
           "shared_memory": false,
           "smooth_prec": 0.001
@@ -411,6 +434,7 @@
         "prec": 0.001,
         "relativity": "None",
         "restricted": true,
+        "rotate": true,
         "screen": 12.0,
         "type": "sad",
         "zeta": 2
@@ -437,12 +461,12 @@
       "center_of_mass": [
         0.0,
         0.0,
-        0.0
+        2.544077373851441e-17
       ],
       "charge": 0,
       "dipole_moment": {
         "dip-1": {
-          "magnitude": 0.0015265202992582132,
+          "magnitude": 0.0015265240227164611,
           "r_O": [
             0.0,
             0.0,
@@ -451,12 +475,12 @@
           "vector": [
             0.0,
             0.0,
-            0.0015265202992582132
+            0.0015265240227164611
           ],
           "vector_el": [
             0.0,
             0.0,
-            0.0015265202991980391
+            0.0015265240227267862
           ],
           "vector_nuc": [
             0.0,
@@ -486,7 +510,7 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -0.014357670942241461
+          -0.014358251529343627
         ],
         "occupation": [
           2.0
@@ -494,7 +518,7 @@
         "spin": [
           "p"
         ],
-        "sum_occupied": -0.028715341884482923
+        "sum_occupied": -0.028716503058687254
       },
       "polarizability": {
         "pol-0.000000": {
@@ -512,9 +536,9 @@
             null,
             null,
             null,
-            -1.8798097891209705e-09,
-            -1.879814843510864e-09,
-            11.653324369889642
+            -1.879583655255217e-09,
+            -1.8795847691142655e-09,
+            11.653311015584691
           ]
         },
         "pol-0.001000": {
@@ -532,22 +556,22 @@
             null,
             null,
             null,
-            8.828454910035952e-10,
-            8.828465009614914e-10,
-            11.65241305963326
+            8.827212115108996e-10,
+            8.827218500439884e-10,
+            11.652399575526314
           ]
         }
       },
       "scf_energy": {
-        "E_ee": 1.1852491743136642,
+        "E_ee": 1.185248388656174,
         "E_eext": 0.0,
-        "E_el": -1.2139645161981472,
-        "E_en": -3.2748276942218673,
-        "E_kin": 0.8756140037100559,
+        "E_el": -1.2139648917148569,
+        "E_en": -3.274826065696044,
+        "E_kin": 0.8756127853250134,
         "E_next": 0.0,
         "E_nn": 0.7141392859689609,
         "E_nuc": 0.7141392859689609,
-        "E_tot": -0.49982523022918623,
+        "E_tot": -0.49982560574589596,
         "E_x": 0.0,
         "E_xc": 0.0,
         "Er_el": 0.0,
@@ -566,48 +590,50 @@
     "rsp_calculations": {
       "ext_el-0.000000": {
         "components": [
+          null,
+          null,
           {
             "rsp_solver": {
               "converged": true,
               "cycles": [
                 {
-                  "mo_residual": 12.267793362546016,
-                  "property_update": -24.885465951690684,
-                  "symmetric_property": -24.885465951690684,
-                  "wall_time": 6.980395791
+                  "mo_residual": 12.2678123602885,
+                  "property_update": -24.885483846958277,
+                  "symmetric_property": -24.885483846958277,
+                  "wall_time": 1.611635202
                 },
                 {
-                  "mo_residual": 5.518227501090269,
-                  "property_update": 14.194751790422504,
-                  "symmetric_property": -10.690714161268179,
-                  "wall_time": 2.683862416
+                  "mo_residual": 5.51820751431992,
+                  "property_update": 14.19478470408276,
+                  "symmetric_property": -10.690699142875516,
+                  "wall_time": 1.869498397
                 },
                 {
-                  "mo_residual": 0.39835398071454153,
-                  "property_update": -0.9615740617924722,
-                  "symmetric_property": -11.652288223060651,
-                  "wall_time": 1.744799542
+                  "mo_residual": 0.3983518768388137,
+                  "property_update": -0.9615756007528375,
+                  "symmetric_property": -11.652274743628354,
+                  "wall_time": 2.074084953
                 },
                 {
-                  "mo_residual": 0.046925484934567434,
-                  "property_update": -0.0015835211930728121,
-                  "symmetric_property": -11.653871744253724,
-                  "wall_time": 1.505897583
+                  "mo_residual": 0.04692192240335428,
+                  "property_update": -0.0015835554208329938,
+                  "symmetric_property": -11.653858299049187,
+                  "wall_time": 2.107398366
                 },
                 {
-                  "mo_residual": 0.014355998640465016,
-                  "property_update": 0.0029045446918409823,
-                  "symmetric_property": -11.650967199561883,
-                  "wall_time": 1.488326875
+                  "mo_residual": 0.014356651321893387,
+                  "property_update": 0.0029044815500451904,
+                  "symmetric_property": -11.650953817499142,
+                  "wall_time": 2.041000976
                 },
                 {
-                  "mo_residual": 0.0009067452339631849,
-                  "property_update": -0.0023571703277589506,
-                  "symmetric_property": -11.653324369889642,
-                  "wall_time": 1.498762042
+                  "mo_residual": 0.0009067545649435275,
+                  "property_update": -0.0023571980855496832,
+                  "symmetric_property": -11.653311015584691,
+                  "wall_time": 2.128407831
                 }
               ],
-              "wall_time": 15.90212125
+              "wall_time": 11.832097051
             }
           }
         ],
@@ -617,54 +643,56 @@
       },
       "ext_el-0.001000": {
         "components": [
+          null,
+          null,
           {
             "rsp_solver": {
               "converged": true,
               "cycles": [
                 {
-                  "mo_residual": 17.35031324257007,
-                  "property_update": -24.88646970511864,
-                  "symmetric_property": -24.88646970511864,
-                  "wall_time": 2.388401125
+                  "mo_residual": 17.350340065085607,
+                  "property_update": -24.886487517622506,
+                  "symmetric_property": -24.886487517622506,
+                  "wall_time": 2.837652136
                 },
                 {
-                  "mo_residual": 7.806068315671397,
-                  "property_update": 14.19518213040423,
-                  "symmetric_property": -10.691287574714408,
-                  "wall_time": 2.52835425
+                  "mo_residual": 7.806039927658487,
+                  "property_update": 14.195214956517189,
+                  "symmetric_property": -10.691272561105317,
+                  "wall_time": 3.340064345
                 },
                 {
-                  "mo_residual": 0.563557761936465,
-                  "property_update": -0.9617440852167114,
-                  "symmetric_property": -11.65303165993112,
-                  "wall_time": 2.912790125
+                  "mo_residual": 0.5635547355624867,
+                  "property_update": -0.9617455518562696,
+                  "symmetric_property": -11.653018112961586,
+                  "wall_time": 3.653212632
                 },
                 {
-                  "mo_residual": 0.06662880669858816,
-                  "property_update": -0.0015798414219609924,
-                  "symmetric_property": -11.65461150135308,
-                  "wall_time": 2.67667025
+                  "mo_residual": 0.0666238259213674,
+                  "property_update": -0.0015798759384999528,
+                  "symmetric_property": -11.654597988900086,
+                  "wall_time": 3.649988131
                 },
                 {
-                  "mo_residual": 0.02032695195236673,
-                  "property_update": 0.0029179043654856684,
-                  "symmetric_property": -11.651693596987595,
-                  "wall_time": 3.333245125
+                  "mo_residual": 0.02032787050609918,
+                  "property_update": 0.0029178470676072266,
+                  "symmetric_property": -11.651680141832479,
+                  "wall_time": 3.700199508
                 },
                 {
-                  "mo_residual": 0.0014158986041166487,
-                  "property_update": -0.0024537217214479767,
-                  "symmetric_property": -11.654147318709043,
-                  "wall_time": 2.847543625
+                  "mo_residual": 0.0014159165533422127,
+                  "property_update": -0.002453813892696388,
+                  "symmetric_property": -11.654133955725175,
+                  "wall_time": 4.080757672
                 },
                 {
-                  "mo_residual": 0.0006950818299225851,
-                  "property_update": 0.0017342590757838394,
-                  "symmetric_property": -11.65241305963326,
-                  "wall_time": 2.847319375
+                  "mo_residual": 0.0006951073188669785,
+                  "property_update": 0.0017343801988616292,
+                  "symmetric_property": -11.652399575526314,
+                  "wall_time": 3.76462842
                 }
               ],
-              "wall_time": 19.534396709
+              "wall_time": 25.026558739
             }
           }
         ],
@@ -675,15 +703,15 @@
     },
     "scf_calculation": {
       "initial_energy": {
-        "E_ee": 1.1852491743136642,
+        "E_ee": 1.185248388656174,
         "E_eext": 0.0,
-        "E_el": -1.2139645161981472,
-        "E_en": -3.2748276942218673,
-        "E_kin": 0.8756140037100559,
+        "E_el": -1.2139648917148569,
+        "E_en": -3.274826065696044,
+        "E_kin": 0.8756127853250134,
         "E_next": 0.0,
         "E_nn": 0.7141392859689609,
         "E_nuc": 0.7141392859689609,
-        "E_tot": -0.49982523022918623,
+        "E_tot": -0.49982560574589596,
         "E_x": 0.0,
         "E_xc": 0.0,
         "Er_el": 0.0,

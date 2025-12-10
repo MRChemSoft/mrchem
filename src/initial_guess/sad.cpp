@@ -63,7 +63,6 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
     if (Phi.size() == 0) return false;
-
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
@@ -112,7 +111,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     OrbitalVector Psi;
     initial_guess::core::project_ao(Psi, prec, nucs, zeta);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
-
     if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
     t_lap.start();
     p.setup(prec);
@@ -143,7 +141,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
     if (Phi.size() == 0) return false;
-
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
@@ -248,8 +245,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
 
     Timer t_tot;
     Density rho_loc(false);
-    rho_loc.alloc(1);
-    rho_loc.real().setZero();
+    rho_loc.alloc(1, true);
 
     Timer t_loc;
     int N_nucs = nucs.size();
@@ -263,8 +259,8 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         o_dens << sad_path << "/" << sym << ".dens";
 
         Density rho_k = initial_guess::gto::project_density(prec, nucs[k], o_bas.str(), o_dens.str(), screen);
+        rho_k.crop(crop_prec);
         rho_loc.add(1.0, rho_k);
-        rho_loc.crop(crop_prec);
 
         charges[k] = nucs[k].getCharge();
         charges[N_nucs + k] = rho_k.integrate().real();
@@ -272,7 +268,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     t_loc.stop();
     Timer t_com;
     mrcpp::mpi::allreduce_vector(charges, mrcpp::mpi::comm_wrk);
-    density::allreduce_density(prec, rho_tot, rho_loc);
+    density::allreduce_density(rho_tot, rho_loc);
     t_com.stop();
 
     for (int k = 0; k < N_nucs; k++) {
