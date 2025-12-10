@@ -58,14 +58,16 @@ public:
     void setRotation(int iter) { this->rotation = iter; }
     void setLocalize(bool loc) { this->localize = loc; }
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
+    void setDeltaSCFMethod(const std::string method) { this-> deltaSCFMethod = method; }
 
-    nlohmann::json optimize(Molecule &mol, FockBuilder &F);
+    nlohmann::json optimize(Molecule &mol, FockBuilder &F, OrbitalVector &Phi_mom);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization
     bool localize{false}; ///< Use localized or canonical orbitals
     std::string chkFile;  ///< Name of checkpoint file
     std::vector<SCFEnergy> energy;
+    std::string deltaSCFMethod{"none"};
 
     void reset() override;
     double calcPropertyError() const;
@@ -74,6 +76,8 @@ protected:
 
     bool needLocalization(int nIter, bool converged) const;
     bool needDiagonalization(int nIter, bool converged) const;
+
+    DoubleVector getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom);
 };
 
 } // namespace mrchem
