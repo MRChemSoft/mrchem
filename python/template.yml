@@ -874,6 +874,60 @@ sections:
         docstring: |
           Path to where converged orbitals will be written in connection with
           the ``write_orbitals`` keyword.
+  - name: Lagrangian
+    docstring: |
+      Includes parameters related to the Lagrangian optimization.
+    keywords:
+      - name: run
+        type: bool
+        default: false
+        docstring: |
+          Run Lagrangian solver. Dummy boolean
+      - name: n_orbitals
+        type: int
+        default: 0
+        docstring: |
+          Total number of orbitals.
+      - name: max_iter
+        type: int
+        default: 30
+        docstring: |
+          Maximum number of orbitals' optimization iterations.
+      - name: external_solver
+        type: str
+        default: chemtensor
+        predicates:
+          - value.lower() in ['chemtensor']
+        docstring:
+          External library used to perform CI calculation.        
+      - name: write_checkpoint
+        type: bool
+        default: false
+        docstring: |
+          Write orbitals to disk in each iteration, file name
+          ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``. 
+      - name: path_checkpoint
+        type: str
+        default: checkpoint
+        predicates:
+          - value[-1] != '/'
+        docstring: |
+          Path to checkpoint files during SCF, used with ``write_checkpoint``
+          and ``chk`` guess.
+      - name: write_orbitals
+        type: bool
+        default: false
+        docstring: |
+          Write final perturbed orbitals to disk, file name
+          ``<path_orbitals>/<X/Y>_<p/a/b>_rsp_<direction>_idx_<0..Np/Na/Nb>``.
+      - name: path_orbitals
+        type: str
+        default: orbitals
+        predicates:
+          - value[-1] != '/'
+        docstring: |
+          Path to where converged orbitals will be written in connection with
+          the ``write_orbitals`` keyword.
   - name: PCM
     docstring: |
       Includes parameters related to the computation of the reaction field

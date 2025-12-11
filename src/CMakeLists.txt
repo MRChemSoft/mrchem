@@ -31,6 +31,7 @@ list(APPEND _public_headers
 add_subdirectory(analyticfunctions)
 add_subdirectory(chemistry)
 add_subdirectory(environment)
+add_subdirectory(external_solvers)
 add_subdirectory(mrdft)
 add_subdirectory(properties)
 add_subdirectory(qmfunctions)

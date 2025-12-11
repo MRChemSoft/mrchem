@@ -27,7 +27,7 @@ import math
 
 from .helpers import (parse_wf_method, write_rsp_calc, write_scf_fock,
                       write_scf_guess, write_scf_plot, write_scf_properties,
-                      write_scf_solver)
+                      write_scf_solver, write_lag_fock, write_lag_solver)
 from .periodictable import PeriodicTable as PT
 from .periodictable import PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
@@ -46,6 +46,7 @@ def translate_input(user_dict):
     mra_dict = write_mra(user_dict, mol_dict)
     scf_dict = write_scf_calculation(user_dict, origin)
     rsp_dict = write_rsp_calculations(user_dict, mol_dict, origin)
+    lag_dict = write_lag_calculations(user_dict)
 
     # piece everything together
     program_dict = {
@@ -57,6 +58,7 @@ def translate_input(user_dict):
         "molecule": mol_dict,
         "scf_calculation": scf_dict,
         "rsp_calculations": rsp_dict,
+        "lag_calculations": lag_dict,
         "geom_opt": user_dict['GeometryOptimizer'],
         "constants": user_dict["Constants"],
     }
@@ -173,6 +175,42 @@ def write_scf_calculation(user_dict, origin):
         scf_dict["plots"] = plot_dict
 
     return scf_dict
+
+
+############################################################
+#                   Lagrangian CALCULATION                 #
+############################################################
+
+
+def write_lag_calculations(user_dict):
+    wf_dict = parse_wf_method(user_dict)
+
+    lag_dict = {}
+    lag_dict["fock_operator"] = write_lag_fock(user_dict)
+    lag_dict["initial_guess"] = write_scf_guess(user_dict, wf_dict)
+
+    path_orbitals = user_dict["Lagrangian"]["path_orbitals"]
+    if user_dict["Lagrangian"]["write_orbitals"]:
+        lag_dict["write_orbitals"] = {
+            "file_phi_p": path_orbitals + "/phi_p_scf",
+            "file_phi_a": path_orbitals + "/phi_a_scf",
+            "file_phi_b": path_orbitals + "/phi_b_scf",
+        }
+
+    if user_dict["Lagrangian"]["run"]:
+        lag_dict["lag_solver"] = write_lag_solver(user_dict)
+
+    lag_dict["n_orbitals"] = user_dict["Lagrangian"]["n_orbitals"]
+    
+    #prop_dict = write_scf_properties(user_dict, origin)
+    #if len(prop_dict) > 0:
+    #    lag_dict["properties"] = prop_dict
+
+    #plot_dict = write_lag_plot(user_dict)
+    #if len(plot_dict) > 0:
+    #    lag_dict["plots"] = plot_dict
+
+    return lag_dict
 
 
 ############################################################
