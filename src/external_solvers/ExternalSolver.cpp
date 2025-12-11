@@ -27,7 +27,8 @@
 
 #include "ExternalSolver.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmoperators/one_electron/KineticOperator.h"
+#include "qmoperators/qmoperator_utils.h"
+#include "qmoperators/one_electron/MomentumOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/GenericTwoOrbitalsOperator.h"
 
@@ -49,21 +50,21 @@ class FockBuilder;
 void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F) {
     F.setup(this->prec);
     // operators
-    KineticOperator K(F.momentum());
+    MomentumOperator P = *(F.momentum());
     NuclearOperator V = *(F.getNuclearOperator());
     GenericTwoOrbitalsOperator g = *(F.getGenericTwoOrbitalsOperator());
 
     g.setup(std::make_shared<OrbitalVector>(Phi), this->prec);
     // set the one- and two-body integrals
-    ExternalSolver::set_one_body_integrals(Phi, K, V);
+    ExternalSolver::set_one_body_integrals(Phi, P, V);
     ExternalSolver::set_two_body_integrals(Phi, g);
 }
 
 // Private
 
 // TODO: change 'NuclearOperator' to 'RankZeroOperator'
-void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, KineticOperator &K, NuclearOperator &V) {
-    this->one_body_integrals = std::make_shared<ComplexMatrix>(K(Phi, Phi) + V(Phi, Phi));
+void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, MomemtumOperator &P, NuclearOperator &V) {
+    this->one_body_integrals = std::make_shared<ComplexMatrix>(qmoperator::calc_kinetic_matrix(P, Phi, Phi) + V(Phi, Phi));
 }
 
 void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi, GenericTwoOrbitalsOperator &g) {
