@@ -24,10 +24,61 @@
  */
 
 #include <MRCPP/Printer>
+#include <stdlib.h>
 
 #include "Functional.h"
+#include "Factory.h"
 
 namespace mrdft {
+
+void Functional::print_libxc_functional_references(int rank) const {
+    // Only relevant if LibXC is actually in use for this functional
+    if (!libxc) return;
+
+    // Optional: only print from the chosen MPI rank
+    if (mrcpp::mpi::world_rank != rank) return;
+
+    // Avoid printing the same LibXC functional multiple times
+    std::set<int> printed_ids;
+
+    std::cout << "\nLibxc functionals used in this calculation:\n";
+
+    for (const auto &func : libxc_objects) {
+        if (func.info == nullptr) continue;  // safety
+
+        int id = func.info->number;
+        if (!printed_ids.insert(id).second) {
+            // Already printed this ID
+            continue;
+        }
+
+        std::cout << "  - " << func.info->name
+                  << " (ID " << id << ")\n";
+    }
+
+    std::cout << "  For recommended references for each functional, see the Libxc manual\n"
+              << "  or the Libxc website (functionals are indexed by the IDs above).\n"
+              << std::endl;
+}
+    
+void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
+    libxc_objects = std::move(libxc_objects_);
+    libxc_coeffs  = std::move(libxc_coeffs_);
+}
+
+double Functional::amountEXX() const {
+    double exx = 0.0;
+    if (Factory::libxc) {
+        for (std::size_t i = 0; i < libxc_objects.size(); ++i) {
+            const xc_func_type &f = libxc_objects[i];
+            double frac = xc_hyb_exx_coef(&f);
+            exx += libxc_coeffs[i] * frac;
+        }
+    } else {
+        xcfun_get(xcfun.get(), "exx", &exx);
+    }
+    return exx;
+    }
 
 /** @brief Run a collection of grid points through XCFun
  *
@@ -73,20 +124,89 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
 
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
-    Eigen::VectorXd inp_row = Eigen::VectorXd::Zero(nInp);
-    Eigen::VectorXd out_row = Eigen::VectorXd::Zero(nOut);
-    for (int i = 0; i < nPts; i++) {
-        bool calc = true;
-        if (isSpin()) {
-            if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
-        } else {
-            if (inp(i, 0) < cutoff) calc = false;
+    Eigen::MatrixXd rho_spin  = Eigen::MatrixXd::Zero(nPts, 1);
+
+    Eigen::MatrixXd out       = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::MatrixXd out_libxc = Eigen::MatrixXd::Zero(nPts, nOut);
+    Eigen::VectorXd exc, vxc, sxc, sigma, inp_row, out_row;
+
+    if (Factory::libxc) {
+        for (size_t i = 0; i < libxc_objects.size(); i++) {
+            switch (libxc_objects[i].info->family) {
+                case XC_FAMILY_LDA:
+                case XC_FAMILY_HYB_LDA:
+                        exc = Eigen::VectorXd::Zero(nPts);
+                        vxc = Eigen::VectorXd::Zero(nPts);
+                    if (isSpin()){
+                        for (size_t k = 0; k < nPts; k++) {
+                            rho_spin(k*2, 0)   = inp(k, 0);
+                            rho_spin(k*2+1, 0) = inp(k, 1);
+                        }
+                        std::cout << "CONSTRUCTS SPIN RHO " << std::endl;
+                        xc_lda_exc_vxc(&libxc_objects[i], nPts, rho_spin.col(0).data(), exc.data(), vxc.data());
+                        for (size_t j = 0; j < nPts; ++j) {
+                            //  xcfun computes rho * exc for energy density, so we do the same
+                            //    aka xcfun calculates actual energy density while libxc calculates 
+                            //    energy density per electron density
+                            out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                            out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                        }
+                    } else {
+                        xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), exc.data(), vxc.data());
+                        for (size_t j = 0; j < nPts; ++j) {
+                            //  xcfun computes rho * exc for energy density, so we do the same
+                            //    aka xcfun calculates actual energy density while libxc calculates 
+                            //    energy density per electron density
+                            out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                            out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                        }
+                    }
+                    break;
+                case XC_FAMILY_GGA:
+                case XC_FAMILY_HYB_GGA:
+                    exc   = Eigen::VectorXd::Zero(nPts);
+                    vxc   = Eigen::VectorXd::Zero(nPts);
+                    sxc   = Eigen::VectorXd::Zero(nPts);
+                    sigma = Eigen::VectorXd::Zero(nPts);
+
+                    for (size_t j = 0; j < nPts; j++) {
+                        sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3);
+                    }
+
+                    xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(),
+                        exc.data(), vxc.data(), sxc.data());
+
+                    for (size_t j = 0; j < nPts; ++j) {
+                        //  xcfun computes rho * exc for energy density, so we do the same
+                        //    aka xcfun calculates actual energy density while libxc calculates 
+                        //    energy density per electron density
+                        out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                        out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                        out_libxc(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
+                        out_libxc(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
+                        out_libxc(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
+                    }
+                    break;
+                default:
+                break;
+            }
         }
-        if (calc) {
-            inp_row = inp.row(i);
-            xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-            out.row(i) = out_row;
+    return out_libxc; // does this do what i hope it does?
+    } else {
+        inp_row = Eigen::VectorXd::Zero(nInp);
+        out_row = Eigen::VectorXd::Zero(nOut);
+        for (int i = 0; i < nPts; i++) {
+            bool calc = true;
+            if (isSpin()) {
+                if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+            } else {
+                if (inp(i, 0) < cutoff) calc = false;
+            }
+            if (calc) {
+                inp_row = inp.row(i);
+                xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
+                out.row(i) = out_row;
+            }
         }
     }
     return out;

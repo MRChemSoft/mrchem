@@ -42,10 +42,75 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         : mra(MRA)
         , xcfun_p(xcfun_new(), xcfun_delete) {}
 
+bool Factory::libxc;
+
+void MapFuncName(const std::string &name, std::vector<int> &ids, std::vector<double> &coeffs) {
+    std::cout << "Name used in MapFunctionalName: " << name << std::endl;
+    if (name == "pbe0") {
+        // ids = {XC_GGA_X_PBE, XC_GGA_C_PBE}; // Both versions are the exact same
+        // coeffs = {0.75, 1.0};
+        ids = {XC_HYB_GGA_XC_PBEH};
+        coeffs = {1.0};
+        return;
+    } else if (name == "slaterx" || name == "SLATERX") {
+        ids = {XC_LDA_X};
+        coeffs = {1.0};
+        return;
+    } else if (name == "BECKEX" || name == "beckex") {
+        ids = {XC_GGA_X_B88};
+        coeffs = {1.0};
+        return;
+    } else if (name == "svwn5c" || name == "VWN5C") {
+        ids = {XC_LDA_C_VWN};
+        coeffs = {1.0};
+        return;
+    } else if (name == "svwn5") {
+        ids = {XC_LDA_C_VWN, XC_LDA_X};
+        coeffs = {1.0, 1.0};
+        return;
+    } else if (name == "b3p86") {
+        ids = {XC_HYB_GGA_XC_B3P86}; 
+        coeffs = {1.0};
+        return;
+    } else if (name == "bpw91") {
+        ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_PW91};
+        coeffs = {.5, .5, 1.0}; // Closest
+        return;
+    } else {std::cout << "NO FUNC MAPPED" << std::endl;}
+}
+
+void Factory::setFunctional(const std::string &n, double c) {
+    xcfun_set(xcfun_p.get(), n.c_str(), c);
+    std::string name = n;
+    std::cout << "xcfun func: " << n << std::endl;
+    // std::vector<int> ids = this->mapFunctionalName(name);
+    setLibxc(libxc); // should probably be where setFunctional is called
+
+    if (libxc) {
+        std::vector<int> ids;
+        std::vector<double> coeffs;
+
+        MapFuncName(name, ids, coeffs);
+        xc_func_type libxc_obj;
+        for (size_t i = 0; i < ids.size(); i++) {
+            auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
+            if (return_code != 0) {
+                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << return_code << std::endl;
+            }
+            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+            
+            std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
+            libxc_objects.push_back(libxc_obj);
+            libxc_coeffs.push_back(c * coeffs[i]);
+        }
+    }
+}
+
 /** @brief Build a MRDFT object from the currently defined parameters */
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
+    setLibxc(libxc);
 
     // Init XCFun
     bool gga = xcfun_is_gga(xcfun_p.get());
@@ -77,6 +142,9 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
+    if (libxc){
+        func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
+    }
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);

@@ -26,12 +26,16 @@
 #pragma once
 
 #include <memory>
+#include <iostream>
+#include <set>
 
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
 #include <XCFun/xcfun.h>
+#include <xc_funcs.h>
+#include <xc.h>
 
 namespace mrdft {
 
@@ -55,16 +59,20 @@ public:
     bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
     bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
-    double amountEXX() const {
-        double exx = 0.0;
-        xcfun_get(xcfun.get(), "exx", &exx);
-        return exx;
-    }
+    double amountEXX() const;
     double XCenergy = 0.0;
 
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     friend class MRDFT;
+
+    bool libxc;
+    std::vector<xc_func_type> libxc_objects;
+    std::vector<double> libxc_coeffs;
+
+    void print_libxc_functional_references(int rank = 0) const;
+
+    void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_);
 
 protected:
     const int order;
@@ -89,6 +97,7 @@ protected:
 
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+
 };
 
 } // namespace mrdft

@@ -26,6 +26,8 @@
 #include "MRCPP/utils/parallel.h"
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
+#include <xc_funcs.h>
+#include <xc.h>
 #include <fstream>
 
 #include "mrchem.h"
@@ -136,6 +138,18 @@ void mrenv::init_mpi(const json &json_mpi) {
     mrcpp::mpi::initialize(); // NB: must be after bank_size and init_mra but before init_printer and print_header
 }
 
+// Temporary function for making the libxc reference print
+void print_libxc_reference() {
+    std::cout <<
+    "\nLibxc (" << xc_version_string() << ") is free software.\n" <<
+    "It is distributed under the Mozilla Public\n" <<
+    "License, version 2.0, see https://www.mozilla.org/en-US/MPL/2.0/.\n" <<
+    "For more information, please check the manual at http://libxc.gitlab.io\n" <<
+    "Scientific users of this library should cite\n" <<
+    "S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques;\n" <<
+    "SoftwareX 7, 2018, DOI: " << xc_reference_doi() << std::endl;
+}
+
 void mrenv::print_header() {
     auto pwidth = Printer::getWidth();
     auto txt_width = 50;
@@ -203,6 +217,7 @@ void mrenv::print_header() {
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
     printout(0, xcfun_splash());
+    print_libxc_reference();
     mrcpp::print::environment(0);
     MRA->print();
 }

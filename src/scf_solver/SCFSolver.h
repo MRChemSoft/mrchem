@@ -57,6 +57,7 @@ public:
     void setHelmholtzPrec(double prec) { this->helmPrec = prec; }
     void setMaxIterations(int iter) { this->maxIter = iter; }
     void setMethodName(const std::string &name) { this->methodName = name; }
+    void setLibxc(bool libxc_) { this->libxc = libxc_; }
     void setRelativityName(const std::string &name) { this->relativityName = name; }
     void setEnvironmentName(const std::string &name) { this->environmentName = name; }
     void setExternalFieldName(const std::string &name) { this->externalFieldName = name; }
@@ -73,6 +74,7 @@ protected:
     std::string relativityName{"None"};    ///< Name of ZORA method
     std::string environmentName{"None"};   ///< Name for external environment
     std::string externalFieldName{"None"}; ///< Name for external fields
+    bool libxc;                            ///< Type of XC Library
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error
