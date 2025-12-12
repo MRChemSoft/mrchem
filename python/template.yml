@@ -301,7 +301,7 @@ sections:
         type: str
         default: none
         predicates:
-          - value.lower() in ['none', 'zora', 'nzora', 'azora']
+          - value.lower() in ['none', 'zora', 'nzora', 'azora', 'zora2c']
         docstring: |
           Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default
           including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section.
@@ -309,13 +309,14 @@ sections:
           over keywords in the ``ZORA`` section).
           ``azora`` uses atomic ZORA potentials, which are precomputed and read from the directory 
           specified in the ``azora_potential_path`` keyword.
+          ``zora2c``uses 2-component ZORA Hamiltonian with spinorial wavefunctions (complex function valued 2-vectors in the code).
       - name: environment
         type: str
         default: none
         predicates:
           - value.lower() in ['none', 'pcm', 'pcm_pb', 'pcm_lpb']
         docstring: |
-          Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model,
+          Set method for treatment of envicononment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model,
           which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the
           Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively.
       - name: nuclear_model

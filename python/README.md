@@ -35,7 +35,7 @@ The utility script can also do this, by specifying the flag `--skip-template`:
 
 ```bash
 $ cd python/mrchem
-$ rm -r input_parser/plumbing/pyparing
+$ rm -r input_parser/plumbing/pyparsing
 $ python update_input_parser --skip-template
 ```
 
