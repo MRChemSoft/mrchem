@@ -35,7 +35,7 @@ void Functional::print_libxc_functional_references(int rank) const {
     // Only relevant if LibXC is actually in use for this functional
     if (!libxc) return;
 
-    // Optional: only print from the chosen MPI rank (default 0)
+    // Optional: only print from the chosen MPI rank
     if (mrcpp::mpi::world_rank != rank) return;
 
     // Avoid printing the same LibXC functional multiple times
