@@ -26,17 +26,17 @@
 #include <MRCPP/Printer>
 #include <stdlib.h>
 
-#include "Functional.h"
 #include "Factory.h"
+#include "Functional.h"
 
 namespace mrdft {
 
-void Functional::print_libxc_functional_references(int rank) const {
+void Functional::print_libxc_functional_references() const {
     // Only relevant if LibXC is actually in use for this functional
     if (!libxc) return;
 
-    // Optional: only print from the chosen MPI rank
-    if (mrcpp::mpi::world_rank != rank) return;
+    // Only print from the main process in MPI runs
+    if (mrcpp::mpi::world_rank != 0) return;
 
     // Avoid printing the same LibXC functional multiple times
     std::set<int> printed_ids;
@@ -44,7 +44,7 @@ void Functional::print_libxc_functional_references(int rank) const {
     std::cout << "\nLibxc functionals used in this calculation:\n";
 
     for (const auto &func : libxc_objects) {
-        if (func.info == nullptr) continue;  // safety
+        if (func.info == nullptr) continue; // safety
 
         int id = func.info->number;
         if (!printed_ids.insert(id).second) {
@@ -52,15 +52,18 @@ void Functional::print_libxc_functional_references(int rank) const {
             continue;
         }
 
-        std::cout << "  - " << func.info->name
-                  << " (ID " << id << ")\n";
-    }
+        char *name = xc_functional_get_name(id);
+        std::cout << "  - " << name << " (ID " << id << "): " << func.info->name << std::endl;
+        free(name);
 
-    std::cout << "  For recommended references for each functional, see the Libxc manual\n"
-              << "  or the Libxc website (functionals are indexed by the IDs above).\n"
-              << std::endl;
+        for (int number = 0; number < XC_MAX_REFERENCES; number++) {
+            auto reference = xc_func_info_get_references(func.info, number);
+            if (reference == nullptr) break;
+            std::cout << "     * " << xc_func_reference_get_ref(reference) << " (DOI:" << xc_func_reference_get_doi(reference) << ")" << std::endl;
+        }
+    }
 }
-    
+
 void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_) {
     libxc_objects = std::move(libxc_objects_);
     libxc_coeffs  = std::move(libxc_coeffs_);
