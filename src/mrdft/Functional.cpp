@@ -124,77 +124,73 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
 
-    Eigen::MatrixXd rho_spin  = Eigen::MatrixXd::Zero(nPts, 1);
-
-    Eigen::MatrixXd out       = Eigen::MatrixXd::Zero(nPts, nOut);
-    Eigen::MatrixXd out_libxc = Eigen::MatrixXd::Zero(nPts, nOut);
-    Eigen::VectorXd exc, vxc, sxc, sigma, inp_row, out_row;
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
 
     std::cout << "xc-library (true if libxc, false if xcfun)\n" << Factory::libxc << std::endl;
 
     if (Factory::libxc) {
+        Eigen::MatrixXd rho_spin = Eigen::MatrixXd::Zero(nPts, 1);
+        Eigen::VectorXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
                 case XC_FAMILY_LDA:
                 case XC_FAMILY_HYB_LDA:
-                        exc = Eigen::VectorXd::Zero(nPts);
-                        vxc = Eigen::VectorXd::Zero(nPts);
-                    if (isSpin()){
+                    exc = Eigen::VectorXd::Zero(nPts);
+                    vxc = Eigen::VectorXd::Zero(nPts);
+                    if (isSpin()) {
                         for (size_t k = 0; k < nPts; k++) {
-                            rho_spin(k*2, 0)   = inp(k, 0);
-                            rho_spin(k*2+1, 0) = inp(k, 1);
+                            rho_spin(k * 2, 0) = inp(k, 0);
+                            rho_spin(k * 2 + 1, 0) = inp(k, 1);
                         }
                         std::cout << "CONSTRUCTS SPIN RHO " << std::endl;
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, rho_spin.col(0).data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
                             //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates 
+                            //    aka xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
-                            out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                            out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                            out(j, 1) += vxc[j] * libxc_coeffs[i];
                         }
                     } else {
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
                             //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates 
+                            //    aka xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
-                            out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                            out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
+                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                            out(j, 1) += vxc[j] * libxc_coeffs[i];
                         }
                     }
                     break;
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
-                    exc   = Eigen::VectorXd::Zero(nPts);
-                    vxc   = Eigen::VectorXd::Zero(nPts);
-                    sxc   = Eigen::VectorXd::Zero(nPts);
+                    exc = Eigen::VectorXd::Zero(nPts);
+                    vxc = Eigen::VectorXd::Zero(nPts);
+                    sxc = Eigen::VectorXd::Zero(nPts);
                     sigma = Eigen::VectorXd::Zero(nPts);
 
-                    for (size_t j = 0; j < nPts; j++) {
-                        sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3);
-                    }
+                    // TODO: write spin-unrestricted code for GGA
 
-                    xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(),
-                        exc.data(), vxc.data(), sxc.data());
+                    for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); }
+                    xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                     for (size_t j = 0; j < nPts; ++j) {
                         //  xcfun computes rho * exc for energy density, so we do the same
-                        //    aka xcfun calculates actual energy density while libxc calculates 
+                        //    aka xcfun calculates actual energy density while libxc calculates
                         //    energy density per electron density
-                        out_libxc(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                        out_libxc(j, 1) += vxc[j] * libxc_coeffs[i];
-                        out_libxc(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
-                        out_libxc(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
-                        out_libxc(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
+                        out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                        out(j, 1) += vxc[j] * libxc_coeffs[i];
+                        out(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
+                        out(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
+                        out(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
                     }
                     break;
                 default:
-                break;
+                    break;
             }
         }
-    return out_libxc; // does this do what i hope it does?
     } else {
+        Eigen::VectorXd inp_row, out_row;
         inp_row = Eigen::VectorXd::Zero(nInp);
         out_row = Eigen::VectorXd::Zero(nOut);
         for (int i = 0; i < nPts; i++) {
