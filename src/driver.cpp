@@ -251,10 +251,10 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////////////   Setting XC Library  //////////////////
     ///////////////////////////////////////////////////////////
-    nlohmann::json xc_lib;
+    std::string xc_lib;
 
     if (json_scf["fock_operator"].contains("xc_library")) {
-        xc_lib = json_scf["fock_operator"]["xc_library"];
+        xc_lib = json_scf["fock_operator"]["xc_library"][0].get<std::string>();
     } else {xc_lib = "xcfun";}
 
     ///////////////////////////////////////////////////////////
@@ -303,8 +303,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
-        // maybe add this instead of the setting xc library section? line might not work
-        // auto xc_lib = (json_scf.contains("xc_library") ? json_scf["xc_library"] : "xcfun");
 
         GroundStateSolver solver;
         solver.setHistory(kain);
@@ -432,7 +430,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
-    auto xc_lib = json_guess["xc_library"];
+    std::string xc_lib = json_guess["xc_library"].get<std::string>();
     auto cutoff = json_guess["cutoff"];
 
     mrcpp::print::separator(0, '~');
@@ -1273,7 +1271,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-        auto xc_lib = (json_fock.contains("xc_library") ? json_fock["xc_library"] : "xcfun");
+        std::string xc_lib = (json_fock.contains("xc_library") ? json_fock["xc_library"][0].get<std::string>() : "xcfun");
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
