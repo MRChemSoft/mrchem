@@ -1,0 +1,17 @@
+world_prec = 1e-4
+world_unit = bohr
+
+WaveFunction {
+  method = pbe
+  relativity = zora
+  restricted = true
+}
+
+Molecule {
+multiplicity = 1
+charge = 8
+$coords
+Ne 0.00000000 0.00000000 0.00000000
+$end
+}
+
