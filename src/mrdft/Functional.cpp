@@ -169,20 +169,24 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     sxc = Eigen::VectorXd::Zero(nPts);
                     sigma = Eigen::VectorXd::Zero(nPts);
 
-                    // TODO: write spin-unrestricted code for GGA
+                    if (isSpin()) {
+                        // TODO: write spin-unrestricted code for GGA
+                        throw std::logic_error("spin-unrestricted interface not implemented!\n");
 
-                    for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); }
-                    xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                    } else {
+                        for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); }
+                        xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
-                    for (size_t j = 0; j < nPts; ++j) {
-                        //  xcfun computes rho * exc for energy density, so we do the same
-                        //    aka xcfun calculates actual energy density while libxc calculates
-                        //    energy density per electron density
-                        out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                        out(j, 1) += vxc[j] * libxc_coeffs[i];
-                        out(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
-                        out(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
-                        out(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
+                        for (size_t j = 0; j < nPts; ++j) {
+                            //  xcfun computes rho * exc for energy density, so we do the same
+                            //    aka xcfun calculates actual energy density while libxc calculates
+                            //    energy density per electron density
+                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
+                            out(j, 1) += vxc[j] * libxc_coeffs[i];
+                            out(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
+                            out(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
+                            out(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
+                        }
                     }
                     break;
                 default:
