@@ -164,17 +164,45 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     break;
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
-                    exc = Eigen::VectorXd::Zero(nPts);
-                    vxc = Eigen::VectorXd::Zero(nPts);
-                    sxc = Eigen::VectorXd::Zero(nPts);
-                    sigma = Eigen::VectorXd::Zero(nPts);
-
+                    // TODO: write spin-unrestricted code for GGA
                     if (isSpin()) {
-                        // TODO: write spin-unrestricted code for GGA
-                        throw std::logic_error("spin-unrestricted interface not implemented!\n");
+                        exc = Eigen::MatrixXd::Zero(nPts, 1);
+                        vxc = Eigen::MatrixXd::Zero(nPts, 1);
+                        sxc = Eigen::MatrixXd::Zero(nPts, 1);
+                        sigma = Eigen::MatrixXd::Zero(nPts, 1);
+                        for (size_t k = 0; k < nPts; k++) {
+                            rho_spin(k * 2, 0) = inp(k, 0);
+                            rho_spin(k * 2 + 1, 0) = inp(k, 1);
+                        }
+                        for (size_t j = 0; j < nPts; j++) { 
+                            sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3) *
+                                       inp(j, 4) * inp(j, 4) + inp(j, 5) * inp(j, 5) + inp(j, 6) * inp(j, 6); 
+                        }
+                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho_spin.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
+                        for (size_t j = 0; j < nPts; ++j) {
+                            //  xcfun computes rho * exc for energy density, so we do the same
+                            //    aka xcfun calculates actual energy density while libxc calculates
+                            //    energy density per electron density
+                            out(j, 0) += exc(j, 0) * libxc_coeffs[i] * inp(j, 0);
+                            out(j, 1) += exc(j, 1) * libxc_coeffs[i] * inp(j, 1);
+                            out(j, 2) += vxc(j, 0) * libxc_coeffs[i];
+                            out(j, 3) += vxc(j, 1) * libxc_coeffs[i];
+                            out(j, 4) += 2 * sxc(j, 0) * inp(j, 1) * libxc_coeffs[i];
+                            out(j, 5) += 2 * sxc(j, 1) * inp(j, 2) * libxc_coeffs[i];
+                            out(j, 6) += 2 * sxc(j, 2) * inp(j, 3) * libxc_coeffs[i];
+                            out(j, 7) += 2 * sxc(j, 0) * inp(j, 4) * libxc_coeffs[i];
+                            out(j, 8) += 2 * sxc(j, 1) * inp(j, 5) * libxc_coeffs[i];
+                            out(j, 9) += 2 * sxc(j, 2) * inp(j, 6) * libxc_coeffs[i];
+                        }
                     } else {
-                        for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); }
+                        exc = Eigen::VectorXd::Zero(nPts);
+                        vxc = Eigen::VectorXd::Zero(nPts);
+                        sxc = Eigen::VectorXd::Zero(nPts);
+                        sigma = Eigen::VectorXd::Zero(nPts);
+                        for (size_t j = 0; j < nPts; j++) { 
+                            sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); 
+                        }
                         xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
