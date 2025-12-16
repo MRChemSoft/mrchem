@@ -75,7 +75,7 @@ protected:
 
     void setupGlobalPotential(double prec);
     mrcpp::CompFunction<3> setupLocalPotential(double prec);
-    void allreducePotential(double prec, mrcpp::CompFunction<3> &V_loc);
+    void allreducePotential(mrcpp::CompFunction<3> &V_loc);
 };
 
 } // namespace mrchem
