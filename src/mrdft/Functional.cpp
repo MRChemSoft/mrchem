@@ -130,6 +130,8 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     Eigen::MatrixXd out_libxc = Eigen::MatrixXd::Zero(nPts, nOut);
     Eigen::VectorXd exc, vxc, sxc, sigma, inp_row, out_row;
 
+    std::cout << "xc-library (true if libxc, false if xcfun)\n" << Factory::libxc << std::endl;
+
     if (Factory::libxc) {
         for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
