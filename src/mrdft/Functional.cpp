@@ -126,9 +126,9 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
 
-    std::cout << "xc-library (true if libxc, false if xcfun)\n" << Factory::libxc << std::endl;
-
     if (Factory::libxc) {
+        std::cout << "using libxc" << std::endl;
+
         Eigen::MatrixXd rho_spin = Eigen::MatrixXd::Zero(nPts, 1);
         Eigen::VectorXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
@@ -190,6 +190,8 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             }
         }
     } else {
+        std::cout << "using xcfun" << std::endl;
+
         Eigen::VectorXd inp_row, out_row;
         inp_row = Eigen::VectorXd::Zero(nInp);
         out_row = Eigen::VectorXd::Zero(nOut);
