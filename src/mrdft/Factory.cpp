@@ -44,39 +44,48 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
 
 bool Factory::libxc;
 
-void MapFuncName(const std::string &name, std::vector<int> &ids, std::vector<double> &coeffs) {
+void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &coeffs) {
+    // ensure name is upper case
+    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
+
     std::cout << "Name used in MapFunctionalName: " << name << std::endl;
-    if (name == "pbe0") {
-        // ids = {XC_GGA_X_PBE, XC_GGA_C_PBE}; // Both versions are the exact same
-        // coeffs = {0.75, 1.0};
+    if (name == "PBE0") {
         ids = {XC_HYB_GGA_XC_PBEH};
         coeffs = {1.0};
         return;
-    } else if (name == "slaterx" || name == "SLATERX") {
+    } else if (name == "SLATERX") {
         ids = {XC_LDA_X};
         coeffs = {1.0};
         return;
-    } else if (name == "BECKEX" || name == "beckex") {
+    } else if (name == "BECKEX") {
         ids = {XC_GGA_X_B88};
         coeffs = {1.0};
         return;
-    } else if (name == "svwn5c" || name == "VWN5C") {
+    } else if (name == "VWN5C") {
         ids = {XC_LDA_C_VWN};
         coeffs = {1.0};
         return;
-    } else if (name == "svwn5") {
+    } else if (name == "SVWN5") {
         ids = {XC_LDA_C_VWN, XC_LDA_X};
         coeffs = {1.0, 1.0};
         return;
-    } else if (name == "b3p86") {
-        ids = {XC_HYB_GGA_XC_B3P86}; 
+    } else if (name == "B3P86") {
+        ids = {XC_HYB_GGA_XC_B3P86};
         coeffs = {1.0};
         return;
-    } else if (name == "bpw91") {
-        ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_PW91};
-        coeffs = {.5, .5, 1.0}; // Closest
+    } else if (name == "BPW91") {
+        ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
+        coeffs = {1.0, 1.0};
         return;
-    } else {std::cout << "NO FUNC MAPPED" << std::endl;}
+    } else {
+        // Check if Libxc has this functional
+        int number = xc_functional_get_number(name.c_str());
+        if (number == -1) { throw std::logic_error("Got name " + name + " but this is not a known shorthand in MRChem nor a functional in Libxc\n"); }
+
+        ids = {number};
+        coeffs = {1.0};
+        return;
+    }
 }
 
 void Factory::setFunctional(const std::string &n, double c) {
