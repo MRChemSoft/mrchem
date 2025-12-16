@@ -173,16 +173,17 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
                     // TODO: write spin-unrestricted code for GGA
+                    exc = Eigen::MatrixXd::Zero(nPts, 1);
+                    vxc = Eigen::MatrixXd::Zero(nPts, 1);
+                    sxc = Eigen::MatrixXd::Zero(nPts, 1);
+                    sigma = Eigen::MatrixXd::Zero(nPts, 1);
                     if (isSpin()) {
-                        exc = Eigen::MatrixXd::Zero(nPts, 1);
-                        vxc = Eigen::MatrixXd::Zero(nPts, 1);
-                        sxc = Eigen::MatrixXd::Zero(nPts, 1);
-                        sigma = Eigen::MatrixXd::Zero(nPts, 1);
                         for (size_t k = 0; k < nPts; k++) {
                             rho_spin(k * 2, 0) = inp(k, 0);
                             rho_spin(k * 2 + 1, 0) = inp(k, 1);
                         }
-                        for (size_t j = 0; j < nPts; j++) { 
+                        for (size_t j = 0; j < nPts; j++) {
+                            // Susi: this is wrong
                             sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3) *
                                        inp(j, 4) * inp(j, 4) + inp(j, 5) * inp(j, 5) + inp(j, 6) * inp(j, 6); 
                         }
@@ -204,10 +205,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                             out(j, 9) += 2 * sxc(j, 2) * inp(j, 6) * libxc_coeffs[i];
                         }
                     } else {
-                        exc = Eigen::VectorXd::Zero(nPts);
-                        vxc = Eigen::VectorXd::Zero(nPts);
-                        sxc = Eigen::VectorXd::Zero(nPts);
-                        sigma = Eigen::VectorXd::Zero(nPts);
                         for (size_t j = 0; j < nPts; j++) { 
                             sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); 
                         }
