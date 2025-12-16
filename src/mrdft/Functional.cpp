@@ -146,6 +146,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     exc = Eigen::VectorXd::Zero(nPts);
                     vxc = Eigen::VectorXd::Zero(nPts);
                     if (isSpin()) {
+                        // Susi : this is wrong
                         for (size_t k = 0; k < nPts; k++) {
                             rho_spin(k * 2, 0) = inp(k, 0);
                             rho_spin(k * 2 + 1, 0) = inp(k, 1);
@@ -172,12 +173,12 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
                     break;
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
-                    // TODO: write spin-unrestricted code for GGA
                     exc = Eigen::MatrixXd::Zero(nPts, 1);
                     vxc = Eigen::MatrixXd::Zero(nPts, 1);
                     sxc = Eigen::MatrixXd::Zero(nPts, 1);
                     sigma = Eigen::MatrixXd::Zero(nPts, 1);
                     if (isSpin()) {
+                        // Susi : this is wrong
                         for (size_t k = 0; k < nPts; k++) {
                             rho_spin(k * 2, 0) = inp(k, 0);
                             rho_spin(k * 2 + 1, 0) = inp(k, 1);
