@@ -32,7 +32,12 @@
 
 namespace mrdft {
 
-void Functional::print_functional_references(int rank) const {
+void Functional::print_functional_references() const {
+    // Only run on main thread
+    if (mrcpp::mpi::world_rank != 0) {
+      return;
+    }
+
     auto pwidth = mrcpp::Printer::getWidth();
     auto txt_width = 50;
     auto pre_spaces = (pwidth - 6 - txt_width) / 2;
@@ -48,21 +53,13 @@ void Functional::print_functional_references(int rank) const {
     println(0, pre_str << "                                                  " << post_str);
     mrcpp::print::separator(0, '*', 1);
 
-    // Only relevant if LibXC is actually in use for this functional
+    // XCFun is used
     if (not Factory::libxc) {
-        if (mrcpp::mpi::world_rank == rank) {
-            // std::cout << "No LibXC functionals used in this calculation.\n";
-            // std::cout <<  xcfun_splash() << "\n";
-            // mrchem::print_utils::scalar(0, xcfun_splash(), "", 0, false);
-            printout(0, xcfun_splash());
-            mrcpp::print::separator(0, ' ');
-            mrcpp::print::separator(0, '-', 1);
-            std::cout << "No LibXC functionals used in this calculation.\n";
-        }
+        printout(0, xcfun_splash());
+        mrcpp::print::separator(0, ' ');
+        mrcpp::print::separator(0, '-', 1);
         return;
     }
-    // Only print from the main process in MPI runs
-    if (mrcpp::mpi::world_rank != rank) return;
 
     //Conditional reference printing
     auto print_wrap = [&](std::string str, std::size_t txt_width) {
@@ -80,25 +77,20 @@ void Functional::print_functional_references(int rank) const {
         std::cout << str;
     };
 
-    auto print_libxc_reference = [&](std::size_t txt_width) {
-        std::string str = "Libxc (" + std::string(xc_version_string()) + ") is free software. "
-        + "It is distributed under the Mozilla Public License, version 2.0, "
-        + "see https://www.mozilla.org/en-US/MPL/2.0/. "
-        + "For more information, please check the manual at http://libxc.gitlab.io. "
-        + "Scientific users of this library should cite "
-        + xc_reference()  + " DOI: " + xc_reference_doi() + "\n";
-        print_wrap(str, txt_width);
-    };
+    std::string str = "Libxc (" + std::string(xc_version_string()) + ") is free software. "
+      + "It is distributed under the Mozilla Public License, version 2.0, "
+      + "see https://www.mozilla.org/en-US/MPL/2.0/. "
+      + "For more information, please check the manual at http://libxc.gitlab.io. "
+      + "Scientific users of this library should cite "
+      + xc_reference()  + " DOI: " + xc_reference_doi() + "\n";
+    print_wrap(str, txt_width);
 
-    // print_libxc_reference(70);
-    // mrchem::print_utils::scalar(0, print_libxc_reference(txt_width + 20), "", 0, false);
-    print_libxc_reference(txt_width + 20);
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
-    std::cout << "Libxc functionals used in this calculation:\n";
 
     // Avoid printing the same LibXC functional multiple times
     std::set<int> printed_ids;
+    std::cout << "\nLibxc functionals used in this calculation:\n";
 
     for (const auto &func : libxc_objects) {
         if (func.info == nullptr) continue; // safety
@@ -116,7 +108,7 @@ void Functional::print_functional_references(int rank) const {
         for (int number = 0; number < XC_MAX_REFERENCES; number++) {
             auto reference = xc_func_info_get_references(func.info, number);
             if (reference == nullptr) break;
-            std::cout << "*" << xc_func_reference_get_ref(reference) << " (DOI:" << xc_func_reference_get_doi(reference) << ")" << std::endl;
+            std::cout << "     * " << xc_func_reference_get_ref(reference) << " (DOI:" << xc_func_reference_get_doi(reference) << ")" << std::endl;
         }
     }
 }
