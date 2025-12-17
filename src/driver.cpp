@@ -1271,7 +1271,17 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-        std::string xc_lib = (json_fock.contains("xc_library") ? json_fock["xc_library"][0].get<std::string>() : "xcfun");
+        // TO DO: Look over and input parser so this is not necessary
+        std::string xc_lib;
+        if (json_fock.contains("xc_library")) {
+            if(json_fock["xc_library"].is_array()){
+                xc_lib = json_fock["xc_library"][0].get<std::string>();
+            }else{
+                xc_lib = json_fock["xc_library"]["xc_library"].get<std::string>();
+            }
+        }else{
+            xc_lib = "xcfun";
+        }
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
