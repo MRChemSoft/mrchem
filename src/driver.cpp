@@ -1285,7 +1285,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         }
         auto mrdft_p = xc_factory.build();
 
-        mrdft_p->functional().print_libxc_functional_references();
+        mrdft_p->functional().print_functional_references();
 
         exx = mrdft_p->functional().amountEXX();
 

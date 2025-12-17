@@ -24,6 +24,7 @@
  */
 
 #include <MRCPP/Printer>
+#include "utils/print_utils.h"
 #include <stdlib.h>
 
 #include "Factory.h"
@@ -31,16 +32,64 @@
 
 namespace mrdft {
 
-void Functional::print_libxc_functional_references() const {
-    // Only relevant if LibXC is actually in use for this functional
-    if (!libxc) return;
+void Functional::print_functional_references() const {
+    // Only run on main thread
+    if (mrcpp::mpi::world_rank != 0) {
+      return;
+    }
 
-    // Only print from the main process in MPI runs
-    if (mrcpp::mpi::world_rank != 0) return;
+    auto pwidth = mrcpp::Printer::getWidth();
+    auto txt_width = 50;
+    auto pre_spaces = (pwidth - 6 - txt_width) / 2;
+    auto post_spaces = pwidth - 6 - txt_width - pre_spaces;
+    std::string pre_str = std::string(3, '*') + std::string(pre_spaces, ' ');
+    std::string post_str = std::string(post_spaces, ' ') + std::string(3, '*');
+
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, '*');
+    println(0, pre_str << "                                                  " << post_str);
+    println(0, pre_str << "                  XC Functional                   " << post_str);
+    println(0, pre_str << "                                                  " << post_str);
+    mrcpp::print::separator(0, '*', 1);
+
+    // XCFun is used
+    if (not Factory::libxc) {
+        printout(0, xcfun_splash());
+        mrcpp::print::separator(0, ' ');
+        mrcpp::print::separator(0, '-', 1);
+        return;
+    }
+
+    //Conditional reference printing
+    auto print_wrap = [&](std::string str, std::size_t txt_width) {
+        size_t offset = 0;
+        while (offset + txt_width < str.size()) {
+            size_t space_pos = str.rfind(' ', offset + txt_width);
+            if (space_pos == std::string::npos || space_pos <= offset) {
+                space_pos = offset + txt_width;
+                str.insert(space_pos, "\n");
+            } else {
+                str[space_pos] = '\n';
+            }
+            offset = space_pos + 1;
+        }
+        std::cout << str;
+    };
+
+    std::string str = "Libxc (" + std::string(xc_version_string()) + ") is free software. "
+      + "It is distributed under the Mozilla Public License, version 2.0, "
+      + "see https://www.mozilla.org/en-US/MPL/2.0/. "
+      + "For more information, please check the manual at http://libxc.gitlab.io. "
+      + "Scientific users of this library should cite "
+      + xc_reference()  + " DOI: " + xc_reference_doi() + "\n";
+    print_wrap(str, txt_width);
+
+    mrcpp::print::separator(0, ' ');
+    mrcpp::print::separator(0, '-', 1);
 
     // Avoid printing the same LibXC functional multiple times
     std::set<int> printed_ids;
-
     std::cout << "\nLibxc functionals used in this calculation:\n";
 
     for (const auto &func : libxc_objects) {
