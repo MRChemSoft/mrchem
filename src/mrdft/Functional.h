@@ -70,7 +70,7 @@ public:
     std::vector<xc_func_type> libxc_objects;
     std::vector<double> libxc_coeffs;
 
-    void print_functional_references(int rank = 0) const;
+    void print_functional_references() const;
 
     void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_);
 
