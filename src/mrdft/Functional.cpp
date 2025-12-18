@@ -77,12 +77,12 @@ void Functional::print_functional_references() const {
         std::cout << str;
     };
 
-    std::string str = "Libxc (" + std::string(xc_version_string()) + ") is free software. "
-      + "It is distributed under the Mozilla Public License, version 2.0, "
-      + "see https://www.mozilla.org/en-US/MPL/2.0/. "
-      + "For more information, please check the manual at http://libxc.gitlab.io. "
-      + "Scientific users of this library should cite "
-      + xc_reference()  + " DOI: " + xc_reference_doi() + "\n";
+    std::string str = "Using Libxc (version " + std::string(xc_version_string())
+      + ") to evaluate density functionals. Libxc is free software. It is "
+      + "distributed under the Mozilla Public License, version 2.0. For "
+      + "more information, please check the Libxc manual. You should cite "
+      + xc_reference()  + " DOI: " + xc_reference_doi() + " when "
+      + "reporting the results of your calculation in a scientific article.\n";
     print_wrap(str, txt_width);
 
     mrcpp::print::separator(0, ' ');
