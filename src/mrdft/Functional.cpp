@@ -140,8 +140,8 @@ double Functional::amountEXX() const {
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
-    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
-    int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    int nInp = numIn();
+    int nOut = numOut();
     int nPts = inp.cols();
     if (nInp != inp.rows()) MSG_ABORT("Invalid input");
 
@@ -152,6 +152,8 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
 
         throw std::logic_error("Not implemented!\n");
     } else {
+        if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
+        xcfun_output_length(xcfun.get()); // Input parameters to XCFun
         for (int i = 0; i < nPts; i++) {
             if (isSpin()) {
                 if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
@@ -176,15 +178,15 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
-    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
-    int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    int nInp = numIn();
+    int nOut = numOut();
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
 
     static bool printed = false;
-    
+
     if (Factory::libxc) {
         if (not printed) {
             std::cout << "using libxc" << std::endl;
@@ -296,6 +298,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             std::cout << "using xcfun" << std::endl;
             printed = true;
         }
+        if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
 
         Eigen::VectorXd inp_row, out_row;
         inp_row = Eigen::VectorXd::Zero(nInp);

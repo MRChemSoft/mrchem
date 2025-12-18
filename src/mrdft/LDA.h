@@ -39,6 +39,8 @@ public:
     bool isSpin() const override { return false; }
     bool isGGA() const override { return false; }
     bool isMetaGGA() const override { return false; }
+    int numIn() const override { return 1; }
+    int numOut() const override { return 2; }
 
 private:
     mrcpp::FunctionTreeVector<3> rho;

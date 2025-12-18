@@ -59,6 +59,9 @@ public:
     virtual bool isGGA() const = 0;
     virtual bool isMetaGGA() const = 0;
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
+    virtual int numIn() const = 0;
+    virtual int numOut() const = 0;
+
     double amountEXX() const;
     double XCenergy = 0.0;
 
