@@ -56,8 +56,8 @@ public:
 
     virtual bool isSpin() const = 0;
     bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
-    bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
-    bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
+    virtual bool isGGA() const = 0;
+    virtual bool isMetaGGA() const = 0;
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
     double amountEXX() const;
     double XCenergy = 0.0;

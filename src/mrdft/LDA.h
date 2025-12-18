@@ -37,6 +37,8 @@ public:
     ~LDA() override = default;
 
     bool isSpin() const override { return false; }
+    bool isGGA() const override { return false; }
+    bool isMetaGGA() const override { return false; }
 
 private:
     mrcpp::FunctionTreeVector<3> rho;
