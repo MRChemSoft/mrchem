@@ -1271,7 +1271,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-        // TO DO: Look over and input parser so this is not necessary
+        // TODO: Look over and input parser so this is not necessary
         std::string xc_lib;
         if (json_fock.contains("xc_library")) {
             if(json_fock["xc_library"].is_array()){
