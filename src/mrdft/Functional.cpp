@@ -146,15 +146,22 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     if (nInp != inp.rows()) MSG_ABORT("Invalid input");
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
-    for (int i = 0; i < nPts; i++) {
-        if (isSpin()) {
-            if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
-        } else {
-            if (inp(0, i) < cutoff) continue;
+    if (Factory::libxc) {
+        // Susi: needs to be implemented, but not like it has been
+        // implemented so far - DRY!!
+
+        throw std::logic_error("Not implemented!\n");
+    } else {
+        for (int i = 0; i < nPts; i++) {
+            if (isSpin()) {
+                if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
+            } else {
+                if (inp(0, i) < cutoff) continue;
+            }
+            // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+            // That means that we cannot extract the energy density data with out.row(0).data() for example.
+            xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
         }
-        // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
-        // That means that we cannot extract the energy density data with out.row(0).data() for example.
-        xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
     }
     return out;
 }
