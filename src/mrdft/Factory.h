@@ -46,8 +46,7 @@ public:
     void setDensityCutoff(double c) { cutoff = c; }
     void setLibxc(bool libxc_) {libxc = libxc_; }
     void setDerivative(const std::string &n) { diff_s = n; }
-    // void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
-    void setFunctional(const std::string &n, double c = 1.0); // new def in .cpp
+    void setFunctional(const std::string &n, double c = 1.0);
 
     std::unique_ptr<MRDFT> build();
     static bool libxc;
