@@ -27,9 +27,9 @@
 
 #include "ExternalSolver.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmoperators/qmoperator_utils.h"
 #include "qmoperators/one_electron/MomentumOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
+#include "qmoperators/qmoperator_utils.h"
 #include "qmoperators/two_electron/GenericTwoOrbitalsOperator.h"
 
 namespace mrchem {
@@ -50,7 +50,7 @@ class FockBuilder;
 void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F) {
     F.setup(this->prec);
     // operators
-    MomentumOperator P = *(F.momentum());
+    MomentumOperator P = F.momentum();
     NuclearOperator V = *(F.getNuclearOperator());
     GenericTwoOrbitalsOperator g = *(F.getGenericTwoOrbitalsOperator());
 
@@ -63,7 +63,7 @@ void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F) {
 // Private
 
 // TODO: change 'NuclearOperator' to 'RankZeroOperator'
-void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, MomemtumOperator &P, NuclearOperator &V) {
+void ExternalSolver::set_one_body_integrals(OrbitalVector &Phi, MomentumOperator &P, NuclearOperator &V) {
     this->one_body_integrals = std::make_shared<ComplexMatrix>(qmoperator::calc_kinetic_matrix(P, Phi, Phi) + V(Phi, Phi));
 }
 
