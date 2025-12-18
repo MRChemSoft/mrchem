@@ -130,60 +130,21 @@ double Functional::amountEXX() const {
         xcfun_get(xcfun.get(), "exx", &exx);
     }
     return exx;
-    }
+}
 
-/** @brief Run a collection of grid points through XCFun
+/** @brief Run a collection of grid points through Libxc or XCFun
  *
  * Each row corresponds to one grid point.
  *
  * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
+ * param[in] out_data Matrix of output values
  */
-Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
-    int nInp = numIn();
-    int nOut = numOut();
-    int nPts = inp.cols();
-    if (nInp != inp.rows()) MSG_ABORT("Invalid input");
-
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
-    if (Factory::libxc) {
-        // Susi: needs to be implemented, but not like it has been
-        // implemented so far - DRY!!
-
-        throw std::logic_error("Not implemented!\n");
-    } else {
-        if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
-        xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-        for (int i = 0; i < nPts; i++) {
-            if (isSpin()) {
-                if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
-            } else {
-                if (inp(0, i) < cutoff) continue;
-            }
-            // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
-            // That means that we cannot extract the energy density data with out.row(0).data() for example.
-            xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
-        }
-    }
-    return out;
-}
-
-/** @brief Run a collection of grid points through XCFun
- *
- * Each column corresponds to one grid point.
- * From a performance point of view, (in pre and postprocessing) it is much more
- * efficient to have the two consecutive points in two consecutive adresses in memory
- *
- * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
- */
-Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
+void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = numIn();
     int nOut = numOut();
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
-
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+    out.setZero();
 
     static bool printed = false;
 
@@ -193,99 +154,97 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             printed = true;
         }
 
-        Eigen::VectorXd exc, vxc, sxc, sigma;
+        Eigen::MatrixXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
                 case XC_FAMILY_LDA:
                 case XC_FAMILY_HYB_LDA:
                     if (isSpin()) {
-                        Eigen::VectorXd rho_spin = Eigen::VectorXd::Zero(2 * nPts);
-                        exc = Eigen::MatrixXd::Zero(nPts, 1);
-                        vxc = Eigen::MatrixXd::Zero(2 * nPts, 1);
-                        for (size_t k = 0; k < nPts; k++) {
+                        Eigen::MatrixXd rho = Eigen::MatrixXd::Zero(2, nPts);
+                        exc = Eigen::MatrixXd::Zero(1, nPts);
+                        vxc = Eigen::MatrixXd::Zero(2, nPts);
+                        for (size_t j = 0; j < nPts; j++) {
                             // alpha_1, beta_1, alpha_2, beta_2, ..
-                            rho_spin[2 * k]     = inp(k, 0);
-                            rho_spin[2 * k + 1] = inp(k, 1);
+                            rho(0, j) = inp(0, j);
+                            rho(1, j) = inp(1, j);
                         }
-                        std::cout << "CONSTRUCTS SPIN RHO " << std::endl;
-                        xc_lda_exc_vxc(&libxc_objects[i], nPts, rho_spin.data(), exc.data(), vxc.data());
-                        std::cout << "LIBXC EXC_VXC COMPUTED" << std::endl;
+                        xc_lda_exc_vxc(&libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
-                            //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates
-                            //    energy density per electron density
-
-                            // rho = rho_alpha + rho_beta (energy is much closer to xcfun when using both)
-                            out(j, 0) += exc(j, 0) * libxc_coeffs[i] * (inp(j, 0) + inp(j, 1));
-                            out(j, 1) += vxc(2 * j + 0, 0) * libxc_coeffs[i];
-                            out(j, 2) += vxc(2 * j + 1, 0) * libxc_coeffs[i];
+                            //    xcfun calculates energy density per volume while libxc calculates
+                            //    energy density per electron, so we multiply by the density here
+                            out(0, j) += exc(0, j) * libxc_coeffs[i] * (inp(0, j) + inp(1, j));
+                            out(1, j) += vxc(0, j) * libxc_coeffs[i];
+                            out(2, j) += vxc(1, j) * libxc_coeffs[i];
                         }
                     } else {
-                        exc      = Eigen::VectorXd::Zero(nPts);
-                        vxc      = Eigen::VectorXd::Zero(nPts);
-                        xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), exc.data(), vxc.data());
+                        exc = Eigen::MatrixXd::Zero(1, nPts);
+                        vxc = Eigen::MatrixXd::Zero(1, nPts);
+                        xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
-                            //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates
-                            //    energy density per electron density
-                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                            out(j, 1) += vxc[j] * libxc_coeffs[i];
+                            //    xcfun calculates energy density per volume while libxc calculates
+                            //    energy density per electron, so we multiply by the density here
+                          out(0, j) += exc(0, j) * libxc_coeffs[i] * inp(0, j);
+                          out(1, j) += vxc(0, j) * libxc_coeffs[i];
                         }
                     }
                     break;
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
                     if (isSpin()) {
-                        Eigen::VectorXd rho_spin = Eigen::VectorXd::Zero(2 * nPts);
-                        exc = Eigen::MatrixXd::Zero(nPts, 1);
-                        vxc = Eigen::MatrixXd::Zero(2 * nPts, 1);
-                        sxc = Eigen::MatrixXd::Zero(3 * nPts, 1);
-                        sigma = Eigen::MatrixXd::Zero(3 * nPts, 1);
-                        for (size_t k = 0; k < nPts; k++) {
+                        Eigen::VectorXd rho = Eigen::MatrixXd::Zero(2, nPts);
+                        exc = Eigen::MatrixXd::Zero(1, nPts);
+                        vxc = Eigen::MatrixXd::Zero(2, nPts);
+                        sxc = Eigen::MatrixXd::Zero(3, nPts);
+                        sigma = Eigen::MatrixXd::Zero(3, nPts);
+                        for (size_t j = 0; j < nPts; j++) {
                             // alpha_1, beta_1, alpha_2, beta_2, ..
-                            rho_spin[2 * k]     = inp(k, 0);
-                            rho_spin[2 * k + 1] = inp(k, 1);
+                          rho(0, j) = inp(0, j);
+                          rho(1, j) = inp(1, j);
                         }
                         for (size_t j = 0; j < nPts; j++) {
+                            // clang-format off
                             // Libxc takes in reduced gradients: up-up, up-down, down-down
-                            sigma(3 * j + 0, 0) = inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3) + inp(j, 4) * inp(j, 4);
-                            sigma(3 * j + 1, 0) = inp(j, 2) * inp(j, 5) + inp(j, 3) * inp(j, 6) + inp(j, 4) * inp(j, 7);
-                            sigma(3 * j + 2, 0) = inp(j, 5) * inp(j, 5) + inp(j, 6) * inp(j, 6) + inp(j, 7) * inp(j, 7);
+                          sigma(0, j) = inp(2, j) * inp(2, j) + inp(3, j) * inp(3, j) + inp(4, j) * inp(4, j);
+                          sigma(1, j) = inp(2, j) * inp(5, j) + inp(3, j) * inp(6, j) + inp(4, j) * inp(7, j);
+                          sigma(2, j) = inp(5, j) * inp(5, j) + inp(6, j) * inp(6, j) + inp(7, j) * inp(7, j);
+                            // clang-format on
                         }
-                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho_spin.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
+                            // clang-format off
                             //    xcfun calculates energy density per volume while libxc calculates
                             //    energy density per electron, so we multiply by the density here
-                            out(j, 0) += exc(j, 0) * libxc_coeffs[i] * (inp(j, 0) + inp(j, 1));
-                            out(j, 1) += vxc(2 * j + 0, 0) * libxc_coeffs[i];
-                            out(j, 2) += vxc(2 * j + 1, 0) * libxc_coeffs[i];
+                            out(0, j) += exc(0, j) * libxc_coeffs[i] * (inp(0, j) + inp(1, j));
+                            out(1, j) += vxc(0, j) * libxc_coeffs[i];
+                            out(2, j) += vxc(1, j) * libxc_coeffs[i];
 
-                            // alpha_i,   coef           * ( 2 * vaa               * grad_a_i  + vab               * grad_b_i ), i = x, y, z
-                            out(j, 3) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 0, 0) * inp(j, 2) + sxc(3 * j + 1, 0) * inp(j, 5) );
-                            out(j, 4) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 0, 0) * inp(j, 3) + sxc(3 * j + 1, 0) * inp(j, 6) );
-                            out(j, 5) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 0, 0) * inp(j, 4) + sxc(3 * j + 1, 0) * inp(j, 7) );
-                            // beta_i,       coef        * ( 2 * vbb               * grad_b_i  + vab               * grad_a_i ), i = x, y, z
-                            out(j, 6) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 2, 0) * inp(j, 5) + sxc(3 * j + 1, 0) * inp(j, 2) );
-                            out(j, 7) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 2, 0) * inp(j, 6) + sxc(3 * j + 1, 0) * inp(j, 3) );
-                            out(j, 8) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 2, 0) * inp(j, 7) + sxc(3 * j + 1, 0) * inp(j, 4) );
+                            // alpha_i,   coef           * ( 2 * vaa       * grad_a_i  + vab       * grad_b_i ), i = x, y, z
+                            out(3, j) += libxc_coeffs[i] * ( 2 * sxc(0, j) * inp(2, j) + sxc(1, j) * inp(5, j) );
+                            out(4, j) += libxc_coeffs[i] * ( 2 * sxc(0, j) * inp(3, j) + sxc(1, j) * inp(6, j) );
+                            out(5, j) += libxc_coeffs[i] * ( 2 * sxc(0, j) * inp(4, j) + sxc(1, j) * inp(7, j) );
+                            // beta_i,       coef        * ( 2 * vbb       * grad_b_i  + vab       * grad_a_i ), i = x, y, z
+                            out(6, j) += libxc_coeffs[i] * ( 2 * sxc(2, j) * inp(5, j) + sxc(1, j) * inp(2, j) );
+                            out(7, j) += libxc_coeffs[i] * ( 2 * sxc(2, j) * inp(6, j) + sxc(1, j) * inp(3, j) );
+                            out(8, j) += libxc_coeffs[i] * ( 2 * sxc(2, j) * inp(7, j) + sxc(1, j) * inp(4, j) );
+                            // clang-format on
                         }
                     } else {
-                        exc = Eigen::MatrixXd::Zero(nPts, 1);
-                        vxc = Eigen::MatrixXd::Zero(nPts, 1);
-                        sxc = Eigen::MatrixXd::Zero(nPts, 1);
-                        sigma = Eigen::MatrixXd::Zero(nPts, 1);
-                        for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(j, 1) * inp(j, 1) + inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3); }
-                        xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                        exc = Eigen::MatrixXd::Zero(1, nPts);
+                        vxc = Eigen::MatrixXd::Zero(1, nPts);
+                        sxc = Eigen::MatrixXd::Zero(1, nPts);
+                        sigma = Eigen::MatrixXd::Zero(1, nPts);
+                        for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(1, j) * inp(1, j) + inp(2, j) * inp(2, j) + inp(3, j) * inp(3, j); }
+                        xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
                             //    xcfun calculates energy density per volume while libxc calculates
                             //    energy density per electron, so we multiply by the density here
-                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                            out(j, 1) += vxc[j] * libxc_coeffs[i];
-                            out(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
-                            out(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
-                            out(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
+                          out(0, j) += exc(0, j) * libxc_coeffs[i] * inp(0, j);
+                          out(1, j) += vxc(0, j) * libxc_coeffs[i];
+                          out(2, j) += 2 * sxc(0, j) * inp(1, j) * libxc_coeffs[i];
+                          out(3, j) += 2 * sxc(0, j) * inp(2, j) * libxc_coeffs[i];
+                          out(4, j) += 2 * sxc(0, j) * inp(3, j) * libxc_coeffs[i];
                         }
                     }
                     break;
@@ -300,26 +259,50 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
         }
         if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
 
-        Eigen::VectorXd inp_row, out_row;
-        inp_row = Eigen::VectorXd::Zero(nInp);
-        out_row = Eigen::VectorXd::Zero(nOut);
         for (int i = 0; i < nPts; i++) {
-            bool calc = true;
             if (isSpin()) {
-                if (inp(i, 0) < cutoff and inp(i, 1) < cutoff) calc = false;
+              if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
             } else {
-                if (inp(i, 0) < cutoff) calc = false;
+              if (inp(0, i) < cutoff) continue;
             }
-            if (calc) {
-                inp_row = inp.row(i);
-                xcfun_eval(xcfun.get(), inp_row.data(), out_row.data());
-                out.row(i) = out_row;
-            }
+            xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
         }
     }
+}
+
+/** @brief Run a collection of grid points through Libxc or XCFun
+ *
+ * Each column corresponds to one grid point.
+ * From a performance point of view, (in pre and postprocessing) it is much more
+ * efficient to have the two consecutive points in two consecutive adresses in memory
+ *
+ * param[in] inp_data Matrix of input values
+ * param[out] out_data Matrix of output values
+ */
+Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
+    int nOut = numOut();
+    int nPts = inp.cols();
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
+    evaluate_data(inp, out);
     return out;
 }
 
+/** @brief Run a collection of grid points through Libxc or XCFun
+ *
+ * Each row corresponds to one grid point.
+ *
+ * param[in] inp_data Matrix of input values
+ * param[out] out_data Matrix of output values
+ */
+Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
+  // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+  // That means that we cannot extract the energy density data with out.row(0).data() for example.
+  Eigen::MatrixXd inp_trans(inp.transpose());
+  Eigen::MatrixXd out_trans(numOut(), inp.rows());
+  evaluate_data(inp_trans, out_trans);
+  return out_trans.transpose();
+}
 
 /** @brief Contract a collection of grid points
  *

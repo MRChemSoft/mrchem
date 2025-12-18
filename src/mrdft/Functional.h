@@ -91,6 +91,8 @@ protected:
     virtual int getCtrInputLength() const = 0;
     virtual int getCtrOutputLength() const = 0;
 
+    void evaluate_data(const Eigen::MatrixXd & inp, Eigen::MatrixXd &out) const;
+
     Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
     Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
 
