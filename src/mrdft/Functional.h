@@ -86,8 +86,6 @@ protected:
     XC_p xcfun;
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};
 
-    int getXCInputLength() const { return xcfun_input_length(xcfun.get()); }
-    int getXCOutputLength() const { return xcfun_output_length(xcfun.get()); }
     virtual int getCtrInputLength() const = 0;
     virtual int getCtrOutputLength() const = 0;
 
