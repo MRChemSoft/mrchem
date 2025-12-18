@@ -142,8 +142,8 @@ double Functional::amountEXX() const {
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = numIn();
     int nOut = numOut();
-    int nPts = inp.rows();
-    if (nInp != inp.cols()) MSG_ABORT("Invalid input");
+    int nPts = inp.cols();
+    if (nInp != inp.rows()) MSG_ABORT("Invalid input");
     out.setZero();
 
     static bool printed = false;
