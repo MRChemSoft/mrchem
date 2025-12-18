@@ -18,7 +18,8 @@ namespace mrchem {
  * The ij/r12 potentials are first (pre)computed for all the orbitals j<i, then multiplied by kl
  */
 Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVector &Phi) {
-    Timer t_tot, t_snd(false), t_rho(false), t_ovr(false), t_calc(false), t_add(false), t_get(false), t_wait(false);
+    mrcpp::print::header(3, "Computing two electron integrals");
+    Timer t_tot, t_snd(false), t_rho(false), t_ovr(false), t_calc(false), t_add(false), t_get(false);
 
     mrcpp::BankAccount PhiBank; // to put the orbitals
     mrcpp::BankAccount VijBank; // to put the ij/r12 potentials
@@ -221,15 +222,17 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
             }
         }
     }
+    t_tot.stop();
 
     mrcpp::print::time(3, "Time making density", t_rho);
     mrcpp::print::time(3, "Time receiving orbitals", t_get);
     mrcpp::print::time(3, "Time sending potentials", t_snd);
     mrcpp::print::time(3, "Time computing integrals", t_calc);
-    mrcpp::print::time(3, "Time making overlap matrix", t_ovr);
     mrcpp::print::separator(3, '-');
     mrcpp::print::time(3, "Time diagonal terms", t_diag);
     mrcpp::print::time(3, "Time off-diagonal terms", t_offd);
+    mrcpp::print::time(3, "Time making overlap matrix", t_ovr);
+    mrcpp::print::time(3, "Time making two el integrals", t_tot);
     mrcpp::print::value(3,"Total size all ij/r12 potentials", totSizeVij/1024.0, "(MB)",0,false);
     mrcpp::print::separator(3, '-');
 
