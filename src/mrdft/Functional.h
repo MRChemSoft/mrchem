@@ -55,7 +55,7 @@ public:
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }
 
     virtual bool isSpin() const = 0;
-    bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
+    bool isLDA() const { return not (isGGA() or isMetaGGA()); }
     virtual bool isGGA() const = 0;
     virtual bool isMetaGGA() const = 0;
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
