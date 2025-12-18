@@ -24,13 +24,26 @@
  */
 
 // This include must come first due to name clashes
+extern "C" {
+#include "hamiltonian.h"
 #include "qnumber.h"
+}
 
 #include "ChemTensorSolver.h"
 
 namespace mrchem {
 
 void ChemTensorSolver::optimize() {
+    int nsites = 6;
+    double t = 1.0;
+    double u = 4.0;
+    double mu = 1.5;
+    mpo hamiltonian;
+    mpo_assembly assembly;
+    construct_fermi_hubbard_1d_mpo_assembly(nsites, t, u, mu, &assembly);
+    mpo_from_assembly(&assembly, &hamiltonian);
+    delete_mpo_assembly(&assembly);
+
     this->energy = encode_quantum_number_pair(4, 2); // dummy
     calculate_rdms();
 }
@@ -39,6 +52,7 @@ void ChemTensorSolver::calculate_rdms() {
     *(this->one_rdm) = *(this->one_body_integrals);
     *(this->two_rdm) = *(this->two_body_integrals);
     // dummy (dimensions are the same)
+    auto *elements = this->one_body_integrals->data();
 }
 
 } // namespace mrchem
