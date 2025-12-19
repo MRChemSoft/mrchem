@@ -122,12 +122,15 @@ def write_scf_fock(user_dict, wf_dict, origin):
             },
         }
 
-    # External electric field
-    if len(user_dict["ExternalFields"]["electric_field"]) > 0:
+    # External electric and magnetic field
+    if len(user_dict["ExternalFields"]) > 0:
         fock_dict["external_operator"] = {
-            "electric_field": user_dict["ExternalFields"]["electric_field"],
             "r_O": origin,
         }
+        if len(user_dict["ExternalFields"]["electric_field"]) > 0:
+            fock_dict["external_operator"]["electric_field"] = user_dict["ExternalFields"]["electric_field"]
+        if len(user_dict["ExternalFields"]["magnetic_field"]) > 0:
+            fock_dict["external_operator"]["magnetic_field"] = user_dict["ExternalFields"]["magnetic_field"]
 
     return fock_dict
 
@@ -234,10 +237,12 @@ def write_scf_guess(user_dict, wf_dict):
         "relativity": wf_dict["relativity_name"],
         "environment": wf_dict["environment_name"],
         "external_field": wf_dict["external_name"],
+        "magnetic_field": wf_dict["magnetic_name"],
         "screen": scf_dict["guess_screen"],
         "localize": scf_dict["localize"],
         "rotate": scf_dict["guess_rotate"],
         "restricted": user_dict["WaveFunction"]["restricted"],
+        "complex": user_dict["WaveFunction"]["complex"],
         "file_chk": f"{scf_dict['path_checkpoint']}/phi_scf",
         "file_basis": file_dict["guess_basis"],
         "file_gto_p": file_dict["guess_gto_p"],
@@ -268,6 +273,7 @@ def write_scf_solver(user_dict, wf_dict):
         "relativity": wf_dict["relativity_name"],
         "environment": wf_dict["environment_name"],
         "external_field": wf_dict["external_name"],
+        "magnetic_field": wf_dict["magnetic_name"],
         "kain": scf_dict["kain"],
         "max_iter": scf_dict["max_iter"],
         "rotation": scf_dict["rotation"],
@@ -287,7 +293,7 @@ def write_scf_solver(user_dict, wf_dict):
 def write_scf_properties(user_dict, origin):
     prop_dict = {}
     if user_dict["Properties"]["dipole_moment"]:
-        prop_dict["dipole_moment"] = {} 
+        prop_dict["dipole_moment"] = {}
         prop_dict["dipole_moment"]["dip-1"] = {
             "operator": "h_e_dip",
             "precision": user_dict["world_prec"],
@@ -591,9 +597,25 @@ def parse_wf_method(user_dict):
         # Labels to aggregate
         external_name = f"Electric field ({x}, {y}, {z})"
 
+    has_magnetic_fields = len(ext_dict["magnetic_field"]) > 0
+
+    magnetic_name = "None"
+    if has_magnetic_fields:
+        # If no external fields, then the list will be empty
+        # Need to catch the exception and store placeholders
+        try:
+            x, y, z = ext_dict["magnetic_field"]
+        except ValueError:
+            x, y, z = None, None, None  # Useless placeholders
+
+        magnetic_name = f"Magnetic field ({x}, {y}, {z})"
+
+
+
     wf_dict["relativity_name"] = relativity_name
     wf_dict["environment_name"] = environment_name
     wf_dict["external_name"] = external_name
+    wf_dict["magnetic_name"] = magnetic_name
     wf_dict["method_name"] = method_name
     wf_dict["method_type"] = method_type
     wf_dict["dft_funcs"] = dft_funcs
