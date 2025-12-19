@@ -673,8 +673,10 @@ int orbital::size_beta(const OrbitalVector &Phi) {
 
 /** @brief Returns the spin multiplicity of the vector */
 int orbital::get_multiplicity(const OrbitalVector &Phi) {
-    int nAlpha = get_electron_number(Phi, SPIN::Alpha);
-    int nBeta = get_electron_number(Phi, SPIN::Beta);
+    double nAlpha = get_electron_number(Phi, SPIN::Alpha);
+    double nBeta = get_electron_number(Phi, SPIN::Beta);
+    // LR: not sure this is currently meaningful for fractional occupancies
+    // as a minimum should we add some kind of warning/error message if the result is not an integer?
     int S = std::abs(nAlpha - nBeta);
     return S + 1;
 }
@@ -684,15 +686,17 @@ int orbital::get_multiplicity(const OrbitalVector &Phi) {
  * Paired spin (default input) returns the total number of electrons.
  *
  */
-int orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
-    int nElectrons = 0;
+double orbital::get_electron_number(const OrbitalVector &Phi, int spin) {
+    double nElectrons = 0.0;
     for (auto &phi_i : Phi) {
         if (spin == SPIN::Paired) {
-            nElectrons += (int)phi_i.occ() + 0.5; // nearest integer
+            nElectrons += phi_i.occ();
         } else if (spin == SPIN::Alpha) {
-            if (phi_i.spin() == SPIN::Paired or phi_i.spin() == SPIN::Alpha) nElectrons += 1;
+            if (phi_i.spin() == SPIN::Paired) {nElectrons += 0.5 * phi_i.occ();}
+            else if (phi_i.spin() == SPIN::Alpha) {nElectrons += phi_i.occ();}
         } else if (spin == SPIN::Beta) {
-            if (phi_i.spin() == SPIN::Paired or phi_i.spin() == SPIN::Beta) nElectrons += 1;
+            if (phi_i.spin() == SPIN::Paired) {nElectrons += 0.5 * phi_i.occ();}
+            else if (phi_i.spin() == SPIN::Beta) {nElectrons += phi_i.occ();}
         } else {
             MSG_ERROR("Invalid spin argument");
         }
@@ -831,20 +835,20 @@ void orbital::print(const OrbitalVector &Phi) {
     auto w3 = w0 - 3 * w1 - 3 * w2;
 
     auto N_e = orbital::get_electron_number(Phi);
-    auto N_a = orbital::size_alpha(Phi) + orbital::size_paired(Phi);
-    auto N_b = orbital::size_beta(Phi) + orbital::size_paired(Phi);
+    auto N_a = orbital::get_electron_number(Phi, SPIN::Alpha);
+    auto N_b = orbital::get_electron_number(Phi, SPIN::Beta);
 
     std::stringstream o_head;
     o_head << std::setw(w1) << "n";
-    o_head << std::setw(w1) << "Occ";
+    o_head << std::setw(w1 + 3) << "Occ";
     o_head << std::setw(w1) << "Spin";
-    o_head << std::string(w3 - 1, ' ') << ':';
+    o_head << std::string(w3 - 4, ' ') << ':';
     o_head << std::setw(3 * w2) << "Norm";
 
     mrcpp::print::header(0, "Molecular Orbitals");
-    print_utils::scalar(0, "Alpha electrons ", N_a, "", 0, false);
-    print_utils::scalar(0, "Beta electrons  ", N_b, "", 0, false);
-    print_utils::scalar(0, "Total electrons ", N_e, "", 0, false);
+    print_utils::scalar(0, "Alpha electrons ", N_a, "", 3, false);
+    print_utils::scalar(0, "Beta electrons  ", N_b, "", 3, false);
+    print_utils::scalar(0, "Total electrons ", N_e, "", 3, false);
     mrcpp::print::separator(0, '-');
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');
@@ -858,7 +862,7 @@ void orbital::print(const OrbitalVector &Phi) {
         memory += Phi[i].getSizeNodes() / 1024.0;
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
-        o_txt << std::setw(w1) << Phi[i].occ();
+        o_txt << std::setw(w1 + 3) << std::setprecision(2) << std::fixed << Phi[i].occ();
         o_txt << std::setw(w1) << Phi[i].printSpin();
         print_utils::scalar(0, o_txt.str(), norms[i], "", 2 * pprec, true);
     }
