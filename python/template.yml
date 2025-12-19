@@ -297,6 +297,11 @@ sections:
         default: true
         docstring: |
           Use spin restricted wavefunction.
+      - name: complex
+        type: bool
+        default: false
+        docstring: |
+          Force the use of complex-valued wave functions throughout the calculation.
       - name: relativity
         type: str
         default: none
@@ -307,7 +312,7 @@ sections:
           including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section.
           ``nZORA`` is shortcut for nuclear-ZORA, i.e. only ``V_nuc`` is included (this keyword takes precedence
           over keywords in the ``ZORA`` section).
-          ``azora`` uses atomic ZORA potentials, which are precomputed and read from the directory 
+          ``azora`` uses atomic ZORA potentials, which are precomputed and read from the directory
           specified in the ``azora_potential_path`` keyword.
       - name: environment
         type: str
@@ -466,6 +471,13 @@ sections:
           - len(value) == 0 or len(value) == 3
         docstring: |
           Strength of external electric field.
+      - name: magnetic_field
+        type: List[float]
+        default: []
+        predicates:
+          - len(value) == 0 or len(value) == 3
+        docstring: |
+          Strength of external magnetic field.
   - name: Polarizability
     docstring: |
       Give details regarding the polarizability calculation.

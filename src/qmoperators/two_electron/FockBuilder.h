@@ -55,12 +55,15 @@ class CoulombOperator;
 class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
+class MagneticFieldOperator;
+class MagneticFieldOperatorImag;
 class ReactionOperator;
 
 class FockBuilder final {
 public:
     MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &potential() { return this->V; }
+    RankZeroOperator &potential_imag() { return this->V_imag; }
     RankZeroOperator &perturbation() { return this->H_1; }
 
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
@@ -69,6 +72,8 @@ public:
     std::shared_ptr<ExchangeOperator> &getExchangeOperator() { return this->ex; }
     std::shared_ptr<XCOperator> &getXCOperator() { return this->xc; }
     std::shared_ptr<ElectricFieldOperator> &getExtOperator() { return this->ext; }
+    std::shared_ptr<MagneticFieldOperator> &getMagneticOperator() { return this->mag; }
+    std::shared_ptr<MagneticFieldOperatorImag> &getMagneticOperatorImag() { return this->mag_imag; }
     std::shared_ptr<ReactionOperator> &getReactionOperator() { return this->Ro; }
     std::shared_ptr<AZoraPotential> &getAZoraChiPotential() { return this->chiPot; }
 
@@ -109,6 +114,7 @@ private:
     Nuclei nucs;
 
     RankZeroOperator V;   ///< Total potential energy operator
+    RankZeroOperator V_imag; ///< Total potential energy (imaginary part)
     RankZeroOperator H_1; ///< Perturbation operators
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
@@ -118,6 +124,8 @@ private:
     std::shared_ptr<XCOperator> xc{nullptr};
     std::shared_ptr<ReactionOperator> Ro{nullptr};       // Reaction field operator
     std::shared_ptr<ElectricFieldOperator> ext{nullptr}; // Total external potential
+    std::shared_ptr<MagneticFieldOperator> mag{nullptr}; // External magnetic field interaction
+    std::shared_ptr<MagneticFieldOperatorImag> mag_imag{nullptr}; // External magnetic field interaction - imaginary component
     std::shared_ptr<ZoraOperator> chi{nullptr};
     std::shared_ptr<ZoraOperator> chi_inv{nullptr};
 

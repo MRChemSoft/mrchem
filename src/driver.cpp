@@ -53,6 +53,8 @@
 
 #include "qmoperators/one_electron/AZoraPotential.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
+#include "qmoperators/one_electron/MagneticFieldOperator.h"
+#include "qmoperators/one_electron/MagneticFieldOperatorImag.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
@@ -283,6 +285,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto relativity = json_scf["scf_solver"]["relativity"];
         auto environment = json_scf["scf_solver"]["environment"];
         auto external_field = json_scf["scf_solver"]["external_field"];
+        auto magnetic_field = json_scf["scf_solver"]["magnetic_field"];
         auto max_iter = json_scf["scf_solver"]["max_iter"];
         auto rotation = json_scf["scf_solver"]["rotation"];
         auto localize = json_scf["scf_solver"]["localize"];
@@ -302,6 +305,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
+        solver.setMagneticFieldName(magnetic_field);
         solver.setCheckpoint(checkpoint);
         solver.setCheckpointFile(file_chk);
         solver.setMaxIterations(max_iter);
@@ -351,6 +355,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto gto_bas = json_guess["file_basis"];
     auto file_chk = json_guess["file_chk"];
     auto restricted = json_guess["restricted"];
+    auto complex = json_guess["complex"];
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
@@ -407,6 +412,9 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         if (err > 0.01) MSG_WARN("MO not normalized!");
     }
 
+    if (complex)
+        Phi = orbital::CopyToComplex(Phi);
+
     orbital::print(Phi);
     return success;
 }
@@ -417,6 +425,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto relativity = json_guess["relativity"];
     auto environment = json_guess["environment"];
     auto external_field = json_guess["external_field"];
+    auto magnetic_field = json_guess["magnetic_field"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
 
@@ -426,6 +435,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     print_utils::text(0, "Relativity     ", relativity);
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
+    print_utils::text(0, "Magnetic fields", magnetic_field);
     print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
@@ -1298,10 +1308,27 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     /////////////////   External Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("external_operator")) {
-        auto field = json_fock["external_operator"]["electric_field"].get<std::array<double, 3>>();
-        auto r_O = json_fock["external_operator"]["r_O"];
-        auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
-        F.getExtOperator() = V_ext;
+
+        // Electric Field
+        if(json_fock["external_operator"].contains("electric_field")) {
+            auto field = json_fock["external_operator"]["electric_field"].get<std::array<double, 3>>();
+            auto r_O = json_fock["external_operator"]["r_O"];
+            auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
+            F.getExtOperator() = V_ext;
+        }
+
+        // Magnetic Field
+        if(json_fock["external_operator"].contains("magnetic_field")) {
+            auto field = json_fock["external_operator"]["magnetic_field"].get<std::array<double, 3>>();
+            auto r_O = json_fock["external_operator"]["r_O"];
+
+            // TODO do not hardcode this
+            auto D_p = driver::get_derivative("bspline");
+            auto V_mag = std::make_shared<MagneticFieldOperator>(field, r_O);
+            auto V_mag_imag = std::make_shared<MagneticFieldOperatorImag>(field, D_p, r_O);
+            F.getMagneticOperator() = V_mag;
+            F.getMagneticOperatorImag() = V_mag_imag;
+        }
     }
     F.build(exx);
 }

@@ -39,6 +39,8 @@
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
+#include "qmoperators/one_electron/MagneticFieldOperator.h"
+#include "qmoperators/one_electron/MagneticFieldOperatorImag.h"
 #include "qmoperators/one_electron/IdentityOperator.h"
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "qmoperators/one_electron/NablaOperator.h"
@@ -68,7 +70,12 @@ void FockBuilder::build(double exx) {
     if (this->ex != nullptr) this->V -= this->exact_exchange * (*this->ex);
     if (this->xc != nullptr) this->V += (*this->xc);
     if (this->ext != nullptr) this->V += (*this->ext);
+    if (this->mag != nullptr) this->V += (*this->mag);
     if (this->Ro != nullptr) this->V -= (*this->Ro);
+
+    this->V_imag = RankZeroOperator();
+    V_imag.setImag(true);
+    if (this->mag_imag != nullptr) this->V_imag += (*this->mag_imag);
 }
 
 /** @brief prepare operator for application
@@ -90,6 +97,7 @@ void FockBuilder::setup(double prec) {
     this->prec = prec;
     if (this->mom != nullptr) this->momentum().setup(prec);
     this->potential().setup(prec);
+    this->potential_imag().setup(prec);
     this->perturbation().setup(prec);
 
     if (isZora()) {
@@ -146,6 +154,7 @@ void FockBuilder::setup(double prec) {
 void FockBuilder::clear() {
     if (this->mom != nullptr) this->momentum().clear();
     this->potential().clear();
+    this->potential_imag().clear();
     this->perturbation().clear();
     if (isZora()) {
         this->chi->clear();
@@ -194,6 +203,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double E_xc = 0.0;   // Exchange and Correlation
     double E_eext = 0.0; // External field contribution to the electronic energy
     double E_next = 0.0; // External field contribution to the nuclear energy
+    double E_mag = 0.0; // External magnetic field contributions to electronic energy
     double Er_nuc = 0.0; // Nuclear reaction energy
     double Er_el = 0.0;  // Electronic reaction energy
     double Er_tot = 0.0; // Total reaction energy
@@ -222,6 +232,8 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     // Electronic part
     if (this->nuc != nullptr) { E_en = this->nuc->trace(Phi).real(); }
 
+    if (this->mag != nullptr && this->mag_imag != nullptr) { E_mag = this->mag->trace(Phi).real() + this->mag_imag->trace(Phi).real(); }
+
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
@@ -229,7 +241,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
 
-    return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el};
+    return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, E_mag, Er_tot, Er_nuc, Er_el};
 }
 
 ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
@@ -246,6 +258,9 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     ComplexMatrix V_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     V_mat += potential()(bra, ket);
+
+    if (potential_imag().size() > 0)
+        V_mat += potential_imag()(bra, ket);
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing Fock matrix", t_tot);

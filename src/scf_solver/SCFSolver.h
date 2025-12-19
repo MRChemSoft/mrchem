@@ -60,6 +60,7 @@ public:
     void setRelativityName(const std::string &name) { this->relativityName = name; }
     void setEnvironmentName(const std::string &name) { this->environmentName = name; }
     void setExternalFieldName(const std::string &name) { this->externalFieldName = name; }
+    void setMagneticFieldName(const std::string &name) { this->magneticFieldName = name; }
 
 protected:
     int history{0};                        ///< Maximum length of KAIN history
@@ -73,6 +74,7 @@ protected:
     std::string relativityName{"None"};    ///< Name of ZORA method
     std::string environmentName{"None"};   ///< Name for external environment
     std::string externalFieldName{"None"}; ///< Name for external fields
+    std::string magneticFieldName{"None"}; ///< Name for magnetic fields
 
     std::vector<double> error;    ///< Convergence orbital error
     std::vector<double> property; ///< Convergence property error
