@@ -229,6 +229,13 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
             if (not hir_map.count(id)) hir_map.insert({id, HirshfeldCharges()});
         }
     }
+    if (json_prop.contains("population_analysis")) {
+        for (const auto &item : json_prop["population_analysis"].items()) {
+            const auto &id = item.key();
+            auto &pop_map = mol.getPopulationAnalyses();
+            if (not pop_map.count(id)) pop_map.insert({id, PopulationAnalysis()});
+        }
+    }
 }
 
 /** @brief Run ground-state SCF calculation
@@ -648,6 +655,37 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing Hirshfeld charges", t_lap);
+    }
+
+    if (json_prop.contains("population_analysis")) {
+        t_lap.start();
+        mrcpp::print::header(2, "Computing population analysis");
+        for (const auto &item : json_prop["population_analysis"].items()) {
+            const auto &id = item.key();
+            unsigned int dim = item.value()["dimension"];
+            double prec = item.value()["precision"];
+            auto &Phi = mol.getOrbitals();
+            DoubleMatrix p = DoubleMatrix::Zero(Phi.size(), (dim == 0) ? 1 : 3);
+            Orbital density = Orbital();
+            if (dim == 0) {
+                for (unsigned int i = 0; i < p.rows(); i++) {
+                    mrcpp::multiply(density, Phi[i], Phi[i], prec);
+                    p(i, 0) = density.integrate().real(); // Integrate over full space
+                }
+            }
+            else {
+                for (unsigned int i = 0; i < p.rows(); i++) {
+                    mrcpp::multiply(density, Phi[i], Phi[i], prec);
+                    p(i, 0) = density.integrate(dim - 1, false).real(); // Integrate over lower half of the space
+                    p(i, 1) = density.integrate(dim - 1, true).real(); // Integrate over upper half of the space
+                    p(i, 2) = density.integrate().real(); // Integrate over full space
+                }
+            }
+            PopulationAnalysis &pop = mol.getPopulationAnalysis(id);
+            pop.setMatrix(p);
+        }
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Population analysis", t_lap);
     }
 
     if (json_prop.contains("hyperpolarizability")) MSG_ERROR("Hyperpolarizability not implemented");
