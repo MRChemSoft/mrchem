@@ -23,26 +23,36 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <nlohmann/json.hpp>
+// This include must come first due to name clashes
+extern "C" {
+#include "hamiltonian.h"
+#include "qnumber.h"
+}
+
+#include "ChemTensorSolver.h"
 
 namespace mrchem {
 
-class Molecule;
-class CUBEfunction;
-namespace driver {
+void ChemTensorSolver::optimize() {
+    int nsites = 6;
+    double t = 1.0;
+    double u = 4.0;
+    double mu = 1.5;
+    mpo hamiltonian;
+    mpo_assembly assembly;
+    construct_fermi_hubbard_1d_mpo_assembly(nsites, t, u, mu, &assembly);
+    mpo_from_assembly(&assembly, &hamiltonian);
+    delete_mpo_assembly(&assembly);
 
-void init_molecule(const nlohmann::json &input, Molecule &mol);
-nlohmann::json print_properties(const Molecule &mol);
-std::vector<mrchem::CUBEfunction> getCUBEFunction(const nlohmann::json &json_inp);
+    this->energy = encode_quantum_number_pair(4, 2); // dummy
+    calculate_rdms();
+}
 
-namespace scf {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
+void ChemTensorSolver::calculate_rdms() {
+    *(this->one_rdm) = *(this->one_body_integrals);
+    *(this->two_rdm) = *(this->two_body_integrals);
+    // dummy (dimensions are the same)
+    auto *elements = this->one_body_integrals->data();
 }
-namespace rsp {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace lag{
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-} // namespace driver
+
 } // namespace mrchem

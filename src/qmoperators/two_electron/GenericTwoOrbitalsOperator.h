@@ -23,26 +23,40 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <nlohmann/json.hpp>
+#pragma once
+
+#include "GenericTwoOrbitalsPotential.h"
+#include "tensor/RankZeroOperator.h"
+#include "qmfunctions/Orbital.h"
 
 namespace mrchem {
 
-class Molecule;
-class CUBEfunction;
-namespace driver {
+class GenericTwoOrbitalsOperator: public RankZeroOperator{
+public:
+    explicit GenericTwoOrbitalsOperator(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi = nullptr, bool mpi_share = false){
+        potential = std::make_shared<GenericTwoOrbitalsPotential>(P, Phi, mpi_share);
 
-void init_molecule(const nlohmann::json &input, Molecule &mol);
-nlohmann::json print_properties(const Molecule &mol);
-std::vector<mrchem::CUBEfunction> getCUBEFunction(const nlohmann::json &json_inp);
+        // Invoke operator= to assign *this operator
+        RankZeroOperator &g = (*this);
+        g = potential;
+        g.name() = "g";
+    }
+    virtual ~GenericTwoOrbitalsOperator() = default;
 
-namespace scf {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace rsp {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace lag{
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-} // namespace driver
+    void setup(std::shared_ptr<OrbitalVector> Phi, double prec){
+        potential->setup(Phi,prec);
+    }
+
+    void set_pair(int j, int l){
+        potential->set_pair(j,l);
+    }
+
+    Orbital apply(Orbital inp){
+        return potential->apply(inp);
+    }
+
+private:
+    std::shared_ptr<GenericTwoOrbitalsPotential> potential{nullptr};
+};
+
 } // namespace mrchem
