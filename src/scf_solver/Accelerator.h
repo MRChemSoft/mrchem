@@ -30,9 +30,11 @@
 
 #include "mrchem.h"
 
+#include "qmfunctions/Orbital.h"
 #include "qmfunctions/qmfunction_fwd.h"
 
-/** @class Acccelerator
+namespace mrchem {
+/** @class Accelerator
  *
  *  Base class for iterative subspace accelerators for use in SCF
  *  optimizations. Solves a linear system of equations \f$ Ac = b \f$
@@ -49,9 +51,6 @@
  *  to the subspace. In this case one entry is added (corresponding to
  *  an extra orbital) using the Frobenius inner product of matrices.
  */
-
-namespace mrchem {
-
 class Accelerator {
 public:
     Accelerator(int max, int min, bool sep);

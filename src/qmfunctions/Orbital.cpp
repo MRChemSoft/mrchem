@@ -23,21 +23,13 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <fstream>
+#include "Orbital.h"
 
 #include "MRCPP/Printer"
 
-#include "Orbital.h"
 #include "orbital_utils.h"
 
 namespace mrchem {
-
-/** @brief Default constructor
- *
- * Initializes with NULL tree pointers.
- */
-Orbital::Orbital()
-        : mrcpp::CompFunction<3>() {}
 
 /** @brief Constructor with only spin
  *
@@ -79,7 +71,7 @@ Orbital::Orbital(int spin, double occ, int rank)
  * NO transfer of ownership:
  * both orbitals are pointing to the same tree
  */
-Orbital::Orbital(Orbital &orb)
+Orbital::Orbital(const Orbital &orb)
         : mrcpp::CompFunction<3>(orb) {}
 
 /** @brief Copy constructor

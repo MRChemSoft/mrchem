@@ -27,6 +27,7 @@
 
 #include "MRCPP/MWFunctions"
 #include "MRCPP/Parallel"
+
 #include "mrchem.h"
 
 /** @class Orbital
@@ -54,15 +55,13 @@ namespace mrchem {
 #define occ() func_ptr->data.d1[0]
 class Orbital : public mrcpp::CompFunction<3> {
 public:
-    Orbital();
+    Orbital() = default;
     Orbital(SPIN::type spin);
-    Orbital(Orbital &orb);
+    Orbital(const Orbital &orb);
     Orbital(const mrcpp::CompFunction<3> &orb);
     Orbital(int spin, double occ, int rank = -1);
     Orbital dagger() const;
 
-    //    const int spin() const {return data().n1[0];}
-    //    const int occ() const {return data().d1[0];}
     char printSpin() const;
     void setSpin(int spin) { this->func_ptr->data.n1[0] = spin; }
     void saveOrbital(const std::string &file);
@@ -76,7 +75,7 @@ public:
 // OrbitalVectors, but directly vector<Orbital>.
 class OrbitalVector : public mrcpp::CompFunctionVector {
 public:
-    OrbitalVector(int N = 0)
+    explicit OrbitalVector(int N = 0)
             : mrcpp::CompFunctionVector(N) {}
     void push_back(Orbital orb) {
         mrcpp::CompFunction<3> &compfunc = orb;
