@@ -1,4 +1,4 @@
-Gaussian basis 3-21G
+Gaussian basis AHGBS-7
 1
 14. 1 2 1 1
 Si 0.000000000000 0.000000000000 0.000000000000

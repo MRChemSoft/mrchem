@@ -1,4 +1,4 @@
-Gaussian basis 3-21G
+Gaussian basis AHGBS-7
 1
 24. 1 3 1 1 1
 Cr 0.000000000000 0.000000000000 0.000000000000
