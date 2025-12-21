@@ -1,54 +1,21 @@
 import numpy as np
 import argparse
 import basis_set_exchange as bse
-import mendeleev
-from mendeleev.econf import ElectronicConfiguration
 
 from pyscf import gto, scf
+from pyscf.scf.atom_ks import get_atm_nrks
 
-
-def uncontract_dfunctions(basname='3-21g', atomic_symbol='He'):
-    """Fetch 3-21G from basis set exchange and uncontract d-functions if present."""
+def uncontract_dfunctions(basname='AHGBS-7', atomic_symbol='He'):
+    """Fetch AHGBS-7 from basis set exchange and uncontract all functions if contractions are present."""
     # Fetch basis set in NWChem format from BSE.
-    bas = bse.get_basis(name=basname, elements=[atomic_symbol], fmt='nwchem', header=True)
-    atom = mendeleev.element(atomic_symbol)
+    bas = bse.get_basis(name=basname, elements=[atomic_symbol], fmt='nwchem', header=True, uncontract_segmented=True)
     
-    # No need to uncontract d-functions when there are none
-    # Note: For polarized basis sets this will not work
-    # (3-21G does not contain polarization functions)
-    if atom.atomic_number < 21:
-        return bas
-    
-    # Get the d function exponents
-    # (not very pretty)
-    lines = bas.splitlines()
-    d_exp = []
-    for i, line in enumerate(lines):
-        if line.strip().startswith(atomic_symbol) and line.split()[1] == 'D':
-            for j, subline in enumerate(lines[i:]):
-                if atomic_symbol in subline:
-                    continue
-                elif 'END' in subline:
-                    break
-                else:
-                    d_exp.append(float(subline.split()[0]))
-            break
-    
-    # Build the custom basis set
-    new = [line for line in lines if 'D' not in line.split() and 'END' not in line][:-len(d_exp)]
-    for e in d_exp:
-        new.append(f'{atomic_symbol}    D')
-        new.append(f'{" "*(len(atomic_symbol)+4)}{e:.10f}       {1:.10f}')
-    new.append('END')
-        
-    return '\n'.join(new)
-
+    return bas
 
 def get_basis_in_mrchem_format(atomic_symbol):
     bas = bse.convert_formatted_basis_str(uncontract_dfunctions(atomic_symbol=atomic_symbol), 'nwchem', 'dalton')
-    atom = mendeleev.element(atomic_symbol)
-        
-    Z = atom.atomic_number
+
+    Z = bse.lut.element_Z_from_sym(atomic_symbol)
     if Z > 20:
         nshells = 3
     elif Z > 2:
@@ -88,24 +55,17 @@ def get_basis_in_mrchem_format(atomic_symbol):
 def sad(atomic_symbol):
     """Compute density matrix for passed atom, and write density and basis set to file."""
     # Build molecule input
-    basis = uncontract_dfunctions(atomic_symbol=atomic_symbol, basname='3-21g')
+    basis = uncontract_dfunctions(atomic_symbol=atomic_symbol, basname='AHGBS-7')
     mol = gto.Mole(atom=f'{atomic_symbol} 0.0 0.0 0.0', basis=basis, symmetry=False, verbose=False)
-    mol.spin = ElectronicConfiguration(mendeleev.element(atomic_symbol).econf).unpaired_electrons()
+    mol.spin = mol.tot_electrons() % 2
     mol.build()
-    
-    # Set SCF method
-    qc = scf.UHF(mol)
-    
-    # Set some SCF parameters
-    qc.conv_tol = 1e-10
-    qc.max_cycle = 500
-    
-    # Perform the calculation
-    energy = qc.kernel()
-    
+
+    # Run DFT calculation for atom
+    atm_scf_result = get_atm_nrks(mol, xc='slater', grid=(250, 434))
+
     # Compute AO density matrix with some thresholding
-    Da, Db = qc.make_rdm1()
-    D = Da + Db
+    scf_energy, _, mo_coeff, mo_occ = atm_scf_result[atomic_symbol]
+    D = mo_coeff @ np.diag(mo_occ) @ mo_coeff.T
     zeros = np.abs(D) <= 1e-13
     D[zeros] = 0.0
     dim = D.shape[0]
@@ -122,7 +82,7 @@ def sad(atomic_symbol):
 
         b.write(basis_mrc)
         
-    return energy
+    return scf_energy
         
         
 if __name__ == '__main__':
@@ -131,7 +91,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     
     e = sad(args.element)
-    print(f'{"UHF/3-21G for":15}: {args.element}')
+    print(f'{"LDA/AHGBS-7 energy for":15}: {args.element}')
     print(f'{"Total energy":15}: {e:.8f} a.u.')
     print(f'{"Density file":15}: {args.element}.dens')
     print(f'{"Basis set file":15}: {args.element}.bas')
