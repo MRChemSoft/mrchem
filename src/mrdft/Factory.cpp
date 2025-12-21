@@ -78,6 +78,11 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coeffs = {1.0, 1.0};
         return;
     } else {
+        // Change any dashes to underscores
+        for (size_t i = 0; i < name.size(); i++) {
+            if (name[i] == '-') { name[i] = '_'; }
+        }
+
         // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
         if (number == -1) { throw std::logic_error("Got name " + name + " but this is not a known shorthand in MRChem nor a functional in Libxc\n"); }
@@ -88,14 +93,13 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     }
 }
 
-void Factory::setFunctional(const std::string &n, double c) {
-    xcfun_set(xcfun_p.get(), n.c_str(), c);
-    std::string name = n;
-    std::cout << "xcfun func: " << n << std::endl;
-    // std::vector<int> ids = this->mapFunctionalName(name);
+void Factory::setFunctional(const std::string &name, double c) {
     setLibxc(libxc); // should probably be where setFunctional is called
 
-    if (libxc) {
+    if (not libxc) {
+        xcfun_set(xcfun_p.get(), name.c_str(), c);
+
+    } else {
         std::vector<int> ids;
         std::vector<double> coeffs;
 
@@ -103,12 +107,10 @@ void Factory::setFunctional(const std::string &n, double c) {
         xc_func_type libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
             auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
-            if (return_code != 0) {
-                std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << return_code << std::endl;
-            }
+            if (return_code != 0) { std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << return_code << std::endl; }
             xc_func_set_dens_threshold(&libxc_obj, cutoff);
-            
-            std::cout << "Functional number: " << libxc_objects.size() << ": " << n << std::endl;
+
+            std::cout << "Functional number: " << libxc_objects.size() << ": " << name << std::endl;
             libxc_objects.push_back(libxc_obj);
             libxc_coeffs.push_back(c * coeffs[i]);
         }
@@ -121,18 +123,47 @@ std::unique_ptr<MRDFT> Factory::build() {
     auto grid_p = std::make_unique<Grid>(mra);
     setLibxc(libxc);
 
-    // Init XCFun
-    bool gga = xcfun_is_gga(xcfun_p.get());
-    bool lda = not(gga);
-    unsigned int mode = 1;                    //!< only partial derivative mode implemented
-    unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
-    unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
-    unsigned int laplacian = 0;               //!< no laplacian
-    unsigned int kinetic = 0;                 //!< no kinetic energy density
-    unsigned int current = 0;                 //!< no current density
-    unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
-    if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
-    xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+    // Init XCFun or Libxc
+    bool gga;
+    if (not libxc) {
+        gga = xcfun_is_gga(xcfun_p.get());
+        unsigned int mode = 1;                    //!< only partial derivative mode implemented
+        unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
+        unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
+        unsigned int laplacian = 0;               //!< no laplacian
+        unsigned int kinetic = 0;                 //!< no kinetic energy density
+        unsigned int current = 0;                 //!< no current density
+        unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
+        if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
+        xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+
+    } else {
+        for (const auto &f : libxc_objects) switch (f.info->family) {
+                case XC_FAMILY_LDA:
+#ifdef XC_FAMILY_HYB_GGA
+                case XC_FAMILY_HYB_LDA:
+#endif
+                    gga = false;
+                    break;
+
+                case XC_FAMILY_GGA:
+#ifdef XC_FAMILY_HYB_GGA
+                case XC_FAMILY_HYB_GGA:
+#endif
+                    gga = true;
+                    break;
+
+                case XC_FAMILY_MGGA:
+                case XC_FAMILY_HYB_MGGA:
+                    gga = false; // eliminate unused variable warning
+                    MSG_ABORT("Meta-GGA functionals are not supported in MRChem.!\n");
+
+                default:
+                    gga = false; // eliminate unused variable warning
+                    MSG_ABORT("Case not handled in MRChem!\n");
+            }
+    }
+    bool lda = not gga;
 
     // Init MW derivative
     if (gga) {
@@ -151,9 +182,7 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-    if (libxc){
-        func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
-    }
+    if (libxc) { func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs); }
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
