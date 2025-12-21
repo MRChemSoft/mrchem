@@ -1,4 +1,4 @@
-Gaussian basis 3-21G
+Gaussian basis AHGBS-7
 1
 46. 1 3 1 1 1
 Pd 0.000000000000 0.000000000000 0.000000000000
