@@ -468,7 +468,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
        }
     }
 
-    // send rho and grad rho to xcfun
+    // send rho and grad rho to xcfun/libxc
     Eigen::MatrixXd xc_out = Functional::evaluate_transposed(xcfun_inp);
 
     // make gradient of the higher order densities
