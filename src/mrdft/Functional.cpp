@@ -61,12 +61,20 @@ void Functional::print_functional_references() const {
         return;
     }
 
-    //Conditional reference printing
+    // Conditional reference printing
     auto print_wrap = [&](std::string str, std::size_t txt_width) {
         size_t offset = 0;
         while (offset + txt_width < str.size()) {
+            // Is the line already sufficiently short?
+            size_t newline_pos = str.find('\n', offset);
+            if (newline_pos < offset + txt_width) {
+                offset = newline_pos + 1;
+                continue;
+            }
+
             size_t space_pos = str.rfind(' ', offset + txt_width);
-            if (space_pos == std::string::npos || space_pos <= offset) {
+            // If the string doesn't have a space, or it is too far out, hard insert a newline
+            if (space_pos == std::string::npos || space_pos - offset > txt_width) {
                 space_pos = offset + txt_width;
                 str.insert(space_pos, "\n");
             } else {
@@ -77,21 +85,15 @@ void Functional::print_functional_references() const {
         std::cout << str;
     };
 
-    std::string str = "Using Libxc (version " + std::string(xc_version_string())
-      + ") to evaluate density functionals. Libxc is free software. It is "
-      + "distributed under the Mozilla Public License, version 2.0. For "
-      + "more information, please check the Libxc manual. You should cite "
-      + xc_reference()  + " DOI: " + xc_reference_doi() + " when "
-      + "reporting the results of your calculation in a scientific article.\n";
-    print_wrap(str, txt_width);
-
-    mrcpp::print::separator(0, ' ');
-    mrcpp::print::separator(0, '-', 1);
+    std::string str = "Using Libxc (version " + std::string(xc_version_string()) + ") to evaluate density functionals. Libxc is free software. It is " +
+                      "distributed under the Mozilla Public License, version 2.0. For " + "more information, please check the Libxc manual. You should cite\n\n" + xc_reference() +
+                      " DOI: " + xc_reference_doi() + "\n\nwhen " + "reporting the results of your calculation in a scientific article.\n";
+    auto libxc_txt_width = 75;
+    print_wrap(str, libxc_txt_width);
 
     // Avoid printing the same LibXC functional multiple times
     std::set<int> printed_ids;
     std::cout << "\nLibxc functionals used in this calculation:\n";
-
     for (const auto &func : libxc_objects) {
         if (func.info == nullptr) continue; // safety
 
