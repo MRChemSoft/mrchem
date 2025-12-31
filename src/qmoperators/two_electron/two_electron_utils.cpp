@@ -11,12 +11,6 @@ extern mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
 
 namespace mrchem {
 
-/** @brief precomputes all the <ik|1/r12|jl> 2-electron integrals
- *
- *  @param[in] Phi input orbitals
- *
- * The ij/r12 potentials are first (pre)computed for all the orbitals j<i, then multiplied by kl
- */
 Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVector &Phi) {
     mrcpp::print::header(3, "Computing two electron integrals");
     Timer t_tot, t_snd(false), t_rho(false), t_ovr(false), t_calc(false), t_add(false), t_get(false);
@@ -25,16 +19,16 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
     mrcpp::BankAccount VijBank; // to put the ij/r12 potentials
 
     int N = Phi.size();
-    double precf = prec / std::sqrt(1 * Phi.size());
+    double precf = prec / (10*std::sqrt(1 * Phi.size()));
     double prec_m2 = precf / 100; // second multiplication
-
-    for (int i = 0; i < Phi.size(); i++) {
-        if (mrcpp::mpi::my_func(i)) PhiBank.put_func(i, Phi[i]);
-    }
 
     std::vector<mrcpp::CompFunction<3>> Vij_vec;
     if (mrcpp::mpi::bank_size <= 0) {
         Vij_vec.resize(N*(N+1)/2);
+    } else {
+        for (int i = 0; i < Phi.size(); i++) {
+            if (mrcpp::mpi::my_func(i)) PhiBank.put_func(i, Phi[i]);
+        }
     }
 
     // first we compute density to be used so we know were the orbitals are. This
@@ -61,7 +55,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
             // if (Vij.norm() > prec)VijBank.put_func(i*(i+1)/2+i, Vij);
             t_snd.stop();
         } else {
-            Vij_vec[i*(i+1)/2+i] = Vij;
+            mrcpp::deep_copy(Vij_vec[i*(i+1)/2+i], Vij);
         }
         Vij.free();
     }
@@ -179,24 +173,29 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
                     // store Vij
                     t_snd.resume();
                     VijBank.put_func(ij, Vij);
-                    // if (Vij.norm() > prec)VijBank.put_func(ij, Vij);
                     t_snd.stop();
                 } else {
-                    Vij_vec[ij] = Vij;
+                    mrcpp::deep_copy(Vij_vec[ij], Vij);
                 }
                 Vij.free();
             }
         }
     }
+
     t_offd.stop();
-    Eigen::Tensor<std::complex<double>, 4> klVij(N,N,N,N);
+    Eigen::Tensor<std::complex<double>, 4> ikVjl(N,N,N,N);
     // For each Vij, compute the overlap matrix <k| lVij>
     long long totSizeVij = 0;
     for (int i = 0; i < N; i ++) {
         for (int j = 0; j <= i; j ++) {
             Orbital Vij;
             t_get.resume();
-            VijBank.get_func(i*(i+1)/2+j, Vij, 1); // note that it will wait if not yet ready
+            if (mrcpp::mpi::bank_size > 0) {
+                VijBank.get_func(i*(i+1)/2+j, Vij, 1); // note that it will wait if not yet ready
+            } else {
+                int ij = std::max(i,j)*(std::max(i,j)+1)/2 + std::min(i,j);
+                Vij = Vij_vec[ij];
+            }
             totSizeVij += Vij.getSizeNodes(); // in kB
             t_get.stop();
 
@@ -209,15 +208,15 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
                 }
                 l_Vij.push_back(lVij);
             }
-            Vij.free();
             t_ovr.resume();
             ComplexMatrix kl_Vij = calc_overlap_matrix(Phi,l_Vij);
             t_ovr.stop();
+            Vij.free();
 
             for (int k = 0; k < N; k ++) {
                 for (int l = 0; l < N; l ++) {
-                    klVij(i,j,k,l) = kl_Vij(k,l);
-                    klVij(j,i,k,l) = kl_Vij(k,l);
+                    ikVjl(i,k,j,l) = kl_Vij(k,l);
+                    ikVjl(j,k,i,l) = kl_Vij(k,l);
                 }
             }
         }
@@ -237,19 +236,9 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
     mrcpp::print::separator(3, '-');
 
     auto t = t_tot.elapsed() / N;
-    return klVij;
+    return ikVjl;
 }
 
-/** @brief computes Int(phi_i^dag*phi_j/|r-r'|)
- *
- *  \param[in] phi_i orbital to be conjugated and multiplied by phi_j
- *  \param[in] phi_j orbital to be multiplied by phi_i^dag
- *  \param[in] rho is normally the density. It is used to screen the final output
- *  \param[out] V_ij is the resulting potential function
-  *
- * Computes the product of complex conjugate of phi_i and phi_j,
- * then applies the Poisson operator. The result is given in V_ij.
- */
 void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_ij) {
     Timer timer_tot;
     mrcpp::PoissonOperator P(*MRA, prec);
@@ -271,7 +260,7 @@ void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_i
     auto N_j = phi_j.getNNodes();
     auto N_ij = rho_ij.getNNodes();
     auto norm_ij = rho_ij.norm();
-    // For now we assume all phi are complex or all ar real.
+    // For now we assume all phi are complex or all are real.
 
     bool RealOrbitals = phi_i.isreal();
 
@@ -296,12 +285,6 @@ void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_i
     }
     rho_ij.free();
     timer_p.stop();
-    auto N_p = V_ij.getNNodes();
-    auto norm_p = V_ij.norm();
 
-    println(5,
-            " time " << (int)((float)timer_tot.elapsed() * 1000) << " ms "
-            << " mult1:" << (int)((float)timer_ij.elapsed() * 1000) << " Pot:" << (int)((float)timer_p.elapsed() * 1000) << " Nnodes: " << N_i << " " << N_j << " " << N_ij << " " << N_p << " " << " norms " << norm_ij<<" "
-                     << norm_p );
 }
 }
