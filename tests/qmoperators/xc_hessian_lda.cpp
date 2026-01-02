@@ -101,10 +101,10 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
     int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    E_P(0, 0) = -0.0507818907147;
-    E_P(0, 1) = -0.0226852770676;
-    E_P(1, 0) = -0.0226852770676;
-    E_P(1, 1) = 0.00549970397828;
+    E_P(0, 0) = -0.0507846835146;
+    E_P(0, 1) = -0.0226753477594;
+    E_P(1, 0) = -0.0226753477594;
+    E_P(1, 1) = 0.00550159503204;
 
     V.setup(prec);
     SECTION("apply") {
