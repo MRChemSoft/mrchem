@@ -117,6 +117,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
             std::cout<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
+            std::cout<<" Apass "<<Phi.size()<<std::endl;
         } else {
             std::cout<<V_00.real()<<" notmine "<<V_00.imag()<<std::endl;
             REQUIRE(V_00.real() < thrs);
@@ -132,6 +133,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
                 std::cout<<i<<" "<<V_ii.real()<<" "<<V_ii.imag()<<" "<<E_P(i, i)<<std::endl;
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i, i)).epsilon(thrs));
                 REQUIRE(V_ii.imag() < thrs);
+                std::cout<<" B pass"<<std::endl;
             } else {
                 REQUIRE(V_ii.real() < thrs);
                 REQUIRE(V_ii.imag() < thrs);
@@ -145,7 +147,8 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
             std::cout<<" "<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
-        } else {
+            std::cout<<" Cpass "<<std::endl;
+       } else {
             REQUIRE(V_00.real() < thrs);
             REQUIRE(V_00.imag() < thrs);
         }
@@ -160,7 +163,8 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));
                 //                REQUIRE(v(i, j).real() == v(i, j).real());
                 REQUIRE(v(i, j).imag() < thrs);
-            }
+                std::cout<<" Dpass "<<std::endl;
+           }
         }
         std::cout<<" Ddone "<<std::endl;
     }
