@@ -110,6 +110,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
 
     V.setup(prec);
     SECTION("apply") {
+        std::cout<<" A "<<std::endl;
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = mrcpp::dot(Phi[0], Vphi_0);
         if (mrcpp::mpi::my_func(Phi[0])) {
@@ -123,6 +124,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         }
     }
     SECTION("vector apply") {
+        std::cout<<" B "<<std::endl;
         OrbitalVector VPhi = V(Phi);
         for (int i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
@@ -137,8 +139,10 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         }
     }
     SECTION("expectation value") {
+        std::cout<<" C "<<std::endl;
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
         if (mrcpp::mpi::my_func(Phi[0])) {
+            std::cout<<" "<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
         } else {
@@ -147,9 +151,11 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         }
     }
     SECTION("expectation matrix ") {
-        ComplexMatrix v = V(Phi, Phi);
+         std::cout<<" D "<<std::endl;
+       ComplexMatrix v = V(Phi, Phi);
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
+                std::cout<<i<<" "<<j<<" "<<std::abs(v(i, j).real()) <<" "<<v(i, j).imag()<<" "<<E_P(i, j)<<std::endl;
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));
                 //                REQUIRE(v(i, j).real() == v(i, j).real());
                 REQUIRE(v(i, j).imag() < thrs);
@@ -157,6 +163,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         }
     }
     V.clear();
+    std::cout<<"all done "<<std::endl;
 }
 
 } // namespace coulomb_hessian
