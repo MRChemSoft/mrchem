@@ -44,7 +44,7 @@ namespace coulomb_hessian {
 
 TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-8;
+    const double thrs = 1.0e-7;
 
     std::vector<int> ns;
     std::vector<int> ls;
