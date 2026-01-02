@@ -17,6 +17,16 @@
       "light_speed": 137.035999084,
       "meter2bohr": 18897261246.2577
     },
+    "geom_opt": {
+      "init_step_size": -0.5,
+      "max_force_component": 0.005,
+      "max_history_length": 10,
+      "max_iter": 100,
+      "minimal_step_size": 0.01,
+      "run": false,
+      "subspace_tolerance": 0.001,
+      "use_previous_guess": false
+    },
     "molecule": {
       "cavity": {
         "spheres": [
@@ -48,9 +58,12 @@
       "multiplicity": 1
     },
     "mpi": {
+      "bank_per_node": -1,
       "bank_size": -1,
       "numerically_exact": true,
-      "shared_memory_size": 10000
+      "omp_threads": -1,
+      "shared_memory_size": 10000,
+      "use_omp_num_threads": false
     },
     "mra": {
       "basis_order": 6,
@@ -98,16 +111,18 @@
         },
         "reaction_operator": {
           "DHS-formulation": "variable",
-          "density_type": "total",
+          "density_type": 0,
           "dynamic_thrs": false,
+          "epsilon_dynamic": 78.4,
           "epsilon_in": 1.0,
-          "epsilon_out": 78.4,
+          "epsilon_static": 78.4,
           "formulation": "exponential",
           "ion_radius": 0.0,
           "ion_width": 0.2,
           "kain": 6,
           "kappa_out": 0.08703231499578493,
           "max_iter": 100,
+          "nonequilibrium": false,
           "poisson_prec": 0.0001,
           "solver_type": "Poisson-Boltzmann"
         },
@@ -144,6 +159,7 @@
         "prec": 0.001,
         "relativity": "None",
         "restricted": true,
+        "rotate": true,
         "screen": 12.0,
         "type": "sad_gto",
         "zeta": 0
@@ -175,7 +191,7 @@
       "charge": -1,
       "dipole_moment": {
         "dip-1": {
-          "magnitude": 7.715572311852292e-13,
+          "magnitude": 7.715884062192767e-13,
           "r_O": [
             0.0,
             0.0,
@@ -211,7 +227,7 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -0.1165723464459209
+          -0.11645943300604367
         ],
         "occupation": [
           2.0
@@ -219,50 +235,50 @@
         "spin": [
           "p"
         ],
-        "sum_occupied": -0.2331446928918418
+        "sum_occupied": -0.23291886601208733
       },
       "scf_energy": {
-        "E_ee": 1.220280348193976,
+        "E_ee": 1.2202803481992135,
         "E_eext": 0.0,
-        "E_el": -0.7847556322707149,
-        "E_en": -1.9145538948639653,
-        "E_kin": 0.9258603759485317,
+        "E_el": -0.7847518825124611,
+        "E_en": -1.9145538948738354,
+        "E_kin": 0.925860375957712,
         "E_next": 0.0,
         "E_nn": 0.0,
-        "E_nuc": 0.19090981420562303,
-        "E_tot": -0.5938458180650918,
-        "E_x": -0.15252084470528926,
-        "E_xc": -0.4885331476131019,
-        "Er_el": -0.37528846923086595,
-        "Er_nuc": 0.19090981420562303,
-        "Er_tot": -0.18437865502524292
+        "E_nuc": 0.19090981420026232,
+        "E_tot": -0.5938420683121988,
+        "E_x": -0.1525208447059436,
+        "E_xc": -0.48852939786881555,
+        "Er_el": -0.375288469220792,
+        "Er_nuc": 0.19090981420026232,
+        "Er_tot": -0.1843786550205297
       }
     },
     "provenance": {
       "creator": "MRChem",
       "mpi_processes": 1,
-      "nthreads": 1,
+      "nthreads": 8,
       "routine": "mrchem.x",
-      "total_cores": 1,
+      "total_cores": 8,
       "version": "1.2.0-alpha"
     },
     "rsp_calculations": null,
     "scf_calculation": {
       "initial_energy": {
-        "E_ee": 1.220280348193976,
+        "E_ee": 1.2202803481992135,
         "E_eext": 0.0,
-        "E_el": -0.7847556322707149,
-        "E_en": -1.9145538948639653,
-        "E_kin": 0.9258603759485317,
+        "E_el": -0.7847518825124611,
+        "E_en": -1.9145538948738354,
+        "E_kin": 0.925860375957712,
         "E_next": 0.0,
         "E_nn": 0.0,
-        "E_nuc": 0.19090981420562303,
-        "E_tot": -0.5938458180650918,
-        "E_x": -0.15252084470528926,
-        "E_xc": -0.4885331476131019,
-        "Er_el": -0.37528846923086595,
-        "Er_nuc": 0.19090981420562303,
-        "Er_tot": -0.18437865502524292
+        "E_nuc": 0.19090981420026232,
+        "E_tot": -0.5938420683121988,
+        "E_x": -0.1525208447059436,
+        "E_xc": -0.48852939786881555,
+        "Er_el": -0.375288469220792,
+        "Er_nuc": 0.19090981420026232,
+        "Er_tot": -0.1843786550205297
       },
       "success": true
     },
