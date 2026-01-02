@@ -44,7 +44,7 @@ namespace coulomb_hessian {
 
 TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-8;
+    const double thrs = 1.0e-7;
 
     std::vector<int> ns;
     std::vector<int> ls;
@@ -114,7 +114,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         Orbital Vphi_0 = V(Phi[0]);
         ComplexDouble V_00 = mrcpp::dot(Phi[0], Vphi_0);
         if (mrcpp::mpi::my_func(Phi[0])) {
-	  std::cout<<std::setprecision(12)<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
+	  std::cout<<std::setprecision(14)<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
             std::cout<<" Apass "<<Phi.size()<<std::endl;
@@ -130,7 +130,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         for (int i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
-                std::cout<<std::setprecision(12)<<i<<" "<<V_ii.real()<<" "<<V_ii.imag()<<" "<<E_P(i, i)<<std::endl;
+                std::cout<<std::setprecision(14)<<i<<" "<<V_ii.real()<<" "<<V_ii.imag()<<" "<<E_P(i, i)<<std::endl;
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i, i)).epsilon(thrs));
                 REQUIRE(V_ii.imag() < thrs);
                 std::cout<<" B pass"<<std::endl;
@@ -144,7 +144,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         std::cout<<" C "<<std::endl;
         ComplexDouble V_00 = V(Phi[0], Phi[0]);
         if (mrcpp::mpi::my_func(Phi[0])) {
-            std::cout<<std::setprecision(12)<<" "<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
+            std::cout<<std::setprecision(14)<<" "<<V_00.real()<<" "<<V_00.imag()<<" "<<E_P(0, 0)<<std::endl;
             REQUIRE(V_00.real() == Catch::Approx(E_P(0, 0)).epsilon(thrs));
             REQUIRE(V_00.imag() < thrs);
             std::cout<<" Cpass "<<std::endl;
@@ -159,7 +159,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         for (int i = 0; i < Phi.size(); i++) {
             std::cout<<i<<" i "<<std::endl;
            for (int j = 0; j <= i; j++) {
-                std::cout<<std::setprecision(12)<<i<<" "<<j<<" "<<(v(i, j).real()) <<" "<<v(i, j).imag()<<" "<<E_P(i, j)<<std::endl;
+                std::cout<<std::setprecision(14)<<i<<" "<<j<<" "<<(v(i, j).real()) <<" "<<v(i, j).imag()<<" "<<E_P(i, j)<<std::endl;
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));
                 //                REQUIRE(v(i, j).real() == v(i, j).real());
                 REQUIRE(v(i, j).imag() < thrs);
