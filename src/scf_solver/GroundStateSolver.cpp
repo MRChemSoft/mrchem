@@ -270,6 +270,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceRow(0);
     }
 
+    // Initialize Resolvent
+    HelmholtzVector Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
+    
+
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -291,13 +295,24 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
+        //println(0, "Helmholtz precision: " + std::to_string(helm_prec));
+        //println(0, "Orbital precision:   " + std::to_string(orb_prec));
+        //Eigen::VectorXd v = F_mat.real().diagonal();
+        //std::cout << "Helmholtz parameters: mu = " << v.transpose() << std::endl;
+        std::cout << "Fock matrix:" << std::endl << F_mat.real() << std::endl;
         ComplexMatrix L_mat = H.getLambdaMatrix();
-
+        
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
-        OrbitalVector Phi_np1 = H(Psi);
-        //OrbitalVector Phi_np1 = Psi;
+//        OrbitalVector Phi_np1 = H(Psi);
+        OrbitalVector grad_E = orbital::add(1.0, Phi_n, 1.0, Psi);
         Psi.clear();
+        grad_E = Resolvent(grad_E);
+        grad_E = orbital::add(2.0, Phi_n, -2.0, grad_E);
+
+
+
+        OrbitalVector Phi_np1 = grad_E;
         F.clear();
 
         // Orthonormalize
