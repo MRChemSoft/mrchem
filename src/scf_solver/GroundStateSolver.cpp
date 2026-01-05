@@ -269,9 +269,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceRow(0);
     }
 
-    //println(1, "EVGUENI can't stop editing here");
-    // SCF iterations should be abolished
-
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -368,6 +365,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         json_out["cycles"].push_back(json_cycle);
         if (converged) break;
+        
+        println(0, "BREAK REACHED");
+        break;
+        println(0, "THIS SHOULD NEVER PRINT");
     }
 
     F.clear();
