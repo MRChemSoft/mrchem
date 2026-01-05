@@ -242,6 +242,7 @@ void GroundStateSolver::reset() {
  *
  */
 json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
+    //MSG_ERROR("GroundStateSolver::optimize() CALLED");
     printParameters("Optimize ground state orbitals");
 
     Timer t_tot;
@@ -295,6 +296,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Phi_np1 = H(Psi);
+        //OrbitalVector Phi_np1 = Psi;
         Psi.clear();
         F.clear();
 
@@ -366,9 +368,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_out["cycles"].push_back(json_cycle);
         if (converged) break;
         
-        println(0, "BREAK REACHED");
-        break;
-        println(0, "THIS SHOULD NEVER PRINT");
+        //println(0, "BREAK REACHED");
+        //break;
+        //println(0, "THIS SHOULD NEVER PRINT");
     }
 
     F.clear();
