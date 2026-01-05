@@ -180,5 +180,69 @@ double logsumexp(const Eigen::VectorXd &x) {
     return max + std::log((x.array() - max).exp().sum());
 }
 
+/**
+ * @brief Solve the symmetric Sylvester equation X B + B X = C.
+ *
+ * @param B Symmetric real coefficient matrix.
+ * @param C Symmetric real right-hand-side matrix.
+ *
+ * This routine assumes that B and C are real symmetric matrices of the same size
+ * and solves X B + B X = C using the spectral decomposition of B.
+ *
+ * 1. Compute the eigendecomposition B = Q Λ Qᵀ with Λ diagonal.
+ * 2. Transform C to the eigenbasis: C̃ = Qᵀ C Q.
+ * 3. Solve (λ_i + λ_j) X̃_{ij} = C̃_{ij} for all i,j; i.e.
+ *        X̃_{ij} = C̃_{ij} / (λ_i + λ_j),
+ *    provided λ_i + λ_j is not (numerically) zero.
+ * 4. Transform back: X = Q X̃ Qᵀ.
+ *
+ * A runtime error is thrown if λ_i + λ_j ≈ 0 for some i,j, since the
+ * Sylvester equation does not admit a unique solution in that case.
+ *
+ * For symmetric B, this is a specialized Sylvester solver exploiting
+ * the orthogonal eigenbasis and reduces to elementwise division in that basis. [web:53][web:57]
+ */
+DoubleMatrix solve_symmetric_sylvester(const DoubleMatrix &B, const DoubleMatrix &C) {
+    // Basic size checks
+    if (B.rows() != B.cols()) {
+        MSG_ERROR("solve_symmetric_sylvester: B must be square");
+    }
+    if (C.rows() != C.cols() || C.rows() != B.rows()) {
+        MSG_ERROR("solve_symmetric_sylvester: B and C must be square and of the same size");
+    }
+
+    const int n = B.rows();
+
+    // 1. Eigendecomposition of symmetric B: B = Q Λ Qᵀ
+    Eigen::SelfAdjointEigenSolver<DoubleMatrix> es(B);
+    if (es.info() != Eigen::Success) {
+        MSG_ERROR("solve_symmetric_sylvester: eigendecomposition of B failed");
+    }
+
+    const DoubleMatrix Q = es.eigenvectors();   // orthogonal
+    const DoubleVector lambda = es.eigenvalues(); // real eigenvalues
+    
+    // 2. Transform C into the eigenbasis of B: C̃ = Qᵀ C Q
+    DoubleMatrix C_tilde = Q.transpose() * C * Q;
+
+    // 3. Solve elementwise (λ_i + λ_j) X̃_{ij} = C̃_{ij}
+    DoubleMatrix X_tilde = DoubleMatrix::Zero(n, n);
+    const double eps = 10.0 * mrcpp::MachineZero; // safety margin
+
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            double denom = lambda(i) + lambda(j);
+            if (std::abs(denom) < eps) {
+                MSG_ERROR("solve_symmetric_sylvester: lambda_i + lambda_j too small, "
+                          "Sylvester equation may not have a unique solution");
+            }
+            X_tilde(i, j) = C_tilde(i, j) / denom;
+        }
+    }
+
+    // 4. Transform back: X = Q X̃ Qᵀ
+    DoubleMatrix X = Q * X_tilde * Q.transpose();
+    return X;
+}
 } // namespace math_utils
 } // namespace mrchem
