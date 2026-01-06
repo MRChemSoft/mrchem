@@ -78,6 +78,11 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coeffs = {1.0, 1.0};
         return;
     } else {
+        // Change any dashes to underscores
+        for (size_t i = 0; i < name.size(); i++) {
+            if (name[i] == '-') { name[i] = '_'; }
+        }
+
         // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
         if (number == -1) { throw std::logic_error("Got name " + name + " but this is not a known shorthand in MRChem nor a functional in Libxc\n"); }
@@ -151,9 +156,7 @@ std::unique_ptr<MRDFT> Factory::build() {
         if (lda) func_p = std::make_unique<LDA>(order, xcfun_p);
     }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-    if (libxc){
-        func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs);
-    }
+    if (libxc) { func_p->set_libxc_functional_object(libxc_objects, libxc_coeffs); }
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);

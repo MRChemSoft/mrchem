@@ -37,6 +37,10 @@ public:
     ~SpinGGA() override = default;
 
     bool isSpin() const override { return true; }
+    bool isGGA() const override { return true; }
+    bool isMetaGGA() const override { return false; }
+    int numIn() const override { return 8; }
+    int numOut() const override { return 9; }
 
 private:
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};

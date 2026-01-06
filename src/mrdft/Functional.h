@@ -55,10 +55,13 @@ public:
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }
 
     virtual bool isSpin() const = 0;
-    bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
-    bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
-    bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
+    bool isLDA() const { return not (isGGA() or isMetaGGA()); }
+    virtual bool isGGA() const = 0;
+    virtual bool isMetaGGA() const = 0;
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
+    virtual int numIn() const = 0;
+    virtual int numOut() const = 0;
+
     double amountEXX() const;
     double XCenergy = 0.0;
 
@@ -83,10 +86,10 @@ protected:
     XC_p xcfun;
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};
 
-    int getXCInputLength() const { return xcfun_input_length(xcfun.get()); }
-    int getXCOutputLength() const { return xcfun_output_length(xcfun.get()); }
     virtual int getCtrInputLength() const = 0;
     virtual int getCtrOutputLength() const = 0;
+
+    void evaluate_data(const Eigen::MatrixXd & inp, Eigen::MatrixXd &out) const;
 
     Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
     Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
