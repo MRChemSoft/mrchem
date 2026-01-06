@@ -134,12 +134,12 @@ double Functional::amountEXX() const {
     return exx;
 }
 
-/** @brief Run a collection of grid points through XCFun
+/** @brief Run a collection of grid points through Libxc or XCFun
  *
  * Each row corresponds to one grid point.
  *
  * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
+ * param[in] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
