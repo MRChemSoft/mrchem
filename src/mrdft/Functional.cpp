@@ -134,32 +134,6 @@ double Functional::amountEXX() const {
     return exx;
 }
 
-/** @brief Run a collection of grid points through Libxc or XCFun
- *
- * Each row corresponds to one grid point.
- *
- * param[in] inp_data Matrix of input values
- * param[in] out_data Matrix of output values
- */
-Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
-    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
-    int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-    int nPts = inp.cols();
-    // if (nInp != inp.rows()) MSG_ABORT("Invalid input");
-
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
-    for (int i = 0; i < nPts; i++) {
-        if (isSpin()) {
-            if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
-        } else {
-            if (inp(0, i) < cutoff) continue;
-        }
-        // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
-        // That means that we cannot extract the energy density data with out.row(0).data() for example.
-        xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
-    }
-    return out;
-}
 
 /** @brief Run a collection of grid points through XCFun
  *
@@ -311,9 +285,44 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
             }
         }
     }
-    // return out;
 }
 
+/** @brief Run a collection of grid points through Libxc or XCFun
+ *
+ * Each column corresponds to one grid point.
+ * From a performance point of view, (in pre and postprocessing) it is much more
+ * efficient to have the two consecutive points in two consecutive adresses in memory
+ *
+ * param[in] inp_data Matrix of input values
+ * param[out] out_data Matrix of output values
+ */
+Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
+    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
+    int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    int nPts = inp.cols();
+    // if (nInp != inp.rows()) MSG_ABORT("Invalid input");
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
+    for (int i = 0; i < nPts; i++) {
+        if (isSpin()) {
+            if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
+        } else {
+            if (inp(0, i) < cutoff) continue;
+        }
+        // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+        // That means that we cannot extract the energy density data with out.row(0).data() for example.
+        xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
+    }
+    return out;
+}
+
+/** @brief Run a collection of grid points through Libxc or XCFun
+ *
+ * Each row corresponds to one grid point.
+ *
+ * param[in] inp_data Matrix of input values
+ * param[out] out_data Matrix of output values
+ */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
   // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
   // That means that we cannot extract the energy density data with out.row(0).data() for example.
