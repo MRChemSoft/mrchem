@@ -295,6 +295,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
         ComplexMatrix L_mat = H.getLambdaMatrix();
+        
         //std::cout << "Fock matrix:" << std::endl << F_mat.real() << std::endl;
         //std::cout << "Lambda matrix:" << std::endl << L_mat.real() << std::endl;
         
