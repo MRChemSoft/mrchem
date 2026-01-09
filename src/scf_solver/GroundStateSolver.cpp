@@ -270,8 +270,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     }
 
     // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
-    HelmholtzVector Minus_2_Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
-    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
+    HelmholtzVector Minus_2_Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -0.5));
+    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -0.5));
     
 
     int nIter = 0;
