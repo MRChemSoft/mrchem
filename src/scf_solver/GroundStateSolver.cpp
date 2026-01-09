@@ -327,7 +327,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, 2.0 * C_proj_sym);
         DoubleMatrix minus_half_A_proj = -0.5 * A_proj;
         
-        //std::cout << "B_proj matrix:" << std::endl << B_proj.real() << std::endl;
+        std::cout << "B_proj matrix:" << std::endl << B_proj.real() << std::endl;
         //std::cout << "C_proj_sym matrix:" << std::endl << C_proj_sym << std::endl;
         //std::cout << "A_proj matrix:" << std::endl << A_proj << std::endl;
 
@@ -336,6 +336,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         auto grad_E_norm = orbital::get_norms(grad_E).maxCoeff();
         std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
         std::cout << "--------------------------------------" << std::endl;
+
+        OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
+        ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
+        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E1, Phi_n);
+        DoubleMatrix C_proj_sym1 = (C_proj_complex1.real() + C_proj_complex1.real().transpose());
+        DoubleMatrix B_proj_real1 = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
+        DoubleMatrix A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
+
+        std::cout << "B_proj1 matrix:" << std::endl << B_proj1.real() << std::endl;
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> es(B_proj_real1);
+        std::cout << "B_proj1 eigenvalues:" << std::endl << es.eigenvalues() << std::endl;
+        
 
         F.clear();
 
@@ -357,6 +369,20 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Check negativity
         std::cout << "sigma_A_proj.maxCoeff() < 0.0: " << (sigma_A_proj.maxCoeff() < 0.0) << std::endl;
         std::cout << "sigma_A_proj: " << std::endl << sigma_A_proj << std::endl;
+        
+        // Diagonalize A_proj
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver1(A_proj1);
+        if (eigensolver1.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of A_proj failed");
+        }
+
+        Eigen::VectorXd sigma_A_proj1 = eigensolver1.eigenvalues();
+        DoubleMatrix U_A_proj1 = eigensolver1.eigenvectors();
+
+        // Check negativity
+        std::cout << "sigma_A_proj1.maxCoeff() < 0.0: " << (sigma_A_proj1.maxCoeff() < 0.0) << std::endl;
+        std::cout << "sigma_A_proj1: " << std::endl << sigma_A_proj1 << std::endl;
+
         if (sigma_A_proj.maxCoeff() < 0.0) {
 
             Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
