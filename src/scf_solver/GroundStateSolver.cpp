@@ -295,8 +295,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        //std::cout << "Fock matrix:" << std::endl << F_mat.real() << std::endl;
         ComplexMatrix L_mat = H.getLambdaMatrix();
+        //std::cout << "Fock matrix:" << std::endl << F_mat.real() << std::endl;
+        //std::cout << "Lambda matrix:" << std::endl << L_mat.real() << std::endl;
         
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
@@ -308,13 +309,16 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         OrbitalVector Minus_2_Resolvent_Phi = Minus_2_Resolvent(Phi_n);
         ComplexMatrix B_proj = -0.5 * orbital::calc_overlap_matrix(Minus_2_Resolvent_Phi, Phi_n);
-        //std::cout << "B_proj matrix:" << std::endl << B_proj.real() << std::endl;
         ComplexMatrix C_proj_complex = orbital::calc_overlap_matrix(grad_E, Phi_n);
         DoubleMatrix C_proj_sym = (C_proj_complex.real() + C_proj_complex.real().transpose()) * 0.5;
         DoubleMatrix B_proj_real = (B_proj.real() + B_proj.real().transpose()) * 0.5;
-
-        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
+        
+        
+        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, 2.0 * C_proj_sym);
         DoubleMatrix minus_half_A_proj = -0.5 * A_proj;
+        
+        //std::cout << "B_proj matrix:" << std::endl << B_proj.real() << std::endl;
+        //std::cout << "C_proj_sym matrix:" << std::endl << C_proj_sym << std::endl;
         //std::cout << "A_proj matrix:" << std::endl << A_proj << std::endl;
 
         OrbitalVector AR_Phi = orbital::rotate(Minus_2_Resolvent_Phi, minus_half_A_proj);
