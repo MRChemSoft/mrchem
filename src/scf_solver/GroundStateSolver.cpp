@@ -340,7 +340,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
         ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
         ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E1, Phi_n);
-        DoubleMatrix C_proj_sym1 = (C_proj_complex1.real() + C_proj_complex1.real().transpose());
+        DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         DoubleMatrix B_proj_real1 = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
         DoubleMatrix A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
 
