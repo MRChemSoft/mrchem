@@ -144,8 +144,9 @@ double Functional::amountEXX() const {
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    // int nInp = numIn();
+    // int nOut = numOut();
     int nPts = inp.rows();
-    if (nInp != inp.cols()) MSG_ABORT("Invalid input");
     if (nInp != inp.cols()) {
       std::ostringstream oss;
       oss << "Invalid input: expected matrix with " << nInp << " cols, got " << inp.cols() << "!\n";
@@ -166,22 +167,24 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
             printed = true;
         }
 
-        Eigen::VectorXd rho_spin = Eigen::VectorXd::Zero(2 * nPts);
-        Eigen::VectorXd exc, vxc, sxc, sigma;
+        // Eigen::VectorXd rho_spin = Eigen::VectorXd::Zero(2 * nPts);
+        // Eigen::VectorXd exc, vxc, sxc, sigma;
+        Eigen::MatrixXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
                 case XC_FAMILY_LDA:
                 case XC_FAMILY_HYB_LDA:
                     if (isSpin()) {
+                        Eigen::VectorXd rho = Eigen::VectorXd::Zero(2 * nPts);
                         exc = Eigen::MatrixXd::Zero(nPts, 1);
                         vxc = Eigen::MatrixXd::Zero(2 * nPts, 1);
                         for (size_t k = 0; k < nPts; k++) {
                             // alpha_1, beta_1, alpha_2, beta_2, ..
-                            rho_spin[2 * k]     = inp(k, 0);
-                            rho_spin[2 * k + 1] = inp(k, 1);
+                            rho[2 * k]     = inp(k, 0);
+                            rho[2 * k + 1] = inp(k, 1);
                         }
                         std::cout << "CONSTRUCTS SPIN RHO " << std::endl;
-                        xc_lda_exc_vxc(&libxc_objects[i], nPts, rho_spin.data(), exc.data(), vxc.data());
+                        xc_lda_exc_vxc(&libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
                         std::cout << "LIBXC EXC_VXC COMPUTED" << std::endl;
                         for (size_t j = 0; j < nPts; ++j) {
                             //  xcfun computes rho * exc for energy density, so we do the same
@@ -194,29 +197,30 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             out(j, 2) += vxc(2 * j + 1, 0) * libxc_coeffs[i];
                         }
                     } else {
-                        exc      = Eigen::VectorXd::Zero(nPts);
-                        vxc      = Eigen::VectorXd::Zero(nPts);
+                        exc      = Eigen::MatrixXd::Zero(nPts, 1);
+                        vxc      = Eigen::MatrixXd::Zero(nPts, 1);
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
                             //  xcfun computes rho * exc for energy density, so we do the same
                             //    aka xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
-                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                            out(j, 1) += vxc[j] * libxc_coeffs[i];
+                            out(j, 0) += exc(j, 0) * libxc_coeffs[i] * inp(j, 0);
+                            out(j, 1) += vxc(j, 0) * libxc_coeffs[i];
                         }
                     }
                     break;
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
                     if (isSpin()) {
+                        Eigen::VectorXd rho = Eigen::VectorXd::Zero(2 * nPts);
                         exc = Eigen::MatrixXd::Zero(nPts, 1);
                         vxc = Eigen::MatrixXd::Zero(2 * nPts, 1);
                         sxc = Eigen::MatrixXd::Zero(3 * nPts, 1);
                         sigma = Eigen::MatrixXd::Zero(3 * nPts, 1);
                         for (size_t k = 0; k < nPts; k++) {
                             // alpha_1, beta_1, alpha_2, beta_2, ..
-                            rho_spin[2 * k]     = inp(k, 0);
-                            rho_spin[2 * k + 1] = inp(k, 1);
+                            rho[2 * k]     = inp(k, 0);
+                            rho[2 * k + 1] = inp(k, 1);
                         }
                         for (size_t j = 0; j < nPts; j++) {
                             // clang-format off
@@ -225,7 +229,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             sigma(3 * j + 1, 0) = inp(j, 2) * inp(j, 5) + inp(j, 3) * inp(j, 6) + inp(j, 4) * inp(j, 7);
                             sigma(3 * j + 2, 0) = inp(j, 5) * inp(j, 5) + inp(j, 6) * inp(j, 6) + inp(j, 7) * inp(j, 7);
                         }
-                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho_spin.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
                             // clang-format off
@@ -235,7 +239,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             out(j, 1) += vxc(2 * j + 0, 0) * libxc_coeffs[i];
                             out(j, 2) += vxc(2 * j + 1, 0) * libxc_coeffs[i];
 
-                            // alpha_i,   coef           * ( 2 * vaa               * grad_a_i  + vab               * grad_b_i ), i = x, y, z
+                            // alpha_i,     coef         * ( 2 * vaa               * grad_a_i  + vab       * grad_b_i ), i = x, y, z
                             out(j, 3) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 0, 0) * inp(j, 2) + sxc(3 * j + 1, 0) * inp(j, 5) );
                             out(j, 4) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 0, 0) * inp(j, 3) + sxc(3 * j + 1, 0) * inp(j, 6) );
                             out(j, 5) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 0, 0) * inp(j, 4) + sxc(3 * j + 1, 0) * inp(j, 7) );
@@ -243,6 +247,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             out(j, 6) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 2, 0) * inp(j, 5) + sxc(3 * j + 1, 0) * inp(j, 2) );
                             out(j, 7) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 2, 0) * inp(j, 6) + sxc(3 * j + 1, 0) * inp(j, 3) );
                             out(j, 8) += libxc_coeffs[i] * ( 2 * sxc(3 * j + 2, 0) * inp(j, 7) + sxc(3 * j + 1, 0) * inp(j, 4) );
+                            // clang-format on
                         }
                     } else {
                         exc = Eigen::MatrixXd::Zero(nPts, 1);
@@ -255,11 +260,11 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                         for (size_t j = 0; j < nPts; ++j) {
                             //    xcfun calculates energy density per volume while libxc calculates
                             //    energy density per electron, so we multiply by the density here
-                            out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
-                            out(j, 1) += vxc[j] * libxc_coeffs[i];
-                            out(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
-                            out(j, 3) += 2 * sxc[j] * inp(j, 2) * libxc_coeffs[i];
-                            out(j, 4) += 2 * sxc[j] * inp(j, 3) * libxc_coeffs[i];
+                            out(j, 0) += exc(j, 0) * libxc_coeffs[i] * inp(j, 0);
+                            out(j, 1) += vxc(j, 0) * libxc_coeffs[i];
+                            out(j, 2) += 2 * sxc(j, 0) * inp(j, 1) * libxc_coeffs[i];
+                            out(j, 3) += 2 * sxc(j, 0) * inp(j, 2) * libxc_coeffs[i];
+                            out(j, 4) += 2 * sxc(j, 0) * inp(j, 3) * libxc_coeffs[i];
                         }
                     }
                     break;
