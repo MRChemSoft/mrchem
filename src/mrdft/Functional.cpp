@@ -134,22 +134,29 @@ double Functional::amountEXX() const {
     return exx;
 }
 
-
-/** @brief Run a collection of grid points through XCFun
+/** @brief Run a collection of grid points through Libxc or XCFun
  *
- * Each column corresponds to one grid point.
- * From a performance point of view, (in pre and postprocessing) it is much more
- * efficient to have the two consecutive points in two consecutive adresses in memory
+ * Each row corresponds to one grid point.
  *
  * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
+ * param[in] out_data Matrix of output values
  */
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
-
+    if (nInp != inp.cols()) {
+      std::ostringstream oss;
+      oss << "Invalid input: expected matrix with " << nInp << " cols, got " << inp.cols() << "!\n";
+      MSG_ABORT(oss.str());
+    }
+    if (nOut != out.cols()) {
+      std::ostringstream oss;
+      oss << "Invalid output: expected matrix with " << nOut << " cols, got " << out.cols() << "!\n";
+      MSG_ABORT(oss.str());
+    }
+    out.setZero();
 
 
     static bool printed = false;
