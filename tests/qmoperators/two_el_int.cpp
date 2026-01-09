@@ -67,7 +67,6 @@ TEST_CASE("TwoElInt", "[two_el_int]") {
 
     Eigen::Tensor<std::complex<double>, 4>two_el_int(nShells, nShells, nShells, nShells);
 
-    int i = 0;
     double t0000 = 0.6249989698;
     double t1000 = 0.0893550109;
     double t1100 = 0.0219478674;
