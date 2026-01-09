@@ -302,6 +302,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Phi_np1 = H(Psi);
+        Psi = F.potential()(Phi_n);
         OrbitalVector grad_E = orbital::add(1.0, Phi_n, -2.0, Psi);
         Psi.clear();
         grad_E = Minus_2_Resolvent(grad_E);
@@ -312,8 +313,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         ComplexMatrix C_proj_complex = orbital::calc_overlap_matrix(grad_E, Phi_n);
         DoubleMatrix C_proj_sym = (C_proj_complex.real() + C_proj_complex.real().transpose()) * 0.5;
         DoubleMatrix B_proj_real = (B_proj.real() + B_proj.real().transpose()) * 0.5;
-        
-        
         DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, 2.0 * C_proj_sym);
         DoubleMatrix minus_half_A_proj = -0.5 * A_proj;
         
