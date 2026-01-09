@@ -328,6 +328,67 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         F.clear();
 
+        // ==============================
+        // Preconditioning
+        // ==============================
+
+        OrbitalVector preconditioned_grad_E = grad_E;
+
+        // Diagonalize A_proj
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver(A_proj);
+        if (eigensolver.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of A_proj failed");
+        }
+
+        Eigen::VectorXd sigma_A_proj = eigensolver.eigenvalues();
+        DoubleMatrix U_A_proj = eigensolver.eigenvectors();
+
+        // Check negativity
+        std::cout << "sigma_A_proj.maxCoeff() < 0.0: " << (sigma_A_proj.maxCoeff() < 0.0) << std::endl;
+        std::cout << "sigma_A_proj: " << std::endl << sigma_A_proj << std::endl;
+        if (sigma_A_proj.maxCoeff() < 0.0) {
+
+            Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
+
+//            if (Printer::getPrintLevel() >= 2) {
+                std::cout << "Using eigenvalues of A/2 for orbital energies:\n"
+                        << orbital_energy.transpose() << std::endl;
+//            }
+
+            // Rotate gradient into eigenbasis
+            preconditioned_grad_E =
+                orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
+
+            // Apply mode-dependent resolvent
+            for (int i = 0; i < preconditioned_grad_E.size(); i++) {
+
+                if (not mrcpp::mpi::my_orb(preconditioned_grad_E[i])) continue;
+
+                double mu_over_2 = orbital_energy(i);
+
+                // Helmholtz operator with exp = sqrt(-mu/2)
+                HelmholtzVector Resolvent_mu(
+                    getHelmholtzPrec(),
+                    Eigen::VectorXd::Constant(1, std::sqrt(-mu_over_2))
+                );
+
+                OrbitalVector tmp(1);
+                tmp[0] = preconditioned_grad_E[i];
+
+                tmp = Resolvent_mu(tmp);
+
+                preconditioned_grad_E[i].add(1.0 + mu_over_2, tmp[0]);
+                preconditioned_grad_E[i].rescale(0.5);
+
+                preconditioned_grad_E[i].crop(getHelmholtzPrec());
+            }
+
+            // Rotate back to original basis
+            preconditioned_grad_E =
+                orbital::rotate(preconditioned_grad_E, U_A_proj);
+        }
+        // ==============================================================
+
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
