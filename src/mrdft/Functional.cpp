@@ -339,7 +339,7 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     // Eigen::MatrixXd out = Eigen::MatrixXd::Zero(inp.rows(), nOut);
     Eigen::MatrixXd out_trans = Eigen::MatrixXd::Zero(nOut, inp.rows());
 
-    evaluate_data(inp_trans, out);
+    evaluate_data(inp_trans, out_trans);
     return out_trans.transpose();
 }
 
