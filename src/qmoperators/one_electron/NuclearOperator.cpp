@@ -39,6 +39,8 @@
 #include "analyticfunctions/PointNucleusHFYGB.h"
 #include "analyticfunctions/PointNucleusMinimum.h"
 #include "analyticfunctions/PointNucleusParabola.h"
+#include "pseudopotential/PPNucleus.h"
+#include "pseudopotential/pseudopotential.h"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Density.h"
 #include "qmoperators/QMPotential.h"
@@ -64,6 +66,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     // Setup local analytic function
     Timer t_loc;
     NuclearFunction *f_loc = nullptr;
+
     if (model == "point_like") {
         mrcpp::print::header(1, "Projecting nuclear potential (point-like HFYGB)");
         f_loc = new PointNucleusHFYGB();
@@ -79,6 +82,20 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     } else if (model == "finite_sphere") {
         mrcpp::print::header(1, "Projecting nuclear potential (finite homogeneous sphere)");
         f_loc = new FiniteNucleusSphere();
+    } else if (model == "pp") {
+        mrcpp::print::header(1, "Projecting nuclear potential (Pseudo-potential)");
+        // std::vector<PseudopotentialData> pps;
+        // for(const Nucleus &nuc : nucs){
+        //     std::string symb = nuc.getElement().getSymbol();
+        //     std::string fname = "psppar." + symb;
+        //     std::cout << "fname: " << fname << std::endl;
+        //     PseudopotentialData hgh(fname);
+        //     std::cout << "Pseudopotential data loaded for nucleus" << std::endl;
+        //     pps.push_back(hgh);
+        // }
+        // std::cout << "Pseudopotential data loaded for nucleus" << std::endl;
+        f_loc = new PPNucleus(nucs);
+        std::cout << "Nuclear operator constructed" << std::endl;
     } else {
         MSG_ABORT("Invalid nuclear model : " << model);
     }
