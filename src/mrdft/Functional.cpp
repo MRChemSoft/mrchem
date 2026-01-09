@@ -142,10 +142,12 @@ double Functional::amountEXX() const {
  * param[in] out_data Matrix of output values
  */
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
-    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
+    int nInp = numIn();
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-    // int nInp = numIn();
+    // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
+    //  eg. Test #17 xc_hessian_pbe has nOut = 15
     // int nOut = numOut();
+
     int nPts = inp.rows();
     if (nInp != inp.cols()) {
       std::ostringstream oss;
@@ -337,11 +339,12 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
   // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
   // That means that we cannot extract the energy density data with out.row(0).data() for example.
-    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-    int nPts = inp.rows();
-    if (nInp != inp.cols()) MSG_ABORT("Invalid input");
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+    // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
+    //  eg. Test #17 xc_hessian_pbe has nOut = 15
+    // int nOut = numOut();
+
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(inp.rows(), nOut);
 
     evaluate_data(inp, out);
     return out;
