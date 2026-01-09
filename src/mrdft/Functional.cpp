@@ -158,9 +158,8 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
     }
     out.setZero();
 
-
     static bool printed = false;
-    
+
     if (Factory::libxc) {
         if (not printed) {
             std::cout << "using libxc" << std::endl;
@@ -220,8 +219,8 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             rho_spin[2 * k + 1] = inp(k, 1);
                         }
                         for (size_t j = 0; j < nPts; j++) {
-                            // Susi: check that the code is correct
-                            // Libxc expects reduced gradients: up-up, up-down, down-down
+                            // clang-format off
+                            // Libxc takes in reduced gradients: up-up, up-down, down-down
                             sigma(3 * j + 0, 0) = inp(j, 2) * inp(j, 2) + inp(j, 3) * inp(j, 3) + inp(j, 4) * inp(j, 4);
                             sigma(3 * j + 1, 0) = inp(j, 2) * inp(j, 5) + inp(j, 3) * inp(j, 6) + inp(j, 4) * inp(j, 7);
                             sigma(3 * j + 2, 0) = inp(j, 5) * inp(j, 5) + inp(j, 6) * inp(j, 6) + inp(j, 7) * inp(j, 7);
@@ -229,9 +228,9 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                         xc_gga_exc_vxc(&libxc_objects[i], nPts, rho_spin.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
-                            //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates
-                            //    energy density per electron density
+                            // clang-format off
+                            //    xcfun calculates energy density per volume while libxc calculates
+                            //    energy density per electron, so we multiply by the density here
                             out(j, 0) += exc(j, 0) * libxc_coeffs[i] * (inp(j, 0) + inp(j, 1));
                             out(j, 1) += vxc(2 * j + 0, 0) * libxc_coeffs[i];
                             out(j, 2) += vxc(2 * j + 1, 0) * libxc_coeffs[i];
@@ -254,9 +253,8 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                         xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.col(0).data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
-                            //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates
-                            //    energy density per electron density
+                            //    xcfun calculates energy density per volume while libxc calculates
+                            //    energy density per electron, so we multiply by the density here
                             out(j, 0) += exc[j] * libxc_coeffs[i] * inp(j, 0);
                             out(j, 1) += vxc[j] * libxc_coeffs[i];
                             out(j, 2) += 2 * sxc[j] * inp(j, 1) * libxc_coeffs[i];
@@ -274,6 +272,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
             std::cout << "using xcfun" << std::endl;
             printed = true;
         }
+        if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
 
         Eigen::VectorXd inp_row, out_row;
         inp_row = Eigen::VectorXd::Zero(nInp);
