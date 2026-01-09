@@ -145,7 +145,7 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     int nPts = inp.cols();
-    if (nInp != inp.rows()) MSG_ABORT("Invalid input");
+    // if (nInp != inp.rows()) MSG_ABORT("Invalid input");
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
     for (int i = 0; i < nPts; i++) {
@@ -170,13 +170,13 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
  * param[in] inp_data Matrix of input values
  * param[out] out_data Matrix of output values
  */
-Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
+void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     int nPts = inp.rows();
     if (nInp != inp.cols()) MSG_ABORT("Invalid input");
 
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+
 
     static bool printed = false;
     
@@ -311,9 +311,21 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
             }
         }
     }
-    return out;
+    // return out;
 }
 
+Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
+  // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+  // That means that we cannot extract the energy density data with out.row(0).data() for example.
+    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
+    int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    int nPts = inp.rows();
+    if (nInp != inp.cols()) MSG_ABORT("Invalid input");
+    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nPts, nOut);
+
+    evaluate_data(inp, out);
+    return out;
+}
 
 /** @brief Contract a collection of grid points
  *
