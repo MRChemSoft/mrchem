@@ -308,22 +308,14 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
-    int nInp = xcfun_input_length(xcfun.get());  // Input parameters to XCFun
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
+    //  eg. Test #17 xc_hessian_pbe has nOut = 15
+    // int nOut = numOut();
     int nPts = inp.cols();
-    // if (nInp != inp.rows()) MSG_ABORT("Invalid input");
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
-    for (int i = 0; i < nPts; i++) {
-        if (isSpin()) {
-            if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
-        } else {
-            if (inp(0, i) < cutoff) continue;
-        }
-        // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
-        // That means that we cannot extract the energy density data with out.row(0).data() for example.
-        xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
-    }
+    evaluate_data(inp, out);
     return out;
 }
 
@@ -335,8 +327,8 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
-  // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
-  // That means that we cannot extract the energy density data with out.row(0).data() for example.
+    // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+    // That means that we cannot extract the energy density data with out.row(0).data() for example.
     int nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
     // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
     //  eg. Test #17 xc_hessian_pbe has nOut = 15
@@ -345,10 +337,10 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     Eigen::MatrixXd inp_trans(inp.transpose());
 
     // Eigen::MatrixXd out = Eigen::MatrixXd::Zero(inp.rows(), nOut);
-    Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, inp.rows());
+    Eigen::MatrixXd out_trans = Eigen::MatrixXd::Zero(nOut, inp.rows());
 
     evaluate_data(inp_trans, out);
-    return out.transpose();
+    return out_trans.transpose();
 }
 
 /** @brief Contract a collection of grid points
@@ -506,7 +498,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
        }
     }
 
-    // send rho and grad rho to xcfun
+    // send rho and grad rho to xcfun/libxc
     Eigen::MatrixXd xc_out = Functional::evaluate_transposed(xcfun_inp);
 
     // make gradient of the higher order densities
