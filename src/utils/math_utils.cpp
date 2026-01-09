@@ -221,7 +221,8 @@ DoubleMatrix solve_symmetric_sylvester(const DoubleMatrix &B, const DoubleMatrix
 
     const DoubleMatrix Q = es.eigenvectors();   // orthogonal
     const DoubleVector lambda = es.eigenvalues(); // real eigenvalues
-
+    std::cout << "Check Q.transpose() * B * Q: " << std::endl << Q.transpose() * B * Q << std::endl;
+    
     // 2. Transform C into the eigenbasis of B: C̃ = Qᵀ C Q
     DoubleMatrix C_tilde = Q.transpose() * C * Q;
 
