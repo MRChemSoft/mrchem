@@ -271,6 +271,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
     // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
     HelmholtzVector Minus_2_Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
+    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
     
 
     int nIter = 0;
@@ -302,11 +303,21 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Phi_np1 = H(Psi);
+
         Psi = F.potential()(Phi_n);
         OrbitalVector grad_E = orbital::add(1.0, Phi_n, -2.0, Psi);
+        OrbitalVector grad_E1= orbital::add(1.0, Psi, -0.5, Phi_n);
         Psi.clear();
         grad_E = Minus_2_Resolvent(grad_E);
+        grad_E1 = Resolvent(grad_E1);
         grad_E = orbital::add(2.0, Phi_n, 1.0, grad_E);
+        grad_E1 = orbital::add(2.0, Phi_n, 4.0, grad_E1);
+
+        auto grad_E_error = orbital::add(1.0, grad_E, -1.0, grad_E1);
+        auto grad_E_error_norm = orbital::get_norms(grad_E_error).maxCoeff();
+        std::cout << "norm(grad_E - grad_E1) = " << grad_E_error_norm << std::endl;
+        std::cout << "--------------------------------------" << std::endl;
+
 
         OrbitalVector Minus_2_Resolvent_Phi = Minus_2_Resolvent(Phi_n);
         ComplexMatrix B_proj = -0.5 * orbital::calc_overlap_matrix(Minus_2_Resolvent_Phi, Phi_n);
@@ -350,10 +361,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
             Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
 
-//            if (Printer::getPrintLevel() >= 2) {
+            if (Printer::getPrintLevel() >= 2) {
                 std::cout << "Using eigenvalues of A/2 for orbital energies:\n"
                         << orbital_energy.transpose() << std::endl;
-//            }
+            }
 
             // Rotate gradient into eigenbasis
             preconditioned_grad_E =
