@@ -136,10 +136,8 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
         if (task < 0) break;
         // we fetch all required i (but only one j at a time)
         std::vector<Orbital> iorb_vec;
-        int i0 = -1;
         for (int i = 0; i < itasks[task].size(); i++) {
             int iorb = itasks[task][i];
-            i0 = iorb;
             Orbital phi_i;
             t_get.resume();
             if (mrcpp::mpi::bank_size > 0) {
@@ -235,7 +233,6 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
     mrcpp::print::value(3,"Total size all ij/r12 potentials", totSizeVij/1024.0, "(MB)",0,false);
     mrcpp::print::separator(3, '-');
 
-    auto t = t_tot.elapsed() / N;
     return ikVjl;
 }
 
@@ -256,12 +253,7 @@ void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_i
     timer_ij.stop();
     if (rho_ij.norm() < prec) return;
 
-    auto N_i = phi_i.getNNodes();
-    auto N_j = phi_j.getNNodes();
-    auto N_ij = rho_ij.getNNodes();
-    auto norm_ij = rho_ij.norm();
     // For now we assume all phi are complex or all are real.
-
     bool RealOrbitals = phi_i.isreal();
 
     // prepare vector used to steer precision of Poisson application

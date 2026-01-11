@@ -57,6 +57,11 @@ PBESolver::PBESolver(const Permittivity &e,
         : GPESolver(e, rho_nuc, P, D, kain_hist, max_iter, dyn_thrs, density_type)
         , kappa(k) {}
 
+PBESolver::~PBESolver() {
+    this->rho_nuc.free();
+    clear();
+}
+
 void PBESolver::computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_factor, mrcpp::CompFunction<3> &pb_term) {
     // create a lambda function for the sinh(V) term and multiply it with kappa and salt factor to get the PB term
     auto sinh_f = [salt_factor](const double &V) { return (salt_factor / (4.0 * mrcpp::pi)) * std::sinh(V); };

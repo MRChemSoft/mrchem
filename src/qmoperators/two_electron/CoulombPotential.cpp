@@ -143,7 +143,6 @@ mrcpp::CompFunction<3> CoulombPotential::setupLocalPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
-    OrbitalVector &Phi = *this->orbitals;
     mrcpp::CompFunction<3> &rho = this->density;
 
     Timer timer;
@@ -161,7 +160,6 @@ void CoulombPotential::allreducePotential(mrcpp::CompFunction<3> &V_loc) {
     Timer t_com;
 
     mrcpp::CompFunction<3> &V_tot = *this;
-    OrbitalVector &Phi = *this->orbitals;
 
     // We do not expect the V_loc to cancel out, therefore we keep everything (no crop)
     double prec = -1.0;
