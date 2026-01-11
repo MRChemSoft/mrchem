@@ -98,7 +98,6 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
         if (mrcpp::mpi::my_func(Phi_x[i])) mrcpp::project(Phi_x[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
     E_P(0, 0) = -0.0507846835146;
