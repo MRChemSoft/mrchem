@@ -310,24 +310,12 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
-    // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
-    // That means that we cannot extract the energy density data with out.row(0).data() for example.
-    int nOut = numOut();
-    // if (Factory::libxc) {
-    //     nOut = numOut();
-    // } else {
-    //     nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-    //     // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
-    //     //  eg. Test #17 xc_hessian_pbe has nOut = 15
-    //     // int nOut = numOut();
-    // }
-
-    Eigen::MatrixXd inp_trans(inp.transpose());
-
-    Eigen::MatrixXd out_trans = Eigen::MatrixXd::Zero(nOut, inp.rows());
-
-    evaluate_data(inp_trans, out_trans);
-    return out_trans.transpose();
+ // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+  // That means that we cannot extract the energy density data with out.row(0).data() for example.
+  Eigen::MatrixXd inp_trans(inp.transpose());
+  Eigen::MatrixXd out_trans(numOut(), inp.rows());
+  evaluate_data(inp_trans, out_trans);
+  return out_trans.transpose();
 }
 
 /** @brief Contract a collection of grid points
