@@ -171,13 +171,13 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                 case XC_FAMILY_LDA:
                 case XC_FAMILY_HYB_LDA:
                     if (isSpin()) {
-                        Eigen::VectorXd rho = Eigen::VectorXd::Zero(2 * nPts);
+                        Eigen::MatrixXd rho = Eigen::MatrixXd::Zero(2, nPts);
                         exc = Eigen::MatrixXd::Zero(1, nPts);
-                        vxc = Eigen::MatrixXd::Zero(1, 2 * nPts);
-                        for (size_t k = 0; k < nPts; k++) {
+                        vxc = Eigen::MatrixXd::Zero(2, nPts);
+                        for (size_t j = 0; j < nPts; j++) {
                             // alpha_1, beta_1, alpha_2, beta_2, ..
-                            rho[2 * k]     = inp(k, 0);
-                            rho[2 * k + 1] = inp(k, 1);
+                            rho(0, j) = inp(0, j);
+                            rho(1, j) = inp(1, j);
                         }
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
@@ -187,12 +187,12 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
 
                             // rho = rho_alpha + rho_beta (energy is much closer to xcfun when using both)
                             out(0, j) += exc(0, j) * libxc_coefs[i] * (inp(0, j) + inp(1, j));
-                            out(1, j) += vxc(0, 2 * j + 0) * libxc_coefs[i];
-                            out(2, j) += vxc(0, 2 * j + 1) * libxc_coefs[i];
+                            out(1, j) += vxc(0, j) * libxc_coefs[i];
+                            out(2, j) += vxc(1, j) * libxc_coefs[i];
                         }
                     } else {
-                        exc      = Eigen::MatrixXd::Zero(1, nPts);
-                        vxc      = Eigen::MatrixXd::Zero(1, nPts);
+                        exc = Eigen::MatrixXd::Zero(1, nPts);
+                        vxc = Eigen::MatrixXd::Zero(1, nPts);
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
                             //  xcfun computes rho * exc for energy density, so we do the same
@@ -206,22 +206,22 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                 case XC_FAMILY_GGA:
                 case XC_FAMILY_HYB_GGA:
                     if (isSpin()) {
-                        Eigen::VectorXd rho = Eigen::VectorXd::Zero(2 * nPts);
+                        Eigen::MatrixXd rho = Eigen::MatrixXd::Zero(2, nPts);
                         exc = Eigen::MatrixXd::Zero(1, nPts);
-                        vxc = Eigen::MatrixXd::Zero(1, 2 * nPts);
-                        sxc = Eigen::MatrixXd::Zero(1, 3 * nPts);
-                        sigma = Eigen::MatrixXd::Zero(1, 3 * nPts);
-                        for (size_t k = 0; k < nPts; k++) {
+                        vxc = Eigen::MatrixXd::Zero(2, nPts);
+                        sxc = Eigen::MatrixXd::Zero(3, nPts);
+                        sigma = Eigen::MatrixXd::Zero(3, nPts);
+                        for (size_t j = 0; j < nPts; j++) {
                             // alpha_1, beta_1, alpha_2, beta_2, ..
-                            rho[2 * k]     = inp(0, k);
-                            rho[2 * k + 1] = inp(1, k);
+                            rho(0, j) = inp(0, j);
+                            rho(1, j) = inp(1, j);
                         }
                         for (size_t j = 0; j < nPts; j++) {
                             // clang-format off
                             // Libxc takes in reduced gradients: up-up, up-down, down-down
-                            sigma(0, 3 * j + 0) = inp(2, j) * inp(2, j) + inp(3, j) * inp(3, j) + inp(4, j) * inp(4, j);
-                            sigma(0, 3 * j + 1) = inp(2, j) * inp(5, j) + inp(3, j) * inp(6, j) + inp(4, j) * inp(7, j);
-                            sigma(0, 3 * j + 2) = inp(5, j) * inp(5, j) + inp(6, j) * inp(6, j) + inp(7, j) * inp(7, j);
+                            sigma(0, j) = inp(2, j) * inp(2, j) + inp(3, j) * inp(3, j) + inp(4, j) * inp(4, j);
+                            sigma(1, j) = inp(2, j) * inp(5, j) + inp(3, j) * inp(6, j) + inp(4, j) * inp(7, j);
+                            sigma(2, j) = inp(5, j) * inp(5, j) + inp(6, j) * inp(6, j) + inp(7, j) * inp(7, j);
                         }
                         xc_gga_exc_vxc(&libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
@@ -230,26 +230,27 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             //    xcfun calculates energy density per volume while libxc calculates
                             //    energy density per electron, so we multiply by the density here
                             out(0, j) += exc(0, j) * libxc_coefs[i] * (inp(0, j) + inp(1, j));
-                            out(1, j) += vxc(0, 2 * j + 0) * libxc_coefs[i];
-                            out(2, j) += vxc(0, 2 * j + 1) * libxc_coefs[i];
+                            out(1, j) += vxc(0, j) * libxc_coefs[i];
+                            out(2, j) += vxc(1, j) * libxc_coefs[i];
 
                             // alpha_i,     coef         * ( 2 * vaa               * grad_a_i  + vab       * grad_b_i ), i = x, y, z
-                            out(3, j) += libxc_coefs[i] * ( 2 * sxc(0, 3 * j + 0) * inp(2, j) + sxc(0, 3 * j + 1) * inp(5, j) );
-                            out(4, j) += libxc_coefs[i] * ( 2 * sxc(0, 3 * j + 0) * inp(3, j) + sxc(0, 3 * j + 1) * inp(6, j) );
-                            out(5, j) += libxc_coefs[i] * ( 2 * sxc(0, 3 * j + 0) * inp(4, j) + sxc(0, 3 * j + 1) * inp(7, j) );
+                            out(3, j) += libxc_coefs[i] * ( 2 * sxc(0, j) * inp(2, j) + sxc(1, j) * inp(5, j) );
+                            out(4, j) += libxc_coefs[i] * ( 2 * sxc(0, j) * inp(3, j) + sxc(1, j) * inp(6, j) );
+                            out(5, j) += libxc_coefs[i] * ( 2 * sxc(0, j) * inp(4, j) + sxc(1, j) * inp(7, j) );
                             // beta_i,       coef        * ( 2 * vbb               * grad_b_i  + vab               * grad_a_i ), i = x, y, z
-                            out(6, j) += libxc_coefs[i] * ( 2 * sxc(0, 3 * j + 2) * inp(5, j) + sxc(0, 3 * j + 1) * inp(2, j) );
-                            out(7, j) += libxc_coefs[i] * ( 2 * sxc(0, 3 * j + 2) * inp(6, j) + sxc(0, 3 * j + 1) * inp(3, j) );
-                            out(8, j) += libxc_coefs[i] * ( 2 * sxc(0, 3 * j + 2) * inp(7, j) + sxc(0, 3 * j + 1) * inp(4, j) );
+                            out(6, j) += libxc_coefs[i] * ( 2 * sxc(2, j) * inp(5, j) + sxc(1, j) * inp(2, j) );
+                            out(7, j) += libxc_coefs[i] * ( 2 * sxc(2, j) * inp(6, j) + sxc(1, j) * inp(3, j) );
+                            out(8, j) += libxc_coefs[i] * ( 2 * sxc(2, j) * inp(7, j) + sxc(1, j) * inp(4, j) );
                             // clang-format on
                         }
                     } else {
+                        Eigen::MatrixXd rho = inp.row(0).transpose();
                         exc = Eigen::MatrixXd::Zero(1, nPts);
                         vxc = Eigen::MatrixXd::Zero(1, nPts);
                         sxc = Eigen::MatrixXd::Zero(1, nPts);
                         sigma = Eigen::MatrixXd::Zero(1, nPts);
                         for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(1, j) * inp(1, j) + inp(2, j) * inp(2, j) + inp(3, j) * inp(3, j); }
-                        xc_gga_exc_vxc(&libxc_objects[i], nPts, inp.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
                             //    xcfun calculates energy density per volume while libxc calculates
