@@ -40,6 +40,7 @@
 #include "initial_guess/gto.h"
 #include "initial_guess/mw.h"
 #include "initial_guess/sad.h"
+#include "initial_guess/nao.h"
 
 #include "utils/MolPlotter.h"
 #include "utils/math_utils.h"
@@ -85,6 +86,9 @@
 #include "environment/Permittivity.h"
 #include "properties/hirshfeld/HirshfeldPartition.h"
 #include "surface_forces/SurfaceForce.h"
+
+#include "pseudopotential/projectorOperator.h"
+#include "pseudopotential/pseudopotential.h"
 
 #include "mrdft/Factory.h"
 
@@ -144,11 +148,24 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
     mol.setMultiplicity(multiplicity);
 
     auto &nuclei = mol.getNuclei();
+    const auto &json_pp = json_mol["pseudopotentials"];
+    bool json_pp_empty = json_pp.empty(); // if pseudopotential is empty in input make sure to not use it for backward compatibility
+
+    int i = 0;
     for (const auto &coord : json_mol["coords"]) {
         auto atom = coord["atom"];
         auto xyz = coord["xyz"];
         auto rms = coord["r_rms"];
-        nuclei.push_back(atom, xyz, rms);
+
+        const nlohmann::json &temp = json_pp["pp_list"][i];
+
+        if (json_pp_empty | (temp["use_pp"] == false)) { // No pseudopotential
+            nuclei.push_back(atom, xyz, rms);
+        } else { // Pseudopotential; add to nucleus
+            PseudopotentialData pp_data(temp);
+            nuclei.push_back(atom, xyz, std::make_shared<PseudopotentialData>(pp_data), rms);
+        }
+        i++;
     }
     mol.printGeometry();
 
@@ -381,9 +398,15 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired));
     for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
     for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
+    
     Phi.distribute();
 
     auto success = true;
+
+    if (mol.hasPseudopotential()) {
+        type = "nao";
+    }
+
     if (type == "chk") {
         success = initial_guess::chk::setup(Phi, file_chk);
     } else if (type == "mw") {
@@ -398,6 +421,20 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {
         success = initial_guess::cube::setup(Phi, prec, cube_p, cube_a, cube_b);
+    } else if (type == "nao") {
+
+        int nmix = 1;
+        std::string key = "initial_mixing_steps";
+        if (json_guess.contains(key)) nmix = json_guess[key];
+        double alpha_mix = 0.4;
+        key = "initial_mixing_step_size";
+        if (json_guess.contains(key)) alpha_mix = json_guess[key];
+        key = "nao_directory";
+        std::string nao_directory = "";
+        if (json_guess.contains(key)) nao_directory = json_guess[key];
+
+
+        success = initial_guess::nao::setup(Phi, prec, nucs, nmix, alpha_mix, nao_directory);
     } else {
         MSG_ERROR("Invalid initial guess");
         success = false;
@@ -446,7 +483,9 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     F.clear();
 
-    if (not localize && rotate) orbital::diagonalize(prec, Phi, F_mat);
+    if (not localize && rotate) {
+        orbital::diagonalize(prec, Phi, F_mat);
+    }
     if (plevel == 1) mrcpp::print::footer(1, t_scf, 2);
 
     Timer t_eps;
@@ -1061,7 +1100,10 @@ void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir,
  * perturbation order of the operators.
  */
 void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuilder &F, int order, bool is_dynamic) {
+
     auto &nuclei = mol.getNuclei();
+    auto pp_nuclei = mol.getPseudoPotentialNuclei();
+    auto all_electron_nuclei = mol.getAllElectronNuclei();
     auto Phi_p = mol.getOrbitals_p();
     auto X_p = mol.getOrbitalsX_p();
     auto Y_p = mol.getOrbitalsY_p();
@@ -1079,12 +1121,24 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     //////////////////   Nuclear Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("nuclear_operator")) {
+
         auto nuc_model = json_fock["nuclear_operator"]["nuclear_model"];
         auto proj_prec = json_fock["nuclear_operator"]["proj_prec"];
         auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"];
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"];
-        auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, nuc_model);
+        std::shared_ptr<NuclearOperator> V_p;
+        if (json_fock.contains("pseudopotential")) {
+            NuclearOperator all_el = NuclearOperator(all_electron_nuclei, proj_prec, smooth_prec, shared_memory, nuc_model);
+            std::string nuc_model_pp = "pp";
+            NuclearOperator pp = NuclearOperator(pp_nuclei, proj_prec, smooth_prec, shared_memory, nuc_model_pp);
+            all_el.add(pp);
+            V_p = std::make_shared<NuclearOperator>(all_el);
+        }
+        else {
+            V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, nuc_model);
+        }
         F.getNuclearOperator() = V_p;
+
     }
     ///////////////////////////////////////////////////////////
     //////////////////////   Zora Operator   //////////////////
@@ -1143,6 +1197,13 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             MSG_ABORT("Invalid perturbation order");
         }
     }
+
+    if (json_fock.contains("pseudopotential")) {
+        std::shared_ptr<ProjectorOperator> pp = std::make_shared<ProjectorOperator>(pp_nuclei, json_fock["pseudopotential"]["pp_prec"]);
+        pp->setup(json_fock["pseudopotential"]["pp_prec"]);
+        F.getProjectorOperator() = pp;
+    }
+
     ///////////////////////////////////////////////////////////
     //////////////////   Reaction Operator   ///////////////////
     ///////////////////////////////////////////////////////////
@@ -1270,6 +1331,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         if (order == 0) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, shared_memory);
+            if (mol.hasNLCCPseudopotential()) {
+                std::shared_ptr<Nuclei> nuclei = std::make_shared<Nuclei>(mol.getPseudoPotentialNuclei());
+                XC_p->setNuclei(nuclei);
+            }
             F.getXCOperator() = XC_p;
         } else if (order == 1) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, X_p, Y_p, shared_memory);
