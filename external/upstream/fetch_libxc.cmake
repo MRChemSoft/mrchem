@@ -18,7 +18,7 @@ else()
   FetchContent_GetProperties(libxc_sources)
 
   set(BUILD_SHARED_LIBS ON  CACHE BOOL "Build LibXC shared libs")
-  set(BUILD_TESTING     OFF CACHE BOOL "Build LibXC tests")
+  set(ENABLE_TESTS      OFF CACHE BOOL "Build LibXC tests")
   set(ENABLE_FORTRAN    OFF CACHE BOOL "Build LibXC Fortran bindings")
   set(DISABLE_FXC       ON  CACHE BOOL "Disable 2nd derivatives (Fxc)")
   set(DISABLE_KXC       ON  CACHE BOOL "Disable 3rd derivatives (Kxc)")
