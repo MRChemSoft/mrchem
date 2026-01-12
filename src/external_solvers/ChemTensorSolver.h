@@ -23,26 +23,24 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <nlohmann/json.hpp>
+#pragma once
+
+#include "ExternalSolver.h"
+#include "mrchem.h"
+#include "qmfunctions/Orbital.h"
+#include "qmoperators/two_electron/FockBuilder.h"
 
 namespace mrchem {
 
-class Molecule;
-class CUBEfunction;
-namespace driver {
+class ChemTensorSolver : public ExternalSolver {
+public:
+    ChemTensorSolver() = default;
+    ~ChemTensorSolver() override = default;
 
-void init_molecule(const nlohmann::json &input, Molecule &mol);
-nlohmann::json print_properties(const Molecule &mol);
-std::vector<mrchem::CUBEfunction> getCUBEFunction(const nlohmann::json &json_inp);
+    void optimize() override;
 
-namespace scf {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace rsp {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace lag{
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-} // namespace driver
+private:
+    void calculate_rdms() override;
+};
+
 } // namespace mrchem
