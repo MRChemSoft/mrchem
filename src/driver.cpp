@@ -26,6 +26,7 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <mrdft/MRDFT.h> // libxc debug
 
 #include "driver.h"
 #include <filesystem>
@@ -248,6 +249,15 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
 
     ///////////////////////////////////////////////////////////
+    //////////////////   Setting XC Library  //////////////////
+    ///////////////////////////////////////////////////////////
+    std::string xc_lib;
+
+    if (json_scf["fock_operator"].contains("xc_library")) {
+        xc_lib = json_scf["fock_operator"]["xc_library"][0].get<std::string>();
+    } else {xc_lib = "xcfun";}
+
+    ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
     FockBuilder F;
@@ -299,6 +309,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRotation(rotation);
         solver.setLocalize(localize);
         solver.setMethodName(method);
+        solver.setLibxc((xc_lib == "libxc") ? true : false);
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
@@ -419,14 +430,18 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
+    std::string xc_lib = json_guess["xc_library"].get<std::string>();
+    auto cutoff = json_guess["cutoff"];
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
     print_utils::text(0, "Method         ", method);
+    print_utils::text(0, "XC Library     ", (xc_lib == "libxc") ? "LibXC" : "XCFun");
     print_utils::text(0, "Relativity     ", relativity);
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
     print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Density cutoff ", print_utils::dbl_to_str(cutoff, 5, true));
     print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 
@@ -1255,9 +1270,21 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
+        // TODO: Look over and input parser so this is not necessary
+        std::string xc_lib;
+        if (json_fock.contains("xc_library")) {
+            if(json_fock["xc_library"].is_array()){
+                xc_lib = json_fock["xc_library"][0].get<std::string>();
+            }else{
+                xc_lib = json_fock["xc_library"]["xc_library"].get<std::string>();
+            }
+        }else{
+            xc_lib = "xcfun";
+        }
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
+        xc_factory.setLibxc((xc_lib == "libxc") ? true : false);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {
@@ -1266,6 +1293,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
+
+        mrdft_p->functional().print_functional_references();
+
         exx = mrdft_p->functional().amountEXX();
 
         if (order == 0) {

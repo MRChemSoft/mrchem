@@ -239,7 +239,7 @@ Here we specify the exchange-correlation functional used in DFT
 
     DFT {
       spin = false                          # Use spin-polarized functionals
-      density_cutoff = 0.0                  # Cutoff to set XC potential to zero
+      density_cutoff = 1e-11                # Cutoff to set XC potential to zero
     $functionals
     <func1>     1.0                         # Functional name and coefficient
     <func2>     1.0                         # Functional name and coefficient

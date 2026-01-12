@@ -47,6 +47,7 @@ def gen_cmake_command(options, arguments):
     command.append('-DENABLE_MPI={0}'.format(arguments['--mpi']))
     command.append('-DENABLE_OPENMP={0}'.format(arguments['--omp']))
     command.append('-DCMAKE_BUILD_TYPE={0}'.format(arguments['--type']))
+    command.append('-DCMAKE_POLICY_VERSION_MINIMUM=3.5')
     command.append('-G"{0}"'.format(arguments['--generator']))
     if arguments['--cmake-options'] != "''":
         command.append(arguments['--cmake-options'])

@@ -27,6 +27,8 @@
 
 #include <MRCPP/MWOperators>
 #include <XCFun/xcfun.h>
+#include <xc_funcs.h>
+#include <xc.h>
 
 #include "MRDFT.h"
 
@@ -42,10 +44,12 @@ public:
     void setUseGamma(bool g) { gamma = g; }
     void setLogGradient(bool lg) { log_grad = lg; }
     void setDensityCutoff(double c) { cutoff = c; }
+    void setLibxc(bool libxc_) {libxc = libxc_; }
     void setDerivative(const std::string &n) { diff_s = n; }
-    void setFunctional(const std::string &n, double c = 1.0) { xcfun_set(xcfun_p.get(), n.c_str(), c); }
+    void setFunctional(const std::string &n, double c = 1.0);
 
     std::unique_ptr<MRDFT> build();
+    static bool libxc;
 
 private:
     int order{1};
@@ -58,6 +62,10 @@ private:
 
     XC_p xcfun_p;
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
+
+    std::vector<xc_func_type> libxc_objects;
+    std::vector<double> libxc_coefs;
+    std::vector<int> mapFunctionalName(const std::string &name) const;
 };
 
 } // namespace mrdft
