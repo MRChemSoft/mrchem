@@ -71,11 +71,11 @@ public:
 
     bool libxc;
     std::vector<xc_func_type> libxc_objects;
-    std::vector<double> libxc_coeffs;
+    std::vector<double> libxc_coefs;
 
     void print_functional_references() const;
 
-    void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coeffs_);
+    void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coefs_);
 
 protected:
     const int order;

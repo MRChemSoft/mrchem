@@ -64,7 +64,7 @@ private:
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
 
     std::vector<xc_func_type> libxc_objects;
-    std::vector<double> libxc_coeffs;
+    std::vector<double> libxc_coefs;
     std::vector<int> mapFunctionalName(const std::string &name) const;
 };
 
