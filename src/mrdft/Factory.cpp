@@ -94,10 +94,12 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
 }
 
 void Factory::setFunctional(const std::string &name, double c) {
-    xcfun_set(xcfun_p.get(), name.c_str(), c); // Has to be set to get correct output length for now, later make else if (libxc)
     setLibxc(libxc); // should probably be where setFunctional is called
 
-    if (libxc) {
+    if (not libxc) {
+        xcfun_set(xcfun_p.get(), name.c_str(), c);
+
+    } else {
         std::vector<int> ids;
         std::vector<double> coeffs;
 
@@ -121,62 +123,47 @@ std::unique_ptr<MRDFT> Factory::build() {
     auto grid_p = std::make_unique<Grid>(mra);
     setLibxc(libxc);
 
-    // !!! Should be changed when nOut is fixed
-    // Init XCFun
-    bool gga = xcfun_is_gga(xcfun_p.get());
-    bool lda = not(gga);
-    unsigned int mode = 1;                    //!< only partial derivative mode implemented
-    unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
-    unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
-    unsigned int laplacian = 0;               //!< no laplacian
-    unsigned int kinetic = 0;                 //!< no kinetic energy density
-    unsigned int current = 0;                 //!< no current density
-    unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
-    if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
-    xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
-    //
-    // !!! Change to
-// // Init XCFun or Libxc
-//     bool gga;
-//     if (not libxc) {
-//         gga = xcfun_is_gga(xcfun_p.get());
-//         unsigned int mode = 1;                    //!< only partial derivative mode implemented
-//         unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
-//         unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
-//         unsigned int laplacian = 0;               //!< no laplacian
-//         unsigned int kinetic = 0;                 //!< no kinetic energy density
-//         unsigned int current = 0;                 //!< no current density
-//         unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
-//         if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
-//         xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+    // Init XCFun or Libxc
+    bool gga;
+    if (not libxc) {
+        gga = xcfun_is_gga(xcfun_p.get());
+        unsigned int mode = 1;                    //!< only partial derivative mode implemented
+        unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
+        unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
+        unsigned int laplacian = 0;               //!< no laplacian
+        unsigned int kinetic = 0;                 //!< no kinetic energy density
+        unsigned int current = 0;                 //!< no current density
+        unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
+        if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
+        xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
 
-//     } else {
-//         for (const auto &f : libxc_objects) switch (f.info->family) {
-//                 case XC_FAMILY_LDA:
-// #ifdef XC_FAMILY_HYB_GGA
-//                 case XC_FAMILY_HYB_LDA:
-// #endif
-//                     gga = false;
-//                     break;
+    } else {
+        for (const auto &f : libxc_objects) switch (f.info->family) {
+                case XC_FAMILY_LDA:
+#ifdef XC_FAMILY_HYB_GGA
+                case XC_FAMILY_HYB_LDA:
+#endif
+                    gga = false;
+                    break;
 
-//                 case XC_FAMILY_GGA:
-// #ifdef XC_FAMILY_HYB_GGA
-//                 case XC_FAMILY_HYB_GGA:
-// #endif
-//                     gga = true;
-//                     break;
+                case XC_FAMILY_GGA:
+#ifdef XC_FAMILY_HYB_GGA
+                case XC_FAMILY_HYB_GGA:
+#endif
+                    gga = true;
+                    break;
 
-//                 case XC_FAMILY_MGGA:
-//                 case XC_FAMILY_HYB_MGGA:
-//                     gga = false; // eliminate unused variable warning
-//                     MSG_ABORT("Meta-GGA functionals are not supported in MRChem.!\n");
+                case XC_FAMILY_MGGA:
+                case XC_FAMILY_HYB_MGGA:
+                    gga = false; // eliminate unused variable warning
+                    MSG_ABORT("Meta-GGA functionals are not supported in MRChem.!\n");
 
-//                 default:
-//                     gga = false; // eliminate unused variable warning
-//                     MSG_ABORT("Case not handled in MRChem!\n");
-//             }
-//     }
-//     bool lda = not gga;
+                default:
+                    gga = false; // eliminate unused variable warning
+                    MSG_ABORT("Case not handled in MRChem!\n");
+            }
+    }
+    bool lda = not gga;
 
     // Init MW derivative
     if (gga) {

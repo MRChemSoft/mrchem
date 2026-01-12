@@ -143,16 +143,7 @@ double Functional::amountEXX() const {
  */
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = numIn();
-    int nOut = 0;
-    if (Factory::libxc) {
-        nOut = numOut();
-    } else {
-        nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-        // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
-        //  eg. Test #17 xc_hessian_pbe has nOut = 15
-        // int nOut = numOut();
-    }
-
+    int nOut = numOut();
     int nPts = inp.cols();
     if (nInp != inp.rows()) {
       std::ostringstream oss;
@@ -174,8 +165,6 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
             printed = true;
         }
 
-        // Eigen::VectorXd rho_spin = Eigen::VectorXd::Zero(2 * nPts);
-        // Eigen::VectorXd exc, vxc, sxc, sigma;
         Eigen::MatrixXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
@@ -284,21 +273,13 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
         }
         if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
 
-        Eigen::VectorXd inp_col, out_col;
-        inp_col = Eigen::VectorXd::Zero(nInp);
-        out_col = Eigen::VectorXd::Zero(nOut);
         for (int i = 0; i < nPts; i++) {
-            bool calc = true;
             if (isSpin()) {
-                if (inp(0, i) < cutoff and inp(1, i) < cutoff) calc = false;
+              if (inp(0, i) < cutoff and inp(1, i) < cutoff) continue;
             } else {
-                if (inp(0, i) < cutoff) calc = false;
+              if (inp(0, i) < cutoff) continue;
             }
-            if (calc) {
-                inp_col = inp.col(i);
-                xcfun_eval(xcfun.get(), inp_col.data(), out_col.data());
-                out.col(i) = out_col;
-            }
+            xcfun_eval(xcfun.get(), inp.col(i).data(), out.col(i).data());
         }
     }
 }
@@ -313,15 +294,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
-    int nOut = 0;
-    if (Factory::libxc) {
-        nOut = numOut();
-    } else {
-        nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-        // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
-        //  eg. Test #17 xc_hessian_pbe has nOut = 15
-        // int nOut = numOut();
-    }
+    int nOut = numOut();
     int nPts = inp.cols();
 
     Eigen::MatrixXd out = Eigen::MatrixXd::Zero(nOut, nPts);
@@ -339,15 +312,15 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
     // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
     // That means that we cannot extract the energy density data with out.row(0).data() for example.
-    int nOut = 0;
-    if (Factory::libxc) {
-        nOut = numOut();
-    } else {
-        nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
-        // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
-        //  eg. Test #17 xc_hessian_pbe has nOut = 15
-        // int nOut = numOut();
-    }
+    int nOut = numOut();
+    // if (Factory::libxc) {
+    //     nOut = numOut();
+    // } else {
+    //     nOut = xcfun_output_length(xcfun.get()); // Input parameters to XCFun
+    //     // nOut depends on type of calculation, cannot be hardcoded as one general number for functional types, continue to use xcfun for now
+    //     //  eg. Test #17 xc_hessian_pbe has nOut = 15
+    //     // int nOut = numOut();
+    // }
 
     Eigen::MatrixXd inp_trans(inp.transpose());
 
