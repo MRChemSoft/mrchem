@@ -74,6 +74,8 @@ void GroundStateSolver::printProperty() const {
     double E_eext_1 = scf_1.getElectronExternalEnergy();
     double E_next_0 = scf_0.getNuclearExternalEnergy();
     double E_next_1 = scf_1.getNuclearExternalEnergy();
+    double E_mag_0 = scf_0.getExternalMagneticEnergy();
+    double E_mag_1 = scf_1.getExternalMagneticEnergy();
     double Er_0 = scf_0.getReactionEnergy();
     double Er_1 = scf_1.getReactionEnergy();
     double Er_el_0 = scf_0.getElectronReactionEnergy();
@@ -83,6 +85,7 @@ void GroundStateSolver::printProperty() const {
 
     bool has_react = (std::abs(Er_el_1) > mrcpp::MachineZero) || (std::abs(Er_nuc_1) > mrcpp::MachineZero);
     bool has_ext = (std::abs(E_eext_1) > mrcpp::MachineZero) || (std::abs(E_next_1) > mrcpp::MachineZero);
+    bool has_mag = (std::abs(E_mag_1) > mrcpp::MachineZero);
 
     int w0 = (Printer::getWidth() - 1);
     int w1 = 20;
@@ -110,6 +113,10 @@ void GroundStateSolver::printProperty() const {
         printUpdate(2, " External field (el)  ", E_eext_1, E_eext_1 - E_eext_0, this->propThrs);
         printUpdate(2, " External field (nuc) ", E_next_1, E_next_1 - E_next_0, this->propThrs);
         printUpdate(2, " External field (tot) ", (E_eext_1 + E_next_1), (E_eext_1 + E_next_1) - (E_eext_0 + E_next_0), this->propThrs);
+    }
+    if (has_mag) {
+        mrcpp::print::separator(2, '-');
+        printUpdate(2, " Magnetic field (el)  ", E_mag_1, E_mag_1 - E_mag_0, this->propThrs);
     }
     if (has_react) {
         mrcpp::print::separator(2, '-');
@@ -197,6 +204,7 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     print_utils::text(0, "Relativity         ", this->relativityName);
     print_utils::text(0, "Environment        ", this->environmentName);
     print_utils::text(0, "External fields    ", this->externalFieldName);
+    print_utils::text(0, "Magnetic fields    ", this->magneticFieldName);
     print_utils::text(0, "Checkpointing      ", (this->checkpoint) ? "On" : "Off");
     print_utils::text(0, "Max iterations     ", o_iter.str());
     print_utils::text(0, "KAIN solver        ", o_kain.str());
