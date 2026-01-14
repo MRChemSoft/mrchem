@@ -114,12 +114,13 @@ void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int o
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
-bool guess_orbitals(const json &input, Molecule &mol);
+bool guess_orbitals(const json &input, const json &input_occ, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
 void write_orbitals_txt(const json &input, Molecule &mol);
 void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
+bool _useExchange = false;
 } // namespace scf
 
 namespace rsp {
@@ -262,7 +263,18 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
-    if (scf::guess_orbitals(json_guess, mol)) {
+    const auto &json_occ = json_scf["occupancies"];
+
+    // save the orbitals for MOM/IMOM before the initial guess energy is calculated due to localization/diagonalization
+    OrbitalVector Phi_mom;
+    if (scf::guess_orbitals(json_guess, json_occ, mol)) {
+        if (json_scf.contains("scf_solver")) {
+            if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") {
+                if (_useExchange)
+                    MSG_ABORT("Running DeltaSCF calculations with exact exchange is currently not supported!");
+                Phi_mom = orbital::deep_copy(mol.getOrbitals());
+            }
+        }
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
     } else {
@@ -293,6 +305,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto energy_thrs = json_scf["scf_solver"]["energy_thrs"];
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
+        auto deltascf_method = json_scf["scf_solver"]["deltascf_method"];
 
         GroundStateSolver solver;
         solver.setHistory(kain);
@@ -308,14 +321,18 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
+        solver.setDeltaSCFMethod(deltascf_method);
 
-        json_out["scf_solver"] = solver.optimize(mol, F);
+        json_out["scf_solver"] = solver.optimize(mol, F, Phi_mom);
         json_out["success"] = json_out["scf_solver"]["converged"];
     }
 
     ///////////////////////////////////////////////////////////
     //////////   Computing Ground State Properties   //////////
     ///////////////////////////////////////////////////////////
+       
+    // get the orbital positions
+    mol.calculateOrbitalPositions();
 
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals_txt")) scf::write_orbitals_txt(json_scf["write_orbitals_txt"], mol);
@@ -337,7 +354,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
  *
  * This function expects the "initial_guess" subsection of the input.
  */
-bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
+bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, Molecule &mol) {
     auto prec = json_guess["prec"];
     auto zeta = json_guess["zeta"];
     auto type = json_guess["type"];
@@ -381,6 +398,77 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired));
     for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
     for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
+    
+    ///////////////////////////////////////////////////////////
+    ///////////////          Core Hole        /////////////////
+    ///////////////////////////////////////////////////////////
+    
+    // Modify the occupancies, e.g. to introduce a core hole for DeltaSCF calculations of core binding energies   
+    if (json_occ.size() > 0){
+        IntVector core_orbitals;          // the list of orbitals whose occupancies we will modify
+        DoubleVector core_occupancies;    // the occupancies associated with those orbitals
+        unsigned int nCH;                 // the number of orbitals whose occupancies will be modified
+
+        // In the restricted case, there is a one-to-one correspondance with the input file format
+        if (restricted) {
+            nCH = json_occ.size();
+            core_orbitals = IntVector::Zero(nCH);
+            core_occupancies = DoubleVector::Zero(nCH);
+
+            for (unsigned int i = 0; i < nCH; i++) {
+                if (json_occ[i]["orbital"] >= Np) {
+                    MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
+                    return false;
+                }
+                if (json_occ[i]["occupancy"].size() == 2)
+                    MSG_WARN("Occupancies for alpha and beta orbitals are added together for restricted calculations");
+                core_orbitals(i) = json_occ[i]["orbital"];
+                core_occupancies(i) = json_occ[i]["occupancy"][0];
+                double beta_occ = json_occ[i]["occupancy"][1];
+                core_occupancies(i) += beta_occ;
+            }
+        }
+      
+        // In the unrestricted case, we need to map the alpha and beta occupancies to the correct orbital number
+        else {
+            // the input number of orbitals
+            unsigned int nCH_in = json_occ.size();
+            // Accounting for alpha and beta
+            nCH = nCH_in * 2;
+            core_orbitals = IntVector::Zero(nCH);
+            core_occupancies = DoubleVector::Zero(nCH);
+
+            // For each alpha orbital, set the orbital and take the first of the 2 occupancies
+            for (unsigned int i = 0; i < nCH_in; i++) {
+                if (json_occ[i]["orbital"] >= Na) {
+                    MSG_ERROR("Orbital index for occupancy modification is too high: " << json_occ[i]["orbital"] << " > " << Na);
+                    return false;
+                }
+                if (json_occ[i]["occupancy"].size() == 1) {
+                    MSG_ERROR("Error, occupancies for beta orbitals required for unrestricted calculations");
+                    return false;
+                }
+                core_orbitals(i) = json_occ[i]["orbital"];
+                core_occupancies(i) = json_occ[i]["occupancy"][0];
+            }
+
+            // For each beta orbital, find the corresponding orbital index and take and the second of the 2 occupancies
+            for (unsigned int i = 0; i < nCH_in; i++) {
+                core_orbitals(nCH_in + i) = Na + int(json_occ[i]["orbital"]);
+                core_occupancies(nCH_in + i) = json_occ[i]["occupancy"][1];
+            }
+        }
+        // Retrieve the default occupancies, which we will then modify
+        DoubleVector default_occs = orbital::get_occupations(Phi);
+        
+        // Modify the default occupancies
+        for (unsigned int i = 0; i < nCH; i++)
+            default_occs[core_orbitals[i]] = core_occupancies[i];
+
+        // Update the occupancies
+        mrchem::orbital::set_occupations(Phi, default_occs);
+    }
+    
     Phi.distribute();
 
     auto success = true;
@@ -699,7 +787,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
         rho.free();
         mrcpp::print::time(1, fname, t_lap);
 
-        if (orbital::size_singly(Phi) > 0) {
+        if (orbital::size_doubly(Phi) == 0) {
             t_lap.start();
             fname = path + "/rho_s";
             density::compute(-1.0, rho, Phi, DensityType::Spin);
@@ -1292,6 +1380,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
             F.getExchangeOperator() = K_p;
         }
+        scf::_useExchange = true; // determine if exact exchange is used in order to prevent MOM/IMOM calculations
     }
     ///////////////////////////////////////////////////////////
     /////////////////   External Operator   ///////////////////
@@ -1357,8 +1446,10 @@ DerivativeOperator_p driver::get_derivative(const std::string &name) {
 
 json driver::print_properties(const Molecule &mol) {
     print_utils::headline(0, "Printing Molecular Properties");
+
     mol.printGeometry();
     mol.printEnergies("final");
+    mol.printOrbitalPositions();
     mol.printProperties();
     return mol.json();
 }
