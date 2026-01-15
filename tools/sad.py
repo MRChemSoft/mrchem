@@ -88,7 +88,7 @@ def sad(basis_name, atomic_symbol):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Generate SAD guess files for MRChem')
     parser.add_argument('element', help='Atomic symbol for which you want to generate SAD files.')
-    parser.add_argument('--basis', help='Basis set you want to use for SAD generation.', default='AHGBS-7')
+    parser.add_argument('--basis', help='Basis set you want to use for SAD generation.', default='dyall-v2z')
     args = parser.parse_args()
     
     e = sad(args.basis, args.element)
