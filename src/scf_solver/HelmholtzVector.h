@@ -52,7 +52,7 @@ protected:
     double prec;         ///< Precision for construction and application of Helmholtz operators
     DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
 
-    virtual Orbital apply(int i, Orbital &phi) const;
+    virtual Orbital apply(int i, const Orbital &phi) const;
 };
 
 class ResolventVector final : public HelmholtzVector {
@@ -60,7 +60,7 @@ public:
     using HelmholtzVector::HelmholtzVector;
 
 protected:
-    Orbital apply(int i, Orbital &phi) const override;
+    Orbital apply(int i, const Orbital &phi) const override;
 };
 
 } // namespace mrchem

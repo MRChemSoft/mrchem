@@ -399,7 +399,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             // Apply mode-dependent resolvent
             for (int i = 0; i < preconditioned_grad_E.size(); i++) {
 
-                if (not mrcpp::mpi::my_orb(preconditioned_grad_E[i])) continue;
+                //if (not mrcpp::mpi::my_orb(preconditioned_grad_E[i])) continue;
 
                 double mu_over_2 = orbital_energy(i);
 
