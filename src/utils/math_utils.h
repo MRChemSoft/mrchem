@@ -47,6 +47,7 @@ ComplexMatrix hermitian_matrix_pow(const ComplexMatrix &A, double b);
 ComplexMatrix diagonalize_hermitian_matrix(const ComplexMatrix &A, DoubleVector &diag);
 void diagonalize_block(ComplexMatrix &M, ComplexMatrix &U, int nstart, int nsize);
 double logsumexp(const Eigen::VectorXd &x);
+DoubleMatrix solve_symmetric_sylvester(const DoubleMatrix &B, const DoubleMatrix &C);
 
 } // namespace math_utils
 } // namespace mrchem

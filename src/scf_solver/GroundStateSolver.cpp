@@ -269,6 +269,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceRow(0);
     }
 
+    // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
+    HelmholtzVector Minus_2_Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -0.5));
+    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -0.5));
+    
+
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -292,11 +297,134 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
         ComplexMatrix L_mat = H.getLambdaMatrix();
 
+        //std::cout << "Fock matrix:" << std::endl << F_mat.real() << std::endl;
+        //std::cout << "Lambda matrix:" << std::endl << L_mat.real() << std::endl;
+        
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Phi_np1 = H(Psi);
+
+        Psi = F.potential()(Phi_n);
+        OrbitalVector grad_E = orbital::add(1.0, Phi_n, -2.0, Psi);
+        OrbitalVector grad_E1= orbital::add(1.0, Psi, -0.5, Phi_n);
         Psi.clear();
+        grad_E = Minus_2_Resolvent(grad_E);
+        grad_E1 = Resolvent(grad_E1);
+        grad_E = orbital::add(2.0, Phi_n, 1.0, grad_E);
+        grad_E1 = orbital::add(2.0, Phi_n, 4.0, grad_E1);
+
+        auto grad_E_error = orbital::add(1.0, grad_E, -1.0, grad_E1);
+        auto grad_E_error_norm = orbital::get_norms(grad_E_error).maxCoeff();
+        std::cout << "norm(grad_E - grad_E1) = " << grad_E_error_norm << std::endl;
+        std::cout << "--------------------------------------" << std::endl;
+
+
+        OrbitalVector Minus_2_Resolvent_Phi = Minus_2_Resolvent(Phi_n);
+        ComplexMatrix B_proj = -0.5 * orbital::calc_overlap_matrix(Minus_2_Resolvent_Phi, Phi_n);
+        ComplexMatrix C_proj_complex = orbital::calc_overlap_matrix(grad_E, Phi_n);
+        DoubleMatrix C_proj_sym = (C_proj_complex.real() + C_proj_complex.real().transpose()) * 0.5;
+        DoubleMatrix B_proj_real = (B_proj.real() + B_proj.real().transpose()) * 0.5;
+        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, 2.0 * C_proj_sym);
+        DoubleMatrix minus_half_A_proj = -0.5 * A_proj;
+        
+        std::cout << "B_proj matrix:" << std::endl << B_proj.real() << std::endl;
+        //std::cout << "C_proj_sym matrix:" << std::endl << C_proj_sym << std::endl;
+        //std::cout << "A_proj matrix:" << std::endl << A_proj << std::endl;
+
+        OrbitalVector AR_Phi = orbital::rotate(Minus_2_Resolvent_Phi, minus_half_A_proj);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        auto grad_E_norm = orbital::get_norms(grad_E).maxCoeff();
+        std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
+        std::cout << "--------------------------------------" << std::endl;
+
+        OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
+        ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
+        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E1, Phi_n);
+        DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        DoubleMatrix B_proj_real1 = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
+        DoubleMatrix A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
+
+        std::cout << "B_proj1 matrix:" << std::endl << B_proj1.real() << std::endl;
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> es(B_proj_real1);
+        std::cout << "B_proj1 eigenvalues:" << std::endl << es.eigenvalues() << std::endl;
+        
+
         F.clear();
+
+        // ==============================
+        // Preconditioning
+        // ==============================
+
+        OrbitalVector preconditioned_grad_E = grad_E;
+
+        // Diagonalize A_proj
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver(A_proj);
+        if (eigensolver.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of A_proj failed");
+        }
+
+        Eigen::VectorXd sigma_A_proj = eigensolver.eigenvalues();
+        DoubleMatrix U_A_proj = eigensolver.eigenvectors();
+
+        // Check negativity
+        std::cout << "sigma_A_proj.maxCoeff() < 0.0: " << (sigma_A_proj.maxCoeff() < 0.0) << std::endl;
+        std::cout << "sigma_A_proj: " << std::endl << sigma_A_proj << std::endl;
+        
+        // Diagonalize A_proj
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver1(A_proj1);
+        if (eigensolver1.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of A_proj failed");
+        }
+
+        Eigen::VectorXd sigma_A_proj1 = eigensolver1.eigenvalues();
+        DoubleMatrix U_A_proj1 = eigensolver1.eigenvectors();
+
+        // Check negativity
+        std::cout << "sigma_A_proj1.maxCoeff() < 0.0: " << (sigma_A_proj1.maxCoeff() < 0.0) << std::endl;
+        std::cout << "sigma_A_proj1: " << std::endl << sigma_A_proj1 << std::endl;
+
+        if (sigma_A_proj.maxCoeff() < 0.0) {
+
+            Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
+
+            if (Printer::getPrintLevel() >= 2) {
+                std::cout << "Using eigenvalues of A/2 for orbital energies:\n"
+                        << orbital_energy.transpose() << std::endl;
+            }
+
+            // Rotate gradient into eigenbasis
+            preconditioned_grad_E =
+                orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
+
+            // Apply mode-dependent resolvent
+            for (int i = 0; i < preconditioned_grad_E.size(); i++) {
+
+                //if (not mrcpp::mpi::my_orb(preconditioned_grad_E[i])) continue;
+
+                double mu_over_2 = orbital_energy(i);
+
+                // Helmholtz operator with exp = sqrt(-mu/2)
+                HelmholtzVector Resolvent_mu(
+                    getHelmholtzPrec(),
+                    Eigen::VectorXd::Constant(1, std::sqrt(-mu_over_2))
+                );
+
+                OrbitalVector tmp(1);
+                tmp[0] = preconditioned_grad_E[i];
+
+                tmp = Resolvent_mu(tmp);
+
+                preconditioned_grad_E[i].add(1.0 + mu_over_2, tmp[0]);
+                preconditioned_grad_E[i].rescale(0.5);
+
+                preconditioned_grad_E[i].crop(getHelmholtzPrec());
+            }
+
+            // Rotate back to original basis
+            preconditioned_grad_E =
+                orbital::rotate(preconditioned_grad_E, U_A_proj);
+        }
+        // ==============================================================
 
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
