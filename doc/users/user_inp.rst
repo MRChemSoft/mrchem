@@ -274,6 +274,8 @@ properties are available (all but the dipole moment are ``false`` by default)
       geometric_derivative = false          # Compute geometric derivative
       plot_density = false                  # Plot converged density
       plot_orbitals = []                    # Plot converged orbitals
+      population_analysis = false           # Compute population analysis, also for half of the space 
+      population_dimension = 0              # Dimension for population analysis (0=total, 1=split x, 2=y, 3=z)
     }
 
 Some properties can be further specified in dedicated sections.
