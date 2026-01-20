@@ -44,7 +44,7 @@ public:
      * @brief Set population value matrix
      * @param v: population value matrix
      */
-    void setMatrix(const DoubleMatrix &v) { this->populations = v; }
+    void setMatrix(const DoubleMatrix &v, bool density = false) { this->populations = v; this->hasDensity = density; }
 
     /**
      * @brief Print population analysis
@@ -65,9 +65,14 @@ public:
             o_head << std::setw(w3*3) << "total";
             println(0, o_head.str());
             mrcpp::print::separator(0, '-');
-            for (int i = 0; i < populations.rows(); i++) {
+            for (int i = 0; i < populations.rows() - hasDensity; i++) {
                 std::string text = "   " + std::to_string(i);
                 print_utils::scalar(0, text, populations(i, 0));
+            }
+            if (hasDensity) {
+                mrcpp::print::separator(0, '-');
+                std::string text = "Density";
+                print_utils::scalar(0, text, populations(populations.rows() - 1, 0));
             }
         }
         else {
@@ -76,9 +81,17 @@ public:
             o_head << std::setw(w3) << "total";
             println(0, o_head.str());
             mrcpp::print::separator(0, '-');
-            for (int i = 0; i < populations.rows(); i++) {
+            for (int i = 0; i < populations.rows() - hasDensity; i++) {
                 std::string text = "   " + std::to_string(i);
                 mrcpp::Coord<3> vec = {populations(i, 0), populations(i, 1), populations(i, 2)};
+                print_utils::coord(0, text, vec);
+            }
+            if (hasDensity) {
+                mrcpp::print::separator(0, '-');
+                std::string text = "Density";
+                mrcpp::Coord<3> vec = {populations(populations.rows() - 1, 0),
+                                       populations(populations.rows() - 1, 1),
+                                       populations(populations.rows() - 1, 2)};
                 print_utils::coord(0, text, vec);
             }
         }
@@ -89,6 +102,7 @@ public:
 
 protected:
     DoubleMatrix populations; ///< Population matrix with cols for the different parts of the space
+    bool hasDensity = false;  ///< Whether the population analysis was also done using the density
 };
 
 } // namespace mrchem
