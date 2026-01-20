@@ -877,6 +877,23 @@ double orbital::h1_inner_product(OrbitalVector &Phi, OrbitalVector &Psi, Momentu
     return val;
 }
 
+/**
+ * @brief Compute the H1 norm of an OrbitalVector.
+ *
+ * Computes
+ * \f[
+ *   \|\Phi\|_{H^1} = \sqrt{\langle \Phi, \Phi \rangle_{H^1}}.
+ * \f]
+ *
+ * @param Phi   Orbital vector
+ * @param nabla Gradient operator (must be set up by the caller)
+ * @return H1 norm
+ */
+double orbital::h1_norm(OrbitalVector &Phi, MomentumOperator &nabla) {
+    double val = orbital::h1_inner_product(Phi, Phi, nabla);
+    return std::sqrt(std::max(val, 0.0));
+}
+
 /** @brief Checks if a vector of orbitals is correctly ordered (paired/alpha/beta) */
 bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
     int nO = Phi.size();

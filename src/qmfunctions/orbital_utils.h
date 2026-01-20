@@ -92,6 +92,7 @@ ComplexVector get_integrals(const OrbitalVector &Phi);
 
 double l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi);
 double h1_inner_product(OrbitalVector &Phi, OrbitalVector &Psi, MomentumOperator &nabla);
+double h1_norm(OrbitalVector &Phi, MomentumOperator &nabla);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);

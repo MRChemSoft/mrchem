@@ -453,6 +453,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         E_n = F.trace(Phi_n, nucs);
 
         h1 = orbital::h1_inner_product(Phi_n, Phi_n, nabla);
+        std::cout << "Should be the same: " << h1 << " = " << orbital::h1_norm(Phi_n, nabla) * orbital::h1_norm(Phi_n, nabla) << std::endl;
         h1 = h1 - orbital::l2_inner_product(Phi_n, Phi_n);
         h1 = h1 * 0.5;
         std::cout << "Kinetic energy through h1_inner_product() = " << h1 << std::endl;
