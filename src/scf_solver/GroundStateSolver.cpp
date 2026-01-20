@@ -414,6 +414,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // ==============================
         // End Preconditioning
 
+        std::cout << "Should be the same: " << std::endl;
+        std::cout << orbital::calc_overlap_matrix(grad_E, preconditioned_grad_E).real().trace() << std::endl;
+        std::cout << orbital::l2_inner_product(grad_E, preconditioned_grad_E) << std::endl;
+        std::cout << "nIter = " << nIter << std::endl;
     // ==============================================================
 
         // Orthonormalize

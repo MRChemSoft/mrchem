@@ -793,6 +793,39 @@ ComplexVector orbital::get_integrals(const OrbitalVector &Phi) {
     return ints;
 }
 
+/**
+ * @brief Compute the L2 inner product of two OrbitalVectors.
+ *
+ * Computes
+ * \f[
+ *   \langle \Phi, \Psi \rangle_{L^2}
+ *   = \sum_i \Re \langle \phi_i, \psi_i \rangle.
+ * \f]
+ *
+ * Only diagonal orbital contributions are evaluated; no overlap
+ * matrix is constructed.
+ *
+ * @param Phi First orbital vector
+ * @param Psi Second orbital vector
+ * @return L2 inner product (real-valued)
+ */
+double orbital::l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi) {
+    if (Phi.size() != Psi.size()) {
+        MSG_ABORT("OrbitalVector size mismatch in l2_inner_product");
+    }
+
+    double val = 0.0;
+
+    for (int i = 0; i < Phi.size(); ++i) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
+            val += std::real(mrcpp::dot(Phi[i], Psi[i]));
+        }
+    }
+
+    // Check the correct MPI use!!!
+    return val;
+}
+
 /** @brief Checks if a vector of orbitals is correctly ordered (paired/alpha/beta) */
 bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
     int nO = Phi.size();

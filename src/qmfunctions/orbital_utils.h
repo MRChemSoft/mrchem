@@ -88,6 +88,8 @@ DoubleVector get_squared_norms(const OrbitalVector &Phi);
 DoubleVector calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
 ComplexVector get_integrals(const OrbitalVector &Phi);
 
+double l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi);
+
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
 void saveOrbital(const std::string &file, const Orbital &orb, int text_format = 0);
