@@ -439,6 +439,16 @@ sections:
           - value in [0, 1, 2, 3]
         docstring: |
           Dimension for population analysis. 0: total, 1: split x, 2: split y, 3: split z.
+      - name: population_orbitals
+        type: bool
+        default: true
+        docstring: |
+          Compute population analysis for the individual orbitals.
+      - name: population_density
+        type: bool
+        default: false
+        docstring: |
+          Compute population analysis for the total density.
   - name: Forces
     docstring: |
       Define parameters for the computation of forces.
@@ -766,6 +776,12 @@ sections:
           Write final orbitals to disk, file name
           ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``.
           Can be used as ``mw`` initial guess in subsequent calculations.
+      - name: write_density
+        type: bool
+        default: false
+        docstring: |
+          Write final density to disk, file name
+          ``<path_orbitals>/phi_dens_<p/a/b>``.
       - name: write_orbitals_txt
         type: bool
         default: false

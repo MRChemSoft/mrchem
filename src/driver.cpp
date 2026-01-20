@@ -118,6 +118,7 @@ bool guess_orbitals(const json &input, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
 void write_orbitals_txt(const json &input, Molecule &mol);
+void write_density(const json &input, Molecule &mol);
 void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
 } // namespace scf
@@ -327,6 +328,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals_txt")) scf::write_orbitals_txt(json_scf["write_orbitals_txt"], mol);
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
+        if (json_scf.contains("write_density")) scf::write_density(json_scf["write_density"], mol);
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol, json_fock);
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
@@ -479,6 +481,11 @@ void driver::scf::write_orbitals(const json &json_orbs, Molecule &mol) {
     orbital::save_orbitals(Phi, json_orbs["file_phi_p"], SPIN::Paired);
     orbital::save_orbitals(Phi, json_orbs["file_phi_a"], SPIN::Alpha);
     orbital::save_orbitals(Phi, json_orbs["file_phi_b"], SPIN::Beta);
+}
+
+void driver::scf::write_density(const json &json_dens, Molecule &mol) {
+    auto &Phi = mol.getOrbitals();
+    density::save_density(Phi, json_dens["file_density"]);
 }
 
 /** @brief Compute ground-state properties
@@ -662,26 +669,38 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
         for (const auto &item : json_prop["population_analysis"].items()) {
             const auto &id = item.key();
             unsigned int dim = item.value()["dimension"];
+            bool intOrbitals = item.value()["integrate_orbitals"];
+            bool intTotal = item.value()["integrate_total"];
             double prec = item.value()["precision"];
             auto &Phi = mol.getOrbitals();
-            DoubleMatrix p = DoubleMatrix::Zero(Phi.size(), (dim == 0) ? 1 : 3);
+            DoubleMatrix p = DoubleMatrix::Zero(Phi.size() * intOrbitals + intTotal, (dim == 0) ? 1 : 3); // rows: orbitals + total, if requested; cols: dim
             Orbital density = Orbital();
-            if (dim == 0) {
-                for (unsigned int i = 0; i < p.rows(); i++) {
+            Density total_density = Density(false);
+            if (intOrbitals) {
+                for (unsigned int i = 0; i < Phi.size(); i++) {
                     mrcpp::multiply(density, Phi[i], Phi[i], prec);
-                    p(i, 0) = density.integrate().real(); // Integrate over full space
+                    if (dim == 0)
+                        p(i, 0) = density.integrate().real(); // Integrate over full space
+                    else {
+                        p(i, 0) = density.integrate(dim - 1, false).real(); // Integrate over lower half of the space
+                        p(i, 1) = density.integrate(dim - 1, true).real();  // Integrate over upper half of the space
+                        p(i, 2) = density.integrate().real();               // Integrate over full space
+                    }
+                    density.free();
                 }
             }
-            else {
-                for (unsigned int i = 0; i < p.rows(); i++) {
-                    mrcpp::multiply(density, Phi[i], Phi[i], prec);
-                    p(i, 0) = density.integrate(dim - 1, false).real(); // Integrate over lower half of the space
-                    p(i, 1) = density.integrate(dim - 1, true).real(); // Integrate over upper half of the space
-                    p(i, 2) = density.integrate().real(); // Integrate over full space
+            if (intTotal) {
+                density::compute(-1.0, total_density, Phi, DensityType::Total);
+                if (dim == 0)
+                    p(p.rows() - 1, 0) = total_density.integrate().real(); // Total number of electrons
+                else {
+                    p(p.rows() - 1, 0) = total_density.integrate(dim - 1, false).real(); // Total number of electrons in lower half
+                    p(p.rows() - 1, 1) = total_density.integrate(dim - 1, true).real();  // Total number of electrons in upper half
+                    p(p.rows() - 1, 2) = total_density.integrate().real();               // Total number of electrons
                 }
             }
             PopulationAnalysis &pop = mol.getPopulationAnalysis(id);
-            pop.setMatrix(p);
+            pop.setMatrix(p, intTotal);
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Population analysis", t_lap);

@@ -276,6 +276,8 @@ properties are available (all but the dipole moment are ``false`` by default)
       plot_orbitals = []                    # Plot converged orbitals
       population_analysis = false           # Compute population analysis, also for half of the space 
       population_dimension = 0              # Dimension for population analysis (0=total, 1=split x, 2=y, 3=z)
+      population_orbitals = true            # Compute population analysis for individual orbitals, only if population_analysis = true
+      population_density = false            # Compute population analysis for total density, only if population_analysis = true
     }
 
 Some properties can be further specified in dedicated sections.
@@ -492,6 +494,7 @@ The converged orbitals can be saved to file with the ``write_orbitals`` keyword
     SCF {
       path_orbitals = orbitals              # Path to orbital files
       write_orbitals = false                # Save converged orbitals to file
+      write_density = false                 # Save density to file
     }
 
 This will make individual files for each orbital under the ``path_orbitals``

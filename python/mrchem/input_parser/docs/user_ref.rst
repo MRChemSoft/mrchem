@@ -479,6 +479,18 @@ User input reference
     **Predicates**
       - ``value in [0, 1, 2, 3]``
   
+   :population_orbitals: Compute population analysis for the individual orbitals. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+   :population_density: Compute population analysis for the total density. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
    :geometric_derivative: Compute geometric derivative. 
   
     **Type** ``bool``
@@ -778,6 +790,12 @@ User input reference
   
     **Predicates**
       - ``value[-1] != '/'``
+  
+   :write_density: Write final density to disk, file name ``<path_orbitals>/phi_dens_<p/a/b>``. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
   
    :write_orbitals_txt: Write final orbitals to disk, in text format, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
   

@@ -319,6 +319,8 @@ def write_scf_properties(user_dict, origin):
         prop_dict["population_analysis"] = {}
         prop_dict["population_analysis"]["pop-1"] = {
             'dimension': user_dict["Properties"]["population_dimension"],
+            'integrate_orbitals': user_dict["Properties"]["population_orbitals"],
+            'integrate_total': user_dict["Properties"]["population_density"],
             'precision': user_dict["world_prec"]
         }
 
