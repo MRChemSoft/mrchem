@@ -826,6 +826,57 @@ double orbital::l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi) {
     return val;
 }
 
+
+/**
+ * @brief Compute the H1 inner product of two OrbitalVectors.
+ *
+ * Computes
+ * \f[
+ *   \langle \Phi, \Psi \rangle_{H^1}
+ *   =
+ *   \sum_i \langle \phi_i, \psi_i \rangle_{L^2}
+ *   +
+ *   \sum_{i,\alpha} \langle \partial_\alpha \phi_i,
+ *                          \partial_\alpha \psi_i \rangle_{L^2}.
+ * \f]
+ *
+ * The gradient contribution is evaluated using a NablaOperator,
+ * but in order to use it in the ground solver context, it is
+ * substituted by a MomentumOperator.
+ * Only diagonal orbital contributions are computed.
+ *
+ * @param Phi   First orbital vector
+ * @param Psi   Second orbital vector
+ * @param nabla Gradient operator (must be set up by the caller)
+ * @return H1 inner product (real-valued)
+ */
+double orbital::h1_inner_product(OrbitalVector &Phi, OrbitalVector &Psi, MomentumOperator &nabla) {
+    if (Phi.size() != Psi.size()) {
+        MSG_ABORT("OrbitalVector size mismatch in h1_inner_product");
+    }
+
+    double val = 0.0;
+
+            
+    for (int i = 0; i < Phi.size(); ++i) {
+        if (!mrcpp::mpi::my_func(Phi[i])) continue;
+
+        // L2 term
+        val += std::real(mrcpp::dot(Phi[i], Psi[i]));
+
+        // Gradient term
+        std::vector<Orbital> gradPhi = nabla(Phi[i]);
+        std::vector<Orbital> gradPsi = nabla(Psi[i]);
+
+        for (int d = 0; d < 3; ++d) {
+            val += std::real(mrcpp::dot(gradPhi[d], gradPsi[d]));
+        }
+    }
+
+    // Check the correct MPI use!!!
+    return val;
+}
+
 /** @brief Checks if a vector of orbitals is correctly ordered (paired/alpha/beta) */
 bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
     int nO = Phi.size();

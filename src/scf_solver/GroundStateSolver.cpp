@@ -418,8 +418,13 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         std::cout << orbital::calc_overlap_matrix(grad_E, preconditioned_grad_E).real().trace() << std::endl;
         std::cout << orbital::l2_inner_product(grad_E, preconditioned_grad_E) << std::endl;
         std::cout << "nIter = " << nIter << std::endl;
-    // ==============================================================
 
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
+        double h1 = orbital::h1_inner_product(grad_E, preconditioned_grad_E, nabla);
+        std::cout << "h1_inner_product(grad_E, preconditioned_grad_E, nabla) = " << h1 << std::endl;
+
+    
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
@@ -447,6 +452,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         F_mat = F(Phi_n, Phi_n);
         E_n = F.trace(Phi_n, nucs);
 
+        h1 = orbital::h1_inner_product(Phi_n, Phi_n, nabla);
+        h1 = h1 - orbital::l2_inner_product(Phi_n, Phi_n);
+        h1 = h1 * 0.5;
+        std::cout << "Kinetic energy through h1_inner_product() = " << h1 << std::endl;
+// ==============================================================
         // Collect convergence data
         this->error.push_back(err_t);
         this->energy.push_back(E_n);
