@@ -19,7 +19,7 @@ else()
 
   FetchContent_Declare(libxc_sources
     GIT_REPOSITORY https://gitlab.com/libxc/libxc
-    GIT_TAG 7bd5bb41415968db94c499a2f093309c9a2dcf53
+    GIT_TAG 7.0.0
   )
 
   FetchContent_MakeAvailable(libxc_sources)
