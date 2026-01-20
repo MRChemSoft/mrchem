@@ -398,14 +398,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         std::cout << "norm(preconditioned_grad_E) = " << preconditioned_grad_E_norm << std::endl;
         std::cout << "--------------------------------------" << std::endl;
 
-        // TODO: Projection as in python version
-        //
-        /* 
-        C_proj = calculate_overlap(preconditioned_grad_E, Phi)
-        preconditioned_grad_E, A_proj = project_to_tanget_space(preconditioned_grad_E, Resolvent_Phi, B_proj, C_proj)
-        # Necessary for Grassmann: 
-        preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi)
-        */
+        C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
+        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
+        AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj1);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi1);
+        grad_E1_norm = orbital::get_norms(preconditioned_grad_E).maxCoeff();
+        std::cout << "--------------------------------------" << std::endl;
+        std::cout << "norm(preconditioned_grad_E and projected) = " << grad_E1_norm << std::endl;
+        std::cout << "--------------------------------------" << std::endl;
+        
+        //# Necessary for Grassmann: 
+        //preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi)
+        
         // ==============================
         // End Preconditioning
 
