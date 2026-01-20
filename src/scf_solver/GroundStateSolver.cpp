@@ -393,7 +393,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
         // Check norm of preconditioned gradient
-        auto preconditioned_grad_E_norm = orbital::get_norms(preconditioned_grad_E).maxCoeff();
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
+
+        auto preconditioned_grad_E_norm = orbital::h1_norm(preconditioned_grad_E, nabla);
         std::cout << "--------------------------------------" << std::endl;
         std::cout << "norm(preconditioned_grad_E) = " << preconditioned_grad_E_norm << std::endl;
         std::cout << "--------------------------------------" << std::endl;
@@ -403,7 +406,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
         AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj1);
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi1);
-        grad_E1_norm = orbital::get_norms(preconditioned_grad_E).maxCoeff();
+
+        grad_E1_norm = orbital::h1_norm(preconditioned_grad_E, nabla);
         std::cout << "--------------------------------------" << std::endl;
         std::cout << "norm(preconditioned_grad_E and projected) = " << grad_E1_norm << std::endl;
         std::cout << "--------------------------------------" << std::endl;
@@ -419,8 +423,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         std::cout << orbital::l2_inner_product(grad_E, preconditioned_grad_E) << std::endl;
         std::cout << "nIter = " << nIter << std::endl;
 
-        auto &nabla = F.momentum();
-        nabla.setup(orb_prec);
         double h1 = orbital::h1_inner_product(grad_E, preconditioned_grad_E, nabla);
         std::cout << "h1_inner_product(grad_E, preconditioned_grad_E, nabla) = " << h1 << std::endl;
 
