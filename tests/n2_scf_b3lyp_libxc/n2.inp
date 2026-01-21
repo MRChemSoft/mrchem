@@ -1,0 +1,33 @@
+# vim:syntax=sh:
+
+world_prec = 1.0e-3
+world_size = 6
+
+MPI {
+  numerically_exact = true
+}
+
+Molecule {
+  charge = 0
+  multiplicity = 1
+$coords
+N   0.0  0.0  -1.039
+N   0.0  0.0   1.039
+$end
+}
+
+WaveFunction {
+  method = DFT
+  restricted = false
+}
+
+SCF {
+  kain = 5
+  max_iter = 12
+  orbital_thrs = 2.0e-2
+}
+
+DFT {
+  xc_library = libxc
+  functionals = HYB_GGA_XC_B3LYP5
+}
