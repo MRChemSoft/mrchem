@@ -272,7 +272,24 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
     HelmholtzVector Minus_2_Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -0.5));
     ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
-    
+
+    // Parameters for line search
+    double alpha = 1.0;                          // current step size (adaptive across iterations)
+    const double beta = 0.5;                     // shrink factor (0 < beta < 1)
+    const double gamma = 1.4;                    // growth factor (>1)
+    const double armijo_parameter = 1e-4;        // Armijo parameter
+    const double alpha_min = 1e-12;              // safeguard lower bound
+    const double alpha_max = 10.0;               // safeguard upper bound
+
+    // Parameters for restarting and momentum
+    int last_restart_iter = -1; //0
+    const int restart_cooldown = 4;     // no restarts within these many iterations of previous restart
+    const double eta_powell = 0.3;         // Powell threshold (tune 0.1..0.3)
+    const double polak_max = 5.0;          // cap on beta (safeguard)
+
+    OrbitalVector direction;
+    OrbitalVector previous_grad_E;
+    OrbitalVector previous_preconditioned_grad_E;
 
     int nIter = 0;
     bool converged = false;
@@ -418,15 +435,45 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // ==============================
         // End Preconditioning
 
-        std::cout << "Should be the same: " << std::endl;
-        std::cout << orbital::calc_overlap_matrix(grad_E, preconditioned_grad_E).real().trace() << std::endl;
-        std::cout << orbital::l2_inner_product(grad_E, preconditioned_grad_E) << std::endl;
-        std::cout << "nIter = " << nIter << std::endl;
+        // Safeguard: if not descent direction, skip preconditioning
+        double h1 = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
+        if (h1 <= 0.0) {
+            preconditioned_grad_E = grad_E;
+            std::cout << "Preconditioning skipped (not a descent direction): " << h1 << std::endl;
+        }
 
-        double h1 = orbital::h1_inner_product(grad_E, preconditioned_grad_E, nabla);
-        std::cout << "h1_inner_product(grad_E, preconditioned_grad_E, nabla) = " << h1 << std::endl;
+        // ======================================================
+        // Conjugate-gradient direction (H1, Polak-Ribière)
+        // ======================================================
+        
+        if (nIter == 1) {
+            // First iteration: steepest descent
+            direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+        }
+/*
+        else {
+            // Polak–Ribière coefficient
+            OrbitalVector diff_pc_grad =
+                orbital::add(1.0, preconditioned_grad_E, -1.0, pc_grad_E_prev);
 
-    
+            double numerator =
+                orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
+
+            double denominator =
+                orbital::h1_inner_product(pc_grad_E_prev, grad_E_prev, nabla);
+
+            double beta = 0.0;
+            if (std::abs(denominator) > mrcpp::MachineZero)
+                beta = numerator / denominator;
+        }
+*/
+
+
+
+
+
+
+
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
@@ -454,11 +501,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         F_mat = F(Phi_n, Phi_n);
         E_n = F.trace(Phi_n, nucs);
 
-        h1 = orbital::h1_inner_product(Phi_n, Phi_n, nabla);
-        std::cout << "Should be the same: " << h1 << " = " << orbital::h1_norm(Phi_n, nabla) * orbital::h1_norm(Phi_n, nabla) << std::endl;
-        h1 = h1 - orbital::l2_inner_product(Phi_n, Phi_n);
-        h1 = h1 * 0.5;
-        std::cout << "Kinetic energy through h1_inner_product() = " << h1 << std::endl;
+        //h1 = orbital::h1_inner_product(Phi_n, Phi_n, nabla);
+        //std::cout << "Should be the same: " << h1 << " = " << orbital::h1_norm(Phi_n, nabla) * orbital::h1_norm(Phi_n, nabla) << std::endl;
+        //h1 = h1 - orbital::l2_inner_product(Phi_n, Phi_n);
+        //h1 = h1 * 0.5;
+        //std::cout << "Kinetic energy through h1_inner_product() = " << h1 << std::endl;
 // ==============================================================
         // Collect convergence data
         this->error.push_back(err_t);
