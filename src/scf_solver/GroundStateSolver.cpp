@@ -524,9 +524,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         while (true) {
             count += 1;
             // Retraction to Stiefel is Lowdin based:
+            OrbitalVector Phi_candidate = orbital::add(1.0, Phi_n, alpha_trial, direction);
+            // Orthonormalization updates F_mat as a side effect?!
+            orbital::orthonormalize(orb_prec, Phi_candidate, F_mat);
+            // Compute Fock matrix and energy
+            if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
+            F.setup(orb_prec);
+            F_mat = F(Phi_candidate, Phi_candidate);
+            E_n = F.trace(Phi_candidate, nucs);
+            std::cout << "Candidate Energy: " << E_n.getTotalEnergy() << std::endl;
 
             break;
         }
+        F.clear();
 
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
