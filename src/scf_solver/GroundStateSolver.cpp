@@ -291,6 +291,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     OrbitalVector previous_grad_E;
     OrbitalVector previous_preconditioned_grad_E;
 
+    double previous_h1_inner_product_preconditioned_grad_E_grad_E;
+
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -435,11 +437,17 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // ==============================
         // End Preconditioning
 
+        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        std::cout << "--------------------------------------" << std::endl;
+        std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
+        std::cout << "--------------------------------------" << std::endl;
+
         // Safeguard: if not descent direction, skip preconditioning
-        double h1 = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
-        if (h1 <= 0.0) {
+        double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
+        if (h1_inner_product_preconditioned_grad_E_grad_E <= 0.0) {
+            std::cout << "Preconditioning skipped (not a descent direction): " << h1_inner_product_preconditioned_grad_E_grad_E << std::endl;
             preconditioned_grad_E = grad_E;
-            std::cout << "Preconditioning skipped (not a descent direction): " << h1 << std::endl;
+            h1_inner_product_preconditioned_grad_E_grad_E = grad_E_norm * grad_E_norm;
         }
 
         // ======================================================
@@ -450,29 +458,75 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             // First iteration: steepest descent
             direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
         }
-/*
         else {
             // Polak–Ribière coefficient
-            OrbitalVector diff_pc_grad =
-                orbital::add(1.0, preconditioned_grad_E, -1.0, pc_grad_E_prev);
+            OrbitalVector diff_pc_grad = orbital::add(1.0, preconditioned_grad_E, -1.0, previous_preconditioned_grad_E);
+            double polak_ribiere = orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
+            polak_ribiere = polak_ribiere / (previous_h1_inner_product_preconditioned_grad_E_grad_E + mrcpp::MachineZero);
+            polak_ribiere = std::max(0.0, polak_ribiere);
+            polak_ribiere = std::min(polak_ribiere, polak_max);
+            std::cout << "Polak-Ribière coefficient = " << polak_ribiere << std::endl;
 
-            double numerator =
-                orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
+            // Project previous direction to tangent space
+            ComplexMatrix C_proj_dir = orbital::calc_overlap_matrix(direction, Phi_n);
+            DoubleMatrix C_proj_dir_sym = (C_proj_dir.real() + C_proj_dir.real().transpose()) * 0.5;
+            DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_dir_sym);
 
-            double denominator =
-                orbital::h1_inner_product(pc_grad_E_prev, grad_E_prev, nabla);
+            OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
+            projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
+            // Grassmann horizontal projection (optional but recommended)
+            //projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n);
 
-            double beta = 0.0;
-            if (std::abs(denominator) > mrcpp::MachineZero)
-                beta = numerator / denominator;
+            direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
+
+            // ---------- Robust restart checks ----------
+            bool do_restart = false;
+            auto reason = "no reason";
+
+            // (1) Descent check
+            double descent = orbital::h1_inner_product(direction, grad_E, nabla);
+
+            if (descent >= 0.0) {
+                do_restart = true;
+                reason = "non-descent";
+            }
+
+            // (2) Powell restart
+            else if ((nIter - last_restart_iter) > restart_cooldown) {
+                double inner =
+                    orbital::h1_inner_product(grad_E, previous_preconditioned_grad_E, nabla);
+
+                double ref =
+                    orbital::h1_inner_product(previous_preconditioned_grad_E, previous_grad_E, nabla);
+
+                if (inner >= eta_powell * ref)
+                    do_restart = true;
+                    reason = "powell";
+            }
+
+            if (do_restart) {
+                std::cout << "Powell/guarded restart at iteration_index " << nIter << " (reason: " << reason << ")" << std::endl;
+                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+                last_restart_iter = nIter;
+            }
+            // ------------------------------------------
         }
-*/
 
 
 
+        previous_preconditioned_grad_E = preconditioned_grad_E;
+        previous_grad_E = grad_E;
+        previous_h1_inner_product_preconditioned_grad_E_grad_E = h1_inner_product_preconditioned_grad_E_grad_E;
 
+        // Backtracking line search
+        auto alpha_trial = alpha;
+        int count = 0;
+        while (true) {
+            count += 1;
+            // Retraction to Stiefel is Lowdin based:
 
-
+            break;
+        }
 
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
