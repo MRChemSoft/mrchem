@@ -454,9 +454,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Conjugate-gradient direction (H1, Polak-Ribière)
         // ======================================================
         
+        double descent_directional_product;
+
         if (nIter == 1) {
             // First iteration: steepest descent
             direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+            descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
         }
         else {
             // Polak–Ribière coefficient
@@ -509,8 +512,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             if (do_restart) {
                 std::cout << "Powell/guarded restart at iteration_index " << nIter << " (reason: " << reason << ")" << std::endl;
                 direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+                descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
                 last_restart_iter = nIter;
             }
+            else descent_directional_product = descent;
             // ------------------------------------------
         }
 
@@ -533,8 +538,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
         auto Energy = this->property.back();
 
-        const double descent_directional_product = orbital::h1_inner_product(direction, grad_E, nabla);
+        std::cout << "=============================================================" << std::endl;
+        std::cout << "MUST BE THE SAME: " << std::endl;
+        std::cout << "Descent directional H1-inner product: " << orbital::h1_inner_product(direction, grad_E, nabla) << std::endl;
         std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
+        std::cout << "=============================================================" << std::endl;
 
         // Backtracking line search
         auto alpha_trial = alpha;
