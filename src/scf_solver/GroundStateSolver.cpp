@@ -501,6 +501,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
                 double ref = //do not have to recalculate?
                     orbital::h1_inner_product(previous_preconditioned_grad_E, previous_grad_E, nabla);
+                
+        std::cout << "=============================================================" << std::endl;
+        std::cout << "MUST BE THE SAME: " << std::endl;
+        std::cout << ref << std::endl;
+        std::cout << previous_h1_inner_product_preconditioned_grad_E_grad_E << std::endl;
+        std::cout << "=============================================================" << std::endl;
 
                 if (inner >= eta_powell * ref)
                 {
@@ -538,11 +544,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
         auto Energy = this->property.back();
 
-        std::cout << "=============================================================" << std::endl;
-        std::cout << "MUST BE THE SAME: " << std::endl;
-        std::cout << "Descent directional H1-inner product: " << orbital::h1_inner_product(direction, grad_E, nabla) << std::endl;
+//        std::cout << "=============================================================" << std::endl;
+//        std::cout << "MUST BE THE SAME: " << std::endl;
+//        std::cout << "Descent directional H1-inner product: " << orbital::h1_inner_product(direction, grad_E, nabla) << std::endl;
         std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
-        std::cout << "=============================================================" << std::endl;
+//        std::cout << "=============================================================" << std::endl;
 
         // Backtracking line search
         auto alpha_trial = alpha;
