@@ -496,7 +496,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 double inner =
                     orbital::h1_inner_product(grad_E, previous_preconditioned_grad_E, nabla);
 
-                double ref =
+                double ref = //do not have to recalculate?
                     orbital::h1_inner_product(previous_preconditioned_grad_E, previous_grad_E, nabla);
 
                 if (inner >= eta_powell * ref)
@@ -532,13 +532,17 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Orbital swapping must be scoped and restored
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
         auto Energy = this->property.back();
-        
+
+        const double descent_directional_product = orbital::h1_inner_product(direction, grad_E, nabla);
+        std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
+
         // Backtracking line search
         auto alpha_trial = alpha;
         double Energy_candidate;
         //int count = 0;
         while (true) {
             //count += 1;
+            F.clear();
             // Retraction to Stiefel is Lowdin based:
             Phi_n = orbital::add(1.0, Phi_backup, alpha_trial, direction);
             // Orthonormalization updates F_mat as a side effect?!
@@ -560,7 +564,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             }
 
             // Directional Armijo condition:
-            if (Energy_candidate <= Energy + armijo_parameter * alpha_trial * orbital::h1_inner_product(direction, grad_E, nabla)) {
+            if (Energy_candidate <= Energy + armijo_parameter * alpha_trial * descent_directional_product) {
                 // Accept step
                 std::cout << "update: " << err_o << " (step size = " << alpha_trial << ")" << std::endl;
                 break;
@@ -573,7 +577,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
         // Step-size growth safeguard
-        if (Energy_candidate <= Energy + 0.7 * alpha_trial * orbital::h1_inner_product(direction, grad_E, nabla)) {
+        if (Energy_candidate <= Energy + 0.7 * alpha_trial * descent_directional_product) {
             alpha = std::min(alpha_trial * gamma, alpha_max);   // grow step size
         } else {
             alpha = alpha_trial;                          // keep shrunk step size
