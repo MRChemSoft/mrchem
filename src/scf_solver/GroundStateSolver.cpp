@@ -518,8 +518,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         previous_grad_E = grad_E;
         previous_h1_inner_product_preconditioned_grad_E_grad_E = h1_inner_product_preconditioned_grad_E_grad_E;
 
-        // Backtracking line search
+        // WARNING: FockBuilder implicitly depends on mol.getOrbitals()
+        // Orbital swapping must be scoped and restored
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
+        
+        // Backtracking line search
         auto alpha_trial = alpha;
         int count = 0;
         while (true) {
@@ -539,13 +542,16 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         F.clear();
 
         // Orthonormalize
-        orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
+        //orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
         // Compute orbital updates
-        OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
+        //OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
+        OrbitalVector dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
         Phi_np1.clear();
 
-        kain.accelerate(orb_prec, Phi_n, dPhi_n);
+        // WARNING: KAIN has to be always OFF
+        //kain.accelerate(orb_prec, Phi_n, dPhi_n);
+        //kain.accelerate(orb_prec, Phi_backup, dPhi_n);
 
         // Compute errors
         errors = orbital::get_norms(dPhi_n);
@@ -554,7 +560,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_cycle["mo_residual"] = err_t;
 
         // Update orbitals
-        Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
+        //Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
+        Phi_n = orbital::add(1.0, Phi_backup, 1.0, dPhi_n);
         dPhi_n.clear();
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
