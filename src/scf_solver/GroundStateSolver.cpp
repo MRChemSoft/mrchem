@@ -500,8 +500,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                     orbital::h1_inner_product(previous_preconditioned_grad_E, previous_grad_E, nabla);
 
                 if (inner >= eta_powell * ref)
+                {
                     do_restart = true;
                     reason = "powell";
+                }
             }
 
             if (do_restart) {
@@ -517,29 +519,69 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         previous_preconditioned_grad_E = preconditioned_grad_E;
         previous_grad_E = grad_E;
         previous_h1_inner_product_preconditioned_grad_E_grad_E = h1_inner_product_preconditioned_grad_E_grad_E;
+/*
+        std::cout << "this->property:" << std::endl;
+        for (std::size_t i = 0; i < this->property.size(); ++i) {
+            std::cout << "  [" << i << "] = " << this->property[i] << std::endl;
+        }
+        std::cout << "this->property.back():" << std::endl;
+        std::cout << this->property.back() << std::endl;
+*/
 
         // WARNING: FockBuilder implicitly depends on mol.getOrbitals()
         // Orbital swapping must be scoped and restored
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
+        auto Energy = this->property.back();
         
         // Backtracking line search
         auto alpha_trial = alpha;
-        int count = 0;
+        double Energy_candidate;
+        //int count = 0;
         while (true) {
-            count += 1;
+            //count += 1;
             // Retraction to Stiefel is Lowdin based:
-            Phi_n = orbital::add(1.0, Phi_n, alpha_trial, direction);
+            Phi_n = orbital::add(1.0, Phi_backup, alpha_trial, direction);
             // Orthonormalization updates F_mat as a side effect?!
             orbital::orthonormalize(orb_prec, Phi_n, F_mat);
             // Compute Fock matrix and energy
             F.setup(orb_prec);
             //F_mat = F(Phi_candidate, Phi_candidate);
             E_n = F.trace(Phi_n, nucs);
+            Energy_candidate = E_n.getTotalEnergy();
             std::cout << "Candidate Energy: " << E_n.getTotalEnergy() << std::endl;
+            
+            OrbitalVector dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
+            errors = orbital::get_norms(dPhi_n);
+            err_o = errors.maxCoeff();
+            if (checkConvergence(err_o, 0.0))
+            {
+                std::cout << "Precision is achieved inside line search at iteration_index = " << nIter << std::endl;
+                break;
+            }
 
-            break;
+            // Directional Armijo condition:
+            if (Energy_candidate <= Energy + armijo_parameter * alpha_trial * orbital::h1_inner_product(direction, grad_E, nabla)) {
+                // Accept step
+                std::cout << "update: " << err_o << " (step size = " << alpha_trial << ")" << std::endl;
+                break;
+            }
+            alpha_trial *= beta;
+            if (alpha_trial < alpha_min) {
+                std::cout << "Warning: step size too small, stopping search." << std::endl;
+                break;
+            }
         }
+
+        // Step-size growth safeguard
+        if (Energy_candidate <= Energy + 0.7 * alpha_trial * orbital::h1_inner_product(direction, grad_E, nabla)) {
+            alpha = std::min(alpha_trial * gamma, alpha_max);   // grow step size
+        } else {
+            alpha = alpha_trial;                          // keep shrunk step size
+        }
+    
+
         F.clear();
+        
 
         // Orthonormalize
         //orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
@@ -561,7 +603,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Update orbitals
         //Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
-        Phi_n = orbital::add(1.0, Phi_backup, 1.0, dPhi_n);
+        //Phi_n = orbital::add(1.0, Phi_backup, 1.0, dPhi_n);
         dPhi_n.clear();
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
