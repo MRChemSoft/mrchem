@@ -282,8 +282,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     const double alpha_max = 10.0;               // safeguard upper bound
 
     // Parameters for restarting and momentum
-    int last_restart_iter = -1; //0
-    const int restart_cooldown = 4;     // no restarts within these many iterations of previous restart
+    int last_restart_iter = 0;
+    const int restart_cooldown = 4;        // no restarts within these many iterations of previous restart
     const double eta_powell = 0.3;         // Powell threshold (tune 0.1..0.3)
     const double polak_max = 5.0;          // cap on beta (safeguard)
 
@@ -431,7 +431,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         std::cout << "norm(preconditioned_grad_E and projected) = " << grad_E1_norm << std::endl;
         std::cout << "--------------------------------------" << std::endl;
         
-        //# Necessary for Grassmann: 
+        // Necessary for Grassmann: 
         //preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi)
         
         // ==============================
@@ -499,16 +499,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 double inner =
                     orbital::h1_inner_product(grad_E, previous_preconditioned_grad_E, nabla);
 
-                double ref = //do not have to recalculate?
-                    orbital::h1_inner_product(previous_preconditioned_grad_E, previous_grad_E, nabla);
-                
-        std::cout << "=============================================================" << std::endl;
-        std::cout << "MUST BE THE SAME: " << std::endl;
-        std::cout << ref << std::endl;
-        std::cout << previous_h1_inner_product_preconditioned_grad_E_grad_E << std::endl;
-        std::cout << "=============================================================" << std::endl;
-
-                if (inner >= eta_powell * ref)
+                if (inner >= eta_powell * previous_h1_inner_product_preconditioned_grad_E_grad_E)
                 {
                     do_restart = true;
                     reason = "powell";
@@ -535,8 +526,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         for (std::size_t i = 0; i < this->property.size(); ++i) {
             std::cout << "  [" << i << "] = " << this->property[i] << std::endl;
         }
-        std::cout << "this->property.back():" << std::endl;
-        std::cout << this->property.back() << std::endl;
 */
 
         // WARNING: FockBuilder implicitly depends on mol.getOrbitals()
@@ -544,11 +533,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
         auto Energy = this->property.back();
 
-//        std::cout << "=============================================================" << std::endl;
-//        std::cout << "MUST BE THE SAME: " << std::endl;
-//        std::cout << "Descent directional H1-inner product: " << orbital::h1_inner_product(direction, grad_E, nabla) << std::endl;
         std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
-//        std::cout << "=============================================================" << std::endl;
 
         // Backtracking line search
         auto alpha_trial = alpha;
