@@ -21,6 +21,6 @@ filters = {
     E_EL: rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="ne", filters=filters)
+ierr = run(options, input_file="h2", filters=filters)
 
 sys.exit(ierr)
