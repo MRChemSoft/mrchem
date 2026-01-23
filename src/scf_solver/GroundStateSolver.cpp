@@ -216,29 +216,10 @@ void GroundStateSolver::reset() {
     this->energy.clear();
 }
 
-/** @brief Run orbital optimization
+/** @brief Run conjugate orbital optimization
  *
  * @param mol: Molecule to optimize
  * @param F: FockBuilder defining the SCF equations
- *
- * Optimize orbitals until convergence thresholds are met. This algorithm computes
- * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
- * accelerator to improve convergence. Diagonalization or localization may be performed
- * during the SCF iterations. Main points of the algorithm:
- *
- * Pre SCF: setup Fock operator and compute Fock matrix
- *
- *  1) Diagonalize/localize orbitals
- *  2) Compute current SCF energy
- *  3) Apply Helmholtz operator on all orbitals
- *  4) Orthonormalize orbitals (Löwdin)
- *  5) Compute orbital updates
- *  6) Compute KAIN update
- *  7) Compute errors and check for convergence
- *  8) Add orbital updates
- *  9) Orthonormalize orbitals (Löwdin)
- * 10) Setup Fock operator
- * 11) Compute Fock matrix
  *
  */
 json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
@@ -278,7 +259,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     const double beta = 0.5;                     // shrink factor (0 < beta < 1)
     const double gamma = 1.4;                    // growth factor (>1)
     const double armijo_parameter = 1e-4;        // Armijo parameter
-    const double alpha_min = 1e-12;              // safeguard lower bound
+    const double alpha_min = 1e-10;              // safeguard lower bound
     const double alpha_max = 10.0;               // safeguard upper bound
 
     // Parameters for restarting and momentum
@@ -316,8 +297,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         HelmholtzVector H(helm_prec, F_mat.real().diagonal());
         ComplexMatrix L_mat = H.getLambdaMatrix();
 
-        //std::cout << "Fock matrix:" << std::endl << F_mat.real() << std::endl;
-        //std::cout << "Lambda matrix:" << std::endl << L_mat.real() << std::endl;
         
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
@@ -361,12 +340,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         std::cout << "norm(grad_E1) = " << grad_E1_norm << std::endl;
         std::cout << "--------------------------------------" << std::endl;
 
-        //auto grad_E_error = orbital::add(1.0, grad_E, -1.0, grad_E1);
-        //auto grad_E_error_norm = orbital::get_norms(grad_E_error).maxCoeff();
-        //std::cout << "--------------------------------------" << std::endl;
-        //std::cout << "norm(grad_E - grad_E1) = " << grad_E_error_norm << std::endl;
-        //std::cout << "--------------------------------------" << std::endl;
-
+        
 
         
 
@@ -411,31 +385,23 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
         }
 
-        // Check norm of preconditioned gradient
-        auto &nabla = F.momentum();
-        nabla.setup(orb_prec);
-
-        auto preconditioned_grad_E_norm = orbital::h1_norm(preconditioned_grad_E, nabla);
-        std::cout << "--------------------------------------" << std::endl;
-        std::cout << "norm(preconditioned_grad_E) = " << preconditioned_grad_E_norm << std::endl;
-        std::cout << "--------------------------------------" << std::endl;
-
+        
         C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
         AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj1);
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi1);
 
-        grad_E1_norm = orbital::h1_norm(preconditioned_grad_E, nabla);
-        std::cout << "--------------------------------------" << std::endl;
-        std::cout << "norm(preconditioned_grad_E and projected) = " << grad_E1_norm << std::endl;
-        std::cout << "--------------------------------------" << std::endl;
         
         // Necessary for Grassmann: 
         //preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi)
         
         // ==============================
         // End Preconditioning
+
+        // Check norm of gradient
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
 
         auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
         std::cout << "--------------------------------------" << std::endl;
@@ -521,12 +487,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         previous_preconditioned_grad_E = preconditioned_grad_E;
         previous_grad_E = grad_E;
         previous_h1_inner_product_preconditioned_grad_E_grad_E = h1_inner_product_preconditioned_grad_E_grad_E;
-/*
-        std::cout << "this->property:" << std::endl;
-        for (std::size_t i = 0; i < this->property.size(); ++i) {
-            std::cout << "  [" << i << "] = " << this->property[i] << std::endl;
-        }
-*/
 
         // WARNING: FockBuilder implicitly depends on mol.getOrbitals()
         // Orbital swapping must be scoped and restored
@@ -586,18 +546,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         F.clear();
         
 
-        // Orthonormalize
-        //orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
-
+        
         // Compute orbital updates
-        //OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
         Phi_np1.clear();
 
-        // WARNING: KAIN has to be always OFF
-        //kain.accelerate(orb_prec, Phi_n, dPhi_n);
-        //kain.accelerate(orb_prec, Phi_backup, dPhi_n);
-
+        
         // Compute errors
         errors = orbital::get_norms(dPhi_n);
         err_o = errors.maxCoeff();
@@ -617,12 +571,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         F_mat = F(Phi_n, Phi_n);
         E_n = F.trace(Phi_n, nucs);
 
-        //h1 = orbital::h1_inner_product(Phi_n, Phi_n, nabla);
-        //std::cout << "Should be the same: " << h1 << " = " << orbital::h1_norm(Phi_n, nabla) * orbital::h1_norm(Phi_n, nabla) << std::endl;
-        //h1 = h1 - orbital::l2_inner_product(Phi_n, Phi_n);
-        //h1 = h1 * 0.5;
-        //std::cout << "Kinetic energy through h1_inner_product() = " << h1 << std::endl;
-// ==============================================================
         // Collect convergence data
         this->error.push_back(err_t);
         this->energy.push_back(E_n);
@@ -681,6 +629,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
     json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;
+
+    // Print energies, gradients, properties for debugging
+    /*
+        std::cout << "this->property:" << std::endl;
+        for (std::size_t i = 0; i < this->property.size(); ++i) {
+            std::cout << "  [" << i << "] = " << this->property[i] << std::endl;
+        }
+    */
+
     return json_out;
 }
 
