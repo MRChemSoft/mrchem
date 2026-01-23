@@ -397,26 +397,38 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             polak_ribiere = std::max(0.0, polak_ribiere);
             polak_ribiere = std::min(polak_ribiere, polak_max);
             std::cout << "Polak-Ribière coefficient = " << polak_ribiere << std::endl;
+            bool polak_ribiere_is_small = (polak_ribiere <= mrcpp::MachineZero);
 
-            // Project previous direction to tangent space
-            ComplexMatrix C_proj_dir = orbital::calc_overlap_matrix(direction, Phi_n);
-            DoubleMatrix C_proj_dir_sym = (C_proj_dir.real() + C_proj_dir.real().transpose()) * 0.5;
-            DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_dir_sym);
+            if (not polak_ribiere_is_small)
+            {
+                // Project previous direction to tangent space
+                ComplexMatrix C_proj_dir = orbital::calc_overlap_matrix(direction, Phi_n);
+                DoubleMatrix C_proj_dir_sym = (C_proj_dir.real() + C_proj_dir.real().transpose()) * 0.5;
+                DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_dir_sym);
 
-            OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
-            projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
-            // Grassmann horizontal projection (optional but recommended)
-            //projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n);
+                OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
+                projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
+                // Grassmann horizontal projection (optional but recommended)
+                //projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n);
 
-            direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
+                direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
+            }
+            else
+            {
+                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+                descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
+            }
+            
 
             // ---------- Robust restart checks ----------
             bool do_restart = false;
             auto reason = "no reason";
 
             // (1) Descent check
-            double descent = orbital::h1_inner_product(direction, grad_E, nabla);
-
+            double descent;
+            if (not polak_ribiere_is_small) descent = orbital::h1_inner_product(direction, grad_E, nabla);
+            else descent = descent_directional_product;
+            
             if (descent >= 0.0) {
                 do_restart = true;
                 reason = "non-descent";
