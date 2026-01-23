@@ -44,7 +44,6 @@
 #include <vector>
 #include <string>
 #include <nlohmann/json.hpp>
-#include <iostream>
 #include <fstream>
 
 #include "utils/print_utils.h"
@@ -119,8 +118,8 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     }
     double rho_int = rho_new.integrate().real();
     if (std::abs(rho_int - total_charge) > 1e-6) {
-        std::cout << "Total charge: " << total_charge << std::endl;
-        std::cout << "Integrated charge: " << rho_int << std::endl;
+        print_utils::scalar(1, "Total charge", total_charge, "", 6);
+        print_utils::scalar(1, "Integrated charge", rho_int, "", 6);
         rho_new.rescale(total_charge / rho_int);
     }
 
@@ -183,7 +182,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     kin_and_nuc_mat = kin_and_nuc_mat + V_nuc_op(Psi, Psi);
 
     for (int imix = 0; imix < n_mix; imix++) {
-        std::cout << "Mixing iteration " << imix << std::endl;
+        print_utils::text(0, "Mixing iteration", std::to_string(imix));
         // Compute Fock matrix
         mrcpp::print::header(2, "Diagonalizing Fock matrix");
 
@@ -205,7 +204,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
             }
             double e_nuc = chemistry::compute_nuclear_repulsion(nucs);
             double e_tot = e_kin + e_en + e_ee + e_xc + e_nuc + e_nl;
-            std::cout << "Initial LDA energy: " << e_tot << std::endl;
+            print_utils::scalar(0, "Initial LDA energy", e_tot, "au", 10);
             mrcpp::print::time(1, "Computing nao energy", t_energy);
         }
 
@@ -367,7 +366,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
         data_dir = nao_directory;
     }
 
-    std::cout << "data_dir: " << data_dir << std::endl << std::endl;
+    print_utils::text(1, "NAO data directory", data_dir);
 
     for (int iNuc = 0; iNuc < nucs.size(); iNuc++) {
         std::string element = nucs[iNuc].getElement().getSymbol();
@@ -434,10 +433,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                 double nrm = orb_mw.norm();
                 int nnodes = orb_mw.getNNodes();
                 if (nnodes < 10) {
-                    std::cout << "l = " << l << " m = " << m << std::endl;
-                    std::cout << "key " << it.key() << std::endl;
-                    std::cout << "nrom " << nrm << " before " << nrm1 << std::endl;
-                    std::cout << "this is really bad" << std::endl;
+                    MSG_WARN("NAO projection resulted in very few nodes (" << nnodes << ") for orbital " << it.key() << " (l=" << l << ", m=" << m << ", norm=" << nrm << ")");
                 }
                 orb_mw.rescale(1 / nrm);
                 // std::cout << "n nodes " << orb_mw.getNNodes(mrcpp::NUMBER::Total) << std::endl;

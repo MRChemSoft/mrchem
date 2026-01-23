@@ -89,7 +89,7 @@ public:
         print_utils::scalar(0, "Exchange energy  ", E_x,    "(au)", pprec, false);
         print_utils::scalar(0, "X-C energy       ", E_xc,   "(au)", pprec, false);
         print_utils::scalar(0, "N-N energy       ", E_nn,   "(au)", pprec, false);
-        print_utils::scalar(0, "nl energy       ", E_nl,   "(au)", pprec, false);
+        print_utils::scalar(0, "Non-local pp energy ", E_nl,   "(au)", pprec, false);
 
         if (has_ext) {
             mrcpp::print::separator(0, '-');
@@ -129,6 +129,7 @@ public:
             {"Er_el", Er_el},
             {"Er_nuc", Er_nuc},
             {"E_nuc", E_nuc},
+            {"E_nl", E_nl},
             {"E_tot", E_nuc + E_el}
         };
     }
