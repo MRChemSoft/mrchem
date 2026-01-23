@@ -251,7 +251,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     }
 
     // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
-    HelmholtzVector Minus_2_Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -0.5));
     ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
 
     // Parameters for line search
@@ -287,59 +286,30 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Initialize SCF cycle
         Timer t_scf;
         double orb_prec = adjustPrecision(err_o);
-        double helm_prec = getHelmholtzPrec();
         if (nIter < 2) {
             if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
         }
 
-        // Init Helmholtz operator
-        HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        ComplexMatrix L_mat = H.getLambdaMatrix();
+        // Calculate Euclidian gradient
+        OrbitalVector grad_E = F.potential()(Phi_n);
+        grad_E = orbital::add(1.0, grad_E, -0.5, Phi_n);
+        grad_E = Resolvent(grad_E);
+        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
 
         
-        // Apply Helmholtz operator
-        OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
-        OrbitalVector Phi_np1 = H(Psi);
-
-        Psi = F.potential()(Phi_n);
-        OrbitalVector grad_E = orbital::add(1.0, Phi_n, -2.0, Psi);
-        OrbitalVector grad_E1= orbital::add(1.0, Psi, -0.5, Phi_n);
-        Psi.clear();
-        grad_E = Minus_2_Resolvent(grad_E);
-        grad_E1 = Resolvent(grad_E1);
-        grad_E = orbital::add(2.0, Phi_n, 1.0, grad_E);
-        grad_E1 = orbital::add(2.0, Phi_n, 4.0, grad_E1);
-
-        OrbitalVector Minus_2_Resolvent_Phi = Minus_2_Resolvent(Phi_n);
-        ComplexMatrix B_proj = -0.5 * orbital::calc_overlap_matrix(Minus_2_Resolvent_Phi, Phi_n);
-        ComplexMatrix C_proj_complex = orbital::calc_overlap_matrix(grad_E, Phi_n);
-        DoubleMatrix C_proj_sym = (C_proj_complex.real() + C_proj_complex.real().transpose()) * 0.5;
-        DoubleMatrix B_proj_real = (B_proj.real() + B_proj.real().transpose()) * 0.5;
-        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, 2.0 * C_proj_sym);
-        DoubleMatrix minus_half_A_proj = -0.5 * A_proj;
         
         
-        OrbitalVector AR_Phi = orbital::rotate(Minus_2_Resolvent_Phi, minus_half_A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
-        //auto grad_E_norm = orbital::get_norms(grad_E).maxCoeff();
-        //std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
-        //std::cout << "--------------------------------------" << std::endl;
-
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
         ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
-        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E1, Phi_n);
+        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
         DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
-        DoubleMatrix B_proj_real1 = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
-        DoubleMatrix A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
+        DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
+        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
 
-        OrbitalVector AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj1);
-        grad_E1 = orbital::add(1.0, grad_E1, -1.0, AR_Phi1);
-        auto grad_E1_norm = orbital::get_norms(grad_E1).maxCoeff();
-        std::cout << "--------------------------------------" << std::endl;
-        std::cout << "norm(grad_E1) = " << grad_E1_norm << std::endl;
-        std::cout << "--------------------------------------" << std::endl;
-
+        OrbitalVector AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi1);
+        
         
 
         
@@ -349,8 +319,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // ==============================
         // Preconditioning
         // ==============================
-
-        A_proj = A_proj1;
 
         OrbitalVector preconditioned_grad_E = grad_E;
 
@@ -388,8 +356,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         
         C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
-        A_proj1 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_sym1);
-        AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj1);
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj);
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi1);
 
         
@@ -439,7 +407,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             // Project previous direction to tangent space
             ComplexMatrix C_proj_dir = orbital::calc_overlap_matrix(direction, Phi_n);
             DoubleMatrix C_proj_dir_sym = (C_proj_dir.real() + C_proj_dir.real().transpose()) * 0.5;
-            DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real1, C_proj_dir_sym);
+            DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_dir_sym);
 
             OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
             projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
@@ -493,7 +461,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
         auto Energy = this->property.back();
 
-        std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
+        //std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
 
         // Backtracking line search
         auto alpha_trial = alpha;
@@ -549,8 +517,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
-        Phi_np1.clear();
-
+        
+        
         
         // Compute errors
         errors = orbital::get_norms(dPhi_n);
@@ -558,9 +526,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
 
-        // Update orbitals
-        //Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
-        //Phi_n = orbital::add(1.0, Phi_backup, 1.0, dPhi_n);
         dPhi_n.clear();
 
         orbital::orthonormalize(orb_prec, Phi_n, F_mat);
