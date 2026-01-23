@@ -1,10 +1,3 @@
-/**
- * @file sphericalHarmonics.h
- * @brief Contains the relevant, real spherical harmonics functions for the non local pseudopotential.
- * The naming of the functions is as follows: slm where l is the angular momentum and m is the magnetic quantum number. m stands for minus.
- * An example of the naming is s2m1 which is the spherical harmonic function with l=2 and m=-1.
- */
-
 #include "pseudopotential/sphericalHarmonics.h"
 #include <cmath>
 #include <array>
