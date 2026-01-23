@@ -181,11 +181,10 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                         }
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
-                            //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates
+                            //    xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
 
-                            // rho = rho_alpha + rho_beta (energy is much closer to xcfun when using both)
+                            // rho = rho_alpha + rho_beta
                             out(0, j) += exc(0, j) * libxc_coefs[i] * (inp(0, j) + inp(1, j));
                             out(1, j) += vxc(0, j) * libxc_coefs[i];
                             out(2, j) += vxc(1, j) * libxc_coefs[i];
@@ -195,8 +194,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                         vxc = Eigen::MatrixXd::Zero(1, nPts);
                         xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
-                            //  xcfun computes rho * exc for energy density, so we do the same
-                            //    aka xcfun calculates actual energy density while libxc calculates
+                            //    xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
                             out(0, j) += exc(0, j) * libxc_coefs[i] * inp(0, j);
                             out(1, j) += vxc(0, j) * libxc_coefs[i];
@@ -311,7 +309,7 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
  * param[out] out_data Matrix of output values
  */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
- // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+  // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
   // That means that we cannot extract the energy density data with out.row(0).data() for example.
   Eigen::MatrixXd inp_trans(inp.transpose());
   Eigen::MatrixXd out_trans(numOut(), inp.rows());
