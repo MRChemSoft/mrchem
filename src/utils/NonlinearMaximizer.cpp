@@ -47,8 +47,8 @@ int NonlinearMaximizer::maximize() {
     Timer t_tot, t_hess, t_step;
     t_hess.stop();
     t_step.stop();
-    int i, j, k, l, iter, dcount;
-    double mu, h2;
+    int i, iter, dcount;
+    double mu;
     double old_norm, new_norm, gradient_norm, value_functional, expected_change, relative_change;
     double value_functional_old, step_norm2, first_order, second_order, valdiff;
 
@@ -64,9 +64,8 @@ int NonlinearMaximizer::maximize() {
     double mu_min = 1.0E-12;
 
     DoubleVector eiVal(N2h), old_step(N2h), diag(N2h), step(N2h);
-    double mu_Newton_init = 2.0, acc_fac = 1.0;
-    double mu_Newton = mu_Newton_init;
-    double lamb1, sq, a, c, x = 0.0, direction = 0.0;
+    double acc_fac = 1.0;
+    double x = 0.0, direction = 0.0;
     int N_newton_step = 0, newton_step_exact = 0;
     double maxEiVal;
 
@@ -80,7 +79,6 @@ int NonlinearMaximizer::maximize() {
 
     // Start of iterations
     for (iter = 1; iter < maxIter + 1 && !converged; iter++) {
-        int lastICG = 0;
         if (print > 5 and mrcpp::mpi::wrk_rank == 0) cout << " iteration  " << iter << endl;
         dcount = 0;
         for (i = 0; i < N2h; i++) { eiVal(i) = this->get_hessian(i, i); }
@@ -142,9 +140,8 @@ int NonlinearMaximizer::maximize() {
             if ((N_newton_step > 2 && (step_norm2 < 1.E-3 || newton_step_exact == 1))) {
                 if (print > 10 and mrcpp::mpi::wrk_rank == 0) cout << "Taking Newton step  " << endl;
                 newton_step_exact = 1;
-                mu_Newton *= 0.2; // level shift for positive and zero eigenvalues
                 DoubleVector r(N2h), Ap(N2h), p(N2h), z(N2h), err(N2h), precond(N2h);
-                double pAp, Hij;
+                double pAp;
                 t_hess.resume();
                 multiply_hessian(step, Ap);
                 t_hess.stop();
@@ -156,7 +153,6 @@ int NonlinearMaximizer::maximize() {
                     p(i) = z(i);
                 }
                 for (int iCG = 0; iCG < CG_maxiter; iCG++) {
-                    double rr = r.transpose() * r;
                     double rz = r.transpose() * z;
                     pAp = 0.0;
                     t_hess.resume();
@@ -188,7 +184,6 @@ int NonlinearMaximizer::maximize() {
                         }
                         if (mrcpp::mpi::wrk_rank == 0) cout << iCG << " error this iteration " << std::sqrt(ee) << endl;
                     }
-                    lastICG = iCG;
                 }
                 step_norm2 = step.transpose() * step;
                 first_order = this->gradient.transpose() * step;
@@ -196,14 +191,12 @@ int NonlinearMaximizer::maximize() {
                 for (int i = 0; i < N2h; i++) { second_order += Ap(i) * step(i); }
             } else {
                 newton_step_exact = 0;
-                mu_Newton = mu_Newton_init;
             }
 
             if (print == 20 and mrcpp::mpi::wrk_rank == 0) cout << endl << " 2nd  " << second_order << " fi*fi/d  " << x << " s g " << step.transpose() * gradient << endl;
         } else {
             N_newton_step = 0;
             newton_step_exact = 0;
-            mu_Newton = mu_Newton_init;
         }
 
         //    if(print==2){cout<<setw(22)<< step_norm2;}

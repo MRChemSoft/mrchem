@@ -47,10 +47,10 @@ public:
         return result;
     }
 
-    std::string getParamName1() const { return "RMS"; }
-    std::string getParamName2() const { return "Xi"; }
-    double calcParam1(double prec, const Nucleus &nuc) const { return nuc.getRMSRadius(); }
-    double calcParam2(double prec, const Nucleus &nuc) const {
+    std::string getParamName1() const override { return "RMS"; }
+    std::string getParamName2() const override { return "Xi"; }
+    double calcParam1(double prec, const Nucleus &nuc) const override { return nuc.getRMSRadius(); }
+    double calcParam2(double prec, const Nucleus &nuc) const override {
         auto RMS = nuc.getRMSRadius();
         auto RMS2 = RMS*RMS;
         auto xi = 3.0 / (2.0 * RMS2);

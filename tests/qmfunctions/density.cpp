@@ -37,7 +37,6 @@ namespace density_tests {
 
 TEST_CASE("Density", "[density]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-12;
 
     SECTION("calc density") {
         OrbitalVector Phi;

@@ -1002,7 +1002,6 @@ void orbital::saveOrbital(const std::string &file, const Orbital &orb, int text_
         std::fstream f;
         f.open(metafile.str(), std::ios::out | std::ios::binary);
         if (not f.is_open()) MSG_ERROR("Unable to open file");
-        mrcpp::CompFunctionData<3> orbdata = orb.getFuncData();
         f.write((char *)&orb.func_ptr->data, sizeof(mrcpp::CompFunctionData<3>));
         f.close();
     }
