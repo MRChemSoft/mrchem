@@ -2,7 +2,6 @@
 #include "pseudopotential/projector.h"
 #include <math.h>
 #include <fstream>
-#include <iostream>
 #include <MRCPP/Printer>
 
 #include <string>
@@ -22,7 +21,6 @@
  * @param prec The precision of the projector.
  */
 ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int l, int m, double prec) {
-    // std::cout << "Constructing ProjectorFunction" << std::endl;
     this->pos = pos;
     this->rl = rl;
     this->i = i;
@@ -33,19 +31,6 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
     // select the spherical harmonic function based on the angular momentum and magnetic quantum number
     switch_sperics(l, m);
     double prefactor = std::sqrt(2.0) / (std::pow(rl, l + (4.0 * ii - 1) / 2.0) * std::sqrt(tgamma( l + (4.0 * ii - 1.0) / 2.0 )) );
-    // std::cout << "prefactor: " << prefactor << std::endl;
-    // std::cout << "rl: " << rl << std::endl;
-    // std::cout << "pow " << std::pow(rl, l + (4.0 * ii - 1) / 2.0) << std::endl;
-
-    // debug with prints why prefactor is nan:
-    // std::cout << "prefactor: " << prefactor << std::endl;
-    // std::cout << "rl: " << rl << std::endl;
-    // std::cout << "l: " << l << std::endl;
-    // std::cout << "i: " << ii << std::endl;
-    // std::cout << "tgamma: " << tgamma( l + (4.0 * ii - 1.0) / 2.0 ) << std::endl;
-    // std::cout << "arg of tgamma: " << l + (4.0 * ii - 1.0) / 2.0 << std::endl;
-
-
 
     auto project_analytic = [this, prefactor, ii](const std::array<double, 3> &r) -> double {
         std::array<double, 3> rprime = {r[0] - this->pos[0], r[1] - this->pos[1], r[2] - this->pos[2]};
@@ -72,12 +57,7 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
 
 
     if (std::abs(nrm - 1.0) > 10 * prec) {
-        std::cout << "Norm of projector " << nrm << std::endl;
-        std::cout << "Number of nodes " << projector_ptr->getNNodes();
-        std::cout << "l: " << l << " m: " << m << std::endl;
-        std::cout << "rl: " << rl << std::endl;
-        std::cout << "i: " << i << std::endl;
-        MSG_ABORT("Projection of projector failed");
+        MSG_ABORT("Projection of projector failed: norm=" << nrm << ", nodes=" << projector_ptr->getNNodes() << ", l=" << l << ", m=" << m << ", rl=" << rl << ", i=" << i);
     }
 
 }

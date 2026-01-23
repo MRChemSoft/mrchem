@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -8,6 +7,7 @@
 #include <Eigen/Dense>
 #include <nlohmann/json.hpp>
 #include "MRCPP/Printer"
+#include "utils/print_utils.h"
 
 /**
  * Splits a given string into a vector of words.
@@ -48,13 +48,8 @@ public:
 
         nlohmann::json pp_json = pp_json_in["pseuodopotential"];
 
-        // std::cout << "PseudopotentialData(nlohmann::json pp_json)" << std::endl;
-        // std::cout << "pp_json: " << pp_json << std::endl;
-        // std::cout << "pp_json[pp_json]: " << pp_json["pp_json"] << std::endl;
-        // std::cout << "reading zeff and zion" << std::endl;
         zeff = pp_json["zeff"];
         zion = pp_json["zion"];
-        // std::cout << "zeff: " << zeff << std::endl;
         rloc = pp_json["local"]["rloc"];
         nloc = pp_json["local"]["nloc"];
         alpha_pp = pp_json["local"]["alpha_pp"];
@@ -65,7 +60,6 @@ public:
         rl = rl_vec;
         std::vector<int> dim_h_vec = pp_json["nonlocal"]["dim_h"];
         dim_h = dim_h_vec;
-        // std::vector<std::vector<std::vector<double>>> h_vec = pp_json["nonlocal"]["h"];
         for (int l = 0; l < nsep; l++) {
             std::vector<std::vector<double>> h_l_vec = pp_json["nonlocal"]["h"][l];
             Eigen::MatrixXd h_l_mat(dim_h[l], dim_h[l]);
@@ -82,123 +76,35 @@ public:
             this->qnlcc = pp_json["nlcc"]["qcore"];
             this->rnlcc = pp_json["nlcc"]["rcore"];
         }
-
-    }
-
-
-    PseudopotentialData(std::string filename) {
-        std::ifstream file(filename);
-        if (!file.is_open()) {
-            std::cerr << "Error: Could not open file " << filename << std::endl;
-            return;
-        }
-
-        MSG_ERROR("PseudopotentialData(std::string filename) is deprecated. Use PseudopotentialData(nlohmann::json pp_json) instead.");
-
-        std::string line;
-        std::vector<std::string> words;
-        // first line is irrelevant
-        std::getline(file, line);
-        // read zatom and zeff
-        std::getline(file, line);
-        words = splitStringToWords(line);
-        zion = std::stoi(words[0]);
-        zeff = std::stoi(words[1]);
-
-        // ignore this line.
-        std::getline(file, line);
-
-        // read rloc, nloc, and the c coefficients
-        std::getline(file, line);
-        words = splitStringToWords(line);
-        rloc = std::stod(words[0]);
-        nloc = std::stoi(words[1]);
-        alpha_pp = 1.0 / (std::sqrt(2.0) * rloc);
-
-        std::cout << "rloc: " << rloc << std::endl;
-        std::cout << "alpha_pp: " << alpha_pp << std::endl;
-        std::cout << "nloc: " << nloc << std::endl;
-
-        c = Eigen::VectorXd::Zero(nloc);
-        for (int i = 0; i < nloc; i++) {
-            c[i] = std::stod(words[2 + i]);
-        }
-        std::cout << "c: " << c.transpose() << std::endl;
-        // read nsep
-        std::getline(file, line);
-        words = splitStringToWords(line);
-        nsep = std::stoi(words[0]);
-        // check if nsep is between 1 and 3
-        if (nsep < 0 || nsep > 3) {
-            std::cerr << "Error: nsep must be between 1 and 3" << std::endl;
-            return;
-        }
-        std::cout << "nsep: " << nsep << std::endl;
-
-        for (int l = 0; l < nsep; l++) {
-            if (!std::getline(file, line)) {
-                std::cerr << "Error: Could not read projector" << std::endl;
-                return;
-            }
-            words = splitStringToWords(line);
-            rl.push_back(std::stod(words[0]));
-            dim_h.push_back(std::stoi(words[1]));
-            std::cout << "dim_h: " << dim_h[l] << std::endl;
-            h.push_back(Eigen::MatrixXd::Zero(dim_h[l], dim_h[l]));
-            // std::cout << "h: " << h[l] << std::endl;
-            for (int i = 0; i < dim_h[l]; i++) {
-                std::cout << "i: " << i << std::endl;
-                std::cout << "words: " << words[2 + i] << std::endl;
-                h[l](0, i) = std::stod(words[2 + i]);
-                h[l](i, 0) = h[l](0, i);
-            }
-            // std::cout << "h: " << h[l] << std::endl;
-            for (int i = 1; i < dim_h[l]; i++) {
-                std::getline(file, line);
-                words = splitStringToWords(line);
-                for (int j = i; j < dim_h[l]; j++){
-                    h[l](i, j) = std::stod(words[j-i]);
-                    h[l](j, i) = h[l](i, j);
-                }
-            }
-            std::cout << "h: " << h[l] << std::endl;
-            // and now read the irrelevant soc lines if l > 0
-            if (l > 0) {
-                for (int i = 0; i < dim_h[l]; i++) {
-                    std::getline(file, line);
-                }
-            }
-        }
     }
 
     /**
      * Prints the pseudopotential.
      */
     void print() {
-        std::cout << std::endl;
-        std::cout << "----------------------------------------" << std::endl;
-        std::cout << "Pseudopotential data:" << std::endl;
-        std::cout << "Zeff: " << zeff << std::endl;
-        std::cout << "Zion: " << zion << std::endl;
-        std::cout << "rloc: " << rloc << std::endl;
-        std::cout << "alpha_pp: " << alpha_pp << std::endl;
-        std::cout << "nloc: " << nloc << std::endl;
-        std::cout << "c: " << c.transpose() << std::endl;
-        std::cout << "nsep: " << nsep << std::endl;
+        mrcpp::print::separator(0, '-');
+        mrcpp::print::header(0, "Pseudopotential data");
+        mrchem::print_utils::scalar(0, "Zeff", zeff);
+        mrchem::print_utils::scalar(0, "Zion", zion);
+        mrchem::print_utils::scalar(0, "rloc", rloc);
+        mrchem::print_utils::scalar(0, "alpha_pp", alpha_pp);
+        mrchem::print_utils::scalar(0, "nloc", nloc);
+        mrchem::print_utils::vector(0, "c", c);
+        mrchem::print_utils::scalar(0, "nsep", nsep);
 
-        for (int l = 0; l < nsep; l++)
-        {
-            std::cout << "l: " << l << std::endl;
-            std::cout << "rl: " << rl[l] << std::endl;
-            std::cout << "h: " << h[l] << std::endl;
+        for (int l = 0; l < nsep; l++) {
+            mrcpp::print::separator(0, '+');
+            mrchem::print_utils::scalar(0, "l", l);
+            mrchem::print_utils::scalar(0, "rl", rl[l]);
+            mrchem::print_utils::matrix(0, "h", h[l]);
         }
+        mrcpp::print::separator(0, '+');
         if (has_nlcc) {
-            std::cout << "Non linear core correction: " << std::endl;
-            std::cout << "qnlcc: " << qnlcc << std::endl;
-            std::cout << "rnlcc: " << rnlcc << std::endl;
+            mrchem::print_utils::text(0, "NLCC", "enabled");
+            mrchem::print_utils::scalar(0, "qnlcc", qnlcc);
+            mrchem::print_utils::scalar(0, "rnlcc", rnlcc);
         }
-        std::cout << "----------------------------------------" << std::endl;
-        std::cout << std::endl;
+        mrcpp::print::separator(0, '-');
     }
 
     /**

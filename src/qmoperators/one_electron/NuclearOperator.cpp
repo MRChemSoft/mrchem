@@ -30,7 +30,6 @@
 
 #include "NuclearOperator.h"
 
-#include <fstream>
 #include <limits>
 #include <nlohmann/json.hpp>
 
@@ -84,18 +83,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
         f_loc = new FiniteNucleusSphere();
     } else if (model == "pp") {
         mrcpp::print::header(1, "Projecting nuclear potential (Pseudo-potential)");
-        // std::vector<PseudopotentialData> pps;
-        // for(const Nucleus &nuc : nucs){
-        //     std::string symb = nuc.getElement().getSymbol();
-        //     std::string fname = "psppar." + symb;
-        //     std::cout << "fname: " << fname << std::endl;
-        //     PseudopotentialData hgh(fname);
-        //     std::cout << "Pseudopotential data loaded for nucleus" << std::endl;
-        //     pps.push_back(hgh);
-        // }
-        // std::cout << "Pseudopotential data loaded for nucleus" << std::endl;
         f_loc = new PPNucleus(nucs);
-        std::cout << "Nuclear operator constructed" << std::endl;
     } else {
         MSG_ABORT("Invalid nuclear model : " << model);
     }

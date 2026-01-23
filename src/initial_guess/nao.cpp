@@ -289,7 +289,6 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
             mrcpp::project(atomic_density_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(rho_analytic), prec);
             ComplexDouble integral = atomic_density_mw.integrate();
             double rescale = nucs[i].getCharge() / integral.real();
-            // std::cout << "rescale: " << rescale << " integral: " << integral.real() << std::endl;
             atomic_density_mw.rescale(rescale);
         } else {
             mrcpp::Coord<3> nucPos = nucs[i].getCoord();
@@ -331,13 +330,6 @@ public:
 
     }
     protected:
-    // bool isVisibleAtScale(int scale, int nQuadPts) const override {
-    //     // double stdDeviation = 1.0;
-    //     // auto visibleScale = static_cast<int>(std::floor(std::log2(nQuadPts * 5.0 * stdDeviation)));
-    //     // std::cout << "visibleScale: " << visibleScale << " scale: " << scale << std::endl;
-    //     int visibleScale = -4;
-    //     return (scale >= visibleScale);
-    // }
 
 private:
     int l;
@@ -374,7 +366,6 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
         std::ifstream ifs(file);
         nlohmann::json orbs_json = nlohmann::json::parse(ifs);
         ifs.close();
-        // std::cout << "Orbitals for " << element << " are: " << orbs_json << std::endl;
         std::vector<double> r_vec = orbs_json["rgrid"];
         Eigen::VectorXd rGrid(r_vec.size());
         for (int i = 0; i < r_vec.size(); i++) {
@@ -382,7 +373,6 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
         }
         for (auto it=orbs_json.begin(); it!=orbs_json.end(); it++) {
             if (it.key() == "rgrid") continue;
-            // std::cout << "key: " << it.key() << std::endl;
             char ang_mom_char = it.key()[1];
             std::string ang_mom = std::string(1, ang_mom_char);
             int l;
@@ -394,8 +384,6 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
             else l = -1;
             std::vector<double> coeffs = it.value();
             Eigen::VectorXd coeffVec(coeffs.size());
-            // std::cout << "ang_mom: " << ang_mom << " l: " << l << std::endl;
-            // std::cout << "coeffs: " << coeffs.size() << std::endl;
             for (int i = 0; i < coeffs.size(); i++) {
                 coeffVec(i) = coeffs[i];
             }
@@ -427,7 +415,6 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                 mrcpp::project(orb_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss2), prec);
 
                 mrcpp::project(orb_mw, orb, prec);
-                // std::cout << "n nodes " << orb_mw.getNNodes(mrcpp::NUMBER::Total) << std::endl;
                 double nrm1 = orb_mw.norm();
                 // orb_mw.crop(prec);
                 double nrm = orb_mw.norm();
@@ -436,8 +423,6 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                     MSG_WARN("NAO projection resulted in very few nodes (" << nnodes << ") for orbital " << it.key() << " (l=" << l << ", m=" << m << ", norm=" << nrm << ")");
                 }
                 orb_mw.rescale(1 / nrm);
-                // std::cout << "n nodes " << orb_mw.getNNodes(mrcpp::NUMBER::Total) << std::endl;
-                // std::cout << "norm " << orb_mw.norm() << std::endl;
                 Phi.push_back(orb_mw);
             }
         }
