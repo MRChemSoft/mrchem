@@ -293,28 +293,23 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Calculate Euclidian gradient
         OrbitalVector grad_E = F.potential()(Phi_n);
+        F.clear();
         grad_E = orbital::add(1.0, grad_E, -0.5, Phi_n);
         grad_E = Resolvent(grad_E);
         grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
 
-        
-        
-        
+        // Evaluate resolvent and its quadratic form
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
         ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
+
+        // Project the Euclidian gradient to tangent space
         ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
         DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
         DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-
-        OrbitalVector AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi1);
-        
-        
-
-        
-
-        F.clear();
+        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        AR_Phi.clear();
 
         // ==============================
         // Preconditioning
@@ -332,6 +327,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix U_A_proj = eigensolver.eigenvectors();
 
         // Check norm(A - 4F) tends to zero
+        std::cout << "--------------------------------------" << std::endl;
         std::cout << "norm(A_proj - 4 * F_mat.real()) = " 
                   << (A_proj - 4.0 * F_mat.real()).norm() << std::endl;
 
@@ -349,7 +345,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             auto temp = Resolvent_mu(preconditioned_grad_E);
             temp = orbital::rotate(temp, one_plus_orbital_energy);
             preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp );
-
+            temp.clear();
             preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
         }
 
@@ -357,8 +353,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-        AR_Phi1 = orbital::rotate(Resolvent_Phi, A_proj);
-        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi1);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
 
         
         // Necessary for Grassmann: 
@@ -372,9 +368,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         nabla.setup(orb_prec);
 
         auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        std::cout << "--------------------------------------" << std::endl;
         std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
-        std::cout << "--------------------------------------" << std::endl;
 
         // Safeguard: if not descent direction, skip preconditioning
         double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
@@ -466,6 +460,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Backtracking line search
         auto alpha_trial = alpha;
         double Energy_candidate;
+        SCFEnergy SCF_Energy_candidate;
+        OrbitalVector dPhi_n;
         //int count = 0;
         while (true) {
             //count += 1;
@@ -475,13 +471,14 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             // Orthonormalization updates F_mat as a side effect?!
             orbital::orthonormalize(orb_prec, Phi_n, F_mat);
             // Compute Fock matrix and energy
+            if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
-            //F_mat = F(Phi_candidate, Phi_candidate);
-            E_n = F.trace(Phi_n, nucs);
-            Energy_candidate = E_n.getTotalEnergy();
-            std::cout << "Candidate Energy: " << E_n.getTotalEnergy() << std::endl;
-            
-            OrbitalVector dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
+            F_mat = F(Phi_n, Phi_n);
+            SCF_Energy_candidate = F.trace(Phi_n, nucs);
+            Energy_candidate = SCF_Energy_candidate.getTotalEnergy();
+            std::cout << "Candidate Energy: " << SCF_Energy_candidate.getTotalEnergy() << std::endl;
+
+            dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
             errors = orbital::get_norms(dPhi_n);
             err_o = errors.maxCoeff();
             if (checkConvergence(err_o, 0.0))
@@ -511,33 +508,26 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
     
 
-        F.clear();
+        //F.clear();
         
+        std::cout << "--------------------------------------" << std::endl;
 
-        
-        // Compute orbital updates
-        OrbitalVector dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
         
         
         
         // Compute errors
-        errors = orbital::get_norms(dPhi_n);
+        //errors = orbital::get_norms(dPhi_n);
         err_o = errors.maxCoeff();
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
 
         dPhi_n.clear();
 
-        orbital::orthonormalize(orb_prec, Phi_n, F_mat);
-
-        // Compute Fock matrix and energy
-        if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
-        F.setup(orb_prec);
-        F_mat = F(Phi_n, Phi_n);
-        E_n = F.trace(Phi_n, nucs);
+        
 
         // Collect convergence data
         this->error.push_back(err_t);
+        E_n = SCF_Energy_candidate;
         this->energy.push_back(E_n);
         this->property.push_back(E_n.getTotalEnergy());
         auto err_p = calcPropertyError();
