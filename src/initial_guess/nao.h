@@ -29,7 +29,7 @@
 #include "qmfunctions/qmfunction_fwd.h"
 #include <string>
 
-/** @file sad.h
+/** @file nao.h
  *
  * @brief Module for generating initial guess with numeric atomic orbitals (NAOs)
  *
@@ -47,6 +47,6 @@ bool setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int n_mix, doubl
 void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs);
 void project_atomic_orbitals(double prec, OrbitalVector &Phi, const Nuclei &nucs, std::string nao_directory = "");
 
-} // namespace sad
+} // namespace nao
 } // namespace initial_guess
 } // namespace mrchem
