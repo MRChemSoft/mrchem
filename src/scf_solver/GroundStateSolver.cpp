@@ -327,7 +327,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix U_A_proj = eigensolver.eigenvectors();
 
         // Check norm(A - 4F) tends to zero
-        std::cout << "--------------------------------------" << std::endl;
+        std::cout << "----------------------------------------------------------------------------" << std::endl;
         std::cout << "norm(A_proj - 4 * F_mat.real()) = " 
                   << (A_proj - 4.0 * F_mat.real()).norm() << std::endl;
 
@@ -455,8 +455,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
         auto Energy = this->property.back();
 
-        //std::cout << "Descent directional H1-inner product: " << descent_directional_product << std::endl;
-
         // Backtracking line search
         auto alpha_trial = alpha;
         double Energy_candidate;
@@ -476,14 +474,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             F_mat = F(Phi_n, Phi_n);
             SCF_Energy_candidate = F.trace(Phi_n, nucs);
             Energy_candidate = SCF_Energy_candidate.getTotalEnergy();
-            std::cout << "Candidate Energy: " << SCF_Energy_candidate.getTotalEnergy() << std::endl;
+            std::cout << "Candidate Energy: " << Energy_candidate << std::endl;
 
             dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
             errors = orbital::get_norms(dPhi_n);
+            dPhi_n.clear();
             err_o = errors.maxCoeff();
             if (checkConvergence(err_o, 0.0))
             {
-                std::cout << "Precision is achieved inside line search at iteration_index = " << nIter << std::endl;
+                std::cout << "Line search step is negligible; accepting." << std::endl;
                 break;
             }
 
@@ -508,34 +507,32 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
     
 
-        //F.clear();
-        
-        std::cout << "--------------------------------------" << std::endl;
-
-        
-        
-        
-        // Compute errors
-        //errors = orbital::get_norms(dPhi_n);
-        err_o = errors.maxCoeff();
+        // Compute total update norm and collect convergence data
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
-
-        dPhi_n.clear();
-
-        
-
-        // Collect convergence data
         this->error.push_back(err_t);
-        E_n = SCF_Energy_candidate;
-        this->energy.push_back(E_n);
-        this->property.push_back(E_n.getTotalEnergy());
+
+        // Energy_candidate < Energy, unless convergence is reached
+        if (Energy_candidate >= Energy) {
+            std::cout << "Energy cannot be decreased more in the backtracking search." << std::endl;
+            converged = true;
+            Phi_n = Phi_backup;
+        }
+        else {
+            E_n = SCF_Energy_candidate;
+            this->energy.push_back(E_n);
+            this->property.push_back(E_n.getTotalEnergy());
+        }
+        Phi_backup.clear();
+
         auto err_p = calcPropertyError();
-        converged = checkConvergence(err_o, err_p);
+        if (not converged) converged = checkConvergence(err_o, err_p);
 
         json_cycle["energy_terms"] = E_n.json();
         json_cycle["energy_total"] = E_n.getTotalEnergy();
         json_cycle["energy_update"] = err_p;
+
+        std::cout << "----------------------------------------------------------------------------" << std::endl;
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
