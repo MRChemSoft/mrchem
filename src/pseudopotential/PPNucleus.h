@@ -85,14 +85,37 @@ public:
         return result;
     }
 
-    // I had to implement this functions, thez return not meaningful values.
+    /**
+     * @brief Returns the name of the first parameter (required by NuclearFunction base class).
+     * @return The string "Precision".
+     * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
+     */
     std::string getParamName1() const { return "Precision"; }
+
+    /**
+     * @brief Returns the name of the second parameter (required by NuclearFunction base class).
+     * @return The string "Smoothing".
+     * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
+     */
     std::string getParamName2() const { return "Smoothing"; }
+
+    /**
+     * @brief Calculates the first parameter (required by NuclearFunction base class).
+     * @param prec The precision value.
+     * @param nuc The nucleus (unused).
+     * @return The precision value unchanged.
+     * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
+     */
     double calcParam1(double prec, const Nucleus &nuc) const { return prec; }
-    double calcParam2(double prec, const Nucleus &nuc) const {
-        double tmp = 0.0;
-        return prec;
-    }
+
+    /**
+     * @brief Calculates the second parameter (required by NuclearFunction base class).
+     * @param prec The precision value.
+     * @param nuc The nucleus (unused).
+     * @return The precision value unchanged.
+     * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
+     */
+    double calcParam2(double prec, const Nucleus &nuc) const { return prec; }
 
 protected:
     std::vector<PseudopotentialData> pps;
