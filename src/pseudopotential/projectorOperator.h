@@ -1,5 +1,14 @@
 #pragma once
 
+/**
+ * @file projectorOperator.h
+ * @brief Non-local pseudopotential projector operator classes.
+ *
+ * This file contains the classes needed to apply the non-local part of
+ * pseudopotentials using projector functions. The projectors are organized
+ * hierarchically by atom, angular momentum (l), and magnetic quantum number (m).
+ */
+
 #include "tensor/RankZeroOperator.h"
 #include "mrchem.h"
 #include "pseudopotential/pseudopotential.h"
@@ -11,31 +20,66 @@
 
 #include "MRCPP/Printer"
 
+/**
+ * @class magneticQuantumNumberProjector
+ * @brief Container for projector functions with the same magnetic quantum number m.
+ *
+ * For a given angular momentum l and magnetic quantum number m, this class
+ * holds all projector functions (indexed by i) that share these quantum numbers.
+ */
 class magneticQuantumNumberProjector {
-    public:
-    std::vector<ProjectorFunction> iProj;
-    int nProj;
+public:
+    std::vector<ProjectorFunction> iProj; ///< Projector functions for this (l,m) pair
+    int nProj;                             ///< Number of projectors
 };
 
+/**
+ * @class angularMomentumProjector
+ * @brief Container for projectors with the same angular momentum l.
+ *
+ * For a given angular momentum l, this class holds projectors for all
+ * magnetic quantum numbers m ranging from -l to +l.
+ */
 class angularMomentumProjector {
-    public:
-    std::vector<magneticQuantumNumberProjector> mProj;
-    int nM;
+public:
+    std::vector<magneticQuantumNumberProjector> mProj; ///< Projectors indexed by m
+    int nM;                                             ///< Number of m values (2l+1)
 };
 
+/**
+ * @class AtomProjector
+ * @brief Container for all projectors associated with a single atom.
+ *
+ * This class organizes the non-local pseudopotential projectors for one atom,
+ * with projectors grouped by angular momentum l.
+ */
 class AtomProjector {
-    public:
-    std::vector<angularMomentumProjector> lProj;
-    int numberOfAngMom;
+public:
+    std::vector<angularMomentumProjector> lProj; ///< Projectors indexed by angular momentum l
+    int numberOfAngMom;                           ///< Number of angular momentum channels
 };
 
+/**
+ * @class ProjectorOperatorQM
+ * @brief Quantum mechanical operator for non-local pseudopotential projectors.
+ *
+ * This class implements the non-local part of the pseudopotential using
+ * the Goedecker-Teter-Hutter (GTH) form. It applies projector operators to orbitals
+ * by computing inner products with projector functions and forming linear
+ * combinations weighted by the pseudopotential matrix elements h_ij^l.
+ */
 class ProjectorOperatorQM final : public mrchem::QMOperator {
 
-    std::vector<PseudopotentialData> pp;
-    std::vector<AtomProjector> proj;
-    double prec;
+    std::vector<PseudopotentialData> pp; ///< Pseudopotential data for each atom
+    std::vector<AtomProjector> proj;      ///< Projector functions for each atom
+    double prec;                          ///< Numerical precision
 
 public:
+    /**
+     * @brief Constructs the projector operator for a set of nuclei.
+     * @param nucs The nuclei with associated pseudopotential data.
+     * @param prec The numerical precision for projector functions.
+     */
     ProjectorOperatorQM(mrchem::Nuclei const &nucs, double prec){
 
         // mrchem::Nuclei nucs = molecule.getNuclei();
@@ -94,16 +138,31 @@ public:
         // std::cout << "ProjectorOperator constructed                      aasdfa asdf" << std::endl;
     }
 
+    /**
+     * @brief Sets up the operator with the given precision.
+     * @param prec The numerical precision.
+     */
     void setup(double prec) {
         this->prec = prec;
     }
 
+    /**
+     * @brief Clears the operator state.
+     */
     void clear() {
     }
 
 protected:
 
-mrchem::Orbital apply(mrchem::Orbital phi) {
+    /**
+     * @brief Applies the non-local projector operator to an orbital.
+     * @param phi The input orbital.
+     * @return The resulting orbital after applying the projector operator.
+     *
+     * The application follows the GTH separable form: sum over atoms, angular
+     * momenta, and projector indices of h_ij^l * <p_i|phi> * |p_j>.
+     */
+    mrchem::Orbital apply(mrchem::Orbital phi) {
     // std::cout << "Applying projector operator" << std::endl;
     // loop over all atoms
     ComplexDouble dotComplex;
@@ -159,28 +218,51 @@ mrchem::Orbital apply(mrchem::Orbital phi) {
     return result;
 }
 
-mrchem::Orbital dagger(mrchem::Orbital phi) {
-    return apply(phi);
-}
+    /**
+     * @brief Applies the adjoint (dagger) operator to an orbital.
+     * @param phi The input orbital.
+     * @return The resulting orbital (same as apply since the operator is Hermitian).
+     */
+    mrchem::Orbital dagger(mrchem::Orbital phi) {
+        return apply(phi);
+    }
 
-mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const {
-    return ComplexDouble(0.0, 0.0);
-}
+    /**
+     * @brief Evaluates the operator at a given coordinate (not implemented).
+     * @param r The coordinate.
+     * @return Zero (placeholder).
+     */
+    mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const {
+        return ComplexDouble(0.0, 0.0);
+    }
 
-mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) {
-    NOT_IMPLEMENTED_ABORT;
-}
-
+    /**
+     * @brief Applies the operator to another operator (not implemented).
+     * @param O The input operator.
+     */
+    mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) {
+        NOT_IMPLEMENTED_ABORT;
+    }
 };
 
+/**
+ * @class ProjectorOperator
+ * @brief High-level interface for the non-local pseudopotential projector operator.
+ *
+ * This class wraps ProjectorOperatorQM as a RankZeroOperator, providing an
+ * interface for use in the MRChem framework.
+ */
 class ProjectorOperator : public mrchem::RankZeroOperator {
 
 public:
+    /**
+     * @brief Constructs a projector operator for a set of nuclei.
+     * @param nucs The nuclei with associated pseudopotential data.
+     * @param prec The numerical precision.
+     */
     ProjectorOperator(mrchem::Nuclei const &nucs, double prec) {
         auto qmOperator = std::make_shared<ProjectorOperatorQM>(nucs, prec);
         mrchem::RankZeroOperator &pp = (*this);
         pp = qmOperator;
     }
-
-
 };
