@@ -356,17 +356,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
 
-        
+        // Set the spatial derivatives
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
+
         // Necessary for Grassmann: 
-        //preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi)
-        
+        preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+        //preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+
         // ==============================
         // End Preconditioning
 
         // Check norm of gradient
-        auto &nabla = F.momentum();
-        nabla.setup(orb_prec);
-
         auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
         std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
 
@@ -408,8 +409,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
                 OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
                 projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
-                // Grassmann horizontal projection (optional but recommended)
-                //projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n);
+                // Necessary for Grassmann:
+                projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
 
                 direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
             }
