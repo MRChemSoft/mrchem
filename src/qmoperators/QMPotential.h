@@ -54,7 +54,7 @@ protected:
     int adap_build;
 
     ComplexDouble evalf(const mrcpp::Coord<3> &r) const override {
-        ComplexDouble out(0.0, 0.0), i(0.0, 1.0);
+        ComplexDouble out(0.0, 0.0);
         if (this->isreal()) out += this->real().evalf(r);
         if (this->iscomplex()) out += this->complex().evalf(r);
         return out;

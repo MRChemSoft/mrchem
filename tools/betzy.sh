@@ -14,7 +14,7 @@ build_dir=${mrchem_dir}/build-${version}
 install_dir=${mrchem_dir}/install-${version}
 
 if [ -d "${build_dir}" ]; then
-    echo "Build directory already exsits, please remove"
+    echo "Build directory already exists, please remove"
     exit 1
 else
     ./setup --prefix=${install_dir} --omp --mpi --cxx=mpicxx ${build_dir} && \

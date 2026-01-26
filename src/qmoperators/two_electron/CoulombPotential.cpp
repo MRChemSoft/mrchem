@@ -143,7 +143,6 @@ mrcpp::CompFunction<3> CoulombPotential::setupLocalPotential(double prec) {
     if (this->poisson == nullptr) MSG_ERROR("Poisson operator not initialized");
 
     PoissonOperator &P = *this->poisson;
-    OrbitalVector &Phi = *this->orbitals;
     mrcpp::CompFunction<3> &rho = this->density;
 
     Timer timer;
@@ -161,7 +160,6 @@ void CoulombPotential::allreducePotential(mrcpp::CompFunction<3> &V_loc) {
     Timer t_com;
 
     mrcpp::CompFunction<3> &V_tot = *this;
-    OrbitalVector &Phi = *this->orbitals;
 
     // We do not expect the V_loc to cancel out, therefore we keep everything (no crop)
     double prec = -1.0;
@@ -169,7 +167,7 @@ void CoulombPotential::allreducePotential(mrcpp::CompFunction<3> &V_loc) {
     // Add up local contributions into the grand master
     mrcpp::mpi::reduce_function(prec, V_loc, mrcpp::mpi::comm_wrk);
 
-    if (not V_tot.hasReal()) V_tot.alloc(1);
+    V_tot.alloc(1);
     if (V_tot.isShared()) {
         int tag = 3141;
         // MPI grand master distributes to shared masters

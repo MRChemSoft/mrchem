@@ -192,7 +192,6 @@ void SCFSolver::printOrbitals(const DoubleVector &norms, const DoubleVector &err
     if (print_head) println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
-    bool conv_tot = true;
     for (int i = 0; i < Phi.size(); i++) {
         bool conv_i = (errors(i) < this->orbThrs) or (this->orbThrs < 0.0);
         std::stringstream o_row;
@@ -204,7 +203,6 @@ void SCFSolver::printOrbitals(const DoubleVector &norms, const DoubleVector &err
         o_row << std::setw(w5) << conv_i;
         println(2, o_row.str());
         if (Phi[i].hasReal()) println(5, Phi[i].real());
-        if (not conv_i) conv_tot = false;
     }
 }
 

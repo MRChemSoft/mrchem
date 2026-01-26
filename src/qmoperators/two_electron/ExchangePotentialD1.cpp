@@ -298,7 +298,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
             Timer timerx;
             // fetch ready contributions to ex_j from others
             std::vector<int> iVec = tasksMaster.get_readytask(jorb, 1);
-            int lastsize = iVec.size();
             for (int iorb : iVec) {
                 t_get.resume();
                 Orbital ex_rcv;
@@ -317,7 +316,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_add.stop();
                 // ex_j is sent to Bank
                 if (ex_j.hasReal() or ex_j.hasImag()) {
-                    auto tT = timerx.elapsed();
                     t_snd.resume();
                     ex_j.crop(prec);
                     if (ex_j.norm() > prec) {
