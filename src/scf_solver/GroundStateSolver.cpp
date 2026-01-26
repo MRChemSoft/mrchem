@@ -532,9 +532,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
         else {
             E_n = SCF_Energy_candidate;
-            this->energy.push_back(E_n);
-            this->property.push_back(E_n.getTotalEnergy());
         }
+        this->energy.push_back(E_n);
+        this->property.push_back(E_n.getTotalEnergy());
         Phi_backup.clear();
 
         auto err_p = calcPropertyError();
