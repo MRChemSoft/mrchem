@@ -115,7 +115,6 @@ public:
         }
 
         Eigen::VectorXd x_in_poly(5), y_in_poly(5);
-        int j = adjustIndexToBoundaries(binarySearch(this->x, xval));
         int i = adjustIndexToBoundaries(binarySearch(this->x, xval));
         for (int k = 0; k < 5; k++) {
             x_in_poly(k) = this->x(i - 2 + k);

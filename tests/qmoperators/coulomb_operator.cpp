@@ -71,7 +71,6 @@ TEST_CASE("CoulombOperator", "[coulomb_operator]") {
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
     E_P(0, 0) = 3.1676468518;

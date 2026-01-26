@@ -313,6 +313,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     // Compute OrbitalVectors
     Timer t_1;
     OrbitalVector termOne = operOne(Phi);
+<<<<<<< HEAD
     // for (int i = 0; i < termOne.size(); i++) {
     //     //termOne will have a prefactor -1, because of i*i
     //     if (not mrcpp::mpi::my_func(termOne[i])) continue;
@@ -320,6 +321,8 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     //     if(std::norm(fac-1.0)>mrcpp::MachineZero)termOne[i].rescale(fac);
     //     termOne[i].func_ptr->data.c1[0] = {1.0, 0.0};
     // }
+=======
+>>>>>>> edb633a6e23e64f7c17d4a516a87b0f4b4058bed
 
     mrcpp::print::time(2, "Computing gradient term", t_1);
 

@@ -169,7 +169,7 @@ void NuclearOperator::allreducePotential(double prec, mrcpp::CompFunction<3> &V_
         if (mrcpp::mpi::numerically_exact) V_loc.crop(prec);
     }
 
-    if (not V_tot.hasReal()) V_tot.alloc(1);
+    V_tot.alloc(1);
     if (V_tot.isShared()) {
         int tag = 3141;
         // MPI grand master distributes to shared masters

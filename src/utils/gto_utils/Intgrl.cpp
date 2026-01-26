@@ -74,7 +74,7 @@ void Intgrl::readAtomBlock(std::ifstream &ifs) {
     ifs >> nAtoms;
     ifs >> nShell;
 
-    int funcsPerShell[nShell];
+    std::vector<int> funcsPerShell(nShell);
     for (int i = 0; i < nShell; i++) { ifs >> funcsPerShell[i]; }
 
     readAtomData(ifs, nAtoms, z);
@@ -111,11 +111,9 @@ void Intgrl::readContractionBlock(std::ifstream &ifs, AOBasis &bas, int l) {
     ifs >> nctr;
 
     int start = bas.size();
-    int nbas = 0;
     for (int i = 0; i < nctr; i++) {
         AOContraction ctr(l);
         bas.append(ctr);
-        nbas += (l + 1) * (l + 2) / 2;
     }
 
     double expo;

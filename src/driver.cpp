@@ -486,7 +486,6 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
     if (plevel == 1) mrcpp::print::header(1, "Computing ground state properties");
 
     auto &Phi = mol.getOrbitals();
-    auto &F_mat = mol.getFockMatrix();
     auto &nuclei = mol.getNuclei();
 
     if (json_prop.contains("dipole_moment")) {

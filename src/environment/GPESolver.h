@@ -76,7 +76,7 @@ public:
               int max_iter,
               bool dyn_thrs,
               SCRFDensityType density_type);
-    ~GPESolver();
+    virtual ~GPESolver();
 
     /** @brief Sets the convergence threshold for the micro-iterations, used with dynamic thresholding.
      *  @param prec value to set the convergence threshold to

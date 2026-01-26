@@ -30,7 +30,7 @@
 
 namespace mrchem {
 
-class RadialFunction final : public mrcpp::RepresentableFunction<1> {
+class RadialFunction final : public mrcpp::RepresentableFunction<1, double> {
 public:
     RadialFunction(int n, int l, double Z);
 
