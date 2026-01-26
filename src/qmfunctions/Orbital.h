@@ -62,6 +62,8 @@ public:
     Orbital(int spin, double occ, int rank = -1, int n_comp = 1);
     Orbital dagger() const;
 
+    // Orbital apply_alpha_matrix(int alpha, bool conjugate = false) const; //redundant, apply_Pauli can be used instead
+
     char printSpin() const;
     void setSpin(int spin) { this->func_ptr->data.n1[0] = spin; }
     void saveOrbital(const std::string &file);

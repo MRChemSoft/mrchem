@@ -27,6 +27,7 @@
 
 #include "mrchem.h"
 #include "qmfunction_fwd.h"
+#include <MRCPP/utils/CompFunction.h>
 
 namespace mrchem {
 namespace orbital {

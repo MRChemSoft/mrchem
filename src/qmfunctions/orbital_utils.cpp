@@ -29,6 +29,7 @@
 #include <MRCPP/Timer>
 #include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/utils/details.h>
+#include <MRCPP/utils/CompFunction.h>
 
 #include "utils/RRMaximizer.h"
 #include "utils/math_utils.h"
@@ -210,7 +211,7 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
  */
 OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
     OrbitalVector out;
-    for (auto &i : Phi) {
+    for (const auto &i : Phi) {
         Orbital out_i;
         mrcpp::CopyToComplex(out_i, i);
         out.push_back(out_i);

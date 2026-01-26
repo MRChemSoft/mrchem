@@ -135,4 +135,12 @@ char Orbital::printSpin() const {
     return sp;
 }
 
+// Orbital Orbital::apply_alpha_matrix(int alpha, bool conjugate) const {
+//     //placeholder
+//     Orbital out(*this); // Shallow copy
+//     out.func_ptr->conj = not this->conjugate();
+//     return out; // Return shallow copy
+// }
+
+
 } // namespace mrchem

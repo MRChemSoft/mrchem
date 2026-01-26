@@ -25,6 +25,7 @@
 
 #include "MRCPP/Gaussians"
 #include "MRCPP/MWFunctions"
+// #include "MRCPP/utils/CompFunction.h"
 #include "MRCPP/Parallel"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"

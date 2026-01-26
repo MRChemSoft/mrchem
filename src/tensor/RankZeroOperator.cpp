@@ -26,6 +26,7 @@
 #include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <MRCPP/utils/spinor_utils.h>
 
 #include "RankZeroOperator.h"
 
@@ -235,16 +236,22 @@ ComplexDouble RankZeroOperator::dagger(const mrcpp::Coord<3> &r) const {
     return std::conj(O(r));
 }
 
-/** @brief apply operator expansion to orbital
+/** @brief Implements an operator of the form (σO) (i.e. sigma matrix times O, not dot) acting on an orbital, with O the RankZeroOperator
  *
  * @param inp: orbital on which to apply
+ * @param alpha: index of the Dirac matrices. 0 is default and represents the identity
  *
  * Applies each term of the operator expansion to the input orbital. First all
  * components of each term are applied consecutively, then the output of each term
  * is added upp with the corresponding coefficient.
  * NB: the result is put at the same location as the input (out and inp trees are the same tree)
+ *
+ * More information on the alpha argument
+ * For scalar operators, it is unused.
+ * For 2 component (Weyl/Pauli) spinors, alpha = 0,1,2,3 corresponds to indentiy, sigma_x, y and z respectively.
+ * NOT YET IMPLEMENTED- SEE spinor_utils.cpp IN MRCPP IF YOU WANT TO IMPLEMENT 4 COMPONENT STUFF For 4 component (Dirac) spinors, alpha = 0,1,2,3 corresponds to indentiy, alpha_x, y and z respectively, and alpha = 4 corresponds to the beta matrix
  */
-Orbital RankZeroOperator::operator()(Orbital inp) {
+Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
     if (inp.getNNodes() == 0) return inp.paramCopy(false);
 
     RankZeroOperator &O = *this;
@@ -256,6 +263,7 @@ Orbital RankZeroOperator::operator()(Orbital inp) {
     }
     Orbital out = inp.paramCopy(true);
     mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
+    mrcpp::apply_Pauli(out, out, alpha); // apply the alpha (Pauli) matrix to the result; NB: 4C behaviour needs to be implemented
     return out;
 }
 

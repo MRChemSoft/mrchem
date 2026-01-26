@@ -309,7 +309,7 @@ sections:
           over keywords in the ``ZORA`` section).
           ``azora`` uses atomic ZORA potentials, which are precomputed and read from the directory 
           specified in the ``azora_potential_path`` keyword.
-          ``zora2c``uses 2-component ZORA Hamiltonian with spinorial wavefunctions (complex function valued 2-vectors in the code).
+          ``zora2c``UNUSED - uses 2-component ZORA Hamiltonian with spinorial wavefunctions (complex function valued 2-vectors in the code).
       - name: environment
         type: str
         default: none
@@ -330,6 +330,14 @@ sections:
           Point-like (numerical smoothing): HFYGB (default), parabola or minimal.
           Finite models (physical smoothing): Gaussian or Homogeneous sphere
           Finite models are derived from nuclear RMS radius, Visscher (1997)
+      - name: components
+        type: int
+        default: 1
+        predicates:
+          - value.lower() in [1,2,4]
+        docstring: |
+          Number of spinor components in the wavefunction. 1 corresponds to scalar wavefunctions, 
+          2 for Weyl or Pauli spinors (Standard for 2C methods), and 4 represent Dirac spinors.
   - name: ZORA
     docstring: |
       Define required parameters for the ZORA Hamiltonian.
