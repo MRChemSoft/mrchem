@@ -80,7 +80,7 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     } else {
         // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
-        if (number == -1) { throw std::logic_error("Got name " + name + " but this is not a known shorthand in MRChem nor a functional in Libxc\n"); }
+        if (number == -1) { MSG_ABORT((name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
 
         ids = {number};
         coefs = {1.0};
@@ -102,7 +102,11 @@ void Factory::setFunctional(const std::string &name, double c) {
         xc_func_type libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
             auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
-            if (return_code != 0) { std::cout << "!!!!! Unknown functional (setfunctional)name : " << name << " id: " << ids[i] << "--" << return_code << std::endl; }
+            if (return_code != 0) {
+              std::ostringstream oss;
+              oss << "Functional id = " << ids[i] << " not found in the employed version of Libxc.\n";
+              MSG_ABORT(oss.str());
+            }
             xc_func_set_dens_threshold(&libxc_obj, cutoff);
 
             std::cout << "Functional number: " << libxc_objects.size() << ": " << name << std::endl;
