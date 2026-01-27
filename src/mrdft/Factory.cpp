@@ -91,10 +91,7 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
 void Factory::setFunctional(const std::string &name, double c) {
     setLibxc(libxc); // should probably be where setFunctional is called
 
-    if (not libxc) {
-        xcfun_set(xcfun_p.get(), name.c_str(), c);
-
-    } else {
+    if (libxc) {
         std::vector<int> ids;
         std::vector<double> coefs;
 
@@ -103,9 +100,9 @@ void Factory::setFunctional(const std::string &name, double c) {
         for (size_t i = 0; i < ids.size(); i++) {
             auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
             if (return_code != 0) {
-              std::ostringstream oss;
-              oss << "Functional id = " << ids[i] << " not found in the employed version of Libxc.\n";
-              MSG_ABORT(oss.str());
+                std::ostringstream oss;
+                oss << "Functional id = " << ids[i] << " not found in the employed version of Libxc.\n";
+                MSG_ABORT(oss.str());
             }
             xc_func_set_dens_threshold(&libxc_obj, cutoff);
 
@@ -113,6 +110,9 @@ void Factory::setFunctional(const std::string &name, double c) {
             libxc_objects.push_back(libxc_obj);
             libxc_coefs.push_back(c * coefs[i]);
         }
+
+    } else {
+        xcfun_set(xcfun_p.get(), name.c_str(), c);
     }
 }
 
@@ -124,19 +124,7 @@ std::unique_ptr<MRDFT> Factory::build() {
 
     // Init XCFun or Libxc
     bool gga;
-    if (not libxc) {
-        gga = xcfun_is_gga(xcfun_p.get());
-        unsigned int mode = 1;                    //!< only partial derivative mode implemented
-        unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
-        unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
-        unsigned int laplacian = 0;               //!< no laplacian
-        unsigned int kinetic = 0;                 //!< no kinetic energy density
-        unsigned int current = 0;                 //!< no current density
-        unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
-        if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
-        xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
-
-    } else {
+    if (libxc) {
         for (const auto &f : libxc_objects) {
 
             switch (f.info->family) {
@@ -168,6 +156,17 @@ std::unique_ptr<MRDFT> Factory::build() {
             if ((f.info->flags & XC_FLAGS_HYB_CAM) || (f.info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
             if ((f.info->flags & XC_FLAGS_HYB_CAMY) || (f.info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
         }
+    } else {
+        gga = xcfun_is_gga(xcfun_p.get());
+        unsigned int mode = 1;                    //!< only partial derivative mode implemented
+        unsigned int func_type = (gga) ? 1 : 0;   //!< only LDA and GGA supported for now
+        unsigned int dens_type = 1 + spin;        //!< only n (dens_type = 1) or alpha & beta (denst_type = 2) supported now.
+        unsigned int laplacian = 0;               //!< no laplacian
+        unsigned int kinetic = 0;                 //!< no kinetic energy density
+        unsigned int current = 0;                 //!< no current density
+        unsigned int exp_derivative = not(gamma); //!< use gamma or explicit derivatives
+        if (not(gga)) exp_derivative = 0;         //!< fall back to gamma-type derivatives if LDA
+        xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
     }
 
     bool lda = not gga;
