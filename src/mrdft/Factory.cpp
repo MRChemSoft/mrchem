@@ -163,11 +163,11 @@ std::unique_ptr<MRDFT> Factory::build() {
                     gga = false; // eliminate unused variable warning
                     MSG_ABORT("Libxc functional family not handled in MRChem!\n");
             }
-        }
 
-        // Check if functional is range separated
-        if ((f.info->flags & XC_FLAGS_HYB_CAM) || (f.info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
-        if ((f.info->flags & XC_FLAGS_HYB_CAMY) || (f.info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
+            // Check if functional is range separated
+            if ((f.info->flags & XC_FLAGS_HYB_CAM) || (f.info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
+            if ((f.info->flags & XC_FLAGS_HYB_CAMY) || (f.info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
+        }
     }
 
     bool lda = not gga;
