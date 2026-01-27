@@ -32,7 +32,6 @@ HirshfeldRadInterpolater::HirshfeldRadInterpolater(const std::string element, st
 
 // Function to evaluate the interpolated function
 double HirshfeldRadInterpolater::evalf(const double &r) const {
-    double y;
     return lnRho->evalfLeftNoRightLinear(r);
 }
 

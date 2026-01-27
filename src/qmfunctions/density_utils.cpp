@@ -93,7 +93,6 @@ Density density::compute(double prec, Orbital phi, DensityType spin) {
  *
  */
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
-    int N_el = orbital::get_electron_number(Phi);
     double rel_prec = prec;        // prec for rho_i = |phi_i|^2
 
     Density rho_loc(false);
@@ -109,9 +108,7 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, DensityType
  *
  */
 void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector &X, OrbitalVector &Y, DensityType spin) {
-    int N_el = orbital::get_electron_number(Phi);
     double rel_prec = prec;        // prec for rho_i = |x_i><phi_i| + |phi_i><x_i|
-    double abs_prec = prec / N_el; // prec for rho = sum_i rho_i
 
     // LUCA: rho_loc should get the "general" grid in order to make sure all densities are available on the same grid.
     Density rho_loc(false);

@@ -48,10 +48,16 @@ variables:
       shell: /bin/bash
       command: |
         cd build
-        ctest --output-on-failure --verbose
+        ctest -N \
+          | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p' \
+          | circleci tests split \
+          | tr '\n' '|' \
+          | sed 's/|$//' \
+          | xargs -I {} ctest  --verbose --output-on-failure -R "{}"
 
 jobs:
   serial-py3:
+    parallelism: 4 
     <<: *ubuntu-2204
     steps:
       - checkout:
@@ -60,6 +66,7 @@ jobs:
       - *build
       - *tests
   omp-py3:
+    parallelism: 4 
     <<: *ubuntu-2204
     environment:
       - OMP_NUM_THREADS: '2'
@@ -70,6 +77,7 @@ jobs:
       - *build
       - *tests
   mpi-py3:
+    parallelism: 4 
     <<: *ubuntu-2204
     steps:
       - checkout:

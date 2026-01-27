@@ -100,7 +100,6 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         if (mrcpp::mpi::my_func(Phi_x[i])) mrcpp::project(Phi_x[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
     E_P(0, 0) = -5.044421437856e-02;
