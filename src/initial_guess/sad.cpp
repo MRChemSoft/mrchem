@@ -149,7 +149,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "AO basis    ", "3-21G");
+    print_utils::text(0, "AO basis    ", "AHGBS-7");
     mrcpp::print::separator(0, '~', 2);
 
     // Make Fock operator contributions
