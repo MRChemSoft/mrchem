@@ -3,8 +3,8 @@ if(ENABLE_MPI)
 endif()
 
 add_integration_test(
-  NAME "Li_SCF_PBE0_Libxc"
-  LABELS "mrchem;li_scf_pbe0_libxc;libxc;Li_SCF_PBE0_Libxc;dft;scf;energy"
+  NAME "Li_SCF_PBE0"
+  LABELS "mrchem;li_scf_pbe0;Li_SCF_PBE0;dft;scf;energy"
   COST 100
   LAUNCH_AGENT ${_li_scf_pbe0_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess
