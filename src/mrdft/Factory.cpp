@@ -78,11 +78,6 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coefs = {1.0, 1.0};
         return;
     } else {
-        // Change any dashes to underscores
-        for (size_t i = 0; i < name.size(); i++) {
-            if (name[i] == '-') { name[i] = '_'; }
-        }
-
         // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
         if (number == -1) { throw std::logic_error("Got name " + name + " but this is not a known shorthand in MRChem nor a functional in Libxc\n"); }
