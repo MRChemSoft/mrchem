@@ -26,6 +26,8 @@
 #include "MRCPP/utils/parallel.h"
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
+#include <xc_funcs.h>
+#include <xc.h>
 #include <fstream>
 
 #include "mrchem.h"
@@ -202,7 +204,6 @@ void mrenv::print_header() {
     print_utils::scalar(0, "Total cores    ", (mrcpp::mpi::world_size - mrcpp::mpi::tot_bank_size) * mrcpp::omp::n_threads + mrcpp::mpi::tot_bank_size, "", 0, false);
     mrcpp::print::separator(0, ' ');
     mrcpp::print::separator(0, '-', 1);
-    printout(0, xcfun_splash());
     mrcpp::print::environment(0);
     MRA->print();
 }

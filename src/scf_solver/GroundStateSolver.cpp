@@ -194,6 +194,7 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation        ", calculation);
     print_utils::text(0, "Method             ", this->methodName);
+    print_utils::text(0, "XC library         ", (this->libxc) ? "LibXC" : "XCFun");
     print_utils::text(0, "Relativity         ", this->relativityName);
     print_utils::text(0, "Environment        ", this->environmentName);
     print_utils::text(0, "External fields    ", this->externalFieldName);

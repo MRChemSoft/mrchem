@@ -1,0 +1,30 @@
+# vim:syntax=sh:
+
+world_prec = 1.0e-5               # Overall relative precision
+world_size = 5                    # Size of simulation box 2^n
+
+MPI {
+  numerically_exact = true        # Guarantee identical results in MPI
+}
+
+Molecule {
+$coords
+H   0.000000    0.000000    0.672828
+H   0.000000    0.000000   -0.672828
+$end
+}
+
+WaveFunction {
+  method = DFT                   # Wave function method (HF or DFT)
+  restricted = true
+}
+
+SCF {
+  kain = 3                        # Length of KAIN iterative history
+  max_iter = 12
+}
+
+DFT {
+  xc_library = libxc
+  functionals = HYB_GGA_XC_B3LYP5
+}

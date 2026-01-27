@@ -1,0 +1,28 @@
+#vim:syntax=sh:
+
+world_prec = 1.0e-5                   # Overall relative precision
+world_size = 6                        # Size of simulation box 2^n
+
+MPI {
+    numerically_exact = true
+}
+
+Molecule {
+$coords
+He 0.0 0.0 0.0
+$end
+}
+
+WaveFunction {
+    method = SVWN5
+}
+
+SCF {
+    kain = 3
+    max_iter = 10
+    guess_type = sad_gto
+}
+
+DFT {
+    xc_library = libxc
+}

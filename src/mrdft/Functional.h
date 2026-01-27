@@ -26,12 +26,16 @@
 #pragma once
 
 #include <memory>
+#include <iostream>
+#include <set>
 
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
 #include <XCFun/xcfun.h>
+#include <xc_funcs.h>
+#include <xc.h>
 
 namespace mrdft {
 
@@ -51,20 +55,27 @@ public:
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }
 
     virtual bool isSpin() const = 0;
-    bool isLDA() const { return (not(isGGA() or isMetaGGA())); }
-    bool isGGA() const { return xcfun_is_gga(xcfun.get()); }
-    bool isMetaGGA() const { return xcfun_is_metagga(xcfun.get()); }
+    bool isLDA() const { return not (isGGA() or isMetaGGA()); }
+    virtual bool isGGA() const = 0;
+    virtual bool isMetaGGA() const = 0;
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); }
-    double amountEXX() const {
-        double exx = 0.0;
-        xcfun_get(xcfun.get(), "exx", &exx);
-        return exx;
-    }
+    virtual int numIn() const = 0;
+    virtual int numOut() const = 0;
+
+    double amountEXX() const;
     double XCenergy = 0.0;
 
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
     friend class MRDFT;
+
+    bool libxc;
+    std::vector<xc_func_type> libxc_objects;
+    std::vector<double> libxc_coefs;
+
+    void print_functional_references() const;
+
+    void set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coefs_);
 
 protected:
     const int order;
@@ -75,10 +86,10 @@ protected:
     XC_p xcfun;
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};
 
-    int getXCInputLength() const { return xcfun_input_length(xcfun.get()); }
-    int getXCOutputLength() const { return xcfun_output_length(xcfun.get()); }
     virtual int getCtrInputLength() const = 0;
     virtual int getCtrOutputLength() const = 0;
+
+    void evaluate_data(const Eigen::MatrixXd & inp, Eigen::MatrixXd &out) const;
 
     Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
     Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
@@ -89,6 +100,7 @@ protected:
 
     virtual void preprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
     virtual mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) = 0;
+
 };
 
 } // namespace mrdft
