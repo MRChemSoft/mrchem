@@ -133,7 +133,9 @@ std::unique_ptr<MRDFT> Factory::build() {
         xcfun_user_eval_setup(xcfun_p.get(), order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
 
     } else {
-        for (const auto &f : libxc_objects) switch (f.info->family) {
+        for (const auto &f : libxc_objects) {
+
+            switch (f.info->family) {
                 case XC_FAMILY_LDA:
 #ifdef XC_FAMILY_HYB_GGA
                 case XC_FAMILY_HYB_LDA:
@@ -157,7 +159,13 @@ std::unique_ptr<MRDFT> Factory::build() {
                     gga = false; // eliminate unused variable warning
                     MSG_ABORT("Case not handled in MRChem!\n");
             }
+        }
+
+        // Check if functional is range separated
+        if ((f.info->flags & XC_FLAGS_HYB_CAM) || (f.info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
+        if ((f.info->flags & XC_FLAGS_HYB_CAMY) || (f.info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
     }
+
     bool lda = not gga;
 
     // Init MW derivative
