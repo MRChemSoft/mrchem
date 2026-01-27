@@ -28,7 +28,7 @@
 #include <XCFun/xcfun.h>
 
 #include "Functional.h"
-#include "Factory.h" // only to call Facotry::libxc
+#include "Factory.h" // only to call Factory::libxc
 
 namespace mrdft {
 
