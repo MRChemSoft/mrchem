@@ -129,8 +129,8 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
             calcExchange_kij(precf, phi_i, y_i, phi_p, ex_iyp);
             func_vec.push_back(ex_xip);
             func_vec.push_back(ex_iyp);
-            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
-            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
+            coef_vec.push_back(spin_fac * phi_i.occ() / phi_i.getSquareNorm());
+            coef_vec.push_back(spin_fac * phi_i.occ() / phi_i.getSquareNorm());
         }
         if (not mrcpp::mpi::my_func(phi_i)) phi_i.free();
         if (not mrcpp::mpi::my_func(x_i)) x_i.free();
@@ -188,8 +188,8 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
             calcExchange_kij(precf, y_i, phi_i, phi_p, ex_yip);
             func_vec.push_back(ex_ixp);
             func_vec.push_back(ex_yip);
-            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
-            coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
+            coef_vec.push_back(spin_fac * phi_i.occ() / phi_i.getSquareNorm());
+            coef_vec.push_back(spin_fac * phi_i.occ() / phi_i.getSquareNorm());
         }
         if (not mrcpp::mpi::my_func(phi_i)) phi_i.free();
         if (not mrcpp::mpi::my_func(x_i)) x_i.free();

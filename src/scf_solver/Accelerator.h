@@ -32,6 +32,7 @@
 
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/qmfunction_fwd.h"
+#include "qmfunctions/Orbital.h"
 
 namespace mrchem {
 /** @class Accelerator

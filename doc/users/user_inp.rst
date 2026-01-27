@@ -380,6 +380,7 @@ The optimization is controlled by the following keywords (defaults shown):
       final_prec = -1.0                     # Dynamic precision, final value
       orbital_thrs = 10 * world_prec        # Convergence threshold orbitals
       energy_thrs = -1.0                    # Convergence threshold energy
+      deltascf_method = none                # Method to use for a DeltaSCF calculation
     }
 
 If ``run = false`` no SCF is performed, and the properties are computed directly
@@ -407,6 +408,9 @@ converge the orbitals this much due to the quadratic convergence of the energy.
 This means that the number of correct digits in the total energy will be
 saturated well before this point, and one should rather use the ``energy_thrs``
 keyword in this case in order to save a few iterations.
+
+There is also the possibility to run a DeltaSCF calculation using either the
+``MOM`` or ``IMOM`` method.
 
 .. note::
 
