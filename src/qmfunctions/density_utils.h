@@ -47,5 +47,12 @@ void compute_local(double prec, Density &rho, OrbitalVector &Phi, OrbitalVector 
  */
 void readAtomicDensity(const std::string path, Eigen::VectorXd &rGrid, Eigen::VectorXd &rhoGrid);
 
+/**
+ * @brief Saves the density to a file
+ * @param Phi The orbital vector containing from which to compute the density
+ * @param file The file path to save the density
+ */
+void save_density(OrbitalVector &Phi, const std::string &file);
+
 } // namespace density
 } // namespace mrchem

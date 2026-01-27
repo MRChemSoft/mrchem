@@ -227,6 +227,7 @@ void Molecule::printProperties() const {
     for (const auto &nmr : nmr_shielding) nmr.second.print(nmr.first);
     for (const auto &geo : geometric_derivative) geo.second.print(geo.first);
     for (const auto &hir : hirshfeld_charges) hir.second.print(hir.first);
+    for (const auto &pop : population_analysis) pop.second.print(pop.first);
 }
 
 nlohmann::json Molecule::json() const {
