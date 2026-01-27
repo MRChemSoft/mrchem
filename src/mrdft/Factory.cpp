@@ -80,7 +80,7 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     } else {
         // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
-        if (number == -1) { MSG_ABORT((name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
+        if (number == -1) { MSG_ABORT(name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
 
         ids = {number};
         coefs = {1.0};
