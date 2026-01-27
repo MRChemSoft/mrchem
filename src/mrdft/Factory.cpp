@@ -161,7 +161,7 @@ std::unique_ptr<MRDFT> Factory::build() {
 
                 default:
                     gga = false; // eliminate unused variable warning
-                    MSG_ABORT("Case not handled in MRChem!\n");
+                    MSG_ABORT("Libxc functional family not handled in MRChem!\n");
             }
         }
 
