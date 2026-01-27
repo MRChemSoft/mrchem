@@ -216,7 +216,6 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         intgrl.getNucleus(0).setCoord(nuc.getCoord());
         gto_utils::OrbitalExp gto_exp(intgrl);
 
-        int n = 0;
         for (int i = 0; i < gto_exp.size(); i++) {
             Timer t_i;
             Phi.push_back(Orbital(SPIN::Paired));
