@@ -139,7 +139,7 @@ double Functional::amountEXX() const {
  * Each row corresponds to one grid point.
  *
  * param[in] inp_data Matrix of input values
- * param[in] out_data Matrix of output values
+ * param[out] out_data Matrix of output values
  */
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = numIn();
