@@ -1,6 +1,6 @@
 # vim:syntax=sh:
 
-world_prec = 1.0e-3               # Overall relative precision
+world_prec = 1.0e-4               # Overall relative precision
 world_size = 5                    # Size of simulation box 2^n
 
 MPI {
@@ -21,7 +21,9 @@ WaveFunction {
 
 SCF {
   kain = 3                        # Length of KAIN iterative history
-  max_iter = 5
-  orbital_thrs = 2.0e-2
-  guess_type = GTO             # Type of initial guess (none, gto, mw)
+  max_iter = 12
+}
+
+DFT {
+  xc_library = libxc
 }
