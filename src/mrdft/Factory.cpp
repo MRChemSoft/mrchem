@@ -65,7 +65,7 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         ids = {XC_LDA_C_VWN};
         coefs = {1.0};
         return;
-    } else if (name == "SVWN5") {
+    } else if (name == "SVWN5" || name == "LDA") {
         ids = {XC_LDA_C_VWN, XC_LDA_X};
         coefs = {1.0, 1.0};
         return;
