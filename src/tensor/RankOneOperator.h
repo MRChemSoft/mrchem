@@ -42,8 +42,15 @@ namespace mrchem {
 template <int I> class RankOneOperator : public TensorOperator<I, RankZeroOperator> {
 public:
     RankOneOperator<I> operator()(RankZeroOperator B);
-    std::vector<Orbital> operator()(Orbital phi); // NB: not an "OrbitalVector", because is not related to MPI
-    ComplexVector operator()(Orbital bra, Orbital ket);
+
+    /* 
+    alpha represents the index of the Dirac matrices. 
+    For scalar operators, it is unused.
+    For 2 component (Weyl/Pauli) spinors, alpha = 0,1,2,3 corresponds to indentiy, sigma_x, y and z respectively.
+    For 4 component (Dirac) spinors, alpha = 0,1,2,3 corresponds to indentiy, alpha_x, y and z respectively, and alpha = 4 corresponds to the beta matrix
+    */
+    std::vector<Orbital> operator()(Orbital phi, int alpha = 0); // NB: not an "OrbitalVector", because is not related to MPI.
+    ComplexVector operator()(Orbital bra, Orbital ket, int alpha = 0);
     ComplexVector trace(OrbitalVector &phi);
     ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
     ComplexVector trace(const Nuclei &nucs);

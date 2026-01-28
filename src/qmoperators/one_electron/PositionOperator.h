@@ -26,6 +26,7 @@
 #pragma once
 
 #include <MRCPP/MWFunctions>
+#include <MRCPP/utils/CompFunction.h>
 
 #include "tensor/RankOneOperator.h"
 

@@ -38,14 +38,14 @@ template <int I> RankOneOperator<I> RankOneOperator<I>::operator()(RankZeroOpera
     return out;
 }
 
-template <int I> std::vector<Orbital> RankOneOperator<I>::operator()(Orbital phi) {
+template <int I> std::vector<Orbital> RankOneOperator<I>::operator()(Orbital phi, int alpha) { //TODO: adapter tout ça pour que alpha ait une valeur par défaut
     RankOneOperator<I> &O = *this;
     std::vector<Orbital> out;
-    for (int i = 0; i < I; i++) out.push_back(O[i](phi));
+    for (int i = 0; i < I; i++) out.push_back(O[i](phi)); //application of the operator is inherited from rankzerooperator
     return out;
 }
 
-template <int I> ComplexVector RankOneOperator<I>::operator()(Orbital bra, Orbital ket) {
+template <int I> ComplexVector RankOneOperator<I>::operator()(Orbital bra, Orbital ket, int alpha) {
     RankOneOperator<I> &O = *this;
     ComplexVector out(I);
     for (int i = 0; i < I; i++) out(i) = O[i](bra, ket);

@@ -80,7 +80,7 @@ public:
     ComplexDouble operator()(const mrcpp::Coord<3> &r) const;
     ComplexDouble dagger(const mrcpp::Coord<3> &r) const;
 
-    Orbital operator()(Orbital inp);
+    Orbital operator()(Orbital inp, int alpha = 0);
     Orbital dagger(Orbital inp);
 
     OrbitalVector operator()(OrbitalVector &inp);
