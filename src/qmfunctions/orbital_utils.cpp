@@ -793,6 +793,193 @@ ComplexVector orbital::get_integrals(const OrbitalVector &Phi) {
     return ints;
 }
 
+/**
+ * @brief Compute the L2 inner product of two OrbitalVectors.
+ *
+ * Computes
+ * \f[
+ *   \langle \Phi, \Psi \rangle_{L^2}
+ *   = \sum_i \Re \langle \phi_i, \psi_i \rangle.
+ * \f]
+ *
+ * Only diagonal orbital contributions are evaluated; no overlap
+ * matrix is constructed.
+ *
+ * @param Phi First orbital vector
+ * @param Psi Second orbital vector
+ * @return L2 inner product (real-valued)
+ */
+double orbital::l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi) {
+    if (Phi.size() != Psi.size()) {
+        MSG_ABORT("OrbitalVector size mismatch in l2_inner_product");
+    }
+
+    double val = 0.0;
+
+    for (int i = 0; i < Phi.size(); ++i) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
+            val += std::real(mrcpp::dot(Phi[i], Psi[i]));
+        }
+    }
+
+    // Check the correct MPI use!!!
+    return val;
+}
+
+
+/**
+ * @brief Compute the H1 inner product of two OrbitalVectors.
+ *
+ * Computes
+ * \f[
+ *   \langle \Phi, \Psi \rangle_{H^1}
+ *   =
+ *   \sum_i \langle \phi_i, \psi_i \rangle_{L^2}
+ *   +
+ *   \sum_{i,\alpha} \langle \partial_\alpha \phi_i,
+ *                          \partial_\alpha \psi_i \rangle_{L^2}.
+ * \f]
+ *
+ * The gradient contribution is evaluated using a NablaOperator,
+ * but in order to use it in the ground solver context, it is
+ * substituted by a MomentumOperator.
+ * Only diagonal orbital contributions are computed.
+ *
+ * @param Phi   First orbital vector
+ * @param Psi   Second orbital vector
+ * @param nabla Gradient operator (must be set up by the caller)
+ * @return H1 inner product (real-valued)
+ */
+double orbital::h1_inner_product(OrbitalVector &Phi, OrbitalVector &Psi, MomentumOperator &nabla) {
+    if (Phi.size() != Psi.size()) {
+        MSG_ABORT("OrbitalVector size mismatch in h1_inner_product");
+    }
+
+    double val = 0.0;
+
+            
+    for (int i = 0; i < Phi.size(); ++i) {
+        if (!mrcpp::mpi::my_func(Phi[i])) continue;
+
+        // L2 term
+        val += std::real(mrcpp::dot(Phi[i], Psi[i]));
+
+        // Gradient term
+        std::vector<Orbital> gradPhi = nabla(Phi[i]);
+        std::vector<Orbital> gradPsi = nabla(Psi[i]);
+
+        for (int d = 0; d < 3; ++d) {
+            val += std::real(mrcpp::dot(gradPhi[d], gradPsi[d]));
+        }
+    }
+
+    // Check the correct MPI use!!!
+    return val;
+}
+
+/**
+ * @brief Compute the H1 norm of an OrbitalVector.
+ *
+ * Computes
+ * \f[
+ *   \|\Phi\|_{H^1} = \sqrt{\langle \Phi, \Phi \rangle_{H^1}}.
+ * \f]
+ *
+ * @param Phi   Orbital vector
+ * @param nabla Gradient operator (must be set up by the caller)
+ * @return H1 norm
+ */
+double orbital::h1_norm(OrbitalVector &Phi, MomentumOperator &nabla) {
+    double val = orbital::h1_inner_product(Phi, Phi, nabla);
+    return std::sqrt(std::max(val, 0.0));
+}
+
+/**
+ * @brief H1 inner product of two orbitals.
+ *
+ * Computes
+ *   <phi, psi>_{H1} = <phi, psi> + sum_d <∂_d phi, ∂_d psi>
+ *
+ * Only local contributions are evaluated; caller must MPI-reduce if needed.
+ */
+double orbital::h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunction<3> &psi, MomentumOperator &nabla)
+{
+    double val = 0.0;
+
+    // L2 part
+    val += std::real(mrcpp::dot(phi, psi));
+
+    // Gradient part
+    std::vector<Orbital> gphi = nabla(phi);
+    std::vector<Orbital> gpsi = nabla(psi);
+
+    for (int d = 0; d < 3; ++d)
+        val += std::real(mrcpp::dot(gphi[d], gpsi[d]));
+
+    return val;
+}
+
+/**
+ * @brief Project a set of orbital variations onto the horizontal subspace.
+ *
+ * Given a set of orbital variations `direction` and a set of orbitals `Phi`,
+ * compute the horizontal component of `direction` in the tangent space
+ * at `Phi` with respect to the H¹ inner product.
+ *
+ * Mathematically, the horizontal projection D_h of D satisfies:
+ * \f[
+ *   D_h = D + (B - B^T) \Phi
+ * \f]
+ * where
+ * \f[
+ *   B_{ij} = \frac{\langle \phi_i, d_j \rangle_{H^1}}
+ *                 {\| \phi_i \|_{H^1}^2 + \| \phi_j \|_{H^1}^2}.
+ * \f]
+ *
+ * The H¹ inner product includes both L² and gradient contributions:
+ * \f[
+ *   \langle \phi, \psi \rangle_{H^1} = \langle \phi, \psi \rangle_{L^2} + 
+ *                                      \sum_{\alpha=0}^{2} \langle \partial_\alpha \phi, \partial_\alpha \psi \rangle_{L^2}.
+ * \f]
+ *
+ * This function is MPI-safe; the squared norms of `Phi` are reduced across ranks.
+ *
+ * @param direction OrbitalVector containing the variations to be projected.
+ * @param Phi       OrbitalVector at which the tangent space is defined.
+ * @param nabla     MomentumOperator for computing derivatives.
+ * @return          OrbitalVector containing the horizontal projection of `direction`.
+ * 
+ */
+OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla)
+{
+    int n = Phi.size();
+
+    if (direction.size() != n)
+        MSG_ABORT("OrbitalVector size mismatch in project_to_horizontal");
+
+    // ---- squared H1 norms of orbitals ----
+    DoubleVector sq_norms = DoubleVector::Zero(n);
+
+    for (int i = 0; i < n; ++i) {
+        if (mrcpp::mpi::my_func(Phi[i])) {
+            sq_norms(i) = orbital::h1_inner_product(Phi[i], Phi[i], nabla);
+        }
+    }
+    mrcpp::mpi::allreduce_vector(sq_norms, mrcpp::mpi::comm_wrk);
+
+    // ---- build B matrix ----
+    ComplexMatrix B = ComplexMatrix::Zero(n, n);
+    for (int i = 0; i < n; ++i)
+        for (int j = 0; j < n; ++j)
+            B(i,j) = orbital::h1_inner_product(Phi[i], direction[j], nabla)
+                    / (sq_norms(i) + sq_norms(j) + mrcpp::MachineZero);
+
+    ComplexMatrix A = B - B.transpose();
+    OrbitalVector APhi = orbital::rotate(Phi, A);
+
+    return orbital::add(1.0, direction, 1.0, APhi);
+}
+
 /** @brief Checks if a vector of orbitals is correctly ordered (paired/alpha/beta) */
 bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
     int nO = Phi.size();

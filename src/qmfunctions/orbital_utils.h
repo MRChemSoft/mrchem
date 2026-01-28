@@ -28,6 +28,8 @@
 #include "mrchem.h"
 #include "qmfunction_fwd.h"
 
+#include "qmoperators/one_electron/MomentumOperator.h"
+
 namespace mrchem {
 namespace orbital {
 
@@ -87,6 +89,12 @@ DoubleVector get_norms(const OrbitalVector &Phi);
 DoubleVector get_squared_norms(const OrbitalVector &Phi);
 DoubleVector calc_eigenvalues(const OrbitalVector &Phi, const ComplexMatrix &F_mat);
 ComplexVector get_integrals(const OrbitalVector &Phi);
+
+double l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi);
+double h1_inner_product(OrbitalVector &Phi, OrbitalVector &Psi, MomentumOperator &nabla);
+double h1_norm(OrbitalVector &Phi, MomentumOperator &nabla);
+double h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunction<3> &psi, MomentumOperator &nabla);
+OrbitalVector project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
