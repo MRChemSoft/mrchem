@@ -57,6 +57,7 @@
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
+#include "qmoperators/two_electron/GenericTwoOrbitalsOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
@@ -77,6 +78,7 @@
 #include "scf_solver/GroundStateSolver.h"
 #include "scf_solver/KAIN.h"
 #include "scf_solver/LinearResponseSolver.h"
+#include "scf_solver/LagrangianSolver.h"
 
 #include "environment/Cavity.h"
 #include "environment/GPESolver.h"
@@ -85,6 +87,8 @@
 #include "environment/Permittivity.h"
 #include "properties/hirshfeld/HirshfeldPartition.h"
 #include "surface_forces/SurfaceForce.h"
+#include "external_solvers/ExternalSolver.h"
+#include "external_solvers/ChemTensorSolver.h"
 
 #include "mrdft/Factory.h"
 
@@ -127,6 +131,10 @@ bool guess_orbitals(const json &input, Molecule &mol);
 void write_orbitals(const json &input, Molecule &mol, bool dynamic);
 void calc_properties(const json &input, Molecule &mol, int dir, double omega);
 } // namespace rsp
+
+namespace lag{
+bool guess_orbitals(const json &input, Molecule &mol, int norbs);
+} // namespace lag
 
 } // namespace driver
 
@@ -895,6 +903,136 @@ json driver::rsp::run(const json &json_rsp, Molecule &mol) {
     return json_out;
 }
 
+
+/** @brief Run Lagrangian SCF calculation
+ *
+ * This function will run the Lagrangian SCF orbitals optimization
+ * with an external DMRG solver. Returns a JSON record of the calculation.
+ * 
+ */
+json driver::lag::run(const json &json_lag, Molecule &mol) {
+    print_utils::headline(0, "Computing Lagrangian SCF orbitals optimization");
+    json json_out = {{"success", true}};
+
+    // TODO: check if lag_solver is in input json??
+    
+    int norbs = json_lag["n_orbitals"];
+    std::cout << "number of orbitals: " << norbs << std::endl;
+    if (norbs < 1) {
+        MSG_ERROR("Invalid number of orbitals");
+        json_out["success"] = false;
+        return json_out;
+    }
+
+    //if (json_lag.contains("properties")) driver::init_properties(json_lag["properties"], mol);
+
+    ///////////////////////////////////////////////////////////
+    ////////////////   Building Fock Operator   ///////////////
+    ///////////////////////////////////////////////////////////
+    FockBuilder F;
+    const auto &json_fock = json_lag["fock_operator"];
+    driver::build_fock_operator(json_fock, mol, F, 0);
+
+    ///////////////////////////////////////////////////////////
+    ///////////////   Setting Up Initial Guess   //////////////
+    ///////////////////////////////////////////////////////////
+    print_utils::headline(0, "Computing Initial Guess Wavefunction");
+    const auto &json_guess = json_lag["initial_guess"];
+    if (lag::guess_orbitals(json_guess, mol, norbs)) {
+        //lag::guess_energy(json_guess, mol, F);
+        //json_out["initial_energy"] = mol.getSCFEnergy().json();
+    } else {
+        json_out["success"] = false;
+        return json_out;
+    }
+
+    ///////////////////////////////////////////////////////////
+    /////////////////   Building DMRG Driver   ////////////////
+    ///////////////////////////////////////////////////////////
+    ChemTensorSolver dmrg_solver;
+    ///////////////////////////////////////////////////////////
+    //////////////   Building Lagrangian Solver   /////////////
+    ///////////////////////////////////////////////////////////
+    LagrangianSolver solver;
+
+    json_out["lag_solver"] = solver.optimize(mol, F, dmrg_solver);
+    std::cout << "optimization: done" << std::endl;
+
+    return json_out;
+}
+
+/** @brief Run initial guess calculation for the orbitals
+ *
+ * This function will update the ground state orbitals and the Fock
+ * matrix of the molecule, based on the chosen initial guess method.
+ * The orbital vector is initialized with the appropriate particle
+ * number and spin. The Fock matrix is initialized to the zero matrix
+ * of the appropriate size.
+ *
+ * This function expects the "initial_guess" subsection of the input.
+ */
+
+bool driver::lag::guess_orbitals(const json &json_guess, Molecule &mol, int norbs) {    
+    auto prec = json_guess["prec"];
+    auto zeta = json_guess["zeta"];
+    auto type = json_guess["type"];
+    auto screen = json_guess["screen"];
+    //auto mw_p = json_guess["file_phi_p"];
+    //auto mw_a = json_guess["file_phi_a"];
+    //auto mw_b = json_guess["file_phi_b"];
+    auto gto_p = json_guess["file_gto_p"];
+    auto gto_a = json_guess["file_gto_a"];
+    auto gto_b = json_guess["file_gto_b"];
+    auto gto_bas = json_guess["file_basis"];
+    auto file_chk = json_guess["file_chk"];
+    //auto restricted = json_guess["restricted"];
+    //auto cube_p = json_guess["file_CUBE_p"];
+    //auto cube_a = json_guess["file_CUBE_a"];
+    //auto cube_b = json_guess["file_CUBE_b"];
+
+    //int mult = mol.getMultiplicity();
+    //if (restricted && mult != 1) {
+    //    MSG_ERROR("Restricted open-shell not supported");
+    //    return false;
+    //}
+
+    // Figure out number of electrons
+    int Ne = mol.getNElectrons(); // total electrons
+    //int Ns = mult - 1;            // single occ electrons
+    //int Nd = Ne - Ns;             // double occ electrons
+    //if (Nd % 2 != 0) {
+    //    MSG_ERROR("Invalid multiplicity");
+    //    return false;
+    //}
+
+    // Figure out number of occupied orbitals
+    //int Na = (restricted) ? Ns : Nd / 2 + Ns; // alpha orbitals
+    //int Nb = (restricted) ? 0 : Nd / 2;       // beta orbitals
+    //int Np = (restricted) ? Nd / 2 : 0;       // paired orbitals
+
+    // Fill orbital vector
+    auto &nucs = mol.getNuclei();
+    auto &Phi = mol.getOrbitals();
+    for (auto p = 0; p < norbs; p++) Phi.push_back(Orbital(SPIN::Paired));
+    //for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
+    //for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
+    Phi.distribute();
+
+    auto success = true;
+    // only gtos supported by now
+    success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
+    
+    for (const auto &phi_i : Phi) {
+        double err = (mrcpp::mpi::my_func(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        if (err > 0.01) MSG_WARN("MO not normalized!");
+    }
+
+    orbital::print(Phi);
+    return success;
+}
+
+
+
 /** @brief Run initial guess calculation for the response orbitals
  *
  * This function will update the ground state orbitals and the Fock
@@ -1302,6 +1440,18 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
+
+    ///////////////////////////////////////////////////////////
+    ///////////   Generic Two Orbitals Operator   /////////////
+    ///////////////////////////////////////////////////////////
+    if (json_fock.contains("generic_two_orbitals_operator")) {
+        auto poisson_prec = json_fock["generic_two_orbitals_operator"]["prec"];
+        auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
+        auto g = std::make_shared<GenericTwoOrbitalsOperator>(P_p);
+        F.getGenericTwoOrbitalsOperator() = g;
+    }
+
+    
     F.build(exx);
 }
 

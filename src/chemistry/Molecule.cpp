@@ -61,7 +61,7 @@ Molecule::Molecule(const std::string &coord_file, int c, int m)
 
 /** @brief Constructor
  *
- * @param coord_file: list of stings with nuclear coordinates
+ * @param coord_file: list of strings with nuclear coordinates
  * @param c: total charge
  * @param m: spin multiplicity
  *

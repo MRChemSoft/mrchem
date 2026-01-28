@@ -40,7 +40,8 @@ __all__ = [
     "write_mra",
     "write_molecule",
     "write_scf_calculation",
-    "write_rsp_calculations"
+    "write_rsp_calculations",
+    "write_lag_calculations"
 ]
 # yapf: enable
 __version__ = MRCHEM_VERSION

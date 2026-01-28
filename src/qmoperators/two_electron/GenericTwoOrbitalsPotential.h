@@ -23,26 +23,39 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <nlohmann/json.hpp>
+#pragma once
+
+#include "qmoperators/QMPotential.h"
+#include "qmfunctions/Orbital.h"
 
 namespace mrchem {
 
-class Molecule;
-class CUBEfunction;
-namespace driver {
+class GenericTwoOrbitalsPotential : public QMPotential {
+public:
+    explicit GenericTwoOrbitalsPotential(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi = nullptr, bool mpi_share = false);
+    ~GenericTwoOrbitalsPotential() override = default; //TODO: explicitly clear? clear it from FockBuilder?
 
-void init_molecule(const nlohmann::json &input, Molecule &mol);
-nlohmann::json print_properties(const Molecule &mol);
-std::vector<mrchem::CUBEfunction> getCUBEFunction(const nlohmann::json &json_inp);
+    void setup(std::shared_ptr<OrbitalVector> Phi, double prec);
+    void set_pair(int j, int l);
 
-namespace scf {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace rsp {
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-namespace lag{
-nlohmann::json run(const nlohmann::json &input, Molecule &mol);
-}
-} // namespace driver
+    Orbital apply(Orbital inp) override;
+    
+    friend class GenericTwoOrbitalsOperator;
+
+protected:
+    std::shared_ptr<OrbitalVector> orbitals;         
+    std::shared_ptr<mrcpp::PoissonOperator> poisson;
+    int j;
+    int l;
+    double prec;
+    std::shared_ptr<Orbital> g_jl{nullptr};
+
+    auto &getPoisson() { return this->poisson; }
+
+    //void setup(double prec) override;
+    //void clear() override;
+
+    void set_g_jl();
+};
+
 } // namespace mrchem

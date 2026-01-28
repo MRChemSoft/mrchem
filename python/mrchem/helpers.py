@@ -131,6 +131,26 @@ def write_scf_fock(user_dict, wf_dict, origin):
 
     return fock_dict
 
+def write_lag_fock(user_dict):
+    fock_dict = {}
+
+    # Kinetic
+    fock_dict["kinetic_operator"] = {"derivative": user_dict["Derivatives"]["kinetic"]}
+
+    # Nuclear
+    fock_dict["nuclear_operator"] = {
+        "proj_prec": user_dict["Precisions"]["nuclear_prec"],
+        "smooth_prec": user_dict["Precisions"]["nuclear_prec"],
+        "nuclear_model": user_dict["WaveFunction"]["nuclear_model"],
+        "shared_memory": user_dict["MPI"]["share_nuclear_potential"],
+    }
+
+    fock_dict["generic_two_orbitals_operator"]={
+        "prec": user_dict["world_prec"],
+    }
+
+
+    return fock_dict
 
 def _reaction_operator_handler(user_dict, rsp=False):
     # convert density_type from string to integer
@@ -283,6 +303,21 @@ def write_scf_solver(user_dict, wf_dict):
 
     return solver_dict
 
+def write_lag_solver(user_dict):
+    # SCF precisions and thresholds
+    prec =  user_dict["world_prec"]
+
+    lag_dict = user_dict["Lagrangian"]
+    solver_dict = {
+        "external_solver": lag_dict["external_solver"],
+        "max_iter": lag_dict["max_iter"],
+        "file_chk": lag_dict["path_checkpoint"] + "/phi_scf",
+        "checkpoint": lag_dict["write_checkpoint"],
+        "prec": prec,
+    }
+
+    return solver_dict
+
 
 def write_scf_properties(user_dict, origin):
     prop_dict = {}
@@ -335,6 +370,11 @@ def write_scf_plot(user_dict):
                 ]
                 for k in plot_dict["plotter"].keys()
             }
+    return plot_dict
+
+# empty template
+def write_lag_plot():
+    plot_dict = {}
     return plot_dict
 
 

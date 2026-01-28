@@ -28,6 +28,7 @@
 #include <complex>
 
 #include <Eigen/Core>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "MRCPP/MWFunctions"
 #include "config.h"
@@ -69,6 +70,8 @@ using ComplexVector = Eigen::VectorXcd;
 using IntMatrix = Eigen::MatrixXi;
 using DoubleMatrix = Eigen::MatrixXd;
 using ComplexMatrix = Eigen::MatrixXcd;
+
+using ComplexTensorR4 = Eigen::Tensor<std::complex<double>, 4>;
 
 extern mrcpp::MultiResolutionAnalysis<3> *MRA; //< Global MRA
 
