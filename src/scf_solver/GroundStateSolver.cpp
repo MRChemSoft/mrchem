@@ -135,9 +135,9 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
 
     std::stringstream o_kain;
     if (this->history > 0) {
-        o_kain << this->history;
+        o_kain << "Grassmann";
     } else {
-        o_kain << "Off";
+        o_kain << "Stiefel";
     }
 
     std::stringstream o_loc;
@@ -361,8 +361,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         nabla.setup(orb_prec);
 
         // Necessary for Grassmann: 
-        preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
-        //preconditioned_grad_E = project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+        if (this->history > 0)
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
 
         // ==============================
         // End Preconditioning
@@ -410,7 +410,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
                 projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
                 // Necessary for Grassmann:
-                projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
+                if (this->history > 0)
+                    projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
 
                 direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
             }
