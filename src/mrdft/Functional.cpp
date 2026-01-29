@@ -134,13 +134,6 @@ double Functional::amountEXX() const {
     return exx;
 }
 
-/** @brief Run a collection of grid points through Libxc or XCFun
- *
- * Each row corresponds to one grid point.
- *
- * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
- */
 void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out) const {
     int nInp = numIn();
     int nOut = numOut();
@@ -283,15 +276,6 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
     }
 }
 
-/** @brief Run a collection of grid points through Libxc or XCFun
- *
- * Each column corresponds to one grid point.
- * From a performance point of view, (in pre and postprocessing) it is much more
- * efficient to have the two consecutive points in two consecutive adresses in memory
- *
- * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
- */
 Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     int nOut = numOut();
     int nPts = inp.cols();
@@ -301,13 +285,6 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
     return out;
 }
 
-/** @brief Run a collection of grid points through Libxc or XCFun
- *
- * Each row corresponds to one grid point.
- *
- * param[in] inp_data Matrix of input values
- * param[out] out_data Matrix of output values
- */
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
   // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
   // That means that we cannot extract the energy density data with out.row(0).data() for example.
@@ -317,14 +294,6 @@ Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
   return out_trans.transpose();
 }
 
-/** @brief Contract a collection of grid points
- *
- * Each row corresponds to one grid point.
- *
- * param[in] xc_data Matrix of functional partial derivative values
- * param[in] d_data Matrix of density input values
- * param[out] out_data Matrix of contracted output values
- */
 Eigen::MatrixXd Functional::contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
     auto nPts = xc_data.cols();
     auto nFcs = getCtrOutputLength();
@@ -349,14 +318,6 @@ Eigen::MatrixXd Functional::contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &
     return out_data;
 }
 
-/** @brief Contract a collection of grid points
- *
- * Each column corresponds to one set of grid points.
- *
- * param[in] xc_data Matrix of functional partial derivative values
- * param[in] d_data Matrix of density input values
- * param[out] out_data Matrix of contracted output values
- */
 Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
     auto nPts = xc_data.rows();
     auto nFcs = getCtrOutputLength();
@@ -380,56 +341,6 @@ Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen:
     return out_data;
 }
 
-
-/** @brief  Evaluates XC functional and derivatives for a given NodeIndex
- *
- * The electronic densities (total/alpha/beta) are given as input.
- * The values of the zero order densities and their gradient are sent to xcfun.
- * The output of xcfun must then be combined ("contract") with the gradients
- * of the higher order densities.
- *
- * XCFunctional output (with k=1 and explicit derivatives):
- *
- * LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho}\right) \f$
- *
- * GGA: \f$ \left(F_{xc},
- *  \frac{\partial F_{xc}}{\partial \rho},
- *  \frac{\partial F_{xc}}{\partial \rho_x},
- *  \frac{\partial F_{xc}}{\partial \rho_y},
- *  \frac{\partial F_{xc}}{\partial \rho_z}\right) \f$
- *
- * Spin LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho^\alpha},
- *  \frac{\partial F_{xc}}{\partial \rho^\beta}\right) \f$
- *
- * Spin GGA: \f$ \left(F_{xc},
- *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
- *  \frac{\partial F_{xc}}{\partial \rho^\beta},
- *  \frac{\partial F_{xc}}{\partial \rho_x^\alpha},
- *  \frac{\partial F_{xc}}{\partial \rho_y^\alpha},
- *  \frac{\partial F_{xc}}{\partial \rho_z^\alpha},
- *  \frac{\partial F_{xc}}{\partial \rho_x^\beta},
- *  \frac{\partial F_{xc}}{\partial \rho_y^\beta},
- *  \frac{\partial F_{xc}}{\partial \rho_z^\beta}
- *  \right) \f$
- *
- * XCFunctional output (with k=1 and gamma-type derivatives):
- *
- * GGA: \f$ \left(F_{xc},
- *  \frac{\partial F_{xc}}{\partial \rho},
- *  \frac{\partial F_{xc}}{\partial \gamma} \f$
- *
- * Spin GGA: \f$ \left(F_{xc},
- *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
- *  \frac{\partial F_{xc}}{\partial \rho^\beta },
- *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \alpha}},
- *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \beta }},
- *  \frac{\partial F_{xc}}{\partial \gamma^{\beta  \beta }}
- *  \right) \f$
- *
- * param[in] inp Input values
- * param[out] xcNodes Output values
- *
- */
 void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes)  const {
     if (this->log_grad){
         MSG_ERROR("log_grad not implemented");

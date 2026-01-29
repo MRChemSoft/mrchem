@@ -91,7 +91,7 @@ public:
     std::unique_ptr<MRDFT> build();
 
     /**
-     * @brief Toggle for initiation of Libxc (True if "DFT {xc_library = libxc}" in input file)
+     * @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
      */
     static bool libxc;
 
@@ -114,12 +114,12 @@ private:
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
 
     /**
-     * @brief Vector containing one functional object per Libxc functional used
+     * @brief Vector of initialized Libxc functionals
      */
     std::vector<xc_func_type> libxc_objects;
 
     /**
-     * @brief Vector containing the corresponding coefficient of each element in libxc_objects
+     * @brief Vector scaling coefficients for each functional in libxc_objects
      */
     std::vector<double> libxc_coefs;
 
