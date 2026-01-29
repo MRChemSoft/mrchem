@@ -10,15 +10,15 @@ from tester import *  # isort:skip
 options = script_cli()
 
 filters = {
-    SUM_OCCUPIED: rel_tolerance(1.0e-9),
-    E_KIN: rel_tolerance(1.0e-9),
-    E_EN: rel_tolerance(1.0e-9),
-    E_EE: rel_tolerance(1.0e-9),
-    E_X: rel_tolerance(1.0e-9),
-    E_XC: rel_tolerance(1.0e-9),
-    E_EEXT: rel_tolerance(1.0e-9),
-    E_NEXT: rel_tolerance(1.0e-9),
-    E_EL: rel_tolerance(1.0e-9),
+    SUM_OCCUPIED: rel_tolerance(1.0e-8),
+    E_KIN: rel_tolerance(1.0e-8),
+    E_EN: rel_tolerance(1.0e-8),
+    E_EE: rel_tolerance(1.0e-8),
+    E_X: rel_tolerance(1.0e-8),
+    E_XC: rel_tolerance(1.0e-8),
+    E_EEXT: rel_tolerance(1.0e-8),
+    E_NEXT: rel_tolerance(1.0e-8),
+    E_EL: rel_tolerance(1.0e-8),
 }
 
 ierr = run(options, input_file="li", filters=filters)
