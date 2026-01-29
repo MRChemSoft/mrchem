@@ -98,8 +98,7 @@ void Intgrl::readAtomData(std::ifstream &ifs, int n_atoms, double z) {
         PeriodicTable pt;
         const Element &element = pt.getElement(sym.c_str());
 
-        auto *nuc = new Nucleus(element, coord);
-        nuc->setCharge(z);
+        auto *nuc = new Nucleus(element, z, coord);
         this->nuclei.push_back(nuc);
     }
 }

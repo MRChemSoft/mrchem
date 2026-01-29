@@ -10,7 +10,6 @@ HirshfeldPartition::HirshfeldPartition(const mrchem::Molecule &mol, std::string 
         std::string element = this->nucs->at(i).getElement().getSymbol();
         this->logDensities.push_back(HirshfeldRadInterpolater(element, data_dir));
         // Uncomment the following line to print the charge of the atomic density
-        // std::cout << "Norm of " << element << " = " << this->logDensities[i].getNorm() << std::endl;
     }
 }
 

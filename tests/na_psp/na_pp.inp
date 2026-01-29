@@ -1,0 +1,27 @@
+world_prec = 1e-04
+world_unit = bohr
+
+Pseudopotential {
+$pp_files
+{
+"Na": "psppar.Na"
+}
+$end
+}
+
+SCF {
+    initial_mixing_steps = 1
+}
+
+Molecule {
+charge = 0
+multiplicity = 2
+$coords
+Na 0.0 0.0 0.0
+$end
+}
+
+WaveFunction {
+  method = pbe
+  restricted = false
+}

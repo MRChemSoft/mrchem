@@ -4,6 +4,12 @@ target_sources(mrchem-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/density.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/orbital.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/orbital_vector.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/spherical_harmonics.cpp
+  )
+
+add_Catch_test(
+  NAME spherical_harmonics
+  LABELS "spherical_harmonics"
   )
 
 add_Catch_test(
