@@ -16,7 +16,8 @@ $end
 }
 
 WaveFunction {
-  method = DFT                   # Wave function method (HF or DFT)
+  method = b3lyp                   # Wave function method (HF or DFT)
+  restricted = true
 }
 
 SCF {
@@ -27,6 +28,5 @@ SCF {
 }
 
 DFT {
-  functionals = b3lyp
   xc_library = libxc
 }

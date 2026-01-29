@@ -12,7 +12,7 @@
 ***         VERSION            1.2.0-alpha                              ***
 ***                                                                     ***
 ***         Git branch         libxc_testbranch                         ***
-***         Git commit hash    2bb9e2fa65c0876a30c8                     ***
+***         Git commit hash    2bb9e2fa65c0876a30c8-dirty               ***
 ***         Git commit author  ylvao                                    ***
 ***         Git commit date    Thu Jan 29 12:29:18 2026 +0100           ***
 ***                                                                     ***
@@ -89,6 +89,8 @@
 ===========================================================================
 
 
+Name used in MapFunctionalName: B3LYP
+Functional number: 0: b3lyp
                                                                            
                                                                            
 ***************************************************************************
@@ -97,18 +99,18 @@
 ***                                                                     ***
 ***************************************************************************
 
-XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
-See http://dftlibs.org/xcfun/ for more information.
+Using Libxc (version 7.0.0) to evaluate density functionals. Libxc is free
+software. It is distributed under the Mozilla Public License, version 2.0.
+For more information, please check the Libxc manual. You should cite
 
-This is free software; see the source code for copying conditions.
-There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. For details see the documentation.
-Scientific users of this library should cite
-U. Ekstrom, L. Visscher, R. Bast, A. J. Thorvaldsen and K. Ruud;
-J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
-                                                                           
----------------------------------------------------------------------------
+S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques., 
+SoftwareX 7, 1–5 (2018) DOI: 10.1016/j.softx.2017.11.002
 
+when reporting the results of your calculation in a scientific article.
+
+Libxc functionals used in this calculation:
+  - hyb_gga_xc_b3lyp5 (ID 475): B3LYP with VWN functional 5 instead of RPA
+     * P. J. Stephens, F. J. Devlin, C. F. Chabalowski, and M. J. Frisch.,  J. Phys. Chem. 98, 11623 (1994) (DOI:10.1021/j100096a001)
                                                                            
 ***************************************************************************
 ***                                                                     ***
@@ -142,8 +144,8 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Compute initial energy
- Method                  : DFT
- XC Library              : XCFun
+ Method                  : DFT (B3LYP)
+ XC Library              : LibXC
  Relativity              : None
  Environment             : None
  External fields         : None
@@ -153,7 +155,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-using xcfun
+using libxc
 ===========================================================================
                         Molecular Energy (initial)
 ---------------------------------------------------------------------------
@@ -161,16 +163,16 @@ using xcfun
  E-N energy              :            (au)                 -3.566631555860
  Coulomb energy          :            (au)                  1.328363917978
  Exchange energy         :            (au)                 -0.132833922118
- X-C energy              :            (au)                 -0.558504026042
+ X-C energy              :            (au)                 -0.558504025890
  N-N energy              :            (au)                  0.714139285969
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -1.856119520810
+ Electronic energy       :            (au)                 -1.856119520658
  Nuclear energy          :            (au)                  0.714139285969
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -1.141980234841e+00
-                         :      (kcal/mol)             -7.166034165554e+02
-                         :        (kJ/mol)             -2.998268694868e+03
-                         :            (eV)             -3.107486525554e+01
+ Total energy            :            (au)             -1.141980234689e+00
+                         :      (kcal/mol)             -7.166034164599e+02
+                         :        (kJ/mol)             -2.998268694468e+03
+                         :            (eV)             -3.107486525140e+01
 ===========================================================================
 
 
@@ -179,9 +181,9 @@ using xcfun
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.408773186621
+    0    2    p          :            (au)                 -0.408773186422
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.817546373242
+ Sum occupied            :            (au)                 -0.817546372845
 ===========================================================================
 
 
@@ -195,8 +197,8 @@ using xcfun
                                                                            
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Optimize ground state orbitals
- Method                  : DFT
- XC library              : XCFun
+ Method                  : DFT (B3LYP)
+ XC library              : LibXC
  Relativity              : None
  Environment             : None
  External fields         : None
@@ -216,9 +218,9 @@ using xcfun
 ===========================================================================
  Iter           MO residual             Total energy                Update
 ---------------------------------------------------------------------------
-    0          1.000000e+00          -1.141980234841         -1.141980e+00
-    1          3.458115e-02          -1.148195370067         -6.215135e-03
-    2          4.033664e-03          -1.148449277714         -2.539076e-04
+    0          1.000000e+00          -1.141980234689         -1.141980e+00
+    1          3.458102e-02          -1.148195369704         -6.215135e-03
+    2          4.033649e-03          -1.148449277513         -2.539078e-04
 ---------------------------------------------------------------------------
                       SCF converged in 2 iterations!
 ===========================================================================
@@ -250,20 +252,20 @@ using xcfun
 ===========================================================================
                          Molecular Energy (final)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  1.062184931013
- E-N energy              :            (au)                 -3.541391351660
- Coulomb energy          :            (au)                  1.294952023161
- Exchange energy         :            (au)                 -0.129492808224
- X-C energy              :            (au)                 -0.548841357974
+ Kinetic energy          :            (au)                  1.062184984187
+ E-N energy              :            (au)                 -3.541391438401
+ Coulomb energy          :            (au)                  1.294952081959
+ Exchange energy         :            (au)                 -0.129492814104
+ X-C energy              :            (au)                 -0.548841377124
  N-N energy              :            (au)                  0.714139285969
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -1.862588563683
+ Electronic energy       :            (au)                 -1.862588563482
  Nuclear energy          :            (au)                  0.714139285969
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -1.148449277714e+00
-                         :      (kcal/mol)             -7.206628022466e+02
-                         :        (kJ/mol)             -3.015253164600e+03
-                         :            (eV)             -3.125089687981e+01
+ Total energy            :            (au)             -1.148449277513e+00
+                         :      (kcal/mol)             -7.206628021205e+02
+                         :        (kJ/mol)             -3.015253164072e+03
+                         :            (eV)             -3.125089687434e+01
 ===========================================================================
 
 
@@ -272,9 +274,9 @@ using xcfun
 ---------------------------------------------------------------------------
     n  Occ Spin          :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.424856481547
+    0    2    p          :            (au)                 -0.424856455858
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.849712963094
+ Sum occupied            :            (au)                 -0.849712911716
 ===========================================================================
 
 
@@ -283,7 +285,7 @@ using xcfun
 ---------------------------------------------------------------------------
  r_O                     :        0.000000        0.000000        0.000000
 ---------------------------------------------------------------------------
- Electronic vector       :       -0.000000       -0.000000        0.000004
+ Electronic vector       :       -0.000000        0.000000        0.000004
  Magnitude               :            (au)                        0.000004
                          :         (Debye)                        0.000009
 ---------------------------------------------------------------------------
@@ -303,7 +305,7 @@ using xcfun
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  0m 10s                       ***
+***                       Wall time :  0h  0m  6s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            
