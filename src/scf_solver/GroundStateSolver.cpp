@@ -220,7 +220,6 @@ void GroundStateSolver::reset() {
  *
  * @param mol: Molecule to optimize
  * @param F: FockBuilder defining the SCF equations
- * @param Phi_mom: MOM/IMOM orbitals
  *
  * Optimize orbitals until convergence thresholds are met. This algorithm computes
  * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
@@ -242,7 +241,7 @@ void GroundStateSolver::reset() {
  * 11) Compute Fock matrix
  *
  */
-json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &Phi_mom) {
+json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     printParameters("Optimize ground state orbitals");
 
     Timer t_tot;
@@ -319,6 +318,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F, OrbitalVector &P
         dPhi_n.clear();
 
         // MOM / IMOM: get the new occupation vector for the current scf iteration
+        OrbitalVector &Phi_mom = mol.getOrbitalsMom();
         if (Phi_mom.size() > 0) {
             bool restricted = (orbital::size_doubly(Phi_n) != 0);
             if (restricted) {

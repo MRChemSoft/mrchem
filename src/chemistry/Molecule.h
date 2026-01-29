@@ -89,6 +89,7 @@ public:
     auto &getOrbitals() { return *this->orbitals_0; }
     auto &getOrbitalsX() { return *this->orbitals_x; }
     auto &getOrbitalsY() { return *this->orbitals_y; }
+    auto &getOrbitalsMom() { return *this->orbitals_mom; }
     auto &getCavity() { return *this->cavity; }
     auto &getFockMatrix() { return this->fock_matrix; }
 
@@ -96,11 +97,13 @@ public:
     const auto &getOrbitals() const { return *this->orbitals_0; }
     const auto &getOrbitalsX() const { return *this->orbitals_x; }
     const auto &getOrbitalsY() const { return *this->orbitals_y; }
+    const auto &getOrbitalsMom() const { return *this->orbitals_mom; }
     const auto &getFockMatrix() const { return this->fock_matrix; }
 
     auto getOrbitals_p() const { return this->orbitals_0; }
     auto getOrbitalsX_p() const { return this->orbitals_x; }
     auto getOrbitalsY_p() const { return this->orbitals_y; }
+    auto getOrbitalsMom_p() const { return this->orbitals_mom; }
     auto getCavity_p() const { return this->cavity; }
 
     nlohmann::json json() const;
@@ -145,6 +148,7 @@ protected:
     std::shared_ptr<OrbitalVector> orbitals_0{std::make_shared<OrbitalVector>()};
     std::shared_ptr<OrbitalVector> orbitals_x{nullptr};
     std::shared_ptr<OrbitalVector> orbitals_y{nullptr};
+    std::shared_ptr<OrbitalVector> orbitals_mom{std::make_shared<OrbitalVector>()}; ///< Orbitals for the maximum overlap method 
 
     // Properties
     SCFEnergy energy{};

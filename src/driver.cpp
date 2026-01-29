@@ -266,12 +266,12 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     const auto &json_occ = json_scf["occupancies"];
 
     // save the orbitals for MOM/IMOM before the initial guess energy is calculated due to localization/diagonalization
-    OrbitalVector Phi_mom;
     if (scf::guess_orbitals(json_guess, json_occ, mol)) {
         if (json_scf.contains("scf_solver")) {
             if (json_scf["scf_solver"]["deltascf_method"] == "IMOM" || json_scf["scf_solver"]["deltascf_method"] == "MOM") {
                 if (_useExchange)
                     MSG_ABORT("Running DeltaSCF calculations with exact exchange is currently not supported!");
+                auto &Phi_mom = mol.getOrbitalsMom();
                 Phi_mom = orbital::deep_copy(mol.getOrbitals());
             }
         }
@@ -323,7 +323,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setThreshold(orbital_thrs, energy_thrs);
         solver.setDeltaSCFMethod(deltascf_method);
 
-        json_out["scf_solver"] = solver.optimize(mol, F, Phi_mom);
+        json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
     }
 

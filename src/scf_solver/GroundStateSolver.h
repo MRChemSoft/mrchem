@@ -60,7 +60,7 @@ public:
     void setCheckpointFile(const std::string &file) { this->chkFile = file; }
     void setDeltaSCFMethod(const std::string method) { this-> deltaSCFMethod = method; }
 
-    nlohmann::json optimize(Molecule &mol, FockBuilder &F, OrbitalVector &Phi_mom);
+    nlohmann::json optimize(Molecule &mol, FockBuilder &F);
 
 protected:
     int rotation{0};      ///< Number of iterations between localization/diagonalization
