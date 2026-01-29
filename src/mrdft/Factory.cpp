@@ -77,6 +77,10 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
         coefs = {1.0, 1.0};
         return;
+    } else if (name == "B3LYP") {
+        ids = {XC_HYB_GGA_XC_B3LYP5};
+        coefs = {1.0};
+        return;
     } else {
         // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
@@ -87,6 +91,7 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         return;
     }
 }
+
 
 void Factory::setFunctional(const std::string &name, double c) {
     setLibxc(libxc); // should probably be where setFunctional is called
@@ -116,7 +121,6 @@ void Factory::setFunctional(const std::string &name, double c) {
     }
 }
 
-/** @brief Build a MRDFT object from the currently defined parameters */
 std::unique_ptr<MRDFT> Factory::build() {
     // Init DFT grid
     auto grid_p = std::make_unique<Grid>(mra);
