@@ -36,7 +36,16 @@ namespace mrdft {
 
 class Factory final {
 public:
+    /**
+     * @brief Construct a new Factory object. Initializes the MRA reference and creates the XCFun handle
+     * @param[in] MRA The Multi-Resolution Analysis object providing the grid 
+     * and basis functions for the calculation
+     */
     Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
+
+    /**
+     * @brief Default destructor
+     */
     ~Factory() = default;
 
     /*
@@ -82,26 +91,26 @@ public:
     std::unique_ptr<MRDFT> build();
 
     /**
-     * @brief Bool to initiate the use of Libxc (True if "DFT {xc_library = libxc}" in input file)
+     * @brief Toggle for initiation of Libxc (True if "DFT {xc_library = libxc}" in input file)
      */
     static bool libxc;
 
 private:
 private:
     int order{1};                  ///< Polynomial order of the Multi-Resolution Analysis (MRA) basis
-    bool spin{false};              ///< If true, perform unrestricted (spin-polarized) calculations
+    bool spin{false};              ///< If true, perform unrestricted calculations
     bool gamma{false};             ///< If true, use gamma-type derivatives (gradient squared) instead of explicit components
-    bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations in the XC kernel
-    double cutoff{-1.0};           ///< Density threshold; values below this are ignored for XC evaluation
+    bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations
+    double cutoff{-1.0};           ///< Density threshold; values below this are sat to 0
     std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (e.g., "bspline", "abgv_55")
     
     /** @brief Reference to the 3D Multi-Resolution Analysis grid structure */
     const mrcpp::MultiResolutionAnalysis<3> mra;
 
-    /** @brief Opaque pointer to the XCFun library handle */
+    /** @brief Pointer to the XCFun library handle */
     XC_p xcfun_p;
 
-    /** @brief Smart pointer to the numerical derivative operator used for GGA gradients */
+    /** @brief Pointer to the numerical derivative operator used for GGA gradients */
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
 
     /**
