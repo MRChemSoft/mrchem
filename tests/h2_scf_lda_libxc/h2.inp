@@ -17,7 +17,7 @@ $end
 
 WaveFunction {
   method = LDA                   # Wave function method (HF or DFT)
-  restricted = false
+  restricted = true
 }
 
 SCF {
