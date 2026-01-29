@@ -44,7 +44,7 @@ using XC_p = std::unique_ptr<xcfun_t, decltype(&xcfun_delete)>;
 /**
  * @class Functional
  * @brief Abstract base class for Exchange-Correlation functionals
- * @details This class provides the interface for evaluating XC potentials
+ * @details Provides the interface for evaluating XC potentials
  * on the Multi-Resolution Analysis (MRA) grid using either Libxc or XCFun
  */
 class Functional {

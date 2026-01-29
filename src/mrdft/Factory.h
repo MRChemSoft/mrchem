@@ -34,6 +34,12 @@
 
 namespace mrdft {
 
+/**
+ * @class Factory
+ * @brief Building class for MRDFT objects
+ * @details Manages the different xc libraries, mapping of functional names and builds the functional objects 
+ * with the required parameters to initialize a DFT calculation
+ */
 class Factory final {
 public:
     /**
@@ -43,21 +49,18 @@ public:
      */
     Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
 
-    /**
-     * @brief Default destructor
-     */
-    ~Factory() = default;
+    ~Factory() = default;   ///< @brief Default destructor
 
     /*
      * Setters
      */
-    void setSpin(bool s) { spin = s; }                          ///< Set spin polarization (true for unrestricted/spin-polarized) */
-    void setOrder(int k) { order = k; }                         ///< Set the polynomial order for the MRA basis
-    void setUseGamma(bool g) { gamma = g; }                     ///< Toggle between gamma-type and explicit derivatives
-    void setLogGradient(bool lg) { log_grad = lg; }             ///< Toggle the use of logarithmic gradients
-    void setDensityCutoff(double c) { cutoff = c; }             ///< Set the threshold for neglecting low-density regions
-    void setLibxc(bool libxc_) {libxc = libxc_; }               ///< Toggle between Libxc (true) and XCFun (false) backends
-    void setDerivative(const std::string &n) { diff_s = n; }    ///< Set derivative operator type (e.g., "bspline", "abgv_00")
+    void setSpin(bool s) { spin = s; }                        ///< Set spin polarization (true for unrestricted/spin-polarized) */
+    void setOrder(int k) { order = k; }                       ///< Set the polynomial order for the MRA basis
+    void setUseGamma(bool g) { gamma = g; }                   ///< Toggle between gamma-type and explicit derivatives
+    void setLogGradient(bool lg) { log_grad = lg; }           ///< Toggle the use of logarithmic gradients
+    void setDensityCutoff(double c) { cutoff = c; }           ///< Set the threshold for neglecting low-density regions
+    void setLibxc(bool libxc_) {libxc = libxc_; }             ///< Toggle between Libxc (true) and XCFun (false) backends
+    void setDerivative(const std::string &n) { diff_s = n; }  ///< Set derivative operator type (e.g., "bspline", "abgv_00")
 
     /**
      * @brief Configures the xc functional
@@ -90,10 +93,7 @@ public:
      */
     std::unique_ptr<MRDFT> build();
 
-    /**
-     * @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
-     */
-    static bool libxc;
+    static bool libxc;      ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
 
 private:
 private:
@@ -103,25 +103,15 @@ private:
     bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations
     double cutoff{-1.0};           ///< Density threshold; values below this are sat to 0
     std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (e.g., "bspline", "abgv_55")
+
     
-    /** @brief Reference to the 3D Multi-Resolution Analysis grid structure */
-    const mrcpp::MultiResolutionAnalysis<3> mra;
+    XC_p xcfun_p;                                         ///< @brief Pointer to the XCFun library handle
+    const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Reference to the 3D Multi-Resolution Analysis grid structure
+    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
 
-    /** @brief Pointer to the XCFun library handle */
-    XC_p xcfun_p;
 
-    /** @brief Pointer to the numerical derivative operator used for GGA gradients */
-    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p;
-
-    /**
-     * @brief Vector of initialized Libxc functionals
-     */
-    std::vector<xc_func_type> libxc_objects;
-
-    /**
-     * @brief Vector scaling coefficients for each functional in libxc_objects
-     */
-    std::vector<double> libxc_coefs;
+    std::vector<xc_func_type> libxc_objects;        ///< @brief Vector of initialized Libxc functionals
+    std::vector<double> libxc_coefs;                ///< @brief Vector scaling coefficients for each functional in libxc_objects
 
     /**
      * @brief Maps a functional name string (e.g., "PBE0", "LDA" or "XC_LDA_X", XC_GGA_X_B88) 
