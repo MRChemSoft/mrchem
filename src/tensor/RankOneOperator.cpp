@@ -38,13 +38,31 @@ template <int I> RankOneOperator<I> RankOneOperator<I>::operator()(RankZeroOpera
     return out;
 }
 
-template <int I> std::vector<Orbital> RankOneOperator<I>::operator()(Orbital phi, int alpha) { //TODO: adapter tout ça pour que alpha ait une valeur par défaut
-    RankOneOperator<I> &O = *this;
+/* @brief apply vector operator to an orbital, of the form σO, with  σ being a Pauli or Dirac matrix (acting in spinor space)
+ *
+ * @param phi: orbital to which to apply the operator
+ * @param alpha: index of the Pauli/Dirac matrix (Identity=0, Pauli x,y,z/gamma matrices = 1,2,3, beta/gamma5 =4) 
+ *
+ * Returns a vector of orbitals, each component being the result of applying
+ * the corresponding RankZeroOperator to the input orbital.
+ */
+//TODO: needs to be adapted for 4C operators with gamma matrices
+template <int I> std::vector<Orbital> RankOneOperator<I>::operator()(Orbital phi, int alpha) { 
     std::vector<Orbital> out;
     for (int i = 0; i < I; i++) out.push_back(O[i](phi)); //application of the operator is inherited from rankzerooperator
     return out;
 }
 
+/* @brief computes the expectation values of an operator of the form σO, <bra|σO|ket>, with  σ being a Pauli or Dirac matrix (acting in spinor space)
+ *
+ * @param bra: dual/conjugated orbital 
+ * @param ket: orbital
+ * @param alpha: index of the Pauli/Dirac matrix (Identity=0, Pauli x,y,z/gamma matrices = 1,2,3, beta/gamma5 =4) 
+ *
+ * Returns a vector of complex number, each component being the result of applying
+ * the corresponding RankZeroOperator to the input orbital.
+ */
+//TODO: needs to be adapted for 4C operators with gamma matrices
 template <int I> ComplexVector RankOneOperator<I>::operator()(Orbital bra, Orbital ket, int alpha) {
     RankOneOperator<I> &O = *this;
     ComplexVector out(I);

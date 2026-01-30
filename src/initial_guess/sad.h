@@ -41,8 +41,8 @@ class Nuclei;
 namespace initial_guess {
 namespace sad {
 
-bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta);
-bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs);
+bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta, int n_components = 1);
+bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int n_components = 1);
 
 } // namespace sad
 } // namespace initial_guess

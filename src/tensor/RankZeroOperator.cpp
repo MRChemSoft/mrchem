@@ -253,7 +253,7 @@ ComplexDouble RankZeroOperator::dagger(const mrcpp::Coord<3> &r) const {
  */
 Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
     if (inp.getNNodes() == 0) return inp.paramCopy(false);
-
+    // apply operator to input orbital
     RankZeroOperator &O = *this;
     std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec = getCoefVector();
@@ -263,7 +263,8 @@ Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
     }
     Orbital out = inp.paramCopy(true);
     mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
-    mrcpp::apply_Pauli(out, out, alpha); // apply the alpha (Pauli) matrix to the result; NB: 4C behaviour needs to be implemented
+    // apply the alpha (Pauli) matrix to the result; NB: 4C behaviour needs to be implemented
+    mrcpp::apply_Pauli(out, out, alpha); 
     return out;
 }
 

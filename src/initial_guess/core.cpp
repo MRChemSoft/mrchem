@@ -85,7 +85,7 @@ int PT[29][2] = {
  * and fills the resulting orbitals by the Aufbau principle.
  *
  */
-bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
+bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta, int n_components) { //TODO: adapt to multiple  components
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize Core Hamiltonian matrix");
@@ -110,7 +110,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     // Project AO basis of hydrogen functions
     t_lap.start();
     OrbitalVector Psi;
-    initial_guess::core::project_ao(Psi, prec, nucs, zeta);
+    initial_guess::core::project_ao(Psi, prec, nucs, zeta, n_components);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
     p.setup(prec);
@@ -159,7 +159,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
  * QZ: 1s2s2p3s3p4s3d4p5s4d5p (5s + 12p + 10d)
  *
  */
-void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
+void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta, int n_components) {
     Timer t_tot;
     auto w0 = Printer::getWidth() - 2;
     auto w1 = 5;
@@ -202,7 +202,7 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
             for (int m = 0; m < M; m++) {
                 Timer t_i;
                 HydrogenFunction h_func(n, l, m, Z, R);
-                Phi.push_back(Orbital(SPIN::Paired));
+                Phi.push_back(Orbital(SPIN::Paired, n_components));
                 Phi.back().setRank(Phi.size() - 1);
                 if (mrcpp::mpi::my_func(Phi.back())) {
                     mrcpp::project(Phi.back(), h_func, prec);

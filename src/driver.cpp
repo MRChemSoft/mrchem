@@ -294,6 +294,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         auto orbital_thrs = json_scf["scf_solver"]["orbital_thrs"];
         auto helmholtz_prec = json_scf["scf_solver"]["helmholtz_prec"];
 
+        // Setting up the solver
         GroundStateSolver solver;
         solver.setHistory(kain);
         solver.setRotation(rotation);
@@ -308,7 +309,8 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setHelmholtzPrec(helmholtz_prec);
         solver.setOrbitalPrec(start_prec, final_prec);
         solver.setThreshold(orbital_thrs, energy_thrs);
-
+        
+        // Running the solver
         json_out["scf_solver"] = solver.optimize(mol, F);
         json_out["success"] = json_out["scf_solver"]["converged"];
     }
@@ -354,6 +356,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
+    auto n_components = json_guess["components"];
 
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
@@ -378,11 +381,18 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     // Fill orbital vector
     auto &nucs = mol.getNuclei();
     auto &Phi = mol.getOrbitals();
-    for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired));
-    for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
-    for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
+    for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired, n_components));
+    for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha, n_components));
+    for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta, n_components));
     Phi.distribute();
 
+    //remove when implemented
+    if (n_components > 1 && (type != "sad" ||  type != "sad_gto")) {
+        MSG_ERROR("Initial guess for multi-component orbitals only implemented for SAD");
+        return false;
+    }
+
+    //create initial guess
     auto success = true;
     if (type == "chk") {
         success = initial_guess::chk::setup(Phi, file_chk);

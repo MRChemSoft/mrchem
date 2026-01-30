@@ -209,7 +209,7 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
  * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
  *
  */
-OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
+OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) { //TODO: recompile with gcc 13
     OrbitalVector out;
     for (const auto &i : Phi) {
         Orbital out_i;
@@ -294,7 +294,7 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     OrbitalVector out;
     OrbitalVector tmp;
     for (auto &Phi_i : Phi) {
-        Orbital i(Phi_i);
+        Orbital i(Phi_i); //todo: make sure that it copies everything, including the number of components
         if (i.spin() == spin) {
             if (i.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
                 // need to send orbital from owner to new owner
@@ -310,6 +310,7 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
                 if (mrcpp::mpi::my_func(tmp.size())) { mrcpp::mpi::recv_function(i, i.getRank() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
             }
             i.setRank(tmp.size());
+            // i.setNcomp(Phi_i.Ncomp()); //copying the number of components, but redundant. Will be cleaned if so.
             tmp.push_back(i);
         }
     }

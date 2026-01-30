@@ -45,8 +45,8 @@ class Nuclei;
 namespace initial_guess {
 namespace core {
 
-bool setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
-void project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta);
+bool setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta, int n_components = 1);
+void project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta, int n_components = 1);
 void rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi);
 ComplexMatrix diagonalize(OrbitalVector &Phi, MomentumOperator &T, RankZeroOperator &V);
 

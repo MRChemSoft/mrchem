@@ -61,7 +61,7 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 } // namespace sad
 } // namespace initial_guess
 
-bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
+bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta, int n_components) {
     if (Phi.size() == 0) return false;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
@@ -108,7 +108,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
     // Project AO basis of hydrogen functions
     t_lap.start();
-    OrbitalVector Psi;
+    OrbitalVector Psi; //TODO: probablement adapter pour plusieurs composants
     initial_guess::core::project_ao(Psi, prec, nucs, zeta);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
     if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
@@ -122,7 +122,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     mrcpp::print::header(2, "Diagonalizing Fock matrix");
     ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
 
-    // Rotate orbitals and fill electrons by Aufbau
+    // Rotate orbitals and fill electrons by Aufbau 
     t_lap.start();
     auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);

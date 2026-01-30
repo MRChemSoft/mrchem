@@ -27,6 +27,7 @@
 
 #include "MRCPP/MWFunctions"
 #include "MRCPP/Parallel"
+#include "MRCPP/utils/CompFunction.h"
 
 #include "mrchem.h"
 
