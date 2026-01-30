@@ -177,7 +177,7 @@ public:
     friend class MRDFT;
 
 protected:
-    const int order;            ///< @brief Order of contraction ????
+    const int order;            ///< @brief Order of derivatives (?)
     bool log_grad{false};       ///< @brief Toggle for logarithmic gradient
     double cutoff{-1.0};        ///< @brief Density threshold
     Eigen::VectorXi d_mask;     ///< @brief 
