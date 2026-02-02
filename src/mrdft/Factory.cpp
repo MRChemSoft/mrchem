@@ -135,7 +135,7 @@ std::unique_ptr<MRDFT> Factory::build() {
     setLibxc(libxc);
 
     // Init XCFun or Libxc
-    bool gga;
+    bool gga = false;
     if (libxc) {
         for (const auto &f : libxc_objects) {
 
@@ -156,11 +156,9 @@ std::unique_ptr<MRDFT> Factory::build() {
 
                 case XC_FAMILY_MGGA:
                 case XC_FAMILY_HYB_MGGA:
-                    gga = false; // eliminate unused variable warning
                     MSG_ABORT("Meta-GGA functionals are not supported in MRChem.!\n");
 
                 default:
-                    gga = false; // eliminate unused variable warning
                     MSG_ABORT("Libxc functional family not handled in MRChem!\n");
             }
 
