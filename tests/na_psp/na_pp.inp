@@ -10,7 +10,7 @@ $end
 }
 
 SCF {
-    initial_mixing_steps = 1
+    initial_mixing_steps = 2
 }
 
 Molecule {
