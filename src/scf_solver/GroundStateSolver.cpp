@@ -329,10 +329,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix U_A_proj = eigensolver.eigenvectors();
 
         // Check norm(A - 4F) tends to zero
-        std::cout << "----------------------------------------------------------------------------" << std::endl;
-        std::cout << "norm(A_proj - 4 * F_mat.real()) = " 
-                  << (A_proj - 4.0 * F_mat.real()).norm() << std::endl;
-
+        mrcpp::print::separator(0, '-');
+        println(0, "norm(A_proj - 4F) = " << (A_proj - 4.0 * F_mat.real()).norm());
         
         
         if (sigma_A_proj.maxCoeff() < 0.0) {
@@ -368,20 +366,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         {
             preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
         }
- 
-        // ==============================
         // End Preconditioning
+        // ==============================
 
         // Check norm of gradient
-        std::cout << "L2-norm(grad_E) = " << orbital::get_norms(grad_E)[0] << std::endl;
         auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
+        println(0, "norm(grad_E) = " << grad_E_norm);
         grad_E_array.push_back(grad_E_norm);
 
         // Safeguard: if not descent direction, skip preconditioning
         double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
         if (h1_inner_product_preconditioned_grad_E_grad_E <= 0.0) {
-            std::cout << "Preconditioning skipped (not a descent direction): " << h1_inner_product_preconditioned_grad_E_grad_E << std::endl;
+            println(0, "Preconditioning skipped (not a descent direction): " << h1_inner_product_preconditioned_grad_E_grad_E);
             preconditioned_grad_E = grad_E;
             h1_inner_product_preconditioned_grad_E_grad_E = grad_E_norm * grad_E_norm;
         }
@@ -404,7 +400,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             polak_ribiere = polak_ribiere / (previous_h1_inner_product_preconditioned_grad_E_grad_E + mrcpp::MachineZero);
             polak_ribiere = std::max(0.0, polak_ribiere);
             polak_ribiere = std::min(polak_ribiere, polak_max);
-            std::cout << "Polak-Ribière coefficient = " << polak_ribiere << std::endl;
+            println(0, "Polak-Ribiere coefficient = " << polak_ribiere);
             bool polak_ribiere_is_small = (polak_ribiere <= mrcpp::MachineZero);
 
             if (not polak_ribiere_is_small)
@@ -456,7 +452,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             }
 
             if (do_restart) {
-                std::cout << "Powell/guarded restart at iteration_index " << nIter << " (reason: " << reason << ")" << std::endl;
+                println(0, "Powell/guarded restart (reason: " << reason << ")");
                 direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
                 descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
                 last_restart_iter = nIter;
@@ -493,7 +489,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             F_mat = F(Phi_n, Phi_n);
             SCF_Energy_candidate = F.trace(Phi_n, nucs);
             Energy_candidate = SCF_Energy_candidate.getTotalEnergy();
-            std::cout << "Candidate Energy: " << Energy_candidate << std::endl;
+            println(0, "Candidate energy: " << Energy_candidate);
 
             dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
             errors = orbital::get_norms(dPhi_n);
@@ -501,19 +497,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             err_o = errors.maxCoeff();
             if (checkConvergence(err_o, 0.0))
             {
-                std::cout << "Line search step is negligible; accepting." << std::endl;
+                println(0, "Line search step is negligible; accepting.");
                 break;
             }
 
             // Directional Armijo condition:
             if (Energy_candidate <= Energy + armijo_parameter * alpha_trial * descent_directional_product) {
                 // Accept step
-                std::cout << "update: " << err_o << " (step size = " << alpha_trial << ")" << std::endl;
+                println(0, "update: " << err_o << " (step size = " << alpha_trial << ")");
                 break;
             }
             alpha_trial *= beta;
             if (alpha_trial < alpha_min) {
-                std::cout << "Warning: step size too small, stopping search." << std::endl;
+                println(0, "Warning: step size too small, stopping search.");
                 break;
             }
             rejectness_count += 1;
@@ -534,7 +530,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Energy_candidate < Energy, unless convergence is reached
         if (Energy_candidate >= Energy) {
-            std::cout << "Energy cannot be decreased more in the backtracking search." << std::endl;
+            println(0, "Energy cannot be decreased more in the backtracking search.");
             converged = true;
             Phi_n = Phi_backup;
         }
@@ -552,8 +548,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         json_cycle["energy_total"] = E_n.getTotalEnergy();
         json_cycle["energy_update"] = err_p;
 
-        //std::cout << "----------------------------------------------------------------------------" << std::endl;
-        std::cout << "============================================================================" << std::endl;
+        mrcpp::print::separator(0, '-');
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
@@ -604,10 +599,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     json_out["converged"] = converged;
 
     // Print energies, gradients, properties for debugging
-    std::cout << "The amount of Armijo rejections: " << rejectness_count << std::endl;
-    std::cout << "norm(grad_E):"<< std::endl;
+    println(0, "The amount of Armijo rejections: " << rejectness_count);
+    println(0, "norm(grad_E):");
     for (std::size_t i = 0; i < grad_E_array.size(); ++i)
-        std::cout << "norm(grad_E)[" << i << "] = " << grad_E_array[i] << std::endl;
+        println(0, "norm(grad_E)[" << i << "] = " << grad_E_array[i]);
     
 
     return json_out;
