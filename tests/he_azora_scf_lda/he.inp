@@ -1,7 +1,7 @@
 world_prec = 1.0e-4
 
 WaveFunction {
-  method = LDA
+  method = SVWN5
   restricted = true
   relativity = azora
 }
