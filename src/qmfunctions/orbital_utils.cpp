@@ -955,28 +955,59 @@ double orbital::h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunctio
 OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla)
 {
     int n = Phi.size();
-
     if (direction.size() != n)
         MSG_ABORT("OrbitalVector size mismatch in project_to_horizontal");
 
-    // ---- squared H1 norms of orbitals ----
-    DoubleVector sq_norms = DoubleVector::Zero(n);
+    std::vector<std::array<Orbital,3>> gradPhi(n), gradDir(n);
 
     for (int i = 0; i < n; ++i)
-        sq_norms(i) = orbital::h1_inner_product(Phi[i], Phi[i], nabla);
+    {
+        auto gP = nabla(Phi[i]);
+        for (int d = 0; d < 3; ++d)
+            gradPhi[i][d] = std::move(gP[d]);
+    }
 
-    // ---- build B matrix ----
-    ComplexMatrix B = ComplexMatrix::Zero(n, n);
-    for (int i = 0; i < n; ++i)
-        for (int j = 0; j < n; ++j)
-            B(i,j) = orbital::h1_inner_product(Phi[i], direction[j], nabla)
-                / (sq_norms(i) + sq_norms(j) + mrcpp::MachineZero);
+    for (int j = 0; j < n; ++j)
+    {
+        auto gD = nabla(direction[j]);
+        for (int d = 0; d < 3; ++d)
+            gradDir[j][d] = std::move(gD[d]);
+    }
+        
+    DoubleVector squared_norms = DoubleVector::Zero(n);
+    for (int i = 0; i < n; ++i) {
+        double val = 0.0;
+        if (mrcpp::mpi::my_func(Phi[i]))
+            val += std::real(mrcpp::dot(Phi[i], Phi[i]));
+        for (int d = 0; d < 3; ++d)
+            if (mrcpp::mpi::my_func(gradPhi[i][d]))
+                val += std::real(mrcpp::dot(gradPhi[i][d], gradPhi[i][d]));
+        squared_norms(i) = val;
+    }
+
+    DoubleMatrix B_local = DoubleMatrix::Zero(n,n);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+        double val = 0.0;
+            if (mrcpp::mpi::my_func(Phi[i]) && mrcpp::mpi::my_func(direction[j]))
+                val += std::real(mrcpp::dot(Phi[i], direction[j]));
+            for (int d = 0; d < 3; ++d)
+                if (mrcpp::mpi::my_func(gradPhi[i][d]) && mrcpp::mpi::my_func(gradDir[j][d]))
+                    val += std::real(mrcpp::dot(gradPhi[i][d], gradDir[j][d]));
+            B_local(i,j) = val / (squared_norms(i) + squared_norms(j) + mrcpp::MachineZero);
+        }
+    }
+
+    mrcpp::mpi::allreduce_matrix(B_local, mrcpp::mpi::comm_wrk);
 
     // ---- compute projected direction ----
+    ComplexMatrix B = B_local.cast<ComplexDouble>();
     ComplexMatrix A = B - B.transpose();
     OrbitalVector APhi = orbital::rotate(Phi, A);
     return orbital::add(1.0, direction, 1.0, APhi);
 }
+
+
 
 /** @brief Checks if a vector of orbitals is correctly ordered (paired/alpha/beta) */
 bool orbital::orbital_vector_is_sane(const OrbitalVector &Phi) {
