@@ -285,7 +285,7 @@ def write_scf_solver(user_dict, wf_dict):
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
-        "xc_library": user_dict["DFT"]["xc_library"]
+        "xc_library": user_dict["DFT"]["xc_library"],
         "deltascf_method": scf_dict["deltascf_method"],
     }
 
