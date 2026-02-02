@@ -18,10 +18,6 @@ target_include_directories(mrchem
     $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
-
-    # LibXC include roots (generated + sources), should be removed at some point
-    # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-build/
-    # ${PROJECT_BINARY_DIR}/_deps/libxc_sources-src/src
   )
 
 list(APPEND _public_headers
