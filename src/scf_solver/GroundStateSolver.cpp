@@ -372,31 +372,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         auto &nabla = F.momentum();
         nabla.setup(orb_prec);
 
-        // ==============================
-        // Debug: check ownership
-        int rank;
-        MPI_Comm_rank(mrcpp::mpi::comm_wrk, &rank);
-
-        for (int i = 0; i < Phi_n.size(); ++i)
-            if (!mrcpp::mpi::my_func(Phi_n[i]))
-                std::cout << "Rank " << rank
-                        << " does not own Phi[" << i << "]\n";
-        // ==============================
 
         // Necessary for Grassmann: 
         if (this->history > 0)
         {
-            // Check norm of gradient
-            std::cout << "L2-norm(grad_E) = " << orbital::get_norms(grad_E)[0] << std::endl;
-            std::cout << "L2-norm(preconditioned_grad_E) = " << orbital::get_norms(preconditioned_grad_E)[0] << std::endl;
             preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
         }
-        std::cout << "Any result from Grassmann !?" << std::endl;
  
         // ==============================
         // End Preconditioning
 
         // Check norm of gradient
+        std::cout << "L2-norm(grad_E) = " << orbital::get_norms(grad_E)[0] << std::endl;
         auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
         std::cout << "norm(grad_E) = " << grad_E_norm << std::endl;
         grad_E_array.push_back(grad_E_norm);
@@ -426,8 +413,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             previous_grad_E.distribute();
             previous_preconditioned_grad_E.distribute();
             direction.distribute();
-            mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
-
+            
             // Polak–Ribière coefficient
             OrbitalVector diff_pc_grad = orbital::add(1.0, preconditioned_grad_E, -1.0, previous_preconditioned_grad_E);
             double polak_ribiere = orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
@@ -624,7 +610,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         previous_grad_E.distribute();
         previous_preconditioned_grad_E.distribute();
         direction.distribute();
-        mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     }
 
     F.clear();
