@@ -104,9 +104,7 @@ private:
     double cutoff{-1.0};           ///< Density threshold; values below this are sat to 0
     std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (e.g., "bspline", "abgv_55")
 
-    
     XC_p xcfun_p;                                         ///< @brief Pointer to the XCFun library handle
-    const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Reference to the 3D Multi-Resolution Analysis grid structure
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
 
 
