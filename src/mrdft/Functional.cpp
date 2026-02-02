@@ -110,7 +110,7 @@ void Functional::print_functional_references() const {
         for (int number = 0; number < XC_MAX_REFERENCES; number++) {
             auto reference = xc_func_info_get_references(func.info, number);
             if (reference == nullptr) break;
-            std::cout << "     * " << xc_func_reference_get_ref(reference) << " (DOI:" << xc_func_reference_get_doi(reference) << ")" << std::endl;
+            std::cout << "     * " << xc_func_reference_get_ref(reference) << "\n       DOI:" << xc_func_reference_get_doi(reference) << std::endl;
         }
     }
 }
