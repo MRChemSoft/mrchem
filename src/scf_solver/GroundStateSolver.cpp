@@ -415,9 +415,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_dir_sym);
 
                 OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
-                projected_direction.distribute();
                 projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
-                projected_direction.distribute();
                 // Necessary for Grassmann:
                 if (this->history > 0)
                     projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
@@ -430,7 +428,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
             }
 
-            direction.distribute();
 
             // ---------- Robust restart checks ----------
             bool do_restart = false;
@@ -461,7 +458,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             if (do_restart) {
                 std::cout << "Powell/guarded restart at iteration_index " << nIter << " (reason: " << reason << ")" << std::endl;
                 direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
-                direction.distribute();
                 descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
                 last_restart_iter = nIter;
             }
@@ -489,10 +485,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             F.clear();
             // Retraction to Stiefel is Lowdin based:
             Phi_n = orbital::add(1.0, Phi_backup, alpha_trial, direction);
-            Phi_n.distribute();
             // Orthonormalization updates F_mat as a side effect?!
             orbital::orthonormalize(orb_prec, Phi_n, F_mat);
-            Phi_n.distribute();
             // Compute Fock matrix and energy
             if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
