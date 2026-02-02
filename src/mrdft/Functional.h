@@ -177,12 +177,12 @@ public:
     friend class MRDFT;
 
 protected:
-    const int order;            ///< @brief Order of derivatives (?)
+    const int order;            ///< @brief Order of functional derivatives. Eg. 0 (energy), 1 (potential), 2 (pot. gradient), etc.
     bool log_grad{false};       ///< @brief Toggle for logarithmic gradient
     double cutoff{-1.0};        ///< @brief Density threshold
-    Eigen::VectorXi d_mask;     ///< @brief 
-    Eigen::MatrixXi xc_mask;    ///< @brief 
-    XC_p xcfun;                 ///< XCFun library handle
+    Eigen::VectorXi d_mask;     ///< @brief density and derivative(s) mask vector for response calculations
+    Eigen::MatrixXi xc_mask;    ///< @brief functional and derivative(s) mask vector for response calculations
+    XC_p xcfun;                 ///< @brief XCFun library handle
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr};  ///< @brief Operator used to compute gradients
 
     /**
