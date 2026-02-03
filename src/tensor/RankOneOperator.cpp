@@ -48,6 +48,7 @@ template <int I> RankOneOperator<I> RankOneOperator<I>::operator()(RankZeroOpera
  */
 //TODO: needs to be adapted for 4C operators with gamma matrices
 template <int I> std::vector<Orbital> RankOneOperator<I>::operator()(Orbital phi, int alpha) { 
+    RankOneOperator<I> &O = *this; 
     std::vector<Orbital> out;
     for (int i = 0; i < I; i++) out.push_back(O[i](phi)); //application of the operator is inherited from rankzerooperator
     return out;

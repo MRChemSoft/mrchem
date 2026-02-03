@@ -61,6 +61,7 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 } // namespace sad
 } // namespace initial_guess
 
+//Hydrogenic basis set initial guess
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta, int n_components) {
     if (Phi.size() == 0) return false;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
@@ -139,6 +140,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     return true;
 }
 
+//GTO basis set (3-21G) initial guess
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
     if (Phi.size() == 0) return false;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;

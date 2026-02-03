@@ -27,6 +27,7 @@
 #include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <MRCPP/utils/CompFunction.h>
 
 #include "core.h"
 
@@ -205,7 +206,9 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
                 Phi.push_back(Orbital(SPIN::Paired, n_components));
                 Phi.back().setRank(Phi.size() - 1);
                 if (mrcpp::mpi::my_func(Phi.back())) {
-                    mrcpp::project(Phi.back(), h_func, prec);
+                    int comp = 0; // component index
+                    if (n_components > 1) {int comp = i%2;}; // by Aufbau, half of the atoms will be alpha (comp index 0) and half beta (comp index 1) 
+                    mrcpp::project(Phi.back(), h_func, prec, comp); 
                     if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
                 }
 

@@ -394,16 +394,17 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
 
     //create initial guess
     auto success = true;
-    if (type == "chk") {
+    //todo: update to multicomponent functions
+    if (type == "chk") { 
         success = initial_guess::chk::setup(Phi, file_chk);
     } else if (type == "mw") {
         success = initial_guess::mw::setup(Phi, prec, mw_p, mw_a, mw_b);
     } else if (type == "core") {
         success = initial_guess::core::setup(Phi, prec, nucs, zeta);
     } else if (type == "sad") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs, zeta);
+        success = initial_guess::sad::setup(Phi, prec, screen, nucs, zeta, n_components);
     } else if (type == "sad_gto") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs);
+        success = initial_guess::sad::setup(Phi, prec, screen, nucs, n_components);
     } else if (type == "gto") {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {

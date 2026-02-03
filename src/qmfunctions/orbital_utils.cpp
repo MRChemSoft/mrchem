@@ -294,7 +294,7 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     OrbitalVector out;
     OrbitalVector tmp;
     for (auto &Phi_i : Phi) {
-        Orbital i(Phi_i); //todo: make sure that it copies everything, including the number of components
+        Orbital i(Phi_i); 
         if (i.spin() == spin) {
             if (i.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
                 // need to send orbital from owner to new owner
