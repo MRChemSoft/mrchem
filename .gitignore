@@ -134,6 +134,3 @@ Pipfile.lock
 .vscode
 
 cube_vectors/
-
-#Personal
-recompile.sh

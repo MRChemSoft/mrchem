@@ -48,7 +48,6 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     // ensure name is upper case
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
 
-    std::cout << "Name used in MapFunctionalName: " << name << std::endl;
     if (name == "PBE0") {
         ids = {XC_HYB_GGA_XC_PBEH};
         coefs = {1.0};
@@ -121,8 +120,6 @@ void Factory::setFunctional(const std::string &name, double c) {
                 MSG_ABORT(oss.str());
             }
             xc_func_set_dens_threshold(&libxc_obj, cutoff);
-
-            std::cout << "Functional number: " << libxc_objects.size() << ": " << name << std::endl;
             libxc_objects.push_back(libxc_obj);
             libxc_coefs.push_back(c * coefs[i]);
         }

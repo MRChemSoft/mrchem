@@ -26,11 +26,6 @@
 #pragma once
 
 #include <memory>
-#include <iostream>
-#include <set>
-
-#include <Eigen/Core>
-#include <MRCPP/MWFunctions>
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
 #include <XCFun/xcfun.h>

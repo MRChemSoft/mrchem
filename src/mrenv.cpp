@@ -26,8 +26,6 @@
 #include "MRCPP/utils/parallel.h"
 #include <MRCPP/Printer>
 #include <XCFun/xcfun.h>
-#include <xc_funcs.h>
-#include <xc.h>
 #include <fstream>
 
 #include "mrchem.h"

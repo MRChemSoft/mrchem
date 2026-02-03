@@ -150,14 +150,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
     }
     out.setZero();
 
-    static bool printed = false;
-
     if (Factory::libxc) {
-        if (not printed) {
-            std::cout << "using libxc" << std::endl;
-            printed = true;
-        }
-
         Eigen::MatrixXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
             switch (libxc_objects[i].info->family) {
@@ -259,10 +252,6 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
             }
         }
     } else {
-        if (not printed) {
-            std::cout << "using xcfun" << std::endl;
-            printed = true;
-        }
         if (nInp != xcfun_input_length(xcfun.get()) or nOut != xcfun_output_length(xcfun.get())) { throw std::logic_error("Dimension mismatch!\n"); }
 
         for (int i = 0; i < nPts; i++) {
