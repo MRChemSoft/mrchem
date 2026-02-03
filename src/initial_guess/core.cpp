@@ -207,8 +207,10 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
                 Phi.back().setRank(Phi.size() - 1);
                 if (mrcpp::mpi::my_func(Phi.back())) {
                     int comp = 0; // component index
-                    if (n_components > 1) {int comp = i%2;}; // by Aufbau, half of the atoms will be alpha (comp index 0) and half beta (comp index 1) 
-                    mrcpp::project(Phi.back(), h_func, prec, comp); 
+                    // by Aufbau, half of the atoms will be alpha (comp index 0) and half beta (comp index 1) 
+                    // Warning: only 1-2 components methods are implemented
+                    if (n_components > 1) {int comp = i%2;}; 
+                    mrcpp::project(Phi.back(), comp, h_func, prec); 
                     if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
                 }
 

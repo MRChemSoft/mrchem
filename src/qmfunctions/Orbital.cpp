@@ -35,7 +35,7 @@ namespace mrchem {
  *
  * Initializes with NULL tree pointers.
  */
-Orbital::Orbital(SPIN::type spin, int n_comp)
+Orbital::Orbital(SPIN::type spin, int n_comp) //TODO: ajouter alloc_comp? 
         : mrcpp::CompFunction<3>(spin, n_comp) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
     // d1 is used to store occupancy

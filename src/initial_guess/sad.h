@@ -40,9 +40,9 @@ class Nuclei;
 
 namespace initial_guess {
 namespace sad {
-//TODO: les définitions ici sont ambigues, il faudrait que Phi contienne le nombre de composantes
-bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta, int n_components = 1);
-bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int n_components = 1);
+
+bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta = 0, int n_components = 1);
+bool setupGTO(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int n_components = 1);
 
 } // namespace sad
 } // namespace initial_guess

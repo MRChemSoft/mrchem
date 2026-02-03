@@ -62,86 +62,107 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 } // namespace initial_guess
 
 //Hydrogenic basis set initial guess
+/* @brief Setup initial guess as superposition of atomic densities
+ *
+ * @param Phi: Orbitals to be filled with the initial guess
+ * @param prec: precision used in projection
+ * @param screen: standard deviation of the Gaussian screening functions
+ * @param nucs: the nuclei of the molecule
+ * @param zeta: quality of the hydrogenic basis set (delault 0 meaning GTO basis, 1=SZ, 2=DZ, 3=TZ, 4=QZ)
+ * @param n_components: number of components in the multi-component calculation (default 1)
+ */
 bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta, int n_components) {
-    if (Phi.size() == 0) return false;
-    auto restricted = (orbital::size_singly(Phi)) ? false : true;
-    mrcpp::print::separator(0, '~');
-    print_utils::text(0, "Calculation ", "Compute initial orbitals");
-    print_utils::text(0, "Method      ", "Diagonalize SAD Hamiltonian");
-    print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
-    print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
-    print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
-    print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
-    print_utils::text(0, "Zeta quality", std::to_string(zeta));
-    mrcpp::print::separator(0, '~', 2);
+    if (zeta == 0){
+        return initial_guess::sad::setupGTO(Phi, prec, screen, nucs, n_components);
+    } else {
+        if (Phi.size() == 0) return false;
+        auto restricted = (orbital::size_singly(Phi)) ? false : true;
+        mrcpp::print::separator(0, '~');
+        print_utils::text(0, "Calculation ", "Compute initial orbitals");
+        print_utils::text(0, "Method      ", "Diagonalize SAD Hamiltonian");
+        print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
+        print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
+        print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
+        print_utils::text(0, "Functional  ", "LDA (SVWN5)");
+        print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
+        print_utils::text(0, "Zeta quality", std::to_string(zeta));
+        mrcpp::print::separator(0, '~', 2);
 
-    // Make Fock operator contributions
-    Timer t_tot, t_lap;
-    auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
-    auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
+        // Make Fock operator contributions
+        Timer t_tot, t_lap;
+        auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
+        auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(false);
-    xc_factory.setFunctional("SLATERX", 1.0);
-    xc_factory.setFunctional("VWN5C", 1.0);
-    auto mrdft_p = xc_factory.build();
+        mrdft::Factory xc_factory(*MRA);
+        xc_factory.setSpin(false);
+        xc_factory.setFunctional("SLATERX", 1.0);
+        xc_factory.setFunctional("VWN5C", 1.0);
+        auto mrdft_p = xc_factory.build();
 
-    MomentumOperator p(D_p);
-    NuclearOperator V_nuc(nucs, prec);
-    CoulombOperator J(P_p);
-    XCOperator XC(mrdft_p);
-    RankZeroOperator V = V_nuc + J + XC;
+        MomentumOperator p(D_p);
+        NuclearOperator V_nuc(nucs, prec);
+        CoulombOperator J(P_p);
+        XCOperator XC(mrdft_p);
+        RankZeroOperator V = V_nuc + J + XC;
 
-    auto plevel = Printer::getPrintLevel();
-    if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
-    if (plevel == 1) mrcpp::print::time(1, "Initializing operators", t_lap);
+        auto plevel = Printer::getPrintLevel();
+        if (plevel == 1) mrcpp::print::header(1, "SAD Initial Guess");
+        if (plevel == 1) mrcpp::print::time(1, "Initializing operators", t_lap);
 
-    // Compute Coulomb density
-    t_lap.start();
-    Density &rho_j = J.getDensity();
-    initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);
+        // Compute Coulomb density
+        t_lap.start();
+        Density &rho_j = J.getDensity();
+        initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);//todo: checker
 
-    // Compute XC density
-    Density &rho_xc = XC.getDensity(DensityType::Total);
-    mrcpp::deep_copy(rho_xc, rho_j);
-    if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
+        // Compute XC density
+        Density &rho_xc = XC.getDensity(DensityType::Total);
+        mrcpp::deep_copy(rho_xc, rho_j);
+        if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
 
-    // Project AO basis of hydrogen functions
-    t_lap.start();
-    OrbitalVector Psi; //TODO: probablement adapter pour plusieurs composants
-    initial_guess::core::project_ao(Psi, prec, nucs, zeta);
-    if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
-    if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
-    t_lap.start();
-    p.setup(prec);
-    V.setup(prec);
-    if (plevel == 2) mrcpp::print::footer(2, t_lap, 2);
-    if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
+        // Project AO basis of hydrogen functions
+        t_lap.start();
+        OrbitalVector Psi; 
+        initial_guess::core::project_ao(Psi, prec, nucs, zeta, n_components);
+        if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
+        if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
+        t_lap.start();
+        p.setup(prec);
+        V.setup(prec);
+        if (plevel == 2) mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Building Fock operator", t_lap);
 
-    // Compute Fock matrix
-    mrcpp::print::header(2, "Diagonalizing Fock matrix");
-    ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
+        // Compute Fock matrix
+        mrcpp::print::header(2, "Diagonalizing Fock matrix");
+        ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
 
-    // Rotate orbitals and fill electrons by Aufbau 
-    t_lap.start();
-    auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
-    auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
-    initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
-    initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
-    initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
-    Phi = orbital::adjoin(Phi, Phi_a);
-    Phi = orbital::adjoin(Phi, Phi_b);
-    p.clear();
-    V.clear();
+        // Rotate orbitals and fill electrons by Aufbau 
+        t_lap.start();
+        auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
+        auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
+        initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
+        initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
+        initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
+        Phi = orbital::adjoin(Phi, Phi_a);
+        Phi = orbital::adjoin(Phi, Phi_b);
+        p.clear();
+        V.clear();
 
-    mrcpp::print::footer(2, t_tot, 2);
-    if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
-    return true;
+        mrcpp::print::footer(2, t_tot, 2);
+        if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
+        return true;
+    }
 }
 
 //GTO basis set (3-21G) initial guess
-bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
+/* @brief Setup initial guess as superposition of atomic densities
+ *
+ * @param Phi: Orbitals to be filled with the initial guess
+ * @param prec: precision used in projection
+ * @param screen: standard deviation of the Gaussian screening functions
+ * @param nucs: the nuclei of the molecule
+ * @param n_components: number of components in the multi-component calculation (default 1)
+*/
+bool initial_guess::sad::setupGTO(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int n_components) {
     if (Phi.size() == 0) return false;
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
     mrcpp::print::separator(0, '~');
