@@ -82,7 +82,10 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coefs = {1.0, 1.0};
         return;
     } else if (name == "B3LYP") {
-        ids = {XC_HYB_GGA_XC_B3LYP};
+        // Keep as b3lyp5 for now to be consistent with xcfun
+        // TODO: change the definition of b3lyp in mrchem to not be b3lyp5
+        ids = {XC_HYB_GGA_XC_B3LYP5};
+        // ids = {XC_HYB_GGA_XC_B3LYP};
         coefs = {1.0};
         return;
     } else if (name == "B3LYP5") {
