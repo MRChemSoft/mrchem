@@ -815,10 +815,11 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
             double prec = item.value()["precision"];
             auto &Phi = mol.getOrbitals();
             DoubleMatrix p = DoubleMatrix::Zero(Phi.size() * intOrbitals + intTotal, (dim == 0) ? 1 : 3); // rows: orbitals + total, if requested; cols: dim
-            Orbital density = Orbital();
-            Density total_density = Density(false);
             if (intOrbitals) {
                 for (unsigned int i = 0; i < Phi.size(); i++) {
+                    if (!mrcpp::mpi::my_func(i))
+                        continue;
+                    Orbital density = Orbital();
                     mrcpp::multiply(density, Phi[i], Phi[i], prec);
                     if (dim == 0)
                         p(i, 0) = density.integrate().real(); // Integrate over full space
@@ -827,10 +828,11 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
                         p(i, 1) = density.integrate(dim - 1, true).real();  // Integrate over upper half of the space
                         p(i, 2) = density.integrate().real();               // Integrate over full space
                     }
-                    density.free();
                 }
+                mrcpp::mpi::allreduce_matrix(p, mrcpp::mpi::comm_wrk);
             }
             if (intTotal) {
+                Density total_density = Density(false);
                 density::compute(-1.0, total_density, Phi, DensityType::Total);
                 if (dim == 0)
                     p(p.rows() - 1, 0) = total_density.integrate().real(); // Total number of electrons
