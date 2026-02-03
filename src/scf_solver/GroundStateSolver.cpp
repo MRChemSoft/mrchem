@@ -650,4 +650,51 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
     return diag;
 }
 
+/** 
+ * @brief Determine new occupation vector according to MOM/IMOM procedure
+ * @param Phi_n: orbitals of current iteration n.
+ * @param Phi_mom: orbitals of last iteration n-1 (MOM) or first iteration (IMOM).
+ * 
+ * According to MOM/IMOM procedure the occupation numbers for the current iteration get
+ * determined based on the overlap with the orbitals of an earlier iteration of the SCF procedure.
+ */
+DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
+    DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
+    DoubleVector occup = orbital::get_occupations(Phi_mom); // get occupation numbers of the orbitals of the first iteration
+    double occ1 = occup(0);
+    DoubleVector occNew = DoubleVector::Constant(occup.size(), occ1);
+
+    // create vector which contains the positions of the second occupation number
+    DoubleVector currOcc = DoubleVector::Zero(occup.size());
+    unsigned int nCurrOcc = 0;
+    double occ2 = 0.0;
+    for (unsigned int i = 1; i < occup.size(); i++) {
+        if (occup(i) != occ1) {
+            occ2 = occup(i);
+            currOcc(i) = 1.0;
+            nCurrOcc++;
+        }
+    }
+
+    // only consider overlap with orbitals with the second occupation number
+    DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
+    DoubleVector p = occOverlap.colwise().norm();
+
+    // debug print section
+    print_utils::matrix(3, "MOM overlap matrix", overlap, 2);
+    print_utils::vector(3, "MOM total overlap", p, 2);
+
+    // sort by highest overlap
+    std::vector<std::pair<double, unsigned int>> sortme;
+    for (unsigned int q = 0; q < p.size(); q++)
+        sortme.push_back(std::pair<double, unsigned int>(p(q), q));
+    std::stable_sort(sortme.begin(), sortme.end());
+    std::reverse(sortme.begin(), sortme.end());
+
+    // assign the second occupation number to orbitals with highest overlap
+    for (unsigned int q = 0; q < nCurrOcc; q++)
+        occNew(sortme[q].second) = occ2;
+    return occNew;
+}
+
 } // namespace mrchem
