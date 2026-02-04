@@ -268,6 +268,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceHeader("Total energy");
         printConvergenceRow(0);
     }
+    // Initialize resolvent operator for gradient evaluation
+    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
 
     int nIter = 0;
     bool converged = false;
@@ -295,6 +297,41 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Apply Helmholtz operator
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Phi_np1 = H(Psi);
+        // ==============================
+        // Printing of gradient norm
+        
+        // Calculate Euclidian gradient
+        OrbitalVector grad_E = F.potential()(Phi_n);
+        F.clear();
+        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
+        grad_E = Resolvent(grad_E);
+        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
+
+        // Evaluate resolvent and its quadratic form
+        OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
+        ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
+
+        // Project the Euclidian gradient to tangent space
+        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
+        DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
+        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        AR_Phi.clear();
+
+        // Set the spatial derivatives
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
+        
+        // Check norm of gradient
+        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        mrcpp::print::separator(0, '-');
+        println(0, "norm(grad_E) = " << grad_E_norm);
+        mrcpp::print::separator(0, '-');
+        
+        // End printing of gradient norm 
+        // ==============================
         Psi.clear();
         F.clear();
 
