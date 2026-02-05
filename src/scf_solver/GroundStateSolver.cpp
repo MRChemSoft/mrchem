@@ -300,7 +300,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         
         // Calculate Euclidian gradient
         OrbitalVector grad_E = F.potential()(Phi_n);
-        F.clear();
+        //F.clear();
         grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
         ResolventVector Resolvent(helm_prec, Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
         grad_E = Resolvent(grad_E);
@@ -318,14 +318,16 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
         grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
         AR_Phi.clear();
+        mrcpp::print::separator(0, '-');
+        println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
 
         // Set the spatial derivatives
         auto &nabla = F.momentum();
-        nabla.setup(orb_prec);
+        //nabla.setup(100.0 * orb_prec);
         
         // Check norm of gradient
         auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        mrcpp::print::separator(0, '-');
+        //mrcpp::print::separator(0, '-');
         println(0, "norm(grad_E) = " << grad_E_norm);
         //println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
         //println(0, "L2norm(Phi_n)= " << orbital::get_norms(Phi_n).norm());
@@ -333,6 +335,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         println(0, "L2norm(F_mat)= " << F_mat.norm());
         println(0, "min(diag F) = " << F_mat.real().diagonal().minCoeff());
         println(0, "max|diag F|  = " << F_mat.real().diagonal().cwiseAbs().maxCoeff());
+        println(0, "orb_prec  = " << orb_prec);
+        println(0, "helm_prec = " << helm_prec);
         mrcpp::print::separator(0, '-');
         Resolvent_Phi.clear();
         grad_E.clear();
