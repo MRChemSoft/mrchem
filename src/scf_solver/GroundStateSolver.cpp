@@ -299,12 +299,43 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Printing of gradient norm
         
         // Calculate Euclidian gradient
-        OrbitalVector grad_E = F.potential()(Phi_n);
-        //F.clear();
+        OrbitalVector grad_E = orbital::param_copy(Phi_n);
+        grad_E = F.potential()(Phi_n);
+        mrcpp::print::separator(0, '-');
+
+        for (int i = 0; i < grad_E.size(); ++i) {
+            if (mrcpp::mpi::my_func(grad_E[i])) {
+                double local_l2 = std::real(mrcpp::dot(grad_E[i], grad_E[i]));
+                println(0, "orb " << i << " local L2 contrib = " << local_l2);
+            }
+        }
+        MPI_Barrier(mrcpp::mpi::comm_wrk);
+
+        grad_E.distribute();
+        
+        mrcpp::print::separator(0, '-');
+        for (int i = 0; i < grad_E.size(); ++i) {
+            bool mine = mrcpp::mpi::my_func(grad_E[i]);
+            println(0, "orb " << i << " owned_by_rank=" << mine);
+        }
+
+        mrcpp::print::separator(0, '-');
+        for (int i = 0; i < Phi_n.size(); ++i) {
+            bool mine = mrcpp::mpi::my_func(Phi_n[i]);
+            println(0, "orb " << i << " owned_by_rank=" << mine);
+        }
+
+        MPI_Barrier(mrcpp::mpi::comm_wrk);
+
+        mrcpp::print::separator(0, '-');
+        println(0, "The following norm will never be computed:");
+        println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
+
         grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
         ResolventVector Resolvent(helm_prec, Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
         grad_E = Resolvent(grad_E);
         grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
+
 
         // Evaluate resolvent and its quadratic form
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
@@ -318,7 +349,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
         grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
         AR_Phi.clear();
-        mrcpp::print::separator(0, '-');
+        //mrcpp::print::separator(0, '-');
         println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
 
         // Set the spatial derivatives
