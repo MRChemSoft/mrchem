@@ -268,8 +268,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceHeader("Total energy");
         printConvergenceRow(0);
     }
-    // Initialize resolvent operator for gradient evaluation
-    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
 
     int nIter = 0;
     bool converged = false;
@@ -304,6 +302,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector grad_E = F.potential()(Phi_n);
         F.clear();
         grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
+        ResolventVector Resolvent(helm_prec, Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
         grad_E = Resolvent(grad_E);
         grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
 
