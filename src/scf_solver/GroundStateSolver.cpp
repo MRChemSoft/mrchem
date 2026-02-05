@@ -341,9 +341,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         mrcpp::print::separator(0, '-');
         println(0, "norm(A_proj - 4F) = " << (A_proj - 4.0 * F_mat.real()).norm());
         println(0, "norm(grad_E) = " << grad_E_norm);
-        println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
-        println(0, "L2norm(Phi_n)= " << orbital::get_norms(Phi_n).norm());
-        println(0, "norm(Phi_n)  = " << orbital::h1_norm(Phi_n, nabla));
+        //println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
+        //println(0, "L2norm(Phi_n)= " << orbital::get_norms(Phi_n).norm());
+        //println(0, "norm(Phi_n)  = " << orbital::h1_norm(Phi_n, nabla));
         println(0, "L2norm(F_mat)= " << F_mat.norm());
         println(0, "min(diag F) = " << F_mat.real().diagonal().minCoeff());
         println(0, "max|diag F|  = " << F_mat.real().diagonal().cwiseAbs().maxCoeff());
@@ -395,7 +395,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Conjugate-gradient direction (H1, Polak-Ribière)
         // ======================================================
         
-        double descent_directional_product;
+        double descent_directional_product = 0.0;
 
         if (nIter == 1 or grad_E_norm >= grad_max) {
             // First iteration: steepest descent
