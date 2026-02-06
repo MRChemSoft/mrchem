@@ -162,6 +162,7 @@ RankZeroOperator &RankZeroOperator::operator=(const RankZeroOperator &O) {
  */
 RankZeroOperator &RankZeroOperator::operator+=(const RankZeroOperator &O) {
     if (this != &O) {
+        if (not(this->imag == O.imag)) MSG_ABORT("Cannot add real and imaginary operators " + this->name());
         if (this->size() == 0) {
             this->name() = O.name();
         } else {

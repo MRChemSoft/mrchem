@@ -46,12 +46,12 @@ public:
     explicit SCFEnergy(double kin = 0.0, double nn = 0.0,
                        double en = 0.0, double ee = 0.0,
                        double x = 0.0, double xc = 0.0,
-                       double next = 0.0, double eext = 0.0,
+                       double next = 0.0, double eext = 0.0, double emag = 0.0,
                        double rt = 0.0, double rn = 0.0, double re = 0.0) :
         E_kin(kin), E_nn(nn), E_en(en), E_ee(ee),
-          E_x(x), E_xc(xc), E_next(next), E_eext(eext), Er_tot(rt), Er_nuc(rn), Er_el(re) {
+          E_x(x), E_xc(xc), E_next(next), E_eext(eext), E_mag(emag), Er_tot(rt), Er_nuc(rn), Er_el(re) {
             E_nuc = E_nn + E_next + Er_nuc;
-            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + Er_el;
+            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + E_mag + Er_el;
         }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
@@ -64,6 +64,7 @@ public:
     double getElectronElectronEnergy() const { return this->E_ee; }
     double getElectronExternalEnergy() const { return this->E_eext; }
     double getNuclearExternalEnergy() const { return this->E_next; }
+    double getExternalMagneticEnergy() const { return this->E_mag; }
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
     double getExchangeEnergy() const { return this->E_x; }
     double getReactionEnergy() const { return this->Er_tot; }
@@ -77,6 +78,7 @@ public:
         auto E_kcal = E_au * PhysicalConstants::get("hartree2kcalmol");
 
         bool has_ext = (std::abs(E_eext) > mrcpp::MachineZero) || (std::abs(E_next) > mrcpp::MachineZero);
+        bool has_mag = (std::abs(E_mag) > mrcpp::MachineZero);
         bool has_react = (std::abs(Er_el) > mrcpp::MachineZero) || (std::abs(Er_nuc) > mrcpp::MachineZero);
 
         auto pprec = 2 * mrcpp::Printer::getPrecision();
@@ -92,6 +94,10 @@ public:
             print_utils::scalar(0, "External field (el)  ", E_eext, "(au)", pprec, false);
             print_utils::scalar(0, "External field (nuc) ", E_next, "(au)", pprec, false);
             print_utils::scalar(0, "External field (tot) ", E_eext + E_next, "(au)", pprec, false);
+        }
+        if (has_mag) {
+            mrcpp::print::separator(0, '-');
+            print_utils::scalar(0, "Magnetic field (el)  ", E_mag, "(au)", pprec, false);
         }
         if (has_react) {
             mrcpp::print::separator(0, '-');
@@ -118,6 +124,7 @@ public:
             {"E_ee", E_ee},
             {"E_next", E_next},
             {"E_eext", E_eext},
+            {"E_mag", E_mag},
             {"E_x", E_x},
             {"E_xc", E_xc},
             {"E_el", E_el},
@@ -141,6 +148,7 @@ private:
     double E_xc{0.0};
     double E_next{0.0};
     double E_eext{0.0};
+    double E_mag{0.0};
     double Er_tot{0.0};
     double Er_nuc{0.0};
     double Er_el{0.0};
