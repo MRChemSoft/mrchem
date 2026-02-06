@@ -308,25 +308,17 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             if (mrcpp::mpi::my_func(phi_i))
                 phi_i.crop(orb_prec);
         }
-
         MPI_Barrier(mrcpp::mpi::comm_wrk);
         mrcpp::print::separator(0, '-');
         
-        // Set the spatial derivatives
+        // Compute Laplacian of Phi_n and the quantity (1 - Laplacian)grad_E.
         auto &nabla = F.momentum();
-        //nabla.setup(orb_prec);
         OrbitalVector dx_Phi = nabla[0](Phi_n);
         OrbitalVector dy_Phi = nabla[1](Phi_n);
         OrbitalVector dz_Phi = nabla[2](Phi_n);
         dx_Phi = nabla[0](dx_Phi);
         dy_Phi = nabla[1](dy_Phi);
         dz_Phi = nabla[2](dz_Phi);
-        auto dx_Phi_norm = orbital::get_norms(dx_Phi).norm();
-        auto dy_Phi_norm = orbital::get_norms(dy_Phi).norm();
-        auto dz_Phi_norm = orbital::get_norms(dz_Phi).norm();
-        println(0, "L2norm(dx_Phi)=" << dx_Phi_norm);
-        println(0, "L2norm(dy_Phi)=" << dy_Phi_norm);
-        println(0, "L2norm(dz_Phi)=" << dz_Phi_norm);
         OrbitalVector one_minus_laplacian_grad_E = orbital::param_copy(Phi_n);
         one_minus_laplacian_grad_E = orbital::add(4.0, grad_E, -2.0, dx_Phi);
         one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dy_Phi);
@@ -334,14 +326,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         dx_Phi.clear();
         dy_Phi.clear();
         dz_Phi.clear();
-        dx_Phi_norm = orbital::get_norms(one_minus_laplacian_grad_E).norm();
-        println(0, "L2norm((1-lapl)grad_E)=" << dx_Phi_norm);
 
         grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
         ResolventVector Resolvent(helm_prec, Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
         grad_E = Resolvent(grad_E);
         grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
-
 
         // Evaluate resolvent and its quadratic form
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
@@ -357,8 +346,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         AR_Phi = orbital::rotate(Phi_n, A_proj);
         one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -1.0, AR_Phi);
-
         AR_Phi.clear();
+        
+        // Alternative gradient evaluation
+        OrbitalVector grad_E1 = Resolvent(one_minus_laplacian_grad_E);
 
 
         for (auto &phi_i : grad_E)
@@ -371,32 +362,30 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             if (mrcpp::mpi::my_func(phi_i))
                 phi_i.crop(orb_prec);
         }
+        for (auto &phi_i : grad_E1)
+        {
+            if (mrcpp::mpi::my_func(phi_i))
+                phi_i.crop(orb_prec);
+        }
         MPI_Barrier(mrcpp::mpi::comm_wrk);
 
-        println(0, "Debugging:");
+        // Check norm of gradient: grad_E = grad_E1 up to numerical noise
         auto grad_E_norm = orbital::get_norms(grad_E).norm();
-        println(0, "L2norm(grad_E)=" << grad_E_norm);
-        auto one_minus_laplacian_grad_E_norm = orbital::get_norms(one_minus_laplacian_grad_E).norm();
-        println(0, "L2norm((1-lapl)grad_E)=" << one_minus_laplacian_grad_E_norm);
-        // Check norm of gradient
-        grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        println(0, "norm(grad_E) = " << grad_E_norm);
-
+        println(0, "L2-n(grad_E) = " << grad_E_norm);
+        grad_E_norm = orbital::get_norms(grad_E1).norm();
+        println(0, "L2-n(grad_E1)= " << grad_E_norm);
+        grad_E_norm = orbital::h1_norm(grad_E1, nabla);
+        println(0, "norm(grad_E1)= " << grad_E_norm);
         grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
-        println(0, "The same     = " << grad_E_norm);
+        println(0, "norm(grad_E) = " << grad_E_norm);
+        grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        println(0, "Noisy twin   = " << grad_E_norm);
 
-
-        auto h1_norm_Phi_n = orbital::h1_norm(Phi_n, nabla);
-        println(0, "norm(Phi_n)  = " << h1_norm_Phi_n);
-        println(0, "L2norm(F_mat)= " << F_mat.norm());
-        println(0, "min(diag F) = " << F_mat.real().diagonal().minCoeff());
-        println(0, "max|diag F|  = " << F_mat.real().diagonal().cwiseAbs().maxCoeff());
-        println(0, "orb_prec  = " << orb_prec);
-        println(0, "helm_prec = " << helm_prec);
         mrcpp::print::separator(0, '-');
         Resolvent_Phi.clear();
         grad_E.clear();
+        grad_E1.clear();
         
         // End printing of gradient norm 
         // ==============================
