@@ -302,19 +302,13 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector grad_E = orbital::param_copy(Phi_n);
         grad_E = F.potential()(Phi_n);
         grad_E.distribute();
-        /*
-        mrcpp::print::separator(0, '-');
-        println(0, "grad_E.size(): " << grad_E.size());
-        if (grad_E.size() > 1)
+
+        for (auto &phi_i : grad_E)
         {
-            std::cout << "grad_E[0].norm(): " << grad_E[0].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
-            std::cout << "grad_E[1].norm(): " << grad_E[1].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
+            if (mrcpp::mpi::my_func(phi_i))
+                phi_i.crop(orb_prec);
         }
 
-        auto test_norm = orbital::get_norms(grad_E).norm();
-        println(0, "L2norm(grad_E)=" << test_norm);
-        mrcpp::print::separator(0, '-');
-        */
         MPI_Barrier(mrcpp::mpi::comm_wrk);
         mrcpp::print::separator(0, '-');
 
@@ -340,13 +334,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Set the spatial derivatives
         auto &nabla = F.momentum();
         //nabla.setup(orb_prec);
-        /*
-        if (grad_E.size() > 1)
+
+        for (auto &phi_i : grad_E)
         {
-            std::cout << "grad_E[0].norm(): " << grad_E[0].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
-            std::cout << "grad_E[1].norm(): " << grad_E[1].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
+            if (mrcpp::mpi::my_func(phi_i))
+                phi_i.crop(orb_prec);
         }
-        */
+
+        MPI_Barrier(mrcpp::mpi::comm_wrk);
+
         println(0, "Debugging:");
         auto grad_E_norm = orbital::get_norms(grad_E).norm();
         println(0, "L2norm(grad_E)=" << grad_E_norm);
