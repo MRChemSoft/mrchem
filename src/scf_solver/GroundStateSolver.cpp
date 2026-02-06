@@ -301,35 +301,22 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Calculate Euclidian gradient
         OrbitalVector grad_E = orbital::param_copy(Phi_n);
         grad_E = F.potential()(Phi_n);
-        mrcpp::print::separator(0, '-');
-
-        for (int i = 0; i < grad_E.size(); ++i) {
-            if (mrcpp::mpi::my_func(grad_E[i])) {
-                double local_l2 = std::real(mrcpp::dot(grad_E[i], grad_E[i]));
-                println(0, "orb " << i << " local L2 contrib = " << local_l2);
-            }
-        }
-        MPI_Barrier(mrcpp::mpi::comm_wrk);
-
         grad_E.distribute();
-        
+        /*
         mrcpp::print::separator(0, '-');
-        for (int i = 0; i < grad_E.size(); ++i) {
-            bool mine = mrcpp::mpi::my_func(grad_E[i]);
-            println(0, "orb " << i << " owned_by_rank=" << mine);
+        println(0, "grad_E.size(): " << grad_E.size());
+        if (grad_E.size() > 1)
+        {
+            std::cout << "grad_E[0].norm(): " << grad_E[0].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
+            std::cout << "grad_E[1].norm(): " << grad_E[1].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
         }
 
+        auto test_norm = orbital::get_norms(grad_E).norm();
+        println(0, "L2norm(grad_E)=" << test_norm);
         mrcpp::print::separator(0, '-');
-        for (int i = 0; i < Phi_n.size(); ++i) {
-            bool mine = mrcpp::mpi::my_func(Phi_n[i]);
-            println(0, "orb " << i << " owned_by_rank=" << mine);
-        }
-
+        */
         MPI_Barrier(mrcpp::mpi::comm_wrk);
-
         mrcpp::print::separator(0, '-');
-        println(0, "The following norm will never be computed:");
-        println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
 
         grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
         ResolventVector Resolvent(helm_prec, Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
@@ -349,20 +336,26 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
         grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
         AR_Phi.clear();
-        //mrcpp::print::separator(0, '-');
-        println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
-
+        
         // Set the spatial derivatives
         auto &nabla = F.momentum();
-        //nabla.setup(100.0 * orb_prec);
-        
+        //nabla.setup(orb_prec);
+        /*
+        if (grad_E.size() > 1)
+        {
+            std::cout << "grad_E[0].norm(): " << grad_E[0].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
+            std::cout << "grad_E[1].norm(): " << grad_E[1].norm() << " on rank " << mrcpp::mpi::wrk_rank << std::endl;
+        }
+        */
+        println(0, "Debugging:");
+        auto grad_E_norm = orbital::get_norms(grad_E).norm();
+        println(0, "L2norm(grad_E)=" << grad_E_norm);
+
         // Check norm of gradient
-        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        //mrcpp::print::separator(0, '-');
+        grad_E_norm = orbital::h1_norm(grad_E, nabla);
         println(0, "norm(grad_E) = " << grad_E_norm);
-        //println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
-        //println(0, "L2norm(Phi_n)= " << orbital::get_norms(Phi_n).norm());
-        //println(0, "norm(Phi_n)  = " << orbital::h1_norm(Phi_n, nabla));
+        auto h1_norm_Phi_n = orbital::h1_norm(Phi_n, nabla);
+        println(0, "norm(Phi_n)  = " << h1_norm_Phi_n);
         println(0, "L2norm(F_mat)= " << F_mat.norm());
         println(0, "min(diag F) = " << F_mat.real().diagonal().minCoeff());
         println(0, "max|diag F|  = " << F_mat.real().diagonal().cwiseAbs().maxCoeff());
