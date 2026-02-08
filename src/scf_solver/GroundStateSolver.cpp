@@ -344,13 +344,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
         grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
 
-        AR_Phi = orbital::rotate(Phi_n, A_proj);
+        ComplexMatrix C_proj_complex2 = orbital::calc_overlap_matrix(one_minus_laplacian_grad_E, Resolvent_Phi);
+        DoubleMatrix C_proj_sym2 = C_proj_complex2.real() + C_proj_complex2.real().transpose();
+        DoubleMatrix A_proj2 = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym2);
+        
+        auto temp_error = (A_proj2 - A_proj).norm();
+        println(0, "Error-in-A   = " << temp_error);
+
+        AR_Phi = orbital::rotate(Phi_n, A_proj2);
         one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -1.0, AR_Phi);
         AR_Phi.clear();
         
         // Alternative gradient evaluation
         OrbitalVector grad_E1 = Resolvent(one_minus_laplacian_grad_E);
-
 
         for (auto &phi_i : grad_E)
         {
@@ -376,9 +382,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         println(0, "L2-n(grad_E1)= " << grad_E_norm);
         grad_E_norm = orbital::h1_norm(grad_E1, nabla);
         println(0, "norm(grad_E1)= " << grad_E_norm);
-        grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
+        grad_E_norm = orbital::l2_inner_product(grad_E1, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
         println(0, "norm(grad_E) = " << grad_E_norm);
+        grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
+        grad_E_norm = std::sqrt(std::abs(grad_E_norm));
+        println(0, "OK-n(grad_E) = " << grad_E_norm);
         grad_E_norm = orbital::h1_norm(grad_E, nabla);
         println(0, "Noisy twin   = " << grad_E_norm);
 
