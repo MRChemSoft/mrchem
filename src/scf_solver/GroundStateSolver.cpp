@@ -310,6 +310,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
         MPI_Barrier(mrcpp::mpi::comm_wrk);
         mrcpp::print::separator(0, '-');
+
+        OrbitalVector V_Phi = orbital::deep_copy(grad_E);
         
         // Compute Laplacian of Phi_n and the quantity (1 - Laplacian)grad_E.
         auto &nabla = F.momentum();
@@ -377,20 +379,39 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Check norm of gradient: grad_E = grad_E1 up to numerical noise
         auto grad_E_norm = orbital::get_norms(grad_E).norm();
-        println(0, "L2-n(grad_E) = " << grad_E_norm);
+        println(0, "L2-n(grad_E0)= " << grad_E_norm);
         grad_E_norm = orbital::get_norms(grad_E1).norm();
         println(0, "L2-n(grad_E1)= " << grad_E_norm);
         grad_E_norm = orbital::h1_norm(grad_E1, nabla);
         println(0, "norm(grad_E1)= " << grad_E_norm);
         grad_E_norm = orbital::l2_inner_product(grad_E1, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
-        println(0, "norm(grad_E) = " << grad_E_norm);
+        println(0, "norm(grad_E2)= " << grad_E_norm);
         grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
-        println(0, "OK-n(grad_E) = " << grad_E_norm);
+        println(0, "norm(grad_E3)= " << grad_E_norm);
         grad_E_norm = orbital::h1_norm(grad_E, nabla);
         println(0, "Noisy twin   = " << grad_E_norm);
+        mrcpp::print::separator(0, '-');
 
+        AR_Phi.clear();
+        grad_E.clear();
+        grad_E1.clear();
+        OrbitalVector Resolvent_V_Phi = Resolvent(V_Phi);
+        C_proj_complex1 = orbital::calc_overlap_matrix(Resolvent_V_Phi, Phi_n);
+        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        C_proj_sym1 = 4.0 * C_proj_sym1;
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        A_proj = A_proj + 2.0 * B_proj_real.llt().solve(Eigen::MatrixXd::Identity(B_proj_real.rows(), B_proj_real.cols()));
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E1 = orbital::add(2.0, Phi_n, -1.0, AR_Phi);
+        grad_E = orbital::add(1.0, grad_E1, 4.0, Resolvent_V_Phi);
+
+        grad_E_norm = orbital::get_norms(grad_E).norm();
+        println(0, "L2-n(grad_E) = " << grad_E_norm);
+        grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        println(0, "norm(grad_E) = " << grad_E_norm);
+        
         mrcpp::print::separator(0, '-');
         Resolvent_Phi.clear();
         grad_E.clear();
