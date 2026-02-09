@@ -265,8 +265,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     int last_restart_iter = 0;
     const int restart_cooldown = 4;        // no restarts within these many iterations of previous restart
     const double eta_powell = 0.3;         // Powell threshold (tune 0.1..0.3)
-    const double polak_max = 1.0;          // cap on beta (safeguard)
-    const double grad_max = 100.0;          // skip preconditioning if norm(grad_E) > grad_max
+    const double polak_max = 5.0;          // cap on beta (safeguard)
 
     OrbitalVector direction = orbital::param_copy(Phi_n);
     OrbitalVector previous_grad_E = orbital::param_copy(Phi_n);
@@ -314,14 +313,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
         AR_Phi.clear();
 
-        // Set the spatial derivatives
-        auto &nabla = F.momentum();
-        nabla.setup(orb_prec);
-
-        // Check norm of gradient
-        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        grad_E_array.push_back(grad_E_norm);
-
         // ==============================
         // Preconditioning
         // ==============================
@@ -340,48 +331,48 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Check norm(A - 4F) tends to zero
         mrcpp::print::separator(0, '-');
         println(0, "norm(A_proj - 4F) = " << (A_proj - 4.0 * F_mat.real()).norm());
-        println(0, "norm(grad_E) = " << grad_E_norm);
-        //println(0, "L2norm(grad_E)=" << orbital::get_norms(grad_E).norm());
-        //println(0, "L2norm(Phi_n)= " << orbital::get_norms(Phi_n).norm());
-        //println(0, "norm(Phi_n)  = " << orbital::h1_norm(Phi_n, nabla));
-        println(0, "L2norm(F_mat)= " << F_mat.norm());
-        println(0, "min(diag F) = " << F_mat.real().diagonal().minCoeff());
-        println(0, "max|diag F|  = " << F_mat.real().diagonal().cwiseAbs().maxCoeff());
+        
+        
+        if (sigma_A_proj.maxCoeff() < 0.0) {
+
+            Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
+            Eigen::MatrixXd one_plus_orbital_energy = (Eigen::VectorXd::Ones(orbital_energy.size()) + orbital_energy).asDiagonal();
+
+            ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
+
+            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
+            auto temp = Resolvent_mu(preconditioned_grad_E);
+            temp = orbital::rotate(temp, one_plus_orbital_energy);
+            preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp );
+            temp.clear();
+            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
+        }
 
         
-        if (grad_E_norm < grad_max)
+        C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
+        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
+
+
+        // Set the spatial derivatives
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
+
+
+        // Necessary for Grassmann: 
+        if (this->history > 0)
         {
-            if (sigma_A_proj.maxCoeff() < 0.0) {
-
-                Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
-                Eigen::MatrixXd one_plus_orbital_energy = (Eigen::VectorXd::Ones(orbital_energy.size()) + orbital_energy).asDiagonal();
-
-                ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
-
-                preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
-                auto temp = Resolvent_mu(preconditioned_grad_E);
-                temp = orbital::rotate(temp, one_plus_orbital_energy);
-                preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp );
-                temp.clear();
-                preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
-            }
-
-            
-            C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
-            C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
-            A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-            AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-            preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
-
-
-            // Necessary for Grassmann: 
-            if (this->history > 0)
-            {
-                preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
-            }
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
         }
         // End Preconditioning
         // ==============================
+
+        // Check norm of gradient
+        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        println(0, "norm(grad_E) = " << grad_E_norm);
+        grad_E_array.push_back(grad_E_norm);
 
         // Safeguard: if not descent direction, skip preconditioning
         double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
@@ -395,9 +386,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Conjugate-gradient direction (H1, Polak-Ribière)
         // ======================================================
         
-        double descent_directional_product = 0.0;
+        double descent_directional_product;
 
-        if (nIter == 1 or grad_E_norm >= grad_max) {
+        if (nIter == 1) {
             // First iteration: steepest descent
             direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
             descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
