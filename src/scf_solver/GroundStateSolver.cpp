@@ -251,7 +251,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     }
 
     // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
-    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
+    ResolventVector Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
 
     // Parameters for line search
     double alpha = 1.0;                          // current step size (adaptive across iterations)
@@ -293,31 +293,70 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             F.setup(orb_prec);
         }
 
-        // Calculate Euclidian gradient
-        OrbitalVector grad_E = F.potential()(Phi_n);
-        F.clear();
-        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
-        grad_E = Resolvent(grad_E);
-        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
+        // Calculate Euclidian gradient starting with the potential evaluation
+        OrbitalVector grad_E = orbital::param_copy(Phi_n);
+        grad_E = F.potential()(Phi_n);
+        grad_E.distribute();
+
+        for (auto &phi_i : grad_E)
+        {
+            if (mrcpp::mpi::my_func(phi_i))
+                phi_i.crop(orb_prec);
+        }
+        MPI_Barrier(mrcpp::mpi::comm_wrk);
+        mrcpp::print::separator(0, '-');
+
+        // Evaluate Laplacian of Phi_n for computing (1 - Laplacian)grad_E
+        auto &nabla = F.momentum();
+        OrbitalVector dx_Phi = nabla[0](Phi_n);
+        OrbitalVector dy_Phi = nabla[1](Phi_n);
+        OrbitalVector dz_Phi = nabla[2](Phi_n);
+        dx_Phi = nabla[0](dx_Phi);
+        dy_Phi = nabla[1](dy_Phi);
+        dz_Phi = nabla[2](dz_Phi);
+        OrbitalVector one_minus_laplacian_grad_E = orbital::param_copy(Phi_n);
+        one_minus_laplacian_grad_E = orbital::add(4.0, grad_E, -2.0, dx_Phi);
+        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dy_Phi);
+        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dz_Phi);
+        dx_Phi.clear();
+        dy_Phi.clear();
+        dz_Phi.clear();
 
         // Evaluate resolvent and its quadratic form
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
-        ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
+        ComplexMatrix B_proj = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
+        DoubleMatrix B_proj_real = (B_proj.real() + B_proj.real().transpose()) * 0.5;
 
-        // Project the Euclidian gradient to tangent space
-        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
-        DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
-        DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
-        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        ComplexMatrix C_proj_complex = orbital::calc_overlap_matrix(one_minus_laplacian_grad_E, Resolvent_Phi);
+        DoubleMatrix C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
+        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
+
+
+
+        OrbitalVector AR_Phi = orbital::rotate(Phi_n, A_proj);
+        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -1.0, AR_Phi);
         AR_Phi.clear();
+        
+        // Alternative gradient evaluation
+        grad_E = Resolvent(one_minus_laplacian_grad_E);
+        
 
+        // Check norm of gradient: grad_E = grad_E1 up to numerical noise
+        auto grad_E_norm = orbital::get_norms(grad_E).norm();
+        println(0, "L2-n(grad_E) = " << grad_E_norm);
+        
+        grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
+        grad_E_norm = std::sqrt(std::abs(grad_E_norm));
+        println(0, "norm(grad_E) = " << grad_E_norm);
+        
+        
         // ==============================
         // Preconditioning
         // ==============================
 
         OrbitalVector preconditioned_grad_E = grad_E;
+        //OrbitalVector preconditioned_grad_E = orbital::param_copy(grad_E);
+        //preconditioned_grad_E = orbital::deep_copy(grad_E);
 
         // Diagonalize A_proj
         Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver(A_proj);
@@ -349,16 +388,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
         
-        C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
-        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
-        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
+        C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
         AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
-
-
-        // Set the spatial derivatives
-        auto &nabla = F.momentum();
-        nabla.setup(orb_prec);
 
 
         // Necessary for Grassmann: 
@@ -369,9 +403,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // End Preconditioning
         // ==============================
 
-        // Check norm of gradient
-        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        println(0, "norm(grad_E) = " << grad_E_norm);
         grad_E_array.push_back(grad_E_norm);
 
         // Safeguard: if not descent direction, skip preconditioning
