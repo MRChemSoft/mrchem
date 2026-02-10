@@ -283,9 +283,10 @@ sections:
       - name: method
         type: str
         predicates:
-          - value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 'hartree-fock',
-            'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 'bpw91', 'bp86', 'b3p86',
-            'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 'olyp', 'kt1', 'kt2', 'kt3']
+          - value.lower() in ['core', 'hartree', 'hf', 'hartreefock', 
+            'hartree-fock', 'dft', 'lda', 'svwn3', 'svwn5', 'pbe', 'pbe0', 
+            'bpw91', 'bp86', 'b3p86', 'b3p86-g', 'blyp', 'b3lyp', 'b3lyp-g', 
+            'olyp', 'kt1', 'kt2', 'kt3']
         docstring: |
           Wavefunction method. See predicates for valid methods. ``hf``,
           ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda``
@@ -322,8 +323,8 @@ sections:
         type: str
         default: point_like
         predicates:
-          - value.lower() in ['point_like', 'point_parabola', 'point_minimal', 'finite_gaussian',
-            'finite_sphere']
+          - value.lower() in ['point_like', 'point_parabola', 'point_minimal', 
+            'finite_gaussian', 'finite_sphere']
         docstring: |
           Type of nucleus model.
           Point-like (numerical smoothing): HFYGB (default), parabola or minimal.
@@ -731,9 +732,9 @@ sections:
         type: str
         default: sad_gto
         predicates:
-          - value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz',
-            'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube',
-            'nao']
+          - value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 
+            'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 
+            'sad_gto', 'cube', 'nao']
         docstring: |
           Type of initial guess for ground state orbitals.
           ``chk`` restarts a previous calculation which was dumped using the
@@ -992,7 +993,8 @@ sections:
                       solvent used.
                   - name: dynamic
                     type: float
-                    default: user['PCM']['Solvent']['Permittivity']['epsilon_out']['static']
+                    default: 
+                      user['PCM']['Solvent']['Permittivity']['epsilon_out']['static']
                     docstring: |
                       Dynamic permittivity outside the cavity. This is
                       characteristic of the solvent used and relevant only in
