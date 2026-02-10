@@ -368,7 +368,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix U_A_proj = eigensolver.eigenvectors();
 
         // Check norm(A - 4F) tends to zero
-        mrcpp::print::separator(0, '-');
         println(0, "norm(A_proj - 4F) = " << (A_proj - 4.0 * F_mat.real()).norm());
         
         
@@ -406,7 +405,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         grad_E_array.push_back(grad_E_norm);
 
         // Safeguard: if not descent direction, skip preconditioning
-        double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
+        //double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
+        double h1_inner_product_preconditioned_grad_E_grad_E = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
         if (h1_inner_product_preconditioned_grad_E_grad_E <= 0.0) {
             println(0, "Preconditioning skipped (not a descent direction): " << h1_inner_product_preconditioned_grad_E_grad_E);
             preconditioned_grad_E = grad_E;
@@ -427,7 +427,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         else {
             // Polak–Ribière coefficient
             OrbitalVector diff_pc_grad = orbital::add(1.0, preconditioned_grad_E, -1.0, previous_preconditioned_grad_E);
-            double polak_ribiere = orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
+            //double polak_ribiere = orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
+            double polak_ribiere = orbital::l2_inner_product(diff_pc_grad, one_minus_laplacian_grad_E);
             polak_ribiere = polak_ribiere / (previous_h1_inner_product_preconditioned_grad_E_grad_E + mrcpp::MachineZero);
             polak_ribiere = std::max(0.0, polak_ribiere);
             polak_ribiere = std::min(polak_ribiere, polak_max);
@@ -462,7 +463,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
             // (1) Descent check
             double descent;
-            if (not polak_ribiere_is_small) descent = orbital::h1_inner_product(direction, grad_E, nabla);
+            //if (not polak_ribiere_is_small) descent = orbital::h1_inner_product(direction, grad_E, nabla);
+            if (not polak_ribiere_is_small) descent = orbital::l2_inner_product(direction, one_minus_laplacian_grad_E);
             else descent = descent_directional_product;
             
             if (descent >= 0.0) {
@@ -473,7 +475,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             // (2) Powell restart
             else if ((nIter - last_restart_iter) > restart_cooldown) {
                 double inner =
-                    orbital::h1_inner_product(grad_E, previous_preconditioned_grad_E, nabla);
+                    //orbital::h1_inner_product(grad_E, previous_preconditioned_grad_E, nabla);
+                    orbital::l2_inner_product(one_minus_laplacian_grad_E, previous_preconditioned_grad_E);
 
                 if (inner >= eta_powell * previous_h1_inner_product_preconditioned_grad_E_grad_E)
                 {
