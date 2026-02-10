@@ -492,7 +492,7 @@ User input reference
     **Predicates**
       - ``value.lower() in ['low', 'medium', 'high']``
 
-   :radius_factor: Sets the radius of the surface used in the computation of forces. The radius is given by this factor times the distance to the neariest neighbour. Must be between 0.1 and 0.9. This should rarely need to be changed. Different values can change the accuracy of the forces.
+   :radius_factor: Sets the radius of the surface used in the computation of forces. The radius is given by this factor times the distance to the nearest neighbour. Must be between 0.1 and 0.9. This should rarely need to be changed. Different values can change the accuracy of the forces.
 
     **Type** ``float``
 
