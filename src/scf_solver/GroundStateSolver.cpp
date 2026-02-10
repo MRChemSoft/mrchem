@@ -379,21 +379,56 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         // Check norm of gradient: grad_E = grad_E1 up to numerical noise
         auto grad_E_norm = orbital::get_norms(grad_E).norm();
-        println(0, "L2-n(grad_E0)= " << grad_E_norm);
+        println(0, "L2-n(grad_E00)= " << grad_E_norm);
         grad_E_norm = orbital::get_norms(grad_E1).norm();
-        println(0, "L2-n(grad_E1)= " << grad_E_norm);
+        println(0, "L2-n(grad_E10)= " << grad_E_norm);
+        
         grad_E_norm = orbital::h1_norm(grad_E1, nabla);
-        println(0, "norm(grad_E1)= " << grad_E_norm);
+        println(0, "norm(grad_E10)= " << grad_E_norm);
         grad_E_norm = orbital::l2_inner_product(grad_E1, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
-        println(0, "norm(grad_E2)= " << grad_E_norm);
+        println(0, "norm(grad_E20)= " << grad_E_norm);
         grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
-        println(0, "norm(grad_E3)= " << grad_E_norm);
+        println(0, "norm(grad_E30)= " << grad_E_norm);
         grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        println(0, "Noisy twin   = " << grad_E_norm);
+        println(0, "norm(grad_E40)= " << grad_E_norm);
+        
+        println(0, "Reapet projection step with grad_E1:");
+        C_proj_complex1 = orbital::calc_overlap_matrix(grad_E1, Phi_n);
+        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        auto Aproj_error = A_proj.norm();
+        println(0, "Error in A projection for grad_E1 = " << Aproj_error);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E1 = orbital::add(1.0, grad_E1, -1.0, AR_Phi);
+        
+        println(0, "Reapet projection step with grad_E:");
+        C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
+        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        Aproj_error = A_proj.norm();
+        println(0, "Error in A projection for grad_E = " << Aproj_error);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        
+        grad_E_norm = orbital::get_norms(grad_E).norm();
+        println(0, "L2-n(grad_E01)= " << grad_E_norm);
+        grad_E_norm = orbital::get_norms(grad_E1).norm();
+        println(0, "L2-n(grad_E11)= " << grad_E_norm);
+        
+        grad_E_norm = orbital::h1_norm(grad_E1, nabla);
+        println(0, "norm(grad_E11)= " << grad_E_norm);
+        grad_E_norm = orbital::l2_inner_product(grad_E1, one_minus_laplacian_grad_E);
+        grad_E_norm = std::sqrt(std::abs(grad_E_norm));
+        println(0, "norm(grad_E21)= " << grad_E_norm);
+        grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
+        grad_E_norm = std::sqrt(std::abs(grad_E_norm));
+        println(0, "norm(grad_E31)= " << grad_E_norm);
+        grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        println(0, "norm(grad_E41)= " << grad_E_norm);
+        
         mrcpp::print::separator(0, '-');
-
         AR_Phi.clear();
         grad_E.clear();
         grad_E1.clear();
@@ -408,9 +443,23 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         grad_E = orbital::add(1.0, grad_E1, 4.0, Resolvent_V_Phi);
 
         grad_E_norm = orbital::get_norms(grad_E).norm();
-        println(0, "L2-n(grad_E) = " << grad_E_norm);
+        println(0, "L2-n(grad_E50) = " << grad_E_norm);
         grad_E_norm = orbital::h1_norm(grad_E, nabla);
-        println(0, "norm(grad_E) = " << grad_E_norm);
+        println(0, "norm(grad_E50) = " << grad_E_norm);
+        
+        println(0, "Reapet projection step with grad_E:");
+        C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
+        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        Aproj_error = A_proj.norm();
+        println(0, "Error in A projection for grad_E5 = " << Aproj_error);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        
+        grad_E_norm = orbital::get_norms(grad_E).norm();
+        println(0, "L2-n(grad_E51) = " << grad_E_norm);
+        grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        println(0, "norm(grad_E51) = " << grad_E_norm);
         
         mrcpp::print::separator(0, '-');
         Resolvent_Phi.clear();
