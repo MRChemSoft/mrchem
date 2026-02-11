@@ -27,7 +27,7 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
     int ii = i + 1;
     this->l = l;
     this->m = m;
-    this->prec = 0.1 * prec;
+    this->prec = prec;
     // select the spherical harmonic function based on the angular momentum and magnetic quantum number
     switch_sperics(l, m);
     double prefactor = std::sqrt(2.0) / (std::pow(rl, l + (4.0 * ii - 1) / 2.0) * std::sqrt(tgamma( l + (4.0 * ii - 1.0) / 2.0 )) );
