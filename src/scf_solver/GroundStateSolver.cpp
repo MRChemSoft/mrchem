@@ -388,9 +388,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         grad_E_norm = orbital::l2_inner_product(grad_E1, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
         println(0, "norm(grad_E20)= " << grad_E_norm);
+
+        // norm(grad_E20) can be considered the most reliable measure of the gradient norm.
+        double grad_E_norm_reference = grad_E_norm;
+        OrbitalVector grad_E_reference = orbital::deep_copy(grad_E1);
+        auto Aproj_reference = A_proj2;
+        
+
         grad_E_norm = orbital::l2_inner_product(grad_E, one_minus_laplacian_grad_E);
         grad_E_norm = std::sqrt(std::abs(grad_E_norm));
         println(0, "norm(grad_E30)= " << grad_E_norm);
+
+        // norm(grad_E30) can be considered the second most reliable measure of the gradient norm, but grad_E seems more noisy than grad_E1.
+
         grad_E_norm = orbital::h1_norm(grad_E, nabla);
         println(0, "norm(grad_E40)= " << grad_E_norm);
         
@@ -462,6 +472,48 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         println(0, "norm(grad_E51) = " << grad_E_norm);
         
         mrcpp::print::separator(0, '-');
+
+        // ==============================
+        // Preconditioning
+        // ==============================
+
+        OrbitalVector preconditioned_grad_E = orbital::param_copy(grad_E_reference);
+        A_proj = Aproj_reference;
+        grad_E_norm = grad_E_norm_reference;
+
+
+
+        // Diagonalize A_proj
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver(A_proj);
+        if (eigensolver.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of A_proj failed");
+        }
+
+        Eigen::VectorXd sigma_A_proj = eigensolver.eigenvalues();
+        DoubleMatrix U_A_proj = eigensolver.eigenvectors();
+
+        if (sigma_A_proj.maxCoeff() >= 0.0)
+            MSG_ABORT("Non-negative eigenvalue in A_proj, preconditioning not possible");
+
+        auto minus_sigma_A_proj_inv = - sigma_A_proj.cwiseInverse();
+        //println(0, "sigma_A_proj =           " << sigma_A_proj);
+        //println(0, "minus_sigma_A_proj_inv = " << minus_sigma_A_proj_inv);
+        auto sigma0 = minus_sigma_A_proj_inv.minCoeff();
+        sigma0 = std::min(sigma0, 0.5);
+        auto sigma1 = minus_sigma_A_proj_inv.maxCoeff();
+        sigma1 = std::max(sigma1, 0.5);
+        println(0, "Sigma0 = " << sigma0);
+        println(0, "Sigma1 = " << sigma1);
+
+        auto lower_preconditioning_boundary = sigma0 * grad_E_norm * grad_E_norm;
+        auto upper_preconditioning_boundary = sigma1 * grad_E_norm * grad_E_norm;
+        println(0, "lower_preconditioning_boundary = " << lower_preconditioning_boundary);
+        println(0, "upper_preconditioning_boundary = " << upper_preconditioning_boundary);
+
+
+        mrcpp::print::separator(0, '-');
+
+        V_Phi.clear();
         Resolvent_Phi.clear();
         grad_E.clear();
         grad_E1.clear();
