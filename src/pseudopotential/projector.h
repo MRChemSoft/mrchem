@@ -13,7 +13,6 @@ public:
     int m;
     double rl;
     double prec;
-    // mrcpp::ComplexFunction projector;
     std::shared_ptr<mrcpp::CompFunction<3>> projector_ptr;
 
 private:
