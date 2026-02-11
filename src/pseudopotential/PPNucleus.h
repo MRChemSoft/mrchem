@@ -52,7 +52,7 @@ public:
     PPNucleus(const Nuclei &nucs) : NuclearFunction(){
         for(int i = 0; i < nucs.size(); i++) {
             if (! nucs[i].hasPseudopotential()) {
-                MSG_ABORT("Nucleus has no pseudopotential data in constroctur of PPNucleus");
+                MSG_ABORT("Nucleus has no pseudopotential data in constructor of PPNucleus");
             }
             this->pps.push_back(*nucs[i].getPseudopotentialData());
         }
