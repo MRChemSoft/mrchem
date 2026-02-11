@@ -368,10 +368,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
         nlohmann::json orbs_json = nlohmann::json::parse(ifs);
         ifs.close();
         std::vector<double> r_vec = orbs_json["rgrid"];
-        Eigen::VectorXd rGrid(r_vec.size());
-        for (int i = 0; i < r_vec.size(); i++) {
-            rGrid(i) = r_vec[i];
-        }
+        Eigen::VectorXd rGrid = Eigen::Map<Eigen::VectorXd>(r_vec.data(), r_vec.size());
         for (auto it=orbs_json.begin(); it!=orbs_json.end(); it++) {
             if (it.key() == "rgrid") continue;
             char ang_mom_char = it.key()[1];
@@ -383,10 +380,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
             else if (ang_mom_char == 'g') l = 4;
             else l = -1;
             std::vector<double> coeffs = it.value();
-            Eigen::VectorXd coeffVec(coeffs.size());
-            for (int i = 0; i < coeffs.size(); i++) {
-                coeffVec(i) = coeffs[i];
-            }
+            Eigen::VectorXd coeffVec = Eigen::Map<Eigen::VectorXd>(coeffs.data(), coeffs.size());
             interpolation_utils::PolyInterpolator rad_func(rGrid, coeffVec);
             for (int m = -l; m <= l; m++) {
                 mrcpp::Coord<3> pos = nucs[iNuc].getCoord();
