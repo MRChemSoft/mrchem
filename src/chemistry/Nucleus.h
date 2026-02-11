@@ -91,7 +91,8 @@ public:
         }
 
     void setRMSRadius(double r) {
-        this->radius = r; }
+        this->radius = r;
+    }
 
     void setCoord(const mrcpp::Coord<3> &r) { this->coord = r; }
 
