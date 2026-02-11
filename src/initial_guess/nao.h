@@ -1,4 +1,3 @@
-
 /*
  * MRChem, a numerical real-space code for molecular electronic structure
  * calculations within the self-consistent field (SCF) approximations of quantum
@@ -26,8 +25,9 @@
 
 #pragma once
 
-#include "qmfunctions/qmfunction_fwd.h"
 #include <string>
+
+#include "qmfunctions/qmfunction_fwd.h"
 
 /** @file nao.h
  *
