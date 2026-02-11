@@ -375,13 +375,12 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
         for (auto it=orbs_json.begin(); it!=orbs_json.end(); it++) {
             if (it.key() == "rgrid") continue;
             char ang_mom_char = it.key()[1];
-            std::string ang_mom = std::string(1, ang_mom_char);
             int l;
-            if (ang_mom == "s") l = 0;
-            else if (ang_mom == "p") l = 1;
-            else if (ang_mom == "d") l = 2;
-            else if (ang_mom == "f") l = 3;
-            else if (ang_mom == "g") l = 4;
+            if (ang_mom_char == 's') l = 0;
+            else if (ang_mom_char == 'p') l = 1;
+            else if (ang_mom_char == 'd') l = 2;
+            else if (ang_mom_char == 'f') l = 3;
+            else if (ang_mom_char == 'g') l = 4;
             else l = -1;
             std::vector<double> coeffs = it.value();
             Eigen::VectorXd coeffVec(coeffs.size());
