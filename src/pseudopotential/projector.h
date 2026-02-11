@@ -16,14 +16,6 @@ public:
     // mrcpp::ComplexFunction projector;
     std::shared_ptr<mrcpp::CompFunction<3>> projector_ptr;
 
-
-
-    // destructor
-    // ~ProjectorFunction(){
-    //     std::cout << "Whya asdf "<< std::endl;
-    //     projector.free(mrcpp::NUMBER::Total);
-    // }
-
 private:
     /**
      * @brief Contains analytic form of projector.
