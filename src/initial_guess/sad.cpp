@@ -250,7 +250,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     rho_loc.alloc(1, true);
 
     Timer t_loc;
-    int N_nucs = nucs.size();
+    auto N_nucs = nucs.size();
     DoubleVector charges = DoubleVector::Zero(2 * N_nucs);
     for (int k = 0; k < N_nucs; k++) {
         if (mrcpp::mpi::wrk_rank != k % mrcpp::mpi::wrk_size) continue;
