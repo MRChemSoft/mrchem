@@ -275,9 +275,10 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
         bool need_rescale = nucs[i].getCharge() != nucs[i].getAtomicNumber();
         mrcpp::CompFunction<3> atomic_density_mw;
 
-        if (need_rescale) {
+        if (need_rescale) { // a pseudopential is present that removes core electrons.
+            // removes some core charge from the initial guess charge density
             double cm = nucs[i].getPseudopotentialData()->getMaxRpp() * .5;
-            double k = 10;
+            double k = 10.0; // empirical scaling factor to determin shape of charge that is removed.
             double temp = - (1.0 / (1.0 + std::exp(cm * k)));
             mrcpp::Coord<3> nucPos = nucs[i].getCoord();
             auto rho_analytic = [atomic_densities, nucPos, cm, k, i, temp](const mrcpp::Coord<3> &r) {
