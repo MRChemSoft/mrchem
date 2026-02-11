@@ -43,13 +43,17 @@ public:
             : charge(elm.getZ())
             , radius(rms)
             , coord(r)
-            , element(&elm) {}
+            , element(&elm) {
+                has_pp_data = false;
+            }
 
     Nucleus(const Element &elm, double z, const mrcpp::Coord<3> &r,double rms = -1.0)
             : charge(z)
             , radius(rms)
             , coord(r)
-            , element(&elm) {}
+            , element(&elm) {
+                has_pp_data = false;
+            }
 
     Nucleus(const Element &elm, const mrcpp::Coord<3> &r, std::shared_ptr<PseudopotentialData> pp_data, double rms = -1.0) {
         charge = pp_data->getZeff();
@@ -140,7 +144,7 @@ private:
     mrcpp::Coord<3> coord;
     const Element *element;
     std::shared_ptr<PseudopotentialData> pp_data_ptr;
-    bool has_pp_data = false;
+    bool has_pp_data;
 
 
 };
