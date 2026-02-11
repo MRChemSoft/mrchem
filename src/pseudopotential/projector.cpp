@@ -6,20 +6,6 @@
 
 #include <string>
 
-// #include "mrchem.h"
-
-/**
- * @brief Constructs a Projector object.
- *
- * This constructor initializes a Projector object with the given parameters.
- *
- * @param pos The position vector of the corresponding atom.
- * @param rl The radial length of the projector.
- * @param i Vector index of the projector.
- * @param l The angular momentum quantum number of the projector.
- * @param m The magnetic quantum number of the projector.
- * @param prec The precision of the projector.
- */
 ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int l, int m, double prec) {
     this->pos = pos;
     this->rl = rl;
