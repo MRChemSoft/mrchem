@@ -821,7 +821,7 @@ double orbital::l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi) {
     double val = 0.0;
 
     for (int i = 0; i < Phi.size(); ++i) {
-        if (mrcpp::mpi::my_func(Phi[i])) {
+        if (mrcpp::mpi::my_func(Phi[i]) && mrcpp::mpi::my_func(Psi[i])) {
             val += std::real(mrcpp::dot(Phi[i], Psi[i]));
         }
     }
