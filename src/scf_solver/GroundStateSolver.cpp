@@ -518,18 +518,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
         Eigen::MatrixXd one_plus_orbital_energy = (Eigen::VectorXd::Ones(orbital_energy.size()) + orbital_energy).asDiagonal();
         ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
-
-        //println(0, "(1) Did we get here?");
-
         preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
         auto temp = Resolvent_mu(preconditioned_grad_E);
         temp = orbital::rotate(temp, one_plus_orbital_energy);
         preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp );
         //temp.clear();
         preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
-
-        //println(0, "(2) Did we get here?");
-
         
         for (auto &phi_i : preconditioned_grad_E)
         {
@@ -538,41 +532,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 phi_i.crop(orb_prec);
             }
         }
-        /*
-        for (auto &phi_i : preconditioned_grad_E)
-        {
-            if (mrcpp::mpi::my_func(phi_i))
-            {
-                std::cout << "Preconditioned gradient vector component: " << std::endl << phi_i.real(0) << std::endl;
-            }
-        }
-        */
-        //MPI_Barrier(mrcpp::mpi::comm_wrk);
 
         auto C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         DoubleMatrix C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
-
-        //println(0, "B_proj_real:");
-        //println(0, B_proj_real);
-
-        //println(0, "C_proj_sym:");
-        //println(0, C_proj_sym);
-
-        //println(0, "(3) Did we get here?");
-
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
-
-        //println(0, "A_proj:");
-        //println(0, A_proj);
-
-        //println(0, "(4) Did we get here?");
-
         AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-
-        //println(0, "(5) Did we get here?");
-
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
-        //AR_Phi.clear();            
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
@@ -580,6 +545,33 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 1 fails.");
+        }
+
+
+        preconditioned_grad_E = orbital::rotate(one_minus_laplacian_grad_E, U_A_proj.transpose());
+        preconditioned_grad_E = Resolvent_mu(preconditioned_grad_E);
+        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, 0.5 * U_A_proj);
+
+        for (auto &phi_i : preconditioned_grad_E)
+        {
+            if (mrcpp::mpi::my_func(phi_i))
+            {
+                phi_i.crop(orb_prec);
+            }
+        }
+
+        C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
+        C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
+        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
+
+
+        grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
+        println(0, "product(preconditioned_grad_E, grad_E, 2) = " << grad_E_norm);
+        if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
+        {
+            println(0, "Preconditioner 2 fails.");
         }
 
 
@@ -598,34 +590,16 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
-
-        //println(0, "B_proj_real:");
-        //println(0, B_proj_real);
-
-        //println(0, "C_proj_sym:");
-        //println(0, C_proj_sym);
-
-        //println(0, "(3) Did we get here?");
-
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
-
-        //println(0, "A_proj:");
-        //println(0, A_proj);
-
-        //println(0, "(4) Did we get here?");
-
         AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-
-        //println(0, "(5) Did we get here?");
-
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 2) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 3) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
-            println(0, "Preconditioner 2 fails.");
+            println(0, "Preconditioner 3 fails.");
         }
 
 
