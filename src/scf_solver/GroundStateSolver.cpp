@@ -325,6 +325,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         one_minus_laplacian_grad_E = orbital::add(4.0, grad_E, -2.0, dx_Phi);
         one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dy_Phi);
         one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dz_Phi);
+        
+        OrbitalVector one_minus_laplacian_Phi = orbital::param_copy(Phi_n);
+        one_minus_laplacian_Phi = orbital::add(1.0, Phi_n, -1.0, dx_Phi);
+        one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dy_Phi);
+        one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dz_Phi);
+        
         //dx_Phi.clear();
         //dy_Phi.clear();
         //dz_Phi.clear();
@@ -547,6 +553,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             println(0, "Preconditioner 1 fails.");
         }
 
+        const bool Grassmann = true;
+        if (Grassmann)
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+        
+        
+        grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
+        println(0, "product(preconditioned_grad_E, grad_E, 1) = " << grad_E_norm);
+        if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
+        {
+            println(0, "Preconditioner 1 fails.");
+        }
+        
+        
 
         preconditioned_grad_E = orbital::rotate(one_minus_laplacian_grad_E, U_A_proj.transpose());
         preconditioned_grad_E = Resolvent_mu(preconditioned_grad_E);
@@ -575,6 +594,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
 
+        if (Grassmann)
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+        
+        
+        grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
+        println(0, "product(preconditioned_grad_E, grad_E, 2) = " << grad_E_norm);
+        if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
+        {
+            println(0, "Preconditioner 2 fails.");
+        }
+
+
         preconditioned_grad_E = orbital::rotate(V_Phi, U_A_proj.transpose());
         preconditioned_grad_E = Resolvent_mu(preconditioned_grad_E);
         preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
@@ -595,6 +626,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
 
 
+        grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
+        println(0, "product(preconditioned_grad_E, grad_E, 3) = " << grad_E_norm);
+        if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
+        {
+            println(0, "Preconditioner 3 fails.");
+        }
+
+
+        if (Grassmann)
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+        
+        
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
         println(0, "product(preconditioned_grad_E, grad_E, 3) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
