@@ -331,6 +331,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dy_Phi);
         one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dz_Phi);
         
+        for (auto &phi_i : one_minus_laplacian_Phi)
+        {
+            if (mrcpp::mpi::my_func(phi_i))
+                phi_i.crop(orb_prec);
+        }
+
         //dx_Phi.clear();
         //dy_Phi.clear();
         //dz_Phi.clear();
@@ -547,7 +553,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 1) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 10) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 1 fails.");
@@ -555,11 +561,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         const bool Grassmann = true;
         if (Grassmann)
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
         
         
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 1) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 11) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 1 fails.");
@@ -587,7 +594,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 2) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 20) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 2 fails.");
@@ -595,11 +602,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         if (Grassmann)
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
         
         
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 2) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 21) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 2 fails.");
@@ -627,7 +635,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 3) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 30) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 3 fails.");
@@ -635,11 +643,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         if (Grassmann)
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
         
         
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
-        println(0, "product(preconditioned_grad_E, grad_E, 3) = " << grad_E_norm);
+        println(0, "product(preconditioned_grad_E, grad_E, 31) = " << grad_E_norm);
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 3 fails.");
