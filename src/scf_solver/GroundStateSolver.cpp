@@ -525,8 +525,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         println(0, "lower_preconditioning_boundary = " << lower_preconditioning_boundary);
         println(0, "upper_preconditioning_boundary = " << upper_preconditioning_boundary);
 
-
         preconditioned_grad_E = orbital::deep_copy(grad_E_reference);
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 1: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
+        }
         Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
         Eigen::MatrixXd one_plus_orbital_energy = (Eigen::VectorXd::Ones(orbital_energy.size()) + orbital_energy).asDiagonal();
         ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
@@ -558,6 +561,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         {
             println(0, "Preconditioner 1 fails.");
         }
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 2: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
+        }
 
         const bool Grassmann = true;
         if (Grassmann)
@@ -571,10 +578,22 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         {
             println(0, "Preconditioner 1 fails.");
         }
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 3: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
+        }
         
         
 
+        if (mrcpp::mpi::my_func(one_minus_laplacian_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 4a: " << std::endl << one_minus_laplacian_grad_E[0].real(0) << std::endl;
+        }
         preconditioned_grad_E = orbital::rotate(one_minus_laplacian_grad_E, U_A_proj.transpose());
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 4b: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
+        }
         preconditioned_grad_E = Resolvent_mu(preconditioned_grad_E);
         preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, 0.5 * U_A_proj);
 
@@ -599,6 +618,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         {
             println(0, "Preconditioner 2 fails.");
         }
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 4: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
+        }
 
 
         if (Grassmann)
@@ -611,6 +634,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 2 fails.");
+        }
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 5: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
         }
 
 
@@ -640,6 +667,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         {
             println(0, "Preconditioner 3 fails.");
         }
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 6: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
+        }
 
 
         if (Grassmann)
@@ -652,6 +683,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         if (lower_preconditioning_boundary > grad_E_norm || grad_E_norm > upper_preconditioning_boundary)
         {
             println(0, "Preconditioner 3 fails.");
+        }
+        if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
+        {
+            std::cout << "Preconditioned gradient vector component 7: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
         }
 
 
