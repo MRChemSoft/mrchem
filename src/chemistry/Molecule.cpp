@@ -92,7 +92,7 @@ int Molecule::getNElectrons() const {
 }
 
 /** @brief Get all-electron nuclei */
-Nuclei Molecule::getAllElectronNuclei() {
+Nuclei Molecule::getAllElectronNuclei() const {
     Nuclei nuclei_ae;
     for (auto i = 0; i < getNNuclei(); i++) {
         const auto &nuc = getNuclei()[i];
@@ -133,7 +133,7 @@ bool Molecule::hasProjectorPseudopotential() const {
 }
 
 /** @brief Get pseudo-potential nuclei */
-Nuclei Molecule::getPseudoPotentialNuclei() {
+Nuclei Molecule::getPseudoPotentialNuclei() const {
     Nuclei nuclei_pp;
     for (auto i = 0; i < getNNuclei(); i++) {
         const auto &nuc = getNuclei()[i];

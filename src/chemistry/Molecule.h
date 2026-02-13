@@ -93,7 +93,7 @@ public:
     /**
      * @brief get_pseudo_potential_nuclei
      */
-    Nuclei getPseudoPotentialNuclei();
+    Nuclei getPseudoPotentialNuclei() const;
 
 
     /**
@@ -114,7 +114,7 @@ public:
     /**
      * @brief get all electron nuclei
      */
-    Nuclei getAllElectronNuclei();
+    Nuclei getAllElectronNuclei() const;
 
 
     auto &getOrbitals() { return *this->orbitals_0; }
