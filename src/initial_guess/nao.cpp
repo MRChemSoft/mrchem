@@ -24,6 +24,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/Gaussians>
 #include <MRCPP/MWOperators>
 #include <MRCPP/MWFunctions>
 #include <MRCPP/Parallel>
@@ -369,8 +370,10 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
         ifs.close();
         std::vector<double> r_vec = orbs_json["rgrid"];
         Eigen::VectorXd rGrid = Eigen::Map<Eigen::VectorXd>(r_vec.data(), r_vec.size());
+        std::vector<double> w_vec = orbs_json["rweight_3d"];
+        Eigen::VectorXd rWeight = Eigen::Map<Eigen::VectorXd>(w_vec.data(), w_vec.size());
         for (auto it=orbs_json.begin(); it!=orbs_json.end(); it++) {
-            if (it.key() == "rgrid") continue;
+            if (it.key() == "rgrid" || it.key() == "rweight_3d") continue;
             char ang_mom_char = it.key()[1];
             int l;
             if (ang_mom_char == 's') l = 0;
@@ -382,31 +385,28 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
             std::vector<double> coeffs = it.value();
             Eigen::VectorXd coeffVec = Eigen::Map<Eigen::VectorXd>(coeffs.data(), coeffs.size());
             interpolation_utils::PolyInterpolator rad_func(rGrid, coeffVec);
+
+            // Compute <r^2> = sum(w * r^2 * orb^2), orbitals are normalized to 1
+            double r2_expectation = 0.0;
+            for (Eigen::Index ir = 0; ir < rGrid.size(); ir++) {
+                r2_expectation += rWeight[ir] * rGrid[ir] * rGrid[ir] * coeffVec[ir] * coeffVec[ir];
+            }
+            // For a 3D Gaussian exp(-r^2/(2*sigma^2)), <r^2> = 3 * sigma^2
+            double sigma = std::sqrt(r2_expectation / 3.0);
+            print_utils::scalar(0, "Orbital <r^2>", r2_expectation, "au^2", 6);
+            print_utils::scalar(0, "Gaussian sigma", sigma, "au", 6);
+
             for (int m = -l; m <= l; m++) {
                 mrcpp::Coord<3> pos = nucs[iNuc].getCoord();
                 AnalyticOrbital orb(l, m, pos, rad_func);
                 Orbital orb_mw;
 
-                double (*spherical_harmonic)(const std::array<double, 3> &r, const double &normr) = get_spherical_harmonics(l, m);
-
-                double sigma = 1.5;
-                auto gauss = [pos, sigma, spherical_harmonic](const std::array<double, 3> &r) -> double {
-                    std::array<double, 3> rprime = {r[0] - pos[0], r[1] - pos[1], r[2] - pos[2]};
-                    double normr = std::sqrt( rprime[0] * rprime[0] + rprime[1] * rprime[1] + rprime[2] * rprime[2]);
-                    double gaussNormalization = 1.0 / std::pow(2.0 * M_PI * sigma * sigma, 1.5);
-                    return std::exp(- 0.5 * normr * normr / (sigma * sigma) ) * spherical_harmonic(rprime, normr) / normr;
-                };
-
-                mrcpp::project(orb_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
-                sigma = 0.6;
-
-                auto gauss2 = [pos, sigma, spherical_harmonic](const std::array<double, 3> &r) -> double {
-                    std::array<double, 3> rprime = {r[0] - pos[0], r[1] - pos[1], r[2] - pos[2]};
-                    double normr = std::sqrt( rprime[0] * rprime[0] + rprime[1] * rprime[1] + rprime[2] * rprime[2]);
-                    double gaussNormalization = 1.0 / std::pow(2.0 * M_PI * sigma * sigma, 1.5);
-                    return std::exp(- 0.5 * normr * normr / (sigma * sigma) ) * spherical_harmonic(rprime, normr) / normr;
-                };
-                mrcpp::project(orb_mw, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss2), prec);
+                // Gaussian pre-projection to seed the multiresolution grid
+                double broad_sigma = std::max(3.0 * sigma, 1.0);
+                mrcpp::GaussFunc<3> gauss_broad(1.0 / (2.0 * broad_sigma * broad_sigma), 1.0, pos);
+                mrcpp::project(orb_mw, gauss_broad, prec);
+                mrcpp::GaussFunc<3> gauss_match(1.0 / (2.0 * sigma * sigma), 1.0, pos);
+                mrcpp::project(orb_mw, gauss_match, prec);
 
                 mrcpp::project(orb_mw, orb, prec);
                 double nrm1 = orb_mw.norm();
