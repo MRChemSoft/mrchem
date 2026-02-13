@@ -346,14 +346,13 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp, orb_prec );
             temp.clear();
             preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj, orb_prec);
-        }
 
-        
-        C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
-        C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
-        A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
-        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
+            C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
+            C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+            A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+            AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+            preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
+        }
 
 
         // Set the spatial derivatives
