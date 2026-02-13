@@ -113,14 +113,14 @@ public:
      * @brief Sets up the operator with the given precision.
      * @param prec The numerical precision.
      */
-    void setup(double prec) {
+    void setup(double prec) override {
         this->prec = prec;
     }
 
     /**
      * @brief Clears the operator state.
      */
-    void clear() {
+    void clear() override {
     }
 
 protected:
@@ -133,7 +133,7 @@ protected:
      * The application follows the GTH separable form: sum over atoms, angular
      * momenta, and projector indices of h_ij^l * <p_i|phi> * |p_j>.
      */
-    mrchem::Orbital apply(mrchem::Orbital phi) {
+    mrchem::Orbital apply(mrchem::Orbital phi) override {
     // std::cout << "Applying projector operator" << std::endl;
     // loop over all atoms
     ComplexDouble dotComplex;
@@ -194,7 +194,7 @@ protected:
      * @param phi The input orbital.
      * @return The resulting orbital (same as apply since the operator is Hermitian).
      */
-    mrchem::Orbital dagger(mrchem::Orbital phi) {
+    mrchem::Orbital dagger(mrchem::Orbital phi) override {
         return apply(phi);
     }
 
@@ -203,7 +203,7 @@ protected:
      * @param r The coordinate.
      * @return Zero (placeholder).
      */
-    mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const {
+    mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const override {
         return ComplexDouble(0.0, 0.0);
     }
 
@@ -211,7 +211,7 @@ protected:
      * @brief Applies the operator to another operator (not implemented).
      * @param O The input operator.
      */
-    mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) {
+    mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) override {
         NOT_IMPLEMENTED_ABORT;
     }
 };
