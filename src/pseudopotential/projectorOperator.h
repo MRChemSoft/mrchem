@@ -79,22 +79,11 @@ public:
      */
     ProjectorOperatorQM(mrchem::Nuclei const &nucs, double prec){
 
-        // mrchem::Nuclei nucs = molecule.getNuclei();
-        // for (int i = 0; i < nucs.size(); i++){
-        //     std::string elem = nucs[i].getElement().getSymbol();
-        //     std::string fname = "psppar." + elem;
-        //     this->pp.push_back(PseudopotentialData(fname));
-        //     std::cout << "Pseudopotential data for atom " << i << " loaded" << std::endl;
-        //     pp[i].print();
-        // }
-
-        // std::cout << "Pseudopotential data loaded" << std::endl;
         for (int i = 0; i < nucs.size(); i++){
             if (!nucs[i].hasPseudopotential()){
                 MSG_ABORT("No pseudopotential for atom " + std::to_string(i));
             }
             this->pp.push_back(*nucs[i].getPseudopotentialData());
-            // nucs[i].getPseudopotentialData()->print();
         }
 
         this->pp = pp;
@@ -103,31 +92,21 @@ public:
 
         // loop over all atoms and create projectors
         for (int i = 0; i < nucs.size(); i++) {
-            // std::cout << "Creating projectors for atom " << i << std::endl << std::endl;
             mrcpp::Coord<3> pos = nucs[i].getCoord();
             proj.push_back(AtomProjector());
             for (int l = 0; l < pp[i].nsep; l++) {
-                // std::cout << "Creating angular momentum projectors for momentum " << l << std::endl;
                 proj[i].lProj.push_back(angularMomentumProjector());
                 for (int m = -l; m <= l; m++) {
-                    // std::cout << "Creating magnetic quantum number projectors for magnetic quantum number " << m << std::endl;
                     int mIndex = m + l;
                     proj[i].lProj[l].mProj.push_back(magneticQuantumNumberProjector());
                     for (int idim = 0; idim < pp[i].dim_h[l]; idim++){
-                        // proj.push_back(ProjectorFunction(pos, pp[i].rl[l], isep, l, m, prec));
-                        // std::cout << "Creating ProjectorFunction " << l << " " << m << " " << idim << std::endl;
                         ProjectorFunction pppp(pos, pp[i].rl[l], idim, l, m, prec);
                         proj[i].lProj[l].mProj[mIndex].iProj.push_back(pppp);
-                        // std::cout << "ProjectorFunction constructed " << i << std::endl;
-                        // std::cout << "i = " << i << std::endl;
-                        // std::cout << "nsep = " << pp[i].nsep << std::endl;
-                        // std::cout << "End of loopsss" << std::endl << std::endl;
                         npp++;
                     }
                 }
             }
         }
-        // std::cout << "ProjectorOperator constructed" << std::endl;
     }
 
     /**
