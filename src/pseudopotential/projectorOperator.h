@@ -79,7 +79,7 @@ public:
      */
     ProjectorOperatorQM(mrchem::Nuclei const &nucs, double prec){
 
-        for (int i = 0; i < nucs.size(); i++){
+        for (size_t i = 0; i < nucs.size(); i++){
             if (!nucs[i].hasPseudopotential()){
                 MSG_ABORT("No pseudopotential for atom " + std::to_string(i));
             }
@@ -91,7 +91,7 @@ public:
         int npp = 0;
 
         // loop over all atoms and create projectors
-        for (int i = 0; i < nucs.size(); i++) {
+        for (size_t i = 0; i < nucs.size(); i++) {
             mrcpp::Coord<3> pos = nucs[i].getCoord();
             proj.push_back(AtomProjector());
             for (int l = 0; l < pp[i].nsep; l++) {
@@ -142,7 +142,7 @@ protected:
     // Note that mrcpp::CompFunctionVector is more than just a vector of CompFunction
     std::vector<mrcpp::CompFunction<3>> complexFunctionVector;
 
-    for (int iat = 0; iat < proj.size(); iat++) {
+    for (size_t iat = 0; iat < proj.size(); iat++) {
         // loop over all angular momenta
         for (int l = 0; l < pp[iat].nsep; l++){
             // loop over all magnetic quantum numbers
@@ -181,7 +181,7 @@ protected:
 
     // std::cout << "size of complexCoefficients " << complexCoefficients.size() << std::endl;
 
-    for (int i = 0; i < complexCoefficients.size(); i++){
+    for (size_t i = 0; i < complexCoefficients.size(); i++){
         // std::cout << "Adding to result " << i << " " << complexCoefficients[i] << std::endl;
         result.add(complexCoefficients[i], complexFunctionVector[i]);
     }
