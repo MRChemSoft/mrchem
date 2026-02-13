@@ -989,6 +989,8 @@ OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVe
         squared_norms(i) = val;
     }
 
+    mrcpp::mpi::allreduce_vector(squared_norms, mrcpp::mpi::comm_wrk);
+
     DoubleMatrix B_local = DoubleMatrix::Zero(n,n);
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
@@ -998,6 +1000,39 @@ OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVe
             for (int d = 0; d < 3; ++d)
                 if (mrcpp::mpi::my_func(gradPhi[i][d]) && mrcpp::mpi::my_func(gradDir[j][d]))
                     val += std::real(mrcpp::dot(gradPhi[i][d], gradDir[j][d]));
+            B_local(i,j) = val / (squared_norms(i) + squared_norms(j) + mrcpp::MachineZero);
+        }
+    }
+
+    mrcpp::mpi::allreduce_matrix(B_local, mrcpp::mpi::comm_wrk);
+
+    // ---- compute projected direction ----
+    ComplexMatrix B = B_local.cast<ComplexDouble>();
+    ComplexMatrix A = B - B.transpose();
+    OrbitalVector APhi = orbital::rotate(Phi, A);
+    return orbital::add(1.0, direction, 1.0, APhi);
+}
+
+OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, OrbitalVector &one_minus_laplacian_Phi)
+{
+    int n = Phi.size();
+
+    DoubleVector squared_norms = DoubleVector::Zero(n);
+    for (int i = 0; i < n; i++)
+        if (mrcpp::mpi::my_func(one_minus_laplacian_Phi[i]) &&
+            mrcpp::mpi::my_func(Phi[i]))
+            squared_norms(i) = std::real(mrcpp::dot(one_minus_laplacian_Phi[i], Phi[i]));
+
+    mrcpp::mpi::allreduce_vector(squared_norms, mrcpp::mpi::comm_wrk);
+
+    DoubleMatrix B_local = DoubleMatrix::Zero(n,n);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            double val = 0.0;
+            if (mrcpp::mpi::my_func(one_minus_laplacian_Phi[i]) &&
+                mrcpp::mpi::my_func(direction[j]))
+                val += std::real(mrcpp::dot(one_minus_laplacian_Phi[i], direction[j]));
+
             B_local(i,j) = val / (squared_norms(i) + squared_norms(j) + mrcpp::MachineZero);
         }
     }

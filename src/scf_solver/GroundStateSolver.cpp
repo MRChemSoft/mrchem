@@ -437,7 +437,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Necessary for Grassmann: 
         if (this->history > 0)
         {
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
         }
 
 
@@ -493,7 +494,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
                 // Necessary for Grassmann:
                 if (this->history > 0)
-                    projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
+                    //projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
+                    projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, one_minus_laplacian_Phi);
 
                 direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
             }

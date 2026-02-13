@@ -95,6 +95,7 @@ double h1_inner_product(OrbitalVector &Phi, OrbitalVector &Psi, MomentumOperator
 double h1_norm(OrbitalVector &Phi, MomentumOperator &nabla);
 double h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunction<3> &psi, MomentumOperator &nabla);
 OrbitalVector project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla);
+OrbitalVector project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, OrbitalVector &one_minus_laplacian_Phi);
 
 void print(const OrbitalVector &Phi);
 int print_size_nodes(const OrbitalVector &Phi, const std::string &txt = "", bool all = true, int plevel = 0);
