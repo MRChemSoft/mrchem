@@ -30,7 +30,6 @@
 class magneticQuantumNumberProjector {
 public:
     std::vector<ProjectorFunction> iProj; ///< Projector functions for this (l,m) pair
-    int nProj;                             ///< Number of projectors
 };
 
 /**
@@ -43,7 +42,6 @@ public:
 class angularMomentumProjector {
 public:
     std::vector<magneticQuantumNumberProjector> mProj; ///< Projectors indexed by m
-    int nM;                                             ///< Number of m values (2l+1)
 };
 
 /**
@@ -56,7 +54,6 @@ public:
 class AtomProjector {
 public:
     std::vector<angularMomentumProjector> lProj; ///< Projectors indexed by angular momentum l
-    int numberOfAngMom;                           ///< Number of angular momentum channels
 };
 
 /**
@@ -124,11 +121,6 @@ public:
                         // std::cout << "ProjectorFunction constructed " << i << std::endl;
                         // std::cout << "i = " << i << std::endl;
                         // std::cout << "nsep = " << pp[i].nsep << std::endl;
-                        proj[i].numberOfAngMom = pp[i].nsep;
-                        // std::cout << "ProjectorFunction added to projector" << std::endl;
-                        proj[i].lProj[l].nM = 2*pp[i].nsep + 1;
-                        // std::cout << "ProjectorFunction added to projector" << std::endl;
-                        proj[i].lProj[l].mProj[mIndex].nProj = pp[i].dim_h[l];
                         // std::cout << "End of loopsss" << std::endl << std::endl;
                         npp++;
                     }
