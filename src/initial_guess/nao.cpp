@@ -393,8 +393,8 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
             }
             // For a 3D Gaussian exp(-r^2/(2*sigma^2)), <r^2> = 3 * sigma^2
             double sigma = std::sqrt(r2_expectation / 3.0);
-            print_utils::scalar(0, "Orbital <r^2>", r2_expectation, "au^2", 6);
-            print_utils::scalar(0, "Gaussian sigma", sigma, "au", 6);
+            print_utils::scalar(1, "Orbital <r^2>", r2_expectation, "au^2", 6);
+            print_utils::scalar(1, "Gaussian sigma", sigma, "au", 6);
 
             for (int m = -l; m <= l; m++) {
                 mrcpp::Coord<3> pos = nucs[iNuc].getCoord();
