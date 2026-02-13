@@ -296,9 +296,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Calculate Euclidian gradient
         OrbitalVector grad_E = F.potential()(Phi_n);
         F.clear();
-        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
+        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E, orb_prec);
         grad_E = Resolvent(grad_E);
-        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
+        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E, orb_prec);
 
         // Evaluate resolvent and its quadratic form
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
@@ -309,8 +309,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
         DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi, orb_prec);
         AR_Phi.clear();
 
         // ==============================
@@ -340,20 +340,20 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
             ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
 
-            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
+            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose(), orb_prec);
             auto temp = Resolvent_mu(preconditioned_grad_E);
-            temp = orbital::rotate(temp, one_plus_orbital_energy);
-            preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp );
+            temp = orbital::rotate(temp, one_plus_orbital_energy, orb_prec);
+            preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp, orb_prec );
             temp.clear();
-            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
+            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj, orb_prec);
         }
 
         
         C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
 
 
         // Set the spatial derivatives
@@ -364,7 +364,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Necessary for Grassmann: 
         if (this->history > 0)
         {
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla, orb_prec);
         }
         // End Preconditioning
         // ==============================
@@ -390,12 +390,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         if (nIter == 1) {
             // First iteration: steepest descent
-            direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+            direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E, orb_prec);
             descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
         }
         else {
             // Polak–Ribière coefficient
-            OrbitalVector diff_pc_grad = orbital::add(1.0, preconditioned_grad_E, -1.0, previous_preconditioned_grad_E);
+            OrbitalVector diff_pc_grad = orbital::add(1.0, preconditioned_grad_E, -1.0, previous_preconditioned_grad_E, orb_prec);
             double polak_ribiere = orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
             polak_ribiere = polak_ribiere / (previous_h1_inner_product_preconditioned_grad_E_grad_E + mrcpp::MachineZero);
             polak_ribiere = std::max(0.0, polak_ribiere);
@@ -410,17 +410,17 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 DoubleMatrix C_proj_dir_sym = (C_proj_dir.real() + C_proj_dir.real().transpose()) * 0.5;
                 DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_dir_sym);
 
-                OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir);
-                projected_direction = orbital::add(1.0, direction, -1.0, projected_direction);
+                OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir, orb_prec);
+                projected_direction = orbital::add(1.0, direction, -1.0, projected_direction, orb_prec);
                 // Necessary for Grassmann:
                 if (this->history > 0)
-                    projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla);
+                    projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla, orb_prec);
 
-                direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E);
+                direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E, orb_prec);
             }
             else
             {
-                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E, orb_prec);
                 descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
             }
 
@@ -453,7 +453,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
             if (do_restart) {
                 println(0, "Powell/guarded restart (reason: " << reason << ")");
-                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E);
+                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E, orb_prec);
                 descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
                 last_restart_iter = nIter;
             }
@@ -480,7 +480,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         while (true) {
             F.clear();
             // Retraction to Stiefel is Lowdin based:
-            Phi_n = orbital::add(1.0, Phi_backup, alpha_trial, direction);
+            Phi_n = orbital::add(1.0, Phi_backup, alpha_trial, direction, orb_prec);
             // Orthonormalization updates F_mat as a side effect?!
             orbital::orthonormalize(orb_prec, Phi_n, F_mat);
             // Compute Fock matrix and energy
@@ -491,7 +491,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             Energy_candidate = SCF_Energy_candidate.getTotalEnergy();
             println(0, "Candidate energy: " << Energy_candidate);
 
-            dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup);
+            dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup, orb_prec);
             errors = orbital::get_norms(dPhi_n);
             dPhi_n.clear();
             err_o = errors.maxCoeff();
