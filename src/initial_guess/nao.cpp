@@ -402,7 +402,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                 Orbital orb_mw;
 
                 // Gaussian pre-projection to seed the multiresolution grid
-                double broad_sigma = std::max(3.0 * sigma, 1.0);
+                double broad_sigma = std::max(3.0 * sigma, 1.5);
                 mrcpp::GaussFunc<3> gauss_broad(1.0 / (2.0 * broad_sigma * broad_sigma), 1.0, pos);
                 mrcpp::project(orb_mw, gauss_broad, prec);
                 mrcpp::GaussFunc<3> gauss_match(1.0 / (2.0 * sigma * sigma), 1.0, pos);
