@@ -127,7 +127,7 @@ public:
                 }
             }
         }
-        // std::cout << "ProjectorOperator constructed                      aasdfa asdf" << std::endl;
+        // std::cout << "ProjectorOperator constructed" << std::endl;
     }
 
     /**
