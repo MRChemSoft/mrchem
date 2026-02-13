@@ -661,7 +661,7 @@ sections:
         type: str
         default: cube_vectors/
         docstring: |
-          Directory where cube vectors are stored for mrchem calculation.
+          Directory where cube vectors are stored for MRChem calculation.
 
   - name: SCF
     docstring: |
@@ -758,7 +758,7 @@ sections:
         type: str
         default: none
         docstring: |
-          Directory where NAO orbitals are stored for mrchem calculation.
+          Directory where NAO orbitals are stored for MRChem calculation.
       - name: initial_mixing_steps
         type: int
         default: 4
