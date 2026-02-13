@@ -89,10 +89,9 @@ public:
      * Set the charge of the nucleus. Deprecated.
      */
     void setCharge(double z) {
-        // throw std::runtime_error("Nucleus::setCharge() is deprecated");
-        MSG_ABORT("Nucleus::setCharge() is deprecated why should the charge be changed?");
+        MSG_ABORT("Nucleus::setCharge() is deprecated.");
         this->charge = z;
-        }
+    }
 
     void setRMSRadius(double r) {
         this->radius = r;
