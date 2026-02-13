@@ -3,6 +3,7 @@
 #include <math.h>
 #include <fstream>
 #include <MRCPP/Printer>
+#include <MRCPP/functions/GaussFunc.h>
 
 #include <string>
 
@@ -28,16 +29,11 @@ ProjectorFunction::ProjectorFunction(mrcpp::Coord<3> pos, double rl, int i, int 
     projector_ptr = std::make_shared<mrcpp::CompFunction<3>>();
 
     double sigma = 0.6;
-    auto gauss = [this, sigma](const std::array<double, 3> &r) -> double {
-        std::array<double, 3> rprime = {r[0] - this->pos[0], r[1] - this->pos[1], r[2] - this->pos[2]};
-        double normr = std::sqrt( rprime[0] * rprime[0] + rprime[1] * rprime[1] + rprime[2] * rprime[2]);
-        double gaussNormalization = 1.0 / std::pow(2.0 * M_PI * sigma * sigma, 1.5);
-        return std::exp(- 0.5 * normr * normr / (sigma * sigma) );
-    };
+    double beta = 0.5 / (sigma * sigma);
+    mrcpp::GaussFunc<3> gauss(beta, 1.0, this->pos);
 
-    mrcpp::project(*projector_ptr, static_cast<std::function<double(const mrcpp::Coord<3>&)>>(gauss), prec);
+    mrcpp::project(*projector_ptr, gauss, prec);
     mrcpp::project(*projector_ptr,  static_cast<std::function<double(const mrcpp::Coord<3>&)>>(project_analytic), prec);
-    // mrcpp::cplxfunc::deep_copy(op, f);
 
     double nrm = projector_ptr->norm();
 
