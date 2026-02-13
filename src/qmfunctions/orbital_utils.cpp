@@ -474,7 +474,6 @@ ComplexMatrix orbital::calc_lowdin_matrix(OrbitalVector &Phi) {
 }
 
 ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
-
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Localizing orbitals");
