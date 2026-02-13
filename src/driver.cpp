@@ -160,7 +160,7 @@ void driver::init_molecule(const json &json_mol, Molecule &mol) {
 
         const nlohmann::json &temp = json_pp["pp_list"][i];
 
-        if (json_pp_empty | (temp["use_pp"] == false)) { // No pseudopotential
+        if (json_pp_empty || (temp["use_pp"] == false)) { // No pseudopotential
             nuclei.push_back(atom, xyz, rms);
         } else { // Pseudopotential; add to nucleus
             PseudopotentialData pp_data(temp);
