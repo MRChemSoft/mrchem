@@ -27,6 +27,7 @@
 #include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+// #include <MRCPP/utils/grid.h>
 
 #include "gto.h"
 
@@ -151,6 +152,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
         if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
+            mrcpp::build_grid(Phi[i].real(), mo_i);
             mrcpp::project(prec, Phi[i].real(), mo_i);
         }
         std::stringstream o_txt;
