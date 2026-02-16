@@ -160,7 +160,7 @@ void OrbitalExp::transformToSpherical() {
             auto *sph_xz = new GaussExp<3>;
             auto *sph_x2 = new GaussExp<3>;
 
-            double invsqrt3 = 1.0 / std::sqrt(3.0);
+            double sqrt3 = std::sqrt(3.0);
 
             for (int i = 0; i < nprim; i++) {
                 Gaussian<3> &xx = this->orbitals[n + 0]->getFunc(i);
@@ -174,25 +174,19 @@ void OrbitalExp::transformToSpherical() {
                 sph_yz->append(yz);
 
                 sph_z2->append(xx);
-                sph_z2->getFunc(sph_z2->size() - 1).setCoef(-0.5 * invsqrt3 * xx.getCoef());
+                sph_z2->getFunc(sph_z2->size() - 1).setCoef(-0.5 * xx.getCoef());
                 sph_z2->append(yy);
-                sph_z2->getFunc(sph_z2->size() - 1).setCoef(-0.5 * invsqrt3 * yy.getCoef());
+                sph_z2->getFunc(sph_z2->size() - 1).setCoef(-0.5 * yy.getCoef());
                 sph_z2->append(zz);
-                sph_z2->getFunc(sph_z2->size() - 1).setCoef(invsqrt3 * zz.getCoef());
+                sph_z2->getFunc(sph_z2->size() - 1).setCoef(zz.getCoef());
 
                 sph_xz->append(xz);
 
                 sph_x2->append(xx);
-                sph_x2->getFunc(sph_x2->size() - 1).setCoef(0.5 * xx.getCoef());
+                sph_x2->getFunc(sph_x2->size() - 1).setCoef(0.5 * sqrt3 * xx.getCoef());
                 sph_x2->append(yy);
-                sph_x2->getFunc(sph_x2->size() - 1).setCoef(-0.5 * yy.getCoef());
+                sph_x2->getFunc(sph_x2->size() - 1).setCoef(-0.5 * sqrt3 * yy.getCoef());
             }
-
-            sph_xy->normalize();
-            sph_yz->normalize();
-            sph_z2->normalize();
-            sph_xz->normalize();
-            sph_x2->normalize();
 
             tmp.push_back(sph_xy);
             tmp.push_back(sph_yz);
