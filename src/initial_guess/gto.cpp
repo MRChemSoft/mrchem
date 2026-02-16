@@ -154,6 +154,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
             mo_i.calcScreening(screen);
             mrcpp::build_grid(Phi[i].real(), mo_i);
             mrcpp::project(prec, Phi[i].real(), mo_i);
+            Phi[i].real().crop(prec, false);
         }
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
