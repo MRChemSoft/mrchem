@@ -112,7 +112,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
         // Compute Coulomb density
         t_lap.start();
         Density &rho_j = J.getDensity();
-        initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);//todo: checker
+        initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);//should be okay multicomponent-wise because densities are always scalar
 
         // Compute XC density
         Density &rho_xc = XC.getDensity(DensityType::Total);
@@ -133,7 +133,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
         // Compute Fock matrix
         mrcpp::print::header(2, "Diagonalizing Fock matrix");
-        ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
+        ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V); //todo adapt to multicomponent
 
         // Rotate orbitals and fill electrons by Aufbau 
         t_lap.start();

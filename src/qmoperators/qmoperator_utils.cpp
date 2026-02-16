@@ -40,8 +40,8 @@ namespace mrchem {
 
 namespace qmoperator {
 ComplexMatrix calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket);
-ComplexMatrix calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
-ComplexMatrix calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
+ComplexMatrix calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial = false);
+ComplexMatrix calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial = false);
 } // namespace qmoperator
 
 double qmoperator::calc_kinetic_trace(MomentumOperator &p, OrbitalVector &Phi) {
@@ -62,18 +62,22 @@ double qmoperator::calc_kinetic_trace(MomentumOperator &p, OrbitalVector &Phi) {
     return 0.5 * eta.dot(norms);
 }
 
-ComplexDouble qmoperator::calc_kinetic_trace(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &Phi) {
+ComplexDouble qmoperator::calc_kinetic_trace(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &Phi, bool spinorial) {
     ComplexDouble out = {0.0, 0.0};
-    {
-        OrbitalVector dPhi = p[0](Phi);
+    int alpha_index = 0; // for spinorial operators, the kinetic operator is of the form sigma p V sigma p, with sigma being a Pauli matrix. alpha_index represents which Pauli matrix is used (x,y or z). For non-spinorial operators, it is unused.
+    {   
+        if (spinorial) alpha_index = 1; // if spinorial, we use sigma_x for the kinetic operator, but it is arbitrary which Pauli matrix we use, as long as it is the same on the left and right of V.
+        OrbitalVector dPhi = p[0](Phi, alpha_index);
+        out += V.trace(dPhi);
+    }
+    {   
+        if (spinorial) alpha_index = 2;
+        OrbitalVector dPhi = p[1](Phi, alpha_index);
         out += V.trace(dPhi);
     }
     {
-        OrbitalVector dPhi = p[1](Phi);
-        out += V.trace(dPhi);
-    }
-    {
-        OrbitalVector dPhi = p[2](Phi);
+        if (spinorial) alpha_index = 3;
+        OrbitalVector dPhi = p[2](Phi, alpha_index);
         out += V.trace(dPhi);
     }
     return 0.5 * out;
@@ -88,7 +92,7 @@ ComplexDouble qmoperator::calc_kinetic_trace(MomentumOperator &p, RankZeroOperat
  * operator is applied both to the left and right, thus taking advantage
  * of symmetry and getting away with only first-derivative operators.
  */
-ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket) { 
     ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component(0, p, bra, ket);
     ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component(1, p, bra, ket);
     ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component(2, p, bra, ket);
@@ -104,21 +108,21 @@ ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, OrbitalVector
  * operator is applied both to the left and right, thus taking advantage
  * of symmetry and getting away with only first-derivative operators.
  */
-ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
-    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component(0, p, V, bra, ket);
+ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
+    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component(0, p, V, bra, ket); //todo: mettre à jouer pour calcul spinoriel
     ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component(1, p, V, bra, ket);
     ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component(2, p, V, bra, ket);
     return T_x + T_y + T_z;
 }
 
-ComplexMatrix qmoperator::calc_kinetic_matrix_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix qmoperator::calc_kinetic_matrix_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
     ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component_symmetrized(0, p, V, bra, ket);
     ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component_symmetrized(1, p, V, bra, ket);
     ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component_symmetrized(2, p, V, bra, ket);
     return T_x + T_y + T_z;
 }
 
-ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
     Timer timer;
     int Ni = bra.size();
     int Nj = ket.size();
@@ -145,7 +149,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
     return 0.5 * T;
 }
 
-ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
     Timer timer;
     int Ni = bra.size();
     int Nj = ket.size();
@@ -172,7 +176,7 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, Momen
     return 0.5 * T;
 }
 
-ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket) {
+ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
     Timer timer;
     int Ni = bra.size();
     int Nj = ket.size();

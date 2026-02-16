@@ -34,10 +34,10 @@ class MomentumOperator;
 
 namespace qmoperator {
 double calc_kinetic_trace(MomentumOperator &p, OrbitalVector &Phi);
-ComplexDouble calc_kinetic_trace(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &Phi);
+ComplexDouble calc_kinetic_trace(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &Phi, bool spinorial = false);
 ComplexMatrix calc_kinetic_matrix(MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket);
-ComplexMatrix calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
-ComplexMatrix calc_kinetic_matrix_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket);
+ComplexMatrix calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial = false);
+ComplexMatrix calc_kinetic_matrix_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial = false);
 } // namespace qmoperator
 
 } // namespace mrchem
