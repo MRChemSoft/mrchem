@@ -821,7 +821,7 @@ double orbital::l2_inner_product(OrbitalVector &Phi, OrbitalVector &Psi) {
     double val = 0.0;
 
     for (int i = 0; i < Phi.size(); ++i) {
-        if (mrcpp::mpi::my_func(Phi[i])) {
+        if (mrcpp::mpi::my_func(Phi[i]) && mrcpp::mpi::my_func(Psi[i])) {
             val += std::real(mrcpp::dot(Phi[i], Psi[i]));
         }
     }
@@ -956,7 +956,7 @@ double orbital::h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunctio
  * @return          OrbitalVector containing the horizontal projection of `direction`.
  * 
  */
-OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla)
+OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla, double prec)
 {
     int n = Phi.size();
     if (direction.size() != n)
@@ -1009,11 +1009,11 @@ OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVe
     // ---- compute projected direction ----
     ComplexMatrix B = B_local.cast<ComplexDouble>();
     ComplexMatrix A = B - B.transpose();
-    OrbitalVector APhi = orbital::rotate(Phi, A);
-    return orbital::add(1.0, direction, 1.0, APhi);
+    OrbitalVector APhi = orbital::rotate(Phi, A, prec);
+    return orbital::add(1.0, direction, 1.0, APhi, prec);
 }
 
-OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, OrbitalVector &one_minus_laplacian_Phi)
+OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, OrbitalVector &one_minus_laplacian_Phi, double prec)
 {
     int n = Phi.size();
 
@@ -1042,8 +1042,8 @@ OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVe
     // ---- compute projected direction ----
     ComplexMatrix B = B_local.cast<ComplexDouble>();
     ComplexMatrix A = B - B.transpose();
-    OrbitalVector APhi = orbital::rotate(Phi, A);
-    return orbital::add(1.0, direction, 1.0, APhi);
+    OrbitalVector APhi = orbital::rotate(Phi, A, prec);
+    return orbital::add(1.0, direction, 1.0, APhi, prec);
 }
 
 

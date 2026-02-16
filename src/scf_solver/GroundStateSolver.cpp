@@ -322,14 +322,14 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         dy_Phi = nabla[1](dy_Phi);
         dz_Phi = nabla[2](dz_Phi);
         OrbitalVector one_minus_laplacian_grad_E = orbital::param_copy(Phi_n);
-        one_minus_laplacian_grad_E = orbital::add(4.0, grad_E, -2.0, dx_Phi);
-        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dy_Phi);
-        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dz_Phi);
+        one_minus_laplacian_grad_E = orbital::add(4.0, grad_E, -2.0, dx_Phi, orb_prec);
+        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dy_Phi, orb_prec);
+        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -2.0, dz_Phi, orb_prec);
         
         OrbitalVector one_minus_laplacian_Phi = orbital::param_copy(Phi_n);
-        one_minus_laplacian_Phi = orbital::add(1.0, Phi_n, -1.0, dx_Phi);
-        one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dy_Phi);
-        one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dz_Phi);
+        one_minus_laplacian_Phi = orbital::add(1.0, Phi_n, -1.0, dx_Phi, orb_prec);
+        one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dy_Phi, orb_prec);
+        one_minus_laplacian_Phi = orbital::add(1.0, one_minus_laplacian_Phi, -1.0, dz_Phi, orb_prec);
         
         for (auto &phi_i : one_minus_laplacian_Phi)
         {
@@ -341,10 +341,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         //dy_Phi.clear();
         //dz_Phi.clear();
 
-        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E);
+        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E, orb_prec);
         ResolventVector Resolvent(helm_prec, Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
         grad_E = Resolvent(grad_E);
-        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E);
+        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E, orb_prec);
 
         // Evaluate resolvent and its quadratic form
         OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
@@ -355,8 +355,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
         DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
         DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
-        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi, orb_prec);
 
         ComplexMatrix C_proj_complex2 = orbital::calc_overlap_matrix(one_minus_laplacian_grad_E, Resolvent_Phi);
         DoubleMatrix C_proj_sym2 = C_proj_complex2.real() + C_proj_complex2.real().transpose();
@@ -365,8 +365,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         auto temp_error = (A_proj2 - A_proj).norm();
         println(0, "Error-in-A   = " << temp_error);
 
-        AR_Phi = orbital::rotate(Phi_n, A_proj2);
-        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Phi_n, A_proj2, orb_prec);
+        one_minus_laplacian_grad_E = orbital::add(1.0, one_minus_laplacian_grad_E, -1.0, AR_Phi, orb_prec);
         //AR_Phi.clear();
         
         // Alternative gradient evaluation
@@ -422,8 +422,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
         auto Aproj_error = A_proj.norm();
         println(0, "Error in A projection for grad_E1 = " << Aproj_error);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E1 = orbital::add(1.0, grad_E1, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E1 = orbital::add(1.0, grad_E1, -1.0, AR_Phi, orb_prec);
         
         println(0, "Reapet projection step with grad_E:");
         C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
@@ -431,8 +431,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
         Aproj_error = A_proj.norm();
         println(0, "Error in A projection for grad_E = " << Aproj_error);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi, orb_prec);
         
         grad_E_norm = orbital::get_norms(grad_E).norm();
         println(0, "L2-n(grad_E01)= " << grad_E_norm);
@@ -461,9 +461,9 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
         auto Binv = B_proj_real.llt().solve(Eigen::MatrixXd::Identity(B_proj_real.rows(), B_proj_real.cols())).eval();
         A_proj += 2.0 * Binv;
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E1 = orbital::add(2.0, Phi_n, -1.0, AR_Phi);
-        grad_E = orbital::add(1.0, grad_E1, 4.0, Resolvent_V_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E1 = orbital::add(2.0, Phi_n, -1.0, AR_Phi, orb_prec);
+        grad_E = orbital::add(1.0, grad_E1, 4.0, Resolvent_V_Phi, orb_prec);
 
         grad_E_norm = orbital::get_norms(grad_E).norm();
         println(0, "L2-n(grad_E50) = " << grad_E_norm);
@@ -476,8 +476,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
         Aproj_error = A_proj.norm();
         println(0, "Error in A projection for grad_E5 = " << Aproj_error);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi, orb_prec);
         
         grad_E_norm = orbital::get_norms(grad_E).norm();
         println(0, "L2-n(grad_E51) = " << grad_E_norm);
@@ -533,12 +533,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
         Eigen::MatrixXd one_plus_orbital_energy = (Eigen::VectorXd::Ones(orbital_energy.size()) + orbital_energy).asDiagonal();
         ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
-        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose());
+        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose(), orb_prec);
         auto temp = Resolvent_mu(preconditioned_grad_E);
-        temp = orbital::rotate(temp, one_plus_orbital_energy);
-        preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp );
+        temp = orbital::rotate(temp, one_plus_orbital_energy, orb_prec);
+        preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp, orb_prec );
         //temp.clear();
-        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
+        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj, orb_prec);
         
         for (auto &phi_i : preconditioned_grad_E)
         {
@@ -551,8 +551,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         auto C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         DoubleMatrix C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
@@ -568,8 +568,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
         const bool Grassmann = true;
         if (Grassmann)
-            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla, orb_prec);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi, orb_prec);
         
         
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
@@ -589,13 +589,13 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         {
             std::cout << "Preconditioned gradient vector component 4a: " << std::endl << one_minus_laplacian_grad_E[0].real(0) << std::endl;
         }
-        preconditioned_grad_E = orbital::rotate(one_minus_laplacian_grad_E, U_A_proj.transpose());
+        preconditioned_grad_E = orbital::rotate(one_minus_laplacian_grad_E, U_A_proj.transpose(), orb_prec);
         if (mrcpp::mpi::my_func(preconditioned_grad_E[0]))
         {
             std::cout << "Preconditioned gradient vector component 4b: " << std::endl << preconditioned_grad_E[0].real(0) << std::endl;
         }
         preconditioned_grad_E = Resolvent_mu(preconditioned_grad_E);
-        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, 0.5 * U_A_proj);
+        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, 0.5 * U_A_proj, orb_prec);
 
         for (auto &phi_i : preconditioned_grad_E)
         {
@@ -608,8 +608,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
@@ -625,8 +625,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         if (Grassmann)
-            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla, orb_prec);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi, orb_prec);
         
         
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
@@ -641,10 +641,10 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
 
-        preconditioned_grad_E = orbital::rotate(V_Phi, U_A_proj.transpose());
+        preconditioned_grad_E = orbital::rotate(V_Phi, U_A_proj.transpose(), orb_prec);
         preconditioned_grad_E = Resolvent_mu(preconditioned_grad_E);
-        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj);
-        preconditioned_grad_E = orbital::add( 2.0, preconditioned_grad_E, 1.0, Phi_n);
+        preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj, orb_prec);
+        preconditioned_grad_E = orbital::add( 2.0, preconditioned_grad_E, 1.0, Phi_n, orb_prec );
 
         for (auto &phi_i : preconditioned_grad_E)
         {
@@ -657,8 +657,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         C_proj_complex = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
         C_proj_sym = C_proj_complex.real() + C_proj_complex.real().transpose();
         A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym);
-        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj);
-        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi);
+        AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
 
 
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
@@ -674,8 +674,8 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
 
         if (Grassmann)
-            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla);
-            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi);
+            //preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla, orb_prec);
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, one_minus_laplacian_Phi, orb_prec);
         
         
         grad_E_norm = orbital::l2_inner_product(preconditioned_grad_E, one_minus_laplacian_grad_E);
