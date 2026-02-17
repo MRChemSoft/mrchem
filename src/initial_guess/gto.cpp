@@ -27,7 +27,6 @@
 #include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-// #include <MRCPP/utils/grid.h>
 
 #include "gto.h"
 
