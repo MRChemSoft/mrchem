@@ -195,8 +195,57 @@ void OrbitalExp::transformToSpherical() {
             tmp.push_back(sph_x2);
 
             n += 6;
+        } else if (l == 3) {
+            GaussExp<3> *sph[7];
+
+            for (int i = 0; i < 7; i++) { sph[i] = new GaussExp<3>; }
+
+            // order of cartesian f orbitals:
+            // xxx xxy xxz xyy xyz xzz yyy yyz yzz zzz
+
+            double c1 = std::sqrt(2.5), c2 = std::sqrt(15.0), c3 = std::sqrt(1.5);
+
+            // from page 211 of Molecular Electronic Structure Theory (Helgaker, et. al.)
+            double coeffs[7][10] = {
+                {0.0, 1.5 * c1, 0.0, 0.0, 0.0, 0.0, -0.5 * c1, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.0, 0.0, c2, 0.0, 0.0, 0.0, 0.0, 0.0},
+                {0.0, -0.5 * c3, 0.0, 0.0, 0.0, 0.0, -0.5 * c3, 0.0, 2.0 * c3, 0.0},
+                {0.0, 0.0, -1.5, 0.0, 0.0, 0.0, 0.0, -1.5, 0.0, 1.0},
+                {-0.5 * c3, 0.0, 0.0, -0.5 * c3, 0.0, 2.0 * c3, 0.0, 0.0, 0.0, 0.0},
+                {0.0, 0.0, 0.5 * c2, 0.0, 0.0, 0.0, 0.0, -0.5 * c2, 0.0, 0.0},
+                {0.5 * c1, 0.0, 0.0, -1.5 * c1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0},
+            };
+
+            double normalization[10] = {15.0, 3.0, 3.0, 3.0, 1.0, 3.0, 15.0, 3.0, 3.0, 15.0};
+            for (int i = 0; i < 10; i++) { normalization[i] = std::sqrt(normalization[i]); }
+
+            int nprim = this->orbitals[n]->size();
+
+            for (int i = 0; i < 10; i++) {
+                if (this->orbitals[n + i]->size() != nprim) { MSG_ABORT("Contracted f orbials with different number of primitives"); }
+            }
+
+            for (int i = 0; i < nprim; i++) {
+                for (int j = 0; j < 7; j++) {
+                    for (int k = 0; k < 10; k++) {
+                        if (coeffs[j][k] != 0.0) {
+                            Gaussian<3> &func = this->orbitals[n + k]->getFunc(i);
+                            sph[j]->append(func);
+                            sph[j]->getFunc(sph[j]->size() - 1).setCoef(coeffs[j][k] * normalization[k] * func.getCoef());
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < 7; i++) {
+                sph[i]->normalize();
+                std::cout << "Norm " << i << ": " << sph[i]->calcSquareNorm() << std::endl;
+                tmp.push_back(sph[i]);
+            }
+
+            n += 10;
         } else {
-            MSG_ABORT("Only s, p, and d orbitals are supported");
+            MSG_ABORT("Only s, p, d, and f orbitals are supported");
         }
     }
     for (int i = 0; i < nOrbs; i++) {
