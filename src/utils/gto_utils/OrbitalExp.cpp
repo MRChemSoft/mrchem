@@ -217,7 +217,7 @@ void OrbitalExp::transformToSpherical() {
             };
 
             double normalization[10] = {15.0, 3.0, 3.0, 3.0, 1.0, 3.0, 15.0, 3.0, 3.0, 15.0};
-            for (int i = 0; i < 10; i++) { normalization[i] = std::sqrt(normalization[i]); }
+            for (int i = 0; i < 10; i++) { normalization[i] = std::sqrt(normalization[i] / 15.0); }
 
             int nprim = this->orbitals[n]->size();
 
@@ -238,7 +238,6 @@ void OrbitalExp::transformToSpherical() {
             }
 
             for (int i = 0; i < 7; i++) {
-                sph[i]->normalize();
                 std::cout << "Norm " << i << ": " << sph[i]->calcSquareNorm() << std::endl;
                 tmp.push_back(sph[i]);
             }
