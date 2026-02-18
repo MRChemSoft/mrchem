@@ -74,7 +74,7 @@ bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Method        ", "Project GTO molecular orbitals");
     print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Screening     ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
-    if (! orbital::size_doubly(Phi)) {
+    if (!orbital::size_doubly(Phi)) {
         print_utils::text(0, "Restricted    ", "False");
         print_utils::text(0, "MO alpha file ", moa_file);
         print_utils::text(0, "MO beta file  ", mob_file);
@@ -151,9 +151,12 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
         if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
-            mrcpp::build_grid(Phi[i].real(), mo_i);
             mrcpp::project(prec, Phi[i].real(), mo_i);
-            Phi[i].real().crop(prec, false);
+            if (std::abs(Phi[i].norm() - 1.0) > prec) {
+                mrcpp::build_grid(Phi[i].real(), mo_i);
+                mrcpp::project(prec, Phi[i].real(), mo_i);
+                Phi[i].real().crop(prec, false);
+            }
         }
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
