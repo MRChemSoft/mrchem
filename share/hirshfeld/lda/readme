@@ -1,2 +1,10 @@
-This directory contains the tabulated hirshfeld charge densities. 
-The data is stored column wise. The first column contains a radial grid and the second column the charge density at this radius.
+This directory contains tabulated atomic data for NAO initial guesses and Hirshfeld charge densities.
+
+Each JSON file contains the following keys:
+  - "rgrid":      Radial grid points (192 points, non-uniform/logarithmic).
+  - "rweight_3d": 3D integration weights for the radial grid (includes 4*pi*r^2*dr).
+                  To integrate a radial function f(r): integral = sum(rweight_3d * f(r)).
+  - "<nl>":       Radial orbital values on the grid (e.g. "1s", "2p", "3d").
+                  Orbitals are normalized: sum(rweight_3d * orb^2) = 1.
+
+The .density files contain the radial charge density (two columns: r and rho(r)).
