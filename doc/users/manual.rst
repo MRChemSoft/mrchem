@@ -43,3 +43,4 @@ in more detail in the sections below.
    qcengine
    program_json
    geometry_optimization.rst
+   pseudopotentials.rst

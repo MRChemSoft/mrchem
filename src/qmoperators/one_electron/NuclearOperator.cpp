@@ -30,7 +30,6 @@
 
 #include "NuclearOperator.h"
 
-#include <fstream>
 #include <limits>
 #include <nlohmann/json.hpp>
 
@@ -39,6 +38,8 @@
 #include "analyticfunctions/PointNucleusHFYGB.h"
 #include "analyticfunctions/PointNucleusMinimum.h"
 #include "analyticfunctions/PointNucleusParabola.h"
+#include "pseudopotential/PPNucleus.h"
+#include "pseudopotential/pseudopotential.h"
 #include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Density.h"
 #include "qmoperators/QMPotential.h"
@@ -64,6 +65,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     // Setup local analytic function
     Timer t_loc;
     NuclearFunction *f_loc = nullptr;
+
     if (model == "point_like") {
         mrcpp::print::header(1, "Projecting nuclear potential (point-like HFYGB)");
         f_loc = new PointNucleusHFYGB();
@@ -79,6 +81,9 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     } else if (model == "finite_sphere") {
         mrcpp::print::header(1, "Projecting nuclear potential (finite homogeneous sphere)");
         f_loc = new FiniteNucleusSphere();
+    } else if (model == "pp") {
+        mrcpp::print::header(1, "Projecting nuclear potential (Pseudo-potential)");
+        f_loc = new PPNucleus(nucs);
     } else {
         MSG_ABORT("Invalid nuclear model : " << model);
     }
