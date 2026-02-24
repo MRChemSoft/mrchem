@@ -49,7 +49,7 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
 
     // functionals defined in mrchem not explicitly translated to libxc:
-    // b3lyp-g, b3p86-g, olyp
+    // b3lyp-g, b3p86-g
 
     // LDA
     if (name == "SLATERX") {
