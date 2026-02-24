@@ -38,6 +38,8 @@
 
 namespace mrdft {
 
+bool Factory::libxc = false;
+
 Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         : mra(MRA)
         , xcfun_p(xcfun_new(), xcfun_delete) {}

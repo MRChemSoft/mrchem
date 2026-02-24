@@ -93,7 +93,7 @@ public:
      */
     std::unique_ptr<MRDFT> build();
 
-    static bool libxc;      ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
+    static bool libxc;     ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file). False by default
 
 private:
     int order{1};                  ///< Polynomial order of the Multi-Resolution Analysis (MRA) basis
