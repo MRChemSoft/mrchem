@@ -96,7 +96,6 @@ public:
     static bool libxc;      ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
 
 private:
-private:
     int order{1};                  ///< Polynomial order of the Multi-Resolution Analysis (MRA) basis
     bool spin{false};              ///< If true, perform unrestricted calculations
     bool gamma{false};             ///< If true, use gamma-type derivatives (gradient squared) instead of explicit components
