@@ -9,7 +9,6 @@ mrchem_dir="$(pwd)"
 source ${mrchem_dir}/tools/saga.env
 
 cd ${mrchem_dir}
-version=`cat VERSION`
 build_dir=${mrchem_dir}/build
 install_dir=${mrchem_dir}/install
 
