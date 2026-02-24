@@ -89,6 +89,11 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     } else if (name == "BPW91") {
         ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
         coefs = {1.0, 1.0};
+        return;
+    } else if (name == "OLYP") {
+        ids = {XC_GGA_X_OPTX, XC_GGA_C_LYP};
+        coefs = {1.0, 1.0};
+        return;
     } else if (name == "PBE") {
         // NB: not the exact same parameters, eq to 1e-7 for H2
         ids = {XC_GGA_X_PBE, XC_GGA_C_PBE};
@@ -129,8 +134,9 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         ids = {XC_HYB_GGA_XC_PBEH};
         coefs = {1.0};
         return;
+
+    // Other: Check if Libxc has this functional
     } else {
-        // Check if Libxc has this functional
         int number = xc_functional_get_number(name.c_str());
         if (number == -1) { MSG_ABORT(name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
 
