@@ -10,11 +10,11 @@ source ${mrchem_dir}/tools/saga.env
 
 cd ${mrchem_dir}
 version=`cat VERSION`
-build_dir=${mrchem_dir}/build-${version}
-install_dir=${mrchem_dir}/install-${version}
+build_dir=${mrchem_dir}/build
+install_dir=${mrchem_dir}/install
 
 if [ -d "${build_dir}" ]; then
-    echo "Build directory already exsits, please remove"
+    echo "Build directory already exists, please remove"
     exit 1
 else
     ./setup --prefix=${install_dir} --omp --mpi --cxx=mpicxx ${build_dir} && \
