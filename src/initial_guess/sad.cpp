@@ -71,7 +71,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
-    print_utils::text(0, "Functional  ", "LDA (SVWN5)");
+    print_utils::text(0, "Functional  ", "LDA (SLATERX)");
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
@@ -84,7 +84,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
-    xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
 
     MomentumOperator p(D_p);
@@ -150,7 +149,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
-    print_utils::text(0, "Functional  ", "LDA (SVWN5)");
+    print_utils::text(0, "Functional  ", "LDA (SLATERX)");
     print_utils::text(0, "AO basis    ", "3-21G");
     mrcpp::print::separator(0, '~', 2);
 
@@ -162,7 +161,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     mrdft::Factory xc_factory(*MRA);
     xc_factory.setSpin(false);
     xc_factory.setFunctional("SLATERX", 1.0);
-    xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
     MomentumOperator p(D_p);
     NuclearOperator V_nuc(nucs, prec);
