@@ -334,7 +334,7 @@ sections:
         type: int
         default: 1
         predicates:
-          - value.lower() in [1,2,4]
+          - 1 <= value <= 4
         docstring: |
           Number of spinor components in the wavefunction. 1 corresponds to scalar wavefunctions, 
           2 for Weyl or Pauli spinors (Standard for 2C methods), and 4 represent Dirac spinors.
