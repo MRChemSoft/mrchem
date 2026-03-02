@@ -301,7 +301,7 @@ sections:
         type: str
         default: none
         predicates:
-          - value.lower() in ['none', 'zora', 'nzora', 'azora', 'zora2c']
+          - value.lower() in ['none', 'zora', 'nzora', 'azora']
         docstring: |
           Set method for relativistic treatment. ``ZORA`` for fully self-consistent ZORA potential, by default
           including all potentials (``V_nuc``, ``J``, ``V_xc``) but this can be overwritten in the ``ZORA`` section.
@@ -309,7 +309,6 @@ sections:
           over keywords in the ``ZORA`` section).
           ``azora`` uses atomic ZORA potentials, which are precomputed and read from the directory 
           specified in the ``azora_potential_path`` keyword.
-          ``zora2c``UNUSED - uses 2-component ZORA Hamiltonian with spinorial wavefunctions (complex function valued 2-vectors in the code).
       - name: environment
         type: str
         default: none
