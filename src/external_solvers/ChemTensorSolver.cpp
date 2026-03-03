@@ -24,6 +24,7 @@
  */
 
 // This include must come first due to name clashes
+
 extern "C" {
 #include "hamiltonian.h"
 #include "qnumber.h"
@@ -33,7 +34,23 @@ extern "C" {
 
 namespace mrchem {
 
+
+void ChemTensorSolver::set_dense_tensors(){
+    this->tkin_tensor = new dense_tensor;
+    this->tkin_tensor->data  = static_cast<void*>(this->one_body_integrals->data());
+    this->tkin_tensor->dim   = new ct_long[2]{this->one_body_integrals->rows(), this->one_body_integrals->cols()};
+    this->tkin_tensor->dtype = CT_DOUBLE_COMPLEX;
+    this->tkin_tensor->ndim  = 2;
+
+    this->vnuc_tensor = new dense_tensor;
+    this->vnuc_tensor->data  = static_cast<void*>(this->two_body_integrals->data());
+    this->vnuc_tensor->dim   = new ct_long[4]{this->two_body_integrals->dimension(0), this->two_body_integrals->dimension(1), this->two_body_integrals->dimension(2), this->two_body_integrals->dimension(3)};
+    this->vnuc_tensor->dtype = CT_DOUBLE_COMPLEX;
+    this->vnuc_tensor->ndim  = 4;
+}
+
 void ChemTensorSolver::optimize() {
+    
     int nsites = 6;
     double t = 1.0;
     double u = 4.0;
@@ -46,6 +63,21 @@ void ChemTensorSolver::optimize() {
 
     this->energy = encode_quantum_number_pair(4, 2); // dummy
     calculate_rdms();
+    /*
+    if (!this->one_body_integrals || !this->two_body_integrals) {
+        MSG_ABORT("Integrals not set. Call set_integrals() before optimize().");
+    }
+
+    mpo hamiltonian;
+    mpo_assembly assembly;
+    set_dense_tensors();
+    construct_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->vnuc_tensor, this->optimize_assembly, &assembly);
+    mpo_from_assembly(&assembly, &hamiltonian);
+    delete_mpo_assembly(&assembly);
+
+    this->energy = encode_quantum_number_pair(4, 2); // dummy
+    calculate_rdms();
+    */
 }
 
 void ChemTensorSolver::calculate_rdms() {

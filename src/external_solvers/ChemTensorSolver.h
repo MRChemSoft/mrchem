@@ -25,6 +25,10 @@
 
 #pragma once
 
+extern "C" {
+    struct dense_tensor;
+}
+
 #include "ExternalSolver.h"
 #include "mrchem.h"
 #include "qmfunctions/Orbital.h"
@@ -40,7 +44,14 @@ public:
     void optimize() override;
 
 private:
+    bool optimize_assembly = true;
+    dense_tensor* tkin_tensor{};
+    dense_tensor* vnuc_tensor{};
+
+    void set_dense_tensors();
     void calculate_rdms() override;
+
+    
 };
 
 } // namespace mrchem

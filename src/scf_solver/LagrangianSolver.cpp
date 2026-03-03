@@ -80,6 +80,9 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     int nIter = 0;
     bool converged = false;
     
+    S.optimize();
+    std::cout << "Energy: " << S.get_energy() << std::endl;
+    
     // end
     F.clear();
     json_out["converged"] = converged;
