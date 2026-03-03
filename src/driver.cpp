@@ -58,7 +58,6 @@
 #include "qmoperators/one_electron/NuclearGradientOperator.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/one_electron/ZoraOperator.h"
-#include "qmoperators/two_electron/GenericTwoOrbitalsOperator.h"
 
 #include "qmoperators/one_electron/H_BB_dia.h"
 #include "qmoperators/one_electron/H_BM_dia.h"
@@ -1075,7 +1074,10 @@ json driver::lag::run(const json &json_lag, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     /////////////////   Building DMRG Driver   ////////////////
     ///////////////////////////////////////////////////////////
-    ChemTensorSolver dmrg_solver;
+    int Ne = mol.getNElectrons(); // total electrons
+    int spin = mol.getMultiplicity(); // spin
+    ChemTensorSolver dmrg_solver(mol.getOrbitals(), F, Ne, spin);
+    
     ///////////////////////////////////////////////////////////
     //////////////   Building Lagrangian Solver   /////////////
     ///////////////////////////////////////////////////////////
@@ -1593,17 +1595,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
-
-    ///////////////////////////////////////////////////////////
-    ///////////   Generic Two Orbitals Operator   /////////////
-    ///////////////////////////////////////////////////////////
-    if (json_fock.contains("generic_two_orbitals_operator")) {
-        auto poisson_prec = json_fock["generic_two_orbitals_operator"]["prec"];
-        auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
-        auto g = std::make_shared<GenericTwoOrbitalsOperator>(P_p);
-        F.getGenericTwoOrbitalsOperator() = g;
-    }
-
     
     F.build(exx);
 }

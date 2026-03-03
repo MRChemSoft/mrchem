@@ -38,12 +38,13 @@ namespace mrchem {
 
 class ChemTensorSolver : public ExternalSolver {
 public:
-    ChemTensorSolver() = default;
+    ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, int spin);
     ~ChemTensorSolver() override = default;
 
     void optimize() override;
 
 private:
+    int32_t qnum_sector{};
     bool optimize_assembly = true;
     dense_tensor* tkin_tensor{};
     dense_tensor* vnuc_tensor{};

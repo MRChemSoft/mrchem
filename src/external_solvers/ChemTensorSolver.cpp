@@ -34,6 +34,11 @@ extern "C" {
 
 namespace mrchem {
 
+ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, int spin) : ExternalSolver() {
+    set_integrals(Phi, F);
+    set_dense_tensors();
+    this->qnum_sector = encode_quantum_number_pair(Ne, spin);
+}
 
 void ChemTensorSolver::set_dense_tensors(){
     this->tkin_tensor = new dense_tensor;
@@ -50,34 +55,19 @@ void ChemTensorSolver::set_dense_tensors(){
 }
 
 void ChemTensorSolver::optimize() {
-    
-    int nsites = 6;
-    double t = 1.0;
-    double u = 4.0;
-    double mu = 1.5;
-    mpo hamiltonian;
-    mpo_assembly assembly;
-    construct_fermi_hubbard_1d_mpo_assembly(nsites, t, u, mu, &assembly);
-    mpo_from_assembly(&assembly, &hamiltonian);
-    delete_mpo_assembly(&assembly);
-
-    this->energy = encode_quantum_number_pair(4, 2); // dummy
-    calculate_rdms();
-    /*
     if (!this->one_body_integrals || !this->two_body_integrals) {
         MSG_ABORT("Integrals not set. Call set_integrals() before optimize().");
     }
 
     mpo hamiltonian;
     mpo_assembly assembly;
-    set_dense_tensors();
     construct_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->vnuc_tensor, this->optimize_assembly, &assembly);
     mpo_from_assembly(&assembly, &hamiltonian);
     delete_mpo_assembly(&assembly);
 
-    this->energy = encode_quantum_number_pair(4, 2); // dummy
-    calculate_rdms();
-    */
+    //this->energy = encode_quantum_number_pair(4, 2); // dummy
+    //calculate_rdms();
+    
 }
 
 void ChemTensorSolver::calculate_rdms() {

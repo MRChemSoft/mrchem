@@ -54,7 +54,7 @@ public:
     virtual void optimize() = 0;
 
 protected:
-    // Dummy default precision
+    // Dummy default precision (TODO: set from input file)
     double prec = 1e-3;
     double energy{};
 
@@ -64,7 +64,7 @@ protected:
     std::shared_ptr<ComplexTensorR4> two_rdm{};
 
     void set_one_body_integrals(OrbitalVector &Phi, MomentumOperator &P, NuclearOperator &V);
-    void set_two_body_integrals(OrbitalVector &Phi, GenericTwoOrbitalsOperator &g);
+    void set_two_body_integrals(OrbitalVector &Phi);
 
     virtual void calculate_rdms() = 0;
 };
