@@ -85,7 +85,7 @@ int ExchangePotentialD1::testInternal(Orbital phi_p) const {
     int out = -1;
     if (Kphi.size() == Phi.size()) {
         for (int i = 0; i < Phi.size(); i++) {
-            if (&Phi[i].real() == &phi_p.real() and &Phi[i].imag() == &phi_p.imag()) {
+            if (Phi[i].CompD[0] == phi_p.CompD[0] and Phi[i].CompC[0] == phi_p.CompC[0]) {
                 out = i;
                 break;
             }
@@ -155,10 +155,13 @@ void ExchangePotentialD1::setupInternal(double prec) {
     Timer t_diag;
     int i = 0;
     for (auto &phi_i : Phi) {
-        Orbital ex_iii(phi_i.spin(), phi_i.occ(), phi_i.getRank());
+        Orbital ex_iii = phi_i.paramCopy();
         t_calc.resume();
         if (mrcpp::mpi::my_func(i)) calcExchange_kij(precf, phi_i, phi_i, phi_i, ex_iii);
         t_calc.stop();
+        // we didn't need to call this before, but now it's needed to get the factor of 1/2 in the restricted case
+        double i_fac = getSpinFactor(phi_i, phi_i);
+        ex_iii.rescale(i_fac * phi_i.occ());
         Ex.push_back(ex_iii);
         i++;
     }
@@ -281,7 +284,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_calc.resume();
                 calcExchange_kij(precf, phi_i, phi_i, phi_j, ex_iij, &ex_jji);
                 t_calc.stop();
-                if (ex_iij.norm() > prec) coef_vec[iijfunc_vec.size()] = j_fac;
+                if (ex_iij.norm() > prec) coef_vec[iijfunc_vec.size()] = j_fac * phi_i.occ();
                 t_snd.resume();
                 if (mrcpp::mpi::bank_size > 0) {
                     // store ex_jji
@@ -289,8 +292,8 @@ void ExchangePotentialD1::setupInternal(double prec) {
                     if (ex_jji.norm() > prec) ExBank.put_func(iorb + jorb * N, ex_jji);
                     if (ex_jji.norm() > prec) tasksMaster.put_readytask(iorb, jorb);
                 } else {
-                    Ex[iorb].add(j_fac, ex_jji);
-                    Ex[jorb].add(j_fac, ex_iij);
+                    Ex[iorb].add(j_fac * phi_j.occ(), ex_jji);
+                    Ex[jorb].add(j_fac * phi_i.occ(), ex_iij);
                 }
                 ex_jji.free();
                 t_snd.stop();
@@ -298,7 +301,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
             Timer timerx;
             // fetch ready contributions to ex_j from others
             std::vector<int> iVec = tasksMaster.get_readytask(jorb, 1);
-            int lastsize = iVec.size();
             for (int iorb : iVec) {
                 t_get.resume();
                 Orbital ex_rcv;
@@ -306,7 +308,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_get.stop();
                 if (not found) MSG_ERROR("Exchange not found");
                 double j_fac = getSpinFactor(ex_rcv, phi_j);
-                coef_vec[iijfunc_vec.size()] = j_fac;
+                coef_vec[iijfunc_vec.size()] = j_fac * Phi[j].occ();
                 iijfunc_vec.push_back(ex_rcv);
             }
             // add all contributions to ex_j,
@@ -317,7 +319,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
                 t_add.stop();
                 // ex_j is sent to Bank
                 if (ex_j.hasReal() or ex_j.hasImag()) {
-                    auto tT = timerx.elapsed();
                     t_snd.resume();
                     ex_j.crop(prec);
                     if (ex_j.norm() > prec) {
@@ -354,7 +355,7 @@ void ExchangePotentialD1::setupInternal(double prec) {
             int found = ExBank.get_func_del(j + i * N, ex_rcv);
             t_get.stop();
             double j_fac = getSpinFactor(ex_rcv, Phi[j]);
-            coef_vec[iijfunc_vec.size()] = j_fac;
+            coef_vec[iijfunc_vec.size()] = j_fac * Phi[j].occ();
             iijfunc_vec.push_back(ex_rcv);
             if (not found) MSG_ERROR("My Exchange not found in Bank");
             tot++;
@@ -424,7 +425,7 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) {
         Orbital phi_i(Phi[i]);
         if (not mrcpp::mpi::my_func(i)) PhiBank.get_func(i, phi_i, 1);
 
-        double spin_fac = getSpinFactor(phi_i, phi_p);
+        double spin_fac = phi_i.occ() * getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
             Orbital ex_iip = phi_p.paramCopy(true);
             calcExchange_kij(precf, phi_i, phi_i, phi_p, ex_iip);

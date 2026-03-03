@@ -30,6 +30,7 @@
 
 #include "environment/Cavity.h"
 #include "qmfunctions/orbital_utils.h"
+#include "qmoperators/one_electron/PositionOperator.h"
 
 using mrcpp::Coord;
 using mrcpp::Printer;
@@ -86,8 +87,59 @@ void Molecule::initPerturbedOrbitals(bool dynamic) {
 /** @brief Return number of electrons */
 int Molecule::getNElectrons() const {
     auto totZ = 0;
-    for (auto i = 0; i < getNNuclei(); i++) totZ += getNuclei()[i].getElement().getZ();
+    for (auto i = 0; i < getNNuclei(); i++) totZ += getNuclei()[i].getCharge();
     return totZ - this->charge;
+}
+
+/** @brief Get all-electron nuclei */
+Nuclei Molecule::getAllElectronNuclei() const {
+    Nuclei nuclei_ae;
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (!nuc.hasPseudopotential()) nuclei_ae.push_back(nuc);
+    }
+    return nuclei_ae;
+}
+
+/** @brief Check if molecule has pseudopotential */
+bool Molecule::hasPseudopotential() const {
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) return true;
+    }
+    return false;
+}
+
+/** @brief Check if molecule has NLCC pseudopotential */
+bool Molecule::hasNLCCPseudopotential() const {
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) {
+            if (nuc.getPseudopotentialData()->getHasNlcc()) return true;
+        }
+    }
+    return false;
+}
+
+/** @brief Check if molecule has projector pseudopotential */
+bool Molecule::hasProjectorPseudopotential() const {
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) {
+            if (nuc.getPseudopotentialData()->getNsep() > 0) return true;
+        }
+    }
+    return false;
+}
+
+/** @brief Get pseudo-potential nuclei */
+Nuclei Molecule::getPseudoPotentialNuclei() const {
+    Nuclei nuclei_pp;
+    for (auto i = 0; i < getNNuclei(); i++) {
+        const auto &nuc = getNuclei()[i];
+        if (nuc.hasPseudopotential()) nuclei_pp.push_back(nuc);
+    }
+    return nuclei_pp;
 }
 
 /** @brief Compute nuclear center of mass */
@@ -245,6 +297,12 @@ nlohmann::json Molecule::json() const {
 
     json_out["scf_energy"] = energy.json();
     json_out["orbital_energies"] = epsilon.json();
+    json_out["orbital_positions"] = {};
+    for (unsigned int i = 0; i < getOrbitalPositionsX().size(); i++) {
+      nlohmann::json json_atom = {getOrbitalPositionsX()[i].real(), getOrbitalPositionsY()[i].real(), getOrbitalPositionsZ()[i].real()};
+      json_out["orbital_positions"].push_back(json_atom);
+    }
+    
     if (not dipole.empty()) json_out["dipole_moment"] = {};
     if (not quadrupole.empty()) json_out["quadrupole_moment"] = {};
     if (not polarizability.empty()) json_out["polarizability"] = {};
@@ -271,4 +329,72 @@ void Molecule::initCavity(const std::vector<mrcpp::Coord<3>> &coords,
     this->cavity = std::make_shared<Cavity>(coords, R, alphas, betas, sigmas);
 }
 
+/**
+ * @brief Calculate the average position of each orbital
+ */
+void Molecule::calculateOrbitalPositions(){
+    // need to work out how to define prec correctly - should be the final_prec?
+    double prec = 1.0e-4;
+
+    PositionOperator r;
+    r.setup(prec);
+
+    RankZeroOperator &r_x = r[0];
+    RankZeroOperator &r_y = r[1];
+    RankZeroOperator &r_z = r[2];
+
+    auto &Phi = getOrbitals();
+    OrbitalVector xPhi_Vec = r_x(Phi);
+    OrbitalVector yPhi_Vec = r_y(Phi);
+    OrbitalVector zPhi_Vec = r_z(Phi);
+       
+    ComplexVector R_X = mrcpp::dot(Phi, xPhi_Vec);
+    ComplexVector R_Y = mrcpp::dot(Phi, yPhi_Vec);
+    ComplexVector R_Z = mrcpp::dot(Phi, zPhi_Vec);
+    
+    this->OrbitalPositionsX = R_X;
+    this->OrbitalPositionsY = R_Y;
+    this->OrbitalPositionsZ = R_Z; 
+    r_x.clear();
+    r_y.clear();
+    r_z.clear();
+}
+
+/**
+ * @brief Print the average position of each orbital to the output
+ */
+void Molecule::printOrbitalPositions() const{
+    auto pprec = mrcpp::Printer::getPrecision();
+    auto w0 = Printer::getWidth() - 1;
+    auto w1 = 7;
+    auto w2 = 2 * w0 / 9;
+    auto w3 = w0 - w1 - 3 * w2;
+    
+    std::stringstream o_head;
+    o_head << std::setw(w1) << "Index";
+    o_head << std::setw(w1 + 3) << "Occ";
+    o_head << std::string(w3 - 11, ' ') << ':';
+    o_head << std::setw(w2) << "x";
+    o_head << std::setw(w2) << "y";
+    o_head << std::setw(w2) << "z";
+
+    auto &Phi = getOrbitals();
+    DoubleVector occup = orbital::get_occupations(Phi);
+
+    mrcpp::print::header(0, "Orbital Positions");
+    println(0, o_head.str());
+    mrcpp::print::separator(0, '-');
+    for (unsigned int i = 0; i < getOrbitalPositionsX().size(); i++) {
+        std::stringstream o_txt;
+        o_txt << std::setw(w1 - 1) << i << std::setw(w1 + 3) << std::setprecision(2) << std::fixed << occup[i];
+        DoubleVector orbitalPositionsVec = DoubleVector::Zero(3);
+        orbitalPositionsVec[0] = getOrbitalPositionsX()[i].real();
+        orbitalPositionsVec[1] = getOrbitalPositionsY()[i].real();
+        orbitalPositionsVec[2] = getOrbitalPositionsZ()[i].real();
+        print_utils::vector(0, o_txt.str(), orbitalPositionsVec, pprec);
+    }
+    mrcpp::print::separator(0, '=', 2);
+}
+
 } // namespace mrchem
+

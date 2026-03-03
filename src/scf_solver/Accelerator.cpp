@@ -23,10 +23,11 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "Accelerator.h"
+
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
-#include "Accelerator.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 

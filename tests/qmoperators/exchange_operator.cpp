@@ -43,7 +43,6 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
     const double prec = 1.0e-3;
     const double thrs = 1.0e-8;
 
-    const int nShells = 2;
     std::vector<int> ns;
     std::vector<int> ls;
     std::vector<int> ms;
@@ -69,7 +68,6 @@ TEST_CASE("ExchangeOperator", "[exchange_operator]") {
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
     E_P(0, 0) = 0.6691669775;
