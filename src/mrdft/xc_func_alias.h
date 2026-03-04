@@ -30,18 +30,19 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
 
     // functionals defined in mrchem not explicitly translated to libxc:
-    // b3lyp-g, b3p86-g
+    // b3lyp-g     {"b3lyp-g", "Becke-3-paramater-LYP (VWN3 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"lypc", 0.81}, {"vwn3c", 0.19}, {"exx", 0.20}}},
+    // b3p86-g     {"b3p86-g", "Becke-3-paramater-LYP (VWN3 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"p86corrc", 0.81}, {"vwn3c", 1.0}, {"exx", 0.20}}}
 
     // LDA
     if (name == "SLATERX") {
         ids = {XC_LDA_X};
         coefs = {1.0};
         return;
-    } else if (name == "VWN3C") {
+    } else if (name == "VWN3C" || name == "VWN3") {
         ids = {XC_LDA_C_VWN_3};
         coefs = {1.0};
         return;
-    } else if (name == "VWN5C") {
+    } else if (name == "VWN5C" || name == "VWN5") {
         ids = {XC_LDA_C_VWN};
         coefs = {1.0};
         return;
@@ -60,18 +61,22 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coefs = {1.0};
         return;
     } else if (name == "BLYP") {
+        // xcfun def:     {"blyp", "Becke exchange and LYP correlation", {{"beckex", 1.0}, {"lypc", 1.0}}}
         ids = {XC_GGA_X_B88, XC_GGA_C_LYP};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "BP86") {
+        // xcfun def:     {"bp86", "Becke-Perdew 1986", {{"beckex", 1.0}, {"p86c", 1.0}}}
         ids = {XC_GGA_X_B88, XC_GGA_C_P86};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "BPW91") {
+        // xcfun def:     {"bpw91", "Becke 88 exchange+PW91", {{"beckex", 1.0}, {"pw91c", 1.0}}}
         ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "OLYP") {
+        // xcfun def:     {"olyp", "LYP correlation and OPTX exchange", {{"lypc", 1.0}, {"optx", 1.0}}}
         ids = {XC_GGA_X_OPTX, XC_GGA_C_LYP};
         coefs = {1.0, 1.0};
         return;
@@ -81,14 +86,21 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coefs = {1.0, 1.0};
         return;
     } else if (name == "KT1") {
+        // xcfun def:     {"kt1", "Keal-Tozer 2", {{"slaterx", 1.}, {"ktx", -0.006}, {"vwn5c", 1.}}}
+        // libxc def:   static int   funcs_id  [2] = {XC_GGA_X_KT1, XC_LDA_C_VWN}; static double funcs_coef[2] = {1.0, 1.0};
+        // if 1 * slaterx - 0.006 ktx = 1 XC_GGA_X_KT1 -> EQUAL
         ids = {XC_GGA_XC_KT1};
         coefs = {1.0};
         return;
     } else if (name == "KT2") {
+        // xcfun def:     {"kt2", "Keal-Tozer 2", {{"slaterx", 1.07173}, {"ktx", -0.006}, {"vwn5c", 0.576727}}}
+        // libxc def:   static int   funcs_id  [3] = {XC_LDA_X, XC_GGA_X_KT1, XC_LDA_C_VWN}; static double funcs_coef[3] = {1.07173 - 1.0, 1.0, 0.576727}
         ids = {XC_GGA_XC_KT2};
         coefs = {1.0};
         return;
     } else if (name == "KT3") {
+        // xcfun def :     {"kt3", "Keal-Tozer 3", {{"slaterx", 1.092}, {"ktx", -0.004}, {"optxcorr", -0.925452}, {"lypc", 0.864409}}}
+        // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_C_LYP, XC_GGA_X_KT1, XC_GGA_X_OPTX}; double funcs_coef[4] = { alpha - eps*a_optx/b_optx - 1.0, beta, 1, eps/b_optx};  
         ids = {XC_GGA_XC_KT3};
         coefs = {1.0};
         return;
@@ -102,11 +114,15 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         coefs = {1.0};
         return;
     } else if (name == "B3LYP5") {
+        // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN, XC_GGA_C_LYP}; funcs_coefs = set by ext_param
         ids = {XC_HYB_GGA_XC_B3LYP5};
         coefs = {1.0};
         return;
     } else if (name == "B3P86") {
         // NB: not the exact same parameters, eq to 1e-3 for H2
+        // xcfun def:     {"b3p86", "Becke-3-paramater-LYP (VWN5 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"p86corrc", 0.81}, {"vwn5c", 1.0}, {"exx", 0.20}}}
+        // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86}; funcs_coefs = set by ext_param
+        // different vwn: vwn5 vs vwn rpa
         ids = {XC_HYB_GGA_XC_B3P86};
         coefs = {1.0};
         return;
