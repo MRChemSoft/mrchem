@@ -80,6 +80,25 @@ void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &c
         ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
         coefs = {1.0, 1.0};
         return;
+    } else if (name == "B3LYP") {
+        // Keep as b3lyp5 for now to be consistent with xcfun
+        // TODO: change the definition of b3lyp in mrchem to not be b3lyp5
+        ids = {XC_HYB_GGA_XC_B3LYP5};
+        // ids = {XC_HYB_GGA_XC_B3LYP};
+        coefs = {1.0};
+        return;
+    } else if (name == "B3LYP5") {
+        ids = {XC_HYB_GGA_XC_B3LYP5};
+        coefs = {1.0};
+        return;
+    } else {
+        // Check if Libxc has this functional
+        int number = xc_functional_get_number(name.c_str());
+        if (number == -1) { MSG_ABORT(name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
+
+        ids = {number};
+        coefs = {1.0};
+        return;
     }
 }
 
