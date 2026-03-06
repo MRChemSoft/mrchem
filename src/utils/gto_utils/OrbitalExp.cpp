@@ -51,14 +51,14 @@ OrbitalExp::~OrbitalExp() {
     }
 }
 
-GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M) const {
+GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M, const double threshold) const {
     if (M.cols() != size()) MSG_ERROR("Size mismatch");
     GaussExp<3> mo_i;
     int n = 0;
     for (int j = 0; j < size(); j++) {
         GaussExp<3> ao_j = getAO(j);
         // ao_i.normalize();
-        if (std::abs(M(i, j)) > mrcpp::MachineZero) {
+        if (std::abs(M(i, j)) > threshold) {
             ao_j *= M(i, j);
             mo_i.append(ao_j);
             n++;
