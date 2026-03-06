@@ -148,11 +148,13 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     Timer t3;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
+        bool built_grid = false;
         if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
             mrcpp::project(prec, Phi[i].real(), mo_i);
-            if (std::abs(Phi[i].norm() - 1.0) > prec) {
+            if (std::abs(Phi[i].norm() - 1.0) > 0.1) {
+                built_grid = true;
                 mrcpp::build_grid(Phi[i].real(), mo_i);
                 mrcpp::project(prec, Phi[i].real(), mo_i);
                 Phi[i].real().crop(prec, false);
@@ -161,6 +163,9 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
         o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
+        if (built_grid) {
+            o_txt << '*';
+        }
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
