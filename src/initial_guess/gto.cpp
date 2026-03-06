@@ -150,7 +150,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
         Timer t_i;
         bool built_grid = false;
         if (mrcpp::mpi::my_func(Phi[i])) {
-            GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
+            GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose(), prec * 1e-1);
             mo_i.calcScreening(screen);
             mrcpp::project(prec, Phi[i].real(), mo_i);
             if (std::abs(Phi[i].norm() - 1.0) > 0.1) {
