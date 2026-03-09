@@ -12,6 +12,30 @@ import json
 #
 # This generates the required mrchem.bas and mrchem.mop/moa/mob files
 #
+# Example orca 6 inputfile with orbital localization:
+#
+
+"""
+!PBE cc-pVTZ Bohrs
+%pal nprocs 4 end
+
+%loc
+  LocMet NewBoys
+  Occ true
+end
+
+* XYZ 0 1
+H      -1.4375  0.0000   1.0250
+O       0.0000  0.0000  -0.1250
+H       1.4375  0.0000   1.0250
+*
+"""
+
+#
+# After running with orca you will have a .gbw file with the canonical orbitals
+# and a .loc file with the localized orbitals. You can run the orca_2json
+# CLI-tool on these to convert to a .json file that can be given to this script
+#
 
 def consolidate_basis(basis):
     new_basis = {}
