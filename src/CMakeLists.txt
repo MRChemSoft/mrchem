@@ -52,6 +52,7 @@ target_link_libraries(mrchem
   PRIVATE
     Eigen3::Eigen
   PUBLIC
+    Libxc::xc
     XCFun::xcfun
     MRCPP::mrcpp
     nlohmann_json::nlohmann_json
