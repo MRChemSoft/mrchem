@@ -28,6 +28,7 @@
 #include <XCFun/xcfun.h>
 
 #include "Functional.h"
+#include "Factory.h" // only to call Factory::libxc
 
 namespace mrdft {
 
@@ -37,6 +38,10 @@ public:
     ~LDA() override = default;
 
     bool isSpin() const override { return false; }
+    bool isGGA() const override { return false; }
+    bool isMetaGGA() const override { return false; }
+    int numIn() const override { return 1; }
+    int numOut() const override { if (Factory::libxc) {return 2;} else {return xcfun_output_length(xcfun.get());} }
 
 private:
     mrcpp::FunctionTreeVector<3> rho;
