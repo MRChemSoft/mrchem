@@ -74,7 +74,7 @@ bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Method        ", "Project GTO molecular orbitals");
     print_utils::text(0, "Precision     ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Screening     ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
-    if (! orbital::size_doubly(Phi)) {
+    if (!orbital::size_doubly(Phi)) {
         print_utils::text(0, "Restricted    ", "False");
         print_utils::text(0, "MO alpha file ", moa_file);
         print_utils::text(0, "MO beta file  ", mob_file);
@@ -148,14 +148,25 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     Timer t3;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
+        bool built_grid = false;
         if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
             mrcpp::project(prec, Phi[i].real(), mo_i);
+            if (std::abs(Phi[i].norm() - 1.0) > 1e2 * prec) {
+                GaussExp<3> mo_i_grid = gto_exp.getMO(i, MO.transpose(), prec * 1e-1);
+                built_grid = true;
+                mrcpp::build_grid(Phi[i].real(), mo_i_grid);
+                mrcpp::project(prec, Phi[i].real(), mo_i);
+                Phi[i].real().crop(prec, false);
+            }
         }
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
         o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
+        if (built_grid) {
+            o_txt << '*';
+        }
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
