@@ -9,9 +9,8 @@ mrchem_dir="$(pwd)"
 source ${mrchem_dir}/tools/betzy.env
 
 cd ${mrchem_dir}
-version=`cat VERSION`
-build_dir=${mrchem_dir}/build-${version}
-install_dir=${mrchem_dir}/install-${version}
+build_dir=${mrchem_dir}/build
+install_dir=${mrchem_dir}/install
 
 if [ -d "${build_dir}" ]; then
     echo "Build directory already exists, please remove"
