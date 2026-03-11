@@ -824,9 +824,9 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
                     if (dim == 0)
                         p(i, 0) = density.integrate().real(); // Integrate over full space
                     else {
-                        p(i, 0) = density.integrate(dim - 1, false).real(); // Integrate over lower half of the space
-                        p(i, 1) = density.integrate(dim - 1, true).real();  // Integrate over upper half of the space
-                        p(i, 2) = density.integrate().real();               // Integrate over full space
+                        p(i, 0) = density.integrateSide(dim - 1, false).real(); // Integrate over negative half of the space
+                        p(i, 1) = density.integrateSide(dim - 1, true).real();  // Integrate over positive half of the space
+                        p(i, 2) = density.integrate().real();                   // Integrate over full space
                     }
                 }
                 mrcpp::mpi::allreduce_matrix(p, mrcpp::mpi::comm_wrk);
@@ -837,9 +837,9 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
                 if (dim == 0)
                     p(p.rows() - 1, 0) = total_density.integrate().real(); // Total number of electrons
                 else {
-                    p(p.rows() - 1, 0) = total_density.integrate(dim - 1, false).real(); // Total number of electrons in lower half
-                    p(p.rows() - 1, 1) = total_density.integrate(dim - 1, true).real();  // Total number of electrons in upper half
-                    p(p.rows() - 1, 2) = total_density.integrate().real();               // Total number of electrons
+                    p(p.rows() - 1, 0) = total_density.integrateSide(dim - 1, false).real(); // Total number of electrons in negative half
+                    p(p.rows() - 1, 1) = total_density.integrateSide(dim - 1, true).real();  // Total number of electrons in positive half
+                    p(p.rows() - 1, 2) = total_density.integrate().real();                   // Total number of electrons
                 }
             }
             PopulationAnalysis &pop = mol.getPopulationAnalysis(id);

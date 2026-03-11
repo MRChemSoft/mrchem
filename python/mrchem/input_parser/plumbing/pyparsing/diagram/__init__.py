@@ -112,14 +112,9 @@ T = TypeVar("T")
 class EachItem(railroad.Group):
     """
     Custom railroad item to compose a:
-
-    - :class:`railroad.Group` containing a
-
-      - :class:`railroad.OneOrMore` containing a
-
-        - :class:`railroad.Choice` of the elements in the
-          :class:`railroad.Each`
-
+    - Group containing a
+      - OneOrMore containing a
+        - Choice of the elements in the Each
     with the group label indicating that all must be matched
     """
 
@@ -157,9 +152,8 @@ class EditablePartial(Generic[T]):
     @classmethod
     def from_call(cls, func: Callable[..., T], *args, **kwargs) -> EditablePartial[T]:
         """
-        If you call this function in the same way that you would call the constructor,
-        it will store the arguments as you expect. For example
-        ``EditablePartial.from_call(Fraction, 1, 3)() == Fraction(1, 3)``
+        If you call this function in the same way that you would call the constructor, it will store the arguments
+        as you expect. For example EditablePartial.from_call(Fraction, 1, 3)() == Fraction(1, 3)
         """
         return EditablePartial(func=func, args=list(args), kwargs=kwargs)
 
@@ -185,9 +179,7 @@ class EditablePartial(Generic[T]):
 
 def railroad_to_html(diagrams: list[NamedDiagram], embed=False, **kwargs) -> str:
     """
-    Given a list of :class:`NamedDiagram`, produce a single HTML string
-    that visualises those diagrams.
-
+    Given a list of NamedDiagram, produce a single HTML string that visualises those diagrams
     :params kwargs: kwargs to be passed in to the template
     """
     data = []
@@ -239,24 +231,7 @@ def to_railroad(
     """
     Convert a pyparsing element tree into a list of diagrams. This is the recommended entrypoint to diagram
     creation if you want to access the Railroad tree before it is converted to HTML
-
     :param element: base element of the parser being diagrammed
-<<<<<<< HEAD
-
-    :param diagram_kwargs: kwargs to pass to the :meth:`Diagram` constructor
-
-    :param vertical: (optional) int - limit at which number of alternatives
-        should be shown vertically instead of horizontally
-
-    :param show_results_names: bool to indicate whether results name
-        annotations should be included in the diagram
-
-    :param show_groups: bool to indicate whether groups should be highlighted
-        with an unlabeled surrounding box
-
-    :param show_hidden: bool to indicate whether internal elements that are
-        typically hidden should be shown
-=======
     :param diagram_kwargs: kwargs to pass to the Diagram() constructor
     :param vertical: (optional) - int - limit at which number of alternatives should be
        shown vertically instead of horizontally
@@ -266,7 +241,6 @@ def to_railroad(
        surrounding box
     :param show_hidden - bool to indicate whether internal elements that are typically hidden
        should be shown
->>>>>>> added population analysis based on the grid
     """
     # Convert the whole tree underneath the root
     lookup = ConverterState(diagram_kwargs=diagram_kwargs or {})
@@ -377,18 +351,14 @@ class ConverterState:
     """
     Stores some state that persists between recursions into the element tree
     """
-    index_generator = itertools.count(start=1)
 
     def __init__(self, diagram_kwargs: typing.Optional[dict] = None) -> None:
         #: A dictionary mapping ParserElements to state relating to them
         self._element_diagram_states: dict[int, ElementState] = {}
         #: A dictionary mapping ParserElement IDs to subdiagrams generated from them
         self.diagrams: dict[int, EditablePartial[NamedDiagram]] = {}
-<<<<<<< HEAD
-=======
         #: The index of the next unnamed element
         self.unnamed_index: int = 1
->>>>>>> added population analysis based on the grid
         #: The index of the next element. This is used for sorting
         self.index: int = 0
         #: Shared kwargs that are used to customize the construction of diagrams
@@ -412,8 +382,6 @@ class ConverterState:
             return self[key]
         except KeyError:
             return default
-<<<<<<< HEAD
-=======
 
     def generate_unnamed(self) -> int:
         """
@@ -421,13 +389,13 @@ class ConverterState:
         """
         self.unnamed_index += 1
         return self.unnamed_index
->>>>>>> added population analysis based on the grid
 
     def generate_index(self) -> int:
         """
         Generate a number used to index a diagram
         """
-        return next(self.index_generator)
+        self.index += 1
+        return self.index
 
     def extract_into_diagram(self, el_id: int):
         """
@@ -575,8 +543,6 @@ def _to_diagram_element(
                 # pyparsing.TokenConverter,
                 pyparsing.Forward,
                 pyparsing.Located,
-                pyparsing.AtStringStart,
-                pyparsing.AtLineStart,
             ),
         ):
             # However, if this element has a useful custom name, and its child does not, we can pass it on to the child
