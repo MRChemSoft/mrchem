@@ -158,4 +158,34 @@ Orbital HelmholtzVector::apply(int i, const Orbital &phi) const {
 
     return out;
 }
+
+/** @brief Apply Helmholtz operator on individual Orbital
+ *
+ * This will construct a Helmholtz/Resolvent operator with the i-th component of the
+ * lambda vector and apply it to the input orbital.
+ *
+ * Computes output as: out_i = H_i[phi_i]
+ */
+Orbital ResolventVector::apply(int i, const Orbital &phi) const {
+    //ComplexDouble mu_i = std::sqrt(-2.0 * this->lambda(i));
+    ComplexDouble mu_i = std::sqrt(- this->lambda(i));
+    if (std::abs(mu_i.imag()) > mrcpp::MachineZero) MSG_ABORT("Mu cannot be complex");
+    mrcpp::HelmholtzOperator H(*MRA, mu_i.real(), this->prec);
+
+    Orbital out = phi.paramCopy();
+    if (phi.hasReal()) {
+        out.alloc(NUMBER::Real);
+        auto &phi_real_nc = const_cast<mrcpp::FunctionTree<3,double>&>(phi.real());
+        mrcpp::apply(this->prec, out.real(), H, phi_real_nc, -1, true); // Absolute prec
+        out.real().rescale(1.0 / (4.0 * mrcpp::pi));
+    }
+    if (phi.hasImag()) {
+        out.alloc(NUMBER::Imag);
+        auto &phi_imag_nc = const_cast<mrcpp::FunctionTree<3,double>&>(phi.imag());
+        mrcpp::apply(this->prec, out.imag(), H, phi_imag_nc, -1, true); // Absolute prec
+        double sign = (phi.conjugate()) ? 1.0 : -1.0;
+        out.imag().rescale(sign / (-4.0 * mrcpp::pi));
+    }
+    return out;
+}
 } // namespace mrchem

@@ -39,7 +39,7 @@
 
 namespace mrchem {
 
-class HelmholtzVector final {
+class HelmholtzVector {
 public:
     HelmholtzVector(double pr, const DoubleVector &l);
 
@@ -48,11 +48,19 @@ public:
     OrbitalVector apply(RankZeroOperator &V, OrbitalVector &Phi, OrbitalVector &Psi) const;
     OrbitalVector operator()(OrbitalVector &Phi) const;
 
-private:
+protected:
     double prec;         ///< Precision for construction and application of Helmholtz operators
     DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
 
-    Orbital apply(int i, const Orbital &phi) const;
+    virtual Orbital apply(int i, const Orbital &phi) const;
+};
+
+class ResolventVector final : public HelmholtzVector {
+public:
+    using HelmholtzVector::HelmholtzVector;
+
+protected:
+    Orbital apply(int i, const Orbital &phi) const override;
 };
 
 } // namespace mrchem
