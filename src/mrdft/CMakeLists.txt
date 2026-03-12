@@ -7,4 +7,5 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/GGA.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/SpinGGA.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/xc_utils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/xc_func_alias.cpp
     )
