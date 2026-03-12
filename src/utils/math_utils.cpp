@@ -242,7 +242,8 @@ DoubleMatrix solve_symmetric_sylvester(const DoubleMatrix &B, const DoubleMatrix
 
     // 4. Transform back: X = Q X̃ Qᵀ
     DoubleMatrix X = Q * X_tilde * Q.transpose();
-    return 0.5 * (X + X.transpose());
+    //return 0.5 * (X + X.transpose());
+    return X;
 }
 } // namespace math_utils
 } // namespace mrchem

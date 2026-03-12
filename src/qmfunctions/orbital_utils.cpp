@@ -978,39 +978,42 @@ OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVe
             gradDir[j][d] = std::move(gD[d]);
     }
         
-    DoubleVector squared_norms = DoubleVector::Zero(n);
+    DoubleMatrix A_local = DoubleMatrix::Zero(n,n);
     for (int i = 0; i < n; ++i) {
-        double val = 0.0;
-        if (mrcpp::mpi::my_func(Phi[i]))
-            val += std::real(mrcpp::dot(Phi[i], Phi[i]));
-        for (int d = 0; d < 3; ++d)
-            if (mrcpp::mpi::my_func(gradPhi[i][d]))
-                val += std::real(mrcpp::dot(gradPhi[i][d], gradPhi[i][d]));
-        squared_norms(i) = val;
+        for (int j = 0; j < n; ++j) {
+            double val = 0.0;
+            if (mrcpp::mpi::my_func(Phi[i]) && mrcpp::mpi::my_func(Phi[j]))
+                val += std::real(mrcpp::dot(Phi[i], Phi[j]));
+            for (int d = 0; d < 3; ++d)
+                if (mrcpp::mpi::my_func(gradPhi[i][d]) && mrcpp::mpi::my_func(gradPhi[j][d]))
+                    val += std::real(mrcpp::dot(gradPhi[i][d], gradPhi[j][d]));
+            A_local(i,j) = val;
+        }
     }
-
-    mrcpp::mpi::allreduce_vector(squared_norms, mrcpp::mpi::comm_wrk);
 
     DoubleMatrix B_local = DoubleMatrix::Zero(n,n);
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-        double val = 0.0;
+            double val = 0.0;
             if (mrcpp::mpi::my_func(Phi[i]) && mrcpp::mpi::my_func(direction[j]))
                 val += std::real(mrcpp::dot(Phi[i], direction[j]));
             for (int d = 0; d < 3; ++d)
                 if (mrcpp::mpi::my_func(gradPhi[i][d]) && mrcpp::mpi::my_func(gradDir[j][d]))
                     val += std::real(mrcpp::dot(gradPhi[i][d], gradDir[j][d]));
-            B_local(i,j) = val / (squared_norms(i) + squared_norms(j) + mrcpp::MachineZero);
+            B_local(i,j) = val;
         }
     }
+
+    mrcpp::mpi::allreduce_matrix(A_local, mrcpp::mpi::comm_wrk);
 
     mrcpp::mpi::allreduce_matrix(B_local, mrcpp::mpi::comm_wrk);
 
     // ---- compute projected direction ----
-    ComplexMatrix B = B_local.cast<ComplexDouble>();
-    ComplexMatrix A = B - B.transpose();
-    OrbitalVector APhi = orbital::rotate(Phi, A, prec);
-    return orbital::add(1.0, direction, 1.0, APhi, prec);
+    A_local = 0.5 * (A_local + A_local.transpose());
+    B_local = B_local - B_local.transpose();
+    DoubleMatrix minus_omega = mrchem::math_utils::solve_symmetric_sylvester(A_local, B_local);
+    OrbitalVector minus_omega_Phi = orbital::rotate(Phi, minus_omega, prec);
+    return orbital::add(1.0, direction, 1.0, minus_omega_Phi, prec);
 }
 
 OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, OrbitalVector &one_minus_laplacian_Phi, double prec)
