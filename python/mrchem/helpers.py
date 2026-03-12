@@ -122,6 +122,10 @@ def write_scf_fock(user_dict, wf_dict, origin):
             },
         }
 
+    # Exchange-Correlation library
+    if wf_dict["method_type"] in ["dft"]:
+        fock_dict["xc_library"] = user_dict["DFT"]["xc_library"],
+
     # External electric field
     if len(user_dict["ExternalFields"]["electric_field"]) > 0:
         fock_dict["external_operator"] = {
@@ -182,6 +186,9 @@ def _reaction_operator_handler(user_dict, rsp=False):
 def write_scf_guess(user_dict, wf_dict):
     guess_str = user_dict["SCF"]["guess_type"].lower()
     guess_type = guess_str.split("_")[0]
+    nmix = user_dict["SCF"]["initial_mixing_steps"]
+    alpha_mix = user_dict["SCF"]["initial_mixing_step_size"]
+    nao_directory = user_dict["SCF"]["nao_directory"]
     zeta = 0
 
     scf_dict = user_dict["SCF"]
@@ -249,7 +256,13 @@ def write_scf_guess(user_dict, wf_dict):
         "file_CUBE_p": f"{vector_dir}CUBE_p_vector.json",
         "file_CUBE_a": f"{vector_dir}CUBE_a_vector.json",
         "file_CUBE_b": f"{vector_dir}CUBE_b_vector.json",
+        "xc_library": user_dict["DFT"]["xc_library"],
+        "cutoff": user_dict["DFT"]["density_cutoff"],
+        "initial_mixing_steps": nmix,
+        "initial_mixing_step_size": alpha_mix,
     }
+    if nao_directory != "none":
+        guess_dict["nao_directory"] = nao_directory
     return guess_dict
 
 
@@ -279,6 +292,8 @@ def write_scf_solver(user_dict, wf_dict):
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
+        "xc_library": user_dict["DFT"]["xc_library"],
+        "deltascf_method": scf_dict["deltascf_method"],
     }
 
     return solver_dict
@@ -465,6 +480,12 @@ def write_rsp_fock(user_dict, wf_dict):
             },
         }
 
+    # Exchange-Correlation library
+    if wf_dict["method_type"] in ["dft"]:
+        fock_dict["xc_library"] = {
+            "xc_library": user_dict["DFT"]["xc_library"],
+        }
+
     # Reaction
     if user_dict["WaveFunction"]["environment"].lower() != "none":
         fock_dict["reaction_operator"] = _reaction_operator_handler(user_dict, rsp=True)
@@ -495,8 +516,191 @@ def write_rsp_solver(user_dict, wf_dict, d):
         "property_thrs": user_dict["Response"]["property_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
         "orth_prec": 1.0e-14,
+        "xc_library": user_dict["DFT"]["xc_library"],
+        "cutoff": user_dict["DFT"]["density_cutoff"],
     }
     return solver_dict
+
+
+def parse_psppar(filename):
+    """
+    Parses a PSPPAR pseudopotential file and returns the data as a dictionary.
+    
+    Args:
+        filename (str): Path to the PSPPAR file.
+
+    Returns:
+        dict: Parsed pseudopotential data.
+    """
+    psppar_data = dict()
+    psppar_data["local"] = dict()
+    psppar_data["nonlocal"] = dict()
+    
+    with open(filename, 'r') as file:
+        # Skip the first line
+        next(file)
+        
+        # Read zion and zeff
+        line = file.readline().strip()
+        zion = float(line.split()[0])
+        zeff = float(line.split()[1])
+        psppar_data['zion'] = zion
+        psppar_data['zeff'] = zeff
+        
+        # Skip the next line
+        next(file)
+        
+        # Read rloc, nloc, and c coefficients
+        line = file.readline().strip()
+        tokens = line.split()
+        rloc = float(tokens[0])
+        nloc = int(tokens[1])
+        c_coefficients = list(map(float, tokens[2:2+nloc]))
+        
+        alpha_pp = 1.0 / (sqrt(2.0) * rloc)
+        psppar_data['local']['rloc'] = rloc
+        psppar_data['local']['alpha_pp'] = alpha_pp
+        psppar_data['local']['nloc'] = nloc
+        psppar_data['local']['c'] = c_coefficients
+        
+        # Read nsep
+        line = file.readline().strip()
+        nsep = int(line.split()[0])
+        if nsep < 0 or nsep > 4:
+            raise ValueError("Error: nsep must be between 0 and 4.")
+        psppar_data['nonlocal']['nsep'] = nsep
+        
+        # Initialize containers for projectors
+        rl = []
+        h = []
+        dim_h = []
+
+        
+        for l in range(nsep):
+            # Read projector radii and dimension
+            line = file.readline().strip()
+            tokens = line.split()
+            rl_l = float(tokens[0])
+            dim_h_l = int(tokens[1])
+            
+            rl.append(rl_l)
+            dim_h.append(dim_h_l)
+            
+            # Initialize h matrix
+            h_matrix = []
+            for _ in range(dim_h_l):
+                h_matrix.append([0.0] * dim_h_l)
+            # convert h_matrix to list of lists
+
+            for i in range(dim_h_l):
+                h_matrix[0][i] = float(line.split()[2 + i])
+                h_matrix[i][0] = h_matrix[0][i]
+            
+            # Fill in the upper triangle of the h matrix
+            for i in range(1, dim_h_l):
+                line = file.readline().strip()
+                values = list(map(float, line.split()))
+                for j, value in enumerate(values):
+                    h_matrix[i][i + j] = value
+                    h_matrix[i + j][i] = value
+            
+            # h_matrix = h_matrix.tolist()
+            h.append(h_matrix)
+            
+            # Skip irrelevant SOC lines if l > 0
+            if l > 0:
+                for _ in range(dim_h_l):
+                    file.readline()
+            
+        # check if file is at the end
+        line = file.readline()
+        if line: # try to read rcore and qcore
+            words = line.split()
+            if len(words) >= 2:
+                rcore = float(words[0])
+                qcore = float(words[1])
+                psppar_data['nlcc'] = dict()
+                psppar_data['nlcc']['rcore'] = rcore
+                psppar_data['nlcc']['qcore'] = qcore
+            
+        
+        psppar_data['nonlocal']['rl'] = rl
+        psppar_data['nonlocal']['dim_h'] = dim_h
+        psppar_data['nonlocal']['h'] = h
+            
+    return psppar_data
+
+
+def write_pseudo_potential(user_dict, mol_dict):
+    import json
+
+    pp_dict_out = {
+        "use_pp": False,
+        "pp_prec": user_dict["Pseudopotential"]["pp_prec"],
+    }
+
+    # if "Pseudopotential" not in user_dict:
+    #     return []
+
+    pp_dict = json.loads(user_dict['Pseudopotential']['pp_files'])
+
+    # loop over keys in pp_dict and convert them to lower case
+    pp_dict = {k.lower(): v for k, v in pp_dict.items()}
+    all_elements = {k.lower() for k in user_dict["Elements"]}
+
+    int_keys = []
+    # check if all keys in pp_dict are valid elements and collect the integer keys
+    for key in pp_dict.keys():
+        if key not in all_elements:
+            try:
+                int_keys.append(int(key))
+            except ValueError:
+                raise RuntimeError(
+                    f"Invalid key in pseudopotential dictionary (neither a numeric value or an element): {key}"
+                )
+
+    nat = len(mol_dict["coords"])
+    atomNames = []
+    atomNamesSet = set()
+    for atom in mol_dict["coords"]:
+        atomNames.append(atom["atom"])
+        atomNamesSet.add(atom["atom"])
+    
+    pps = []
+    for i in range(nat):
+        key = ''
+        if i in int_keys:
+            key = str(i)
+        # check if the key is an element
+        elif atomNames[i] in pp_dict.keys():
+            key = atomNames[i]
+        # if none of the above, all electron calculation for atom i
+        else:
+            pp = {
+                "use_pp": False,
+            }
+            pps.append(pp)
+        
+        if key != "":
+            if pp_dict[key].lower() == "none" or pp_dict[key].lower() == "":
+                pp = {
+                    "use_pp": False,
+                }
+            else:
+                pp = {
+                    "use_pp": True,
+                    "file": pp_dict[key],
+                }
+                pp_dict_out["use_pp"] = True
+                # temp_string = json.dumps(temp_pp, indent=4, cls=NumpyEncoder)
+                # print("Parsed pseudopotential for element:", key, "\n \n")
+                # print(temp_string)
+                # print("\n \n \n")
+                pp['pseuodopotential'] = parse_psppar(pp["file"])
+            pps.append(pp)
+    # print(pps)
+    pp_dict_out["pp_list"] = pps
+    return pp_dict_out
 
 
 def parse_wf_method(user_dict):
@@ -599,7 +803,6 @@ def parse_wf_method(user_dict):
     wf_dict["dft_funcs"] = dft_funcs
     return wf_dict
 
-
 def compute_kappa(constants, eps, I):
     kb = constants["boltzmann_constant"]
     e = constants["elementary_charge"]
@@ -614,3 +817,93 @@ def compute_kappa(constants, eps, I):
     debye_length = sqrt(numerator / denominator) * m2au
 
     return 1.0 / debye_length
+ 
+# Error/warning messages
+ERROR_MESSAGE_ORBITAL_OCCUPANCIES = (
+    lambda details: f"ABORT: INVALID ORBITAL OCCUPANCIES: {details}"
+)
+    
+def write_scf_occupancies(user_dict):
+    """Convert orbital occupancies from JSON syntax to program syntax."""
+    # First validate the input file
+    orbitals, occupancies = validate_orbital_occupancies(user_dict)
+    
+    return [
+        {"orbital": orbital, "occupancy": occupancy}
+        for orbital, occupancy in zip(orbitals, occupancies)
+    ]
+    
+def validate_orbital_occupancies(user_dict):
+    """Parse the $occupancies block and ensure correct formatting."""
+    import re
+    
+    # Regex components
+    line_start = r"^"
+    line_end = r"$"
+    decimal = r"[+-]?([0-9]+\.?[0-9]*|\.[0-9]+)"
+    integer = r"[0-9]+"
+    one_or_more_whitespace = r"[\s]+"
+    zero_or_more_whitespace = r"[\s]*"
+
+    # Build regex
+    restricted_occupancies = (
+        line_start
+        + zero_or_more_whitespace
+        + integer
+        + (one_or_more_whitespace + decimal)
+        + zero_or_more_whitespace
+        + line_end
+    )
+    unrestricted_occupancies = (
+        line_start
+        + zero_or_more_whitespace
+        + integer
+        + (one_or_more_whitespace + decimal) * 2
+        + zero_or_more_whitespace
+        + line_end
+    )
+
+    occ_restricted = re.compile(restricted_occupancies)
+    occ_unrestricted = re.compile(unrestricted_occupancies)
+    
+    occs_raw = user_dict["OrbitalOccupancies"]["occupancies"]
+
+    lines = [x.strip() for x in occs_raw.strip().splitlines() if x != ""]
+    # Parse coordinates
+    orbitals = []
+    occupancies = []
+    bad_occupancies = []
+    for occ in lines:
+        match_restricted = occ_restricted.match(occ)
+        match_unrestricted = occ_unrestricted.match(occ)
+        if match_restricted:
+            g = match_restricted.group()
+            orbitals.append(int(g.split()[0].strip()))
+            occupancies.append([float(c.strip()) for c in g.split()[1:]])
+        elif match_unrestricted:
+            g = match_unrestricted.group()
+            orbitals.append(int(g.split()[0].strip()))
+            occupancies.append([float(c.strip()) for c in g.split()[1:]])
+        else:
+            bad_occupancies.append(occ)
+
+    if bad_occupancies:
+        newline = "\n"
+        raise RuntimeError(
+            ERROR_MESSAGE_ORBITAL_OCCUPANCIES(
+                f"One or more orbital occupancies had an invalid input format:\n{newline.join(bad_occupancies)}"
+            )
+        )
+
+    # Check that the orbital is valid - we would need the total number of orbitals to do this properly
+    # so here we just check the index isn't negative
+    fltr = filter(lambda x: x < 0, orbitals)
+    if any(list(fltr)):
+        newline = "\n"
+        raise RuntimeError(
+            self.ERROR_MESSAGE_ORBITAL_OCCUPANCIES(
+                f"One or more invalid atomic symbols:\n{newline.join(set(fltr))}"
+            )
+        )
+
+    return orbitals, occupancies

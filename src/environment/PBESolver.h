@@ -69,6 +69,8 @@ public:
               int max_iter,
               bool dyn_thrs,
               SCRFDensityType density_type);
+    
+    ~PBESolver() override;
 
     friend class ReactionPotential;
 

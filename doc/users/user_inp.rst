@@ -239,7 +239,8 @@ Here we specify the exchange-correlation functional used in DFT
 
     DFT {
       spin = false                          # Use spin-polarized functionals
-      density_cutoff = 0.0                  # Cutoff to set XC potential to zero
+      density_cutoff = 1e-11                # Cutoff to set XC potential to zero
+      xc_library = xcfun                    # Specify XC functional library
     $functionals
     <func1>     1.0                         # Functional name and coefficient
     <func2>     1.0                         # Functional name and coefficient
@@ -254,7 +255,8 @@ of exact Hartree-Fock exchange as a separate functional
 ``EXX`` (``EXX 0.2`` for B3LYP and ``EXX 0.25`` for PBE0 etc.). Option to use
 spin-polarized functionals or not. Unrestricted calculations will use
 spin-polarized functionals by default. The XC functionals are provided by the
-`XCFun <https://github.com/dftlibs/xcfun>`_ library.
+`XCFun <https://github.com/dftlibs/xcfun>`_ library by default, but can be 
+changed with the keyword ``xc_library`` to use either XCFun or `Libxc <https://libxc.gitlab.io/>`_ .
 
 Properties
 ----------
@@ -380,6 +382,7 @@ The optimization is controlled by the following keywords (defaults shown):
       final_prec = -1.0                     # Dynamic precision, final value
       orbital_thrs = 10 * world_prec        # Convergence threshold orbitals
       energy_thrs = -1.0                    # Convergence threshold energy
+      deltascf_method = none                # Method to use for a DeltaSCF calculation
     }
 
 If ``run = false`` no SCF is performed, and the properties are computed directly
@@ -407,6 +410,9 @@ converge the orbitals this much due to the quadratic convergence of the energy.
 This means that the number of correct digits in the total energy will be
 saturated well before this point, and one should rather use the ``energy_thrs``
 keyword in this case in order to save a few iterations.
+
+There is also the possibility to run a DeltaSCF calculation using either the
+``MOM`` or ``IMOM`` method.
 
 .. note::
 

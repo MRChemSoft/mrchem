@@ -1,0 +1,30 @@
+#!/usr/bin/env python3
+
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from tester import *  # isort:skip
+
+options = script_cli()
+
+rel_tolerances = 1.0e-4
+
+filters = {
+    SUM_OCCUPIED: rel_tolerance(rel_tolerances),
+    E_KIN: rel_tolerance(rel_tolerances),
+    E_EN: rel_tolerance(rel_tolerances),
+    E_EE: rel_tolerance(rel_tolerances),
+    E_X: rel_tolerance(rel_tolerances),
+    E_XC: rel_tolerance(rel_tolerances),
+    E_EEXT: rel_tolerance(rel_tolerances),
+    E_NEXT: rel_tolerance(rel_tolerances),
+    E_EL: rel_tolerance(rel_tolerances),
+}
+
+print(options)
+ierr = run(options, input_file="na_pp", filters=filters)
+
+
+sys.exit(ierr)

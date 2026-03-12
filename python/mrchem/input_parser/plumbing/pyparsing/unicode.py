@@ -2,7 +2,7 @@
 
 import sys
 from itertools import filterfalse
-from typing import List, Tuple, Union
+from typing import Union
 
 
 class _lazyclassproperty:
@@ -25,7 +25,7 @@ class _lazyclassproperty:
         return cls._intern[attrname]
 
 
-UnicodeRangeList = List[Union[Tuple[int, int], Tuple[int]]]
+UnicodeRangeList = list[Union[tuple[int, int], tuple[int]]]
 
 
 class unicode_set:
@@ -53,59 +53,61 @@ class unicode_set:
     _ranges: UnicodeRangeList = []
 
     @_lazyclassproperty
-    def _chars_for_ranges(cls):
-        ret = []
-        for cc in cls.__mro__:
+    def _chars_for_ranges(cls) -> list[str]:
+        ret: list[int] = []
+        for cc in cls.__mro__:  # type: ignore[attr-defined]
             if cc is unicode_set:
                 break
             for rr in getattr(cc, "_ranges", ()):
                 ret.extend(range(rr[0], rr[-1] + 1))
-        return [chr(c) for c in sorted(set(ret))]
+        return sorted(chr(c) for c in set(ret))
 
     @_lazyclassproperty
-    def printables(cls):
+    def printables(cls) -> str:
         """all non-whitespace characters in this range"""
         return "".join(filterfalse(str.isspace, cls._chars_for_ranges))
 
     @_lazyclassproperty
-    def alphas(cls):
+    def alphas(cls) -> str:
         """all alphabetic characters in this range"""
         return "".join(filter(str.isalpha, cls._chars_for_ranges))
 
     @_lazyclassproperty
-    def nums(cls):
+    def nums(cls) -> str:
         """all numeric digit characters in this range"""
         return "".join(filter(str.isdigit, cls._chars_for_ranges))
 
     @_lazyclassproperty
-    def alphanums(cls):
+    def alphanums(cls) -> str:
         """all alphanumeric characters in this range"""
         return cls.alphas + cls.nums
 
     @_lazyclassproperty
-    def identchars(cls):
+    def identchars(cls) -> str:
         """all characters in this range that are valid identifier characters, plus underscore '_'"""
         return "".join(
             sorted(
-                set(
-                    "".join(filter(str.isidentifier, cls._chars_for_ranges))
-                    + "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzªµº"
-                    + "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
-                    + "_"
+                set(filter(str.isidentifier, cls._chars_for_ranges))
+                | set(
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzªµº"
+                    "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
+                    "_"
                 )
             )
         )
 
     @_lazyclassproperty
-    def identbodychars(cls):
+    def identbodychars(cls) -> str:
         """
         all characters in this range that are valid identifier body characters,
         plus the digits 0-9, and · (Unicode MIDDLE DOT)
         """
         identifier_chars = set(
-            c for c in cls._chars_for_ranges if ("_" + c).isidentifier()
+            c for c in cls._chars_for_ranges if f"_{c}".isidentifier()
         )
-        return "".join(sorted(identifier_chars | set(cls.identchars + "0123456789·")))
+        return "".join(
+            sorted(identifier_chars | set(cls.identchars) | set("0123456789·"))
+        )
 
     @_lazyclassproperty
     def identifier(cls):

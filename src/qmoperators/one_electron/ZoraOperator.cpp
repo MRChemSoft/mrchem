@@ -61,7 +61,6 @@ ZoraOperator::ZoraOperator(QMPotential &vz, double c, double proj_prec, bool inv
     } else {
         chi.name() = "chi";
     }
-    auto plevel = Printer::getPrintLevel();
     print_utils::qmfunction(2, "ZORA operator (" + chi.name() + ")", *k, timer);
 }
 

@@ -58,17 +58,9 @@ MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const 
     Vector3d r_vect;
     double r;
     double r2, r3;
-    double temp;
-    double c, q;
-    double c2, c3;
-    double c3_times_sqrt_pi_times_three;
-    double sqrt_pi = std::sqrt(M_PI);
+    double q;
     for (int i = 0; i < nNuc; ++i) {
-        c = nucSmoothing(i);
         q = nucCharge(i);
-        c2 = c * c;
-        c3 = c2 * c;
-        c3_times_sqrt_pi_times_three = 3. * std::sqrt(M_PI) * c3;
         for (int j = 0; j < nGrid; j++) {
             r_vect = nucPos.row(i) - gridPos.row(j);
             r = r_vect.norm();
@@ -162,11 +154,6 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
     // That way, only second derivatives of density is needed which speeds things up. quite a lot.
 
     int nGrid = gridPos.rows();
-    int nOrbs = Phi.size();
-
-    double StressArray[nGrid][3][3];
-
-    double orbVal;
     std::vector<Matrix3d> stress(nGrid);
 
     Eigen::MatrixXd voigtStress = Eigen::MatrixXd::Zero(nGrid, 6);
@@ -250,7 +237,7 @@ VectorXd distanceToNearestNeighbour(MatrixXd pos) {
  */
 Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi, double prec, const json &json_fock, std::string leb_prec, double radius_factor) {
 
-    if (radius_factor > 0.95 && radius_factor < 0.05) { MSG_ABORT("Invalid value of radius_factor") }
+    if (radius_factor > 0.95 || radius_factor < 0.05) { MSG_ABORT("Invalid value of radius_factor") }
 
     // setup density
     mrchem::Density rho(false);
@@ -283,7 +270,6 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     }
     // setup xc stuff:
     int order = 0;
-    bool shared_memory = json_fock["xc_operator"]["shared_memory"];
     auto json_xcfunc = json_fock["xc_operator"]["xc_functional"];
     bool xc_spin = json_xcfunc["spin"];
     auto xc_cutoff = json_xcfunc["cutoff"];
@@ -332,7 +318,6 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     VectorXd dist = distanceToNearestNeighbour(posmatrix);
 
     int nLebPoints = 0;
-    int nTinyPoints = 1;
     if (leb_prec == "low") {
         nLebPoints = 194;
     } else if (leb_prec == "medium") {

@@ -45,10 +45,11 @@ auto lebedev(size_t N) -> std::tuple<Eigen::VectorXd, Eigen::Matrix3Xd> {
     const auto lb = std::lower_bound(available.cbegin(), available.cend(), N);
     auto closest = (lb == available.cend()) ? available.back() : *lb;
 
-    if (lb != available.cbegin()) {
-        auto prec = lb - 1;
-        if (std::abs<int>(closest - N) > std::abs<int>(*prec - N)) closest = *prec;
-    }
+  if (lb != available.cbegin()) {
+    auto prec = lb - 1;
+	    if (std::abs<int>((int)(closest - N)) > std::abs<int>((int)(*prec - N)))
+      closest = *prec;
+  }
 
     switch (closest) {
         case 6:
@@ -116,8 +117,8 @@ auto lebedev(size_t N) -> std::tuple<Eigen::VectorXd, Eigen::Matrix3Xd> {
         case 5810:
             return detail::Lebedev_131_5810::quadrature();
 
-        default:
-            // FIXME error handling
-            std::abort();
-    }
+    default:
+      // FIXME error handling
+      std::abort();
+  }
 }

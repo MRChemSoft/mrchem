@@ -490,14 +490,18 @@ ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
  */
 Orbital RankZeroOperator::applyOperTerm(int n, const Orbital &inp) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
-    Orbital out;
-    mrcpp::deep_copy(out, inp);
+    Orbital out = inp.paramCopy(true);
 
     if (inp.getNNodes() == 0) return out;
     int i = 0;
     for (auto O_nm : this->oper_exp[n]) {
         if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
-        out = O_nm->apply(out);
+        if (i==0) {
+            out = O_nm->apply(inp);
+        } else {
+            out = O_nm->apply(out);
+        }
+        i++;
     }
     return out;
 }

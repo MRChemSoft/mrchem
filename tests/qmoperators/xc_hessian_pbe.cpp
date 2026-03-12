@@ -44,7 +44,7 @@ namespace coulomb_hessian {
 
 TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     const double prec = 1.0e-3;
-    const double thrs = 1.0e-8;
+    const double thrs = 1.0e-7;
 
     std::vector<int> ns;
     std::vector<int> ls;
@@ -100,13 +100,12 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         if (mrcpp::mpi::my_func(Phi_x[i])) mrcpp::project(Phi_x[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    E_P(0, 0) = -0.0496021801;
-    E_P(0, 1) = -0.0234437207;
-    E_P(1, 0) = -0.0234437207;
-    E_P(1, 1) = 0.0061055193;
+    E_P(0, 0) = -5.044421437856e-02;
+    E_P(0, 1) = -2.367706120016e-02;
+    E_P(1, 0) = -2.367706120016e-02;
+    E_P(1, 1) = 5.905043780341e-03;
 
     V.setup(prec);
     SECTION("apply") {

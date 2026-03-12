@@ -83,13 +83,13 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
     // reference values obtained with a test run at order=9 in unit_test.cpp and prec=1.0e-5 here
 
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
-    E_P(0, 0) = -0.4574999901;
-    E_P(0, 1) = -0.0593789497;
-    E_P(1, 0) = -0.0593789497;
-    E_P(1, 1) = -0.1894199551;
-    E_P(2, 2) = -0.2109971956;
-    E_P(3, 3) = -0.2109971956;
-    E_P(4, 4) = -0.2109971956;
+    E_P(0, 0) = -0.4575796342;
+    E_P(0, 1) = -0.0594481220;
+    E_P(1, 0) = -0.0594481220;
+    E_P(1, 1) = -0.1894534101;
+    E_P(2, 2) = -0.2109681364;
+    E_P(3, 3) = -0.2109681364;
+    E_P(4, 4) = -0.2109681364;
 
     V.setup(prec);
     SECTION("apply") {

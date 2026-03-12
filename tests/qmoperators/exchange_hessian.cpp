@@ -101,7 +101,6 @@ TEST_CASE("ExchangeHessian", "[exchange_hessian]") {
         if (mrcpp::mpi::my_func(Phi_x[i])) mrcpp::project(Phi_x[i], f, prec);
     }
 
-    int i = 0;
     DoubleMatrix E = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
     E(0, 0) = 0.0625327715;

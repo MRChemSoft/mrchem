@@ -28,7 +28,7 @@
 
 namespace mrchem {
 
-class CUBEfunction final : public mrcpp::RepresentableFunction<3> {
+class CUBEfunction final : public mrcpp::RepresentableFunction<3, double> {
 public:
     CUBEfunction(const int N_atoms,
                  const int N_vals,

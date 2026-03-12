@@ -40,16 +40,16 @@ public:
             , molecule(&mol) {}
 
     void linePlot(const std::array<int, 1> &npts, const mrcpp::CompFunction<3> &func, const std::string &fname) {
-        if (func.hasReal()) linePlot(npts, func.real(), fname + "_re");
-        if (func.hasImag()) linePlot(npts, func.imag(), fname + "_im");
+        if (func.isreal()) linePlot(npts, func, fname + "_re");
+        if (func.iscomplex()) MSG_ERROR("Not implemented"); // linePlot(npts, func.imag(), fname + "_im");
     }
     void surfPlot(const std::array<int, 2> &npts, const mrcpp::CompFunction<3> &func, const std::string &fname) {
-        if (func.hasReal()) surfPlot(npts, func.real(), fname + "_re");
-        if (func.hasImag()) surfPlot(npts, func.imag(), fname + "_im");
+        if (func.isreal()) surfPlot(npts, func, fname + "_re");
+        if (func.iscomplex()) MSG_ERROR("Not implemented"); // surfPlot(npts, func.imag(), fname + "_im");
     }
     void cubePlot(const std::array<int, 3> &npts, const mrcpp::CompFunction<3> &func, const std::string &fname) {
-        if (func.hasReal()) cubePlot(npts, func.real(), fname + "_re");
-        if (func.hasImag()) cubePlot(npts, func.imag(), fname + "_im");
+        if (func.isreal()) cubePlot(npts, func, fname + "_re");
+        if (func.iscomplex()) MSG_ERROR("Not implemented"); // cubePlot(npts, func.imag(), fname + "_im");
     }
 
     using Plotter<3>::linePlot;

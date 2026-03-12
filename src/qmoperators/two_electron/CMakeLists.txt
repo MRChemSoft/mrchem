@@ -13,4 +13,5 @@ target_sources(mrchem
     ${CMAKE_CURRENT_SOURCE_DIR}/ReactionPotential.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ReactionPotentialD1.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ReactionPotentialD2.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/two_electron_utils.cpp
   )

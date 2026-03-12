@@ -50,10 +50,10 @@ public:
         return result;
     }
 
-    std::string getParamName1() const { return "Precision"; }
-    std::string getParamName2() const { return "Smoothing"; }
-    double calcParam1(double prec, const Nucleus &nuc) const { return prec; }
-    double calcParam2(double prec, const Nucleus &nuc) const {
+    std::string getParamName1() const override { return "Precision"; }
+    std::string getParamName2() const override { return "Smoothing"; }
+    double calcParam1(double prec, const Nucleus &nuc) const override { return prec; }
+    double calcParam2(double prec, const Nucleus &nuc) const override {
         auto Z = nuc.getCharge();
         double tmp = 0.00435 * prec / std::pow(Z, 5.0);
         return std::cbrt(tmp);
