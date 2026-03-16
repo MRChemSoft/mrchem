@@ -221,6 +221,7 @@ def update_periodic_table():
 def run_parselglossy():
     os.chdir(root)
     pyparsing_path = target.joinpath("plumbing", "pyparsing")
+    print("pyparsing_path:", pyparsing_path)
     if os.path.isdir(pyparsing_path):
         print(f"{pyparsing_path} already exists. Please delete this directory to run the script.")
     else:

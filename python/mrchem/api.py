@@ -146,6 +146,7 @@ def write_scf_calculation(user_dict, origin):
     scf_dict = {}
     scf_dict["fock_operator"] = write_scf_fock(user_dict, wf_dict, origin)
     scf_dict["initial_guess"] = write_scf_guess(user_dict, wf_dict)
+    scf_dict["spinor_components"] = wf_dict["spinor_components"]
 
     path_orbitals = user_dict["SCF"]["path_orbitals"]
     if user_dict["SCF"]["write_orbitals"]:

@@ -329,11 +329,11 @@ sections:
           Point-like (numerical smoothing): HFYGB (default), parabola or minimal.
           Finite models (physical smoothing): Gaussian or Homogeneous sphere
           Finite models are derived from nuclear RMS radius, Visscher (1997)
-      - name: components
+      - name: spinor_components
         type: int
         default: 1
         predicates:
-          - 1 <= value <= 4
+          - 0 < value < 5
         docstring: |
           Number of spinor components in the wavefunction. 1 corresponds to scalar wavefunctions, 
           2 for Weyl or Pauli spinors (Standard for 2C methods), and 4 represent Dirac spinors.
