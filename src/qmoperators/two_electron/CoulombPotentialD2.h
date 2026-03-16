@@ -29,6 +29,7 @@
 
 namespace mrchem {
 
+//1st order response implementation of the Coulomb potential
 class CoulombPotentialD2 final : public CoulombPotential {
 public:
     CoulombPotentialD2(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, std::shared_ptr<OrbitalVector> X, std::shared_ptr<OrbitalVector> Y, bool mpi_share = false);

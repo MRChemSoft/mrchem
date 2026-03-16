@@ -52,7 +52,12 @@
 namespace mrchem {
 
 // Note: cannot only define "getSpin()", because sometime we only have a CompFunction, not an Orbital
-#define spin() func_ptr->data.n1[0]
+#define spin() func_ptr->data.n1[0]  //default spin for 1 component
+// #define spinidx(i) func_ptr->data.n1[i] //spin for component i, if multiple components are defined
+// #define EXPAND(x)                           x
+// #define GET_MACRO(_1, name, ...)    name
+// #define spin(...)    EXPAND( GET_MACRO(__VA_ARGS__, spinidx, spindef)(__VA_ARGS__) )
+
 #define occ() func_ptr->data.d1[0]
 class Orbital : public mrcpp::CompFunction<3> {
 public:

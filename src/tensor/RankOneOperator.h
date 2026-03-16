@@ -50,7 +50,7 @@ public:
     For 4 component (Dirac) spinors, alpha = 0,1,2,3 corresponds to indentiy, alpha_x, y and z respectively, and alpha = 4 corresponds to the beta matrix
     */
     std::vector<Orbital> operator()(Orbital phi, int alpha = 0); // NB: not an "OrbitalVector", because is not related to MPI.
-    ComplexVector operator()(Orbital bra, Orbital ket, int alpha = 0);
+    ComplexVector operator()(Orbital bra, Orbital ket);
     ComplexVector trace(OrbitalVector &phi);
     ComplexVector trace(OrbitalVector &phi, OrbitalVector &x, OrbitalVector &y);
     ComplexVector trace(const Nuclei &nucs);

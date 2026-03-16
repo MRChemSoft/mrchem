@@ -114,7 +114,7 @@ void build_fock_operator(const json &input, Molecule &mol, FockBuilder &F, int o
 void init_properties(const json &json_prop, Molecule &mol);
 
 namespace scf {
-bool guess_orbitals(const json &input, Molecule &mol);
+bool guess_orbitals(const json &input, Molecule &mol, int n_components = 1);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
 void write_orbitals_txt(const json &input, Molecule &mol);
@@ -244,28 +244,40 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
  */
 json driver::scf::run(const json &json_scf, Molecule &mol) {
     // print_utils::headline(0, "Computing Ground State Wavefunction");
+    std::cout << "driver::scf::run start"  << json_scf["spinor_components"]<< std::endl;
     json json_out = {{"success", true}};
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::scf::run Fock start" << std::endl;
     FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
-    driver::build_fock_operator(json_fock, mol, F, 0);
+    driver::build_fock_operator(json_fock, mol, F, 0); //todo
 
     // Pre-compute internal exchange contributions
     if (F.getExchangeOperator()) F.getExchangeOperator()->setPreCompute();
 
     ///////////////////////////////////////////////////////////
+    // WAVEFUNCTION COMPONENTS
+    ///////////////////////////////////////////////////////////
+    int n_components = json_scf["spinor_components"];
+    std::cout << "driver::scf::run n_components: " << n_components << std::endl;
+
+    ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::scf::run Initial Guess start" << std::endl;
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
-    if (scf::guess_orbitals(json_guess, mol)) {
+    std::cout << "driver::scf::run Initial Guess start 2" << std::endl;
+    if (scf::guess_orbitals(json_guess, mol, n_components)) {
+        std::cout << "driver::scf::run Initial Guess start success" << std::endl;
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
     } else {
+        std::cout << "driver::scf::run Initial Guess start failed" << std::endl;
         json_out["success"] = false;
         return json_out;
     }
@@ -273,6 +285,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////   Optimizing Ground State Orbitals  ////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::scf::run Optimisation start" << std::endl;
 
     // Run GroundStateSolver if present in input JSON
     if (json_scf.contains("scf_solver")) {
@@ -339,7 +352,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
  *
  * This function expects the "initial_guess" subsection of the input.
  */
-bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
+bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol, int n_components) {
     auto prec = json_guess["prec"];
     auto zeta = json_guess["zeta"];
     auto type = json_guess["type"];
@@ -356,9 +369,12 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
-    auto n_components = json_guess["components"];
+    std::cout << "driver::scf::guess_orbitals -- json done until n_components" << std::endl;
+    // int n_components = json_guess["spinor_components"];
+    std::cout << "driver::scf::guess_orbitals -- json done" << n_components << " " << std::endl;
 
     int mult = mol.getMultiplicity();
+    std::cout << "driver::scf::guess_orbitals -- multiplicity: " << mult << std::endl;
     if (restricted && mult != 1) {
         MSG_ERROR("Restricted open-shell not supported");
         return false;
@@ -366,6 +382,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
 
     // Figure out number of electrons
     int Ne = mol.getNElectrons(); // total electrons
+    std::cout << "driver::scf::guess_orbitals -- number of electrons: " << Ne << std::endl;
     int Ns = mult - 1;            // single occ electrons
     int Nd = Ne - Ns;             // double occ electrons
     if (Nd % 2 != 0) {
@@ -378,13 +395,25 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     int Nb = (restricted) ? 0 : Nd / 2;       // beta orbitals
     int Np = (restricted) ? Nd / 2 : 0;       // paired orbitals
 
+
     // Fill orbital vector
     auto &nucs = mol.getNuclei();
+    std::cout << "driver::scf::guess_orbitals -- nuclei ok" << std::endl;
     auto &Phi = mol.getOrbitals();
-    for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired, n_components));
+    std::cout << "driver::scf::guess_orbitals -- orbitals ok a" << Phi.size() << " " << Np << std::endl;
+    // for (auto p = 0; p < Np; p++) Phi.push_back(Orbital(SPIN::Paired, n_components));
+    // Orbital tut(SPIN::Paired, n_components);
+    std::cout << "driver::scf::guess_orbitals -- orbital test" << SPIN::Paired << std::endl;
+    for (auto p = 0; p < Np; p++) {
+        std::cout << "driver::scf::guess_orbitals -- pushing paired orbital " << p+1 << "/" << Np << std::endl;
+        Phi.push_back(Orbital(SPIN::Paired, n_components));
+        std::cout << "driver::scf::guess_orbitals -- tut " << std::endl;
+    }
     for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha, n_components));
     for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta, n_components));
-    Phi.distribute();
+    std::cout << "driver::scf::guess_orbitals -- orbital vector filled 1" << std::endl;
+    Phi.distribute(); //sets the rank of each orbital (i^th orbital gets rank i), to order them
+    std::cout << "driver::scf::guess_orbitals -- orbital vector distributed " << Phi.size() << std::endl;
 
     //remove when implemented
     if (n_components > 1 && (type != "sad" ||  type != "sad_gto")) {
@@ -392,6 +421,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
         return false;
     }
 
+    std::cout << "driver::scf::guess_orbitals -- orbital vector complete" << std::endl;
     //create initial guess
     auto success = true;
     //todo: update to multicomponent functions
@@ -402,9 +432,11 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     } else if (type == "core") {
         success = initial_guess::core::setup(Phi, prec, nucs, zeta);
     } else if (type == "sad") {
+        std::cout << "driver::scf::guess_orbitals -- SAD setup start" << std::endl;
         success = initial_guess::sad::setup(Phi, prec, screen, nucs, zeta, n_components);
     } else if (type == "sad_gto") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs, n_components);
+        std::cout << "driver::scf::guess_orbitals -- SAD GTO setup start" << std::endl;
+        success = initial_guess::sad::setupGTO(Phi, prec, screen, nucs, n_components);
     } else if (type == "gto") {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {
@@ -415,6 +447,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
     }
     for (const auto &phi_i : Phi) {
         double err = (mrcpp::mpi::my_func(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
+        std::cout << "driver::scf::guess_orbitals -- orbital norm : " << phi_i.norm() << std::endl;
         if (err > 0.01) MSG_WARN("MO not normalized!");
     }
 
@@ -423,6 +456,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol) {
 }
 
 bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilder &F) {
+    std::cout << "driver::scf::guess_energy start" << std::endl;
     auto prec = json_guess["prec"];
     auto method = json_guess["method"];
     auto relativity = json_guess["relativity"];
@@ -430,6 +464,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
+    std::cout << "driver::scf::guess_energy -- json done" << std::endl;
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
@@ -449,12 +484,19 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto &nucs = mol.getNuclei();
     auto &F_mat = mol.getFockMatrix();
 
+    std::cout << "driver::scf::guess_energy -- Fock matrix setup start" << std::endl;
+
     F_mat = ComplexMatrix::Zero(Phi.size(), Phi.size());
     if (localize && rotate) orbital::localize(prec, Phi, F_mat);
 
+    std::cout << "driver::scf::guess_energy -- Fock matrix setup done, orbitals localised" << std::endl;
+
     F.setup(prec);
+    std::cout << "driver::scf::guess_energy -- Fock operator setup done" << std::endl;
     F_mat = F(Phi, Phi);
+    std::cout << "driver::scf::guess_energy -- Fock matrix computed" << std::endl;
     mol.getSCFEnergy() = F.trace(Phi, nucs);
+    std::cout << "driver::scf::guess_energy -- SCF energy computed" << std::endl;
     F.clear();
 
     if (not localize && rotate) orbital::diagonalize(prec, Phi, F_mat);
@@ -1080,6 +1122,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     ///////////////      Momentum Operator    /////////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::build_fock_operator: Building Momentum operator..." << std::endl;
     if (json_fock.contains("kinetic_operator")) {
         auto kin_diff = json_fock["kinetic_operator"]["derivative"];
         auto D_p = driver::get_derivative(kin_diff);
@@ -1089,17 +1132,21 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     //////////////////   Nuclear Operator   ///////////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::build_fock_operator: I'm nuclear " << std::endl;
     if (json_fock.contains("nuclear_operator")) {
         auto nuc_model = json_fock["nuclear_operator"]["nuclear_model"];
         auto proj_prec = json_fock["nuclear_operator"]["proj_prec"];
         auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"];
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"];
+        std::cout << "driver::build_fock_operator: I'm wild" << std::endl;
         auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, nuc_model);
+        std::cout << "driver::build_fock_operator: I'm breaking up inside " << std::endl;
         F.getNuclearOperator() = V_p;
     }
     ///////////////////////////////////////////////////////////
     //////////////////////   Zora Operator   //////////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::build_fock_operator: Zora temple" << std::endl;
     if (json_fock.contains("zora_operator")) {
         auto c = PhysicalConstants::get("light_speed");
         F.setLightSpeed(c);
@@ -1140,14 +1187,21 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     ///////////////////////////////////////////////////////////
     //////////////////   Coulomb Operator   ///////////////////
     ///////////////////////////////////////////////////////////
+    std::cout << "driver::build_fock_operator: Building Coulomb operator..." << std::endl;
     if (json_fock.contains("coulomb_operator")) {
+        std::cout << "driver::build_fock_operator: tut 1" << std::endl;
         auto poisson_prec = json_fock["coulomb_operator"]["poisson_prec"];
         auto shared_memory = json_fock["coulomb_operator"]["shared_memory"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         if (order == 0) {
+            std::cout << "driver::build_fock_operator: tut pert order 0" << std::endl;
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
             F.getCoulombOperator() = J_p;
+            std::cout << "driver::build_fock_operator: AAAAAAAAAAAAAAAAAAAAAAAAA before" << std::endl;
+            F.setup(1e-3);
+            std::cout << "driver::build_fock_operator: AAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         } else if (order == 1) {
+            std::cout << "driver::build_fock_operator: tut pert order 1" << std::endl;
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
             F.getCoulombOperator() = J_p;
         } else {
@@ -1293,6 +1347,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     /////////////////   Exchange Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("exchange_operator") and exx > mrcpp::MachineZero) {
+        std::cout << "driver::build_fock_operator: Building exchange operator" << std::endl;
         auto exchange_prec = json_fock["exchange_operator"]["exchange_prec"];
         auto poisson_prec = json_fock["exchange_operator"]["poisson_prec"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
@@ -1313,6 +1368,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
+    std::cout << "driver::build_fock_operator: finally building the fock operator" << std::endl;
     F.build(exx);
 }
 

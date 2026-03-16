@@ -109,20 +109,20 @@ ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, OrbitalVector
  * of symmetry and getting away with only first-derivative operators.
  */
 ComplexMatrix qmoperator::calc_kinetic_matrix(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
-    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component(0, p, V, bra, ket); //todo: mettre à jouer pour calcul spinoriel
-    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component(1, p, V, bra, ket);
-    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component(2, p, V, bra, ket);
+    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component(0, p, V, bra, ket, spinorial); 
+    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component(1, p, V, bra, ket, spinorial);
+    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component(2, p, V, bra, ket, spinorial);
     return T_x + T_y + T_z;
 }
 
 ComplexMatrix qmoperator::calc_kinetic_matrix_symmetrized(MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
-    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component_symmetrized(0, p, V, bra, ket);
-    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component_symmetrized(1, p, V, bra, ket);
-    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component_symmetrized(2, p, V, bra, ket);
+    ComplexMatrix T_x = qmoperator::calc_kinetic_matrix_component_symmetrized(0, p, V, bra, ket, spinorial);
+    ComplexMatrix T_y = qmoperator::calc_kinetic_matrix_component_symmetrized(1, p, V, bra, ket, spinorial);
+    ComplexMatrix T_z = qmoperator::calc_kinetic_matrix_component_symmetrized(2, p, V, bra, ket, spinorial);
     return T_x + T_y + T_z;
 }
 
-ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket, bool spinorial) {
+ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator &p, OrbitalVector &bra, OrbitalVector &ket) {
     Timer timer;
     int Ni = bra.size();
     int Nj = ket.size();
@@ -155,15 +155,19 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component_symmetrized(int d, Momen
     int Nj = ket.size();
     ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
 
+    //in case of spinorial orbitals, the kinetic operator is sigma dot p, we therefore need to set the index of the pauli matrix to use
+    int pauli_index = 0; //identity (fits non-spinorial case)
+    if (spinorial) pauli_index = d + 1; //Pauli index is 1 for x, 2 for y and 3 for z, whereas the momentum operator index is 0 for x, 1 for y and 2 for z, so we need to add 1 to get the correct Pauli matrix.
+
     int nNodes = 0, sNodes = 0;
     if (&bra == &ket) {
-        OrbitalVector dKet = (V * p[d])(ket);
+        OrbitalVector dKet = (V * p[d])(ket, pauli_index);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
         T = mrcpp::calc_overlap_matrix(dKet, dKet);
     } else {
-        OrbitalVector dBra = (V * p[d])(bra);
-        OrbitalVector dKet = (V * p[d])(ket);
+        OrbitalVector dBra = (V * p[d])(bra, pauli_index);
+        OrbitalVector dKet = (V * p[d])(ket, pauli_index);
         nNodes += orbital::get_n_nodes(dBra);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
@@ -182,15 +186,19 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
     int Nj = ket.size();
     ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
 
+    //in case of spinorial orbitals, the kinetic operator is sigma dot p, we therefore need to set the index of the pauli matrix to use
+    int pauli_index = 0; //identity (fits non-spinorial case)
+    if (spinorial) pauli_index = d + 1; //Pauli index is 1 for x, 2 for y and 3 for z, whereas the momentum operator index is 0 for x, 1 for y and 2 for z, so we need to add 1 to get the correct Pauli matrix.
+
     int nNodes = 0, sNodes = 0;
     if (&bra == &ket) {
-        OrbitalVector dKet = p[d](ket);
+        OrbitalVector dKet = p[d](ket, pauli_index);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
         T = V(dKet, dKet);
     } else {
-        OrbitalVector dBra = p[d](bra);
-        OrbitalVector dKet = p[d](ket);
+        OrbitalVector dBra = p[d](bra, pauli_index);
+        OrbitalVector dKet = p[d](ket, pauli_index);
         nNodes += orbital::get_n_nodes(dBra);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);

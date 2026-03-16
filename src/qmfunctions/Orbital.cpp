@@ -38,27 +38,29 @@ namespace mrchem {
 Orbital::Orbital(SPIN::type spin, int n_comp) //TODO: ajouter alloc_comp? 
         : mrcpp::CompFunction<3>(spin, n_comp) {
     if (this->spin() < 0) INVALID_ARG_ABORT;
+    std::cout << "Orbital::Orbital constructor with spin: " << this->spin() << std::endl;
     // d1 is used to store occupancy
-    if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2;
-    if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1;
-    if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[1] = 1;
+    if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2.0;
+    if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1.0;
+    if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[1] = 1.0;
 }
 
 /** @brief Constructor
  *
- * @param spin: electron spin (SPIN::Alpha/Beta/Paired)
+ * @param spin: electron spin (SPIN::Alpha (spin = 1, sets n1 to 1) /Beta (spin = 2, sets n1 to 1)/Paired (spin = 0))
  * @param occ: occupation
  * @param rank: position in vector if part of a vector
  *
  */
 Orbital::Orbital(int spin, double occ, int rank, int n_comp)
-        : mrcpp::CompFunction<3>(spin) {
+        : mrcpp::CompFunction<3>(spin, n_comp) {
+        std::cout << "Orbital::Orbital other constructor with spin: " << this->spin() << std::endl;
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
         // d1 is defined as occupancy
-        if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2;
-        if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1;
-        if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[1] = 1;
+        if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2.0;
+        if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1.0;
+        if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[1] = 1.0;
     }
     this->func_ptr->rank = rank;
 }

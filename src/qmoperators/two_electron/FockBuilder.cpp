@@ -60,15 +60,26 @@ namespace mrchem {
  *
  */
 void FockBuilder::build(double exx) {
+    std::cout << "FockBuilder::build -- Building Potential operator" << std::endl;
     this->exact_exchange = exx;
 
     this->V = RankZeroOperator();
-    if (this->nuc != nullptr) this->V += (*this->nuc);
-    if (this->coul != nullptr) this->V += (*this->coul);
+    if (this->nuc != nullptr) this->V += (*this->nuc); //TODO, peut-être tenter de retirer chacune de ces contributions pour voir laquelle est mal initialisée
+    if (this->coul != nullptr) this->V += (*this->coul); //coulomb pose un problème
     if (this->ex != nullptr) this->V -= this->exact_exchange * (*this->ex);
     if (this->xc != nullptr) this->V += (*this->xc);
     if (this->ext != nullptr) this->V += (*this->ext);
     if (this->Ro != nullptr) this->V -= (*this->Ro);
+    //debug, need to be removed eventually
+    if (this->nuc == nullptr) std::cout << "FockBuilder::build -- Nuclear operator not present" << std::endl;
+    if (this->coul == nullptr) std::cout << "FockBuilder::build -- Coulomb operator not present" << std::endl;
+    if (this->ex == nullptr) std::cout << "FockBuilder::build -- Exchange operator not present" << std::endl;
+    if (this->nuc != nullptr) std::cout << "FockBuilder::build -- Nuclear operator present" << std::endl;
+    if (this->coul != nullptr) std::cout << "FockBuilder::build -- Coulomb operator present" << std::endl;
+    if (this->ex != nullptr) std::cout << "FockBuilder::build -- Exchange operator present" << std::endl;
+    // if (this->xc == nullptr) std::cout << "FockBuilder::build -- XC operator not present" << std::endl;
+    // if (this->ext == nullptr) std::cout << "FockBuilder::build -- External operator not present" << std::endl;
+    // if (this->Ro == nullptr) std::cout << "FockBuilder::build -- Reaction operator not present" << std::endl;
 }
 
 /** @brief prepare operator for application
@@ -81,16 +92,33 @@ void FockBuilder::build(double exx) {
 void FockBuilder::setup(double prec) {
     Timer t_tot;
 
+    std::cout << "FockBuilder::setup -- ex is nullptr =" << (this->ex== nullptr) << std::endl;
+
+    // std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators Potential=" << (this->V == nullptr) << std::endl;
+
     auto plevel = Printer::getPrintLevel();
     if (plevel == 2) {
         mrcpp::print::header(2, "Building Fock operator");
         mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
         mrcpp::print::separator(2, '-');
     }
+    //test TODOD À exécuter
+    for (auto &i : this->potential().getOperatorExpansion()) {
+        // std::cout << "RankZeroOperator::setup -- operator expansion" << std::endl;
+        for (int j = 0; j < i.size(); j++) { std::cout << "FockBuilder::setup -- operator: "<< j << " " << i[j] << std::endl; }
+    }
+    // std::cout << "FockBuilder::setup -- Starting setup of operators: " << &i << std::endl;
+    // if (this->coul != nullptr) this->V += (*this->coul);
+    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators" << std::endl;
     this->prec = prec;
+    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 2 "<< (this->mom != nullptr) << std::endl;
     if (this->mom != nullptr) this->momentum().setup(prec);
+    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 3" << std::endl;
     this->potential().setup(prec);
-    this->perturbation().setup(prec);
+    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 4" << std::endl;
+    this->perturbation().setup(prec); //TODO: uncomment when response is implemented for multiple components
+
+    std::cout << "FockBuilder::setup -- Kinetic and potential operators setup done" << std::endl;
 
     if (isZora()) {
         Timer t_zora; //TODO: make this working for 2C

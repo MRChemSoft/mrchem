@@ -61,6 +61,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
     Timer t_tot;
 
+    // std::cout << "NuclearOperator constructor start" << std::endl;
     // Setup local analytic function
     Timer t_loc;
     NuclearFunction *f_loc = nullptr;
@@ -82,8 +83,10 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     } else {
         MSG_ABORT("Invalid nuclear model : " << model);
     }
+    // std::cout << "NuclearOperator constructor model chosen" << std::endl;
     setupLocalPotential(*f_loc, nucs, smooth_prec);
 
+    // std::cout << "NuclearOperator constructor local pot set up" << std::endl;
     // Scale precision by charge, since norm of potential is ~ to charge
     double Z_tot = 1.0 * chemistry::get_total_charge(nucs);
     double Z_loc = 1.0 * chemistry::get_total_charge(f_loc->getNuclei());
@@ -98,11 +101,15 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     loc_prec /= pow(vol, 1.0 / 6.0); // norm of 1/r over the box ~ root_6(Volume)
 
     // Project local potential
+    // std::cout << "NuclearOperator constructor local pot pre projection" << std::endl;
     mrcpp::CompFunction<3> V_loc(false);
+    // std::cout << "NuclearOperator constructor local pot constructed" << std::endl;
     mrcpp::project(V_loc, *f_loc, loc_prec);
+    // std::cout << "NuclearOperator constructor local pot actually projected" << std::endl;
     t_loc.stop();
     mrcpp::print::separator(1, '-');
     print_utils::qmfunction(1, "Local potential", V_loc, t_loc);
+    // std::cout << "NuclearOperator constructor projected local potential" << std::endl;
 
     // Collect local potentials
     Timer t_com;
@@ -114,6 +121,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     t_tot.stop();
     print_utils::qmfunction(1, "Allreduce potential", *V_tot, t_com);
     mrcpp::print::footer(1, t_tot, 2);
+    // std::cout << "NuclearOperator constructor local pot collected" << std::endl;
 
     // Invoke operator= to assign *this operator
     RankZeroOperator &O = (*this);

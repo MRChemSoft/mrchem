@@ -112,6 +112,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
         // Compute Coulomb density
         t_lap.start();
         Density &rho_j = J.getDensity();
+        std::cout << "initial_guess::sad::setup -- Projecting Coulomb density start" << std::endl;
         initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);//should be okay multicomponent-wise because densities are always scalar
 
         // Compute XC density
@@ -122,7 +123,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
         // Project AO basis of hydrogen functions
         t_lap.start();
         OrbitalVector Psi; 
-        initial_guess::core::project_ao(Psi, prec, nucs, zeta, n_components);
+        initial_guess::core::project_ao(Psi, prec, nucs, zeta, n_components); //Normalement ça marche parce que ça a une norme de 1
         if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
         if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
         t_lap.start();
@@ -133,19 +134,37 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
         // Compute Fock matrix
         mrcpp::print::header(2, "Diagonalizing Fock matrix");
-        ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V); //todo adapt to multicomponent
+        std::cout << "initial_guess::sad::setup -- Diagonalizing Fock matrix start" << std::endl;
+        ComplexMatrix soverlap = mrcpp::calc_overlap_matrix(Psi); //TODO check that this is not zero, sinon problème
+        for (int i = 0; i < Psi.size(); i++) {
+            for (int j = 0; j < Psi.size(); j++) {
+                std::cout << "S_overlap(" << i << "," << j << ") = " << soverlap(i, j) << std::endl;
+            }
+        }
+        ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V); //ça output une matrice nulle, problème
+
+        // std::cout << "sad::setup Psi norm (2nd argument)=" << Psi[0].norm() << " Phi norm (1st argument)=" << Phi[0].norm() << std::endl;
 
         // Rotate orbitals and fill electrons by Aufbau 
         t_lap.start();
-        auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha);
+        auto Phi_a = orbital::disjoin(Phi, SPIN::Alpha); 
         auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
-        initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
+        std::cout << "sad::setup post-disjoin norm (1st argument)=" << Phi[0].norm() << " norm (2nd argument)=" << Psi[0].norm() << std::endl;
+        initial_guess::core::rotate_orbitals(Phi, prec, U, Psi); //problem is here
         initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
         initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
         Phi = orbital::adjoin(Phi, Phi_a);
         Phi = orbital::adjoin(Phi, Phi_b);
         p.clear();
         V.clear();
+
+        std::cout << "initial_guess::sad::setup -- Diagonalizing Fock matrix end" << std::endl;
+        ComplexMatrix soverlap2 = mrcpp::calc_overlap_matrix(Phi); //TODO check that this is not zero, sinon problème
+        for (int i = 0; i < Phi.size(); i++) {
+            for (int j = 0; j < Phi.size(); j++) {
+                std::cout << "soverlap2(" << i << "," << j << ") = " << soverlap2(i, j) << std::endl;
+            }
+        }
 
         mrcpp::print::footer(2, t_tot, 2);
         if (plevel == 1) mrcpp::print::footer(1, t_tot, 2);
@@ -208,7 +227,8 @@ bool initial_guess::sad::setupGTO(OrbitalVector &Phi, double prec, double screen
     // Project AO basis of hydrogen functions
     t_lap.start();
     OrbitalVector Psi;
-    initial_guess::gto::project_ao(Psi, prec, nucs);
+    // initial_guess::gto::project_ao(Psi, prec, nucs, n_components);
+    initial_guess::gto::project_ao(Psi, prec, nucs); //TODO update
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO AOs", t_lap);
     if (plevel == 2) mrcpp::print::header(2, "Building Fock operator");
     t_lap.start();
@@ -282,6 +302,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         o_dens << sad_path << "/" << sym << ".dens";
 
         Density rho_k = initial_guess::gto::project_density(prec, nucs[k], o_bas.str(), o_dens.str(), screen);
+        std::cout << "initial_guess::sad::project_atomic_densities -- projected density for atom " << k << " norm = " << rho_k.norm() << std::endl;
         rho_k.crop(crop_prec);
         rho_loc.add(1.0, rho_k);
 

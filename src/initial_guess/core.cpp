@@ -230,6 +230,9 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 
 void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi) {
     if (Psi.size() == 0) return;
+
+    std::cout << "initial_guess::core::rotate_orbitals: Phi (1st argument) norm before rotation = " << Phi[0].norm() << "Psi (2nd argument) norm before rotation = " << Psi[0].norm()<< std::endl;
+
     Timer t_tot;
     mrcpp::rotate(Phi, U, Psi, prec);
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
@@ -237,7 +240,17 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
 
 ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOperator &p, RankZeroOperator &V) {
     Timer t1;
-    ComplexMatrix S_m12 = mrcpp::calc_lowdin_matrix(Phi);
+    ComplexMatrix S_m12 = mrcpp::calc_lowdin_matrix(Phi);//TODO checker que ça donne une matrice non nulle, sinon problème
+
+    ComplexMatrix S_overlap = mrcpp::calc_overlap_matrix(Phi);
+    for (int i = 0; i < S_overlap.rows(); i++) {
+        for (int j = 0; j < S_overlap.cols(); j++) {
+            std::cout << "S_overlap(" << i << "," << j << ") = " << S_overlap(i, j) << std::endl;
+            // if (std::abs(S_m12(i, j)) > 1e-6) {
+            // }
+        }
+    }
+
     mrcpp::print::separator(2, '-');
     ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(p, Phi, Phi);
     ComplexMatrix v_tilde = V(Phi, Phi);

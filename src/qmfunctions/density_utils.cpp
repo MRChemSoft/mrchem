@@ -124,17 +124,25 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 /** @brief Compute local density as the sum of own (MPI) orbitals
  */
 void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
+    MSG_INFO("Debug message");
     for (auto &phi_i : Phi) {
         if (mrcpp::mpi::my_func(phi_i)) {
             double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue;
-            Density rho_i;
+            Density rho_i; 
+            MSG_INFO("Debug message 2"); //rho manque un MRA
             mrcpp::copy_grid(rho_i, phi_i);
+            MSG_INFO("Debug message 2.5");
+            // auto tut = rho_i.real().getMRA();
+            MSG_INFO("Debug message 3");
             mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
+            MSG_INFO("Debug message 4");
             //note that we crop the phi_i*phi_i, because the square makes small smaller
             rho_i.crop(prec);  // Truncates to given precision
+            MSG_INFO("Debug message 5" << " occ: " << occ << " norm: " << rho_i.getSquareNorm());
             // we do not crop rho, since the rho_i do not cancel out
             rho.add(occ, rho_i); // Extends to union grid
+            MSG_INFO("Debug message 6");
         }
     }
 }

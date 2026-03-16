@@ -49,4 +49,16 @@ public:
     }
 };
 
+// class RelativisticMomemtumOperator final : public MomentumOperator {
+//     protected:
+//         bool isZora = false;
+
+//         // std::shared_ptr<ZoraOperator> chi_inv;
+//     public:
+//         RelativisticMomemtumOp(std::shared_ptr<mrcpp::DerivativeOperator<3>> D)
+//                 : MomentumOperator(NablaOperator(D, true)) {}
+//         RelativisticMomemtumOp(MomentumOperator p) 
+//                 : MomentumOperator(p) {}
+// }; 
+
 } // namespace mrchem

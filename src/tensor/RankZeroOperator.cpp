@@ -170,6 +170,7 @@ RankZeroOperator &RankZeroOperator::operator+=(const RankZeroOperator &O) {
         }
         for (auto i : O.coef_exp) this->coef_exp.push_back(i);
         for (const auto &i : O.oper_exp) this->oper_exp.push_back(i);
+        // for (const auto &i : O.oper_exp) std::cout << "RankZeroOperator::operator+= -- operator expansion: " << &i << std::endl;
     } else {
         MSG_ABORT("Cannot add self in place");
     }
@@ -204,8 +205,14 @@ RankZeroOperator &RankZeroOperator::operator-=(const RankZeroOperator &O) {
  * applied with the given precision. Must be called prior to application.
  */
 void RankZeroOperator::setup(double prec) {
+    std::cout << "RankZeroOperator::setup -- Setting up operator " << this->name() << " with precision " << prec << std::endl;
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) { i[j]->setup(prec); }
+        std::cout << "RankZeroOperator::setup -- operator expansion" << std::endl;
+        for (int j = 0; j < i.size(); j++) { 
+            std::cout << "RankZeroOperator::setup -- operator: "<< j << " " << i[j] << std::endl;
+            i.at(j)->setup(prec); 
+            std::cout << "RankZeroOperator::setup -- operator setup done tut" << std::endl;
+        }
     }
 }
 
@@ -292,20 +299,22 @@ Orbital RankZeroOperator::dagger(Orbital inp) {
 /** @brief apply operator expansion to orbital vector
  *
  * @param inp: orbitals on which to apply
+ * @param alpha: index of the Dirac (4C to be implemented) or Pauli (2C) matrices. 0 is default and represents the identity (also 1C/scalar)
  *
  * This produces a new OrbitalVector of the same size as the input, containing
  * the corresponding output orbitals after applying the operator.
  */
-OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
+OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp, int alpha) {
     RankZeroOperator &O = *this;
     OrbitalVector out;
     for (auto i = 0; i < inp.size(); i++) {
         Timer t1;
         Orbital out_i;
         if (mrcpp::mpi::my_func(inp[i])) {
-            out_i = O(inp[i]);
+            out_i = O(inp[i], alpha);
         } else {
             out_i = inp[i].paramCopy(false);
+            mrcpp::apply_Pauli(out_i, out_i, alpha); 
         }
         out.push_back(out_i);
         std::stringstream o_name;
