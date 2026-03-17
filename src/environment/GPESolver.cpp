@@ -146,8 +146,8 @@ void GPESolver::accelerateConvergence(mrcpp::CompFunction<3> &dfunc, mrcpp::Comp
     phi_n[0] = func;
     dPhi_n[0] = dfunc;
 
-    phi_n[0].setRank(mrcpp::mpi::wrk_rank);
-    dPhi_n[0].setRank(mrcpp::mpi::wrk_rank);
+    phi_n[0].setRank(0);
+    dPhi_n[0].setRank(0);
 
     kain.accelerate(this->apply_prec, phi_n, dPhi_n);
 
