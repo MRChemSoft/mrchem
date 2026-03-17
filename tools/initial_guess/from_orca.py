@@ -289,9 +289,6 @@ if __name__ == "__main__":
 
     mo_perm, mo_sign = make_mo_permutation(atoms, basis_sets)
 
-    print(mo_perm)
-    print(mo_sign)
-
     mo = read_occ_mo(mol, mo_perm, mo_sign)
 
     print_mrchem_mo_files(mo, len(mo_perm))
