@@ -157,8 +157,8 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
                 GaussExp<3> mo_i_screened = gto_exp.getMO(i, MO.transpose(), prec * 1e-2);
                 GaussExp<3> mo_i_grid = gto_exp.getMO(i, MO.transpose(), prec * 1e-1);
                 built_grid = true;
-                mrcpp::build_grid(Phi[i].real(), mo_i_grid);
-                mrcpp::project(prec, Phi[i].real(), mo_i_screened);
+                mrcpp::build_grid(Phi[i].real(), mo_i);
+                mrcpp::project(prec, Phi[i].real(), mo_i);
                 Phi[i].real().crop(prec, false);
             }
         }
