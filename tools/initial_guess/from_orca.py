@@ -37,6 +37,7 @@ H       1.4375  0.0000   1.0250
 # CLI-tool on these to convert to a .json file that can be given to this script
 #
 
+
 def consolidate_basis(basis):
     new_basis = {}
 
@@ -142,11 +143,26 @@ def shell_permutation(angmom):
     return invert_perm(perm)
 
 
+def shell_signs(angmom):
+    l = angmom_to_l[angmom]
+    if l <= 2:
+        return [1] * (2 * l + 1)
+
+    if angmom == 'f':
+        return [-1, 1, 1, 1, 1, 1, -1]
+    elif angmom == 'g':
+        return [-1, -1, 1, 1, 1, 1, 1, -1, -1] # This is untested!!
+    else:
+        raise NotImplementedError
+
+
 def atom_basis_permutation(atom_basis):
     perm = []
+    sign = []
 
     for angmom in atom_basis:
         shell_perm = shell_permutation(angmom)
+        shell_sign = shell_signs(angmom)
 
         num_funcs = 0
         for _, coeffs in atom_basis[angmom]:
@@ -156,8 +172,10 @@ def atom_basis_permutation(atom_basis):
             offset = len(perm)
             for i in shell_perm:
                 perm.append(i + offset)
+            for i in shell_sign:
+                sign.append(i)
 
-    return perm
+    return perm, sign
 
 
 def make_mo_permutation(atoms, basis_sets):
@@ -181,22 +199,29 @@ def make_mo_permutation(atoms, basis_sets):
     offset = 0
     for i in atom_to_basis:
         atoms_offsets.append(offset)
-        offset += len(atom_basis_perms[i])
+        offset += len(atom_basis_perms[i][0])
 
     perm = []
+    sign = []
 
     for i in atoms_perm:
-        for j in atom_basis_perms[atom_to_basis[i]]:
+        for j in atom_basis_perms[atom_to_basis[i]][0]:
             perm.append(j + atoms_offsets[i])
+        for j in atom_basis_perms[atom_to_basis[i]][1]:
+            sign.append(j)
 
-    return perm
+    return perm, sign
 
 
 def permute(array, perm):
     return [array[i] for i in perm]
 
 
-def read_occ_mo(mol, mo_perm):
+def scale(array, factors):
+    return [x * y for x, y in zip(array, factors)]
+
+
+def read_occ_mo(mol, mo_perm, mo_sign):
     restricted = mol["HFTyp"] == "RHF"
 
     mo_buf = [0.0 for _ in mo_perm]
@@ -208,7 +233,8 @@ def read_occ_mo(mol, mo_perm):
     orbitals = mol["MolecularOrbitals"]["MOs"]
 
     while orbitals[i]["Occupancy"] > 0:
-        moa.extend(permute(orbitals[i]["MOCoefficients"], mo_perm))
+        moa.extend(
+            scale(permute(orbitals[i]["MOCoefficients"], mo_perm), mo_sign))
         i += 1
 
     if restricted:
@@ -220,7 +246,8 @@ def read_occ_mo(mol, mo_perm):
     mob = []
 
     while orbitals[i]["Occupancy"] > 0:
-        mob.extend(permute(orbitals[i]["MOCoefficients"], mo_perm))
+        mob.extend(
+            scale(permute(orbitals[i]["MOCoefficients"], mo_perm), mo_sign))
         i += 1
 
     return (moa, mob)
@@ -260,8 +287,11 @@ if __name__ == "__main__":
 
     print_mrchem_bas_file(atoms, basis_sets, coord_scale)
 
-    mo_perm = make_mo_permutation(atoms, basis_sets)
+    mo_perm, mo_sign = make_mo_permutation(atoms, basis_sets)
 
-    mo = read_occ_mo(mol, mo_perm)
+    print(mo_perm)
+    print(mo_sign)
+
+    mo = read_occ_mo(mol, mo_perm, mo_sign)
 
     print_mrchem_mo_files(mo, len(mo_perm))
