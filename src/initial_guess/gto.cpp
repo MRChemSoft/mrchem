@@ -148,7 +148,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     Timer t3;
     for (int i = 0; i < Phi.size(); i++) {
         Timer t_i;
-        bool built_grid = false;
+        bool grid_was_built = false;
         if (mrcpp::mpi::my_func(Phi[i])) {
             GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
             mo_i.calcScreening(screen);
@@ -156,7 +156,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
             if (std::abs(Phi[i].norm() - 1.0) > 1e2 * prec) {
                 GaussExp<3> mo_i_grid = gto_exp.getMO(i, MO.transpose(), prec * 1e-1);
                 GaussExp<3> mo_i_screened = gto_exp.getMO(i, MO.transpose(), prec * 1e-2);
-                built_grid = true;
+                grid_was_built = true;
                 mrcpp::build_grid(Phi[i].real(), mo_i_grid);
                 mrcpp::project(prec, Phi[i].real(), mo_i_screened);
                 Phi[i].real().crop(prec * 1e-1, false);
@@ -165,7 +165,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
         std::stringstream o_txt;
         o_txt << std::setw(w1 - 1) << i;
         o_txt << std::setw(w3) << print_utils::dbl_to_str(Phi[i].norm(), pprec, true);
-        if (built_grid) {
+        if (grid_was_built) {
             o_txt << '*';
         }
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
