@@ -52,15 +52,16 @@ void Factory::setFunctional(const std::string &name, double c) {
         std::vector<double> coefs;
 
         mapFunctionalName(name, ids, coefs);
-        xc_func_type libxc_obj;
+        xc_func_type *libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
-            auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
+            libxc_obj = xc_func_alloc();
+            auto return_code = xc_func_init(libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
             if (return_code != 0) {
                 std::ostringstream oss;
                 oss << "Functional id = " << ids[i] << " not found in the employed version of Libxc.\n";
                 MSG_ABORT(oss.str());
             }
-            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+            xc_func_set_dens_threshold(libxc_obj, cutoff);
             libxc_objects.push_back(libxc_obj);
             libxc_coefs.push_back(c * coefs[i]);
         }
@@ -78,14 +79,13 @@ std::unique_ptr<MRDFT> Factory::build() {
     // Init XCFun or Libxc
     bool gga = false;
     if (libxc) {
-        for (const auto &f : libxc_objects) {
+        for (const auto *f : libxc_objects) {
 
-            switch (f.info->family) {
+            switch (f->info->family) {
                 case XC_FAMILY_LDA:
 #ifdef XC_FAMILY_HYB_GGA
                 case XC_FAMILY_HYB_LDA:
 #endif
-                    gga = false;
                     break;
 
                 case XC_FAMILY_GGA:
@@ -104,8 +104,8 @@ std::unique_ptr<MRDFT> Factory::build() {
             }
 
             // Check if functional is range separated
-            if ((f.info->flags & XC_FLAGS_HYB_CAM) || (f.info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
-            if ((f.info->flags & XC_FLAGS_HYB_CAMY) || (f.info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
+            if ((f->info->flags & XC_FLAGS_HYB_CAM)  || (f->info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
+            if ((f->info->flags & XC_FLAGS_HYB_CAMY) || (f->info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
         }
     } else {
         gga = xcfun_is_gga(xcfun_p.get());

@@ -30,15 +30,15 @@
 #include "xc_func_alias.h"
 
 namespace mrdft {
-
+    
 void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs) {
-    // ensure name is upper case
+        // ensure name is upper case
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
-
+        
     // functionals defined in mrchem not explicitly translated to libxc:
     // b3lyp-g     {"b3lyp-g", "Becke-3-paramater-LYP (VWN3 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"lypc", 0.81}, {"vwn3c", 0.19}, {"exx", 0.20}}},
     // b3p86-g     {"b3p86-g", "Becke-3-paramater-LYP (VWN3 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"p86corrc", 0.81}, {"vwn3c", 1.0}, {"exx", 0.20}}}
-
+    
     // LDA
     if (name == "SLATERX") {
         ids = {XC_LDA_X};
@@ -60,8 +60,8 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         ids = {XC_LDA_C_VWN, XC_LDA_X};
         coefs = {1.0, 1.0};
         return;
-
-    // GGA
+        
+        // GGA
     } else if (name == "BECKEX") {
         ids = {XC_GGA_X_B88};
         coefs = {1.0};
@@ -110,8 +110,8 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         ids = {XC_GGA_XC_KT3};
         coefs = {1.0};
         return;
-
-    // HYB GGA
+        
+        // HYB GGA
     } else if (name == "B3LYP" || name == "B3LYP5") {
         // Keep as b3lyp5 for now to be consistent with xcfun
         ids = {XC_HYB_GGA_XC_B3LYP5};
@@ -127,9 +127,9 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86}; funcs_coefs = set by ext_param
         // different vwn: vwn5 vs vwn rpa
         ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_P86, XC_LDA_C_VWN};
-        coefs = {.80, .72, .81, 1.0};
-        // ids = {XC_HYB_GGA_XC_B3P86};
-        // coefs = {1.0};
+        coefs = {0.80, 0.72, 0.81, 1.0};
+            // ids = {XC_HYB_GGA_XC_B3P86, XC_LDA_X};
+            // coefs = {1.0, 1.0};
         return;
     } else if (name == "PBE0") {
         // NB: not the exact same parameters, equivalent to 1e-7 for H2
