@@ -44,6 +44,6 @@ namespace mrdft {
  * MapFuncName("LDA", ids, coefs);
  * // ids: {XC_LDA_C_VWN, XC_LDA_X}, coefs: {1.0, 1.0}
  */
-void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs);
+void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs, double &customExx);
 
 } // namespace mrdft

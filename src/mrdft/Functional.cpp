@@ -121,7 +121,7 @@ void Functional::set_libxc_functional_object(std::vector<xc_func_type*> &libxc_o
 }
 
 double Functional::amountEXX() const {
-    double exx = 0.0;
+    double exx = customExx;
     if (Factory::libxc) {
         for (std::size_t i = 0; i < libxc_objects.size(); ++i) {
             const xc_func_type *f = libxc_objects[i];

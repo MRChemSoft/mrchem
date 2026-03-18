@@ -31,7 +31,8 @@
 
 namespace mrdft {
     
-void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs) {
+void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs, double &customExx) {
+    customExx = 0.0;
         // ensure name is upper case
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
         
@@ -130,6 +131,7 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         coefs = {0.80, 0.72, 0.81, 1.0};
             // ids = {XC_HYB_GGA_XC_B3P86, XC_LDA_X};
             // coefs = {1.0, 1.0};
+        customExx = 0.2;
         return;
     } else if (name == "PBE0") {
         // NB: not the exact same parameters, equivalent to 1e-7 for H2

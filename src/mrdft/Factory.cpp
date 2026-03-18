@@ -50,8 +50,9 @@ void Factory::setFunctional(const std::string &name, double c) {
     if (libxc) {
         std::vector<int> ids;
         std::vector<double> coefs;
+        customExx = 0.0;
 
-        mapFunctionalName(name, ids, coefs);
+        mapFunctionalName(name, ids, coefs, customExx);
         xc_func_type *libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
             libxc_obj = xc_func_alloc();
@@ -143,6 +144,7 @@ std::unique_ptr<MRDFT> Factory::build() {
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
     if (libxc) { func_p->set_libxc_functional_object(libxc_objects, libxc_coefs); }
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+    func_p->setCustomExx(customExx);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);

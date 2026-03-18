@@ -111,6 +111,7 @@ public:
     void setLogGradient(bool log) { log_grad = log; }    ///< @brief Set whether to use logarithmic gradient transformations
     void setDensityCutoff(double cut) { cutoff = cut; }  ///< @brief Set the density threshold below which density is set to 0
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }   ///< @brief Set the numerical derivative operator for gradient-based functionals
+    void setCustomExx(double exx) {customExx = exx; }   /// <@brief Set custom exact exchange
 
     /**
      * Functional type querying
@@ -129,6 +130,7 @@ public:
      * @return The total fraction of exx to be added to the functional
      */
     double amountEXX() const;
+    double customExx = 0.0;         ///< @brief Used in mapfunctionalName to set exx for custom functionals
     double XCenergy = 0.0;          ///< @brief Stores calculated xc energy for the current state
 
     /**

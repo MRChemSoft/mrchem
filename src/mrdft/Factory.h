@@ -102,6 +102,7 @@ private:
     bool gamma{false};             ///< If true, use gamma-type derivatives (gradient squared) instead of explicit components
     bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations
     double cutoff{-1.0};           ///< Density threshold; values below this are sat to 0
+    double customExx{0.0};         ///< @brief Used in mapfunctionalName to set exx for custom functionals
     std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (e.g., "bspline", "abgv_55")
 
     const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Reference to the 3D Multi-Resolution Analysis grid structure
