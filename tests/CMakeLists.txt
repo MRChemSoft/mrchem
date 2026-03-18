@@ -33,6 +33,7 @@ add_subdirectory(h2_mag_lda)
 add_subdirectory(h2_scf_svwn5_libxc)
 add_subdirectory(h2_scf_b3lyp_libxc)
 add_subdirectory(h2o_energy_blyp)
+add_subdirectory(2h2o_far_energy_pbe)
 add_subdirectory(h2o_hirshfeld_lda)
 add_subdirectory(h2_pol_cube)
 # TODO: Should rename test using xcfun to +"_xcfun" and add "xc_library = xcfun"

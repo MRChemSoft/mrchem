@@ -1,4 +1,3 @@
-import warnings
 from functools import lru_cache
 import pyparsing as pp
 
@@ -8,15 +7,15 @@ def camel_to_snake(s: str) -> str:
     """
     Convert CamelCase to snake_case.
     """
-    return "".join(f"_{c.lower()}" if c.isupper() else c for c in s).lstrip("_")
+    return "".join("_" + c.lower() if c.isupper() else c for c in s).lstrip("_")
 
 
 pre_pep8_method_names = """
 addCondition addParseAction anyCloseTag anyOpenTag asDict asList cStyleComment canParseNext conditionAsParseAction 
 convertToDate convertToDatetime convertToFloat convertToInteger countedArray cppStyleComment dblQuotedString 
 dblSlashComment defaultName dictOf disableMemoization downcaseTokens enableLeftRecursion enablePackrat getName 
-htmlComment ignoreWhitespace infixNotation inlineLiteralsUsing javaStyleComment leaveWhitespace 
-lineEnd lineStart matchOnlyAtCol matchPreviousExpr matchPreviousLiteral nestedExpr nullDebugAction oneOf 
+htmlComment ignoreWhitespace indentedBlock infixNotation inlineLiteralsUsing javaStyleComment leaveWhitespace 
+lineEnd lineStart locatedExpr matchOnlyAtCol matchPreviousExpr matchPreviousLiteral nestedExpr nullDebugAction oneOf 
 originalTextFor parseFile parseString parseWithTabs pythonStyleComment quotedString removeQuotes replaceWith 
 resetCache restOfLine runTests scanString searchString setBreak setDebug setDebugActions setDefaultWhitespaceChars 
 setFailAction setName setParseAction setResultsName setWhitespaceChars sglQuotedString stringEnd stringStart tokenMap 
@@ -32,8 +31,6 @@ special_changes = {
     "makeXMLTags": "make_xml_tags",
     "commonHTMLEntity": "common_html_entity",
     "stripHTMLTags": "strip_html_tags",
-    "indentedBlock": "IndentedBlock",
-    "locatedExpr": "Located",
 }
 
 pre_pep8_arg_names = """parseAll maxMatches listAllMatches callDuringTry includeSeparators fullDump printResults 
@@ -41,40 +38,17 @@ failureTests postParse matchString identChars maxMismatches initChars bodyChars 
 asMatch quoteChar escChar escQuote unquoteResults endQuoteChar convertWhitespaceEscapes notChars wordChars stopOn 
 failOn joinString markerString intExpr useRegex asString ignoreExpr""".split()
 
-special_changes_arg_names = {
-    "asList": "aslist",
-}
-
 pre_pep8_method_name = pp.one_of(pre_pep8_method_names, as_keyword=True)
 pre_pep8_method_name.set_parse_action(lambda t: camel_to_snake(t[0]))
 special_pre_pep8_name = pp.one_of(special_changes, as_keyword=True)
-def update_special_changes(s, l, t):
-    if t[0] == "indentedBlock":
-        warnings.warn(
-            "Conversion of 'indentedBlock' to new 'IndentedBlock'"
-            " requires added code changes to remove 'indentStack' argument\n"
-            f"  {pp.lineno(l, s)}: {pp.line(l, s)}",
-            stacklevel=2,
-        )
-    elif t[0] == "locatedExpr":
-        warnings.warn(
-            "Conversion of 'locatedExpr' to new 'Located'"
-            " may require added code changes - Located does not automatically"
-            " group parsed elements\n"
-            f"  {pp.lineno(l, s)}: {pp.line(l, s)}",
-            stacklevel=2,
-        )
-    return special_changes[t[0]]
-special_pre_pep8_name.set_parse_action(update_special_changes)
+special_pre_pep8_name.set_parse_action(lambda t: special_changes[t[0]])
 # only replace arg names if part of an arg list
 pre_pep8_arg_name = pp.Regex(
-    rf"{pp.util.make_compressed_re(pre_pep8_arg_names)}"
-) + pp.FollowedBy("=")
+    rf"{pp.util.make_compressed_re(pre_pep8_arg_names)}\s*="
+)
 pre_pep8_arg_name.set_parse_action(lambda t: camel_to_snake(t[0]))
-special_pre_pep8_arg_name = pp.one_of(special_changes_arg_names, as_keyword=True) + pp.FollowedBy("=")
-special_pre_pep8_arg_name.set_parse_action(lambda t: special_changes_arg_names[t[0]])
 
-pep8_converter = special_pre_pep8_arg_name | pre_pep8_method_name | special_pre_pep8_name | pre_pep8_arg_name
+pep8_converter = pre_pep8_method_name | special_pre_pep8_name | pre_pep8_arg_name
 
 if __name__ == "__main__":
     import argparse
