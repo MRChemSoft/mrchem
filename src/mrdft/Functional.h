@@ -112,6 +112,13 @@ public:
     void setDensityCutoff(double cut) { cutoff = cut; }  ///< @brief Set the density threshold below which density is set to 0
     void setDerivOp(std::unique_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = std::move(d); }   ///< @brief Set the numerical derivative operator for gradient-based functionals
     void setCustomExx(double exx) {customExx = exx; }   /// <@brief Set custom exact exchange
+    /**
+     * @brief Transfers ownership of Libxc functional objects and their scaling 
+     * coefficients to the Functional instance
+     * @param[in] libxc_objects_ Vector of initialized Libxc functionals
+     * @param[in] libxc_coefs_   Vector of corresponding weights of the initialized Libxc functionals
+     */
+    void setLibxcFunctionalObject(std::vector<xc_func_type*> &libxc_objects_, std::vector<double> &libxc_coefs_);
 
     /**
      * Functional type querying
@@ -163,13 +170,6 @@ public:
      */
     void print_functional_references() const;
     
-    /**
-     * @brief Transfers ownership of Libxc functional objects and their scaling 
-     * coefficients to the Functional instance
-     * @param[in] libxc_objects_ Vector of initialized Libxc functionals
-     * @param[in] libxc_coefs_   Vector of corresponding weights of the initialized Libxc functionals
-     */
-    void set_libxc_functional_object(std::vector<xc_func_type*> &libxc_objects_, std::vector<double> &libxc_coefs_);
 
     friend class MRDFT;
 
