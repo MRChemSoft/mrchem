@@ -112,16 +112,13 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         return;
 
     // HYB GGA
-    } else if (name == "B3LYP") {
+    } else if (name == "B3LYP" || name == "B3LYP5") {
         // Keep as b3lyp5 for now to be consistent with xcfun
-        // TODO: change the definition of b3lyp in mrchem to not be b3lyp5
         ids = {XC_HYB_GGA_XC_B3LYP5};
-        // ids = {XC_HYB_GGA_XC_B3LYP};
         coefs = {1.0};
         return;
-    } else if (name == "B3LYP5") {
-        // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN, XC_GGA_C_LYP}; funcs_coefs = set by ext_param
-        ids = {XC_HYB_GGA_XC_B3LYP5};
+    } else if (name == "B3LYP-G") {
+        ids = {XC_HYB_GGA_XC_B3LYP};
         coefs = {1.0};
         return;
     } else if (name == "B3P86") {
@@ -129,9 +126,10 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         // xcfun def:     {"b3p86", "Becke-3-paramater-LYP (VWN5 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"p86corrc", 0.81}, {"vwn5c", 1.0}, {"exx", 0.20}}}
         // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86}; funcs_coefs = set by ext_param
         // different vwn: vwn5 vs vwn rpa
-        // change to be similar to xcfun?
-        ids = {XC_HYB_GGA_XC_B3P86};
-        coefs = {1.0};
+        ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_P86, XC_LDA_C_VWN};
+        coefs = {.80, .72, .81, 1.0};
+        // ids = {XC_HYB_GGA_XC_B3P86};
+        // coefs = {1.0};
         return;
     } else if (name == "PBE0") {
         // NB: not the exact same parameters, equivalent to 1e-7 for H2
