@@ -1075,8 +1075,9 @@ json driver::lag::run(const json &json_lag, Molecule &mol) {
     /////////////////   Building DMRG Driver   ////////////////
     ///////////////////////////////////////////////////////////
     int Ne = mol.getNElectrons(); // total electrons
-    int spin = mol.getMultiplicity(); // spin
-    ChemTensorSolver dmrg_solver(mol.getOrbitals(), F, Ne, spin);
+    int spin = mol.getMultiplicity()-1; // spin = multiplicity-1
+    const auto &json_chemtensor = json_lag["external_solver"];
+    ChemTensorSolver dmrg_solver(mol.getOrbitals(), F, Ne, spin, json_chemtensor);
     
     ///////////////////////////////////////////////////////////
     //////////////   Building Lagrangian Solver   /////////////
@@ -1141,6 +1142,7 @@ bool driver::lag::guess_orbitals(const json &json_guess, Molecule &mol, int norb
     // Fill orbital vector
     auto &nucs = mol.getNuclei();
     auto &Phi = mol.getOrbitals();
+    // BUG: it allocates automatically 2 electrons per orbital!
     for (auto p = 0; p < norbs; p++) Phi.push_back(Orbital(SPIN::Paired));
     //for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
     //for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));

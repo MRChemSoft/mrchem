@@ -317,7 +317,6 @@ def write_lag_solver(user_dict):
 
     lag_dict = user_dict["Lagrangian"]
     solver_dict = {
-        "external_solver": lag_dict["external_solver"],
         "max_iter": lag_dict["max_iter"],
         "file_chk": lag_dict["path_checkpoint"] + "/phi_scf",
         "checkpoint": lag_dict["write_checkpoint"],
@@ -326,6 +325,19 @@ def write_lag_solver(user_dict):
 
     return solver_dict
 
+def write_external_solver(user_dict):
+    ext_dict = user_dict["ExternalSolver"]
+    if( ext_dict["method"].lower() != "chemtensor" ):
+        raise RuntimeError("External solver not recognized: " + ext_dict["name"])
+    solver_dict = {
+        "max_vdim": ext_dict["max_vdim"],
+        "num_sweeps": ext_dict["num_sweeps"],
+        "maxiter_lanczos": ext_dict["maxiter_lanczos"],
+        "tol_split": ext_dict["tol_split"],
+        "optimize_assembly": ext_dict["optimize_assembly"]
+    }
+
+    return solver_dict
 
 def write_scf_properties(user_dict, origin):
     prop_dict = {}

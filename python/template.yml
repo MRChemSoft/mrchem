@@ -926,7 +926,7 @@ sections:
         type: bool
         default: false
         docstring: |
-          Run Lagrangian solver. Dummy boolean
+          Run Lagrangian solver.
       - name: n_orbitals
         type: int
         default: 0
@@ -937,13 +937,6 @@ sections:
         default: 30
         docstring: |
           Maximum number of orbitals' optimization iterations.
-      - name: external_solver
-        type: str
-        default: chemtensor
-        predicates:
-          - value.lower() in ['chemtensor']
-        docstring:
-          External library used to perform CI calculation.        
       - name: write_checkpoint
         type: bool
         default: false
@@ -972,6 +965,42 @@ sections:
         docstring: |
           Path to where converged orbitals will be written in connection with
           the ``write_orbitals`` keyword.
+  - name: ExternalSolver
+    docstring: |
+      Define parameters for the external solver used for the Lagrangian optimization (only Chemtensor allowed for now).
+    keywords:
+      - name: method
+        type: str
+        default: chemtensor
+        predicates:
+          - value.lower() in ['chemtensor']
+        docstring: |
+          Method for solving the Lagrangian optimization problem. Currently only Chemtensor is available.
+      - name: max_vdim
+        type: int
+        default: 500
+        docstring: |
+          Maximum bond dimension for the MPS wavefunction in the DMRG calculation.
+      - name: num_sweeps
+        type: int
+        default: 6
+        docstring: |
+          Number of sweeps in the DMRG calculation.
+      - name: maxiter_lanczos
+        type: int
+        default: 5
+        docstring: |
+          Maximum number of Lanczos iterations.
+      - name: tol_split
+        type: float
+        default: 1.0e-8
+        docstring: |
+          Tolerance for the split step in the DMRG calculation.
+      - name: optimize_assembly
+        type: bool
+        default: true
+        docstring: |
+          Whether to optimize the assembly of the Hamiltonian in the DMRG calculation.
   - name: PCM
     docstring: |
       Includes parameters related to the computation of the reaction field

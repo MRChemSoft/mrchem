@@ -27,7 +27,8 @@ import math
 
 from .helpers import (parse_wf_method, write_rsp_calc, write_scf_fock,
                       write_scf_guess, write_scf_occupancies, write_scf_plot,
-                      write_scf_properties, write_scf_solver, write_pseudo_potential, write_lag_fock, write_lag_solver)
+                      write_scf_properties, write_scf_solver, write_pseudo_potential, 
+                      write_lag_fock, write_lag_solver, write_external_solver)
 from .periodictable import PeriodicTable as PT
 from .periodictable import PeriodicTableByZ as PT_Z
 from .validators import MoleculeValidator
@@ -198,7 +199,7 @@ def write_lag_calculations(user_dict):
     lag_dict = {}
     lag_dict["fock_operator"] = write_lag_fock(user_dict)
     lag_dict["initial_guess"] = write_scf_guess(user_dict, wf_dict)
-
+    lag_dict["external_solver"] = write_external_solver(user_dict)
     path_orbitals = user_dict["Lagrangian"]["path_orbitals"]
     if user_dict["Lagrangian"]["write_orbitals"]:
         lag_dict["write_orbitals"] = {

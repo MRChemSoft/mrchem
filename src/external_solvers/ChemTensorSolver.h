@@ -38,16 +38,33 @@ namespace mrchem {
 
 class ChemTensorSolver : public ExternalSolver {
 public:
-    ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, int spin);
+    ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, int spin, json dict_chemtensor);
     ~ChemTensorSolver() override = default;
+
+    void set_max_vdim(int max_vdim) { this->max_vdim = max_vdim; }
+    void set_num_sweeps(int num_sweeps) { this->num_sweeps = num_sweeps; }
+    void set_maxiter_lanczos(int maxiter_lanczos) { this->maxiter_lanczos = maxiter_lanczos; }
+    void set_tol_split(double tol_split) { this->tol_split = tol_split; }
+
+    const int* get_bond_dimensions() const { return this->bond_dimensions; }
+    const double* get_en_sweeps() const { return this->en_sweeps; }
 
     void optimize() override;
 
 private:
-    int32_t qnum_sector{};
-    bool optimize_assembly = true;
     dense_tensor* tkin_tensor{};
     dense_tensor* vnuc_tensor{};
+
+    int max_vdim;
+    int num_sweeps;
+    int maxiter_lanczos;
+    float tol_split;
+    bool optimize_assembly;
+
+    int32_t qnum_sector{};
+
+    int* bond_dimensions;
+    double* en_sweeps;    
 
     void set_dense_tensors();
     void calculate_rdms() override;

@@ -81,7 +81,11 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     bool converged = false;
     
     S.optimize();
-    std::cout << "Energy: " << S.get_energy() << std::endl;
+    for(int i=0; i<6; i++){
+        std::cout << "Iteration: " << i << std::endl;
+        std::cout << "Energy: " << S.get_en_sweeps()[i] << std::endl;
+    }
+    //std::cout << "Energy: " << S.get_energy() << std::endl;
     
     // end
     F.clear();
