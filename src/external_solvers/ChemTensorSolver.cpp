@@ -48,9 +48,13 @@ ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, i
     this->maxiter_lanczos = dict_chemtensor["maxiter_lanczos"];
     this->tol_split = dict_chemtensor["tol_split"];
     this->optimize_assembly = dict_chemtensor["optimize_assembly"];
+}
 
-    this->bond_dimensions = nullptr;
-    this->en_sweeps = nullptr;
+ChemTensorSolver::~ChemTensorSolver() {
+    delete this->tkin_tensor->dim;
+    delete this->vnuc_tensor->dim;
+    delete this->tkin_tensor;
+    delete this->vnuc_tensor;
 }
 
 void ChemTensorSolver::set_dense_tensors(){
@@ -104,24 +108,20 @@ void ChemTensorSolver::optimize() {
 	// #endif
 
 	// run two-site DMRG
-	this->en_sweeps = new double[this->num_sweeps];
-	double* entropy   = new double[hamiltonian.nsites - 1];
-	if (dmrg_twosite(&hamiltonian, this->num_sweeps, this->maxiter_lanczos, this->tol_split, this->max_vdim, &psi, this->en_sweeps, entropy) < 0)
+	this->en_sweeps.reserve(this->num_sweeps);
+	std::vector<double> entropy(hamiltonian.nsites - 1);
+	if (dmrg_twosite(&hamiltonian, this->num_sweeps, this->maxiter_lanczos, this->tol_split, this->max_vdim, &psi, this->en_sweeps.data(), entropy.data()) < 0)
 		std::cerr << "'dmrg_twosite' failed internally" << std::endl;
 	this->energy = this->en_sweeps[this->num_sweeps - 1];
-    delete [] entropy;
 
     // calculate final bond dimensions
-    this->bond_dimensions = new int[hamiltonian.nsites + 1];
+    this->bond_dimensions.reserve(hamiltonian.nsites + 1);
 	for (int l = 0; l < hamiltonian.nsites + 1; l++) {
 		this->bond_dimensions[l] = mps_bond_dim(&psi, l);
 	}
 
 
 
-
-
-    //this->energy = encode_quantum_number_pair(4, 2); // dummy
     //calculate_rdms();
     
 }
