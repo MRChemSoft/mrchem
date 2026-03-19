@@ -938,7 +938,7 @@ User input reference
  :Lagrangian: Includes parameters related to the Lagrangian optimization. 
 
   :red:`Keywords`
-   :run: Run Lagrangian solver. Dummy boolean 
+   :run: Run Lagrangian solver. 
   
     **Type** ``bool``
   
@@ -955,15 +955,6 @@ User input reference
     **Type** ``int``
   
     **Default** ``30``
-  
-   :external_solver: External library used to perform CI calculation.
-  
-    **Type** ``str``
-  
-    **Default** ``chemtensor``
-  
-    **Predicates**
-      - ``value.lower() in ['chemtensor']``
   
    :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``.  
   
@@ -994,6 +985,48 @@ User input reference
   
     **Predicates**
       - ``value[-1] != '/'``
+  
+ :ExternalSolver: Define parameters for the external solver used for the Lagrangian optimization (only Chemtensor allowed for now). 
+
+  :red:`Keywords`
+   :method: Method for solving the Lagrangian optimization problem. Currently only Chemtensor is available. 
+  
+    **Type** ``str``
+  
+    **Default** ``chemtensor``
+  
+    **Predicates**
+      - ``value.lower() in ['chemtensor']``
+  
+   :max_vdim: Maximum bond dimension for the MPS wavefunction in the DMRG calculation. 
+  
+    **Type** ``int``
+  
+    **Default** ``500``
+  
+   :num_sweeps: Number of sweeps in the DMRG calculation. 
+  
+    **Type** ``int``
+  
+    **Default** ``6``
+  
+   :maxiter_lanczos: Maximum number of Lanczos iterations. 
+  
+    **Type** ``int``
+  
+    **Default** ``5``
+  
+   :tol_split: Tolerance for the split step in the DMRG calculation. 
+  
+    **Type** ``float``
+  
+    **Default** ``1e-08``
+  
+   :optimize_assembly: Whether to optimize the assembly of the Hamiltonian in the DMRG calculation. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
   
  :PCM: Includes parameters related to the computation of the reaction field energy of a system in an environment within the Polarizable Continuum Model. 
 
