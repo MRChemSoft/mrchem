@@ -26,6 +26,7 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <mrdft/MRDFT.h> // libxc debug
 
 #include "driver.h"
 #include <filesystem>
@@ -125,6 +126,7 @@ bool guess_orbitals(const json &input, const json &input_occ, Molecule &mol);
 bool guess_energy(const json &input, Molecule &mol, FockBuilder &F);
 void write_orbitals(const json &input, Molecule &mol);
 void write_orbitals_txt(const json &input, Molecule &mol);
+void write_density(const json &input, Molecule &mol);
 void calc_properties(const json &input, Molecule &mol, const json &json_fock);
 void plot_quantities(const json &input, Molecule &mol);
 bool _useExchange = false;
@@ -254,6 +256,13 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
             if (not hir_map.count(id)) hir_map.insert({id, HirshfeldCharges()});
         }
     }
+    if (json_prop.contains("population_analysis")) {
+        for (const auto &item : json_prop["population_analysis"].items()) {
+            const auto &id = item.key();
+            auto &pop_map = mol.getPopulationAnalyses();
+            if (not pop_map.count(id)) pop_map.insert({id, PopulationAnalysis()});
+        }
+    }
 }
 
 /** @brief Run ground-state SCF calculation
@@ -271,6 +280,15 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     // print_utils::headline(0, "Computing Ground State Wavefunction");
     json json_out = {{"success", true}};
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
+
+    ///////////////////////////////////////////////////////////
+    //////////////////   Setting XC Library  //////////////////
+    ///////////////////////////////////////////////////////////
+    std::string xc_lib;
+
+    if (json_scf["fock_operator"].contains("xc_library")) {
+        xc_lib = json_scf["fock_operator"]["xc_library"][0].get<std::string>();
+    } else {xc_lib = "xcfun";}
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
@@ -336,6 +354,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRotation(rotation);
         solver.setLocalize(localize);
         solver.setMethodName(method);
+        solver.setLibxc((xc_lib == "libxc") ? true : false);
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
@@ -361,6 +380,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     if (json_out["success"]) {
         if (json_scf.contains("write_orbitals_txt")) scf::write_orbitals_txt(json_scf["write_orbitals_txt"], mol);
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
+        if (json_scf.contains("write_density")) scf::write_density(json_scf["write_density"], mol);
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol, json_fock);
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
     }
@@ -550,14 +570,18 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     auto external_field = json_guess["external_field"];
     auto localize = json_guess["localize"];
     auto rotate = json_guess["rotate"];
+    std::string xc_lib = json_guess["xc_library"].get<std::string>();
+    auto cutoff = json_guess["cutoff"];
 
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
     print_utils::text(0, "Method         ", method);
+    print_utils::text(0, "XC Library     ", (xc_lib == "libxc") ? "LibXC" : "XCFun");
     print_utils::text(0, "Relativity     ", relativity);
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
     print_utils::text(0, "Precision      ", print_utils::dbl_to_str(prec, 5, true));
+    print_utils::text(0, "Density cutoff ", print_utils::dbl_to_str(cutoff, 5, true));
     print_utils::text(0, "Localization   ", (localize) ? "On" : "Off");
     mrcpp::print::separator(0, '~', 2);
 
@@ -605,6 +629,11 @@ void driver::scf::write_orbitals(const json &json_orbs, Molecule &mol) {
     orbital::save_orbitals(Phi, json_orbs["file_phi_p"], SPIN::Paired);
     orbital::save_orbitals(Phi, json_orbs["file_phi_a"], SPIN::Alpha);
     orbital::save_orbitals(Phi, json_orbs["file_phi_b"], SPIN::Beta);
+}
+
+void driver::scf::write_density(const json &json_dens, Molecule &mol) {
+    auto &Phi = mol.getOrbitals();
+    density::save_density(Phi, json_dens["file_density"]);
 }
 
 /** @brief Compute ground-state properties
@@ -780,6 +809,51 @@ void driver::scf::calc_properties(const json &json_prop, Molecule &mol, const js
         }
         mrcpp::print::footer(2, t_lap, 2);
         if (plevel == 1) mrcpp::print::time(1, "Computing Hirshfeld charges", t_lap);
+    }
+
+    if (json_prop.contains("population_analysis")) {
+        t_lap.start();
+        mrcpp::print::header(2, "Computing population analysis");
+        for (const auto &item : json_prop["population_analysis"].items()) {
+            const auto &id = item.key();
+            unsigned int dim = item.value()["dimension"];
+            bool intOrbitals = item.value()["integrate_orbitals"];
+            bool intTotal = item.value()["integrate_total"];
+            double prec = item.value()["precision"];
+            auto &Phi = mol.getOrbitals();
+            DoubleMatrix p = DoubleMatrix::Zero(Phi.size() * intOrbitals + intTotal, (dim == 0) ? 1 : 3); // rows: orbitals + total, if requested; cols: dim
+            if (intOrbitals) {
+                for (unsigned int i = 0; i < Phi.size(); i++) {
+                    if (!mrcpp::mpi::my_func(i))
+                        continue;
+                    Orbital density = Orbital();
+                    mrcpp::multiply(density, Phi[i], Phi[i], prec);
+                    if (dim == 0)
+                        p(i, 0) = density.integrate().real(); // Integrate over full space
+                    else {
+                        p(i, 0) = density.integrateSide(dim - 1, false).real(); // Integrate over negative half of the space
+                        p(i, 1) = density.integrateSide(dim - 1, true).real();  // Integrate over positive half of the space
+                        p(i, 2) = density.integrate().real();                   // Integrate over full space
+                    }
+                }
+                mrcpp::mpi::allreduce_matrix(p, mrcpp::mpi::comm_wrk);
+            }
+            if (intTotal) {
+                Density total_density = Density(false);
+                density::compute(-1.0, total_density, Phi, DensityType::Total);
+                if (dim == 0)
+                    p(p.rows() - 1, 0) = total_density.integrate().real(); // Total number of electrons
+                else {
+                    p(p.rows() - 1, 0) = total_density.integrateSide(dim - 1, false).real(); // Total number of electrons in negative half
+                    p(p.rows() - 1, 1) = total_density.integrateSide(dim - 1, true).real();  // Total number of electrons in positive half
+                    p(p.rows() - 1, 2) = total_density.integrate().real();                   // Total number of electrons
+                }
+            }
+            PopulationAnalysis &pop = mol.getPopulationAnalysis(id);
+            pop.setMatrix(p, intTotal);
+        }
+        mrcpp::print::footer(2, t_lap, 2);
+        if (plevel == 1) mrcpp::print::time(1, "Population analysis", t_lap);
     }
 
     if (json_prop.contains("hyperpolarizability")) MSG_ERROR("Hyperpolarizability not implemented");
@@ -1545,9 +1619,21 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
+        // TODO: Look over and input parser so this is not necessary
+        std::string xc_lib;
+        if (json_fock.contains("xc_library")) {
+            if(json_fock["xc_library"].is_array()){
+                xc_lib = json_fock["xc_library"][0].get<std::string>();
+            }else{
+                xc_lib = json_fock["xc_library"]["xc_library"].get<std::string>();
+            }
+        }else{
+            xc_lib = "xcfun";
+        }
 
         mrdft::Factory xc_factory(*MRA);
         xc_factory.setSpin(xc_spin);
+        xc_factory.setLibxc((xc_lib == "libxc") ? true : false);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {
@@ -1556,6 +1642,9 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             xc_factory.setFunctional(name, coef);
         }
         auto mrdft_p = xc_factory.build();
+
+        mrdft_p->functional().print_functional_references();
+
         exx = mrdft_p->functional().amountEXX();
 
         if (order == 0) {

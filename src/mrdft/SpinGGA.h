@@ -28,6 +28,7 @@
 #include <XCFun/xcfun.h>
 
 #include "Functional.h"
+#include "Factory.h" // only to call Factory::libxc
 
 namespace mrdft {
 
@@ -37,6 +38,10 @@ public:
     ~SpinGGA() override = default;
 
     bool isSpin() const override { return true; }
+    bool isGGA() const override { return true; }
+    bool isMetaGGA() const override { return false; }
+    int numIn() const override { return 8; }
+    int numOut() const override { if (Factory::libxc) {return 9;} else {return xcfun_output_length(xcfun.get());} }
 
 private:
     std::unique_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};

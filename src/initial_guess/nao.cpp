@@ -100,8 +100,8 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     auto mrdft_p = xc_factory.build();
     MomentumOperator p(D_p);
     CoulombOperator J(P_p);
-    XCOperator XC(mrdft_p);
-    RankZeroOperator V = J + XC;
+    XCOperator XC_(mrdft_p);
+    RankZeroOperator V = J + XC_;
 
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "NAO Initial Guess");
@@ -126,14 +126,14 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
 
 
     // Compute XC density
-    Density &rho_xc = XC.getDensity(DensityType::Total);
+    Density &rho_xc = XC_.getDensity(DensityType::Total);
     // mrcpp::deep_copy(rho_j, rho_j);
 
     std::shared_ptr<NuclearOperator> V_nuc;
     std::shared_ptr<ProjectorOperator> P;
 
     if (use_pp) {
-        XC.setNuclei(std::make_shared<Nuclei>(nucs));
+        XC_.setNuclei(std::make_shared<Nuclei>(nucs));
         Nuclei nucs_pp;
         Nuclei nucs_all_el;
         for (int i = 0; i < nucs.size(); i++) {
@@ -197,7 +197,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
             double e_kin = qmoperator::calc_kinetic_trace(p, Phi);
             double e_en = V_nuc->trace(Phi).real();
             double e_ee = 0.5 * J.trace(Phi).real();
-            double e_xc = XC.getEnergy();
+            double e_xc = XC_.getEnergy();
             // double e_pot = V.trace(Phi).real();
             double e_nl = 0.0;
             if (use_pp) {

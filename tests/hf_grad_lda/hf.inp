@@ -19,7 +19,7 @@ Forces {
 }
 
 WaveFunction {
-  method = LDA                      # Wave function method (HF or DFT)
+  method = SVWN5                      # Wave function method (HF or DFT)
 }
 
 Properties {

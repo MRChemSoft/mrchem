@@ -33,6 +33,7 @@
 #include "Orbital.h"
 #include "density_utils.h"
 #include "orbital_utils.h"
+#include "utils/print_utils.h"
 #include <fstream>
 
 using mrcpp::FunctionTree;
@@ -264,6 +265,40 @@ void density::readAtomicDensity(const std::string path, Eigen::VectorXd &rGrid, 
     file.close();
     rGrid = Eigen::Map<Eigen::VectorXd>(r.data(), r.size());
     rhoGrid = Eigen::Map<Eigen::VectorXd>(rho.data(), rho.size());
+}
+
+void density::save_density(OrbitalVector &Phi, const std::string &file) {
+    Timer t1;
+    mrcpp::print::header(2, "Saving density to file");
+    print_utils::text(2, "File name", file);
+    Density density = Density(false);
+
+    density::compute(-1.0, density, Phi, DensityType::Total);
+    std::stringstream densName;
+    densName << file << "_total";
+    density.saveDensity(densName.str());
+    density.free();
+
+    if (orbital::size_singly(Phi)) {
+        density::compute(-1.0, density, Phi, DensityType::Alpha);
+        densName.str("");
+        densName << file << "_alpha";
+        density.saveDensity(densName.str());
+        density.free();
+        
+        density::compute(-1.0, density, Phi, DensityType::Beta);
+        densName.str("");
+        densName << file << "_beta";
+        density.saveDensity(densName.str());
+        density.free();
+
+        density::compute(-1.0, density, Phi, DensityType::Spin);
+        densName.str("");
+        densName << file << "_spin";;
+        density.saveDensity(densName.str());
+        density.free();
+    }
+    mrcpp::print::footer(2, t1, 2);
 }
 
 } // namespace mrchem

@@ -5,10 +5,8 @@ from functools import lru_cache, wraps
 import inspect
 import itertools
 import types
-from typing import Callable, Union, Iterable, TypeVar, cast, Any
+from typing import Callable, Union, Iterable, TypeVar, cast
 import warnings
-
-from .warnings import PyparsingDeprecationWarning, PyparsingDiagnosticWarning
 
 _bslash = chr(92)
 C = TypeVar("C", bound=Callable)
@@ -27,7 +25,6 @@ class __config_flags:
             warnings.warn(
                 f"{cls.__name__}.{dname} {cls._type_desc} is {str(getattr(cls, dname)).upper()}"
                 f" and cannot be overridden",
-                PyparsingDiagnosticWarning,
                 stacklevel=3,
             )
             return
@@ -48,7 +45,7 @@ def col(loc: int, strg: str) -> int:
 
     Note: the default parsing behavior is to expand tabs in the input string
     before starting the parsing process.  See
-    :meth:`ParserElement.parse_string` for more
+    :class:`ParserElement.parse_string` for more
     information on parsing strings containing ``<TAB>`` s, and suggested
     methods to maintain a consistent view of the parsed string, the parse
     location, and line and column positions within the parsed string.
@@ -63,7 +60,7 @@ def lineno(loc: int, strg: str) -> int:
     The first line is number 1.
 
     Note - the default parsing behavior is to expand tabs in the input string
-    before starting the parsing process.  See :meth:`ParserElement.parse_string`
+    before starting the parsing process.  See :class:`ParserElement.parse_string`
     for more information on parsing strings containing ``<TAB>`` s, and
     suggested methods to maintain a consistent view of the parsed string, the
     parse location, and line and column positions within the parsed string.
@@ -189,24 +186,12 @@ class _GroupConsecutive:
     """
     Used as a callable `key` for itertools.groupby to group
     characters that are consecutive:
-
-    .. testcode::
-
-       from itertools import groupby
-       from pyparsing.util import _GroupConsecutive
-
-       grouped = groupby("abcdejkmpqrs", key=_GroupConsecutive())
-       for index, group in grouped:
-           print(tuple([index, list(group)]))
-
-    prints:
-
-    .. testoutput::
-
-       (0, ['a', 'b', 'c', 'd', 'e'])
-       (1, ['j', 'k'])
-       (2, ['m'])
-       (3, ['p', 'q', 'r', 's'])
+        itertools.groupby("abcdejkmpqrs", key=IsConsecutive())
+        yields:
+            (0, iter(['a', 'b', 'c', 'd', 'e']))
+            (1, iter(['j', 'k']))
+            (2, iter(['m']))
+            (3, iter(['p', 'q', 'r', 's']))
     """
 
     def __init__(self) -> None:
@@ -222,23 +207,6 @@ class _GroupConsecutive:
         return self.value
 
 
-def _is_iterable(obj, _str_type=(str, bytes), _iter_exception=Exception):
-    # str's are iterable, but in pyparsing, we don't want to iterate over them
-    if isinstance(obj, _str_type):
-        return False
-
-    try:
-        iter(obj)
-    except _iter_exception:  # noqa
-        return False
-    else:
-        return True
-
-
-def _escape_re_range_char(c: str) -> str:
-    return fr"\{c}" if c in r"\^-][" else c
-
-
 def _collapse_string_to_ranges(
     s: Union[str, Iterable[str]], re_escape: bool = True
 ) -> str:
@@ -246,28 +214,21 @@ def _collapse_string_to_ranges(
     Take a string or list of single-character strings, and return
     a string of the consecutive characters in that string collapsed
     into groups, as might be used in a regular expression '[a-z]'
-    character set::
-
+    character set:
         'a' -> 'a' -> '[a]'
         'bc' -> 'bc' -> '[bc]'
         'defgh' -> 'd-h' -> '[d-h]'
         'fdgeh' -> 'd-h' -> '[d-h]'
         'jklnpqrtu' -> 'j-lnp-rtu' -> '[j-lnp-rtu]'
-
-    Duplicates get collapsed out::
-
+    Duplicates get collapsed out:
         'aaa' -> 'a' -> '[a]'
         'bcbccb' -> 'bc' -> '[bc]'
         'defghhgf' -> 'd-h' -> '[d-h]'
         'jklnpqrjjjtu' -> 'j-lnp-rtu' -> '[j-lnp-rtu]'
-
-    Spaces are preserved::
-
+    Spaces are preserved:
         'ab c' -> ' a-c' -> '[ a-c]'
-
     Characters that are significant when defining regex ranges
-    get escaped::
-
+    get escaped:
         'acde[]-' -> r'\-\[\]ac-e' -> r'[\-\[\]ac-e]'
     """
 
@@ -278,11 +239,14 @@ def _collapse_string_to_ranges(
     #   used to generate regex ranges for character sets in the pyparsing.unicode
     #   classes, and these can be _very_ long lists of strings
 
-    escape_re_range_char: Callable[[str], str]
-    if re_escape:
-        escape_re_range_char = _escape_re_range_char
-    else:
-        escape_re_range_char = lambda ss: ss
+    def escape_re_range_char(c: str) -> str:
+        return "\\" + c if c in r"\^-][" else c
+
+    def no_escape_re_range_char(c: str) -> str:
+        return c
+
+    if not re_escape:
+        escape_re_range_char = no_escape_re_range_char
 
     ret = []
 
@@ -329,27 +293,14 @@ def _collapse_string_to_ranges(
 
 def _flatten(ll: Iterable) -> list:
     ret = []
-    for i in ll:
-        # Developer notes:
-        # - do not collapse this section of code, isinstance checks are done
-        # in optimal order
-        if isinstance(i, str):
-            ret.append(i)
-        elif isinstance(i, Iterable):
-            ret.extend(_flatten(i))
+    to_visit = [*ll]
+    while to_visit:
+        i = to_visit.pop(0)
+        if isinstance(i, Iterable) and not isinstance(i, str):
+            to_visit[:0] = i
         else:
             ret.append(i)
     return ret
-
-
-def _convert_escaped_numerics_to_char(s: str) -> str:
-    if s == "0":
-        return "\0"
-    if s.isdigit() and len(s) == 3:
-        return chr(int(s, 8))
-    elif s.startswith(("u", "x")):
-        return chr(int(s[1:], 16))
-    return s
 
 
 def make_compressed_re(
@@ -448,6 +399,8 @@ def make_compressed_re(
 
 
 def replaced_by_pep8(compat_name: str, fn: C) -> C:
+    # In a future version, uncomment the code in the internal _inner() functions
+    # to begin emitting DeprecationWarnings.
 
     # Unwrap staticmethod/classmethod
     fn = getattr(fn, "__func__", fn)
@@ -458,28 +411,21 @@ def replaced_by_pep8(compat_name: str, fn: C) -> C:
 
         @wraps(fn)
         def _inner(self, *args, **kwargs):
-            warnings.warn(
-                f"{compat_name!r} deprecated - use {fn.__name__!r}",
-                PyparsingDeprecationWarning,
-                stacklevel=2,
-            )
+            # warnings.warn(
+            #     f"Deprecated - use {fn.__name__}", DeprecationWarning, stacklevel=2
+            # )
             return fn(self, *args, **kwargs)
 
     else:
 
         @wraps(fn)
         def _inner(*args, **kwargs):
-            warnings.warn(
-                f"{compat_name!r} deprecated - use {fn.__name__!r}",
-                PyparsingDeprecationWarning,
-                stacklevel=2,
-            )
+            # warnings.warn(
+            #     f"Deprecated - use {fn.__name__}", DeprecationWarning, stacklevel=2
+            # )
             return fn(*args, **kwargs)
 
-    _inner.__doc__ = f"""
-        .. deprecated:: 3.0.0
-           Use :class:`{fn.__name__}` instead
-        """
+    _inner.__doc__ = f"""Deprecated - use :class:`{fn.__name__}`"""
     _inner.__name__ = compat_name
     _inner.__annotations__ = fn.__annotations__
     if isinstance(fn, types.FunctionType):
@@ -490,25 +436,3 @@ def replaced_by_pep8(compat_name: str, fn: C) -> C:
         _inner.__kwdefaults__ = None  # type: ignore [attr-defined]
     _inner.__qualname__ = fn.__qualname__
     return cast(C, _inner)
-
-
-def _to_pep8_name(s: str, _re_sub_pattern=re.compile(r"([a-z])([A-Z])")) -> str:
-    s = _re_sub_pattern.sub(r"\1_\2", s)
-    return s.lower()
-
-
-def deprecate_argument(
-    kwargs: dict[str, Any], arg_name: str, default_value=None, *, new_name: str = ""
-) -> Any:
-
-    if arg_name in kwargs:
-        new_name = new_name or _to_pep8_name(arg_name)
-        warnings.warn(
-            f"{arg_name!r} argument is deprecated, use {new_name!r}",
-            category=PyparsingDeprecationWarning,
-            stacklevel=3,
-        )
-    else:
-        kwargs[arg_name] = default_value
-
-    return kwargs[arg_name]

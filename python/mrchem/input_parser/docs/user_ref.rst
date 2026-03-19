@@ -416,6 +416,12 @@ User input reference
   
     **Default** ``0.0``
   
+   :xc_library: Runs Libxc or XCFun 
+  
+    **Type** ``str``
+  
+    **Default** ``xcfun``
+  
    :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun documentation <https://xcfun.readthedocs.io/>_. 
   
     **Type** ``str``
@@ -474,6 +480,33 @@ User input reference
     **Default** ``[]``
   
    :hirshfeld_charges: Compute Hirshfeld charges. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :population_analysis: Compute population analysis, also possible for half of the space. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :population_dimension: Dimension for population analysis. 0: total, 1: split x, 2: split y, 3: split z. 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+    **Predicates**
+      - ``value in [0, 1, 2, 3]``
+  
+   :population_orbitals: Compute population analysis for the individual orbitals. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
+   :population_density: Compute population analysis for the total density. 
   
     **Type** ``bool``
   
@@ -796,6 +829,12 @@ User input reference
   
     **Predicates**
       - ``value[-1] != '/'``
+  
+   :write_density: Write final density to disk, file name ``<path_orbitals>/phi_dens_<p/a/b>``. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
   
    :write_orbitals_txt: Write final orbitals to disk, in text format, file name ``<path_orbitals>/phi_<p/a/b>_scf_idx_<0..Np/Na/Nb>``. Can be used as ``mw`` initial guess in subsequent calculations. 
   

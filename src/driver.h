@@ -23,6 +23,8 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#pragma once
+
 #include <nlohmann/json.hpp>
 
 namespace mrchem {

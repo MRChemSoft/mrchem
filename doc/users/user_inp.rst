@@ -239,7 +239,8 @@ Here we specify the exchange-correlation functional used in DFT
 
     DFT {
       spin = false                          # Use spin-polarized functionals
-      density_cutoff = 0.0                  # Cutoff to set XC potential to zero
+      density_cutoff = 1e-11                # Cutoff to set XC potential to zero
+      xc_library = xcfun                    # Specify XC functional library
     $functionals
     <func1>     1.0                         # Functional name and coefficient
     <func2>     1.0                         # Functional name and coefficient
@@ -254,7 +255,8 @@ of exact Hartree-Fock exchange as a separate functional
 ``EXX`` (``EXX 0.2`` for B3LYP and ``EXX 0.25`` for PBE0 etc.). Option to use
 spin-polarized functionals or not. Unrestricted calculations will use
 spin-polarized functionals by default. The XC functionals are provided by the
-`XCFun <https://github.com/dftlibs/xcfun>`_ library.
+`XCFun <https://github.com/dftlibs/xcfun>`_ library by default, but can be 
+changed with the keyword ``xc_library`` to use either XCFun or `Libxc <https://libxc.gitlab.io/>`_ .
 
 Properties
 ----------
@@ -274,6 +276,10 @@ properties are available (all but the dipole moment are ``false`` by default)
       geometric_derivative = false          # Compute geometric derivative
       plot_density = false                  # Plot converged density
       plot_orbitals = []                    # Plot converged orbitals
+      population_analysis = false           # Compute population analysis, also for half of the space 
+      population_dimension = 0              # Dimension for population analysis (0=total, 1=split x, 2=y, 3=z)
+      population_orbitals = true            # Compute population analysis for individual orbitals, only if population_analysis = true
+      population_density = false            # Compute population analysis for total density, only if population_analysis = true
     }
 
 Some properties can be further specified in dedicated sections.
@@ -494,6 +500,7 @@ The converged orbitals can be saved to file with the ``write_orbitals`` keyword
     SCF {
       path_orbitals = orbitals              # Path to orbital files
       write_orbitals = false                # Save converged orbitals to file
+      write_density = false                 # Save density to file
     }
 
 This will make individual files for each orbital under the ``path_orbitals``

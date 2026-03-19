@@ -13,7 +13,7 @@
         "restricted": false
     },
     "DFT": {
-        "functionals": "LDA\n"
+        "functionals": "SVWN5\n"
     },
     "Properties": {
         "magnetizability": true,
