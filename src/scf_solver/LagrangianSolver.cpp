@@ -87,6 +87,19 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     }
     //std::cout << "Energy: " << S.get_energy() << std::endl;
     
+    ComplexMatrix one_rdm = *(S.get_one_rdm());
+    ComplexTensorR4 two_rdm = *(S.get_two_rdm());
+    
+    // print one-body RDM
+    std::cout << "One-body RDM" << std::endl;
+    for(int i=0; i<one_rdm.rows(); i++){
+        for(int j=0; j<one_rdm.cols(); j++){
+            std::cout << one_rdm(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
     // end
     F.clear();
     json_out["converged"] = converged;

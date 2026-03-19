@@ -31,6 +31,8 @@ extern "C" {
 #include "rng.h"
 #include "dmrg.h"
 #include "qnumber.h"
+#include "gradient.h"
+#include "aligned_memory.h"
 }
 
 #include "ChemTensorSolver.h"
@@ -51,10 +53,22 @@ ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, i
 }
 
 ChemTensorSolver::~ChemTensorSolver() {
-    delete this->tkin_tensor->dim;
-    delete this->vnuc_tensor->dim;
-    delete this->tkin_tensor;
-    delete this->vnuc_tensor;
+    if (this->tkin_tensor) {
+        delete this->tkin_tensor->dim;
+        delete this->tkin_tensor;
+    }
+    if (this->vnuc_tensor) {
+        delete this->vnuc_tensor->dim;
+        delete this->vnuc_tensor;
+    }
+    if (this->assembly){ 
+        delete_mpo_assembly(this->assembly); 
+        delete this->assembly; 
+    }
+    if (this->psi){ 
+        delete_mps(this->psi);
+        delete this->psi;
+    }
 }
 
 void ChemTensorSolver::set_dense_tensors(){
@@ -76,27 +90,23 @@ void ChemTensorSolver::optimize() {
         MSG_ABORT("Integrals not set.");
     }
 
-    // overall quantum number sector of quantum state (particle number and spin)
-
+    this->assembly = new mpo_assembly{};
     mpo hamiltonian;
-    {
-        mpo_assembly assembly;
-        construct_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->vnuc_tensor, this->optimize_assembly, &assembly);
-        mpo_from_assembly(&assembly, &hamiltonian);
-        delete_mpo_assembly(&assembly);
-    }
+    construct_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->vnuc_tensor, this->optimize_assembly, this->assembly);
+    //this->assembly = std::make_shared<mpo_assembly>(assembly);
+
+    mpo_from_assembly(this->assembly, &hamiltonian);
     if (!mpo_is_consistent(&hamiltonian))
 		MSG_ABORT("internal consistency check for Molecular Hamiltonian MPO failed");
 	
-
     // initial state vector as MPS
-	mps psi;
+	this->psi = new mps{};
 	{
 		rng_state rng;
 		seed_rng_state(42, &rng);
 
-		construct_random_mps(hamiltonian.a[0].dtype, hamiltonian.nsites, hamiltonian.d, hamiltonian.qsite, this->qnum_sector, this->max_vdim, &rng, &psi);
-		if (!mps_is_consistent(&psi)) 
+		construct_random_mps(hamiltonian.a[0].dtype, hamiltonian.nsites, hamiltonian.d, hamiltonian.qsite, this->qnum_sector, this->max_vdim, &rng, this->psi);
+		if (!mps_is_consistent(this->psi)) 
 			MSG_ABORT("internal MPS consistency check failed");
 		
 	}
@@ -110,27 +120,78 @@ void ChemTensorSolver::optimize() {
 	// run two-site DMRG
 	this->en_sweeps.reserve(this->num_sweeps);
 	std::vector<double> entropy(hamiltonian.nsites - 1);
-	if (dmrg_twosite(&hamiltonian, this->num_sweeps, this->maxiter_lanczos, this->tol_split, this->max_vdim, &psi, this->en_sweeps.data(), entropy.data()) < 0)
+	if (dmrg_twosite(&hamiltonian, this->num_sweeps, this->maxiter_lanczos, this->tol_split, this->max_vdim, this->psi, this->en_sweeps.data(), entropy.data()) < 0)
 		std::cerr << "'dmrg_twosite' failed internally" << std::endl;
 	this->energy = this->en_sweeps[this->num_sweeps - 1];
 
     // calculate final bond dimensions
     this->bond_dimensions.reserve(hamiltonian.nsites + 1);
 	for (int l = 0; l < hamiltonian.nsites + 1; l++) {
-		this->bond_dimensions[l] = mps_bond_dim(&psi, l);
+		this->bond_dimensions[l] = mps_bond_dim(this->psi, l);
 	}
 
-
-
-    //calculate_rdms();
-    
+    // calculate RDMs
+    calculate_rdms();
 }
 
 void ChemTensorSolver::calculate_rdms() {
-    *(this->one_rdm) = *(this->one_body_integrals);
-    *(this->two_rdm) = *(this->two_body_integrals);
-    // dummy (dimensions are the same)
-    auto *elements = this->one_body_integrals->data();
-}
+    // number of orbitals
+    const int N = this->psi->nsites;
 
+    // vectors storing energy averages and gradients' coefficients
+    std::vector<double> avr(this->assembly->num_coeffs);
+    std::vector<std::complex<double>> dcoeff(this->assembly->num_coeffs);
+    operator_average_coefficient_gradient(this->assembly, this->psi, this->psi, avr.data(), dcoeff.data());
+
+    // --- one-body RDM ---
+    int c = 2;
+    ComplexMatrix rdm1(N,N);
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+            rdm1(i, j) = dcoeff[c++];
+    // symmetrize
+    rdm1 = 0.5 * (rdm1 + rdm1.conjugate().transpose());
+    this->one_rdm = std::make_shared<ComplexMatrix>(rdm1);
+
+
+    // --- two-body RDM ---
+    const int dim_g0 = (this->assembly->num_coeffs - c) / 2;
+
+    // intermediate tensors
+    ComplexTensorR4 dg0(N, N, N, N); 
+    ComplexTensorR4 dg1(N, N, N, N);
+    dg0.setZero();
+    dg1.setZero();
+    int c0 = c;
+    int c1 = c + dim_g0;
+    for (int i = 0; i < N; i++)
+        for (int j = i; j < N; j++)
+            for (int k = 0; k < N; k++)
+                for (int l = k; l < N; l++) {
+                    dg0(i, j, k, l) = dcoeff[c0];
+                    dg1(i, j, k, l) = dcoeff[c1];
+                    c0++;
+                    c1++;
+                }
+
+    // reconstruct two_body from dg0 and dg1
+    ComplexTensorR4 rdm2(N, N, N, N);
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+            for (int k = 0; k < N; k++)
+                for (int l = 0; l < N; l++)
+                    rdm2(i, j, k, l) = 0.5 * (
+                          dg0(i, j, k, l) + dg0(j, i, l, k)
+                        - dg1(j, i, k, l) - dg1(i, j, l, k));
+
+    // symmetrize: rdm2 + rdm2.conj().transpose(2, 1, 0, 3)
+    for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
+            for (int k = 0; k < N; k++)
+                for (int l = 0; l < N; l++)
+                    rdm2(i, j, k, l) = 0.5 * (rdm2(i, j, k, l) + std::conj(rdm2(k, j, i, l)));
+    
+    // store two body RDM in variable of parent class
+    this->two_rdm = std::make_shared<ComplexTensorR4>(rdm2);
+}
 } // namespace mrchem

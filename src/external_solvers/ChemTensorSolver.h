@@ -27,6 +27,8 @@
 
 extern "C" {
     struct dense_tensor;
+    struct mpo_assembly;
+    struct mps;
 }
 
 #include "ExternalSolver.h"
@@ -54,6 +56,8 @@ public:
 private:
     dense_tensor* tkin_tensor{};
     dense_tensor* vnuc_tensor{};
+    mpo_assembly* assembly{};
+    mps* psi{};
 
     int max_vdim;
     int num_sweeps;
@@ -67,7 +71,7 @@ private:
     std::vector<double> en_sweeps{};
 
     void set_dense_tensors();
-    void calculate_rdms() override;
+    void calculate_rdms();
 
     
 };
