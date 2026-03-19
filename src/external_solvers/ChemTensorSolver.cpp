@@ -86,11 +86,12 @@ void ChemTensorSolver::set_dense_tensors(){
 }
 
 void ChemTensorSolver::optimize() {
-    if (!this->one_body_integrals || !this->two_body_integrals) {
+    if (!this->one_body_integrals || !this->two_body_integrals)
         MSG_ABORT("Integrals not set.");
-    }
-
-    this->assembly = new mpo_assembly{};
+    
+    if(!this->assembly)
+        this->assembly = new mpo_assembly{};
+    
     mpo hamiltonian;
     construct_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->vnuc_tensor, this->optimize_assembly, this->assembly);
     //this->assembly = std::make_shared<mpo_assembly>(assembly);
@@ -100,7 +101,8 @@ void ChemTensorSolver::optimize() {
 		MSG_ABORT("internal consistency check for Molecular Hamiltonian MPO failed");
 	
     // initial state vector as MPS
-	this->psi = new mps{};
+    if(!this->psi)
+        this->psi = new mps{};
 	{
 		rng_state rng;
 		seed_rng_state(42, &rng);
@@ -108,7 +110,6 @@ void ChemTensorSolver::optimize() {
 		construct_random_mps(hamiltonian.a[0].dtype, hamiltonian.nsites, hamiltonian.d, hamiltonian.qsite, this->qnum_sector, this->max_vdim, &rng, this->psi);
 		if (!mps_is_consistent(this->psi)) 
 			MSG_ABORT("internal MPS consistency check failed");
-		
 	}
 
 	// #ifdef _OPENMP
@@ -126,9 +127,9 @@ void ChemTensorSolver::optimize() {
 
     // calculate final bond dimensions
     this->bond_dimensions.reserve(hamiltonian.nsites + 1);
-	for (int l = 0; l < hamiltonian.nsites + 1; l++) {
+	for (int l = 0; l < hamiltonian.nsites + 1; l++)
 		this->bond_dimensions[l] = mps_bond_dim(this->psi, l);
-	}
+	
 
     // calculate RDMs
     calculate_rdms();
