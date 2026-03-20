@@ -32,21 +32,17 @@
 namespace mrdft {
     
 void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs, double &customExx) {
-    customExx = 0.0;
-        // ensure name is upper case
+    customExx = 0.0; // Allows for hard coded exact exchange
+    // ensure name is upper case
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
-        
-    // functionals defined in mrchem not explicitly translated to libxc:
-    // b3lyp-g     {"b3lyp-g", "Becke-3-paramater-LYP (VWN3 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"lypc", 0.81}, {"vwn3c", 0.19}, {"exx", 0.20}}},
-    // b3p86-g     {"b3p86-g", "Becke-3-paramater-LYP (VWN3 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"p86corrc", 0.81}, {"vwn3c", 1.0}, {"exx", 0.20}}}
-    
+
     // LDA
     if (name == "SLATERX") {
         ids = {XC_LDA_X};
         coefs = {1.0};
         return;
     } else if (name == "VWN3C" || name == "VWN3") {
-        ids = {XC_LDA_C_VWN_3};
+        ids = {XC_LDA_C_VWN_RPA};
         coefs = {1.0};
         return;
     } else if (name == "VWN5C" || name == "VWN5") {
@@ -54,87 +50,74 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
         coefs = {1.0};
         return;
     } else if (name == "SVWN3") {
-        ids = {XC_LDA_C_VWN_3, XC_LDA_X};
+        ids = {XC_LDA_C_VWN_RPA, XC_LDA_X};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "SVWN5" || name == "LDA") {
         ids = {XC_LDA_C_VWN, XC_LDA_X};
         coefs = {1.0, 1.0};
         return;
-        
+
         // GGA
     } else if (name == "BECKEX") {
         ids = {XC_GGA_X_B88};
         coefs = {1.0};
         return;
     } else if (name == "BLYP") {
-        // xcfun def:     {"blyp", "Becke exchange and LYP correlation", {{"beckex", 1.0}, {"lypc", 1.0}}}
         ids = {XC_GGA_X_B88, XC_GGA_C_LYP};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "BP86") {
-        // xcfun def:     {"bp86", "Becke-Perdew 1986", {{"beckex", 1.0}, {"p86c", 1.0}}}
-        ids = {XC_GGA_X_B88, XC_GGA_C_P86};
+        ids = {XC_GGA_X_B88, XC_GGA_C_P86_FT};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "BPW91") {
-        // xcfun def:     {"bpw91", "Becke 88 exchange+PW91", {{"beckex", 1.0}, {"pw91c", 1.0}}}
         ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "OLYP") {
-        // xcfun def:     {"olyp", "LYP correlation and OPTX exchange", {{"lypc", 1.0}, {"optx", 1.0}}}
         ids = {XC_GGA_X_OPTX, XC_GGA_C_LYP};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "PBE") {
-        // NB: not the exact same parameters, eq to 1e-7 for H2
         ids = {XC_GGA_X_PBE, XC_GGA_C_PBE};
         coefs = {1.0, 1.0};
         return;
     } else if (name == "KT1") {
-        // xcfun def:     {"kt1", "Keal-Tozer 2", {{"slaterx", 1.}, {"ktx", -0.006}, {"vwn5c", 1.}}}
-        // libxc def:   static int   funcs_id  [2] = {XC_GGA_X_KT1, XC_LDA_C_VWN}; static double funcs_coef[2] = {1.0, 1.0};
-        // if 1 * slaterx - 0.006 ktx = 1 XC_GGA_X_KT1 -> EQUAL
         ids = {XC_GGA_XC_KT1};
         coefs = {1.0};
         return;
     } else if (name == "KT2") {
-        // xcfun def:     {"kt2", "Keal-Tozer 2", {{"slaterx", 1.07173}, {"ktx", -0.006}, {"vwn5c", 0.576727}}}
-        // libxc def:   static int   funcs_id  [3] = {XC_LDA_X, XC_GGA_X_KT1, XC_LDA_C_VWN}; static double funcs_coef[3] = {1.07173 - 1.0, 1.0, 0.576727}
+        //ok
         ids = {XC_GGA_XC_KT2};
         coefs = {1.0};
         return;
     } else if (name == "KT3") {
-        // xcfun def :     {"kt3", "Keal-Tozer 3", {{"slaterx", 1.092}, {"ktx", -0.004}, {"optxcorr", -0.925452}, {"lypc", 0.864409}}}
-        // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_C_LYP, XC_GGA_X_KT1, XC_GGA_X_OPTX}; double funcs_coef[4] = { alpha - eps*a_optx/b_optx - 1.0, beta, 1, eps/b_optx};  
+        //ok
         ids = {XC_GGA_XC_KT3};
         coefs = {1.0};
         return;
         
         // HYB GGA
     } else if (name == "B3LYP" || name == "B3LYP5") {
-        // Keep as b3lyp5 for now to be consistent with xcfun
         ids = {XC_HYB_GGA_XC_B3LYP5};
         coefs = {1.0};
         return;
     } else if (name == "B3LYP-G") {
+        //ok
         ids = {XC_HYB_GGA_XC_B3LYP};
         coefs = {1.0};
         return;
     } else if (name == "B3P86") {
-        // NB: not the exact same parameters, eq to 1e-3 for H2
-        // xcfun def:     {"b3p86", "Becke-3-paramater-LYP (VWN5 form)", {{"slaterx", 0.80}, {"beckecorrx", 0.72}, {"p86corrc", 0.81}, {"vwn5c", 1.0}, {"exx", 0.20}}}
-        // libxc def:   static int   funcs_id  [4] = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86}; funcs_coefs = set by ext_param
-        // different vwn: vwn5 vs vwn rpa
-        ids = {XC_LDA_X, XC_GGA_X_B88, XC_GGA_C_P86, XC_LDA_C_VWN};
-        coefs = {0.80, 0.72, 0.81, 1.0};
-            // ids = {XC_HYB_GGA_XC_B3P86, XC_LDA_X};
-            // coefs = {1.0, 1.0};
-        customExx = 0.2;
+        ids = {XC_HYB_GGA_XC_B3P86, XC_LDA_C_VWN_RPA, XC_LDA_C_VWN};
+        coefs = {1.0, -1.0, 1.0};
+        return;
+    } else if (name == "B3P86-G") {
+        //ok
+        ids = {XC_HYB_GGA_XC_B3P86};
+        coefs = {1.0};
         return;
     } else if (name == "PBE0") {
-        // NB: not the exact same parameters, equivalent to 1e-7 for H2
         ids = {XC_HYB_GGA_XC_PBEH};
         coefs = {1.0};
         return;
@@ -142,7 +125,7 @@ void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<doub
     // Other: Check if Libxc has this functional
     } else {
         int number = xc_functional_get_number(name.c_str());
-        if (number == -1) { MSG_ABORT(name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
+        if (number == -1) { MSG_ABORT(name + " is not a known shorthand in MRChem nor a functional in Libxc.\n"); }
 
         ids = {number};
         coefs = {1.0};

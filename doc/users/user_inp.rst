@@ -241,6 +241,7 @@ Here we specify the exchange-correlation functional used in DFT
       spin = false                          # Use spin-polarized functionals
       density_cutoff = 1e-11                # Cutoff to set XC potential to zero
       xc_library = xcfun                    # Specify XC functional library
+      functionals = <func>                  # Functional name, see table bellow for examples
     $functionals
     <func1>     1.0                         # Functional name and coefficient
     <func2>     1.0                         # Functional name and coefficient
@@ -257,6 +258,86 @@ spin-polarized functionals or not. Unrestricted calculations will use
 spin-polarized functionals by default. The XC functionals are provided by the
 `XCFun <https://github.com/dftlibs/xcfun>`_ library by default, but can be 
 changed with the keyword ``xc_library`` to use either XCFun or `Libxc <https://libxc.gitlab.io/>`_ .
+
+Exchange-correlation Functionals
+++++++++++++++++++++++++++++++++
+
+A list of available xc functional shorthands in MRChem and their mapping to respective libraries. Note that only LDAs, GGAs and their hybrids are currently supported by MRCHem.
+
+.. |c_on| raw:: html
+
+   <div style="text-align: center;"><strong>
+
+.. |c_off| raw:: html
+
+   </strong></div>
+
++-------------------+-------------------+--------------------------------+--------------------+
+| MRChem Shorthand  | XCFun Functionals | LibXC Functionals              | Comments*          |
++===================+===================+================================+====================+
+|                             |c_on| LDAs |c_off|                                             |
++-------------------+-------------------+--------------------------------+--------------------+
+| slaterx           | | slaterx         | | LDA_X                        |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| vwn3, vwn3c       | | vwn3c           | | LDA_C_VWN_RPA                |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| vwn5, vwn5c       | | vwn5c           | | LDA_C_VWN                    |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| svwn3             | | svwn3c          | | LDA_X                        |                    |
+|                   | |                 | | + LDA_C_VWN_RPA              |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| svwn5, svwn, lda  | | svwn3c          | | LDA_X                        |                    |
+|                   | |                 | | + LDA_C_VWN                  |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+|                             |c_on| GGAs |c_off|                                             |
++-------------------+-------------------+--------------------------------+--------------------+
+| beckex            | | beckex          | | GGA_X_B88                    | Equal to 1e-10     |
++-------------------+-------------------+--------------------------------+--------------------+
+| blyp              | | blyp            | | GGA_X_B88                    | Equal to 1e-11     |
+|                   | |                 | | + GGA_C_LYP                  |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| bp86              | | bp86            | | GGA_X_B88                    | Equal to 1e-6      |
+|                   | |                 | | + GGA_C_P86_FT               |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| bpw91             | | bpw91           | | GGA_X_B88                    | Equal to 1e-7      |
+|                   | |                 | | + GGA_C_PW91                 |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| olyp              | | olyp            | | GGA_X_OPTX                   |                    |
+|                   | |                 | | + GGA_C_LYP                  |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| pbe               | | pbe             | | GGA_X_PBE                    | Equal to 1e-6      |
+|                   | |                 | | + GGA_C_PBE                  |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| kt1               | | kt1             | | GGA_XC_KT1                   |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| kt3               | | kt2             | | GGA_XC_KT2                   |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| kt3               | | kt3             | | GGA_XC_KT3                   |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+|                           |c_on| Hyb-GGAs |c_off|                                           |
++-------------------+-------------------+--------------------------------+--------------------+
+| b3lyp, b3lyp5     | | b3lyp           | | HYB_GGA_XC_B3LYP5            | Equal to 1e-10     |
++-------------------+-------------------+--------------------------------+--------------------+
+| b3lyp-g           | | b3lyp-g         | | HYB_GGA_XC_B3LYP             |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| b3p86             | | b3p86           | | HYB_GGA_XC_B3P86 + LDA_C_VWN | Equal to 1e-2      |
+|                   | |                 | | - LDA_C_VWN_RPA              |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| b3p86-g           | | b3p86-g         | | HYB_GGA_XC_B3P86             |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+| pbe0              | | pbe0            | | HYB_GGA_XC_PBEH              | Equal to 1e-6      |
+|                   | |                 | |                              |                    |
++-------------------+-------------------+--------------------------------+--------------------+
+
+\* Differences between functionals are based on total energies [hartree] of the H\ :math:`_2` dimer and is not dependent on world precision.
+
+Some general notes:
+
+ * LibXC and XCFun does have some implementation differences, resulting in some numerical variations.
+ * Some functional parameters are intrinsically different in the different libraries, internally changing these in MRChem to match would remove the purpose of using libraries; thus some differences are to be expected.
+ * Functionals are based on the XCFun definitions.
+ * A complete list of XCFun shorthands and definitions can be found in the `aliases.cpp <https://github.com/dftlibs/xcfun/blob/master/src/functionals/aliases.cpp>`_ file.
+ * A complete list of LibXC functionals can be found in the `xc_funcs.h <https://gitlab.com/libxc/libxc/-/blob/7.0.0/src/xc_funcs.h>`_ file.
 
 Properties
 ----------

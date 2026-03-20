@@ -115,7 +115,7 @@ void Functional::print_functional_references() const {
     }
 }
 
-void Functional::set_libxc_functional_object(std::vector<xc_func_type*> &libxc_objects_, std::vector<double> &libxc_coefs_) {
+void Functional::setLibxcFunctionalObject(std::vector<xc_func_type*> &libxc_objects_, std::vector<double> &libxc_coefs_) {
     libxc_objects = std::move(libxc_objects_);
     libxc_coefs  = std::move(libxc_coefs_);
 }

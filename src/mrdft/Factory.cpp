@@ -50,9 +50,10 @@ void Factory::setFunctional(const std::string &name, double c) {
     if (libxc) {
         std::vector<int> ids;
         std::vector<double> coefs;
-        customExx = 0.0;
+        double scaled_custom_exx = 0.0;
 
-        mapFunctionalName(name, ids, coefs, customExx);
+        mapFunctionalName(name, ids, coefs, scaled_custom_exx);
+        customExx += c * scaled_custom_exx;
         xc_func_type *libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
             libxc_obj = xc_func_alloc();
