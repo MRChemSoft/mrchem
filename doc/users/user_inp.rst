@@ -346,7 +346,7 @@ XCFun and LibXC functionals can also be specified in the `functionals` input key
 
 Some general notes:
 
- * Functionals aliases are based on the XCFun definitions.
+ * Functional aliases are based on the XCFun definitions.
  * LibXC and XCFun have implementation differences, which in some cases result in numerical variations.
  * Some functional parameters are intrinsically different in the two libraries, internally changing these in MRChem to match would remove the purpose of using libraries; thus some differences are to be expected.
  * A complete list of XCFun shorthands and definitions can be found in the `aliases.cpp <https://github.com/dftlibs/xcfun/blob/master/src/functionals/aliases.cpp>`_ file.
