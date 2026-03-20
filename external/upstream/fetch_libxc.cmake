@@ -7,8 +7,7 @@ else()
   message(STATUS "Suitable LibXC could not be located. Fetching and building!")
   include(FetchContent)
   FetchContent_Declare(libxc_sources
-    GIT_REPOSITORY https://gitlab.com/libxc/libxc
-    GIT_TAG 7.0.0
+    URL https://gitlab.com/libxc/libxc/-/archive/7.0.0/libxc-7.0.0.tar.gz
   )
   set(CMAKE_INSTALL_INCLUDEDIR "include/" CACHE STRING "" FORCE) # Creates Libxc subdir in install
   set(BUILD_TESTING     OFF CACHE BOOL "Build LibXC tests" FORCE)
