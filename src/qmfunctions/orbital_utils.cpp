@@ -932,14 +932,25 @@ double orbital::h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunctio
  * compute the horizontal component of `direction` in the tangent space
  * at `Phi` with respect to the H¹ inner product.
  *
- * Mathematically, the horizontal projection D_h of D satisfies:
+ * Mathematically, the horizontal projection \( D_h \) of \( D \) satisfies:
  * \f[
- *   D_h = D + (B - B^T) \Phi
+ *   D_h = D - \omega \Phi
  * \f]
- * where
+ * where \( \omega \) is the skew-symmetric matrix solving the Sylvester equation
  * \f[
- *   B_{ij} = \frac{\langle \phi_i, d_j \rangle_{H^1}}
- *                 {\| \phi_i \|_{H^1}^2 + \| \phi_j \|_{H^1}^2}.
+ *   \omega \Phi + \Phi \omega = \Psi - \Psi^T
+ * \f]
+ * with
+ * \f[
+ *   \Phi_{ij} = \langle \phi_i, \phi_j \rangle_{H^1}, \quad
+ *   \Psi_{ij} = \langle d_j, \phi_i \rangle_{H^1}.
+ * \f]
+ *
+ * To solve this, diagonalize \( \Phi = U \Lambda_\Phi U^T \) with
+ * \( \Lambda_\Phi = \diag(\lambda_1, \ldots, \lambda_N) \), then
+ * \f[
+ *   \omega = U Y U^T, \quad Y_{ij} = \frac{S_{ij}}{\lambda_i + \lambda_j},
+ *   \quad S = U^T (\Psi - \Psi^T) U.
  * \f]
  *
  * The H¹ inner product includes both L² and gradient contributions:
@@ -954,7 +965,6 @@ double orbital::h1_inner_product(mrcpp::CompFunction<3> &phi, mrcpp::CompFunctio
  * @param Phi       OrbitalVector at which the tangent space is defined.
  * @param nabla     MomentumOperator for computing derivatives.
  * @return          OrbitalVector containing the horizontal projection of `direction`.
- * 
  */
 OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, MomentumOperator &nabla, double prec)
 {
@@ -1016,6 +1026,12 @@ OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVe
     return orbital::add(1.0, direction, 1.0, minus_omega_Phi, prec);
 }
 
+/**
+ * @brief Project a set of orbital variations onto the horizontal subspace (OUTDATED).
+ *
+ * @todo This function is currently using incorrect formula for the skew-symmetric matrix.
+ * It needs to be updated with `solve_symmetric_sylvester`.
+ */
 OrbitalVector orbital::project_to_horizontal(OrbitalVector &direction, OrbitalVector &Phi, OrbitalVector &one_minus_laplacian_Phi, double prec)
 {
     int n = Phi.size();

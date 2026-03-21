@@ -184,10 +184,11 @@ double logsumexp(const Eigen::VectorXd &x) {
  * @brief Solve the symmetric Sylvester equation X B + B X = C.
  *
  * @param B Symmetric real coefficient matrix.
- * @param C Symmetric real right-hand-side matrix.
+ * @param C Real right-hand-side matrix.
  *
- * This routine assumes that B and C are real symmetric matrices of the same size
- * and solves X B + B X = C using the spectral decomposition of B.
+ * This routine assumes that B is real symmetric matrix.
+ * All matrices are of the same size.
+ * It solves X B + B X = C using the spectral decomposition of B.
  *
  * 1. Compute the eigendecomposition B = Q Λ Qᵀ with Λ diagonal.
  * 2. Transform C to the eigenbasis: C̃ = Qᵀ C Q.
@@ -200,7 +201,7 @@ double logsumexp(const Eigen::VectorXd &x) {
  * Sylvester equation does not admit a unique solution in that case.
  *
  * For symmetric B, this is a specialized Sylvester solver exploiting
- * the orthogonal eigenbasis and reduces to elementwise division in that basis. [web:53][web:57]
+ * the orthogonal eigenbasis and reduces to elementwise division in that basis.
  */
 DoubleMatrix solve_symmetric_sylvester(const DoubleMatrix &B, const DoubleMatrix &C) {
     // Basic size checks
@@ -242,7 +243,6 @@ DoubleMatrix solve_symmetric_sylvester(const DoubleMatrix &B, const DoubleMatrix
 
     // 4. Transform back: X = Q X̃ Qᵀ
     DoubleMatrix X = Q * X_tilde * Q.transpose();
-    //return 0.5 * (X + X.transpose());
     return X;
 }
 } // namespace math_utils
