@@ -262,7 +262,7 @@ changed with the keyword ``xc_library`` to use either XCFun or `LibxXC <https://
 Exchange-correlation Functionals
 ++++++++++++++++++++++++++++++++
 
-A list of available xc functional shorthands in MRChem and their mapping to respective libraries.Note that only LDAs, GGAs and their hybrids are currently supported by MRCHem.
+A list of available xc functional shorthands in MRChem and their mapping to respective libraries. Note that only LDAs, GGAs and their hybrids are currently supported by MRChem.
 
 .. |c_on| raw:: html
 
