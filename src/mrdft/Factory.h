@@ -110,7 +110,7 @@ private:
     XC_p xcfun_p;                                         ///< @brief Pointer to the XCFun library handle
 
 
-    std::vector<xc_func_type*> libxc_objects;        ///< @brief Vector of initialized Libxc functionals
+    std::vector<xc_func_type*> libxc_objects;       ///< @brief Vector of initialized Libxc functionals
     std::vector<double> libxc_coefs;                ///< @brief Vector scaling coefficients for each functional in libxc_objects
 };
 
