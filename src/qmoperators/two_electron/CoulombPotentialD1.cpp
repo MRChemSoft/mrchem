@@ -75,7 +75,8 @@ void CoulombPotentialD1::setupLocalDensity(double prec) {
     // This forcefully gives rho an MRA (the default one).
     // This should eventually be solved in a more thorough way
     // But this is above my pay grade for now
-    (void)rho.real().getMRA(); 
+    // MSG_INFO((mrcpp::defaultCompMRA == nullptr) ? "Density MRA is null" : "Density MRA is not null"); 
+    
 
     MSG_INFO("Debug message 3");
 

@@ -259,19 +259,28 @@ ComplexDouble RankZeroOperator::dagger(const mrcpp::Coord<3> &r) const {
  * NOT YET IMPLEMENTED- SEE spinor_utils.cpp IN MRCPP IF YOU WANT TO IMPLEMENT 4 COMPONENT STUFF For 4 component (Dirac) spinors, alpha = 0,1,2,3 corresponds to indentiy, alpha_x, y and z respectively, and alpha = 4 corresponds to the beta matrix
  */
 Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
+    MSG_INFO("aa");
     if (inp.getNNodes() == 0) return inp.paramCopy(false);
     // apply operator to input orbital
     RankZeroOperator &O = *this;
+    MSG_INFO("bb");
     std::vector<mrcpp::CompFunction<3>> func_vec;
+    MSG_INFO("cc");
     std::vector<ComplexDouble> coef_vec = getCoefVector();
+    MSG_INFO("dd");
     for (int n = 0; n < O.size(); n++) {
+        MSG_INFO(O.size() << " ee " << n << " name = " << O.name());
         Orbital out_n = O.applyOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
+    MSG_INFO("ff");
     Orbital out = inp.paramCopy(true);
+    MSG_INFO("gg");
     mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
+    MSG_INFO("hh");
     // apply the alpha (Pauli) matrix to the result; NB: 4C behaviour needs to be implemented
     mrcpp::apply_Pauli(out, out, alpha); 
+    MSG_INFO("ii end");
     return out;
 }
 
@@ -359,9 +368,13 @@ OrbitalVector RankZeroOperator::dagger(OrbitalVector &inp) {
  * the corresponding coefficient to yield the final result.
  */
 ComplexDouble RankZeroOperator::operator()(Orbital bra, Orbital ket) {
+    // MSG_INFO("aa");
     RankZeroOperator &O = *this;
+    // MSG_INFO("bb");
     Orbital Oket = O(ket);
+    // MSG_INFO("cc");
     ComplexDouble out = mrcpp::dot(bra, Oket);
+    // MSG_INFO("dd");
     return out;
 }
 
@@ -391,9 +404,13 @@ ComplexDouble RankZeroOperator::dagger(Orbital bra, Orbital ket) {
  */
 ComplexMatrix RankZeroOperator::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     Timer t1;
+    MSG_INFO("aa");
     RankZeroOperator &O = *this;
+    MSG_INFO("bb");
     OrbitalVector Oket = O(ket);
+    MSG_INFO("cc");
     ComplexMatrix out = orbital::calc_overlap_matrix(bra, Oket);
+    MSG_INFO("dd");
     std::stringstream o_name;
     o_name << "<i|" << O.name() << "|j>";
     mrcpp::print::tree(2, o_name.str(), orbital::get_n_nodes(Oket), orbital::get_size_nodes(Oket), t1.elapsed());
@@ -509,14 +526,17 @@ ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
 Orbital RankZeroOperator::applyOperTerm(int n, const Orbital &inp) {
     if (n >= this->oper_exp.size()) MSG_ABORT("Invalid oper term");
     Orbital out = inp.paramCopy(true);
+    MSG_INFO("s");
 
     if (inp.getNNodes() == 0) return out;
     int i = 0;
     for (auto O_nm : this->oper_exp[n]) {
         if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
         if (i==0) {
+            MSG_INFO("n "<<i);
             out = O_nm->apply(inp);
         } else {
+            MSG_INFO("o "<< i);
             out = O_nm->apply(out);
         }
         i++;

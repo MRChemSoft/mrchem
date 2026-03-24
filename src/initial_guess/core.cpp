@@ -240,6 +240,7 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
 
 ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOperator &p, RankZeroOperator &V) {
     Timer t1;
+    MSG_INFO("a");
     ComplexMatrix S_m12 = mrcpp::calc_lowdin_matrix(Phi);//TODO checker que ça donne une matrice non nulle, sinon problème
 
     ComplexMatrix S_overlap = mrcpp::calc_overlap_matrix(Phi);
@@ -250,19 +251,35 @@ ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOpera
             // }
         }
     }
+    MSG_INFO("b");
+
+    OrbitalVector VPhi = V(Phi);
 
     mrcpp::print::separator(2, '-');
     ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(p, Phi, Phi);
+    for (int m = 0; m < t_tilde.rows(); m++) {
+        std::cout << "ttilde " << std::endl;
+        for (int p = 0; p < t_tilde.cols(); p++) {
+            std::cout << t_tilde(m,p) << " ";
+        }
+        std::cout << std::endl;
+    }
+    MSG_INFO("b1");
     ComplexMatrix v_tilde = V(Phi, Phi);
+    MSG_INFO("b2");
     ComplexMatrix f_tilde = t_tilde + v_tilde;
+    MSG_INFO("b3");
     ComplexMatrix f = S_m12.adjoint() * f_tilde * S_m12;
     mrcpp::print::separator(2, '-');
     mrcpp::print::time(1, "Computing Fock matrix", t1);
 
+    MSG_INFO("c");
     Timer t2;
     DoubleVector eig;
     ComplexMatrix U = math_utils::diagonalize_hermitian_matrix(f, eig);
     mrcpp::print::time(1, "Diagonalizing Fock matrix", t2);
+
+    MSG_INFO("d");
 
     return S_m12 * U;
 }

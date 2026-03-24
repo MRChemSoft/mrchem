@@ -369,7 +369,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol, int n_co
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
-    std::cout << "driver::scf::guess_orbitals -- json done until n_components" << std::endl;
+    std::cout << "driver::scf::guess_orbitals -- json done until n_components restricted=" << restricted << std::endl;
     // int n_components = json_guess["spinor_components"];
     std::cout << "driver::scf::guess_orbitals -- json done" << n_components << " " << std::endl;
 
@@ -416,7 +416,8 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol, int n_co
     std::cout << "driver::scf::guess_orbitals -- orbital vector distributed " << Phi.size() << std::endl;
 
     //remove when implemented
-    if (n_components > 1 && (type != "sad" ||  type != "sad_gto")) {
+    MSG_INFO("tut type = " << type);
+    if (n_components > 1 && not((type == "sad") ||  (type == "sad_gto"))) {
         MSG_ERROR("Initial guess for multi-component orbitals only implemented for SAD");
         return false;
     }

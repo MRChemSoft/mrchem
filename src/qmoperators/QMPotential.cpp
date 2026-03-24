@@ -72,7 +72,7 @@ QMPotential::QMPotential(const QMPotential &inp)
  */
 Orbital QMPotential::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-
+    MSG_INFO("a");
     Orbital out;
     calc(out, inp, false);
 
@@ -132,13 +132,14 @@ void QMPotential::calc(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> &inp,
     double prec = this->apply_prec;
     if (out.Ncomp() > 0) MSG_ABORT("Output not empty");
     if (out.isShared()) MSG_ABORT("Cannot share this function");
-    if (dagger and inp.iscomplex()) MSG_ERROR("Not implemented");
+    if (dagger and inp.iscomplex()) MSG_INFO("DAGGER OPERATOR NEEDS TO BE CHECKED");
     if (inp.conjugate()) MSG_ERROR("Not implemented");
 
     mrcpp::CompFunction<3> &V = *this;
     double coef = 1.0;
     mrcpp::copy_grid(out, inp);
-    mrcpp::multiply(prec, out, coef, inp, V, adap);
+    // mrcpp::multiply(prec, out, coef, inp, V, adap);
+    mrcpp::multiply(out, inp, *V.CompD[0], prec, false, false, dagger); //modifier pour que ça corresponde à la bonne fonction
 }
 
 } // namespace mrchem

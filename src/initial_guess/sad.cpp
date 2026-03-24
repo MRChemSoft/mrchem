@@ -101,6 +101,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
         MomentumOperator p(D_p);
         NuclearOperator V_nuc(nucs, prec);
+        // MSG_INFO(" inpb = " << &V_loc.CompD[0] << " inpb2 = " << &V_loc.CompD[1] ); //à tester
         CoulombOperator J(P_p);
         XCOperator XC(mrdft_p);
         RankZeroOperator V = V_nuc + J + XC;
@@ -134,7 +135,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
 
         // Compute Fock matrix
         mrcpp::print::header(2, "Diagonalizing Fock matrix");
-        std::cout << "initial_guess::sad::setup -- Diagonalizing Fock matrix start" << std::endl;
+        std::cout << "initial_guess::sad::setup -- Diagonalizing Fock matrix startut" << std::endl;
         ComplexMatrix soverlap = mrcpp::calc_overlap_matrix(Psi); //TODO check that this is not zero, sinon problème
         for (int i = 0; i < Psi.size(); i++) {
             for (int j = 0; j < Psi.size(); j++) {
@@ -306,8 +307,10 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
         rho_k.crop(crop_prec);
         rho_loc.add(1.0, rho_k);
 
+        MSG_INFO("tut post add");
         charges[k] = nucs[k].getCharge();
         charges[N_nucs + k] = rho_k.integrate().real();
+        MSG_INFO("tut adadsa")
     }
     t_loc.stop();
     Timer t_com;
@@ -315,6 +318,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     density::allreduce_density(rho_tot, rho_loc);
     t_com.stop();
 
+    MSG_INFO("tut 2");
     for (int k = 0; k < N_nucs; k++) {
         std::stringstream o_row;
         o_row << std::setw(w1) << k;
@@ -328,6 +332,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     auto tot_nuc = charges.segment(0, N_nucs).sum();
     auto tot_rho = charges.segment(N_nucs, N_nucs).sum();
 
+    MSG_INFO("Tut 3");
     std::stringstream o_row;
     o_row << " Total charge";
     o_row << std::string(w1 + w2 + w4 - 13, ' ');

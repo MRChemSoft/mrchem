@@ -125,21 +125,24 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
  */
 void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
     MSG_INFO("Debug message");
+    rho.alloc(1);
     for (auto &phi_i : Phi) {
         if (mrcpp::mpi::my_func(phi_i)) {
             double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue;
             Density rho_i; 
-            MSG_INFO("Debug message 2"); //rho manque un MRA
-            mrcpp::copy_grid(rho_i, phi_i);
-            MSG_INFO("Debug message 2.5");
+            rho_i.alloc(1);
+            // Density rho_i(*(new mrcpp::MultiResolutionAnalysis<3>(Phi[0].real().getMRA()))); // this is a bit hacky, but it gives rho_i the same MRA as phi_i, which is necessary for the copy_grid and make_density functions. We also give it 1 component, since it will only hold the density of one orbital.
+            MSG_INFO("Debug message 2 "<< rho_i.Ncomp() << " " << &(rho_i.real().getMRA())); //rho manque un MRA
+            mrcpp::copy_grid(rho_i, phi_i, 0); //last argument means only copy grid of the first component, as rho_i has only one itself
+            MSG_INFO("Debug message 2.5 "<< rho_i.Ncomp());
             // auto tut = rho_i.real().getMRA();
-            MSG_INFO("Debug message 3");
+            MSG_INFO("Debug message 3 " << &(rho_i.real().getMRA()));
             mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
-            MSG_INFO("Debug message 4");
+            MSG_INFO("Debug message 4 "<< rho_i.Ncomp() << " MerdeRA="<< &(rho_i.CompD[0]->getMRA()));
             //note that we crop the phi_i*phi_i, because the square makes small smaller
             rho_i.crop(prec);  // Truncates to given precision
-            MSG_INFO("Debug message 5" << " occ: " << occ << " norm: " << rho_i.getSquareNorm());
+            MSG_INFO("Debug message 5" << " occ: " << occ << " norm: " << rho_i.getSquareNorm() << " MerdeRA_i="<< &(rho_i.CompD[0]->getMRA()) << " MerdeRA="<< &(rho.CompD[0]->getMRA()));
             // we do not crop rho, since the rho_i do not cancel out
             rho.add(occ, rho_i); // Extends to union grid
             MSG_INFO("Debug message 6");

@@ -54,6 +54,8 @@ public:
             : mrcpp::CompFunction<3>(0, share, 1) {}
     Density(const Density &dens) //copy constructor
             : mrcpp::CompFunction<3>(dens) {}
+    Density(mrcpp::MultiResolutionAnalysis<3> &mra)
+            : mrcpp::CompFunction<3>(mra, 1) {}
     Density &operator=(const Density &dens);
 
     void saveDensity(const std::string &file);

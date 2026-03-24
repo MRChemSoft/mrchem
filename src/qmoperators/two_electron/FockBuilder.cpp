@@ -265,6 +265,7 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
+    MSG_INFO("pre kinetic mat")
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora() || isAZora()) {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket) + qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
@@ -272,8 +273,12 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
 
+    MSG_INFO("post kin mat, pre pot mat")
+
     ComplexMatrix V_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     V_mat += potential()(bra, ket);
+
+    MSG_INFO("matrices ok")
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing Fock matrix", t_tot);
