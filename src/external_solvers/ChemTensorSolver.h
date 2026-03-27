@@ -55,7 +55,7 @@ public:
 
 private:
     dense_tensor* tkin_tensor{};
-    dense_tensor* vnuc_tensor{};
+    dense_tensor* velec_tensor{};
     mpo_assembly* assembly{};
     mps* psi{};
 

@@ -1175,57 +1175,45 @@ json driver::lag::run(const json &json_lag, Molecule &mol) {
  * This function expects the "initial_guess" subsection of the input.
  */
 
-bool driver::lag::guess_orbitals(const json &json_guess, Molecule &mol, int norbs) {    
+bool driver::lag::guess_orbitals(const json &json_guess, Molecule &mol, int norbs) {
+    // only gtos supported by now
     auto prec = json_guess["prec"];
-    auto zeta = json_guess["zeta"];
-    auto type = json_guess["type"];
     auto screen = json_guess["screen"];
-    //auto mw_p = json_guess["file_phi_p"];
-    //auto mw_a = json_guess["file_phi_a"];
-    //auto mw_b = json_guess["file_phi_b"];
     auto gto_p = json_guess["file_gto_p"];
     auto gto_a = json_guess["file_gto_a"];
     auto gto_b = json_guess["file_gto_b"];
     auto gto_bas = json_guess["file_basis"];
     auto file_chk = json_guess["file_chk"];
-    //auto restricted = json_guess["restricted"];
-    //auto cube_p = json_guess["file_CUBE_p"];
-    //auto cube_a = json_guess["file_CUBE_a"];
-    //auto cube_b = json_guess["file_CUBE_b"];
-
-    //int mult = mol.getMultiplicity();
-    //if (restricted && mult != 1) {
-    //    MSG_ERROR("Restricted open-shell not supported");
-    //    return false;
-    //}
-
+    
     // Figure out number of electrons
     int Ne = mol.getNElectrons(); // total electrons
-    //int Ns = mult - 1;            // single occ electrons
-    //int Nd = Ne - Ns;             // double occ electrons
-    //if (Nd % 2 != 0) {
-    //    MSG_ERROR("Invalid multiplicity");
-    //    return false;
-    //}
-
-    // Figure out number of occupied orbitals
-    //int Na = (restricted) ? Ns : Nd / 2 + Ns; // alpha orbitals
-    //int Nb = (restricted) ? 0 : Nd / 2;       // beta orbitals
-    //int Np = (restricted) ? Nd / 2 : 0;       // paired orbitals
-
+    
     // Fill orbital vector
     auto &nucs = mol.getNuclei();
     auto &Phi = mol.getOrbitals();
     // BUG: it allocates automatically 2 electrons per orbital!
     for (auto p = 0; p < norbs; p++) Phi.push_back(Orbital(SPIN::Paired));
-    //for (auto a = 0; a < Na; a++) Phi.push_back(Orbital(SPIN::Alpha));
-    //for (auto b = 0; b < Nb; b++) Phi.push_back(Orbital(SPIN::Beta));
+    //for (auto p = 0; p < norbs; p++) Phi.push_back(Orbital(SPIN::Alpha));
+    //for (auto p = 0; p < norbs; p++) Phi.push_back(Orbital(SPIN::Beta));
+
     Phi.distribute();
 
-    auto success = true;
-    // only gtos supported by now
-    success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
+    auto success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     
+    // modify occupancies, otherwise wrong number of electrons
+    // TODO: take care of it in gto::setup??
+    DoubleVector default_occs = orbital::get_occupations(Phi);
+    if( Ne%2!=0 ){
+        MSG_ERROR("Odd number of electrons not supported by now");
+        return false;
+    }
+    for (unsigned int i = Ne/2; i < norbs; i++){
+        default_occs[i] = 0;
+        //default_occs[i+norbs] = 0;
+    }
+    mrchem::orbital::set_occupations(Phi, default_occs);
+
+    // check normalization
     for (const auto &phi_i : Phi) {
         double err = (mrcpp::mpi::my_func(phi_i)) ? std::abs(phi_i.norm() - 1.0) : 0.0;
         if (err > 0.01) MSG_WARN("MO not normalized!");

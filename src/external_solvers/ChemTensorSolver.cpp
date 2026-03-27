@@ -49,7 +49,7 @@ ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, i
     this->num_sweeps = dict_chemtensor["num_sweeps"];
     this->maxiter_lanczos = dict_chemtensor["maxiter_lanczos"];
     this->tol_split = dict_chemtensor["tol_split"];
-    this->optimize_assembly = dict_chemtensor["optimize_assembly"];
+    this->optimize_assembly = false; //dict_chemtensor["optimize_assembly"];
 }
 
 ChemTensorSolver::~ChemTensorSolver() {
@@ -57,9 +57,9 @@ ChemTensorSolver::~ChemTensorSolver() {
         delete this->tkin_tensor->dim;
         delete this->tkin_tensor;
     }
-    if (this->vnuc_tensor) {
-        delete this->vnuc_tensor->dim;
-        delete this->vnuc_tensor;
+    if (this->velec_tensor) {
+        delete this->velec_tensor->dim;
+        delete this->velec_tensor;
     }
     if (this->assembly){ 
         delete_mpo_assembly(this->assembly); 
@@ -75,14 +75,14 @@ void ChemTensorSolver::set_dense_tensors(){
     this->tkin_tensor = new dense_tensor;
     this->tkin_tensor->data  = static_cast<void*>(this->one_body_integrals->data());
     this->tkin_tensor->dim   = new ct_long[2]{this->one_body_integrals->rows(), this->one_body_integrals->cols()};
-    this->tkin_tensor->dtype = CT_DOUBLE_COMPLEX;
+    this->tkin_tensor->dtype = CT_DOUBLE_REAL;
     this->tkin_tensor->ndim  = 2;
 
-    this->vnuc_tensor = new dense_tensor;
-    this->vnuc_tensor->data  = static_cast<void*>(this->two_body_integrals->data());
-    this->vnuc_tensor->dim   = new ct_long[4]{this->two_body_integrals->dimension(0), this->two_body_integrals->dimension(1), this->two_body_integrals->dimension(2), this->two_body_integrals->dimension(3)};
-    this->vnuc_tensor->dtype = CT_DOUBLE_COMPLEX;
-    this->vnuc_tensor->ndim  = 4;
+    this->velec_tensor = new dense_tensor;
+    this->velec_tensor->data  = static_cast<void*>(this->two_body_integrals->data()); //->shuffle(Eigen::array<int,4>{0,2,1,3})); //physicist's notation
+    this->velec_tensor->dim   = new ct_long[4]{this->two_body_integrals->dimension(0), this->two_body_integrals->dimension(1), this->two_body_integrals->dimension(2), this->two_body_integrals->dimension(3)};
+    this->velec_tensor->dtype = CT_DOUBLE_REAL;
+    this->velec_tensor->ndim  = 4;
 }
 
 void ChemTensorSolver::optimize() {
@@ -93,7 +93,7 @@ void ChemTensorSolver::optimize() {
         this->assembly = new mpo_assembly{};
     
     mpo hamiltonian;
-    construct_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->vnuc_tensor, this->optimize_assembly, this->assembly);
+    construct_spin_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->velec_tensor, this->optimize_assembly, this->assembly);
     //this->assembly = std::make_shared<mpo_assembly>(assembly);
 
     mpo_from_assembly(this->assembly, &hamiltonian);

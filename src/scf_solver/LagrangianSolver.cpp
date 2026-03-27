@@ -77,6 +77,24 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     }
     std::cout << std::endl;
 
+    // print two-body integral
+    std::cout << "Two-body integrals" << std::endl;
+    for(int i=0; i<one_int.rows(); i++){
+        for(int j=0; j<one_int.cols(); j++){
+            for(int k=0; k<one_int.rows(); k++){
+                for(int l=0; l<one_int.cols(); l++){
+                    std::cout << two_int(i,j,k,l) << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+
+
+
     int nIter = 0;
     bool converged = false;
     
