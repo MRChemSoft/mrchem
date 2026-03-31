@@ -106,9 +106,9 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     // std::cout << "NuclearOperator constructor local pot constructed" << std::endl;
     mrcpp::project(V_loc, *f_loc, loc_prec);
     //test
-    MSG_INFO("TESTTESTTESTTEST")
+    // MSG_INFO("TESTTESTTESTTEST")
     mrcpp::project(V_loc, *f_loc, loc_prec, 1);
-    MSG_INFO(" inpb = " << &V_loc.CompD[0] << " inpb2 = " << &V_loc.CompD[1] )
+    // MSG_INFO(" inpb = " << &V_loc.CompD[0] << " inpb2 = " << &V_loc.CompD[1] )
     // std::cout << "NuclearOperator constructor local pot actually projected" << std::endl;
     t_loc.stop();
     mrcpp::print::separator(1, '-');
@@ -119,10 +119,10 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     Timer t_com;
     auto V_tot = std::make_shared<QMPotential>(1, mpi_share);
     allreducePotential(tot_prec, *V_tot, V_loc);
-    MSG_INFO(" inpb = " << &V_tot->CompD[0] << " inpb2 = " << &V_tot->CompD[1] )
+    // MSG_INFO(" inpb = " << &V_tot->CompD[0] << " inpb2 = " << &V_tot->CompD[1] )
     V_func = *V_tot;
     t_com.stop();
-    MSG_INFO(" inpb = " << &V_func.CompD[0] << " inpb2 = " << &V_func.CompD[1] )
+    // MSG_INFO(" inpb = " << &V_func.CompD[0] << " inpb2 = " << &V_func.CompD[1] )
 
     t_tot.stop();
     print_utils::qmfunction(1, "Allreduce potential", *V_tot, t_com);
@@ -130,10 +130,9 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     // std::cout << "NuclearOperator constructor local pot collected" << std::endl;
 
     // Invoke operator= to assign *this operator
-    (*this).name() = "V_nuc";
-    // RankZeroOperator &O = (*this); //to be removed
-    // O = V_tot; //to be removed
-    // O.name() = "V_nuc"; //to be removed
+    RankZeroOperator &O = (*this); //sets the 
+    O = V_tot; 
+    O.name() = "V_nuc"; 
     delete f_loc;
 }
 
