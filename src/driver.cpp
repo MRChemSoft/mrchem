@@ -273,6 +273,9 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     const auto &json_guess = json_scf["initial_guess"];
     std::cout << "driver::scf::run Initial Guess start 2" << std::endl;
     if (scf::guess_orbitals(json_guess, mol, n_components)) {
+        //todo changer ça pour voir si ce con d'exchange marche ou si c'est trace qui foire?
+        // MSG_INFO("build fock done DaddyCoul=" << F.getCoulombOperator()->trace(*Phi_p)<< " DaddyExch=" << F.getExchangeOperator()->trace(*Phi_p));
+
         std::cout << "driver::scf::run Initial Guess start success" << std::endl;
         scf::guess_energy(json_guess, mol, F);
         json_out["initial_energy"] = mol.getSCFEnergy().json();
@@ -457,7 +460,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, Molecule &mol, int n_co
 }
 
 bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilder &F) {
-    std::cout << "driver::scf::guess_energy start" << std::endl;
+    std::cout << "driver::scf::guess_energy start nucsize=" << F.getNuclearOperator()->size() << std::endl;
     auto prec = json_guess["prec"];
     auto method = json_guess["method"];
     auto relativity = json_guess["relativity"];
@@ -493,9 +496,10 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     std::cout << "driver::scf::guess_energy -- Fock matrix setup done, orbitals localised" << std::endl;
 
     F.setup(prec);
-    std::cout << "driver::scf::guess_energy -- Fock operator setup done" << std::endl;
+    MSG_INFO("build fock done DaddyCoul=" << F.getCoulombOperator()->trace(Phi)<< " DaddyExch=" << F.getExchangeOperator()->trace(Phi));
+    std::cout << "driver::scf::guess_energy -- Fock operator setup done nucsize="<< F.getNuclearOperator()->size() << std::endl;
     F_mat = F(Phi, Phi);
-    std::cout << "driver::scf::guess_energy -- Fock matrix computed" << std::endl;
+    std::cout << "driver::scf::guess_energy -- Fock matrix computed nuc =" << F.getNuclearOperator()->size() << std::endl;
     mol.getSCFEnergy() = F.trace(Phi, nucs);
     std::cout << "driver::scf::guess_energy -- SCF energy computed" << std::endl;
     F.clear();
@@ -1140,9 +1144,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto smooth_prec = json_fock["nuclear_operator"]["smooth_prec"];
         auto shared_memory = json_fock["nuclear_operator"]["shared_memory"];
         std::cout << "driver::build_fock_operator: I'm wild" << std::endl;
-        auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, nuc_model);
-        std::cout << "driver::build_fock_operator: I'm breaking up inside " << std::endl;
+        auto V_p = std::make_shared<NuclearOperator>(nuclei, proj_prec, smooth_prec, shared_memory, nuc_model); //TODO ça ne créé pas d'opérateur
+        std::cout << "driver::build_fock_operator: I'm breaking up inside " << V_p->size()<< std::endl;
         F.getNuclearOperator() = V_p;
+        MSG_INFO("nuc = " <<  F.getNuclearOperator()->size())
     }
     ///////////////////////////////////////////////////////////
     //////////////////////   Zora Operator   //////////////////
@@ -1198,9 +1203,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             std::cout << "driver::build_fock_operator: tut pert order 0" << std::endl;
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
             F.getCoulombOperator() = J_p;
-            std::cout << "driver::build_fock_operator: AAAAAAAAAAAAAAAAAAAAAAAAA before" << std::endl;
-            F.setup(1e-3);
-            std::cout << "driver::build_fock_operator: AAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
+            MSG_INFO("Coulomb value="<< F.getCoulombOperator()->trace(*Phi_p));
         } else if (order == 1) {
             std::cout << "driver::build_fock_operator: tut pert order 1" << std::endl;
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
@@ -1355,6 +1358,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         if (order == 0) {
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, exchange_prec);
             F.getExchangeOperator() = K_p;
+            MSG_INFO("Exchange size=" << K_p->trace(*Phi_p) << " " << F.getCoulombOperator()->trace(*Phi_p));// << " expct val="<< (*K_p)((*Phi_p)[0], (*Phi_p)[0]));
         } else {
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
             F.getExchangeOperator() = K_p;

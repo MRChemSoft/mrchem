@@ -102,11 +102,11 @@ void FockBuilder::setup(double prec) {
         mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
         mrcpp::print::separator(2, '-');
     }
-    //test TODOD À exécuter
-    for (auto &i : this->potential().getOperatorExpansion()) {
-        // std::cout << "RankZeroOperator::setup -- operator expansion" << std::endl;
-        for (int j = 0; j < i.size(); j++) { std::cout << "FockBuilder::setup -- operator: "<< j << " " << i[j] << std::endl; }
-    }
+    // //test TODOD À exécuter
+    // for (auto &i : this->potential().getOperatorExpansion()) {
+    //     // std::cout << "RankZeroOperator::setup -- operator expansion" << std::endl;
+    //     for (int j = 0; j < i.size(); j++) { std::cout << "FockBuilder::setup -- operator: "<< j << " " << i[j] << std::endl; }
+    // }
     // std::cout << "FockBuilder::setup -- Starting setup of operators: " << &i << std::endl;
     // if (this->coul != nullptr) this->V += (*this->coul);
     std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators" << std::endl;
@@ -227,6 +227,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double Er_tot = 0.0; // Total reaction energy
 
     // Nuclear part
+    MSG_INFO("nuc")
     if (this->nuc != nullptr) E_nn = chemistry::compute_nuclear_repulsion(nucs);
     if (this->ext != nullptr) E_next = -this->ext->trace(nucs).real();
 
@@ -241,6 +242,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Kinetic part
+    MSG_INFO("kin")
     if (isZora() || isAZora()) {
         E_kin = qmoperator::calc_kinetic_trace(momentum(), *this->chi, Phi).real() + qmoperator::calc_kinetic_trace(momentum(), Phi);
     } else {
@@ -248,10 +250,13 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Electronic part
+    MSG_INFO("ee")
     if (this->nuc != nullptr) { E_en = this->nuc->trace(Phi).real(); }
 
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
+    ComplexDouble tutex = this->ex->trace(Phi).real();
+    MSG_INFO("coulomb expct val="<< E_ee << " exchange expct val=" << -this->exact_exchange << " " << tutex.real() << tutex.imag());
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
     mrcpp::print::footer(2, t_tot, 2);
@@ -268,7 +273,11 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     MSG_INFO("pre kinetic mat")
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora() || isAZora()) {
-        T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket) + qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
+        //If we have spinors, the kinetic operator is of the form (σ·p)V(σ·p), with σ being a Pauli matrix.
+        //What this boolean does is enabling the application of the Pauli matrices along the x,y,z momentum operators.
+        //NOTE! The second term does not change from being spinorial; (σ·p)(σ·p) = p^2 using the Dirac identity.
+        bool spinorial = (bra[0].Ncomp() > 1); //assumes all orbitals have the same number of components
+        T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket, spinorial) + qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }

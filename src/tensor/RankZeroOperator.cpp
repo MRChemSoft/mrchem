@@ -210,7 +210,7 @@ void RankZeroOperator::setup(double prec) {
         std::cout << "RankZeroOperator::setup -- operator expansion" << std::endl;
         for (int j = 0; j < i.size(); j++) { 
             std::cout << "RankZeroOperator::setup -- operator: "<< j << " " << i[j] << std::endl;
-            i.at(j)->setup(prec); 
+            i.at(j)->setup(prec); //calls QMOperator::setup
             std::cout << "RankZeroOperator::setup -- operator setup done tut" << std::endl;
         }
     }
@@ -267,7 +267,7 @@ Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
     std::vector<mrcpp::CompFunction<3>> func_vec;
     MSG_INFO("cc");
     std::vector<ComplexDouble> coef_vec = getCoefVector();
-    MSG_INFO("dd");
+    MSG_INFO("dd" << " name=" << O.name() << " size="<< O.size());
     for (int n = 0; n < O.size(); n++) {
         MSG_INFO(O.size() << " ee " << n << " name = " << O.name());
         Orbital out_n = O.applyOperTerm(n, inp);
@@ -275,7 +275,7 @@ Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
     }
     MSG_INFO("ff");
     Orbital out = inp.paramCopy(true);
-    MSG_INFO("gg");
+    MSG_INFO("gg" << out.Ncomp());
     mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
     MSG_INFO("hh");
     // apply the alpha (Pauli) matrix to the result; NB: 4C behaviour needs to be implemented
@@ -446,17 +446,23 @@ ComplexMatrix RankZeroOperator::dagger(OrbitalVector &bra, OrbitalVector &ket) {
  */
 ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi) {
     Timer t1;
+    // MSG_INFO("a start name = " << this->name() << " size="<< this->size());
     RankZeroOperator &O = *this;
     OrbitalVector OPhi = O(Phi);
+    // MSG_INFO("b");
     std::vector<ComplexDouble> eta(Phi.size());
     std::vector<ComplexDouble> phi_vec(Phi.size());
+    // MSG_INFO("c");
     auto phiOPhi = mrcpp::dot(Phi, OPhi);
+    // MSG_INFO("d");
     ComplexDouble out = 0.0;
     for (int i = 0; i < Phi.size(); i++) {
+        // MSG_INFO("e iter=" << i);
         eta[i] = Phi[i].occ();
         phi_vec[i] = phiOPhi[i];
         out += eta[i] * phi_vec[i];
     }
+    // MSG_INFO("e ok");
 
     std::stringstream o_name;
     o_name << "Trace " << O.name() << "(rho)";
@@ -464,6 +470,7 @@ ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi) {
     auto n_size = orbital::get_size_nodes(OPhi);
     mrcpp::print::tree(2, o_name.str(), n_nodes, n_size, t1.elapsed());
 
+    // MSG_INFO("f end");
     return out;
 }
 
