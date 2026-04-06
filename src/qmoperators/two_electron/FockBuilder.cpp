@@ -347,6 +347,17 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         MSG_ABORT("At this point, the ZORA or AZORA operator should be set. Exiting.");
     }
 
+    //spin orbit coupling term, which would be identically 0 for scalar functions.
+    if (Phi[0].Ncomp() > 1) {
+        //Manually implementing the cross product appearing in the spin-orbit term
+        //NOTE! The multiplication by the Pauli matrices will need to be handled later,
+        //      during the application of the cross-product to the orbitals.
+        //x term 
+        RankZeroOperator operSOX = p(chi)[1]*p[2] - p(chi)[2]*p[1];
+        RankZeroOperator operSOY = p(chi)[2]*p[0] - p(chi)[0]*p[2];
+        RankZeroOperator operSOZ = p(chi)[0]*p[1] - p(chi)[1]*p[0];
+    }
+
     RankZeroOperator operThree = *operThreePtr;
 
     operOne.setup(prec);
