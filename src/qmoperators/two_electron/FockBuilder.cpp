@@ -27,6 +27,7 @@
 
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include "MRCPP/utils/spinor_utils.h"
 
 #include "CoulombOperator.h"
 #include "ExchangeOperator.h"
@@ -347,17 +348,6 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         MSG_ABORT("At this point, the ZORA or AZORA operator should be set. Exiting.");
     }
 
-    //spin orbit coupling term, which would be identically 0 for scalar functions.
-    if (Phi[0].Ncomp() > 1) {
-        //Manually implementing the cross product appearing in the spin-orbit term
-        //NOTE! The multiplication by the Pauli matrices will need to be handled later,
-        //      during the application of the cross-product to the orbitals.
-        //x term 
-        RankZeroOperator operSOX = p(chi)[1]*p[2] - p(chi)[2]*p[1];
-        RankZeroOperator operSOY = p(chi)[2]*p[0] - p(chi)[0]*p[2];
-        RankZeroOperator operSOZ = p(chi)[0]*p[1] - p(chi)[1]*p[0];
-    }
-
     RankZeroOperator operThree = *operThreePtr;
 
     operOne.setup(prec);
@@ -392,10 +382,46 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     OrbitalVector termThree = operThree(epsPhi);
     mrcpp::print::time(2, "Computing rescaled potential term", t_3);
 
+    //spin orbit coupling term, which would be identically 0 for scalar functions.
+    OrbitalVector termSO(Phi.size());
+    //allocate zero-valued orbitals for the spin-orbit term, which will be filled in the loop below, to avoid seg faults
+    for (int i = 0; i < termSO.size(); i++) {
+        termSO[i].alloc(Phi[i].Ncomp(), true);
+    }
+    if (Phi[0].Ncomp() > 1) {
+        //Manually implementing the cross product appearing in the spin-orbit term
+        //NOTE! The multiplication by the Pauli matrices will need to be handled later,
+        //      during the application of the cross-product to the orbitals.
+        RankZeroOperator operSOX = p(chi)[1]*p[2] - p(chi)[2]*p[1];
+        operSOX.setup(prec);
+        RankZeroOperator operSOY = p(chi)[2]*p[0] - p(chi)[0]*p[2];
+        operSOY.setup(prec);
+        RankZeroOperator operSOZ = p(chi)[0]*p[1] - p(chi)[1]*p[0];
+        operSOZ.setup(prec);
+        //Applying the curls to temporary copies of the orbitals 
+        //NOTE! Extremely inefficient!
+        OrbitalVector orbTempX = orbital::deep_copy(Phi);
+        orbTempX = operSOX(Phi);
+        OrbitalVector orbTempY = orbital::deep_copy(Phi);
+        orbTempY = operSOX(Phi);
+        OrbitalVector orbTempZ = orbital::deep_copy(Phi);
+        orbTempZ = operSOX(Phi);
+        //adding the contributions together. Note that the coefficient is purely imaginary.
+        for (int i = 0; i < Phi.size(); i++) {
+            mrcpp::apply_Pauli(orbTempX[i], orbTempX[i], 1, -1.0, false);
+            mrcpp::apply_Pauli(orbTempY[i], orbTempY[i], 1, -1.0, false);
+            mrcpp::apply_Pauli(orbTempZ[i], orbTempZ[i], 1, -1.0, false);
+            termSO[i].add((0.0, 1.0), orbTempX[i]);
+            termSO[i].add((0.0, 1.0), orbTempY[i]);
+            termSO[i].add((0.0, 1.0), orbTempZ[i]);
+        }
+    }
+
     auto normsOne = orbital::get_norms(termOne);
     auto normsTwo = orbital::get_norms(termTwo);
     auto normsThree = orbital::get_norms(termThree);
     auto normsPsi = orbital::get_norms(Psi);
+
     // Add up all the terms
     Timer t_add;
     OrbitalVector arg = orbital::deep_copy(termOne);
