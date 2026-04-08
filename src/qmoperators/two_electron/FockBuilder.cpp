@@ -417,9 +417,11 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         }
     }
 
+    //What is this useful for? We don't use them at all.
     auto normsOne = orbital::get_norms(termOne);
     auto normsTwo = orbital::get_norms(termTwo);
     auto normsThree = orbital::get_norms(termThree);
+    // auto normsSO = (Phi[0].Ncomp() > 1 ? orbital::get_norms(termSO) : DoubleVector(termSO.size(), 0.0)); //Does not compile. Need to check the constructor for the DoubleVector
     auto normsPsi = orbital::get_norms(Psi);
 
     // Add up all the terms
@@ -429,6 +431,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         if (not mrcpp::mpi::my_func(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
+        if (Phi[0].Ncomp() > 1) arg[i].add(1.0, termSO[i]); //spin-orbit coupling. Is zero for scalar functions.
         arg[i].add(1.0, Psi[i]);
     }
     mrcpp::print::time(2, "Adding contributions", t_add);
