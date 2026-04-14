@@ -59,11 +59,11 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     //Timer t_tot;
     json json_out;
 
-    const Nuclei &nucs = mol.getNuclei();
+    //Nuclei nucs = mol.getNuclei();
     OrbitalVector &Phi_n = mol.getOrbitals();
     double prec = 1e-3;
 
-    S.set_integrals(Phi_n, F);
+    S.set_integrals(Phi_n);
     ComplexMatrix one_int = *(S.get_one_body_integrals());
     ComplexTensorR4 two_int = *(S.get_two_body_integrals());
 

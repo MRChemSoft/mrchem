@@ -1148,10 +1148,11 @@ json driver::lag::run(const json &json_lag, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     /////////////////   Building DMRG Driver   ////////////////
     ///////////////////////////////////////////////////////////
+    mrchem::Nuclei nucs = mol.getNuclei();
     int Ne = mol.getNElectrons(); // total electrons
     int spin = mol.getMultiplicity()-1; // spin = multiplicity-1
     const auto &json_chemtensor = json_lag["external_solver"];
-    ChemTensorSolver dmrg_solver(mol.getOrbitals(), F, Ne, spin, json_chemtensor);
+    ChemTensorSolver dmrg_solver(mol.getOrbitals(), F, nucs, Ne, spin, json_chemtensor);
     
     ///////////////////////////////////////////////////////////
     //////////////   Building Lagrangian Solver   /////////////

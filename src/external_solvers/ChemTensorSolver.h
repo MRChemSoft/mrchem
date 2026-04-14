@@ -40,13 +40,15 @@ namespace mrchem {
 
 class ChemTensorSolver : public ExternalSolver {
 public:
-    ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, int spin, json dict_chemtensor);
+    ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, Nuclei &nucs, int Ne, int spin, json dict_chemtensor);
     ~ChemTensorSolver();
 
     void set_max_vdim(int max_vdim) { this->max_vdim = max_vdim; }
     void set_num_sweeps(int num_sweeps) { this->num_sweeps = num_sweeps; }
     void set_maxiter_lanczos(int maxiter_lanczos) { this->maxiter_lanczos = maxiter_lanczos; }
     void set_tol_split(double tol_split) { this->tol_split = tol_split; }
+
+    void set_integrals(OrbitalVector &Phi);
 
     const int* get_bond_dimensions() const { return this->bond_dimensions.data(); }
     const double* get_en_sweeps() const { return this->en_sweeps.data(); }
@@ -64,6 +66,7 @@ private:
     int maxiter_lanczos;
     float tol_split;
     bool optimize_assembly;
+    bool energy_correction = true;
 
     int32_t qnum_sector{};
 

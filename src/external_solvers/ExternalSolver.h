@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "mrchem.h"
+#include "chemistry/chemistry_utils.h"
 #include "qmfunctions/Orbital.h"
 #include "qmoperators/two_electron/FockBuilder.h"
 
@@ -39,13 +40,13 @@ class FockBuilder;
 
 class ExternalSolver {
 public:
-    ExternalSolver() = default;
+    ExternalSolver(FockBuilder &F, Nuclei &nucs);
     virtual ~ExternalSolver() = default;
 
     double get_energy() { return this->energy; }
     // void set_precision(double p){this->prec=p;}
 
-    void set_integrals(OrbitalVector &Phi, FockBuilder &F);
+    void set_integrals(OrbitalVector &Phi);
     std::shared_ptr<ComplexMatrix> get_one_body_integrals() { return this->one_body_integrals; }
     std::shared_ptr<ComplexTensorR4> get_two_body_integrals() { return this->two_body_integrals; }
     std::shared_ptr<ComplexMatrix> get_one_rdm() { return this->one_rdm; }
@@ -54,9 +55,12 @@ public:
     virtual void optimize() = 0;
 
 protected:
+    FockBuilder F{};
+    Nuclei nucs{};
     // Dummy default precision (TODO: set from input file)
     double prec = 1e-3;
     double energy{};
+    double E_nn{};
 
     std::shared_ptr<ComplexMatrix> one_body_integrals{};
     std::shared_ptr<ComplexTensorR4> two_body_integrals{};

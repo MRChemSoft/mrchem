@@ -39,9 +39,7 @@ extern "C" {
 
 namespace mrchem {
 
-ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, int Ne, int spin, json dict_chemtensor) : ExternalSolver() {
-    set_integrals(Phi, F);
-    set_dense_tensors();
+ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, Nuclei &nucs, int Ne, int spin, json dict_chemtensor) : ExternalSolver(F, nucs) {
     this->qnum_sector = encode_quantum_number_pair(Ne, spin);
     std::cout << "Initialized ChemTensorSolver with Ne = " << Ne << " and spin = " << spin << std::endl;
 
@@ -75,14 +73,19 @@ void ChemTensorSolver::set_dense_tensors(){
     this->tkin_tensor = new dense_tensor;
     this->tkin_tensor->data  = static_cast<void*>(this->one_body_integrals->data());
     this->tkin_tensor->dim   = new ct_long[2]{this->one_body_integrals->rows(), this->one_body_integrals->cols()};
-    this->tkin_tensor->dtype = CT_DOUBLE_REAL;
+    this->tkin_tensor->dtype = CT_DOUBLE_COMPLEX;
     this->tkin_tensor->ndim  = 2;
 
     this->velec_tensor = new dense_tensor;
     this->velec_tensor->data  = static_cast<void*>(this->two_body_integrals->data()); //->shuffle(Eigen::array<int,4>{0,2,1,3})); //physicist's notation
     this->velec_tensor->dim   = new ct_long[4]{this->two_body_integrals->dimension(0), this->two_body_integrals->dimension(1), this->two_body_integrals->dimension(2), this->two_body_integrals->dimension(3)};
-    this->velec_tensor->dtype = CT_DOUBLE_REAL;
+    this->velec_tensor->dtype = CT_DOUBLE_COMPLEX;
     this->velec_tensor->ndim  = 4;
+}
+
+void ChemTensorSolver::set_integrals(OrbitalVector &Phi){
+    ExternalSolver::set_integrals(Phi);
+    set_dense_tensors();
 }
 
 void ChemTensorSolver::optimize() {
@@ -123,13 +126,25 @@ void ChemTensorSolver::optimize() {
 	std::vector<double> entropy(hamiltonian.nsites - 1);
 	if (dmrg_twosite(&hamiltonian, this->num_sweeps, this->maxiter_lanczos, this->tol_split, this->max_vdim, this->psi, this->en_sweeps.data(), entropy.data()) < 0)
 		std::cerr << "'dmrg_twosite' failed internally" << std::endl;
+    
+    
+    if(this->energy_correction)
+        for(auto i=0; i<this->num_sweeps; i++)
+            this->en_sweeps.data()[i] += this->E_nn;
+    
 	this->energy = this->en_sweeps[this->num_sweeps - 1];
+
+
 
     // calculate final bond dimensions
     this->bond_dimensions.reserve(hamiltonian.nsites + 1);
 	for (int l = 0; l < hamiltonian.nsites + 1; l++)
 		this->bond_dimensions[l] = mps_bond_dim(this->psi, l);
 	
+    std::cout << "virtual bond dimension: [";
+    for (int l = 0; l < hamiltonian.nsites + 1; l++)
+        std::cout << this->bond_dimensions[l] << ", ";
+    std::cout << "]" << std::endl;
 
     // calculate RDMs
     calculate_rdms();

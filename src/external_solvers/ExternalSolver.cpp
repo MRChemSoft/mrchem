@@ -37,6 +37,12 @@ namespace mrchem {
 class FockBuilder;
 // class PoissonOperator;
 
+ExternalSolver::ExternalSolver(FockBuilder &F, Nuclei &nucs){
+    this->F = F;
+    this->nucs = nucs;
+}
+
+
 /** @brief Calculates and stores the one- and two-electron integrals for given orbitals
  *
  * @param Phi: Vector of orbitals
@@ -46,15 +52,18 @@ class FockBuilder;
  *
  */
 
-void ExternalSolver::set_integrals(OrbitalVector &Phi, FockBuilder &F) {
-    F.setup(this->prec);
+void ExternalSolver::set_integrals(OrbitalVector &Phi) {
+    this->F.setup(this->prec);
     // operators
-    MomentumOperator P = F.momentum();
-    NuclearOperator V = *(F.getNuclearOperator());
+    MomentumOperator P = this->F.momentum();
+    NuclearOperator V = *(this->F.getNuclearOperator());
     
     // set the one- and two-body integrals
     ExternalSolver::set_one_body_integrals(Phi, P, V);
     ExternalSolver::set_two_body_integrals(Phi);
+
+    // set nuclear repulsion energy
+    this->E_nn = chemistry::compute_nuclear_repulsion(this->nucs);
 }
 
 // Private
