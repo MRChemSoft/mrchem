@@ -325,7 +325,6 @@ void OrbitalExp::transformToSpherical() {
             }
 
             for (int i = 0; i < 9; i++) {
-                std::cout << "i: " << i << " => " << sph[i]->calcSquareNorm() << std::endl;
                 tmp.push_back(sph[i]);
             }
 
