@@ -151,7 +151,7 @@ def shell_signs(angmom):
     if angmom == 'f':
         return [-1, 1, 1, 1, 1, 1, -1]
     elif angmom == 'g':
-        return [-1, -1, 1, 1, 1, 1, 1, -1, -1] # This is untested!!
+        return [-1, -1, 1, 1, 1, 1, 1, -1, -1]
     else:
         raise NotImplementedError
 
