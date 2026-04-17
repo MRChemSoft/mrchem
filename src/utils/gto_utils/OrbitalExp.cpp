@@ -285,7 +285,7 @@ void OrbitalExp::transformToSpherical() {
                 // ml = 1
                 coeffs[5][2] = -1.5 * c4;
                 coeffs[5][7] = -1.5 * c4;
-                coeffs[5][13] = 2.0 * c4;
+                coeffs[5][9] = 2.0 * c4;
 
                 // ml = 2
                 coeffs[6][0] = -0.25 * c3;
@@ -298,9 +298,9 @@ void OrbitalExp::transformToSpherical() {
                 coeffs[7][7] = -1.5 * c2;
 
                 // ml = 4
-                coeffs[8][0] = 1.0 / 8.0 * c2;
-                coeffs[8][3] = -3.0 / 4.0 * c2;
-                coeffs[8][10] = 1.0 / 4.0 * c2;
+                coeffs[8][0] = 1.0 / 8.0 * c1;
+                coeffs[8][3] = -3.0 / 4.0 * c1;
+                coeffs[8][10] = 1.0 / 8.0 * c1;
             }
 
             double normalization[15] = {105.0, 15.0, 15.0, 9.0, 3.0, 9.0, 15.0, 3.0, 3.0, 15.0, 105.0, 15.0, 9.0, 15.0, 105.0};
@@ -325,6 +325,7 @@ void OrbitalExp::transformToSpherical() {
             }
 
             for (int i = 0; i < 9; i++) {
+                std::cout << "i: " << i << " => " << sph[i]->calcSquareNorm() << std::endl;
                 tmp.push_back(sph[i]);
             }
 
