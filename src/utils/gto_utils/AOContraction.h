@@ -33,7 +33,7 @@
 namespace mrchem {
 namespace gto_utils {
 
-static const int MAX_L = 3; // Max f-functions
+static const int MAX_L = 4; // Max f-functions
 
 /** Contracted atomic orbital.
  *

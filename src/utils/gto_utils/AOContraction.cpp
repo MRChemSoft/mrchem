@@ -66,6 +66,24 @@ static const int f_gto[][3] = {
     {0, 0, 3}
 };
 
+static const int g_gto[][3] = {
+    {4, 0, 0},
+    {3, 1, 0},
+    {3, 0, 1},
+    {2, 2, 0},
+    {2, 1, 1},
+    {2, 0, 2},
+    {1, 3, 0},
+    {1, 2, 1},
+    {1, 1, 2},
+    {1, 0, 3},
+    {0, 4, 0},
+    {0, 3, 1},
+    {0, 2, 2},
+    {0, 1, 3},
+    {0, 0, 4}
+};
+
 struct gtoDef {
     int l;
     int ncomp;
@@ -77,7 +95,8 @@ static const gtoDef GTOS[MAX_L+1] = {
     { 0,  1, {s_gto[0]} },
     { 1,  3, {p_gto[0], p_gto[1], p_gto[2]}},
     { 2,  6, {d_gto[0], d_gto[1], d_gto[2], d_gto[3], d_gto[4], d_gto[5]}},
-    { 3, 10, {f_gto[0], f_gto[1], f_gto[2], f_gto[3], f_gto[4], f_gto[5], f_gto[6], f_gto[7], f_gto[8], f_gto[9]}}
+    { 3, 10, {f_gto[0], f_gto[1], f_gto[2], f_gto[3], f_gto[4], f_gto[5], f_gto[6], f_gto[7], f_gto[8], f_gto[9]}},
+    { 4, 15, {g_gto[0], g_gto[1], g_gto[2], g_gto[3], g_gto[4], g_gto[5], g_gto[6], g_gto[7], g_gto[8], g_gto[9], g_gto[10], g_gto[11], g_gto[12], g_gto[13], g_gto[14]}}
 };
 // clang-format on
 
@@ -121,8 +140,11 @@ GaussExp<3> AOContraction::getContraction(int m, const mrcpp::Coord<3> &center) 
             case 3:
                 normFac *= 15.0;
                 break;
+            case 4:
+                normFac *= 105.0;
+                break;
             default:
-                MSG_ERROR("We don't support g-functions at the moment");
+                MSG_ERROR("We don't support h-functions at the moment");
         }
     }
     normFac = std::sqrt(normFac);
