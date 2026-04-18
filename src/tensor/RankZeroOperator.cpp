@@ -279,9 +279,12 @@ Orbital RankZeroOperator::operator()(Orbital inp, int alpha) {
     mrcpp::linear_combination(out, coef_vec, func_vec, -1.0);
     MSG_INFO("hh");
     // apply the alpha (Pauli) matrix to the result; NB: 4C behaviour needs to be implemented
-    mrcpp::apply_Pauli(out, out, alpha); 
+    Orbital out_true; //debug test
+    mrcpp::deep_copy(out_true, out); //debug test
+    mrcpp::apply_Pauli(out_true, out, alpha); 
     MSG_INFO("ii end");
-    return out;
+    // return out;
+    return out_true; //debug test
 }
 
 /** @brief apply the adjoint of the operator expansion to orbital
@@ -319,11 +322,22 @@ OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp, int alpha) {
     for (auto i = 0; i < inp.size(); i++) {
         Timer t1;
         Orbital out_i;
+        // out_i.defreal(); //debug test doesn't help
+        // out_i.alloc(inp[0].Ncomp()); //debug test doesn't help
         if (mrcpp::mpi::my_func(inp[i])) {
+            MSG_INFO("MPI");
             out_i = O(inp[i], alpha);
+            // Orbital out_tmp; //debug test
+            // out_tmp.defreal(); //debug test doesn't help
+            // out_tmp.alloc(inp[i].Ncomp()); //debug test doesn't help
+            // out_tmp = O(inp[i]); //debug test
+            // out_i = O(inp[i]);
+            // mrcpp::apply_Pauli(out_i, out_tmp, alpha); //problème dans ça?
+            // out_i = mrcpp::apply_alpha(out_tmp, alpha); //debug test
         } else {
+            MSG_INFO("not MPi");
             out_i = inp[i].paramCopy(false);
-            mrcpp::apply_Pauli(out_i, out_i, alpha); 
+            // mrcpp::apply_Pauli(out_i, inp[i], alpha); //Remove? if the orbital is not on the current MPI rank, we prolly shouldn't do anything to it
         }
         out.push_back(out_i);
         std::stringstream o_name;
@@ -412,8 +426,11 @@ ComplexMatrix RankZeroOperator::operator()(OrbitalVector &bra, OrbitalVector &ke
     ComplexMatrix out = orbital::calc_overlap_matrix(bra, Oket);
     MSG_INFO("dd");
     std::stringstream o_name;
+    MSG_INFO("ee");
     o_name << "<i|" << O.name() << "|j>";
+    MSG_INFO("ff");
     mrcpp::print::tree(2, o_name.str(), orbital::get_n_nodes(Oket), orbital::get_size_nodes(Oket), t1.elapsed());
+    MSG_INFO("gg end");
     return out;
 }
 
@@ -548,6 +565,7 @@ Orbital RankZeroOperator::applyOperTerm(int n, const Orbital &inp) {
         }
         i++;
     }
+    MSG_INFO("end")
     return out;
 }
 

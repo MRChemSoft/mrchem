@@ -53,8 +53,8 @@ namespace mrchem {
  * potential grid. The argument sets how many extra refinement levels is allowed
  * beyond this initial refinement.
  */
-QMPotential::QMPotential(int adap, bool shared)
-        : mrcpp::CompFunction<3>(0, shared)
+QMPotential::QMPotential(int adap, bool shared, int nComponents)
+        : mrcpp::CompFunction<3>(0, shared, nComponents)
         , QMOperator()
         , adap_build(adap) {}
 

@@ -45,7 +45,7 @@ namespace mrchem {
 
 class QMPotential : public mrcpp::CompFunction<3>, public QMOperator {
 public:
-    explicit QMPotential(int adap, bool shared = false);
+    explicit QMPotential(int adap, bool shared = false, int nComponents = 1);
     QMPotential(const QMPotential &pot);
     QMPotential &operator=(const QMPotential &pot) = delete;
     virtual ~QMPotential() = default;

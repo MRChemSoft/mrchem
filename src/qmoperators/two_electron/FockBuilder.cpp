@@ -122,20 +122,29 @@ void FockBuilder::setup(double prec) {
     std::cout << "FockBuilder::setup -- Kinetic and potential operators setup done" << std::endl;
 
     if (isZora()) {
+        MSG_INFO("Setting up ZORA operators");
         Timer t_zora; //TODO: make this working for 2C
         double c = getLightSpeed();
+        MSG_INFO("c ok");
         mrcpp::print::header(3, "Building ZORA operators");
         mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
         mrcpp::print::value(3, "Light speed", c, "(au)", 5);
         mrcpp::print::separator(3, '-');
         auto vz = collectZoraBasePotential();
+        MSG_INFO("ZORA base potential collected");
         // chi = kappa - 1. See ZoraOperator.h for more information.
         this->chi = std::make_shared<ZoraOperator>(*vz, c, prec, false);
+        MSG_INFO("ZORA chi operator setup");
         this->chi_inv = std::make_shared<ZoraOperator>(*vz, c, prec, true);
+        MSG_INFO("ZORA chi inverse operator setup");
         this->zora_base = RankZeroOperator(vz);
+        MSG_INFO("ZORA base operator setup");
         this->chi->setup(prec);
+        MSG_INFO("ZORA chi setup ok");
         this->chi_inv->setup(prec);
+        MSG_INFO("ZORA chi inverse setup ok");
         this->zora_base.setup(prec);
+        MSG_INFO("ZORA base setup ok");
         mrcpp::print::footer(3, t_zora, 2);
     }
     if (isAZora()) {
@@ -274,6 +283,9 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     MSG_INFO("pre kinetic mat")
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora() || isAZora()) {
+        MSG_INFO("Computing kinetic matrix with ZORA/AZORA correction");
+        ComplexMatrix T_test = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket, true);
+        MSG_INFO("test 1 ok");
         //If we have spinors, the kinetic operator is of the form (σ·p)V(σ·p), with σ being a Pauli matrix.
         //What this boolean does is enabling the application of the Pauli matrices along the x,y,z momentum operators.
         //NOTE! The second term does not change from being spinorial; (σ·p)(σ·p) = p^2 using the Dirac identity.
@@ -329,12 +341,15 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     RankZeroOperator &chi = *this->chi;
     RankZeroOperator &chi_m1 = *this->chi_inv;
     RankZeroOperator operOne = 0.5 * tensor::dot(p(chi), p);
+    MSG_INFO("start");
 
     std::shared_ptr<RankZeroOperator> operThreePtr = nullptr;
 
     if (isZora()) {
         RankZeroOperator &V_zora = this->zora_base;
+        MSG_INFO("V_zora initialised");
         operThreePtr = std::make_shared<RankZeroOperator>(V_zora * chi + V_zora);
+        MSG_INFO("V_zora computed");
     } else if (isAZora()) {
         /*
         Note that V_z * kappa = 2 c^2 * (kappa - 1)
@@ -352,10 +367,12 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     operOne.setup(prec);
     operThree.setup(prec);
+    MSG_INFO("1 & 3 setup");
 
     // Compute OrbitalVectors
     Timer t_1;
     OrbitalVector termOne = operOne(Phi);
+    MSG_INFO("1 applied");
     // for (int i = 0; i < termOne.size(); i++) {
     //     //termOne will have a prefactor -1, because of i*i
     //     if (not mrcpp::mpi::my_func(termOne[i])) continue;
@@ -369,6 +386,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     Timer t_2;
     OrbitalVector termTwo = V(Phi);
+    MSG_INFO("2 applied");
 
     mrcpp::print::time(2, "Computing potential term", t_2);
 
@@ -380,15 +398,18 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         epsPhi[i].rescale(eps[i] / two_cc);
     }
     OrbitalVector termThree = operThree(epsPhi);
+    MSG_INFO("3 applied");
     mrcpp::print::time(2, "Computing rescaled potential term", t_3);
 
     //spin orbit coupling term, which would be identically 0 for scalar functions.
     OrbitalVector termSO(Phi.size());
-    //allocate zero-valued orbitals for the spin-orbit term, which will be filled in the loop below, to avoid seg faults
-    for (int i = 0; i < termSO.size(); i++) {
-        termSO[i].alloc(Phi[i].Ncomp(), true);
-    }
+    //allocate zero-valued orbitals for the spin-orbit term, which will be filled in the loop below, to avoid seg faults // seems like it is not needed?
+    // for (int i = 0; i < termSO.size(); i++) {
+    //     //def termSO real or complex depending on phi ? 
+    //     termSO[i].alloc(Phi[i].Ncomp(), true);
+    // }
     if (Phi[0].Ncomp() > 1) {
+        MSG_INFO("spinorial");
         //Manually implementing the cross product appearing in the spin-orbit term
         //NOTE! The multiplication by the Pauli matrices will need to be handled later,
         //      during the application of the cross-product to the orbitals.
@@ -398,6 +419,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         operSOY.setup(prec);
         RankZeroOperator operSOZ = p(chi)[0]*p[1] - p(chi)[1]*p[0];
         operSOZ.setup(prec);
+        MSG_INFO("Curls setup");
         //Applying the curls to temporary copies of the orbitals 
         //NOTE! Extremely inefficient!
         OrbitalVector orbTempX = orbital::deep_copy(Phi);
@@ -406,6 +428,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         orbTempY = operSOX(Phi);
         OrbitalVector orbTempZ = orbital::deep_copy(Phi);
         orbTempZ = operSOX(Phi);
+        MSG_INFO("Curls applied");
         //adding the contributions together. Note that the coefficient is purely imaginary.
         for (int i = 0; i < Phi.size(); i++) {
             mrcpp::apply_Pauli(orbTempX[i], orbTempX[i], 1, -1.0, false);
@@ -416,6 +439,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
             termSO[i].add((0.0, 1.0), orbTempZ[i]);
         }
     }
+    MSG_INFO("Spinorb done");
 
     //What is this useful for? We don't use them at all.
     auto normsOne = orbital::get_norms(termOne);
@@ -480,17 +504,23 @@ void FockBuilder::setZoraType(bool has_nuc, bool has_coul, bool has_xc, bool is_
 
 std::shared_ptr<QMPotential> FockBuilder::collectZoraBasePotential() {
     Timer timer;
-    auto vz = std::make_shared<QMPotential>(1, false);
+    auto vz = std::make_shared<QMPotential>(1, false); // normal way
+    // auto vz = std::make_shared<QMPotential>(1, false, 2); //TODO: Inclure la quantité de composantes des orbitales dans ce constructeur //Probablement un problème dans le constructeur ici dans le cas où on a 2 composantes? 
+    vz->alloc(1, true);
     if (zora_has_nuc) {
+        MSG_INFO("Collecting nuclear potential for ZORA base potential");
         if (getNuclearOperator() != nullptr) {
+            MSG_INFO("Collecting nuclear potential for ZORA base potential tut ");
             auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
             if (not vnuc.hasReal()) MSG_ERROR("ZORA: Adding empty nuclear potential");
+            MSG_INFO("Adding nuclear potential to ZORA base potential");
             vz->add(1.0, vnuc);
         } else {
             MSG_ERROR("ZORA: Nuclear requested but not available");
         }
     }
     if (zora_has_coul) {
+        MSG_INFO("Collecting Coulomb potential for ZORA base potential");
         if (getCoulombOperator() != nullptr) {
             auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
             if (not coul.hasReal()) MSG_INFO("ZORA: Adding empty Coulomb potential");
@@ -500,6 +530,7 @@ std::shared_ptr<QMPotential> FockBuilder::collectZoraBasePotential() {
         }
     }
     if (zora_has_xc) {
+        MSG_INFO("Collecting XC potential for ZORA base potential");
         if (getXCOperator() != nullptr) {
             getXCOperator()->setSpin(SPIN::Paired);
             auto &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
