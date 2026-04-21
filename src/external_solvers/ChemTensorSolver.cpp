@@ -70,15 +70,33 @@ ChemTensorSolver::~ChemTensorSolver() {
 }
 
 void ChemTensorSolver::set_dense_tensors(){
+    using RowMajorMatrix = Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    auto one_body_integrals_rowmajor = std::make_shared<RowMajorMatrix>(*this->one_body_integrals);
+
     this->tkin_tensor = new dense_tensor;
-    this->tkin_tensor->data  = static_cast<void*>(this->one_body_integrals->data());
+    //this->tkin_tensor->data  = static_cast<void*>(this->one_body_integrals->data());
+    this->tkin_tensor->data  = static_cast<void*>(one_body_integrals_rowmajor->data());
     this->tkin_tensor->dim   = new ct_long[2]{this->one_body_integrals->rows(), this->one_body_integrals->cols()};
     this->tkin_tensor->dtype = CT_DOUBLE_COMPLEX;
     this->tkin_tensor->ndim  = 2;
 
+    using RowMajorTensor = Eigen::Tensor<std::complex<double>, 4, Eigen::RowMajor>;
+
+    // shuffle reverses index order: (i,j,k,l) -> (l,k,j,i) to go from col to row major
+    Eigen::array<int, 4> reverse = {3, 2, 1, 0};
+    auto two_body_integrals_rowmajor = std::make_shared<RowMajorTensor>(
+        this->two_body_integrals->shuffle(reverse).swap_layout()
+    );
+    
     this->velec_tensor = new dense_tensor;
-    this->velec_tensor->data  = static_cast<void*>(this->two_body_integrals->data()); //->shuffle(Eigen::array<int,4>{0,2,1,3})); //physicist's notation
-    this->velec_tensor->dim   = new ct_long[4]{this->two_body_integrals->dimension(0), this->two_body_integrals->dimension(1), this->two_body_integrals->dimension(2), this->two_body_integrals->dimension(3)};
+    //this->velec_tensor->data  = static_cast<void*>(this->two_body_integrals->data()); //->shuffle(Eigen::array<int,4>{0,2,1,3})); //physicist's notation
+    this->velec_tensor->data  = static_cast<void*>(two_body_integrals_rowmajor->data()); 
+    this->velec_tensor->dim   = new ct_long[4]{
+        two_body_integrals_rowmajor->dimension(0), 
+        two_body_integrals_rowmajor->dimension(1), 
+        two_body_integrals_rowmajor->dimension(2), 
+        two_body_integrals_rowmajor->dimension(3)
+    };
     this->velec_tensor->dtype = CT_DOUBLE_COMPLEX;
     this->velec_tensor->ndim  = 4;
 }
@@ -89,12 +107,12 @@ void ChemTensorSolver::set_integrals(OrbitalVector &Phi){
 }
 
 void ChemTensorSolver::optimize() {
-    if (!this->one_body_integrals || !this->two_body_integrals)
+    if (!this->tkin_tensor || !this->velec_tensor)
         MSG_ABORT("Integrals not set.");
     
     if(!this->assembly)
         this->assembly = new mpo_assembly{};
-    
+
     mpo hamiltonian;
     construct_spin_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->velec_tensor, this->optimize_assembly, this->assembly);
     //this->assembly = std::make_shared<mpo_assembly>(assembly);
@@ -104,8 +122,10 @@ void ChemTensorSolver::optimize() {
 		MSG_ABORT("internal consistency check for Molecular Hamiltonian MPO failed");
 	
     // initial state vector as MPS
-    if(!this->psi)
+    if(!this->psi) {
         this->psi = new mps{};
+    }
+
 	{
 		rng_state rng;
 		seed_rng_state(42, &rng);
@@ -128,9 +148,10 @@ void ChemTensorSolver::optimize() {
 		std::cerr << "'dmrg_twosite' failed internally" << std::endl;
     
     
-    if(this->energy_correction)
+    if(this->energy_correction) {
         for(auto i=0; i<this->num_sweeps; i++)
             this->en_sweeps.data()[i] += this->E_nn;
+    }
     
 	this->energy = this->en_sweeps[this->num_sweeps - 1];
 
