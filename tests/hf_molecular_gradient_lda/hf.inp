@@ -30,3 +30,7 @@ SCF {
   run = false
   guess_type = CORE_DZ              # Type of initial guess: none, mw, gto
 }
+
+DFT {
+  xc_library = xcfun
+}

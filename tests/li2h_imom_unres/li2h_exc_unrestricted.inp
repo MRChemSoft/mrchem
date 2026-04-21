@@ -32,6 +32,10 @@ SCF {
   deltascf_method = IMOM
 }
 
+DFT {
+  xc_library = xcfun
+}
+
 Printer {
   print_level = 2
 }

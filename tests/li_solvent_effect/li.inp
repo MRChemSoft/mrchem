@@ -34,5 +34,8 @@
 "SCF": {
   "run": false,
   "guess_type": "sad_dz"
+},
+"DFT": {
+  "xc_library": "xcfun"
 }
 }

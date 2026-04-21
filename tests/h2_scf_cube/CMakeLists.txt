@@ -4,7 +4,7 @@ endif()
 
 add_integration_test(
   NAME "H2_SCF_CUBE"
-  LABELS "mrchem;H2;scf;cube;hf;energy;short"
+  LABELS "mrchem;H2;scf;cube;hf;energy;xcfun;short"
   COST 100
   LAUNCH_AGENT ${_h2_scf_cube_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess

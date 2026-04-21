@@ -34,6 +34,10 @@ SCF {
   guess_type = SAD_DZ
 }
 
+DFT {
+  xc_library = xcfun
+}
+
 Polarizability {
   frequency = [0.0, 0.05]
 }

@@ -25,3 +25,7 @@ WaveFunction {
   method = pbe
   restricted = false
 }
+
+DFT {
+  xc_library = xcfun
+}

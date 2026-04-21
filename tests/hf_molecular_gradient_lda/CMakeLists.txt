@@ -4,7 +4,7 @@ endif()
 
 add_integration_test(
   NAME "HF_molecular_gradient_LDA"
-  LABELS "mrchem;HF;scf;lda;dft;gradient;short"
+  LABELS "mrchem;HF;scf;lda;dft;gradient;xcfun;short"
   COST 200
   LAUNCH_AGENT ${_hf_grad_lda_launcher}
   )
