@@ -41,55 +41,100 @@ variables:
       name: Building and installing
       shell: /bin/bash
       command: |
-        cmake --build build --target install -- VERBOSE=1
+        cmake --build build --target install -- VERBOSE=1 -j4
   tests: &tests
-    run:
-      name: Testing
-      shell: /bin/bash
-      command: |
-        cd build
-        ctest -N \
-          | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p' \
-          | circleci tests split \
-          | tr '\n' '|' \
-          | sed 's/|$//' \
-          | xargs -I {} ctest  --verbose --output-on-failure -R "{}"
+      - run: mkdir -p test-results
+      - run:
+          name: Testing
+          command: |
+            ctest -N \
+              | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p' \
+              | circleci tests run \
+                --command='tr "\n" "|" | sed "s/|$//" | xargs -I {} ctest --verbose --output-on-failure -R "{}"' \
+                --split-by=timings \
+                --verbose
+      - store_test_results:
+          path: test-results
+
 
 jobs:
-  serial-py3:
-    parallelism: 4 
+  build-serial:
     <<: *ubuntu-2404
     steps:
       - checkout:
          method: blobless
       - *configure-serial
       - *build
-      - *tests
-  omp-py3:
-    parallelism: 4 
+      - persist_to_workspace:
+          root: ~/mrchem
+          paths:
+            - .
+
+  build-omp:
     <<: *ubuntu-2404
-    environment:
-      - OMP_NUM_THREADS: '2'
     steps:
       - checkout:
          method: blobless
       - *configure-omp
       - *build
-      - *tests
-  mpi-py3:
-    parallelism: 4 
+      - persist_to_workspace:
+          root: ~/mrchem
+          paths:
+            - .
+
+  build-mpi:
     <<: *ubuntu-2404
     steps:
       - checkout:
          method: blobless
       - *configure-mpi
       - *build
+      - persist_to_workspace:
+          root: ~/mrchem
+          paths:
+            - .
+    
+  ###############################
+
+  test-serial:
+    parallelism: 4
+    <<: *ubuntu-2404
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests
+
+    test-omp:
+    parallelism: 4
+    <<: *ubuntu-2404
+    environment:
+      - OMP_NUM_THREADS: '4'
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests
+    
+    test-mpi:
+    parallelism: 4
+    <<: *ubuntu-2404
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
       - *tests
 
 workflows:
-  version: 2
-  build:
+  version: 3
+  build-and-test:
     jobs:
-      - serial-py3
-      - omp-py3
-      - mpi-py3
+      - build-serial  
+      - test-serial:
+          requires:
+            - build-serial
+      - build-omp
+      - test-omp:
+          requires:
+            - build-omp
+      - build-mpi
+      - test-mpi:
+          requires:
+            - build-mpi
