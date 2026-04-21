@@ -50,7 +50,7 @@ variables:
             ctest -N \
               | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p' \
               | circleci tests run \
-                --command='tr "\n" "|" | sed "s/|$//" | xargs -I {} ctest --verbose --output-on-failure -R "{}"' \
+                --command='xargs -I {} ctest --verbose --output-on-failure -R "{}"' \
                 --split-by=timings \
                 --verbose
       - store_test_results:
