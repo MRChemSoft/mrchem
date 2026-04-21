@@ -1,9 +1,9 @@
-version: 2
+version: 3
 
 variables:
-  ubuntu-2204: &ubuntu-2204
+  ubuntu-2404: &ubuntu-2404
     docker:
-      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-22.04:sha-9f6ecd4
+      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-24.04:sha-2b5887e
         name: tsubame
         user: merzbow
     working_directory: ~/mrchem
@@ -58,7 +58,7 @@ variables:
 jobs:
   serial-py3:
     parallelism: 4 
-    <<: *ubuntu-2204
+    <<: *ubuntu-2404
     steps:
       - checkout:
          method: blobless
@@ -67,7 +67,7 @@ jobs:
       - *tests
   omp-py3:
     parallelism: 4 
-    <<: *ubuntu-2204
+    <<: *ubuntu-2404
     environment:
       - OMP_NUM_THREADS: '2'
     steps:
@@ -78,7 +78,7 @@ jobs:
       - *tests
   mpi-py3:
     parallelism: 4 
-    <<: *ubuntu-2204
+    <<: *ubuntu-2404
     steps:
       - checkout:
          method: blobless
