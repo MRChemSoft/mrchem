@@ -11,10 +11,10 @@
 ***                                                                     ***
 ***         VERSION            1.2.0-alpha                              ***
 ***                                                                     ***
-***         Git branch         libxc_testbranch                         ***
-***         Git commit hash    2bb9e2fa65c0876a30c8                     ***
+***         Git branch         fixing_tests                             ***
+***         Git commit hash    774b75eba6cb455c9de3-dirty               ***
 ***         Git commit author  ylvao                                    ***
-***         Git commit date    Thu Jan 29 12:29:18 2026 +0100           ***
+***         Git commit date    Tue Apr 21 10:18:56 2026 +0200           ***
 ***                                                                     ***
 ***         Contact: luca.frediani@uit.no                               ***
 ***                                                                     ***
@@ -29,8 +29,8 @@
 ---------------------------------------------------------------------------
 
  MPI processes           :       (no bank)                               1
- OpenMP threads          :                                               1
- Total cores             :                                               1
+ OpenMP threads          :                                               6
+ Total cores             :                                               6
                                                                            
 ---------------------------------------------------------------------------
 
@@ -39,12 +39,12 @@
 
  MRCPP version         : 1.6.0-alpha
  Git branch            : HEAD
- Git commit hash       : cec3cc96d578cdf77e8e
+ Git commit hash       : ad080014842f898e9529
  Git commit author     : Niklas Göllmann
- Git commit date       : Tue Jan 6 16:29:30 2026 +0100
+ Git commit date       : Wed Mar 11 11:25:17 2026 +0100
 
  Linear algebra        : EIGEN v3.4.0
- Parallelization       : NONE
+ Parallelization       : MPI/OpenMP (6 threads)
 
 ---------------------------------------------------------------------------
 
@@ -97,18 +97,24 @@
 ***                                                                     ***
 ***************************************************************************
 
-XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
-See http://dftlibs.org/xcfun/ for more information.
+Using Libxc (version 7.0.0) to evaluate density functionals. Libxc is free
+software. It is distributed under the Mozilla Public License, version 2.0.
+For more information, please check the Libxc manual. You should cite
 
-This is free software; see the source code for copying conditions.
-There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. For details see the documentation.
-Scientific users of this library should cite
-U. Ekstrom, L. Visscher, R. Bast, A. J. Thorvaldsen and K. Ruud;
-J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
-                                                                           
----------------------------------------------------------------------------
+S. Lehtola, C. Steigemann, M. J.T. Oliveira, and M. A.L. Marques., 
+SoftwareX 7, 1–5 (2018) DOI: 10.1016/j.softx.2017.11.002
 
+when reporting the results of your calculation in a scientific article.
+
+Libxc functionals used in this calculation:
+  - lda_c_vwn (ID 7): Vosko, Wilk & Nusair (VWN5)
+     * S. H. Vosko, L. Wilk, and M. Nusair.,  Can. J. Phys. 58, 1200 (1980)
+       DOI:10.1139/p80-159
+  - lda_x (ID 1): Slater exchange
+     * P. A. M. Dirac.,  Math. Proc. Cambridge Philos. Soc. 26, 376 (1930)
+       DOI:10.1017/S0305004100016108
+     * F. Bloch.,  Z. Phys. 57, 545 (1929)
+       DOI:10.1007/BF01340281
                                                                            
 ***************************************************************************
 ***                                                                     ***
@@ -130,58 +136,58 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ===========================================================================
                             Molecular Orbitals
 ---------------------------------------------------------------------------
- Alpha electrons         :                                               1
- Beta electrons          :                                               1
- Total electrons         :                                               2
+ Alpha electrons         :                                           1.000
+ Beta electrons          :                                           1.000
+ Total electrons         :                                           2.000
 ---------------------------------------------------------------------------
-    n  Occ Spin          :                                            Norm
+    n     Occ Spin       :                                            Norm
 ---------------------------------------------------------------------------
-    0    2    p          :                              9.999999041879e-01
+    0    2.00    p       :                              9.999999041879e-01
 ===========================================================================
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Compute initial energy
- Method                  : DFT
- XC Library              : XCFun
+ Method                  : DFT (SVWN5)
+ XC Library              : LibXC
  Relativity              : None
  Environment             : None
  External fields         : None
  Precision               : 1.00000e-03
- Density cutoff          : 1.00000e-11
+ Density cutoff          : 0.00000e+00
  Localization            : Off
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-using xcfun
 ===========================================================================
                         Molecular Energy (initial)
 ---------------------------------------------------------------------------
  Kinetic energy          :            (au)                  1.073486065232
  E-N energy              :            (au)                 -3.566631555860
  Coulomb energy          :            (au)                  1.328363917978
- Exchange energy         :            (au)                 -0.132833922118
- X-C energy              :            (au)                 -0.558504026042
+ Exchange energy         :            (au)                  0.000000000000
+ X-C energy              :            (au)                 -0.653870455508
  N-N energy              :            (au)                  0.714139285969
+ Non-local pp energy     :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -1.856119520810
+ Electronic energy       :            (au)                 -1.818652028158
  Nuclear energy          :            (au)                  0.714139285969
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -1.141980234841e+00
-                         :      (kcal/mol)             -7.166034165554e+02
-                         :        (kJ/mol)             -2.998268694868e+03
-                         :            (eV)             -3.107486525554e+01
+ Total energy            :            (au)             -1.104512742189e+00
+                         :      (kcal/mol)             -6.930922099469e+02
+                         :        (kJ/mol)             -2.899897806418e+03
+                         :            (eV)             -3.005532284132e+01
 ===========================================================================
 
 
 ===========================================================================
                         Orbital Energies (initial)
 ---------------------------------------------------------------------------
-    n  Occ Spin          :                                         Epsilon
+    n     Occ Spin       :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.408773186621
+    0    2.00    p       :            (au)                 -0.345283968279
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.817546373242
+ Sum occupied            :            (au)                 -0.690567936558
 ===========================================================================
 
 
@@ -195,8 +201,8 @@ using xcfun
                                                                            
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Optimize ground state orbitals
- Method                  : DFT
- XC library              : XCFun
+ Method                  : DFT (SVWN5)
+ XC library              : LibXC
  Relativity              : None
  Environment             : None
  External fields         : None
@@ -216,9 +222,9 @@ using xcfun
 ===========================================================================
  Iter           MO residual             Total energy                Update
 ---------------------------------------------------------------------------
-    0          1.000000e+00          -1.141980234841         -1.141980e+00
-    1          3.458115e-02          -1.148195370067         -6.215135e-03
-    2          4.033664e-03          -1.148449277714         -2.539076e-04
+    0          1.000000e+00          -1.104512742189         -1.104513e+00
+    1          4.926459e-02          -1.111747010485         -7.234268e-03
+    2          6.223220e-03          -1.111921804296         -1.747938e-04
 ---------------------------------------------------------------------------
                       SCF converged in 2 iterations!
 ===========================================================================
@@ -250,31 +256,41 @@ using xcfun
 ===========================================================================
                          Molecular Energy (final)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  1.062184931013
- E-N energy              :            (au)                 -3.541391351660
- Coulomb energy          :            (au)                  1.294952023161
- Exchange energy         :            (au)                 -0.129492808224
- X-C energy              :            (au)                 -0.548841357974
+ Kinetic energy          :            (au)                  1.026223333141
+ E-N energy              :            (au)                 -3.493189863421
+ Coulomb energy          :            (au)                  1.273120232062
+ Exchange energy         :            (au)                  0.000000000000
+ X-C energy              :            (au)                 -0.632214792047
  N-N energy              :            (au)                  0.714139285969
+ Non-local pp energy     :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -1.862588563683
+ Electronic energy       :            (au)                 -1.826061090265
  Nuclear energy          :            (au)                  0.714139285969
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -1.148449277714e+00
-                         :      (kcal/mol)             -7.206628022466e+02
-                         :        (kJ/mol)             -3.015253164600e+03
-                         :            (eV)             -3.125089687981e+01
+ Total energy            :            (au)             -1.111921804296e+00
+                         :      (kcal/mol)             -6.977414666133e+02
+                         :        (kJ/mol)             -2.919350296310e+03
+                         :            (eV)             -3.025693369204e+01
 ===========================================================================
 
 
 ===========================================================================
                          Orbital Energies (final)
 ---------------------------------------------------------------------------
-    n  Occ Spin          :                                         Epsilon
+    n     Occ Spin       :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2    p          :            (au)                 -0.424856481547
+    0    2.00    p       :            (au)                 -0.373213640612
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -0.849712963094
+ Sum occupied            :            (au)                 -0.746427281223
+===========================================================================
+
+
+===========================================================================
+                             Orbital Positions
+---------------------------------------------------------------------------
+  Index       Occ        :               x               y               z
+---------------------------------------------------------------------------
+      0      2.00        :        0.000000        0.000000       -0.000001
 ===========================================================================
 
 
@@ -283,17 +299,17 @@ using xcfun
 ---------------------------------------------------------------------------
  r_O                     :        0.000000        0.000000        0.000000
 ---------------------------------------------------------------------------
- Electronic vector       :       -0.000000       -0.000000        0.000004
- Magnitude               :            (au)                        0.000004
-                         :         (Debye)                        0.000009
+ Electronic vector       :       -0.000000       -0.000000        0.000003
+ Magnitude               :            (au)                        0.000003
+                         :         (Debye)                        0.000007
 ---------------------------------------------------------------------------
  Nuclear vector          :        0.000000        0.000000       -0.000000
  Magnitude               :            (au)                        0.000000
                          :         (Debye)                        0.000000
 ---------------------------------------------------------------------------
- Total vector            :        0.000000        0.000000        0.000004
- Magnitude               :            (au)                        0.000004
-                         :         (Debye)                        0.000009
+ Total vector            :        0.000000        0.000000        0.000003
+ Magnitude               :            (au)                        0.000003
+                         :         (Debye)                        0.000007
 ===========================================================================
 
 
@@ -303,7 +319,7 @@ using xcfun
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  0m 10s                       ***
+***                       Wall time :  0h  0m  1s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            
