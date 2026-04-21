@@ -22,6 +22,8 @@ else()
   set(XCFUN_MAX_ORDER 3)  # TODO Maybe as a user-facing option?
   set(XCFUN_PYTHON_INTERFACE FALSE CACHE BOOL "")
 
+  add_compile_definitions(XCFUN_REF_PBEX_MU)
+
   if(NOT xcfun_sources_POPULATED)
     FetchContent_Populate(xcfun_sources)
 
