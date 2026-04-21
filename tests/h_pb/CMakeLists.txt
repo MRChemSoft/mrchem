@@ -4,7 +4,7 @@ endif()
 
 add_integration_test(
   NAME "H_poisson_boltzmann"
-  LABELS "mrchem;h_pb;poisson_boltzmann;scf;energy"
+  LABELS "mrchem;h_pb;poisson_boltzmann;scf;energy;short"
   COST 100
   LAUNCH_AGENT ${_h_pb_launcher}
   )

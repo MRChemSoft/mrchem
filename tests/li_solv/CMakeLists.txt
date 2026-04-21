@@ -4,7 +4,7 @@ endif()
 
 add_integration_test(
   NAME "Li_solvent_effect"
-  LABELS "mrchem;li_solv;solvent;scf;energy"
+  LABELS "mrchem;li_solv;solvent;scf;energy;short"
   COST 100
   LAUNCH_AGENT ${_li_solv_launcher}
   )

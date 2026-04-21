@@ -7,15 +7,15 @@ target_sources(mrchem-tests
 
 add_Catch_test(
   NAME cavity_function
-  LABELS "cavity_function"
+  LABELS "cavity_function;short"
   )
 
 add_Catch_test(
   NAME reaction_operator
-  LABELS "reaction_operator"
+  LABELS "reaction_operator;short"
   )
 
  add_Catch_test(
    NAME PB_solver
-   LABELS "PB_solver"
+   LABELS "PB_solver;medium"
    )
