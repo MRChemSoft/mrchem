@@ -3,8 +3,8 @@ if(ENABLE_MPI)
 endif()
 
 add_integration_test(
-  NAME "Li_static_polarizability_LDA"
-  LABELS "mrchem;Li;scf;lda;dft;unrestricted;polarizability;medium"
+  NAME "Li_static_polarizability_XCFun_LDA"
+  LABELS "mrchem;Li;scf;lda;dft;unrestricted;polarizability;xcfun;medium"
   COST 100
   LAUNCH_AGENT ${_li_pol_lda_launcher}
   )

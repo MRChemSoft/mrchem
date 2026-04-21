@@ -34,3 +34,7 @@ SCF {
   guess_type = CORE_DZ
 }
 
+DFT {
+  xc_library = xcfun
+}
+

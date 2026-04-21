@@ -13,7 +13,8 @@
         "restricted": false
     },
     "DFT": {
-        "functionals": "SVWN5\n"
+        "functionals": "SVWN5\n",
+        "xc_library": "xcfun"
     },
     "Properties": {
         "magnetizability": true,

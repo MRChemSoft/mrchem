@@ -38,3 +38,7 @@ Response {
 Polarizability {
   frequency = [0.0]
 }
+
+DFT {
+  xc_library = xcfun
+}

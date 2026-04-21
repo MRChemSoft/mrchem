@@ -35,5 +35,8 @@
             true
         ],
         "guess_type": "cube"
+    },
+    "DFT": {
+        "xc_library": "xcfun"
     }
 }
