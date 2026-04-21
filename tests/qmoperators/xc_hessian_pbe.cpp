@@ -37,6 +37,8 @@
 
 #include "mrdft/Factory.h"
 
+#include <stdio.h>
+
 using namespace mrchem;
 using namespace orbital;
 
@@ -102,10 +104,10 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
 
     DoubleMatrix E_P = DoubleMatrix::Zero(Phi.size(), Phi.size());
 
-    E_P(0, 0) = -5.044421437856e-02;
-    E_P(0, 1) = -2.367706120016e-02;
-    E_P(1, 0) = -2.367706120016e-02;
-    E_P(1, 1) = 5.905043780341e-03;
+    E_P(0, 0) = -5.044421230509e-02;
+    E_P(0, 1) = -2.367708150619e-02;
+    E_P(1, 0) = -2.367708150619e-02;
+    E_P(1, 1) = 5.905065326901e-05;
 
     V.setup(prec);
     SECTION("apply") {
@@ -146,6 +148,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
         ComplexMatrix v = V(Phi, Phi);
         for (int i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
+                // printf("V_%d%d: %.12e + %.12e i\n", i, j, v(i, j).real(), v(i, j).imag());
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));
                 //                REQUIRE(v(i, j).real() == v(i, j).real());
                 REQUIRE(v(i, j).imag() < thrs);

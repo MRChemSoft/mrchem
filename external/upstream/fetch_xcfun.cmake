@@ -22,6 +22,7 @@ else()
   set(XCFUN_MAX_ORDER 3)  # TODO Maybe as a user-facing option?
   set(XCFUN_PYTHON_INTERFACE FALSE CACHE BOOL "")
 
+  # Remove this line to restore the "old" pbe behaviour when using XCFun
   add_compile_definitions(XCFUN_REF_PBEX_MU)
 
   if(NOT xcfun_sources_POPULATED)
