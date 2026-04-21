@@ -1,0 +1,21 @@
+world_prec = 1.0e-6                 # Overall relative precision
+world_size = 6                      # Size of simulation box 2^n
+world_unit = angstrom
+
+# use Psi4 naming of displacements
+# displacement 4 of 5 (i.e. point +1 in the stencil) 
+Molecule {
+$coords
+F           -1.194797389853    -0.244603028004     0.340822581459
+H           -1.673845087234    -0.395504779624     1.109456843865
+$end
+translate = false
+}
+
+WaveFunction {
+  method = LDA                      # Wave function method (HF or DFT)
+}
+
+SCF {
+  guess_type = CORE_DZ             # Type of initial guess: none, mw, gto
+}

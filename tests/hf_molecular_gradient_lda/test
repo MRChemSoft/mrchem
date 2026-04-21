@@ -1,0 +1,128 @@
+#!/usr/bin/env python3
+
+import math
+import json
+import sys
+from pathlib import Path
+from itertools import repeat
+from functools import reduce
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from tester import *  # isort:skip
+
+options = script_cli()
+
+# nuclear component of the molecular gradient as computed by Psi4
+psi4_nuc_grad = [
+    -1.568919559280,
+    -0.494215317058,
+    2.517338742705,
+    1.568919559280,
+    0.494215317058,
+    -2.517338742705,
+]
+
+# compare against reference
+filters = {
+    SUM_OCCUPIED: rel_tolerance(1.0e-6),
+    E_KIN: rel_tolerance(1.0e-6),
+    E_EN: rel_tolerance(1.0e-6),
+    E_EE: rel_tolerance(1.0e-6),
+    E_X: rel_tolerance(1.0e-6),
+    E_XC: rel_tolerance(5.0e-6),
+    E_EEXT: rel_tolerance(1.0e-6),
+    E_NEXT: rel_tolerance(1.0e-6),
+    E_EL: rel_tolerance(1.0e-6),
+    GEOMETRIC_DERIVATIVE(1, "total"): rel_tolerance(1.0e-6),
+}
+
+ierr = run(options, input_file="hf", filters=filters)
+
+# compare nuclear component of the molecular gradient with Psi4
+with Path("hf.json").open("r") as o:
+    nuc_grad = json.load(o)["output"]["properties"]["geometric_derivative"]["geom-1"]["nuclear"]
+passed, message = compare_values(
+    nuc_grad,
+    psi4_nuc_grad,
+    "MRChem vs. Psi4 nuclear component of the molecular gradient",
+    rtol=1.0e-6,
+    atol=1.0e-6,
+)
+sys.stdout.write(f"{message}\n")
+ierr += 0 if passed else 137
+
+# NOTE This test is not run as part of the test suite: it would always fail at
+# loose `world_prec` and would take too long at tight `world_prec`.
+# You can however uncomment the lines below and run it locally!
+# We compute the numerical gradient with a centered-difference, 5-point stencil
+# The displaced geometries were generated with Psi4
+
+def finite_difference_gradient(energies):
+    disp_size = 0.005
+    stencil = [1.0 / 12, -2.0 / 3, 2.0 / 3, -1.0 / 12]
+    # gradient in internal coordinates a.k.a. force
+    g_q = sum([s * e for s, e in zip(stencil, energies)]) / disp_size
+    # Psi4 uses internal coordinates for displacements
+    # This is the transformation matrix back to Cartesian displacements, copy-pasted from Psi4
+    B = [
+        0.11710092767299,
+        0.03688721436055,
+        -0.18788898404271,
+        -0.50842431805312,
+        -0.16015549303346,
+        0.81576918714405,
+    ]
+    # transform from internal to Cartesian coordinates
+    # this is laid out as [x_H, y_H, z_H, x_F, y_F, z_F]
+    g_c = [g_q * b for b in B]
+    # finally, mass-weight the Cartesian gradient
+    # masses copy-pasted from periodictable.py
+    masses = [18.9984032, 1.00794]
+    # this builds an array with the square root of the masses repeated 3 times per each atom
+    # [sqrt(M_A), sqrt(M_A), sqrt(M_A), ..., sqrt(M_N), sqrt(M_N), sqrt(M_N)]
+    massweighter = [
+        math.sqrt(m)
+        for m in reduce(
+            lambda x, y: x + y, map(lambda m: list(repeat(m, 3)), masses), []
+        )
+    ]
+    g_c_mw = [g * w for g, w in zip(g_c, massweighter)]
+    return g_c_mw
+
+# collect energies
+#tot_es = []
+#ele_es = []
+#for f in [
+#    Path(__file__).resolve().parent / f"reference/numgrad/{x}.json"
+#    for x in ["hf_m2", "hf_m1", "hf_p1", "hf_p2"]
+#]:
+#    with f.open("r") as j:
+#        data = json.load(j)
+#    tot_es.append(data["output"]["properties"]["scf_energy"]["E_tot"])
+#    ele_es.append(data["output"]["properties"]["scf_energy"]["E_el"])
+
+## compare analytical vs. numerical electronic component of the molecular gradient
+# with (Path(__file__).resolve().parent / "hf.json").open("r") as o:
+#    ele_grad = #    json.load(o)["output"]["properties"]["geometric_derivative"]["geom-1"]["electronic"]
+# passed, message = compare_values(ele_grad,
+#                                 finite_difference_gradient(ele_es),
+#                                 "Analytic vs. numeric electronic component of the molecular gradient",
+#                                 rtol=1.0e-6,
+#                                 atol=1.0e-6)
+# sys.stdout.write(f"{message}\n")
+# ierr += 0 if passed else 137
+#
+## compare analytical vs. numerical total molecular gradient
+# with (Path(__file__).resolve().parent / "hf.json").open("r") as o:
+#    tot_grad =
+#    json.load(o)["output"]["properties"]["geometric_derivative"]["geom-1"]["total"]
+# passed, message = compare_values(tot_grad,
+#                                 finite_difference_gradient(tot_es),
+#                                 "Analytic vs. numeric total molecular gradient",
+#                                 rtol=1.0e-6,
+#                                 atol=1.0e-6)
+# sys.stdout.write(f"{message}\n")
+# ierr += 0 if passed else 137
+
+sys.exit(ierr)

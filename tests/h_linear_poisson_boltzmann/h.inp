@@ -1,0 +1,41 @@
+{
+"world_prec": 1.0e-4,
+"world_size": 5,
+"MPI": {
+  "numerically_exact": true
+},
+"Molecule": {
+  "charge": -1,
+  "coords": "H 0.0 0.0 0.0"
+},
+"WaveFunction": {
+  "method": "pbe0",
+  "environment": "pcm_lpb"
+},
+"PCM": {
+  "SCRF": {
+    "kain": 6,
+    "max_iter": 100,
+    "dynamic_thrs": false
+  },
+  "Cavity": {
+    "spheres": "0 2.645616384 1.0 0.0 0.2"
+  },
+  "Solvent": {
+    "Permittivity": {
+      "epsilon_in": 1.0,
+      "epsilon_out": { "static": 78.4},
+      "formulation": "exponential"
+    },
+    "DebyeHuckelScreening": {
+      "ion_strength": 0.25,
+      "ion_radius": 0.0,
+      "ion_width": 0.2
+    }
+  }
+},
+"SCF": {
+  "run": false,
+  "guess_type": "sad_gto"
+}
+}

@@ -1,0 +1,39 @@
+{
+    "world_prec": 0.001,
+    "world_size": 5,
+    "world_unit": "angstrom",
+    "MPI": {
+        "numerically_exact": true
+    },
+    "Molecule": {
+        "coords": "H      0.0000 0.0000   -0.3705\nH      0.0000 0.0000    0.3705\n"
+    },
+    "WaveFunction": {
+        "method": "DFT",
+        "restricted": true
+    },
+    "Properties": {
+        "polarizability": true
+    },
+    "Polarizability": {
+        "frequency": [
+            0.0, 
+            0.001
+        ]
+    },
+    "SCF": {
+        "run": false,
+        "guess_type": "sad_dz"
+    },
+    "Response": {
+        "kain": 3,
+        "max_iter": 10,
+        "orbital_thrs": 0.001,
+        "run": [
+            false,
+            false,
+            true
+        ],
+        "guess_type": "cube"
+    }
+}
