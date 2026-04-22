@@ -38,7 +38,7 @@ jobs:
 
     - name: Build
       run: |
-        cmake --build build --config $BUILD_TYPE -- -v -d stats
+        cmake --build build --config $BUILD_TYPE -- -v -d stats -j4
 
     - name: Test MRChem and generate coverage report
       run: |
