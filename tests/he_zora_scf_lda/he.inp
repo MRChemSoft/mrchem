@@ -6,7 +6,9 @@ MPI {
 }
 
 Molecule {
-  coords = He 0.0 0.0 0.0
+$coords
+  He 0.0 0.0 0.0
+$end
 }
 
 WaveFunction {
