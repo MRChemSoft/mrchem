@@ -21,6 +21,6 @@ filters = {
     E_EL: rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="he", filters=filters, extra_args=["--json"])
+ierr = run(options, input_file="he", filters=filters)
 
 sys.exit(ierr)

@@ -24,7 +24,7 @@ filters = {
     POLARIZABILITY(0.001): rel_tolerance(1.0e-6),
 }
 
-ierr = run(options, input_file="h2", filters=filters, extra_args=["--json"])
+ierr = run(options, input_file="h2", filters=filters)
 
 freq = 0.0
 
