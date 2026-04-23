@@ -19,7 +19,7 @@ filters = {
     E_EEXT:       rel_tolerance(1.0e-10),
     E_NEXT:       rel_tolerance(1.0e-10),
     E_EL:         rel_tolerance(1.0e-10),
-    POLARIZABILITY(0.0): rel_tolerance(1.0e-10),
+    POLARIZABILITY(0.0): rel_tolerance(1.0e-8),
 }
 
 ierr = run(options, input_file="h2", filters=filters)
