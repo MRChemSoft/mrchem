@@ -257,7 +257,7 @@ of exact Hartree-Fock exchange as a separate functional
 spin-polarized functionals or not. Unrestricted calculations will use
 spin-polarized functionals by default. The XC functionals are provided by the
 `XCFun <https://github.com/dftlibs/xcfun>`_ library by default, but can be 
-changed with the keyword ``xc_library`` to use either XCFun or `LibxXC <https://libxc.gitlab.io/>`_ .
+changed with the keyword ``xc_library`` to use either XCFun or `LibXC <https://libxc.gitlab.io/>`_ .
 
 Exchange-correlation Functionals
 ++++++++++++++++++++++++++++++++
