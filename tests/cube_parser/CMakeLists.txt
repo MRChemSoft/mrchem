@@ -1,6 +1,6 @@
 add_integration_test(
   NAME "cube_parser"
-  LABELS "cube_guess;mrchem;cube_parser;short"
+  LABELS "guess;mrchem;cube;parser;short"
   COST 200
   )
 

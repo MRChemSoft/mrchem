@@ -29,5 +29,5 @@ add_Catch_test(
 
 add_Catch_test(
   NAME orbital_vector
-  LABELS "orbital_vector;short"
+  LABELS "orbital;vector;short"
   )
