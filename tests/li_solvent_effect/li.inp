@@ -32,7 +32,7 @@ PCM {
     Permittivity {
       epsilon_in = 1.0
       formulation = exponential
-      epsilon_out = { static = 2.0}
+      epsilon_out { static = 2.0}
     }
   }
 }
