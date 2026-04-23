@@ -25,7 +25,9 @@ PCM {
     dynamic_thrs = false
   }
   Cavity {
-    spheres = "0 2.645616384 1.0 0.0 0.2"
+  $spheres
+    0 2.645616384 1.0 0.0 0.2
+  $end
   }
   Solvent {
     Permittivity {
