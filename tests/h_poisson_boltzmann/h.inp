@@ -7,9 +7,9 @@ MPI {
 
 Molecule {
   charge = -1
-  $coords
-    H 0.0 0.0 0.0
-  $end
+$coords
+  H 0.0 0.0 0.0
+$end
 }
 
 WaveFunction {
@@ -18,7 +18,7 @@ WaveFunction {
 }
 
 PCM {
-  SCRF = {
+  SCRF {
     kain         = 6
     max_iter     = 100
     dynamic_thrs = false
@@ -29,8 +29,8 @@ PCM {
   Solvent {
     Permittivity {
       epsilon_in  = 1.0
-      epsilon_out = { static = 78.4}
       formulation = exponential
+      epsilon_out = { static = 78.4}
     }
     DebyeHuckelScreening {
       ion_strength = 0.25

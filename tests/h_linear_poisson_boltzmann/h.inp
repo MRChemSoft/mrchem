@@ -25,19 +25,19 @@ PCM {
     dynamic_thrs = false
   }
   Cavity {
-  spheres = "0 2.645616384 1.0 0.0 0.2"
+    spheres = "0 2.645616384 1.0 0.0 0.2"
   }
   Solvent {
-  Permittivity {
-    epsilon_in  = 1.0,
-    formulation = exponential
-    epsilon_out { static = 78.4}
-  }
-  DebyeHuckelScreening {
-    ion_strength = 0.25
-    ion_radius   = 0.0
-    ion_width    = 0.2
-  }
+    Permittivity {
+      epsilon_in  = 1.0
+      formulation = exponential
+      epsilon_out { static = 78.4}
+    }
+    DebyeHuckelScreening {
+      ion_strength = 0.25
+      ion_radius   = 0.0
+      ion_width    = 0.2
+    }
 }
 
 }
@@ -46,7 +46,7 @@ SCF {
   guess_type = sad_gto
 }
 
-DFT = {
+DFT {
   xc_library = xcfun
 }
 

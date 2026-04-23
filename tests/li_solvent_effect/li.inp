@@ -7,9 +7,9 @@ MPI {
 
 Molecule {
   charge = 1
-  $coords
+$coords
   Li 0.0 0.0 0.0
-  $end
+$end
 }
 
 WaveFunction {
