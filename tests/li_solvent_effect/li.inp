@@ -29,7 +29,7 @@ PCM {
   $end
   }
   Solvent {
-    Permittivity = {
+    Permittivity {
       epsilon_in = 1.0
       formulation = exponential
       epsilon_out = { static = 2.0}
