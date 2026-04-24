@@ -161,11 +161,6 @@ void ChemTensorSolver::optimize() {
     this->bond_dimensions.reserve(hamiltonian.nsites + 1);
 	for (int l = 0; l < hamiltonian.nsites + 1; l++)
 		this->bond_dimensions[l] = mps_bond_dim(this->psi, l);
-	
-    std::cout << "virtual bond dimension: [";
-    for (int l = 0; l < hamiltonian.nsites + 1; l++)
-        std::cout << this->bond_dimensions[l] << ", ";
-    std::cout << "]" << std::endl;
 
     // calculate RDMs
     calculate_rdms();
@@ -188,7 +183,7 @@ void ChemTensorSolver::calculate_rdms() {
             rdm1(i, j) = dcoeff[c++];
     // symmetrize
     rdm1 = 0.5 * (rdm1 + rdm1.conjugate().transpose());
-    this->one_rdm = std::make_shared<ComplexMatrix>(rdm1);
+    this->one_rdm = std::make_shared<ComplexMatrix>(std::move(rdm1));
 
 
     // --- two-body RDM ---
@@ -221,14 +216,12 @@ void ChemTensorSolver::calculate_rdms() {
                           dg0(i, j, k, l) + dg0(j, i, l, k)
                         - dg1(j, i, k, l) - dg1(i, j, l, k));
 
-    // symmetrize: rdm2 + rdm2.conj().transpose(2, 1, 0, 3)
-    for (int i = 0; i < N; i++)
-        for (int j = 0; j < N; j++)
-            for (int k = 0; k < N; k++)
-                for (int l = 0; l < N; l++)
-                    rdm2(i, j, k, l) = 0.5 * (rdm2(i, j, k, l) + std::conj(rdm2(k, j, i, l)));
+    ComplexTensorR4 rdm2_sym(N, N, N, N);
+    Eigen::array<int, 4> perm = {2, 1, 0, 3};
+    rdm2_sym = 0.5 * (rdm2 + rdm2.conjugate().shuffle(perm));
     
     // store two body RDM in variable of parent class
-    this->two_rdm = std::make_shared<ComplexTensorR4>(rdm2);
+    this->two_rdm = std::make_shared<ComplexTensorR4>(std::move(rdm2_sym));
+
 }
 } // namespace mrchem

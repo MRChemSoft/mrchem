@@ -64,59 +64,16 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     double prec = 1e-3;
 
     S.set_integrals(Phi_n);
-    ComplexMatrix one_int = *(S.get_one_body_integrals());
-    ComplexTensorR4 two_int = *(S.get_two_body_integrals());
-
-    // print one-body integral
-    std::cout << "One-body integrals" << std::endl;
-    for(int i=0; i<one_int.rows(); i++){
-        for(int j=0; j<one_int.cols(); j++){
-            std::cout << one_int(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
-    // print two-body integral
-    std::cout << "Two-body integrals" << std::endl;
-    for(int i=0; i<one_int.rows(); i++){
-        for(int j=0; j<one_int.cols(); j++){
-            for(int k=0; k<one_int.rows(); k++){
-                for(int l=0; l<one_int.cols(); l++){
-                    std::cout << two_int(i,j,k,l) << " ";
-                }
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
-
-
 
     int nIter = 0;
     bool converged = false;
     
     S.optimize();
-    for(int i=0; i<6; i++){
-        std::cout << "Iteration: " << i << std::endl;
-        std::cout << "Energy: " << S.get_en_sweeps()[i] << std::endl;
-    }
-    //std::cout << "Energy: " << S.get_energy() << std::endl;
+    std::cout << "Energy: " << S.get_energy() << std::endl;
     
-    ComplexMatrix one_rdm = *(S.get_one_rdm());
-    ComplexTensorR4 two_rdm = *(S.get_two_rdm());
+    // ComplexMatrix one_rdm = *(S.get_one_rdm());
+    // ComplexTensorR4 two_rdm = *(S.get_two_rdm());
     
-    // print one-body RDM
-    std::cout << "One-body RDM" << std::endl;
-    for(int i=0; i<one_rdm.rows(); i++){
-        for(int j=0; j<one_rdm.cols(); j++){
-            std::cout << one_rdm(i,j) << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << std::endl;
 
     // end
     F.clear();
