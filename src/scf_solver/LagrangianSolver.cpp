@@ -40,7 +40,15 @@ using nlohmann::json;
 
 namespace mrchem {
 
+// TODO: read all the settings in input
+LagrangianSolver::LagrangianSolver(){
+    this->nIter = 1;
+    this->scf_tol = 1e-3;
+}
 
+void LagrangianSolver::set_orbitals(OrbitalVector Phi_n){
+    this->orbitals = std::make_shared<OrbitalVector>(Phi_n);
+}
 
 
 /** @brief Run Lagrangian orbital optimization
@@ -60,20 +68,28 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     json json_out;
 
     //Nuclei nucs = mol.getNuclei();
-    OrbitalVector &Phi_n = mol.getOrbitals();
+
+    // initial orbitals
+    set_orbitals(mol.getOrbitals());
     double prec = 1e-3;
 
-    S.set_integrals(Phi_n);
-
-    int nIter = 0;
     bool converged = false;
     
-    S.optimize();
-    std::cout << "Energy: " << S.get_energy() << std::endl;
-    
-    // ComplexMatrix one_rdm = *(S.get_one_rdm());
-    // ComplexTensorR4 two_rdm = *(S.get_two_rdm());
-    
+    for(int i=0; i<this->nIter && !converged; i++){
+        // set integrals, run DMRG and calculate RDMS
+        S.set_integrals(*this->orbitals);
+        S.optimize();
+        this->energy.push_back(S.get_energy());
+
+        // update orbitals
+        orbital_update();
+
+        // check if converged
+        if(i>0){
+            if(abs(this->energy[i-1]-this->energy[i])<this->scf_tol)
+                converged=true;
+        }
+    }
 
     // end
     F.clear();
@@ -81,4 +97,12 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     return json_out;
 
 }
+
+void LagrangianSolver::orbital_update(){
+    return;
+}
+
+
+
+
 } // namespace mrchem

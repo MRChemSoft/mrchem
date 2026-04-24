@@ -49,28 +49,25 @@ class FockBuilder;
 
 class LagrangianSolver : public SCFSolver {
 public:
-    LagrangianSolver() = default;
+    LagrangianSolver();
     virtual ~LagrangianSolver() override = default;
 
-    //void setRotation(int iter) { this->rotation = iter; }
-    //void setLocalize(bool loc) { this->localize = loc; }
-    //void setCheckpointFile(const std::string &file) { this->chkFile = file; }
+    
+    OrbitalVector get_orbitals(){ return *this->orbitals; };
 
     nlohmann::json optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver &S);
 
 protected:
-    //int rotation{0};      ///< Number of iterations between localization/diagonalization
-    //bool localize{false}; ///< Use localized or canonical orbitals
     //std::string chkFile;  ///< Name of checkpoint file
-    std::vector<SCFEnergy> energy;
+    int nIter{};
+    float scf_tol{};
+    std::vector<double> energy{};
+    std::shared_ptr<OrbitalVector> orbitals{};
 
-    //void reset() override;
-    //double calcPropertyError() const;
-    //void printProperty() const;
-    //void printParameters(const std::string &method) const;
+    void set_orbitals(OrbitalVector Phi);
 
-    //bool needLocalization(int nIter, bool converged) const;
-    //bool needDiagonalization(int nIter, bool converged) const;
+    void orbital_update();
+
 };
 
 } // namespace mrchem
