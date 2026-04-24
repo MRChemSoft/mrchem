@@ -82,7 +82,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
         this->energy.push_back(S.get_energy());
 
         // update orbitals
-        orbital_update();
+        orbital_update(S);
 
         // check if converged
         if(i>0){
@@ -98,11 +98,33 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
 
 }
 
-void LagrangianSolver::orbital_update(){
+void LagrangianSolver::orbital_update(ChemTensorSolver &S){
+    std::shared_ptr<ComplexMatrix> epsilon = calculate_lagrange_multipliers(S);
+
     return;
 }
 
+std::shared_ptr<ComplexMatrix> LagrangianSolver::calculate_lagrange_multipliers(ChemTensorSolver &S){
+    std::shared_ptr<ComplexMatrix> ptr_one_int = S.get_one_body_integrals();
+    std::shared_ptr<ComplexTensorR4> ptr_two_int = S.get_two_body_integrals();
+    std::shared_ptr<ComplexMatrix> ptr_one_rdm = S.get_one_rdm();
+    std::shared_ptr<ComplexTensorR4> ptr_two_rdm = S.get_two_rdm();
 
+    const int L = ptr_one_int->rows();
+    ComplexMatrix epsilon = ComplexMatrix::Zero(L, L);
 
+    // one-body contributions
+    epsilon += (*ptr_one_rdm) * (*ptr_one_int).transpose();
+
+    // two-body contributions
+    for (int n = 0; n < L; n++)
+        for (int m = 0; m < L; m++)
+            for (int j = 0; j < L; j++)
+                for (int k = 0; k < L; k++)
+                    for (int l = 0; l < L; l++)
+                        epsilon(n, m) += 2.0 * (*ptr_two_rdm)(m, j, k, l) * (*ptr_two_int)(n, j, k, l);
+    
+    return std::make_shared<ComplexMatrix>(epsilon);
+}
 
 } // namespace mrchem

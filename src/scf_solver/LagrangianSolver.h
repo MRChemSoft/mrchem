@@ -63,11 +63,22 @@ protected:
     float scf_tol{};
     std::vector<double> energy{};
     std::shared_ptr<OrbitalVector> orbitals{};
+    
 
     void set_orbitals(OrbitalVector Phi);
 
-    void orbital_update();
+    void orbital_update(ChemTensorSolver &S);
+    std::shared_ptr<ComplexMatrix> calculate_lagrange_multipliers(ChemTensorSolver &S);
 
 };
 
 } // namespace mrchem
+
+
+
+
+/*  Open questions:
+    - Store orbitals separately or override the ones in molecule?
+    - save solver as a private element?
+    
+*/
