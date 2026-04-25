@@ -44,6 +44,7 @@ namespace mrchem {
 LagrangianSolver::LagrangianSolver(){
     this->nIter = 1;
     this->scf_tol = 1e-3;
+    this->prec = 1e-3;
 }
 
 void LagrangianSolver::set_orbitals(OrbitalVector Phi_n){
@@ -99,9 +100,33 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
 }
 
 void LagrangianSolver::orbital_update(ChemTensorSolver &S){
-    std::shared_ptr<ComplexMatrix> epsilon = calculate_lagrange_multipliers(S);
+    // diagonalize 1rdm. change basis of one-body integral and orbitals 
+    // (two-body integral and rdms not necessary)
+    S.diagonalize_1rdm();
+    std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
+    orbital_basis_change(basis_change);
 
+    // calculate Lagrange multipliers directly in the new basis
+    std::shared_ptr<ComplexMatrix> epsilon = calculate_lagrange_multipliers(S);
+    
+    
+        
     return;
+}
+
+void LagrangianSolver::orbital_basis_change(std::shared_ptr<ComplexMatrix> basis_change){
+    const int L = basis_change->rows();
+    OrbitalVector new_Phi;
+
+    for (int i = 0; i < L; i++) {
+        std::vector<ComplexDouble> coeffs(basis_change->row(i).data(), 
+                                          basis_change->row(i).data() + L);
+        Orbital phi_i;
+        mrcpp::linear_combination(phi_i, coeffs, *this->orbitals, this->prec);
+        new_Phi.push_back(phi_i);
+    }
+
+    *this->orbitals = new_Phi;
 }
 
 std::shared_ptr<ComplexMatrix> LagrangianSolver::calculate_lagrange_multipliers(ChemTensorSolver &S){
@@ -126,5 +151,9 @@ std::shared_ptr<ComplexMatrix> LagrangianSolver::calculate_lagrange_multipliers(
     
     return std::make_shared<ComplexMatrix>(epsilon);
 }
+
+
+
+
 
 } // namespace mrchem

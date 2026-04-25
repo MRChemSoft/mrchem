@@ -51,14 +51,16 @@ public:
     std::shared_ptr<ComplexTensorR4> get_two_body_integrals() { return this->two_body_integrals; }
     std::shared_ptr<ComplexMatrix> get_one_rdm() { return this->one_rdm; }
     std::shared_ptr<ComplexTensorR4> get_two_rdm() { return this->two_rdm; }
+    std::shared_ptr<ComplexMatrix> get_basis_change() { return this->basis_change; }
 
     virtual void optimize() = 0;
+
+    void diagonalize_1rdm();
 
 protected:
     FockBuilder F{};
     Nuclei nucs{};
-    // Dummy default precision (TODO: set from input file)
-    double prec = 1e-3;
+    double prec{};
     double energy{};
     double E_nn{};
 
@@ -66,6 +68,7 @@ protected:
     std::shared_ptr<ComplexTensorR4> two_body_integrals{};
     std::shared_ptr<ComplexMatrix> one_rdm{};
     std::shared_ptr<ComplexTensorR4> two_rdm{};
+    std::shared_ptr<ComplexMatrix> basis_change{};
 
     void set_one_body_integrals(OrbitalVector &Phi, MomentumOperator &P, NuclearOperator &V);
     void set_two_body_integrals(OrbitalVector &Phi);

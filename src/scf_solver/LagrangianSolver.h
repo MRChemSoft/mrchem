@@ -61,13 +61,14 @@ protected:
     //std::string chkFile;  ///< Name of checkpoint file
     int nIter{};
     float scf_tol{};
+    float prec{};
     std::vector<double> energy{};
     std::shared_ptr<OrbitalVector> orbitals{};
     
-
     void set_orbitals(OrbitalVector Phi);
 
     void orbital_update(ChemTensorSolver &S);
+    void orbital_basis_change(std::shared_ptr<ComplexMatrix> basis_change);
     std::shared_ptr<ComplexMatrix> calculate_lagrange_multipliers(ChemTensorSolver &S);
 
 };
@@ -80,5 +81,7 @@ protected:
 /*  Open questions:
     - Store orbitals separately or override the ones in molecule?
     - save solver as a private element?
+    - store copy of integrals and rdms in new basis, or change the originals?
+    - with molecular orbitals does it make sense to diagonalize the 1rdm?
     
 */
