@@ -42,7 +42,7 @@ Orbital::Orbital(SPIN::type spin, int n_comp) //TODO: ajouter alloc_comp?
     // d1 is used to store occupancy
     if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2.0;
     if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1.0;
-    if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[1] = 1.0;
+    if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[0] = 1.0;
 }
 
 /** @brief Constructor
@@ -60,7 +60,7 @@ Orbital::Orbital(int spin, double occ, int rank, int n_comp)
         // d1 is defined as occupancy
         if (this->spin() == SPIN::Paired) this->func_ptr->data.d1[0] = 2.0;
         if (this->spin() == SPIN::Alpha) this->func_ptr->data.d1[0] = 1.0;
-        if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[1] = 1.0;
+        if (this->spin() == SPIN::Beta) this->func_ptr->data.d1[0] = 1.0;
     }
     this->func_ptr->rank = rank;
 }

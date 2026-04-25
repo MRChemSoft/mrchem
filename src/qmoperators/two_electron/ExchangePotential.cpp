@@ -174,6 +174,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     mrcpp::multiply(rho_ij, phi_i, phi_j, prec_m1, true, true, true);
     timer_ij.stop();
     if (rho_ij.norm() < prec) return;
+    MSG_INFO("tut exchange badim" << rho_ij.norm());
 
     auto N_i = phi_i.getNNodes();
     auto N_j = phi_j.getNNodes();
@@ -183,37 +184,50 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
 
     bool RealOrbitals = phi_i.isreal();
 
-    // prepare vector used to steer precision of Poisson application
-    mrcpp::FunctionTreeVector<3, double> phi_opt_vec_real;
-    mrcpp::FunctionTreeVector<3, ComplexDouble> phi_opt_vec_cplx;
-    if (RealOrbitals) {
-        if (phi_k.isreal() and phi_k.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_k.CompD[0]);
-        if (phi_j.isreal() and &phi_j != &phi_k and phi_j.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_j.CompD[0]);
-        if (phi_i.isreal() and &phi_i != &phi_k and &phi_i != &phi_j and phi_i.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_i.CompD[0]);
-    } else {
-        if (phi_k.iscomplex()) phi_opt_vec_cplx.emplace_back(1.0, phi_k.CompC[0]);
-        if (phi_j.iscomplex() and &phi_j != &phi_k) phi_opt_vec_cplx.emplace_back(1.0, phi_j.CompC[0]);
-        if (phi_i.iscomplex() and &phi_i != &phi_k and &phi_i != &phi_j) phi_opt_vec_cplx.emplace_back(1.0, phi_i.CompC[0]);
+    Orbital V_ij = rho_ij.paramCopy(true); //multicomp test
+    double timer_allcomps = 0;
+    for (int comp = 0; comp < rho_ij.Ncomp(); comp++){
+        // prepare vector used to steer precision of Poisson application
+        mrcpp::FunctionTreeVector<3, double> phi_opt_vec_real;
+        mrcpp::FunctionTreeVector<3, ComplexDouble> phi_opt_vec_cplx;
+        if (RealOrbitals) {
+            if (phi_k.isreal() and phi_k.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_k.CompD[comp]);
+            if (phi_j.isreal() and &phi_j != &phi_k and phi_j.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_j.CompD[comp]);
+            if (phi_i.isreal() and &phi_i != &phi_k and &phi_i != &phi_j and phi_i.getNNodes() > 0) phi_opt_vec_real.emplace_back(1.0, phi_i.CompD[comp]);
+        } else {
+            if (phi_k.iscomplex()) phi_opt_vec_cplx.emplace_back(1.0, phi_k.CompC[comp]);
+            if (phi_j.iscomplex() and &phi_j != &phi_k) phi_opt_vec_cplx.emplace_back(1.0, phi_j.CompC[comp]);
+            if (phi_i.iscomplex() and &phi_i != &phi_k and &phi_i != &phi_j) phi_opt_vec_cplx.emplace_back(1.0, phi_i.CompC[comp]);
+        }
+        // compute V_ij = P[rho_ij]
+        Timer timer_p;
+        // Orbital V_ij = rho_ij.paramCopy(true); //moved outside of loop // multicomp test
+        if (RealOrbitals) {
+            mrcpp::apply(prec_p, *V_ij.CompD[comp], P, *rho_ij.CompD[comp], phi_opt_vec_real, -1, true);//old 
+            
+            // mrcpp::apply(prec_p, *V_ij.CompD[0], P, *rho_ij.CompD[0], phi_opt_vec_real, -1, true);//old 
+        } else {
+            mrcpp::apply(prec_p, *V_ij.CompC[comp], P, *rho_ij.CompC[comp], phi_opt_vec_cplx, -1, true);//old
+            // mrcpp::apply(prec_p, *V_ij.CompC[0], P, *rho_ij.CompC[0], phi_opt_vec_cplx, -1, true);//old
+        }
+        rho_ij.free();
+        timer_p.stop();
+        timer_allcomps += timer_p.elapsed();
     }
-    // compute V_ij = P[rho_ij]
-    Timer timer_p;
-    Orbital V_ij = rho_ij.paramCopy(true);
-    if (RealOrbitals) {
-        mrcpp::apply(prec_p, *V_ij.CompD[0], P, *rho_ij.CompD[0], phi_opt_vec_real, -1, true);
-    } else {
-        mrcpp::apply(prec_p, *V_ij.CompC[0], P, *rho_ij.CompC[0], phi_opt_vec_cplx, -1, true);
-    }
-    rho_ij.free();
-    timer_p.stop();
     auto N_p = V_ij.getNNodes();
     auto norm_p = V_ij.norm();
 
+    MSG_INFO("norme phi_k (premier arg)" << phi_k.getSquareNorm() << " et V_ij=" << V_ij.getSquareNorm() << " Ncomps respectifs=" << phi_k.func_ptr->data.c1[0] << " " << phi_k.func_ptr->data.c1[1] << " " << V_ij.func_ptr->data.c1[0] << " " << V_ij.func_ptr->data.c1[1]);
     // compute out_kij = phi_k * V_ij
     Timer timer_kij;
-    mrcpp::multiply(out_kij, phi_k, V_ij, prec_m2, true, true);
+    mrcpp::multiply(out_kij, phi_k, V_ij, prec_m2, true, true); //problème ici
     auto N_kij = out_kij.getNNodes();
     auto norm_kij = out_kij.norm();
     timer_kij.stop();
+
+    out_kij.CompD[0]->calcSquareNorm();
+    out_kij.CompD[1]->calcSquareNorm();
+    MSG_INFO("exchange norme = "<< out_kij.getSquareNorm()<< " comp 0=" << out_kij.CompD[0]->getSquareNorm() << " comp 1=" << out_kij.CompD[1]->getSquareNorm());
 
     // compute out_jji = phi_j * V_ji = phi_j * V_ij^dagger
     Timer timer_jji;
@@ -228,7 +242,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
 
     println(5,
             " time " << (int)((float)timer_tot.elapsed() * 1000) << " ms "
-                     << " mult1:" << (int)((float)timer_ij.elapsed() * 1000) << " Pot:" << (int)((float)timer_p.elapsed() * 1000) << " mult2:" << (int)((float)timer_kij.elapsed() * 1000) << " "
+                     << " mult1:" << (int)((float)timer_ij.elapsed() * 1000) << " Pot:" << (int)((float)timer_allcomps * 1000) << " mult2:" << (int)((float)timer_kij.elapsed() * 1000) << " "
                      << (int)((float)timer_jji.elapsed() * 1000) << " Nnodes: " << N_i << " " << N_j << " " << N_ij << " " << N_p << " " << N_kij << " " << N_jji << " norms " << norm_ij << " "
                      << norm_p << " " << norm_kij << "  " << norm_jji);
 }
