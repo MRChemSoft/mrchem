@@ -55,6 +55,7 @@ public:
 
     virtual void optimize() = 0;
 
+    void calculate_lagrange_multipliers();
     void diagonalize_1rdm();
 
 protected:
@@ -68,6 +69,7 @@ protected:
     std::shared_ptr<ComplexTensorR4> two_body_integrals{};
     std::shared_ptr<ComplexMatrix> one_rdm{};
     std::shared_ptr<ComplexTensorR4> two_rdm{};
+    std::shared_ptr<ComplexMatrix> epsilon{};
     std::shared_ptr<ComplexMatrix> basis_change{};
 
     void set_one_body_integrals(OrbitalVector &Phi, MomentumOperator &P, NuclearOperator &V);

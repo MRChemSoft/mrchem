@@ -79,9 +79,30 @@ void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi) {
     this->two_body_integrals = std::make_shared<ComplexTensorR4>(calc_2elintegrals(this->prec, Phi));
 }
 
+void ExternalSolver::calculate_lagrange_multipliers(){
+    const int L = this->one_body_integrals->rows();
+    ComplexMatrix epsilon = ComplexMatrix::Zero(L, L);
+
+    // one-body contributions
+    epsilon += (*this->one_rdm) * (*this->one_body_integrals).transpose();
+
+    // two-body contributions
+    for (int n = 0; n < L; n++)
+        for (int m = 0; m < L; m++)
+            for (int j = 0; j < L; j++)
+                for (int k = 0; k < L; k++)
+                    for (int l = 0; l < L; l++)
+                        epsilon(n, m) += 2.0 * (*this->two_rdm)(m, j, k, l) * (*this->two_body_integrals)(n, j, k, l);
+    
+    this->epsilon = std::make_shared<ComplexMatrix>(epsilon);
+}
+
 void ExternalSolver::diagonalize_1rdm(){
     const int L = this->one_rdm->rows();
-
+    // NOTE: I need to calculate epsilon before starting with the basis change!
+    if(!this->epsilon)
+        MSG_ABORT("Lagrange multipliers matrix must be defined before the change of basis.");
+        
     if (!this->basis_change)
         this->basis_change = std::make_shared<ComplexMatrix>(ComplexMatrix::Identity(L, L));
 
@@ -104,8 +125,11 @@ void ExternalSolver::diagonalize_1rdm(){
         (*this->one_rdm)(i, i) = solver.eigenvalues()(L - 1 - i);
     // one-body integral in new basis
     *this->one_body_integrals = (*this->basis_change) * (*this->one_body_integrals) * (*this->basis_change).adjoint();
-
+    // lagrange multipliers in the new basis
+    *this->epsilon = (*this->basis_change) * (*this->epsilon) * (*this->basis_change).adjoint();
 }
+
+
 
 
 

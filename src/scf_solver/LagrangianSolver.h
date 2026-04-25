@@ -83,5 +83,6 @@ protected:
     - save solver as a private element?
     - store copy of integrals and rdms in new basis, or change the originals?
     - with molecular orbitals does it make sense to diagonalize the 1rdm?
+    - change of basis is now split between External solver (integrals, rdms and lagrange multipliers) and LagrangianSolver (orbitals)
     
 */
