@@ -132,9 +132,11 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
 
     // Orbitals are unchanged, updates are overwritten
     dPhi = orbital::param_copy(this->dOrbitals[nHistory]);
+    MSG_INFO("param copied");
 
     int m = 0;
     for (int n = 0; n < nOrbitals; n++) {
+        MSG_INFO(n <<" out of " << nOrbitals);
         if (this->sepOrbitals) m = n;
         if (mrcpp::mpi::my_func(Phi[n])) {
             std::vector<ComplexDouble> totCoefs;
@@ -144,41 +146,66 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             auto &fPhi_m = this->dOrbitals[nHistory][n];
             totCoefs.push_back({1.0, 0.0});
             totOrbs.push_back(fPhi_m);
+            MSG_INFO("real gud");
+            if (fPhi_m.iscomplex()) {MSG_INFO("coeffs gottem" << fPhi_m.CompC[0]->getSquareNorm());}
+            else {MSG_INFO("coeffs gottem real" << fPhi_m.CompD[0]->getSquareNorm());}
+            MSG_INFO("complex gud");
 
             // Ref. Harrisons KAIN paper the following has the wrong sign,
             // but we define the updates (lowercase f) with opposite sign
             // (but not the orbitals themselves).
             for (int j = 0; j < nHistory; j++) {
+                MSG_INFO(j << "th history out of "<< nHistory);
                 std::vector<ComplexDouble> partCoefs(4);
                 std::vector<mrcpp::CompFunction<3>> partOrbs;
 
                 partCoefs[0] = {1.0, 0.0};
                 auto &phi_j = this->orbitals[j][n];
                 partOrbs.push_back(phi_j);
+                MSG_INFO("orb hist");
 
                 partCoefs[1] = {1.0, 0.0};
                 auto &fPhi_j = this->dOrbitals[j][n];
                 partOrbs.push_back(fPhi_j);
+                MSG_INFO("d orb hist");
 
                 partCoefs[2] = {-1.0, 0.0};
                 partOrbs.push_back(phi_m);
+                MSG_INFO("orb current");
 
                 partCoefs[3] = {-1.0, 0.0};
                 partOrbs.push_back(fPhi_m);
+                MSG_INFO("d orb current");
 
                 auto partStep = phi_m.paramCopy(true);
+                MSG_INFO("pre lin combination");
                 mrcpp::linear_combination(partStep, partCoefs, partOrbs, prec);
+                MSG_INFO("post lin comb");
 
                 auto c_j = this->c[m](j);
                 totCoefs.push_back(c_j);
                 totOrbs.push_back(partStep);
             }
+            // for (int k = 0; k < totOrbs.size(); k++ ) {
+            for (int k = totOrbs.size()-1; k >= 0; k-- ) { //debug test
+                MSG_INFO("totOrbs_" << k << "/"<< totOrbs.size() << " done is complex?"  << totOrbs[k].isreal() << totOrbs[k].iscomplex() << " "  << totOrbs[k].isreal() <<  totOrbs[k].iscomplex()<< " - " << &totOrbs[k].CompC[0] << " "<< &totOrbs[k].CompC[1] << " "  << &totOrbs[k].CompD[0] << " "<< &totOrbs[k].CompD[1] );
+                double tuta = totOrbs[k].CompD[0]->getSquareNorm();
+                MSG_INFO("pouet");
+                double tutb = totOrbs[k].CompD[1]->getSquareNorm();
+                MSG_INFO("tuta="<<tuta << "tutb="<<tutb);
+            } //debug test
 
+            MSG_INFO("post history loop");
             std::vector<ComplexDouble> coefsVec(totCoefs.size());
             for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
 
+            MSG_INFO("coeff vecs ok");
             dPhi[n] = Phi[n].paramCopy(true);
-            mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
+            // MSG_INFO("final dPhi_n done is complex?"  << dPhi[0].isreal() << dPhi[0].iscomplex() << " "  << dPhi[1].isreal() <<  dPhi[1].iscomplex()<< " - " << &dPhi[0].CompD[0] << " "<< &dPhi[0].CompD[1] << " " << &dPhi[0].CompC[0] << " "<< &dPhi[0].CompC[1] << " "  << &dPhi[1].CompD[0] << " "<< &dPhi[1].CompD[1] << " " << &dPhi[1].CompC[0] << " "<< &dPhi[1].CompC[1]);
+            MSG_INFO("final dPhi_n done is complex?"  << dPhi[n].isreal() << dPhi[n].iscomplex() << " "  << dPhi[n].isreal() <<  dPhi[n].iscomplex()<< " - " << &dPhi[n].CompC[0] << " "<< &dPhi[n].CompC[1] << " "  << &dPhi[n].CompD[0] << " "<< &dPhi[n].CompD[1] );
+            // MSG_INFO()
+            mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec); //problème dans totOrbs?
+            MSG_INFO("end");
         }
     }
 

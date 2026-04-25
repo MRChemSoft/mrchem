@@ -202,17 +202,24 @@ void Accelerator::accelerate(double prec, OrbitalVector &Phi, OrbitalVector &dPh
     Timer t_tot;
     auto plevel = Printer::getPrintLevel(); // global print level
     mrcpp::print::header(this->pl + 2, "Iterative subspace accelerator");
+    MSG_INFO("tut 1 ");
 
     // Deep copy into history
     this->push_back(Phi, dPhi, F, dF);
+    MSG_INFO("tut 2 pushed back");
 
     int nHistory = this->orbitals.size() - 1;
     if (nHistory > this->minHistory) {
+        MSG_INFO("tut 3 > minHistory");
         setupLinearSystem();
+        MSG_INFO("tut 3 setup");
         solveLinearSystem();
+        MSG_INFO("tut 3 solved");
         // Overwrites (Phi, dPhi, F, dF) with new guess
         expandSolution(prec, Phi, dPhi, F, dF);
+        MSG_INFO("tut 3 expanded");
         clearLinearSystem();
+        MSG_INFO("tut 3 cleared");
     }
     printSizeNodes();
     mrcpp::print::footer(this->pl + 2, t_tot, 2);
