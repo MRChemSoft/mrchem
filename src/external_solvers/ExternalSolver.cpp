@@ -81,10 +81,10 @@ void ExternalSolver::set_two_body_integrals(OrbitalVector &Phi) {
 
 void ExternalSolver::calculate_lagrange_multipliers(){
     const int L = this->one_body_integrals->rows();
-    ComplexMatrix epsilon = ComplexMatrix::Zero(L, L);
+    ComplexMatrix lag_coeff = ComplexMatrix::Zero(L, L);
 
     // one-body contributions
-    epsilon += (*this->one_rdm) * (*this->one_body_integrals).transpose();
+    lag_coeff += (*this->one_rdm) * (*this->one_body_integrals).transpose();
 
     // two-body contributions
     for (int n = 0; n < L; n++)
@@ -92,15 +92,15 @@ void ExternalSolver::calculate_lagrange_multipliers(){
             for (int j = 0; j < L; j++)
                 for (int k = 0; k < L; k++)
                     for (int l = 0; l < L; l++)
-                        epsilon(n, m) += 2.0 * (*this->two_rdm)(m, j, k, l) * (*this->two_body_integrals)(n, j, k, l);
+                        lag_coeff(n, m) += 2.0 * (*this->two_rdm)(m, j, k, l) * (*this->two_body_integrals)(n, j, k, l);
     
-    this->epsilon = std::make_shared<ComplexMatrix>(epsilon);
+    this->lag_coeff = std::make_shared<ComplexMatrix>(lag_coeff);
 }
 
 void ExternalSolver::diagonalize_1rdm(){
     const int L = this->one_rdm->rows();
-    // NOTE: I need to calculate epsilon before starting with the basis change!
-    if(!this->epsilon)
+    // NOTE: I need to calculate lag_coeff before starting with the basis change!
+    if(!this->lag_coeff)
         MSG_ABORT("Lagrange multipliers matrix must be defined before the change of basis.");
         
     if (!this->basis_change)
@@ -126,11 +126,47 @@ void ExternalSolver::diagonalize_1rdm(){
     // one-body integral in new basis
     *this->one_body_integrals = (*this->basis_change) * (*this->one_body_integrals) * (*this->basis_change).adjoint();
     // lagrange multipliers in the new basis
-    *this->epsilon = (*this->basis_change) * (*this->epsilon) * (*this->basis_change).adjoint();
+    *this->lag_coeff = (*this->basis_change) * (*this->lag_coeff) * (*this->basis_change).adjoint();
 }
 
+void ExternalSolver::calculate_helmholtz_coefficients() {
+    const int L = this->one_body_integrals->rows();
 
+    std::vector<ComplexDouble> result(L);
+    for (int m = 0; m < L; m++) {
+        if (std::abs((*this->one_rdm)(m, m)) < 1e-10)
+            MSG_ABORT("Division by zero in helmholtz_coefficients: occupation number too small");
+        result[m] = (*this->lag_coeff)(m, m) / (*this->one_rdm)(m, m);
+    }
 
+    this->helm_coeff = result;
+}
+
+// std::vector<ComplexDouble> LagrangianSolver::calculate_helmholtz_coefficients() {
+//     const int L = this->one_body_integrals->rows();
+
+//     // 2 * np.einsum("mn, mi, ijkl, njkl -> m", U, U, two_rdm, two_body_int)
+//     std::vector<ComplexDouble> correction(L, 0.0);
+//     for (int m = 0; m < L; m++)
+//         for (int n = 0; n < L; n++)
+//             for (int i = 0; i < L; i++)
+//                 for (int j = 0; j < L; j++)
+//                     for (int k = 0; k < L; k++)
+//                         for (int l = 0; l < L; l++)
+//                             correction[m] += 2.0 
+//                                 * (*this->change_basis)(m, n) 
+//                                 * (*this->change_basis)(m, i)
+//                                 * (*this->two_rdm)(i, j, k, l)
+//                                 * (*this->two_body_integrals)(n, j, k, l);
+
+//     std::vector<ComplexDouble> result(L);
+//     for (int m = 0; m < L; m++) {
+//         if (std::abs((*this->one_rdm)(m, m)) < 1e-10)
+//             MSG_ABORT("Division by zero in helmholtz_coefficients: occupation number too small");
+//         result[m] = (*this->one_body_integrals)(m, m) + correction[m] / (*this->one_rdm)(m, m);
+//     }
+//     this->helm_coeff = std::make_shared<ComplexMatrix>(result);
+// }
 
 
 

@@ -110,7 +110,7 @@ void LagrangianSolver::orbital_update(ChemTensorSolver &S){
     std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
     orbital_basis_change(basis_change);
 
-    
+    S.calculate_helmholtz_coefficients();
     
     
         

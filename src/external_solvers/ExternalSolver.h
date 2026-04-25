@@ -52,11 +52,14 @@ public:
     std::shared_ptr<ComplexMatrix> get_one_rdm() { return this->one_rdm; }
     std::shared_ptr<ComplexTensorR4> get_two_rdm() { return this->two_rdm; }
     std::shared_ptr<ComplexMatrix> get_basis_change() { return this->basis_change; }
+    std::vector<ComplexDouble> get_helmholtz_coefficients() { return this->helm_coeff; }
+
 
     virtual void optimize() = 0;
 
     void calculate_lagrange_multipliers();
     void diagonalize_1rdm();
+    void calculate_helmholtz_coefficients();
 
 protected:
     FockBuilder F{};
@@ -69,7 +72,8 @@ protected:
     std::shared_ptr<ComplexTensorR4> two_body_integrals{};
     std::shared_ptr<ComplexMatrix> one_rdm{};
     std::shared_ptr<ComplexTensorR4> two_rdm{};
-    std::shared_ptr<ComplexMatrix> epsilon{};
+    std::shared_ptr<ComplexMatrix> lag_coeff{};
+    std::vector<ComplexDouble> helm_coeff{};
     std::shared_ptr<ComplexMatrix> basis_change{};
 
     void set_one_body_integrals(OrbitalVector &Phi, MomentumOperator &P, NuclearOperator &V);
