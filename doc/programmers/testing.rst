@@ -63,9 +63,12 @@ Division of Tests
 +++++++++++++++++
 
 The tests are divided into three sets, depending on the runtime cost: short, medium and long.
-Which set a test belongs to is included in the labels of the test as one of the three mentioned keywords.
+Which set a test belongs to is included in the labels for the short and medium tests.
+The long tests are not part of the main ctest infrastructure as they might require much memory and time to run.
 
 - Short tests are smaller critical tests (up to ~1 min.) that are run every time a new commit is pushed to github
-- Medium tests are longer, and it not part of the default test pipeline in github. However, they should always be run before a pull request is merged
+- Medium tests are longer, and is not part of the default test pipeline in github. However, they should always be run before a pull request is merged
 - Long tests are more extensive tests that should only be run sometimes
+
+There are currently no long tests, however, these are in the making.
 
