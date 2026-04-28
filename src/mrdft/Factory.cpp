@@ -44,81 +44,26 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA)
         : mra(MRA)
         , xcfun_p(xcfun_new(), xcfun_delete) {}
 
-void MapFuncName(std::string name, std::vector<int> &ids, std::vector<double> &coefs) {
-    // ensure name is upper case
-    std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
-
-    if (name == "PBE0") {
-        ids = {XC_HYB_GGA_XC_PBEH};
-        coefs = {1.0};
-        return;
-    } else if (name == "PBE") {
-        ids = {XC_GGA_X_PBE, XC_GGA_C_PBE};
-        coefs = {1.0, 1.0};
-        return;
-    } else if (name == "SLATERX") {
-        ids = {XC_LDA_X};
-        coefs = {1.0};
-        return;
-    } else if (name == "BECKEX") {
-        ids = {XC_GGA_X_B88};
-        coefs = {1.0};
-        return;
-    } else if (name == "VWN5C") {
-        ids = {XC_LDA_C_VWN};
-        coefs = {1.0};
-        return;
-    } else if (name == "SVWN5") {
-        ids = {XC_LDA_C_VWN, XC_LDA_X};
-        coefs = {1.0, 1.0};
-        return;
-    } else if (name == "B3P86") {
-        ids = {XC_HYB_GGA_XC_B3P86};
-        coefs = {1.0};
-        return;
-    } else if (name == "BPW91") {
-        ids = {XC_GGA_X_B88, XC_GGA_C_PW91};
-        coefs = {1.0, 1.0};
-        return;
-    } else if (name == "B3LYP") {
-        // Keep as b3lyp5 for now to be consistent with xcfun
-        // TODO: change the definition of b3lyp in mrchem to not be b3lyp5
-        ids = {XC_HYB_GGA_XC_B3LYP5};
-        // ids = {XC_HYB_GGA_XC_B3LYP};
-        coefs = {1.0};
-        return;
-    } else if (name == "B3LYP5") {
-        ids = {XC_HYB_GGA_XC_B3LYP5};
-        coefs = {1.0};
-        return;
-    } else {
-        // Check if Libxc has this functional
-        int number = xc_functional_get_number(name.c_str());
-        if (number == -1) { MSG_ABORT(name + " is not a known shorthand in MRChem nor a functional in Libxc!\n"); }
-
-        ids = {number};
-        coefs = {1.0};
-        return;
-    }
-}
-
 void Factory::setFunctional(const std::string &name, double c) {
     setLibxc(libxc); // should probably be where setFunctional is called
 
     if (libxc) {
         std::vector<int> ids;
         std::vector<double> coefs;
+        double scaled_custom_exx = 0.0;
 
-        MapFuncName(name, ids, coefs);
-        xc_func_type libxc_obj;
+        mapFunctionalName(name, ids, coefs, scaled_custom_exx);
+        customExx += c * scaled_custom_exx;
+        xc_func_type *libxc_obj;
         for (size_t i = 0; i < ids.size(); i++) {
-            auto return_code = xc_func_init(&libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
+            libxc_obj = xc_func_alloc();
+            auto return_code = xc_func_init(libxc_obj, ids[i], spin ? XC_POLARIZED : XC_UNPOLARIZED);
             if (return_code != 0) {
                 std::ostringstream oss;
                 oss << "Functional id = " << ids[i] << " not found in the employed version of Libxc.\n";
                 MSG_ABORT(oss.str());
             }
-            xc_func_set_dens_threshold(&libxc_obj, cutoff);
+            xc_func_set_dens_threshold(libxc_obj, cutoff);
             libxc_objects.push_back(libxc_obj);
             libxc_coefs.push_back(c * coefs[i]);
         }
@@ -136,14 +81,13 @@ std::unique_ptr<MRDFT> Factory::build() {
     // Init XCFun or Libxc
     bool gga = false;
     if (libxc) {
-        for (const auto &f : libxc_objects) {
+        for (const auto *f : libxc_objects) {
 
-            switch (f.info->family) {
+            switch (f->info->family) {
                 case XC_FAMILY_LDA:
 #ifdef XC_FAMILY_HYB_GGA
                 case XC_FAMILY_HYB_LDA:
 #endif
-                    gga = false;
                     break;
 
                 case XC_FAMILY_GGA:
@@ -162,8 +106,8 @@ std::unique_ptr<MRDFT> Factory::build() {
             }
 
             // Check if functional is range separated
-            if ((f.info->flags & XC_FLAGS_HYB_CAM) || (f.info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
-            if ((f.info->flags & XC_FLAGS_HYB_CAMY) || (f.info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
+            if ((f->info->flags & XC_FLAGS_HYB_CAM)  || (f->info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
+            if ((f->info->flags & XC_FLAGS_HYB_CAMY) || (f->info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
         }
     } else {
         gga = xcfun_is_gga(xcfun_p.get());
@@ -199,8 +143,9 @@ std::unique_ptr<MRDFT> Factory::build() {
         else MSG_ABORT("Case not handled");
     }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-    if (libxc) { func_p->set_libxc_functional_object(libxc_objects, libxc_coefs); }
+    if (libxc) { func_p->setLibxcFunctionalObject(libxc_objects, libxc_coefs); }
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+    func_p->setCustomExx(customExx);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);

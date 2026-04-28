@@ -62,13 +62,19 @@ void Functional::print_functional_references() const {
     }
 
     // Conditional reference printing
-    auto print_wrap = [&](std::string str, std::size_t txt_width) {
+    auto print_wrap = [&](std::string str, std::size_t txt_width, int indent = 0) {
+        const std::string continuation_indent(indent, ' ');
         size_t offset = 0;
         while (offset + txt_width < str.size()) {
             // Is the line already sufficiently short?
             size_t newline_pos = str.find('\n', offset);
             if (newline_pos < offset + txt_width) {
-                offset = newline_pos + 1;
+                if (newline_pos != std::string::npos && newline_pos + 1 < str.size()) {
+                    str.insert(newline_pos + 1, continuation_indent);
+                    offset = newline_pos + 1 + continuation_indent.size();
+                } else {
+                    offset = newline_pos + 1;
+                }
                 continue;
             }
 
@@ -76,56 +82,59 @@ void Functional::print_functional_references() const {
             // If the string doesn't have a space, or it is too far out, hard insert a newline
             if (space_pos == std::string::npos || space_pos - offset > txt_width) {
                 space_pos = offset + txt_width;
-                str.insert(space_pos, "\n");
+                str.insert(space_pos, "\n" + continuation_indent);
             } else {
                 str[space_pos] = '\n';
+                str.insert(space_pos + 1, continuation_indent);
             }
-            offset = space_pos + 1;
+            offset = space_pos + 1 + continuation_indent.size();
         }
         std::cout << str;
     };
 
-    std::string str = "Using Libxc (version " + std::string(xc_version_string()) + ") to evaluate density functionals. Libxc is free software. It is " +
-                      "distributed under the Mozilla Public License, version 2.0. For " + "more information, please check the Libxc manual. You should cite\n\n" + xc_reference() +
-                      " DOI: " + xc_reference_doi() + "\n\nwhen " + "reporting the results of your calculation in a scientific article.\n";
+    std::string libxc_ref_str = "Using Libxc (version " + std::string(xc_version_string()) + ") to evaluate density functionals. Libxc is free software. It is " +
+                                "distributed under the Mozilla Public License, version 2.0. For " + "more information, please check the Libxc manual. You should cite\n\n" +
+                                 xc_reference() + " DOI: " + xc_reference_doi() + "\n\nwhen " + "reporting the results of your calculation in a scientific article.\n";
     auto libxc_txt_width = 75;
-    print_wrap(str, libxc_txt_width);
+    print_wrap(libxc_ref_str, libxc_txt_width);
 
     // Avoid printing the same LibXC functional multiple times
     std::set<int> printed_ids;
     std::cout << "\nLibxc functionals used in this calculation:\n";
-    for (const auto &func : libxc_objects) {
-        if (func.info == nullptr) continue; // safety
+    for (const auto *func : libxc_objects) {
+        if (func->info == nullptr) continue; // safety
 
-        int id = func.info->number;
+        int id = func->info->number;
         if (!printed_ids.insert(id).second) {
             // Already printed this ID
             continue;
         }
 
         char *name = xc_functional_get_name(id);
-        std::cout << "  - " << name << " (ID " << id << "): " << func.info->name << std::endl;
+        std::string func_id_str = "  - " + std::string(name) + " (ID " + std::to_string(id) + "): " + func->info->name + "\n";
+        print_wrap(func_id_str, libxc_txt_width);
         free(name);
 
         for (int number = 0; number < XC_MAX_REFERENCES; number++) {
-            auto reference = xc_func_info_get_references(func.info, number);
+            auto reference = xc_func_info_get_references(func->info, number);
             if (reference == nullptr) break;
-            std::cout << "     * " << xc_func_reference_get_ref(reference) << "\n       DOI:" << xc_func_reference_get_doi(reference) << std::endl;
+            std::string func_ref_str = "     * " + std::string(xc_func_reference_get_ref(reference)) + ", DOI:" + xc_func_reference_get_doi(reference) + "\n";
+            print_wrap(func_ref_str, libxc_txt_width, 7);
         }
     }
 }
 
-void Functional::set_libxc_functional_object(std::vector<xc_func_type> libxc_objects_, std::vector<double> libxc_coefs_) {
+void Functional::setLibxcFunctionalObject(std::vector<xc_func_type*> &libxc_objects_, std::vector<double> &libxc_coefs_) {
     libxc_objects = std::move(libxc_objects_);
     libxc_coefs  = std::move(libxc_coefs_);
 }
 
 double Functional::amountEXX() const {
-    double exx = 0.0;
+    double exx = customExx;
     if (Factory::libxc) {
         for (std::size_t i = 0; i < libxc_objects.size(); ++i) {
-            const xc_func_type &f = libxc_objects[i];
-            double frac = xc_hyb_exx_coef(&f);
+            const xc_func_type *f = libxc_objects[i];
+            double frac = xc_hyb_exx_coef(f);
             exx += libxc_coefs[i] * frac;
         }
     } else {
@@ -153,7 +162,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
     if (Factory::libxc) {
         Eigen::MatrixXd exc, vxc, sxc, sigma;
         for (size_t i = 0; i < libxc_objects.size(); i++) {
-            switch (libxc_objects[i].info->family) {
+            switch (libxc_objects[i]->info->family) {
                 case XC_FAMILY_LDA:
                 case XC_FAMILY_HYB_LDA:
                     if (isSpin()) {
@@ -165,7 +174,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             rho(0, j) = inp(0, j);
                             rho(1, j) = inp(1, j);
                         }
-                        xc_lda_exc_vxc(&libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
+                        xc_lda_exc_vxc(libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
                             //    xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
@@ -178,7 +187,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                     } else {
                         exc = Eigen::MatrixXd::Zero(1, nPts);
                         vxc = Eigen::MatrixXd::Zero(1, nPts);
-                        xc_lda_exc_vxc(&libxc_objects[i], nPts, inp.data(), exc.data(), vxc.data());
+                        xc_lda_exc_vxc(libxc_objects[i], nPts, inp.data(), exc.data(), vxc.data());
                         for (size_t j = 0; j < nPts; ++j) {
                             //    xcfun calculates actual energy density while libxc calculates
                             //    energy density per electron density
@@ -207,7 +216,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                             sigma(1, j) = inp(2, j) * inp(5, j) + inp(3, j) * inp(6, j) + inp(4, j) * inp(7, j);
                             sigma(2, j) = inp(5, j) * inp(5, j) + inp(6, j) * inp(6, j) + inp(7, j) * inp(7, j);
                         }
-                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                        xc_gga_exc_vxc(libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
                             // clang-format off
@@ -234,7 +243,7 @@ void Functional::evaluate_data(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out)
                         sxc = Eigen::MatrixXd::Zero(1, nPts);
                         sigma = Eigen::MatrixXd::Zero(1, nPts);
                         for (size_t j = 0; j < nPts; j++) { sigma(j) = inp(1, j) * inp(1, j) + inp(2, j) * inp(2, j) + inp(3, j) * inp(3, j); }
-                        xc_gga_exc_vxc(&libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
+                        xc_gga_exc_vxc(libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                         for (size_t j = 0; j < nPts; ++j) {
                             //    xcfun calculates energy density per volume while libxc calculates

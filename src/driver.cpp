@@ -1485,7 +1485,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             }else{
                 xc_lib = json_fock["xc_library"]["xc_library"].get<std::string>();
             }
-        }else{
+        } else {
             xc_lib = "xcfun";
         }
 
