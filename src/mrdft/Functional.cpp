@@ -88,7 +88,6 @@ void Functional::print_functional_references() const {
     // XCFun is used
     if (not Factory::libxc) {
         printout(0, xcfun_splash());
-        mrcpp::print::separator(0, ' ');
         std::cout << "\nXCFun functionals used in this calculation:\n";
         for (const auto &func_name : xcfun_func_names) {
             std::string xcfun_ref = xcfun_describe_long(func_name.c_str());
