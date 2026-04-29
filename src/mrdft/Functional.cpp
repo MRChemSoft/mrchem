@@ -91,7 +91,7 @@ void Functional::print_functional_references() const {
         std::cout << "\nXCFun functionals used in this calculation:\n";
         for (const auto &func_name : xcfun_func_names) {
             std::string xcfun_ref = xcfun_describe_long(func_name.c_str());
-            std::string xcfun_ref_str = "- " + xcfun_ref;
+            std::string xcfun_ref_str = "  - " + xcfun_ref;
             print_wrap(xcfun_ref_str, outfile_txt_width, 4);
         }
         return;
