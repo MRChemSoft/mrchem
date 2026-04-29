@@ -70,6 +70,7 @@ void Factory::setFunctional(const std::string &name, double c) {
 
     } else {
         xcfun_set(xcfun_p.get(), name.c_str(), c);
+        xcfun_func_names.push_back(name);
     }
 }
 
@@ -144,6 +145,7 @@ std::unique_ptr<MRDFT> Factory::build() {
     }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
     if (libxc) { func_p->setLibxcFunctionalObject(libxc_objects, libxc_coefs); }
+    if (not libxc) {func_p->setXCFunFunctionalNames(xcfun_func_names); }
     diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setCustomExx(customExx);
     func_p->setDerivOp(diff_p);

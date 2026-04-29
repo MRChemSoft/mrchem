@@ -109,7 +109,7 @@ private:
     std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
     XC_p xcfun_p;                                         ///< @brief Pointer to the XCFun library handle
 
-
+    std::vector<std::string> xcfun_func_names;      ///< @brief Vector for storing used XCFun functional names
     std::vector<xc_func_type*> libxc_objects;       ///< @brief Vector of initialized Libxc functionals
     std::vector<double> libxc_coefs;                ///< @brief Vector scaling coefficients for each functional in libxc_objects
 };
