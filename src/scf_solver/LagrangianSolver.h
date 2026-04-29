@@ -32,6 +32,9 @@
 #include "external_solvers/ExternalSolver.h"
 #include "external_solvers/ChemTensorSolver.h"
 
+using PoissonOperator = mrcpp::PoissonOperator;
+using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
+
 
 /** @class LagrangianSolver
  *
@@ -60,17 +63,19 @@ public:
 protected:
     //std::string chkFile;  ///< Name of checkpoint file
     int nIter{};
-    float scf_tol{};
-    float prec{};
+    double scf_tol{};
+    double prec{};
+    double threshold{};
+    PoissonOperator_p P_p{};
     std::vector<double> energy{};
     std::shared_ptr<OrbitalVector> orbitals{};
     
     void set_orbitals(OrbitalVector Phi);
 
-    void orbital_update(ChemTensorSolver &S);
+    void orbital_update(FockBuilder &F, ChemTensorSolver &S);
     void orbital_basis_change(std::shared_ptr<ComplexMatrix> basis_change);
-    std::shared_ptr<ComplexMatrix> calculate_lagrange_multipliers(ChemTensorSolver &S);
-
+    void orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
+    void orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
 };
 
 } // namespace mrchem

@@ -132,14 +132,14 @@ void ExternalSolver::diagonalize_1rdm(){
 void ExternalSolver::calculate_helmholtz_coefficients() {
     const int L = this->one_body_integrals->rows();
 
-    std::vector<ComplexDouble> result(L);
+    DoubleVector result(L);
     for (int m = 0; m < L; m++) {
         if (std::abs((*this->one_rdm)(m, m)) < 1e-10)
             MSG_ABORT("Division by zero in helmholtz_coefficients: occupation number too small");
-        result[m] = (*this->lag_coeff)(m, m) / (*this->one_rdm)(m, m);
+        result[m] = ((*this->lag_coeff)(m, m) / (*this->one_rdm)(m, m)).real();
     }
 
-    this->helm_coeff = result;
+    this->helm_coeff = std::make_shared<DoubleVector>(result);
 }
 
 // std::vector<ComplexDouble> LagrangianSolver::calculate_helmholtz_coefficients() {
