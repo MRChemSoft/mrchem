@@ -3,8 +3,8 @@ message(STATUS "Downloading and building chemtensor.")
 include(FetchContent)
 FetchContent_Declare(chemtensor
   QUIET
-	GIT_REPOSITORY https://github.com/Ectras/chemtensor.git
-	GIT_TAG 9600e8e0bd21291931eb524b9b964834a4a8894d
+	GIT_REPOSITORY https://github.com/qc-tum/chemtensor.git
+	GIT_TAG 18c269a5f1c4844c6d68188baa515aa4c9329611
 )
 
 # We save CMAKE_BUILD_TYPE, as we will set it to Release for externals
