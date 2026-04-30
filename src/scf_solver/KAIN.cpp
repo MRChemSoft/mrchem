@@ -183,16 +183,20 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
                 MSG_INFO("post lin comb");
 
                 auto c_j = this->c[m](j);
-                totCoefs.push_back(c_j);
+                // totCoefs.push_back(c_j);//original
+                //test debug start
+                //TODO: think about how to handle kain with complex orbitals
+                totCoefs.push_back(std::real(c_j)); //all you had to do was to follow the damn KAIN, CJ
+                //test debug end
                 totOrbs.push_back(partStep);
             }
-            // for (int k = 0; k < totOrbs.size(); k++ ) {
-            for (int k = totOrbs.size()-1; k >= 0; k-- ) { //debug test
-                MSG_INFO("totOrbs_" << k << "/"<< totOrbs.size() << " done is complex?"  << totOrbs[k].isreal() << totOrbs[k].iscomplex() << " "  << totOrbs[k].isreal() <<  totOrbs[k].iscomplex()<< " - " << &totOrbs[k].CompC[0] << " "<< &totOrbs[k].CompC[1] << " "  << &totOrbs[k].CompD[0] << " "<< &totOrbs[k].CompD[1] );
-                double tuta = totOrbs[k].CompD[0]->getSquareNorm();
-                MSG_INFO("pouet");
-                double tutb = totOrbs[k].CompD[1]->getSquareNorm();
-                MSG_INFO("tuta="<<tuta << "tutb="<<tutb);
+            // // for (int k = 0; k < totOrbs.size(); k++ ) {
+            for (int k = totCoefs.size()-1; k >= 0; k-- ) { //debug test
+                MSG_INFO("totCoefs_" << (k+1) << "/"<< totCoefs.size() << "=" <<totCoefs[k]);
+                // double tuta = totCoefs[k].CompD[0]->getSquareNorm();
+                // MSG_INFO("pouet");
+                // double tutb = totCoefs[k].CompD[1]->getSquareNorm();
+                // MSG_INFO("tuta="<<tuta << "tutb="<<tutb);
             } //debug test
 
             MSG_INFO("post history loop");
