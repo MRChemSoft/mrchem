@@ -9,5 +9,4 @@ dependencies:
   - lcov
   - ninja
   - nlohmann_json
-  - xcfun
   - libxc

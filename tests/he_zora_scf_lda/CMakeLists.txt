@@ -4,7 +4,7 @@ endif()
 
 add_integration_test(
   NAME "He_ZORA_SCF_LDA"
-  LABELS "mrchem;he_zora_scf_lda;He_ZORA_SCF_LDA;energy;lda;scf;zora;he;helium"
+  LABELS "mrchem;He;scf;dft;lda;scf;energy;zora;xcfun;short"
   COST 100
   LAUNCH_AGENT ${_he_zora_scf_lda_launcher}
   )

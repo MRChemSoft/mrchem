@@ -1,0 +1,44 @@
+# vim:syntax=sh:
+
+world_prec = 1.0e-3               # Overall relative precision
+world_size = 5                    # Size of simulation box 2^n
+
+MPI {
+  numerically_exact = true        # Guarantee identical results in MPI
+}
+
+Molecule {
+  multiplicity = 2
+$coords
+Li      0.0000  0.0000  0.0000
+$end
+}
+
+WaveFunction {
+  method = SVWN5                    # Wave function method (HF or DFT)
+  restricted = false
+}
+
+Properties {
+  polarizability = true
+}
+
+SCF {
+  run = false
+  guess_type = SAD_DZ
+}
+
+Response {
+  kain = 3                        # Length of KAIN iterative history
+  max_iter = 10
+  orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
+  run = [false,false,true]
+}
+
+Polarizability {
+  frequency = [0.0]
+}
+
+DFT {
+  xc_library = xcfun
+}

@@ -11,10 +11,10 @@
 ***                                                                     ***
 ***         VERSION            1.2.0-alpha                              ***
 ***                                                                     ***
-***         Git branch         mom_merged                               ***
-***         Git commit hash    32739ee40f9efa2046d1                     ***
-***         Git commit author  Niklas Goellmann                         ***
-***         Git commit date    Mon Oct 27 14:55:46 2025 +0100           ***
+***         Git branch         fixing_tests                             ***
+***         Git commit hash    3f52af0576ab5360daac-dirty               ***
+***         Git commit author  ylvao                                    ***
+***         Git commit date    Thu Apr 23 18:13:05 2026 +0200           ***
 ***                                                                     ***
 ***         Contact: luca.frediani@uit.no                               ***
 ***                                                                     ***
@@ -29,31 +29,22 @@
 ---------------------------------------------------------------------------
 
  MPI processes           :       (no bank)                               1
- OpenMP threads          :                                               8
- Total cores             :                                               8
+ OpenMP threads          :                                              32
+ Total cores             :                                              32
                                                                            
 ---------------------------------------------------------------------------
 
-XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
-See http://dftlibs.org/xcfun/ for more information.
-
-This is free software; see the source code for copying conditions.
-There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. For details see the documentation.
-Scientific users of this library should cite
-U. Ekstrom, L. Visscher, R. Bast, A. J. Thorvaldsen and K. Ruud;
-J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 ---------------------------------------------------------------------------
 
  MRCPP version         : 1.6.0-alpha
  Git branch            : HEAD
- Git commit hash       : cec3cc96d578cdf77e8e
+ Git commit hash       : ad080014842f898e9529
  Git commit author     : Niklas Göllmann
- Git commit date       : Tue Jan 6 16:29:30 2026 +0100
+ Git commit date       : Wed Mar 11 11:25:17 2026 +0100
 
  Linear algebra        : EIGEN v3.4.0
- Parallelization       : OpenMP (8 threads)
+ Parallelization       : MPI/OpenMP (32 threads)
 
 ---------------------------------------------------------------------------
 
@@ -99,6 +90,26 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 
                                                                            
+                                                                           
+***************************************************************************
+***                                                                     ***
+***                           XC Functional                             ***
+***                                                                     ***
+***************************************************************************
+
+XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
+See http://dftlibs.org/xcfun/ for more information.
+
+This is free software; see the source code for copying conditions.
+There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. For details see the documentation.
+Scientific users of this library should cite
+U. Ekstrom, L. Visscher, R. Bast, A. J. Thorvaldsen and K. Ruud;
+J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
+                                                                           
+---------------------------------------------------------------------------
+
+                                                                           
 ***************************************************************************
 ***                                                                     ***
 ***                Computing Initial Guess Wavefunction                 ***
@@ -106,7 +117,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ***************************************************************************
                                                                            
                                                                            
-Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are added together for restricted calculations
+Warning: guess_orbitals(), line 461: Occupancies for alpha and beta orbitals are added together for restricted calculations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Compute initial orbitals
  Method                  : Project MW molecular orbitals
@@ -133,10 +144,12 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Compute initial energy
  Method                  : DFT (PBE)
+ XC Library              : XCFun
  Relativity              : None
  Environment             : None
  External fields         : None
  Precision               : 1.00000e-03
+ Density cutoff          : 0.00000e+00
  Localization            : Off
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -148,16 +161,17 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
  E-N energy              :            (au)                -12.148695163047
  Coulomb energy          :            (au)                  2.604954736037
  Exchange energy         :            (au)                  0.000000000000
- X-C energy              :            (au)                 -1.282802204309
+ X-C energy              :            (au)                 -1.282801379430
  N-N energy              :            (au)                  0.989451349446
+ Non-local pp energy     :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -6.368883521916
+ Electronic energy       :            (au)                 -6.368882697037
  Nuclear energy          :            (au)                  0.989451349446
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -5.379432172470e+00
-                         :      (kcal/mol)             -3.375644653305e+03
-                         :        (kJ/mol)             -1.412369722943e+04
-                         :            (eV)             -1.463818066292e+02
+ Total energy            :            (au)             -5.379431347591e+00
+                         :      (kcal/mol)             -3.375644135685e+03
+                         :        (kJ/mol)             -1.412369506371e+04
+                         :            (eV)             -1.463817841831e+02
 ===========================================================================
 
 
@@ -166,10 +180,10 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ---------------------------------------------------------------------------
     n     Occ Spin       :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    1.00    p       :            (au)                 -3.302726889048
-    1    2.00    p       :            (au)                 -0.407605747608
+    0    1.00    p       :            (au)                 -3.302726375885
+    1    2.00    p       :            (au)                 -0.407605587134
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -4.117938384265
+ Sum occupied            :            (au)                 -4.117937550152
 ===========================================================================
 
 
@@ -184,6 +198,7 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Optimize ground state orbitals
  Method                  : DFT (PBE)
+ XC library              : XCFun
  Relativity              : None
  Environment             : None
  External fields         : None
@@ -203,12 +218,12 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ===========================================================================
  Iter           MO residual             Total energy                Update
 ---------------------------------------------------------------------------
-    0          1.414214e+00          -5.379432172470         -5.379432e+00
-    1          1.618553e-01          -5.514222654107         -1.347905e-01
-    2          8.569811e-02          -5.545265995748         -3.104334e-02
-    3          4.804409e-02          -5.554886935807         -9.620940e-03
-    4          6.086901e-02          -5.559821824673         -4.934889e-03
-    5          6.044567e-03          -5.559966704989         -1.448803e-04
+    0          1.414214e+00          -5.379431347591         -5.379431e+00
+    1          1.618553e-01          -5.514221824310         -1.347905e-01
+    2          8.569812e-02          -5.545265156736         -3.104333e-02
+    3          4.804409e-02          -5.554886093682         -9.620937e-03
+    4          6.086900e-02          -5.559820979674         -4.934886e-03
+    5          6.044563e-03          -5.559965860123         -1.448804e-04
 ---------------------------------------------------------------------------
                       SCF converged in 5 iterations!
 ===========================================================================
@@ -240,20 +255,21 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ===========================================================================
                          Molecular Energy (final)
 ---------------------------------------------------------------------------
- Kinetic energy          :            (au)                  5.360621679613
- E-N energy              :            (au)                -13.346945570992
- Coulomb energy          :            (au)                  2.768745693540
+ Kinetic energy          :            (au)                  5.360620958336
+ E-N energy              :            (au)                -13.346944798359
+ Coulomb energy          :            (au)                  2.768745554662
  Exchange energy         :            (au)                  0.000000000000
- X-C energy              :            (au)                 -1.331839856597
+ X-C energy              :            (au)                 -1.331838924208
  N-N energy              :            (au)                  0.989451349446
+ Non-local pp energy     :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -6.549418054436
+ Electronic energy       :            (au)                 -6.549417209569
  Nuclear energy          :            (au)                  0.989451349446
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -5.559966704989e+00
-                         :      (kcal/mol)             -3.488931782856e+03
-                         :        (kJ/mol)             -1.459769057947e+04
-                         :            (eV)             -1.512944015243e+02
+ Total energy            :            (au)             -5.559965860123e+00
+                         :      (kcal/mol)             -3.488931252694e+03
+                         :        (kJ/mol)             -1.459768836127e+04
+                         :            (eV)             -1.512943785343e+02
 ===========================================================================
 
 
@@ -262,10 +278,10 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ---------------------------------------------------------------------------
     n     Occ Spin       :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    1.00    p       :            (au)                 -3.130548893411
-    1    2.00    p       :            (au)                 -0.508412435609
+    0    1.00    p       :            (au)                 -3.130548364999
+    1    2.00    p       :            (au)                 -0.508412326554
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -4.147373764629
+ Sum occupied            :            (au)                 -4.147373018107
 ===========================================================================
 
 
@@ -284,7 +300,7 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ---------------------------------------------------------------------------
  r_O                     :        0.000000        0.000000        0.000000
 ---------------------------------------------------------------------------
- Electronic vector       :       14.517613       -4.393354       -1.663282
+ Electronic vector       :       14.517612       -4.393354       -1.663281
  Magnitude               :            (au)                       15.258740
                          :         (Debye)                       38.783848
 ---------------------------------------------------------------------------
@@ -304,7 +320,7 @@ Warning: guess_orbitals(), line 424: Occupancies for alpha and beta orbitals are
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  0m  7s                       ***
+***                       Wall time :  0h  0m  6s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            

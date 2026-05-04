@@ -1,6 +1,9 @@
 Testing
 -------
 
+Unit tests
+++++++++++
+
 We perform unit testing of our code. The unit testing framework used is
 `Catch <https://github.com/philsquared/Catch>`_ The framework provides quite an
 extensive set of macros to test various data types, it also provides facilities
@@ -36,3 +39,36 @@ To add new tests for your class you have to:
    A possible workaround is to add some kind of input file and create a text fixture
    that sets up the test environment. Have a look in the ``tests/input`` directory
    for an example
+
+Running Different Types of Tests
+++++++++++++++++++++++++++++++++
+
+The tests in MRChem should all have a list of labels in the CMakeLists.txt inside their respective subdirectories, all in lower case letters. 
+CTest allows you to call all tests containing a specific label by running the following command in you build directory:
+
+   .. code-block:: bash
+
+      ctest -L "label"    # label = scf, dft, H2, polarization, ...
+
+You can also use the -R command to run specific tests by name or parts of a name. 
+Note that command is utilizing regex, so if multiple test names contain the entered keyword, they will all run.
+Also note that this is command is case sensitive, and the casing of the test name may not correspond with that of the test subdirectory.
+
+   .. code-block:: bash
+
+      ctest -R "name"    # name = H2O_energy_BLYP, ...
+
+
+Division of Tests
++++++++++++++++++
+
+The tests are divided into three sets, depending on the runtime cost: short, medium and long.
+Which set a test belongs to is included in the labels for the short and medium tests.
+The long tests are not part of the main ctest infrastructure as they might require much memory and time to run.
+
+- Short tests are smaller critical tests (up to ~1 min.) that are run every time a new commit is pushed to github
+- Medium tests are longer, and is not part of the default test pipeline in github. However, they should always be run before a pull request is merged
+- Long tests are more extensive tests that should only be run sometimes
+
+There are currently no long tests, however, these are in the making.
+

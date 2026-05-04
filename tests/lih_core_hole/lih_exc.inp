@@ -26,3 +26,7 @@ SCF {
   run = true
   guess_type = mw                   # Type of initial guess: none, mw, gto
 }
+
+DFT {
+  xc_library = xcfun
+}

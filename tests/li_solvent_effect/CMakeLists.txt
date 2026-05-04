@@ -1,0 +1,10 @@
+if(ENABLE_MPI)
+    set(_li_solv_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
+endif()
+
+add_integration_test(
+  NAME "Li_solvent_effect"
+  LABELS "mrchem;Li;scf;dft;pbe0;gga;unrestricted;pcm;solvent;energy;xcfun;short"
+  COST 100
+  LAUNCH_AGENT ${_li_solv_launcher}
+  )

@@ -6,9 +6,12 @@ WaveFunction {
   relativity = azora
 }
 
-
 Molecule {
 $coords
 He   0.0 0.0 0.0
 $end
+}
+
+DFT {
+  xc_library = xcfun
 }

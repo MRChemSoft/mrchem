@@ -4,7 +4,7 @@ endif()
 
 add_integration_test(
   NAME "Li2H_imom_unres"
-  LABELS "mrchem;li2h_imom_unres;Li2H_imom_unres;dft;gga;energy"
+  LABELS "mrchem;Li2H;scf;dft;gga;pbe;unrestricted;imom;energy;xcfun;medium"
   COST 100
   LAUNCH_AGENT ${_li2h_imom_unres_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess

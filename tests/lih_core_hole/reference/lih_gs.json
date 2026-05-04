@@ -49,7 +49,19 @@
           ]
         }
       ],
-      "multiplicity": 1
+      "multiplicity": 1,
+      "pseudopotentials": {
+        "pp_list": [
+          {
+            "use_pp": false
+          },
+          {
+            "use_pp": false
+          }
+        ],
+        "pp_prec": 0.001,
+        "use_pp": false
+      }
     },
     "mpi": {
       "bank_per_node": -1,
@@ -103,6 +115,9 @@
           "shared_memory": false,
           "smooth_prec": 0.001
         },
+        "xc_library": [
+          "xcfun"
+        ],
         "xc_operator": {
           "shared_memory": false,
           "xc_functional": {
@@ -118,6 +133,7 @@
         }
       },
       "initial_guess": {
+        "cutoff": 0.0,
         "environment": "None",
         "external_field": "None",
         "file_CUBE_a": "cube_vectors/CUBE_a_vector.json",
@@ -131,6 +147,8 @@
         "file_phi_a": "initial_guess/phi_a_scf",
         "file_phi_b": "initial_guess/phi_b_scf",
         "file_phi_p": "initial_guess/phi_p_scf",
+        "initial_mixing_step_size": 0.4,
+        "initial_mixing_steps": 4,
         "localize": true,
         "method": "DFT (PBE)",
         "prec": 0.001,
@@ -139,6 +157,7 @@
         "rotate": true,
         "screen": 12.0,
         "type": "sad_gto",
+        "xc_library": "xcfun",
         "zeta": 0
       },
       "occupancies": [],
@@ -174,21 +193,21 @@
       "charge": 0,
       "dipole_moment": {
         "dip-1": {
-          "magnitude": 2.62001558525881,
+          "magnitude": 2.6200155852588107,
           "r_O": [
             0.0,
             0.0,
             0.0
           ],
           "vector": [
-            1.9505388506215269,
-            1.4372494938980669,
-            -0.9970926494087036
+            1.9505388506215304,
+            1.4372494938980624,
+            -0.9970926494087045
           ],
           "vector_el": [
-            19.357313990139236,
-            -5.857549709894434,
-            -2.217074982313739
+            19.35731399013924,
+            -5.857549709894438,
+            -2.21707498231374
           ],
           "vector_nuc": [
             -17.40677513951771,
@@ -218,8 +237,8 @@
       "multiplicity": 1,
       "orbital_energies": {
         "energy": [
-          -1.853683797812744,
-          -0.07076131873743928
+          -1.8536833197367422,
+          -0.07076115705543888
         ],
         "occupation": [
           2.0,
@@ -229,32 +248,33 @@
           "p",
           "p"
         ],
-        "sum_occupied": -3.8488902331003665
+        "sum_occupied": -3.8488889535843622
       },
       "orbital_positions": [
         [
-          -3.7857889667938767,
-          2.2407384179906495,
-          0.015694142002414705
+          -3.7857889667938776,
+          2.24073841799065,
+          0.015694142002414684
         ],
         [
-          -5.892868028275742,
-          0.6880364369565676,
-          1.092843349154455
+          -5.8928680282757435,
+          0.6880364369565682,
+          1.0928433491544556
         ]
       ],
       "scf_energy": {
-        "E_ee": 5.737346014404489,
+        "E_ee": 5.7373460144044905,
         "E_eext": 0.0,
-        "E_el": -8.952914596320966,
-        "E_en": -20.444464823190827,
-        "E_kin": 8.013025500156616,
+        "E_el": -8.952913274379405,
+        "E_en": -20.44446482319083,
+        "E_kin": 8.013025500156617,
         "E_next": 0.0,
+        "E_nl": 0.0,
         "E_nn": 0.9894513494461199,
         "E_nuc": 0.9894513494461199,
-        "E_tot": -7.963463246874846,
+        "E_tot": -7.963461924933285,
         "E_x": 0.0,
-        "E_xc": -2.2588212876912435,
+        "E_xc": -2.2588199657496815,
         "Er_el": 0.0,
         "Er_nuc": 0.0,
         "Er_tot": 0.0
@@ -263,25 +283,26 @@
     "provenance": {
       "creator": "MRChem",
       "mpi_processes": 1,
-      "nthreads": 8,
+      "nthreads": 32,
       "routine": "mrchem.x",
-      "total_cores": 8,
+      "total_cores": 32,
       "version": "1.2.0-alpha"
     },
     "rsp_calculations": null,
     "scf_calculation": {
       "initial_energy": {
-        "E_ee": 5.737346014404489,
+        "E_ee": 5.7373460144044905,
         "E_eext": 0.0,
-        "E_el": -8.952914596320966,
-        "E_en": -20.444464823190827,
-        "E_kin": 8.013025500156616,
+        "E_el": -8.952913274379405,
+        "E_en": -20.44446482319083,
+        "E_kin": 8.013025500156617,
         "E_next": 0.0,
+        "E_nl": 0.0,
         "E_nn": 0.9894513494461199,
         "E_nuc": 0.9894513494461199,
-        "E_tot": -7.963463246874846,
+        "E_tot": -7.963461924933285,
         "E_x": 0.0,
-        "E_xc": -2.2588212876912435,
+        "E_xc": -2.2588199657496815,
         "Er_el": 0.0,
         "Er_nuc": 0.0,
         "Er_tot": 0.0
