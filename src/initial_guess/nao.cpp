@@ -269,7 +269,6 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
         atomic_densities.push_back(atomic_density);
     }
 
-    int N_nucs = nucs.size();
     for (int i = 0; i < nucs.size(); i++) {
         if (mrcpp::mpi::wrk_rank != i % mrcpp::mpi::wrk_size) continue;
 
@@ -409,8 +408,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                 mrcpp::project(orb_mw, gauss_match, prec);
 
                 mrcpp::project(orb_mw, orb, prec);
-                double nrm1 = orb_mw.norm();
-                // orb_mw.crop(prec);
+                // Note: Might want to crop after project
                 double nrm = orb_mw.norm();
                 int nnodes = orb_mw.getNNodes();
                 if (nnodes < 10) {

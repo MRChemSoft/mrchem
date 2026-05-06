@@ -15,9 +15,7 @@ TEST_CASE("sperical_harmonics", "[spherical_harmonics]") {
     // const double thrs = 1.0e-12;
 
     SECTION("calc spherical harmonics") {
-        double alpha = .5;
         std::vector<ProjectorFunction> pps;
-        int iOrb = 0;
         for (int l = 0; l < lmax; l++) {
             for (int m = -l; m <= l; m++) {
                 for (int idim = 0; idim < 1; idim++) {
