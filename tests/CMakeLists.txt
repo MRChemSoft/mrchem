@@ -61,4 +61,4 @@ add_subdirectory(li2h_imom_unres)
 add_subdirectory(lih_core_hole)
 add_subdirectory(na_pp_scf_hf)
 add_subdirectory(ne_zora_scf_pbe)
-
+add_subdirectory(o2_gto_qzvp_libxc_pbe)
