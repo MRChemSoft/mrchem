@@ -127,7 +127,6 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
 
     // Compute XC density
     Density &rho_xc = XC_.getDensity(DensityType::Total);
-    // mrcpp::deep_copy(rho_j, rho_j);
 
     std::shared_ptr<NuclearOperator> V_nuc;
     std::shared_ptr<ProjectorOperator> P;
@@ -145,18 +144,13 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
         }
         P = std::make_shared<ProjectorOperator>(nucs_pp, prec);
         std::string model_pp = "point_like";
-        // NuclearOperator V_nuc_all_el(nucs_all_el, prec, prec, false, model_pp);
         V_nuc = std::make_shared<NuclearOperator>(nucs_all_el, prec, prec, false, model_pp);
         model_pp = "pp";
         NuclearOperator pp_nuc(nucs_pp, prec, prec, false,  model_pp);
         V_nuc->add(pp_nuc);
         V = V + (*P);
-        // V_nuc_ptr = std::make_shared<NuclearOperator>(V_nuc_all_el);
     } else{
-        // NuclearOperator V_nuc(nucs, prec);
-        // std::make_shared<NuclearOperator>(V_nuc);
         V_nuc = std::make_shared<NuclearOperator>(nucs, prec);
-        // V = V;
     }
 
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
