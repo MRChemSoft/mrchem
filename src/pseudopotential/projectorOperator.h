@@ -86,9 +86,7 @@ public:
             this->pp.push_back(*nucs[i].getPseudopotentialData());
         }
 
-        this->pp = pp;
         this->prec = prec;
-        int npp = 0;
 
         // loop over all atoms and create projectors
         for (size_t i = 0; i < nucs.size(); i++) {
@@ -102,7 +100,6 @@ public:
                     for (int idim = 0; idim < pp[i].dim_h[l]; idim++){
                         ProjectorFunction pppp(pos, pp[i].rl[l], idim, l, m, prec);
                         proj[i].lProj[l].mProj[mIndex].iProj.push_back(pppp);
-                        npp++;
                     }
                 }
             }
@@ -156,7 +153,6 @@ protected:
                 for (int ip = 0; ip < pp[iat].dim_h[l]; ip++){
                     // dotComplex = mrchem::qmfunction::dot(phi, proj[iat].lProj[l].mProj[m].iProj[ip]);
                     // std::cout << "computing dot product " << ip << std::endl;
-                    mrcpp::Coord<3> r = {0.0, 0.0, 0.3};
                     // std::cout << "projector value at origin: " << proj[iat].lProj[l].mProj[mm].iProj[ip].real().evalf(r) << std::endl;
                     dotComplex = mrcpp::dot(phi, *proj[iat].lProj[l].mProj[mm].iProj[ip].projector_ptr);
                     dot_products(ip) = dotComplex.real();

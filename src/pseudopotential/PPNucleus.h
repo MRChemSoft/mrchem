@@ -90,14 +90,14 @@ public:
      * @return The string "Precision".
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    std::string getParamName1() const { return "Precision"; }
+    std::string getParamName1() const override { return "Precision"; }
 
     /**
      * @brief Returns the name of the second parameter (required by NuclearFunction base class).
      * @return The string "Smoothing".
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    std::string getParamName2() const { return "Smoothing"; }
+    std::string getParamName2() const override { return "Smoothing"; }
 
     /**
      * @brief Calculates the first parameter (required by NuclearFunction base class).
@@ -106,7 +106,7 @@ public:
      * @return The precision value unchanged.
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    double calcParam1(double prec, const Nucleus &nuc) const { return prec; }
+    double calcParam1(double prec, const Nucleus &nuc) const override { return prec; }
 
     /**
      * @brief Calculates the second parameter (required by NuclearFunction base class).
@@ -115,7 +115,7 @@ public:
      * @return The precision value unchanged.
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    double calcParam2(double prec, const Nucleus &nuc) const { return prec; }
+    double calcParam2(double prec, const Nucleus &nuc) const override { return prec; }
 
 protected:
     std::vector<PseudopotentialData> pps;
