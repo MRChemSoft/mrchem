@@ -74,7 +74,7 @@ Eigen::MatrixXd getPositions(const json &mol_inp) {
  * @param pos Eigen::MatrixXd containing positions. Dimension must be (3, num_atoms)
 */
 void setPositions(json &mol_inp, const Eigen::MatrixXd &pos) {
-    for (int i = 0; i < mol_inp["coords"].size(); i++) {
+    for (size_t i = 0; i < mol_inp["coords"].size(); i++) {
         Eigen::VectorXd vvv = pos.col(i);
         mol_inp["coords"][i]["xyz"] = {vvv(0), vvv(1), vvv(2)};
     }
@@ -152,7 +152,7 @@ json optimize_positions(json scf_inp, json mol_inp, const json &geopt_inp, std::
     std::vector<std::string> element_symbols;
     std::string element_symbol;
 
-    for (int i = 0; i < mol_inp["coords"].size(); i++) {
+    for (size_t i = 0; i < mol_inp["coords"].size(); i++) {
         element_symbol = mol_inp["coords"][i]["atom"];
         element_symbol[0] = std::toupper(element_symbol[0]);
         element_symbols.push_back(element_symbol);
