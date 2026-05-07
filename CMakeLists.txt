@@ -7,6 +7,9 @@ cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 # project name
 project(MRChem LANGUAGES CXX)
 
+# Make GCC print warning/errors with color
+set(CMAKE_COLOR_DIAGNOSTICS ON)
+
 # do not rebuild if rules (compiler flags) change
 set(CMAKE_SKIP_RULE_DEPENDENCY TRUE)
 
