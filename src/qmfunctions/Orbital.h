@@ -62,8 +62,8 @@ public:
     Orbital(int spin, double occ, int rank = -1);
     Orbital dagger() const;
 
-    // Explicitly implement = operator to suppress -Wdeprecated-copy warnings
-    Orbital operator=(const Orbital &orb) { return Orbital(orb); }
+    // Explicitly declare operator= to suppress -Wdeprecated-copy warnings
+    Orbital& operator=(const Orbital &orb) = default;
 
     char printSpin() const;
     void setSpin(int spin) { this->func_ptr->data.n1[0] = spin; }
