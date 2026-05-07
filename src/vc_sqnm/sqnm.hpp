@@ -149,7 +149,7 @@ namespace sqnm_space
           this->estimate_step_size = false;
         } else
         {
-          double gainratio = calc_gainratio(f_of_x, df_dx);
+          double gainratio = calc_gainratio(df_dx);
           adjust_stepsize(gainratio);
         }
 
@@ -257,7 +257,7 @@ namespace sqnm_space
     }
 
     private:
-    double calc_gainratio(double &f, Eigen::VectorXd &df_dx){
+    double calc_gainratio(Eigen::VectorXd &df_dx){
       // double gr = (f - prev_f) / ( .5 * this->dir_of_descent.dot(prev_df_dx));
       double gr = prev_df_dx.dot(df_dx) / (prev_df_dx.norm() * df_dx.norm());
       return gr;
