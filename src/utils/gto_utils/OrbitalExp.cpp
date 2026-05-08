@@ -242,8 +242,95 @@ void OrbitalExp::transformToSpherical() {
             }
 
             n += 10;
+        } else if (l == 4) {
+            GaussExp<3> *sph[9];
+
+            for (int i = 0; i < 9; i++) { sph[i] = new GaussExp<3>; }
+
+            // order of cartesian g orbitals:
+            // xxxx xxxy xxxz xxyy xxyz xxzz xyyy xyyz xyzz xzzz yyyy yyyz yyzz yzzz zzzz
+            // 0    1    2    3    4    5    6    7    8    9    10   11   12   13   14
+
+            double c1 = std::sqrt(35.0), c2 = std::sqrt(35.0 * 0.5), c3 = std::sqrt(5.0), c4 = std::sqrt(2.5);
+
+            // from page 211 of Molecular Electronic Structure Theory (Helgaker, et. al.)
+            double coeffs[9][15] = {};
+            {
+                // ml = -4
+                coeffs[0][1] = 0.5 * c1;
+                coeffs[0][6] = -0.5 * c1;
+
+                // ml = -3
+                coeffs[1][4] = 1.5 * c2;
+                coeffs[1][11] = -0.5 * c2;
+
+                // ml = -2
+                coeffs[2][1] = -0.5 * c3;
+                coeffs[2][6] = -0.5 * c3;
+                coeffs[2][8] = 3.0 * c3;
+
+                // ml = -1
+                coeffs[3][4] = -1.5 * c4;
+                coeffs[3][11] = -1.5 * c4;
+                coeffs[3][13] = 2.0 * c4;
+
+                // ml = 0
+                coeffs[4][0] = 3.0 / 8.0;
+                coeffs[4][3] = 3.0 / 4.0;
+                coeffs[4][5] = -3.0;
+                coeffs[4][10] = 3.0 / 8.0;
+                coeffs[4][12] = -3.0;
+                coeffs[4][14] = 1.0;
+
+                // ml = 1
+                coeffs[5][2] = -1.5 * c4;
+                coeffs[5][7] = -1.5 * c4;
+                coeffs[5][9] = 2.0 * c4;
+
+                // ml = 2
+                coeffs[6][0] = -0.25 * c3;
+                coeffs[6][5] = 1.5 * c3;
+                coeffs[6][10] = 0.25 * c3;
+                coeffs[6][12] = -1.5 * c3;
+
+                // ml = 3
+                coeffs[7][2] = 0.5 * c2;
+                coeffs[7][7] = -1.5 * c2;
+
+                // ml = 4
+                coeffs[8][0] = 1.0 / 8.0 * c1;
+                coeffs[8][3] = -3.0 / 4.0 * c1;
+                coeffs[8][10] = 1.0 / 8.0 * c1;
+            }
+
+            double normalization[15] = {105.0, 15.0, 15.0, 9.0, 3.0, 9.0, 15.0, 3.0, 3.0, 15.0, 105.0, 15.0, 9.0, 15.0, 105.0};
+            for (int i = 0; i < 15; i++) { normalization[i] = std::sqrt(normalization[i] / 105.0); }
+
+            int nprim = this->orbitals[n]->size();
+
+            for (int i = 0; i < 15; i++) {
+                if (this->orbitals[n + i]->size() != nprim) { MSG_ABORT("Contracted g orbials with different number of primitives"); }
+            }
+
+            for (int i = 0; i < nprim; i++) {
+                for (int j = 0; j < 9; j++) {
+                    for (int k = 0; k < 15; k++) {
+                        if (coeffs[j][k] != 0.0) {
+                            Gaussian<3> &func = this->orbitals[n + k]->getFunc(i);
+                            sph[j]->append(func);
+                            sph[j]->getFunc(sph[j]->size() - 1).setCoef(coeffs[j][k] * normalization[k] * func.getCoef());
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < 9; i++) {
+                tmp.push_back(sph[i]);
+            }
+
+            n += 15;
         } else {
-            MSG_ABORT("Only s, p, d, and f orbitals are supported");
+            MSG_ABORT("Only s, p, d, f and g orbitals are supported");
         }
     }
     for (int i = 0; i < nOrbs; i++) {

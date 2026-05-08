@@ -1,0 +1,36 @@
+# vim:syntax=sh:
+
+world_prec = 1.0e-4
+world_unit = angstrom
+
+Molecule {
+multiplicity = 3
+translate = false
+$coords
+O     0.000000000000   0.000000000000   0.00000000000
+O     1.158000000000   0.000000000000   0.00000000000
+$end
+}
+
+WaveFunction {
+  method = pbe
+  restricted = false
+}
+
+DFT {
+  xc_library = libxc
+}
+
+Properties {
+  dipole_moment = true              # Compute electrostatic dipole moment
+  quadrupole_moment = true          # Compute electrostatic quadrupole moment
+}
+
+SCF {
+  run = false
+  localize = false
+
+  guess_screen = 16.0
+  guess_type = gto
+  guess_prec = 1.0e-4
+}
