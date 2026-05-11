@@ -24,3 +24,7 @@ SCF {
   write_orbitals = true
   path_orbitals = initial_guess
 }
+
+DFT {
+  xc_library = xcfun
+}

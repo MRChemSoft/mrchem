@@ -9,25 +9,25 @@ target_sources(mrchem-tests
 
 add_Catch_test(
   NAME spherical_harmonics
-  LABELS "spherical_harmonics"
+  LABELS "spherical_harmonics;short"
   )
 
 add_Catch_test(
   NAME qmfunction
-  LABELS "qmfunction"
+  LABELS "qmfunction;short"
   )
 
 add_Catch_test(
   NAME density
-  LABELS "density"
+  LABELS "density;short"
   )
 
 add_Catch_test(
   NAME orbital
-  LABELS "orbital"
+  LABELS "orbital;short"
   )
 
 add_Catch_test(
   NAME orbital_vector
-  LABELS "orbital_vector"
+  LABELS "orbital;vector;short"
   )

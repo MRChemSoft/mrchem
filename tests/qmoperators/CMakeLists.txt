@@ -20,85 +20,85 @@ target_sources(mrchem-tests
 
 add_Catch_test(
   NAME identity_operator
-  LABELS "identity_operator"
+  LABELS "identity;operator;short"
   )
 
 add_Catch_test(
   NAME position_operator
-  LABELS "position_operator"
+  LABELS "position;operator;short"
   )
 
 add_Catch_test(
   NAME momentum_operator
-  LABELS "momentum_operator"
+  LABELS "momentum;operator;short"
   )
 
 add_Catch_test(
   NAME kinetic_operator
-  LABELS "kinetic_operator"
+  LABELS "kinetic;operator;short"
   )
 
 add_Catch_test(
   NAME nuclear_operator
-  LABELS "nuclear_operator"
+  LABELS "nuclear;operator;short"
   )
 
 add_Catch_test(
   NAME coulomb_operator
-  LABELS "coulomb_operator"
+  LABELS "coulomb;operator;short"
   )
 
 add_Catch_test(
   NAME coulomb_hessian
-  LABELS "coulomb_hessian"
+  LABELS "coulomb;hessian;short"
   )
 
 add_Catch_test(
   NAME exchange_operator
-  LABELS "exchange_operator"
+  LABELS "exchange;operator;short"
   )
 
 add_Catch_test(
   NAME exchange_hessian
-  LABELS "exchange_hessian"
+  LABELS "exchange;hessian;short"
   )
 
 add_Catch_test(
   NAME xc_operator_lda
-  LABELS "xc_operator_lda"
+  LABELS "xc;operator;lda;short"
   )
 
 add_Catch_test(
   NAME xc_operator_blyp
-  LABELS "xc_operator_blyp"
+  LABELS "xc;operator;blyp;short"
   )
 
 add_Catch_test(
   NAME xc_hessian_lda
-  LABELS "xc_hessian_lda"
+  LABELS "xc;hessian;lda;short"
   )
 
 add_Catch_test(
   NAME xc_hessian_pbe
-  LABELS "xc_hessian_pbe"
+  LABELS "xc;hessian;pbe;short"
   )
 
 add_Catch_test(
   NAME electric_field_operator
-  LABELS "electric_field_operator"
+  LABELS "electric_field;operator;short"
   )
 
 add_Catch_test(
   NAME electric_field_energy
-  LABELS "electric_field_energy"
+  LABELS "electric_field;energy;short"
   )
 
 add_Catch_test(
   NAME operator_composition
-  LABELS "operator_composition"
+  LABELS "operator;composition;short"
   )
 
 add_Catch_test(
   NAME two_el_int
-  LABELS "two_el_int"
+  LABELS "two-electron;integration;short"
   )

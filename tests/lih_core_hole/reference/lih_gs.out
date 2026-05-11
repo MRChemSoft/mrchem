@@ -11,10 +11,10 @@
 ***                                                                     ***
 ***         VERSION            1.2.0-alpha                              ***
 ***                                                                     ***
-***         Git branch         mom_merged                               ***
-***         Git commit hash    32739ee40f9efa2046d1                     ***
-***         Git commit author  Niklas Goellmann                         ***
-***         Git commit date    Mon Oct 27 14:55:46 2025 +0100           ***
+***         Git branch         fixing_tests                             ***
+***         Git commit hash    3f52af0576ab5360daac-dirty               ***
+***         Git commit author  ylvao                                    ***
+***         Git commit date    Thu Apr 23 18:13:05 2026 +0200           ***
 ***                                                                     ***
 ***         Contact: luca.frediani@uit.no                               ***
 ***                                                                     ***
@@ -29,31 +29,22 @@
 ---------------------------------------------------------------------------
 
  MPI processes           :       (no bank)                               1
- OpenMP threads          :                                               8
- Total cores             :                                               8
+ OpenMP threads          :                                              32
+ Total cores             :                                              32
                                                                            
 ---------------------------------------------------------------------------
 
-XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
-See http://dftlibs.org/xcfun/ for more information.
-
-This is free software; see the source code for copying conditions.
-There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or
-FITNESS FOR A PARTICULAR PURPOSE. For details see the documentation.
-Scientific users of this library should cite
-U. Ekstrom, L. Visscher, R. Bast, A. J. Thorvaldsen and K. Ruud;
-J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 ---------------------------------------------------------------------------
 
  MRCPP version         : 1.6.0-alpha
  Git branch            : HEAD
- Git commit hash       : cec3cc96d578cdf77e8e
+ Git commit hash       : ad080014842f898e9529
  Git commit author     : Niklas Göllmann
- Git commit date       : Tue Jan 6 16:29:30 2026 +0100
+ Git commit date       : Wed Mar 11 11:25:17 2026 +0100
 
  Linear algebra        : EIGEN v3.4.0
- Parallelization       : OpenMP (8 threads)
+ Parallelization       : MPI/OpenMP (32 threads)
 
 ---------------------------------------------------------------------------
 
@@ -99,6 +90,26 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 
 
                                                                            
+                                                                           
+***************************************************************************
+***                                                                     ***
+***                           XC Functional                             ***
+***                                                                     ***
+***************************************************************************
+
+XCFun DFT library Copyright 2009-2020 Ulf Ekstrom and contributors.
+See http://dftlibs.org/xcfun/ for more information.
+
+This is free software; see the source code for copying conditions.
+There is ABSOLUTELY NO WARRANTY; not even for MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE. For details see the documentation.
+Scientific users of this library should cite
+U. Ekstrom, L. Visscher, R. Bast, A. J. Thorvaldsen and K. Ruud;
+J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
+                                                                           
+---------------------------------------------------------------------------
+
+                                                                           
 ***************************************************************************
 ***                                                                     ***
 ***                Computing Initial Guess Wavefunction                 ***
@@ -113,6 +124,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  Screening               : 1.20000e+01 StdDev
  Restricted              : True
  Functional              : LDA (SVWN5)
+ XC Library              : XCFun
  AO basis                : 3-21G
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -134,10 +146,12 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  Calculation             : Compute initial energy
  Method                  : DFT (PBE)
+ XC Library              : XCFun
  Relativity              : None
  Environment             : None
  External fields         : None
  Precision               : 1.00000e-03
+ Density cutoff          : 0.00000e+00
  Localization            : On
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -149,16 +163,17 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  E-N energy              :            (au)                -20.444464823191
  Coulomb energy          :            (au)                  5.737346014404
  Exchange energy         :            (au)                  0.000000000000
- X-C energy              :            (au)                 -2.258821287691
+ X-C energy              :            (au)                 -2.258819965750
  N-N energy              :            (au)                  0.989451349446
+ Non-local pp energy     :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -8.952914596321
+ Electronic energy       :            (au)                 -8.952913274379
  Nuclear energy          :            (au)                  0.989451349446
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -7.963463246875e+00
-                         :      (kcal/mol)             -4.997148633767e+03
-                         :        (kJ/mol)             -2.090806988368e+04
-                         :            (eV)             -2.166968742664e+02
+ Total energy            :            (au)             -7.963461924933e+00
+                         :      (kcal/mol)             -4.997147804236e+03
+                         :        (kJ/mol)             -2.090806641292e+04
+                         :            (eV)             -2.166968382946e+02
 ===========================================================================
 
 
@@ -167,10 +182,10 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ---------------------------------------------------------------------------
     n     Occ Spin       :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2.00    p       :            (au)                 -1.853683797813
-    1    2.00    p       :            (au)                 -0.070761318737
+    0    2.00    p       :            (au)                 -1.853683319737
+    1    2.00    p       :            (au)                 -0.070761157055
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -3.848890233100
+ Sum occupied            :            (au)                 -3.848888953584
 ===========================================================================
 
 
@@ -204,16 +219,17 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
  E-N energy              :            (au)                -20.444464823191
  Coulomb energy          :            (au)                  5.737346014404
  Exchange energy         :            (au)                  0.000000000000
- X-C energy              :            (au)                 -2.258821287691
+ X-C energy              :            (au)                 -2.258819965750
  N-N energy              :            (au)                  0.989451349446
+ Non-local pp energy     :            (au)                  0.000000000000
 ---------------------------------------------------------------------------
- Electronic energy       :            (au)                 -8.952914596321
+ Electronic energy       :            (au)                 -8.952913274379
  Nuclear energy          :            (au)                  0.989451349446
 ---------------------------------------------------------------------------
- Total energy            :            (au)             -7.963463246875e+00
-                         :      (kcal/mol)             -4.997148633767e+03
-                         :        (kJ/mol)             -2.090806988368e+04
-                         :            (eV)             -2.166968742664e+02
+ Total energy            :            (au)             -7.963461924933e+00
+                         :      (kcal/mol)             -4.997147804236e+03
+                         :        (kJ/mol)             -2.090806641292e+04
+                         :            (eV)             -2.166968382946e+02
 ===========================================================================
 
 
@@ -222,10 +238,10 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ---------------------------------------------------------------------------
     n     Occ Spin       :                                         Epsilon
 ---------------------------------------------------------------------------
-    0    2.00    p       :            (au)                 -1.853683797813
-    1    2.00    p       :            (au)                 -0.070761318737
+    0    2.00    p       :            (au)                 -1.853683319737
+    1    2.00    p       :            (au)                 -0.070761157055
 ---------------------------------------------------------------------------
- Sum occupied            :            (au)                 -3.848890233100
+ Sum occupied            :            (au)                 -3.848888953584
 ===========================================================================
 
 
@@ -264,7 +280,7 @@ J.Chem.Theor.Comp. 2010, DOI: 10.1021/ct100117s
 ***                                                                     ***
 ***                            Exiting MRChem                           ***
 ***                                                                     ***
-***                       Wall time :  0h  0m 12s                       ***
+***                       Wall time :  0h  0m  7s                       ***
 ***                                                                     ***
 ***************************************************************************
                                                                            

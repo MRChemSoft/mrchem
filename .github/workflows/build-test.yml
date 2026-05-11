@@ -55,10 +55,12 @@ jobs:
     - name: Build
       shell: bash -l {0}
       run: |
-        cmake --build build --config $BUILD_TYPE --target install -- -v -d stats
+        cmake --build build --config $BUILD_TYPE --target install -- -v -d stats -j4
 
     - name: Test
       shell: bash -l {0}
+      env:
+        OMP_NUM_THREADS: 2
       run: |
         cd build
         ctest -C $BUILD_TYPE --output-on-failure --verbose

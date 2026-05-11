@@ -10,18 +10,18 @@ from tester import *  # isort:skip
 options = script_cli()
 
 filters = {
-    SUM_OCCUPIED: rel_tolerance(1.0e-6),
-    E_KIN: rel_tolerance(1.0e-6),
-    E_EN: rel_tolerance(1.0e-6),
-    E_EE: rel_tolerance(1.0e-6),
-    E_X: rel_tolerance(1.0e-6),
-    E_XC: rel_tolerance(1.0e-6),
-    E_EEXT: rel_tolerance(1.0e-6),
-    E_NEXT: rel_tolerance(1.0e-6),
-    E_EL: rel_tolerance(1.0e-6),
-    DIPOLE_MOMENT(1): abs_tolerance(1.0e-6),
-    DIPOLE_MOMENT_EL(1): abs_tolerance(1.0e-6),
-    DIPOLE_MOMENT_NUC(1): abs_tolerance(1.0e-6),
+    SUM_OCCUPIED: rel_tolerance(1.0e-9),
+    E_KIN:        rel_tolerance(1.0e-8),
+    E_EN:         rel_tolerance(1.0e-8),
+    E_EE:         rel_tolerance(1.0e-9),
+    E_X:          rel_tolerance(1.0e-9),
+    E_XC:         rel_tolerance(1.0e-10),
+    E_EEXT:       rel_tolerance(1.0e-10),
+    E_NEXT:       rel_tolerance(1.0e-10),
+    E_EL:         rel_tolerance(1.0e-10),
+    DIPOLE_MOMENT(1):     abs_tolerance(1.0e-8),
+    DIPOLE_MOMENT_EL(1):  abs_tolerance(1.0e-8),
+    DIPOLE_MOMENT_NUC(1): abs_tolerance(1.0e-10),
 }
 
 ierr = run(options, input_file="h2", filters=filters)

@@ -523,10 +523,10 @@ Initial guess
 
 Several types of initial guess are available:
 
- - ``core`` and ``sad`` requires no further input and computes guesses from
+ - ``core``, ``sad`` and ``nao`` requires no further input and computes guesses from
    scratch.
  - ``chk`` and ``mw`` require input files from previous MW calculations.
- - ``cube`` requires input files computed from other sources.
+ - ``cube`` and ``gto`` requires input files computed from other sources.
 
 The ``core`` and ``sad`` guesses are computed by diagonalizing the Hamiltonian
 matrix using a Core or Superposition of Atomic Densities (SAD) Hamiltonian,
@@ -556,6 +556,14 @@ The ``core`` and ``sad`` guesses are fully specified with the following keywords
       guess_screen = 12.0                   # Number of StdDev before a GTO is set to zero (sad_gto)
       guess_rotate = true                   # Localize/Diagonalize guess orbitals before calculating the initial guess energy
     }
+
+The ``gto`` initial guess requires ``.bas`` and ``.mop`` (or ``.moa/.mob``)
+files containing information about the gto basis (in the ``.bas`` file), and the
+mo coefficients (in the ``.mo...`` files). These files are in dalton format, but
+can be generated from orca calculations using the script ``tools/initial_guess/from_orca.py``.
+Currently, MRChem only supports reading AO basis functions with angular momentum
+up to ``l = 4`` (g orbitals), which in practice means that basis sets up to quadruple zeta
+(e.g. ``def2-QZVP`` and ``cc-pVQZ``) will work for most elements.
 
 Checkpointing
 +++++++++++++

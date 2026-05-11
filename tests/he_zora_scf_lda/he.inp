@@ -1,9 +1,33 @@
-{
-    "world_prec": 1.0e-4,
-    "world_size": 5,
-    "MPI": {"numerically_exact": true},
-    "Molecule": {"coords": "He 0.0 0.0 0.0"},
-    "WaveFunction": {"method": "lda", "relativity": "zora"},
-    "ZORA": {"include_nuclear": true, "include_coulomb": true, "include_xc": true},
-    "SCF": {"kain": 3, "max_iter": 10, "guess_type": "sad_gto"}
+world_prec = 1.0e-4
+world_size = 5
+
+MPI {
+  numerically_exact = true
+}
+
+Molecule {
+$coords
+  He 0.0 0.0 0.0
+$end
+}
+
+WaveFunction {
+  method     = lda
+  relativity = zora
+}
+
+ZORA {
+  include_nuclear = true
+  include_coulomb = true
+  include_xc      = true
+}
+
+SCF {
+  kain      = 3
+  max_iter  = 10
+  guess_type = sad_gto
+}
+
+DFT {
+  xc_library = xcfun
 }

@@ -22,3 +22,7 @@ SCF {
   guess_type = GTO
   guess_prec = 1e-3
 }
+
+DFT {
+  xc_library = xcfun
+}

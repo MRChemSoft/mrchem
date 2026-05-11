@@ -1,9 +1,9 @@
-version: 2
+version: 2.1
 
 variables:
-  ubuntu-2204: &ubuntu-2204
+  ubuntu-2404: &ubuntu-2404
     docker:
-      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-22.04:sha-9f6ecd4
+      - image: ghcr.io/mrchemsoft/metamr/circleci_ubuntu-24.04:sha-2b5887e
         name: tsubame
         user: merzbow
     working_directory: ~/mrchem
@@ -41,55 +41,160 @@ variables:
       name: Building and installing
       shell: /bin/bash
       command: |
-        cmake --build build --target install -- VERBOSE=1
-  tests: &tests
+        cmake --build build --target install -- VERBOSE=1 -j4
+  tests-short: &tests-short
     run:
-      name: Testing
-      shell: /bin/bash
+      name: Get assigned tests and run
       command: |
-        cd build
-        ctest -N \
-          | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p' \
-          | circleci tests split \
-          | tr '\n' '|' \
-          | sed 's/|$//' \
-          | xargs -I {} ctest  --verbose --output-on-failure -R "{}"
+        : > test-list.txt
+        TESTS=$(ctest -L "short" --test-dir build -N | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p')
+        echo "Tests found: $TESTS"
+        echo "$TESTS" | circleci tests run \
+          --command='>test-list.txt xargs echo' \
+          --verbose
+        if [ ! -s test-list.txt ]; then
+          circleci-agent step halt
+        else
+          cat test-list.txt | tr " " "|" | xargs -I {} ctest --test-dir build --verbose --output-on-failure -R "^({})$"
+        fi
+  tests-medium: &tests-medium
+    run:
+      name: Get assigned tests and run
+      command: |
+        : > test-list.txt
+        TESTS=$(ctest -L "medium" --test-dir build -N | sed -n 's/.*Test #[0-9]\+: \(.*\)/\1/p')
+        echo "Tests found: $TESTS"
+        echo "$TESTS" | circleci tests run \
+          --command='>test-list.txt xargs echo' \
+          --verbose
+        if [ ! -s test-list.txt ]; then
+          circleci-agent step halt
+        else
+          cat test-list.txt | tr " " "|" | xargs -I {} ctest --test-dir build --verbose --output-on-failure -R "^({})$"
+        fi
 
+# Run both the build and test stages
 jobs:
-  serial-py3:
-    parallelism: 4 
-    <<: *ubuntu-2204
+###############################################################
+# Building
+
+  build-serial:
+    <<: *ubuntu-2404
     steps:
       - checkout:
-         method: blobless
+          method: blobless
       - *configure-serial
       - *build
-      - *tests
-  omp-py3:
-    parallelism: 4 
-    <<: *ubuntu-2204
-    environment:
-      - OMP_NUM_THREADS: '2'
+      - persist_to_workspace:
+          root: ~/mrchem
+          paths:
+            - .
+
+  build-omp:
+    <<: *ubuntu-2404
     steps:
       - checkout:
-         method: blobless
+          method: blobless
       - *configure-omp
       - *build
-      - *tests
-  mpi-py3:
-    parallelism: 4 
-    <<: *ubuntu-2204
+      - persist_to_workspace:
+          root: ~/mrchem
+          paths:
+            - .
+
+  build-mpi:
+    <<: *ubuntu-2404
     steps:
       - checkout:
-         method: blobless
+          method: blobless
       - *configure-mpi
       - *build
-      - *tests
+      - persist_to_workspace:
+          root: ~/mrchem
+          paths:
+            - .
+
+###############################################################
+# Testing
+
+  test-serial-short:
+    <<: *ubuntu-2404
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests-short
+
+  test-omp-short:
+    <<: *ubuntu-2404
+    parallelism: 4
+    environment:
+      OMP_NUM_THREADS: '2'
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests-short
+
+  test-mpi-short:
+    <<: *ubuntu-2404
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests-short
+
+  test-serial-medium:
+    <<: *ubuntu-2404
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests-medium
+
+  test-omp-medium:
+    <<: *ubuntu-2404
+    parallelism: 4
+    environment:
+      OMP_NUM_THREADS: '2'
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests-medium
+ 
+  test-mpi-medium:
+    <<: *ubuntu-2404
+    parallelism: 4
+    steps:
+      - attach_workspace:
+          at: ~/mrchem
+      - *tests-medium
 
 workflows:
-  version: 2
-  build:
+  build-and-test:
     jobs:
-      - serial-py3
-      - omp-py3
-      - mpi-py3
+      - hold:
+          type: approval
+      - build-serial
+      - test-serial-short:
+          requires:
+            - build-serial
+      - build-omp
+      - test-omp-short:
+          requires:
+            - build-omp
+      - build-mpi
+      - test-mpi-short:
+          requires:
+            - build-mpi
+      - test-serial-medium:
+          requires:
+            - hold
+            - build-serial
+      - test-omp-medium:
+          requires:
+            - hold
+            - build-omp
+      - test-mpi-medium:
+          requires:
+            - hold
+            - build-mpi

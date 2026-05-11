@@ -3,8 +3,8 @@ if(ENABLE_MPI)
 endif()
 
 add_integration_test(
-  NAME "H2_SCF_HartreeFock"
-  LABELS "mrchem;h2_scf_hf;H2_SCF_HartreeFock;energy;hartree_fock;scf"
+  NAME "H2_SCF_HF"
+  LABELS "mrchem;H2;scf;HF;energy;short"
   COST 100
   LAUNCH_AGENT ${_h2_scf_hf_launcher}
   )

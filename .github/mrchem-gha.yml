@@ -8,5 +8,4 @@ dependencies:
   - eigen
   - ninja
   - nlohmann_json
-  - xcfun
   - libxc

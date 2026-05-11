@@ -28,6 +28,7 @@ DFT {
 $functionals
 BLYP
 $end
+xc_library = xcfun
 }
 
 Properties {

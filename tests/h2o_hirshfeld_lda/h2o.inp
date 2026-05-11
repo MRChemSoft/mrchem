@@ -23,3 +23,7 @@ $end
 Properties {
   hirshfeld_charges = true
 }
+
+DFT {
+  xc_library = xcfun
+}
