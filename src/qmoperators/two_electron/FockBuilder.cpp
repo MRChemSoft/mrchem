@@ -93,7 +93,7 @@ void FockBuilder::build(double exx) {
 void FockBuilder::setup(double prec) {
     Timer t_tot;
 
-    std::cout << "FockBuilder::setup -- ex is nullptr =" << (this->ex== nullptr) << std::endl;
+    std::cout << "FockBuilder::setup -- ex is nullptr =" << (this->ex== nullptr)<< "-- coul is nullptr =" << (this->coul== nullptr) << std::endl;
 
     // std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators Potential=" << (this->V == nullptr) << std::endl;
 
@@ -110,41 +110,41 @@ void FockBuilder::setup(double prec) {
     // }
     // std::cout << "FockBuilder::setup -- Starting setup of operators: " << &i << std::endl;
     // if (this->coul != nullptr) this->V += (*this->coul);
-    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators" << std::endl;
+    // std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators" << std::endl;
     this->prec = prec;
-    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 2 "<< (this->mom != nullptr) << std::endl;
+    // std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 2 "<< (this->mom != nullptr) << std::endl;
     if (this->mom != nullptr) this->momentum().setup(prec);
-    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 3" << std::endl;
+    // std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 3" << std::endl;
     this->potential().setup(prec);
-    std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 4" << std::endl;
+    // std::cout << "FockBuilder::setup -- Starting setup of kinetic and potential operators 4" << std::endl;
     this->perturbation().setup(prec); //TODO: uncomment when response is implemented for multiple components
 
-    std::cout << "FockBuilder::setup -- Kinetic and potential operators setup done" << std::endl;
+    // std::cout << "FockBuilder::setup -- Kinetic and potential operators setup done" << std::endl;
 
     if (isZora()) {
-        MSG_INFO("Setting up ZORA operators");
+        // MSG_INFO("Setting up ZORA operators");
         Timer t_zora; //TODO: make this working for 2C
         double c = getLightSpeed();
-        MSG_INFO("c ok");
+        // MSG_INFO("c ok");
         mrcpp::print::header(3, "Building ZORA operators");
         mrcpp::print::value(3, "Precision", prec, "(rel)", 5);
         mrcpp::print::value(3, "Light speed", c, "(au)", 5);
         mrcpp::print::separator(3, '-');
         auto vz = collectZoraBasePotential();
-        MSG_INFO("ZORA base potential collected");
+        // MSG_INFO("ZORA base potential collected");
         // chi = kappa - 1. See ZoraOperator.h for more information.
         this->chi = std::make_shared<ZoraOperator>(*vz, c, prec, false);
-        MSG_INFO("ZORA chi operator setup");
+        // MSG_INFO("ZORA chi operator setup");
         this->chi_inv = std::make_shared<ZoraOperator>(*vz, c, prec, true);
-        MSG_INFO("ZORA chi inverse operator setup");
+        // MSG_INFO("ZORA chi inverse operator setup");
         this->zora_base = RankZeroOperator(vz);
-        MSG_INFO("ZORA base operator setup");
+        // MSG_INFO("ZORA base operator setup");
         this->chi->setup(prec);
-        MSG_INFO("ZORA chi setup ok");
+        // MSG_INFO("ZORA chi setup ok");
         this->chi_inv->setup(prec);
-        MSG_INFO("ZORA chi inverse setup ok");
+        // MSG_INFO("ZORA chi inverse setup ok");
         this->zora_base.setup(prec);
-        MSG_INFO("ZORA base setup ok");
+        // MSG_INFO("ZORA base setup ok");
         mrcpp::print::footer(3, t_zora, 2);
     }
     if (isAZora()) {
@@ -237,7 +237,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double Er_tot = 0.0; // Total reaction energy
 
     // Nuclear part
-    MSG_INFO("nuc")
+    // MSG_INFO("nuc")
     if (this->nuc != nullptr) E_nn = chemistry::compute_nuclear_repulsion(nucs);
     if (this->ext != nullptr) E_next = -this->ext->trace(nucs).real();
 
@@ -252,21 +252,23 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Kinetic part
-    MSG_INFO("kin")
+    // MSG_INFO("kin")
     if (isZora() || isAZora()) {
-        E_kin = qmoperator::calc_kinetic_trace(momentum(), *this->chi, Phi).real() + qmoperator::calc_kinetic_trace(momentum(), Phi);
+        bool spinorial = (Phi[0].Ncomp() > 1); //assumes all orbitals have the same number of components
+        //second term doesn't inclue Pauli matrices (i.e. spinorial is false) because (σ·p)(σ·p) = p^2
+        E_kin = qmoperator::calc_kinetic_trace(momentum(), *this->chi, Phi, spinorial).real() + qmoperator::calc_kinetic_trace(momentum(), Phi);
     } else {
         E_kin = qmoperator::calc_kinetic_trace(momentum(), Phi);
     }
 
     // Electronic part
-    MSG_INFO("ee")
+    // MSG_INFO("ee")
     if (this->nuc != nullptr) { E_en = this->nuc->trace(Phi).real(); }
 
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     ComplexDouble tutex = this->ex->trace(Phi).real();
-    MSG_INFO("coulomb expct val="<< E_ee << " exchange expct val=" << -this->exact_exchange << " " << tutex.real() << tutex.imag());
+    // MSG_INFO("coulomb expct val="<< E_ee << " exchange expct val=" << -this->exact_exchange << " " << tutex.real() << tutex.imag());
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
     mrcpp::print::footer(2, t_tot, 2);
@@ -280,27 +282,63 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
-    MSG_INFO("pre kinetic mat")
+    // MSG_INFO("pre kinetic mat")
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora() || isAZora()) {
-        MSG_INFO("Computing kinetic matrix with ZORA/AZORA correction");
-        ComplexMatrix T_test = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket, true);
-        MSG_INFO("test 1 ok");
         //If we have spinors, the kinetic operator is of the form (σ·p)V(σ·p), with σ being a Pauli matrix.
         //What this boolean does is enabling the application of the Pauli matrices along the x,y,z momentum operators.
         //NOTE! The second term does not change from being spinorial; (σ·p)(σ·p) = p^2 using the Dirac identity.
         bool spinorial = (bra[0].Ncomp() > 1); //assumes all orbitals have the same number of components
-        T_mat = qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket, spinorial) + qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
+        T_mat = (qmoperator::calc_kinetic_matrix(momentum(), *this->chi, bra, ket, spinorial) + qmoperator::calc_kinetic_matrix(momentum(), bra, ket));
     } else {
         T_mat = qmoperator::calc_kinetic_matrix(momentum(), bra, ket);
     }
 
-    MSG_INFO("post kin mat, pre pot mat")
+    //debug tests start
+    for (int a = 0; a < T_mat.rows(); a++) {
+        for (int b = 0; b < T_mat.cols(); b++) {
+            std::cout<< "T_mat(" << a << ", " << b << ") = " << T_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    MSG_INFO("post kin mat, pre pot mat");
+    ComplexMatrix Vnuc_mat = ComplexMatrix::Zero(bra.size(), ket.size());
+    Vnuc_mat = (*getNuclearOperator())(bra, ket);
+    for (int a = 0; a < Vnuc_mat.rows(); a++) {
+        for (int b = 0; b < Vnuc_mat.cols(); b++) {
+            std::cout<< "Vnuc_mat(" << a << ", " << b << ") = " << Vnuc_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    ComplexMatrix Vcoul_mat = ComplexMatrix::Zero(bra.size(), ket.size());
+    Vcoul_mat = (*getCoulombOperator())(bra, ket);
+    for (int a = 0; a < Vcoul_mat.rows(); a++) {
+        for (int b = 0; b < Vcoul_mat.cols(); b++) {
+            std::cout<< "Vcoul_mat(" << a << ", " << b << ") = " << Vcoul_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    ComplexMatrix Vex_mat = ComplexMatrix::Zero(bra.size(), ket.size());
+    Vex_mat = (*getExchangeOperator())(bra, ket);
+    for (int a = 0; a < Vex_mat.rows(); a++) {
+        for (int b = 0; b < Vex_mat.cols(); b++) {
+            std::cout<< "Vex_mat(" << a << ", " << b << ") = " << Vex_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    //debug tests end
 
     ComplexMatrix V_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     V_mat += potential()(bra, ket);
 
-    MSG_INFO("matrices ok")
+    // debug tests start
+    for (int a = 0; a < V_mat.rows(); a++) {
+        for (int b = 0; b < V_mat.cols(); b++) {
+            std::cout<< "V_mat(" << a << ", " << b << ") = " << V_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    // debug tests end
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing Fock matrix", t_tot);
@@ -313,7 +351,25 @@ OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi
     mrcpp::print::header(2, "Computing Helmholtz argument");
 
     Timer t_rot;
+    // MSG_INFO("Pouet")
+    //Debug test
+    // MSG_INFO("Fock matrix ");
+    for (int a = 0; a < F_mat.rows(); a++) {
+        for (int b = 0; b < F_mat.cols(); b++) {
+            std::cout<< "F_mat(" << a << ", " << b << ") = " << F_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    // MSG_INFO("Overlap? matrix ");
+    for (int a = 0; a < L_mat.rows(); a++) {
+        for (int b = 0; b < L_mat.cols(); b++) {
+            std::cout<< "L_mat(" << a << ", " << b << ") = " << L_mat(a, b) << "; ";
+        }
+        std::cout << std::endl;
+    }
+    //end debug test
     OrbitalVector Psi = orbital::rotate(Phi, L_mat - F_mat, prec);
+    // MSG_INFO("pouetronicus")
     mrcpp::print::time(2, "Rotating orbitals", t_rot);
 
     OrbitalVector out;
@@ -341,15 +397,15 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     RankZeroOperator &chi = *this->chi;
     RankZeroOperator &chi_m1 = *this->chi_inv;
     RankZeroOperator operOne = 0.5 * tensor::dot(p(chi), p);
-    MSG_INFO("start");
+    // MSG_INFO("start");
 
     std::shared_ptr<RankZeroOperator> operThreePtr = nullptr;
 
     if (isZora()) {
         RankZeroOperator &V_zora = this->zora_base;
-        MSG_INFO("V_zora initialised");
+        // MSG_INFO("V_zora initialised");
         operThreePtr = std::make_shared<RankZeroOperator>(V_zora * chi + V_zora);
-        MSG_INFO("V_zora computed");
+        // MSG_INFO("V_zora computed");
     } else if (isAZora()) {
         /*
         Note that V_z * kappa = 2 c^2 * (kappa - 1)
@@ -367,12 +423,12 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     operOne.setup(prec);
     operThree.setup(prec);
-    MSG_INFO("1 & 3 setup");
+    // MSG_INFO("1 & 3 setup");
 
     // Compute OrbitalVectors
     Timer t_1;
     OrbitalVector termOne = operOne(Phi);
-    MSG_INFO("1 applied");
+    // MSG_INFO("1 applied");
     // for (int i = 0; i < termOne.size(); i++) {
     //     //termOne will have a prefactor -1, because of i*i
     //     if (not mrcpp::mpi::my_func(termOne[i])) continue;
@@ -386,7 +442,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     Timer t_2;
     OrbitalVector termTwo = V(Phi);
-    MSG_INFO("2 applied");
+    // MSG_INFO("2 applied");
 
     mrcpp::print::time(2, "Computing potential term", t_2);
 
@@ -398,7 +454,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         epsPhi[i].rescale(eps[i] / two_cc);
     }
     OrbitalVector termThree = operThree(epsPhi);
-    MSG_INFO("3 applied");
+    // MSG_INFO("3 applied");
     mrcpp::print::time(2, "Computing rescaled potential term", t_3);
 
     //spin orbit coupling term, which would be identically 0 for scalar functions.
@@ -408,38 +464,64 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     //     //def termSO real or complex depending on phi ? 
     //     termSO[i].alloc(Phi[i].Ncomp(), true);
     // }
-    if (Phi[0].Ncomp() > 1) {
-        MSG_INFO("spinorial");
+    if ((Phi[0].Ncomp() == 2) and isZora()) {
+        // mrcpp::apply(prec, *dx_chi, p[0], chi);
+        
+        // MSG_INFO("spinorial");
         //Manually implementing the cross product appearing in the spin-orbit term
         //NOTE! The multiplication by the Pauli matrices will need to be handled later,
         //      during the application of the cross-product to the orbitals.
         RankZeroOperator operSOX = p(chi)[1]*p[2] - p(chi)[2]*p[1];
         operSOX.setup(prec);
+        // MSG_INFO("Spinorbit =" << " " << (p(chi)[0].getOperatorExpansion()[0])->getSquareNorm()); //<< (p(chi)[1]).getSquareNorm()<< (p(chi)[2]).getSquareNorm());
         RankZeroOperator operSOY = p(chi)[2]*p[0] - p(chi)[0]*p[2];
         operSOY.setup(prec);
         RankZeroOperator operSOZ = p(chi)[0]*p[1] - p(chi)[1]*p[0];
         operSOZ.setup(prec);
-        MSG_INFO("Curls setup");
+        // MSG_INFO("Curls setup");
         //Applying the curls to temporary copies of the orbitals 
         //NOTE! Extremely inefficient!
-        OrbitalVector orbTempX = orbital::deep_copy(Phi);
+        // OrbitalVector orbTempX = orbital::deep_copy(Phi);
+        OrbitalVector orbTempX;
         orbTempX = operSOX(Phi);
-        OrbitalVector orbTempY = orbital::deep_copy(Phi);
-        orbTempY = operSOX(Phi);
-        OrbitalVector orbTempZ = orbital::deep_copy(Phi);
-        orbTempZ = operSOX(Phi);
-        MSG_INFO("Curls applied");
+        // OrbitalVector orbTempY = orbital::deep_copy(Phi);
+        OrbitalVector orbTempY;
+        orbTempY = operSOY(Phi);
+        // OrbitalVector orbTempZ = orbital::deep_copy(Phi);
+        OrbitalVector orbTempZ;
+        orbTempZ = operSOZ(Phi);
+        // MSG_INFO("Curls applied");
         //adding the contributions together. Note that the coefficient is purely imaginary.
         for (int i = 0; i < Phi.size(); i++) {
-            mrcpp::apply_Pauli(orbTempX[i], orbTempX[i], 1, -1.0, false);
-            mrcpp::apply_Pauli(orbTempY[i], orbTempY[i], 1, -1.0, false);
-            mrcpp::apply_Pauli(orbTempZ[i], orbTempZ[i], 1, -1.0, false);
-            termSO[i].add((0.0, 1.0), orbTempX[i]);
-            termSO[i].add((0.0, 1.0), orbTempY[i]);
-            termSO[i].add((0.0, 1.0), orbTempZ[i]);
+            Orbital orbTempX2;//test debug test
+            Orbital orbTempY2;//test debug test
+            Orbital orbTempZ2;//test debug test
+            deep_copy(orbTempX2, orbTempX[i]);//test debug test
+            deep_copy(orbTempY2, orbTempY[i]);//test debug test
+            deep_copy(orbTempZ2, orbTempZ[i]);//test debug test
+            // mrcpp::apply_Pauli(orbTempX[i], orbTempX[i], 1, -1.0, false);//it runs but I believe it is not computing correctly if input and output is the same
+            // mrcpp::apply_Pauli(orbTempY[i], orbTempY[i], 1, -1.0, false); //runs
+            // mrcpp::apply_Pauli(orbTempZ[i], orbTempZ[i], 1, -1.0, false); //runs
+            MSG_INFO("spinorbit before pauli");
+            mrcpp::apply_Pauli(orbTempX2, orbTempX[i], 1, -1.0, false);//test debug test
+            mrcpp::apply_Pauli(orbTempY2, orbTempY[i], 2, -1.0, false);//test debug test
+            mrcpp::apply_Pauli(orbTempZ2, orbTempZ[i], 3, -1.0, false);//test debug test
+            MSG_INFO("spinorbit applied pauli");
+            ComplexDouble cmplx_i = {0.0, 1.0};
+            // termSO[i].add(cmplx_i, orbTempX2);//test debug test
+            // termSO[i].add(cmplx_i, orbTempY2);//test debug test
+            // termSO[i].add(cmplx_i, orbTempZ2);//test debug test
+            mrcpp::add(termSO[i],1.0 , termSO[i], cmplx_i, orbTempX2, -1.0, false);//test debug test
+            mrcpp::add(termSO[i],1.0 , termSO[i], cmplx_i, orbTempY2, -1.0, false);//test debug test
+            mrcpp::add(termSO[i],1.0 , termSO[i], cmplx_i, orbTempZ2, -1.0, false);//test debug test
+            MSG_INFO("spinorbit orb="<<i << " " << orbTempX2.getSquareNorm()<< " " << orbTempY2.getSquareNorm()<< " " << orbTempZ2.getSquareNorm());
+            // if (termSO[i].isreal()) MSG_INFO("Component norms="<< termSO[i].CompD[0]->getSquareNorm() << " " <<  termSO[i].CompD[1]->getSquareNorm());
         }
+        operSOX.clear();
+        operSOY.clear();
+        operSOZ.clear();
     }
-    MSG_INFO("Spinorb done");
+    // MSG_INFO("Spinorb done");
 
     //What is this useful for? We don't use them at all.
     auto normsOne = orbital::get_norms(termOne);
@@ -455,7 +537,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         if (not mrcpp::mpi::my_func(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
-        if (Phi[0].Ncomp() > 1) arg[i].add(1.0, termSO[i]); //spin-orbit coupling. Is zero for scalar functions.
+        if ((Phi[0].Ncomp() > 1) and isZora()) arg[i].add(1.0, termSO[i]); //spin-orbit coupling. Is zero for scalar functions.
         arg[i].add(1.0, Psi[i]);
     }
     mrcpp::print::time(2, "Adding contributions", t_add);
@@ -508,29 +590,29 @@ std::shared_ptr<QMPotential> FockBuilder::collectZoraBasePotential() {
     // auto vz = std::make_shared<QMPotential>(1, false, 2); //TODO: Inclure la quantité de composantes des orbitales dans ce constructeur //Probablement un problème dans le constructeur ici dans le cas où on a 2 composantes? 
     vz->alloc(1, true);
     if (zora_has_nuc) {
-        MSG_INFO("Collecting nuclear potential for ZORA base potential");
+        // MSG_INFO("Collecting nuclear potential for ZORA base potential");
         if (getNuclearOperator() != nullptr) {
-            MSG_INFO("Collecting nuclear potential for ZORA base potential tut ");
+            // MSG_INFO("Collecting nuclear potential for ZORA base potential tut ");
             auto &vnuc = static_cast<QMPotential &>(getNuclearOperator()->getRaw(0, 0));
             if (not vnuc.hasReal()) MSG_ERROR("ZORA: Adding empty nuclear potential");
-            MSG_INFO("Adding nuclear potential to ZORA base potential");
+            // MSG_INFO("Adding nuclear potential to ZORA base potential");
             vz->add(1.0, vnuc);
         } else {
             MSG_ERROR("ZORA: Nuclear requested but not available");
         }
     }
     if (zora_has_coul) {
-        MSG_INFO("Collecting Coulomb potential for ZORA base potential");
+        // MSG_INFO("Collecting Coulomb potential for ZORA base potential");
         if (getCoulombOperator() != nullptr) {
             auto &coul = static_cast<QMPotential &>(getCoulombOperator()->getRaw(0, 0));
-            if (not coul.hasReal()) MSG_INFO("ZORA: Adding empty Coulomb potential");
+            // if (not coul.hasReal()) MSG_INFO("ZORA: Adding empty Coulomb potential");
             vz->add(1.0, coul);
         } else {
             MSG_ERROR("ZORA: Coulomb requested but not available");
         }
     }
     if (zora_has_xc) {
-        MSG_INFO("Collecting XC potential for ZORA base potential");
+        // MSG_INFO("Collecting XC potential for ZORA base potential");
         if (getXCOperator() != nullptr) {
             getXCOperator()->setSpin(SPIN::Paired);
             auto &xc = static_cast<QMPotential &>(getXCOperator()->getRaw(0, 0));
