@@ -53,14 +53,6 @@ void Functional::print_functional_references() const {
     println(0, pre_str << "                                                  " << post_str);
     mrcpp::print::separator(0, '*', 1);
 
-    // XCFun is used
-    if (not Factory::libxc) {
-        printout(0, xcfun_splash());
-        mrcpp::print::separator(0, ' ');
-        mrcpp::print::separator(0, '-', 1);
-        return;
-    }
-
     // Conditional reference printing
     auto print_wrap = [&](std::string str, std::size_t txt_width, int indent = 0) {
         const std::string continuation_indent(indent, ' ');
@@ -92,11 +84,24 @@ void Functional::print_functional_references() const {
         std::cout << str;
     };
 
+    auto outfile_txt_width = 75;
+    // XCFun is used
+    if (not Factory::libxc) {
+        printout(0, xcfun_splash());
+        std::cout << "\nXCFun functionals used in this calculation:\n";
+        for (const auto &func_name : xcfun_func_names) {
+            std::string xcfun_ref = xcfun_describe_long(func_name.c_str());
+            std::string xcfun_ref_str = "  - " + xcfun_ref;
+            print_wrap(xcfun_ref_str, outfile_txt_width, 4);
+        }
+        return;
+    }
+
+    // LibXC is used
     std::string libxc_ref_str = "Using Libxc (version " + std::string(xc_version_string()) + ") to evaluate density functionals. Libxc is free software. It is " +
                                 "distributed under the Mozilla Public License, version 2.0. For " + "more information, please check the Libxc manual. You should cite\n\n" +
                                  xc_reference() + " DOI: " + xc_reference_doi() + "\n\nwhen " + "reporting the results of your calculation in a scientific article.\n";
-    auto libxc_txt_width = 75;
-    print_wrap(libxc_ref_str, libxc_txt_width);
+    print_wrap(libxc_ref_str, outfile_txt_width);
 
     // Avoid printing the same LibXC functional multiple times
     std::set<int> printed_ids;
@@ -112,14 +117,14 @@ void Functional::print_functional_references() const {
 
         char *name = xc_functional_get_name(id);
         std::string func_id_str = "  - " + std::string(name) + " (ID " + std::to_string(id) + "): " + func->info->name + "\n";
-        print_wrap(func_id_str, libxc_txt_width);
+        print_wrap(func_id_str, outfile_txt_width);
         free(name);
 
         for (int number = 0; number < XC_MAX_REFERENCES; number++) {
             auto reference = xc_func_info_get_references(func->info, number);
             if (reference == nullptr) break;
             std::string func_ref_str = "     * " + std::string(xc_func_reference_get_ref(reference)) + ", DOI:" + xc_func_reference_get_doi(reference) + "\n";
-            print_wrap(func_ref_str, libxc_txt_width, 7);
+            print_wrap(func_ref_str, outfile_txt_width, 7);
         }
     }
 }

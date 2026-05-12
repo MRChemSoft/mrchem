@@ -121,6 +121,12 @@ public:
     void setLibxcFunctionalObject(std::vector<xc_func_type*> &libxc_objects_, std::vector<double> &libxc_coefs_);
 
     /**
+     * @brief Sets the list of XCFun functional names
+     * @param[in] names_ Vector of functional names used in XCFun
+     */
+    void setXCFunFunctionalNames(const std::vector<std::string> &names_) { xcfun_func_names = names_; }
+
+    /**
      * Functional type querying
      */
     bool isLDA() const { return not (isGGA() or isMetaGGA()); }          ///< @return True if functional is LDA type (not a GGA or meta-GGA)
@@ -157,10 +163,11 @@ public:
      * @details Each row corresponds to one grid point
      */
     Eigen::MatrixXd evaluate_transposed(Eigen::MatrixXd &inp) const;
-    
-    bool libxc;                                 ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
-    std::vector<xc_func_type*> libxc_objects;   ///< @brief Vector of initialized Libxc functionals
-    std::vector<double> libxc_coefs;            ///< @brief Vector scaling coefficients for each functional in libxc_objects
+
+    std::vector<std::string> xcfun_func_names;    ///< @brief Vector for storing used XCFun functional names
+    bool libxc;                                   ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file)
+    std::vector<xc_func_type*> libxc_objects;     ///< @brief Vector of initialized Libxc functionals
+    std::vector<double> libxc_coefs;              ///< @brief Vector scaling coefficients for each functional in libxc_objects
     
     /**
      * @brief Prints the splash screens, version info, and references for the 
