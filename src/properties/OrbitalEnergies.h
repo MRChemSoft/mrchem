@@ -88,7 +88,7 @@ public:
         DoubleVector occ = getOccupation();
         const DoubleVector &eps = getEpsilon();
         std::vector<std::string> spn;
-        for (auto i = 0; i < spinVec.size(); i++) {
+        for (size_t i = 0; i < spinVec.size(); i++) {
             if (this->spinVec(i) == SPIN::Paired) spn.push_back("p");
             if (this->spinVec(i) == SPIN::Alpha) spn.push_back("a");
             if (this->spinVec(i) == SPIN::Beta) spn.push_back("b");

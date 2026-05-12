@@ -164,7 +164,7 @@ void Cavity::printParameters() const {
     mrcpp::print::header(0, "Solvation Cavity");
     println(0, o_head.str());
     mrcpp::print::separator(0, '-');
-    for (auto i = 0; i < coords.size(); i++) {
+    for (size_t i = 0; i < coords.size(); i++) {
         auto coord = coords[i];
         auto x = coord[0];
         auto y = coord[1];

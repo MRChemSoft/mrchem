@@ -290,7 +290,7 @@ Orbital RankZeroOperator::dagger(Orbital inp) {
 OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
     RankZeroOperator &O = *this;
     OrbitalVector out;
-    for (auto i = 0; i < inp.size(); i++) {
+    for (size_t i = 0; i < inp.size(); i++) {
         Timer t1;
         Orbital out_i;
         if (mrcpp::mpi::my_func(inp[i])) {
@@ -315,7 +315,7 @@ OrbitalVector RankZeroOperator::operator()(OrbitalVector &inp) {
 OrbitalVector RankZeroOperator::dagger(OrbitalVector &inp) {
     RankZeroOperator &O = *this;
     OrbitalVector out;
-    for (auto i = 0; i < inp.size(); i++) {
+    for (size_t i = 0; i < inp.size(); i++) {
         Timer t1;
         Orbital out_i;
         if (mrcpp::mpi::my_func(inp[i])) {

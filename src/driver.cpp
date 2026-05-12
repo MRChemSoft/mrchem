@@ -933,7 +933,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
     if (orb_idx.size() > 0) {
         if (orb_idx[0] < 0) {
             // Plotting ALL orbitals
-            for (auto i = 0; i < Phi.size(); i++) {
+            for (size_t i = 0; i < Phi.size(); i++) {
                 if (not mrcpp::mpi::my_func(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
