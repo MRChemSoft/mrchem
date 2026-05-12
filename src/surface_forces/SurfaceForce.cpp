@@ -167,7 +167,7 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
     std::array<double, 3> pos;
     double n1, n2, n3;
     double occ;
-    for (int iOrb = 0; iOrb < Phi.size(); iOrb++) {
+    for (size_t iOrb = 0; iOrb < Phi.size(); iOrb++) {
         occ = Phi[iOrb].occ();
 
         for (int i = 0; i < nGrid; i++) {
@@ -271,7 +271,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
 
     std::vector<std::vector<Orbital>> nablaPhi(Phi.size());
     std::vector<Orbital> hessRho = hess(rho);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (mrcpp::mpi::my_func(i)) { nablaPhi[i] = nabla(Phi[i]); }
     }
     // setup xc stuff:

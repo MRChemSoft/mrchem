@@ -38,7 +38,7 @@ public:
     // zero order, just take constant
     double evalf(const mrcpp::Coord<3> &r) const override {
         double result = 0.0;
-        for (int i = 0; i < this->nuclei.size(); i++) {
+        for (size_t i = 0; i < this->nuclei.size(); i++) {
             const auto &R = this->nuclei[i].getCoord();
             auto R1 = math_utils::calc_distance(R, r);
             auto Z = this->nuclei[i].getCharge();

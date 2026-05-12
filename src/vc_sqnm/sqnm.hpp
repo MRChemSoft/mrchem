@@ -160,7 +160,7 @@ namespace sqnm_space
 
         // compute eq 8
         int dim_subsp = 0;
-        for (int i = 0; i < S_eval.size(); i++){
+        for (size_t i = 0; i < S_eval.size(); i++){
           if (S_eval(i) / S_eval(nhist-1) > eps_subsp)
           {
             dim_subsp+=1;

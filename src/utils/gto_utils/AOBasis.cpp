@@ -41,14 +41,14 @@ AOBasis::AOBasis() {
 AOBasis::AOBasis(const AOBasis &bas) {
     this->nPrim = 0;
     this->nFunc = 0;
-    for (int i = 0; i < bas.size(); i++) append(bas.getContraction(i));
+    for (size_t i = 0; i < bas.size(); i++) append(bas.getContraction(i));
 }
 
 AOBasis &AOBasis::operator=(const AOBasis &bas) {
     if (this != &bas) {
         this->nPrim = 0;
         this->nFunc = 0;
-        for (int i = 0; i < bas.size(); i++) append(bas.getContraction(i));
+        for (size_t i = 0; i < bas.size(); i++) append(bas.getContraction(i));
     }
     return *this;
 }

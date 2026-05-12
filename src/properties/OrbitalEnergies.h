@@ -67,7 +67,7 @@ public:
         println(0, o_head.str());
         mrcpp::print::separator(0, '-');
 
-        for (int i = 0; i < this->epsilon.size(); i++) {
+        for (size_t i = 0; i < this->epsilon.size(); i++) {
             auto sp = 'u';
             if (this->spinVec(i) == SPIN::Paired) sp = 'p';
             if (this->spinVec(i) == SPIN::Alpha) sp = 'a';

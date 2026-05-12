@@ -146,7 +146,7 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     t2.stop();
 
     Timer t3;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         Timer t_i;
         bool grid_was_built = false;
         if (mrcpp::mpi::my_func(Phi[i])) {
@@ -228,7 +228,7 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         intgrl.getNucleus(0).setCoord(nuc.getCoord());
         gto_utils::OrbitalExp gto_exp(intgrl);
 
-        for (int i = 0; i < gto_exp.size(); i++) {
+        for (size_t i = 0; i < gto_exp.size(); i++) {
             Timer t_i;
             Phi.push_back(Orbital(SPIN::Paired));
             Phi.back().setRank(Phi.size() - 1);

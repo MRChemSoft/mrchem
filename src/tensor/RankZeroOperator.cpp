@@ -204,7 +204,7 @@ RankZeroOperator &RankZeroOperator::operator-=(const RankZeroOperator &O) {
  */
 void RankZeroOperator::setup(double prec) {
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) { i[j]->setup(prec); }
+        for (size_t j = 0; j < i.size(); j++) { i[j]->setup(prec); }
     }
 }
 
@@ -212,14 +212,14 @@ void RankZeroOperator::setup(double prec) {
  */
 void RankZeroOperator::clear() {
     for (auto &i : this->oper_exp) {
-        for (int j = 0; j < i.size(); j++) { i[j]->clear(); }
+        for (size_t j = 0; j < i.size(); j++) { i[j]->clear(); }
     }
 }
 
 ComplexDouble RankZeroOperator::operator()(const mrcpp::Coord<3> &r) const {
     const RankZeroOperator &O = *this;
     ComplexDouble out = {0.0, 0.0};
-    for (int n = 0; n < O.size(); n++) {
+    for (size_t n = 0; n < O.size(); n++) {
         ComplexDouble out_n = {1.0, 0.0};
         for (auto O_nm : this->oper_exp[n]) {
             if (O_nm == nullptr) MSG_ABORT("Invalid oper term");
@@ -250,7 +250,7 @@ Orbital RankZeroOperator::operator()(Orbital inp) {
     RankZeroOperator &O = *this;
     std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec = getCoefVector();
-    for (int n = 0; n < O.size(); n++) {
+    for (size_t n = 0; n < O.size(); n++) {
         Orbital out_n = O.applyOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
@@ -271,7 +271,7 @@ Orbital RankZeroOperator::dagger(Orbital inp) {
     RankZeroOperator &O = *this;
     std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec = getCoefVector();
-    for (int n = 0; n < O.size(); n++) {
+    for (size_t n = 0; n < O.size(); n++) {
         Orbital out_n = O.daggerOperTerm(n, inp);
         func_vec.push_back(out_n);
     }
@@ -417,7 +417,7 @@ ComplexDouble RankZeroOperator::trace(OrbitalVector &Phi) {
     std::vector<ComplexDouble> phi_vec(Phi.size());
     auto phiOPhi = mrcpp::dot(Phi, OPhi);
     ComplexDouble out = 0.0;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         eta[i] = Phi[i].occ();
         phi_vec[i] = phiOPhi[i];
         out += eta[i] * phi_vec[i];
@@ -472,7 +472,7 @@ ComplexDouble RankZeroOperator::trace(const Nuclei &nucs) {
     RankZeroOperator &O = *this;
     std::vector<ComplexDouble> coef_vec = getCoefVector();
     ComplexDouble out = 0.0;
-    for (int n = 0; n < O.size(); n++) out += coef_vec[n] * O.traceOperTerm(n, nucs);
+    for (size_t n = 0; n < O.size(); n++) out += coef_vec[n] * O.traceOperTerm(n, nucs);
     std::stringstream o_name;
     o_name << "Trace " << O.name() << "(nucs)";
     mrcpp::print::tree(2, o_name.str(), 0, 0, t1.elapsed());

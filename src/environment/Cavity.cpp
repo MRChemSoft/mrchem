@@ -117,7 +117,7 @@ Cavity::Cavity(const std::vector<mrcpp::Coord<3>> &coords, const std::vector<dou
  */
 double Cavity::evalf(const mrcpp::Coord<3> &r) const {
     auto C = 1.0;
-    for (int i = 0; i < centers.size(); i++) {
+    for (size_t i = 0; i < centers.size(); i++) {
         auto center = this->centers[i];
         auto radius = this->radii[i];
         auto sigma = this->sigmas[i];

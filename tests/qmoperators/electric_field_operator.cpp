@@ -112,8 +112,8 @@ TEST_CASE("ElectricFieldOperator", "[electric_field_operator]") {
         }
 
         OrbitalVector xPhi = EF(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
-            for (int j = 0; j < xPhi.size(); j++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
+            for (size_t j = 0; j < xPhi.size(); j++) {
                 ComplexDouble X_ij = mrcpp::dot(Phi[i], xPhi[j]);
                 REQUIRE(std::abs(X_ij.real()) == Catch::Approx(ref(i, j)).margin(thrs));
             }

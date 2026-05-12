@@ -61,15 +61,15 @@ void ExchangePotentialD2::setupBank() {
     Timer timer;
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     OrbitalVector &Phi = *this->orbitals;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (mrcpp::mpi::my_func(Phi[i])) PhiBank.put_func(i, Phi[i]);
     }
     OrbitalVector &X = *this->orbitals_x;
-    for (int i = 0; i < X.size(); i++) {
+    for (size_t i = 0; i < X.size(); i++) {
         if (mrcpp::mpi::my_func(X[i])) XBank.put_func(i, X[i]);
     }
     OrbitalVector &Y = *this->orbitals_y;
-    for (int i = 0; i < Y.size(); i++) {
+    for (size_t i = 0; i < Y.size(); i++) {
         if (mrcpp::mpi::my_func(Y[i])) YBank.put_func(i, Y[i]);
     }
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
@@ -112,7 +112,7 @@ Orbital ExchangePotentialD2::apply(Orbital phi_p) {
 
     std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         Orbital phi_i(Phi[i]);
         Orbital x_i(X[i]);
         Orbital y_i(Y[i]);
@@ -171,7 +171,7 @@ Orbital ExchangePotentialD2::dagger(Orbital phi_p) {
 
     std::vector<mrcpp::CompFunction<3>> func_vec;
     std::vector<ComplexDouble> coef_vec;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         Orbital phi_i(Phi[i]);
         Orbital x_i(X[i]);
         Orbital y_i(Y[i]);

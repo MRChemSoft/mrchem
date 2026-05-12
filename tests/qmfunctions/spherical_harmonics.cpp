@@ -31,15 +31,15 @@ TEST_CASE("sperical_harmonics", "[spherical_harmonics]") {
         }
 
         Eigen::MatrixXd S(pps.size(), pps.size());
-        for (int i = 0; i < pps.size(); i++) {
-            for (int j = 0; j < pps.size(); j++) {
+        for (size_t i = 0; i < pps.size(); i++) {
+            for (size_t j = 0; j < pps.size(); j++) {
                 // S(i, j) = qmfunction::dot(Phi[i], Phi[j]).real();
                 S(i, j) = mrcpp::dot(*pps[i].projector_ptr, *pps[j].projector_ptr).real();
                 // std::cout << i << " " << j << " " << S(i, j) << " " << pps[i].projector_ptr->norm() << std::endl;
             }
         }
         Eigen::MatrixXd S_ref = Eigen::MatrixXd::Zero(pps.size(), pps.size());
-        for (int i = 0; i < pps.size(); i++) {
+        for (size_t i = 0; i < pps.size(); i++) {
             S_ref(i, i) = 1.0;
         }
         int iorb = 0;

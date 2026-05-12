@@ -1434,7 +1434,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto radii_0 = cavity_p->getOriginalRadii();
             auto radii_ion = std::vector<double>(radii_0.size());
 
-            for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
+            for (size_t i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
             auto cavity_centers = cavity_p->getCoordinates();
             cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
         } else {

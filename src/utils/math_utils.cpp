@@ -128,7 +128,7 @@ ComplexMatrix hermitian_matrix_pow(const ComplexMatrix &A, double b) {
     ComplexMatrix U = diagonalize_hermitian_matrix(A, diag);
 
     DoubleMatrix B = DoubleMatrix::Zero(A.rows(), A.cols());
-    for (int i = 0; i < diag.size(); i++) {
+    for (size_t i = 0; i < diag.size(); i++) {
         if (std::abs(diag(i)) < mrcpp::MachineZero) {
             B(i, i) = 0.0;
         } else {
