@@ -246,6 +246,7 @@ Orbital XCPotential::dagger(Orbital phi) {
 }
 
 QMOperatorVector XCPotential::apply(QMOperator_p &O) {
+    (void)O;
     NOT_IMPLEMENTED_ABORT;
 }
 

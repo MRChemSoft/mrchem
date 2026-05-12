@@ -1187,6 +1187,8 @@ void driver::rsp::write_orbitals(const json &json_orbs, Molecule &mol, bool dyna
  * input section, and will compute all properties which are present in this input.
  */
 void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir, double omega) {
+    (void)omega;
+
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Computing linear response properties");

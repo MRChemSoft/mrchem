@@ -53,8 +53,9 @@ public:
 
     std::string getParamName1() const override{ return "RMS"; }
     std::string getParamName2() const override{ return "R0"; }
-    double calcParam1(double prec, const Nucleus &nuc) const override { return nuc.getRMSRadius(); }
+    double calcParam1(double prec, const Nucleus &nuc) const override { (void)prec; return nuc.getRMSRadius(); }
     double calcParam2(double prec, const Nucleus &nuc) const override {
+        (void)prec;
         auto RMS = nuc.getRMSRadius();
         auto RMS2 = RMS*RMS;
         auto R0 = std::sqrt(RMS2*(5.0/3.0));

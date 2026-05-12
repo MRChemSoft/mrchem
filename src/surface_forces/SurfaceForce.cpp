@@ -52,6 +52,9 @@ namespace surface_force {
  * @param gridPos The positions of the grid points where the field should be evaluated. Shape (nGrid, 3).
  */
 MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const VectorXd &nucSmoothing, const MatrixXd gridPos) {
+
+    (void)nucSmoothing;
+
     int nGrid = gridPos.rows();
     int nNuc = nucPos.rows();
     MatrixXd Efield = MatrixXd::Zero(nGrid, 3);
@@ -146,6 +149,9 @@ std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, std::vector<Orbi
  * @brief Calculates the kinetic stress tensor for the given molecule. See the function description for the formula.
  */
 std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std::vector<std::vector<mrchem::Orbital>> &nablaPhi, std::vector<Orbital> &hessRho, double prec, const MatrixXd &gridPos) {
+
+    (void)mol;
+    (void)prec;
 
     // original formula for kinetic stress:
     // sigma_ij = 0.5 \sum_k phi_k del_i del_j phi_k - (del_i phi_k) (del_j phi_k)

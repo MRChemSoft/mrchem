@@ -70,8 +70,8 @@ protected:
     void setup(double prec) override;
     void clear() override;
 
-    virtual void setupGlobalDensity(double prec) {}
-    virtual void setupLocalDensity(double prec) {}
+    virtual void setupGlobalDensity(double prec) { (void)prec; }
+    virtual void setupLocalDensity(double prec) { (void)prec; }
 
     void setupGlobalPotential(double prec);
     mrcpp::CompFunction<3> setupLocalPotential(double prec);

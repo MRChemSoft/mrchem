@@ -275,6 +275,8 @@ void Accelerator::copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
  * Deletes the old orbital set and copies the new. Counts backwards,
  * zero input returns latest orbital set. */
 void Accelerator::replaceOrbitals(OrbitalVector &Phi, int nHistory) {
+    (void)Phi;
+    (void)nHistory;
     NOT_IMPLEMENTED_ABORT;
     //    int totHistory = this->orbitals.size();
     //    if (nHistory >= totHistory or nHistory < 0) {
@@ -297,6 +299,8 @@ void Accelerator::replaceOrbitals(OrbitalVector &Phi, int nHistory) {
  * Deletes the old orbital set and copies the new. Counts backwards,
  * zero input returns latest orbital set. */
 void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
+    (void)dPhi;
+    (void)nHistory;
     NOT_IMPLEMENTED_ABORT;
     //    int totHistory = this->dOrbitals.size();
     //    if (nHistory >= totHistory or nHistory < 0) {

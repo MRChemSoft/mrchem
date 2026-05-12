@@ -106,7 +106,7 @@ public:
      * @return The precision value unchanged.
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    double calcParam1(double prec, const Nucleus &nuc) const override { return prec; }
+    double calcParam1(double prec, const Nucleus &nuc) const override { (void)nuc; return prec; }
 
     /**
      * @brief Calculates the second parameter (required by NuclearFunction base class).
@@ -115,7 +115,7 @@ public:
      * @return The precision value unchanged.
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    double calcParam2(double prec, const Nucleus &nuc) const override { return prec; }
+    double calcParam2(double prec, const Nucleus &nuc) const override { (void)nuc; return prec; }
 
 protected:
     std::vector<PseudopotentialData> pps;

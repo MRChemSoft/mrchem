@@ -129,6 +129,7 @@ Orbital ExchangePotentialD1::dagger(Orbital phi_p) {
 }
 
 QMOperatorVector ExchangePotentialD1::apply(QMOperator_p &O) {
+    (void)O;
     NOT_IMPLEMENTED_ABORT;
 }
 

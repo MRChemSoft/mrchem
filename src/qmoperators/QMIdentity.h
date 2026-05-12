@@ -34,7 +34,7 @@ public:
     QMIdentity() = default;
 
 private:
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 1.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 1.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
