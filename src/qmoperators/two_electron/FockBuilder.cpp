@@ -459,11 +459,17 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     //spin orbit coupling term, which would be identically 0 for scalar functions.
     OrbitalVector termSO(Phi.size());
-    //allocate zero-valued orbitals for the spin-orbit term, which will be filled in the loop below, to avoid seg faults // seems like it is not needed?
+    // OrbitalVector termSO = orbital::deep_copy(Phi); //test debug test start
+    //set the orbitals to zero in case we don't use them 
     // for (int i = 0; i < termSO.size(); i++) {
     //     //def termSO real or complex depending on phi ? 
-    //     termSO[i].alloc(Phi[i].Ncomp(), true);
+    //     // termSO[i].alloc(Phi[i].Ncomp(), true);
+    //     for (int comp = 0; comp < termSO[i].Ncomp(); comp++){
+    //         if (termSO[i].isreal()){termSO[i].CompD[comp]->setZero();}
+    //         if (termSO[i].iscomplex()){termSO[i].CompC[comp]->setZero();}
+    //     }
     // }
+    //test debug test end
     if ((Phi[0].Ncomp() == 2) and isZora()) {
         // mrcpp::apply(prec, *dx_chi, p[0], chi);
         
@@ -471,28 +477,34 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         //Manually implementing the cross product appearing in the spin-orbit term
         //NOTE! The multiplication by the Pauli matrices will need to be handled later,
         //      during the application of the cross-product to the orbitals.
+        // auto dchi = p(chi); 
         RankZeroOperator operSOX = p(chi)[1]*p[2] - p(chi)[2]*p[1];
+        // RankZeroOperator operSOX = dchi[1]*p[2] - dchi[2]*p[1];
         operSOX.setup(prec);
         // MSG_INFO("Spinorbit =" << " " << (p(chi)[0].getOperatorExpansion()[0])->getSquareNorm()); //<< (p(chi)[1]).getSquareNorm()<< (p(chi)[2]).getSquareNorm());
         RankZeroOperator operSOY = p(chi)[2]*p[0] - p(chi)[0]*p[2];
+        // RankZeroOperator operSOY = dchi[2]*p[0] - dchi[0]*p[2];
         operSOY.setup(prec);
         RankZeroOperator operSOZ = p(chi)[0]*p[1] - p(chi)[1]*p[0];
+        // RankZeroOperator operSOZ = dchi[0]*p[1] - dchi[1]*p[0];
         operSOZ.setup(prec);
-        // MSG_INFO("Curls setup");
         //Applying the curls to temporary copies of the orbitals 
         //NOTE! Extremely inefficient!
         // OrbitalVector orbTempX = orbital::deep_copy(Phi);
-        OrbitalVector orbTempX;
-        orbTempX = operSOX(Phi);
+        OrbitalVector orbTempX = operSOX(Phi);
+        // orbTempX = operSOX(Phi);
         // OrbitalVector orbTempY = orbital::deep_copy(Phi);
-        OrbitalVector orbTempY;
-        orbTempY = operSOY(Phi);
+        OrbitalVector orbTempY = operSOY(Phi);
+        // orbTempY = operSOY(Phi);
         // OrbitalVector orbTempZ = orbital::deep_copy(Phi);
-        OrbitalVector orbTempZ;
-        orbTempZ = operSOZ(Phi);
+        OrbitalVector orbTempZ = operSOZ(Phi);
+        // orbTempZ = operSOZ(Phi);
         // MSG_INFO("Curls applied");
         //adding the contributions together. Note that the coefficient is purely imaginary.
         for (int i = 0; i < Phi.size(); i++) {
+            // termSO[i].defcomplex(); //test debug test
+            // termSO[i].alloc(Phi[i].Ncomp(), true);
+
             Orbital orbTempX2;//test debug test
             Orbital orbTempY2;//test debug test
             Orbital orbTempZ2;//test debug test
@@ -511,10 +523,15 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
             // termSO[i].add(cmplx_i, orbTempX2);//test debug test
             // termSO[i].add(cmplx_i, orbTempY2);//test debug test
             // termSO[i].add(cmplx_i, orbTempZ2);//test debug test
-            mrcpp::add(termSO[i],1.0 , termSO[i], cmplx_i, orbTempX2, -1.0, false);//test debug test
-            mrcpp::add(termSO[i],1.0 , termSO[i], cmplx_i, orbTempY2, -1.0, false);//test debug test
-            mrcpp::add(termSO[i],1.0 , termSO[i], cmplx_i, orbTempZ2, -1.0, false);//test debug test
+            Orbital termSOtemp;                                                                                                                                                                                                        
+            mrcpp::add(termSOtemp, cmplx_i, orbTempX2, cmplx_i, orbTempY2, -1.0, false);                                                                                                                                               
+            mrcpp::add(termSO[i], 1.0, termSOtemp, cmplx_i, orbTempZ2, -1.0, false);  
+            // mrcpp::add(termSO[i],{1.0,0.0} , termSO[i], cmplx_i, orbTempX2, -1.0, false);//test debug test
+            // mrcpp::add(termSO[i],{1.0,0.0} , termSO[i], cmplx_i, orbTempY2, -1.0, false);//test debug test
+            // mrcpp::add(termSO[i],{1.0,0.0}, termSO[i], cmplx_i, orbTempZ2, -1.0, false);//test debug test
             MSG_INFO("spinorbit orb="<<i << " " << orbTempX2.getSquareNorm()<< " " << orbTempY2.getSquareNorm()<< " " << orbTempZ2.getSquareNorm());
+            termSO[i].calcSquareNorm();
+            MSG_INFO("SO strength="<< termSO[i].getSquareNorm() << " expectation value for orbital "<< i << ": "<< dot(Phi[i], termSO[i]));
             // if (termSO[i].isreal()) MSG_INFO("Component norms="<< termSO[i].CompD[0]->getSquareNorm() << " " <<  termSO[i].CompD[1]->getSquareNorm());
         }
         operSOX.clear();
