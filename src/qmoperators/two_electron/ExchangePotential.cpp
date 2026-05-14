@@ -187,6 +187,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
         //resetting out_kij to a default real definition rather than the complex it might have inherited from phi 
         out_kij.func_ptr->isreal = 1;
         out_kij.func_ptr->iscomplex = 0;
+        out_kij.alloc(rho_ij.Ncomp(), true);
         return;
     }
     // MSG_INFO("tut exchange badim" << rho_ij.norm());
@@ -214,6 +215,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
             if (phi_j.iscomplex() and &phi_j != &phi_k) phi_opt_vec_cplx.emplace_back(1.0, phi_j.CompC[comp]);
             if (phi_i.iscomplex() and &phi_i != &phi_k and &phi_i != &phi_j) phi_opt_vec_cplx.emplace_back(1.0, phi_i.CompC[comp]);
         }
+        
         // compute V_ij = P[rho_ij]
         Timer timer_p;
         // Orbital V_ij = rho_ij.paramCopy(true); //moved outside of loop // multicomp test
@@ -225,10 +227,10 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
             mrcpp::apply(prec_p, *V_ij.CompC[comp], P, *rho_ij.CompC[comp], phi_opt_vec_cplx, -1, true);//old
             // mrcpp::apply(prec_p, *V_ij.CompC[0], P, *rho_ij.CompC[0], phi_opt_vec_cplx, -1, true);//old
         }
-        rho_ij.free();
         timer_p.stop();
         timer_allcomps += timer_p.elapsed();
     }
+    rho_ij.free();
     auto N_p = V_ij.getNNodes();
     auto norm_p = V_ij.norm();
 

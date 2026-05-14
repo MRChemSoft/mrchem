@@ -140,9 +140,16 @@ void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, Densi
             // rho_i.alloc(1); // Also always scalar, so only one component
             // Density rho_i(*(new mrcpp::MultiResolutionAnalysis<3>(Phi[0].real().getMRA()))); // this is a bit hacky, but it gives rho_i the same MRA as phi_i, which is necessary for the copy_grid and make_density functions. We also give it 1 component, since it will only hold the density of one orbital.
             // MSG_INFO("Debug message 2 ");
-            mrcpp::copy_grid(rho_i, phi_i, 1); //last argument means only copy grid up to the first component, as rho_i has only one itself
-            
+
+            //is this even needed? we nuke it afterwards anyway
+            // mrcpp::copy_grid(rho_i, phi_i, 1); //last argument means only copy grid up to the first component, as rho_i has only one itself
+            MSG_INFO("test tutbambim");
+            rho_i.alloc(1, true);
+            MSG_INFO("allocated");
+
+
             mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
+            MSG_INFO("tutbambimboum");
             // if (phi_i.iscomplex()) {
             //     rho_i.CompC[0]->CopyTreeToReal(rho_i.CompD[0]);
             //     delete rho_i.CompC[0];
