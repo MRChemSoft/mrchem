@@ -58,6 +58,15 @@ ExchangePotential::ExchangePotential(PoissonOperator_p P, OrbitalVector_p Phi, d
  */
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
+    //test debug start
+    MSG_INFO("rotut");
+    for (auto i: this->exchange){
+        i.calcSquareNorm();
+        MSG_INFO("norm =" << i.getSquareNorm());
+        if (i.isreal()) MSG_INFO("real comp 0 exists="<< (i.CompD[0]!=nullptr) << "comp 1 exists="<< (i.CompD[1]!=nullptr));
+        if (i.iscomplex()) MSG_INFO("complex comp 0 exists="<< (i.CompC[0]!=nullptr) << "comp 1 exists="<< (i.CompC[1]!=nullptr));
+    }
+    //test debug end
     mrcpp::rotate(this->exchange, U, this->apply_prec);
 
     // NOTE: The following MPI point is currently NOT implemented!
@@ -173,8 +182,14 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     Orbital rho_ij = phi_i.paramCopy(true);
     mrcpp::multiply(rho_ij, phi_i, phi_j, prec_m1, true, true, true);
     timer_ij.stop();
-    if (rho_ij.norm() < prec) return;
-    MSG_INFO("tut exchange badim" << rho_ij.norm());
+    // if (rho_ij.norm() < prec) return;
+    if (rho_ij.norm() < prec){ //test debug 
+        //resetting out_kij to a default real definition rather than the complex it might have inherited from phi 
+        out_kij.func_ptr->isreal = 1;
+        out_kij.func_ptr->iscomplex = 0;
+        return;
+    }
+    // MSG_INFO("tut exchange badim" << rho_ij.norm());
 
     auto N_i = phi_i.getNNodes();
     auto N_j = phi_j.getNNodes();
@@ -217,7 +232,7 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     auto N_p = V_ij.getNNodes();
     auto norm_p = V_ij.norm();
 
-    MSG_INFO("norme phi_k (premier arg)" << phi_k.getSquareNorm() << " et V_ij=" << V_ij.getSquareNorm() << " Ncomps respectifs=" << phi_k.func_ptr->data.c1[0] << " " << phi_k.func_ptr->data.c1[1] << " " << V_ij.func_ptr->data.c1[0] << " " << V_ij.func_ptr->data.c1[1]);
+    // MSG_INFO("norme phi_k (premier arg)" << phi_k.getSquareNorm() << " et V_ij=" << V_ij.getSquareNorm() << " Ncomps respectifs=" << phi_k.func_ptr->data.c1[0] << " " << phi_k.func_ptr->data.c1[1] << " " << V_ij.func_ptr->data.c1[0] << " " << V_ij.func_ptr->data.c1[1]);
     // compute out_kij = phi_k * V_ij
     Timer timer_kij;
     mrcpp::multiply(out_kij, phi_k, V_ij, prec_m2, true, true); //problème ici
@@ -225,10 +240,8 @@ void ExchangePotential::calcExchange_kij(double prec, Orbital phi_k, Orbital phi
     auto norm_kij = out_kij.norm();
     timer_kij.stop();
 
-    out_kij.CompD[0]->calcSquareNorm();
-    out_kij.CompD[1]->calcSquareNorm();
-    MSG_INFO("exchange norme = "<< out_kij.getSquareNorm()<< " comp 0=" << out_kij.CompD[0]->getSquareNorm() << " comp 1=" << out_kij.CompD[1]->getSquareNorm());
-
+    // MSG_INFO("exchangetut mid");
+    
     // compute out_jji = phi_j * V_ji = phi_j * V_ij^dagger
     Timer timer_jji;
     auto N_jji = 0;

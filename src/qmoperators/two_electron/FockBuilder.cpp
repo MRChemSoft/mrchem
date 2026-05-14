@@ -103,10 +103,10 @@ void FockBuilder::setup(double prec) {
         mrcpp::print::value(2, "Precision", prec, "(rel)", 5);
         mrcpp::print::separator(2, '-');
     }
-    // //test TODOD À exécuter
-    // for (auto &i : this->potential().getOperatorExpansion()) {
-    //     // std::cout << "RankZeroOperator::setup -- operator expansion" << std::endl;
-    //     for (int j = 0; j < i.size(); j++) { std::cout << "FockBuilder::setup -- operator: "<< j << " " << i[j] << std::endl; }
+    // // //test TODOD À exécuter
+    // for (auto &i : this->coul()->orbitals) {
+    //     MSG_INFO("Orbital is ")
+    //     // for (int j = 0; j < i.size(); j++) { std::cout << "FockBuilder::setup -- operator: "<< j << " " << i[j] << std::endl; }
     // }
     // std::cout << "FockBuilder::setup -- Starting setup of operators: " << &i << std::endl;
     // if (this->coul != nullptr) this->V += (*this->coul);
@@ -237,7 +237,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     double Er_tot = 0.0; // Total reaction energy
 
     // Nuclear part
-    // MSG_INFO("nuc")
+    MSG_INFO("nuc");
     if (this->nuc != nullptr) E_nn = chemistry::compute_nuclear_repulsion(nucs);
     if (this->ext != nullptr) E_next = -this->ext->trace(nucs).real();
 
@@ -252,7 +252,7 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Kinetic part
-    // MSG_INFO("kin")
+    MSG_INFO("kin");
     if (isZora() || isAZora()) {
         bool spinorial = (Phi[0].Ncomp() > 1); //assumes all orbitals have the same number of components
         //second term doesn't inclue Pauli matrices (i.e. spinorial is false) because (σ·p)(σ·p) = p^2
@@ -262,17 +262,18 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     }
 
     // Electronic part
-    // MSG_INFO("ee")
+    MSG_INFO("ee");
     if (this->nuc != nullptr) { E_en = this->nuc->trace(Phi).real(); }
 
     if (this->coul != nullptr) E_ee = 0.5 * this->coul->trace(Phi).real();
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
-    ComplexDouble tutex = this->ex->trace(Phi).real();
+    // ComplexDouble tutex = this->ex->trace(Phi).real();
     // MSG_INFO("coulomb expct val="<< E_ee << " exchange expct val=" << -this->exact_exchange << " " << tutex.real() << tutex.imag());
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
+    MSG_INFO("trace ok");
 
     return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el};
 }
@@ -282,7 +283,7 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Computing Fock matrix");
 
-    // MSG_INFO("pre kinetic mat")
+    // MSG_INFO("pre kinetic mat");
     ComplexMatrix T_mat = ComplexMatrix::Zero(bra.size(), ket.size());
     if (isZora() || isAZora()) {
         //If we have spinors, the kinetic operator is of the form (σ·p)V(σ·p), with σ being a Pauli matrix.
@@ -338,6 +339,7 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
         }
         std::cout << std::endl;
     }
+    MSG_INFO("ok");
     // debug tests end
 
     mrcpp::print::footer(2, t_tot, 2);
@@ -351,7 +353,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgument(double prec, OrbitalVector Phi
     mrcpp::print::header(2, "Computing Helmholtz argument");
 
     Timer t_rot;
-    // MSG_INFO("Pouet")
+    MSG_INFO("Pouet")
     //Debug test
     // MSG_INFO("Fock matrix ");
     for (int a = 0; a < F_mat.rows(); a++) {
@@ -520,19 +522,19 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
             mrcpp::apply_Pauli(orbTempZ2, orbTempZ[i], 3, -1.0, false);//test debug test
             MSG_INFO("spinorbit applied pauli");
             ComplexDouble cmplx_i = {0.0, 1.0};
-            // termSO[i].add(cmplx_i, orbTempX2);//test debug test
-            // termSO[i].add(cmplx_i, orbTempY2);//test debug test
-            // termSO[i].add(cmplx_i, orbTempZ2);//test debug test
-            Orbital termSOtemp;                                                                                                                                                                                                        
-            mrcpp::add(termSOtemp, cmplx_i, orbTempX2, cmplx_i, orbTempY2, -1.0, false);                                                                                                                                               
-            mrcpp::add(termSO[i], 1.0, termSOtemp, cmplx_i, orbTempZ2, -1.0, false);  
-            // mrcpp::add(termSO[i],{1.0,0.0} , termSO[i], cmplx_i, orbTempX2, -1.0, false);//test debug test
-            // mrcpp::add(termSO[i],{1.0,0.0} , termSO[i], cmplx_i, orbTempY2, -1.0, false);//test debug test
-            // mrcpp::add(termSO[i],{1.0,0.0}, termSO[i], cmplx_i, orbTempZ2, -1.0, false);//test debug test
+            termSO[i].add(cmplx_i, orbTempX2);//test debug test
+            termSO[i].add(cmplx_i, orbTempY2);//test debug test
+            termSO[i].add(cmplx_i, orbTempZ2);//test debug test
+            // Orbital termSOtemp;                                                                                                                                                                                                        
+            // mrcpp::add(termSOtemp, cmplx_i, orbTempX2, cmplx_i, orbTempY2, -1.0, false);                                                                                                                                               
+            // mrcpp::add(termSO[i], 1.0, termSOtemp, cmplx_i, orbTempZ2, -1.0, false);  
+
+            //Multiplying by the prefactors. The factor 1/2 comes from the definition of chi, whereas 1/2c^2 comes from the elimination of the small component
+            termSO[i].rescale(1 / (2*two_cc)); //could be replaced by simply changing the factor in the addition to the argument
+
             MSG_INFO("spinorbit orb="<<i << " " << orbTempX2.getSquareNorm()<< " " << orbTempY2.getSquareNorm()<< " " << orbTempZ2.getSquareNorm());
             termSO[i].calcSquareNorm();
             MSG_INFO("SO strength="<< termSO[i].getSquareNorm() << " expectation value for orbital "<< i << ": "<< dot(Phi[i], termSO[i]));
-            // if (termSO[i].isreal()) MSG_INFO("Component norms="<< termSO[i].CompD[0]->getSquareNorm() << " " <<  termSO[i].CompD[1]->getSquareNorm());
         }
         operSOX.clear();
         operSOY.clear();
@@ -554,7 +556,9 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
         if (not mrcpp::mpi::my_func(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
+        MSG_INFO("pre spinorb: arg["<< i << "] is complex="<<arg[i].iscomplex() << " is real="<<arg[i].isreal());
         if ((Phi[0].Ncomp() > 1) and isZora()) arg[i].add(1.0, termSO[i]); //spin-orbit coupling. Is zero for scalar functions.
+        MSG_INFO("post spinorb: arg["<< i << "] is complex="<<arg[i].iscomplex() << " is real="<<arg[i].isreal());
         arg[i].add(1.0, Psi[i]);
     }
     mrcpp::print::time(2, "Adding contributions", t_add);

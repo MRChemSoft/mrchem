@@ -124,29 +124,88 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 /** @brief Compute local density as the sum of own (MPI) orbitals
  */
 void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
-    MSG_INFO("Debug message");
+    // MSG_INFO("Debug message " << Phi.size());
     rho.alloc(1);
     for (auto &phi_i : Phi) {
+        // MSG_INFO("debug loop");
+        // if (phi_i.isreal()){
         if (mrcpp::mpi::my_func(phi_i)) {
+            // MSG_INFO("debug message 1.25");
             double occ = density::compute_occupation(phi_i, spin);
             if (std::abs(occ) < mrcpp::MachineZero) continue;
+            // MSG_INFO("debug message 1.5");
             Density rho_i; 
-            rho_i.alloc(1);
+            // rho_i.defreal(); // test // density is always real, even if the orbital is complex
+            // MSG_INFO("debug message 1.75");
+            // rho_i.alloc(1); // Also always scalar, so only one component
             // Density rho_i(*(new mrcpp::MultiResolutionAnalysis<3>(Phi[0].real().getMRA()))); // this is a bit hacky, but it gives rho_i the same MRA as phi_i, which is necessary for the copy_grid and make_density functions. We also give it 1 component, since it will only hold the density of one orbital.
-            MSG_INFO("Debug message 2 "<< rho_i.Ncomp() << " " << &(rho_i.real().getMRA())); //rho manque un MRA
-            mrcpp::copy_grid(rho_i, phi_i, 0); //last argument means only copy grid of the first component, as rho_i has only one itself
-            MSG_INFO("Debug message 2.5 "<< rho_i.Ncomp());
-            // auto tut = rho_i.real().getMRA();
-            MSG_INFO("Debug message 3 " << &(rho_i.real().getMRA()));
+            // MSG_INFO("Debug message 2 ");
+            mrcpp::copy_grid(rho_i, phi_i, 1); //last argument means only copy grid up to the first component, as rho_i has only one itself
+            
             mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
-            MSG_INFO("Debug message 4 "<< rho_i.Ncomp() << " MerdeRA="<< &(rho_i.CompD[0]->getMRA()));
+            // if (phi_i.iscomplex()) {
+            //     rho_i.CompC[0]->CopyTreeToReal(rho_i.CompD[0]);
+            //     delete rho_i.CompC[0];
+            //     rho_i.defreal();
+            //     rho_i.func_ptr->iscomplex = 0;
+            // }
+            // MSG_INFO("Debug message 4 "<< rho_i.Ncomp());// << " MerdeRA="<< &(rho_i.CompD[0]->getMRA()));
             //note that we crop the phi_i*phi_i, because the square makes small smaller
             rho_i.crop(prec);  // Truncates to given precision
-            MSG_INFO("Debug message 5" << " occ: " << occ << " norm: " << rho_i.getSquareNorm() << " MerdeRA_i="<< &(rho_i.CompD[0]->getMRA()) << " MerdeRA="<< &(rho.CompD[0]->getMRA()));
+            // MSG_INFO("Debug message 5"); //<< " occ: " << occ << " norm: " << rho_i.getSquareNorm() << " MerdeRA_i="<< &(rho_i.CompD[0]->getMRA()) << " MerdeRA="<< &(rho.CompD[0]->getMRA()));
             // we do not crop rho, since the rho_i do not cancel out
             rho.add(occ, rho_i); // Extends to union grid
-            MSG_INFO("Debug message 6");
+            // MSG_INFO("Debug message 6roses");
+            // rho_i.CompD[0]->deleteRootNodes();
+            // if (phi_i.iscomplex()){
+            //     MSG_INFO("test");
+            //     rho_i.CompC[0]->calcSquareNorm();
+            //     double bim = rho_i.CompC[0]->getSquareNorm();
+            //     rho_i.CompD[0]->calcSquareNorm();
+            //     double bam = rho_i.CompD[0]->getSquareNorm();
+            //     MSG_INFO("test passed ="<< bim<< " "<< bam);
+            // }
+            // MSG_INFO("is density empty?" << (rho_i.CompD[0]==nullptr) << " " << (rho_i.CompD[1]==nullptr) << " " << (rho_i.CompC[0]==nullptr) << " " << (rho_i.CompC[1]==nullptr) << " ");
+            // MSG_INFO("Debug message 7");
         }
+        // } else { //complex orbitals test
+        //     if (mrcpp::mpi::my_func(phi_i)) {
+        //     MSG_INFO("debug message 1.25");
+        //     double occ = density::compute_occupation(phi_i, spin);
+        //     if (std::abs(occ) < mrcpp::MachineZero) continue;
+        //     MSG_INFO("debug message 1.5");
+        //     Density rho_i; 
+        //     rho_i.defcomplex(); // test // density is always real, even if the orbital is complex
+        //     MSG_INFO("debug message 1.75");
+        //     rho_i.alloc(1); // Also always scalar, so only one component
+        //     // Density rho_i(*(new mrcpp::MultiResolutionAnalysis<3>(Phi[0].real().getMRA()))); // this is a bit hacky, but it gives rho_i the same MRA as phi_i, which is necessary for the copy_grid and make_density functions. We also give it 1 component, since it will only hold the density of one orbital.
+        //     MSG_INFO("Debug message 2 "); //rho manque un MRA
+        //     mrcpp::copy_grid(rho_i, phi_i, 0); //last argument means only copy grid of the first component, as rho_i has only one itself
+        //     MSG_INFO("Debug message 2.5 "<< rho_i.Ncomp());
+        //     // rho_i.defreal(); // test /
+        //     // auto tut = rho_i.real().getMRA();
+        //     MSG_INFO("Debug message 3 ");
+        //     mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
+        //     MSG_INFO("Debug message 4 ");
+        //     //note that we crop the phi_i*phi_i, because the square makes small smaller
+        //     rho_i.crop(prec);  // Truncates to given precision
+        //     MSG_INFO("Debug message 5"); //<< " occ: " << occ << " norm: " << rho_i.getSquareNorm() << " MerdeRA_i="<< &(rho_i.CompD[0]->getMRA()) << " MerdeRA="<< &(rho.CompD[0]->getMRA()));
+            
+        //     rho_i.CompC[0]->Real()->deep_copy(rho_i.CompD[0]);
+        //     MSG_INFO("bim1");
+        //     // delete out.CompD[i];
+        //     rho_i.CompC[0]->deleteRootNodes();
+        //     MSG_INFO("bim2");
+        //     delete rho_i.CompC[0];
+        //     rho_i.defreal();
+        //     rho_i.func_ptr->iscomplex = 0;
+        //     MSG_INFO("tut2")
+
+        //     // we do not crop rho, since the rho_i do not cancel out
+        //     rho.add(occ, rho_i); // Extends to union grid
+        //     MSG_INFO("Debug message 6");
+        //     }
+        // }
     }
 }
 
