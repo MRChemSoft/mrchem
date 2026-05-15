@@ -180,5 +180,27 @@ double logsumexp(const Eigen::VectorXd &x) {
     return max + std::log((x.array() - max).exp().sum());
 }
 
+/**
+ * @brief Compute the binomial coefficient (n, k).
+ * @warning Will not warn or crash in case of overflow, use at own risk!
+ * @param n Number of elements in collection
+ * @param k Number of elements in selection
+ * @result Number of ways to chose k unordered elements from n.
+ */
+u_int64_t binomial(u_int64_t n, u_int64_t k) {
+    // The implementation is translated to C++ from the Julia standard library
+    // (https://github.com/JuliaLang/julia/blob/15346901f0039751c5488744f1f62de7d87510a8/base/intfuncs.jl#L1252-L1279)
+
+    if (k > n) { return 0; }
+    if (k > (n >> 1)) { k = n - k; }
+    if (k == 0) { return 1; }
+
+    uint64_t x = n - k + 1;
+
+    for (uint64_t nn = x + 1, rr = 2; rr <= k; rr++, nn++) { x = (x * nn) / rr; }
+
+    return x;
+}
+
 } // namespace math_utils
 } // namespace mrchem
