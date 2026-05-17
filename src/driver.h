@@ -43,6 +43,8 @@ nlohmann::json run(const nlohmann::json &input, Molecule &mol);
 namespace rsp {
 nlohmann::json run(const nlohmann::json &input, Molecule &mol);
 }
-
+namespace lag{
+nlohmann::json run(const nlohmann::json &input, Molecule &mol);
+}
 } // namespace driver
 } // namespace mrchem

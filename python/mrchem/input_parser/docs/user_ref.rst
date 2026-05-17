@@ -974,6 +974,99 @@ User input reference
   
     **Default** ``user['SCF']['localize']``
   
+ :Lagrangian: Includes parameters related to the Lagrangian optimization. 
+
+  :red:`Keywords`
+   :run: Run Lagrangian solver. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :n_orbitals: Total number of orbitals. 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
+   :max_iter: Maximum number of orbitals' optimization iterations. 
+  
+    **Type** ``int``
+  
+    **Default** ``30``
+  
+   :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``.  
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :path_checkpoint: Path to checkpoint files during SCF, used with ``write_checkpoint`` and ``chk`` guess. 
+  
+    **Type** ``str``
+  
+    **Default** ``checkpoint``
+  
+    **Predicates**
+      - ``value[-1] != '/'``
+  
+   :write_orbitals: Write final perturbed orbitals to disk, file name ``<path_orbitals>/<X/Y>_<p/a/b>_rsp_<direction>_idx_<0..Np/Na/Nb>``. 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
+   :path_orbitals: Path to where converged orbitals will be written in connection with the ``write_orbitals`` keyword. 
+  
+    **Type** ``str``
+  
+    **Default** ``orbitals``
+  
+    **Predicates**
+      - ``value[-1] != '/'``
+  
+ :ExternalSolver: Define parameters for the external solver used for the Lagrangian optimization (only Chemtensor allowed for now). 
+
+  :red:`Keywords`
+   :method: Method for solving the Lagrangian optimization problem. Currently only Chemtensor is available. 
+  
+    **Type** ``str``
+  
+    **Default** ``chemtensor``
+  
+    **Predicates**
+      - ``value.lower() in ['chemtensor']``
+  
+   :max_vdim: Maximum bond dimension for the MPS wavefunction in the DMRG calculation. 
+  
+    **Type** ``int``
+  
+    **Default** ``500``
+  
+   :num_sweeps: Number of sweeps in the DMRG calculation. 
+  
+    **Type** ``int``
+  
+    **Default** ``6``
+  
+   :maxiter_lanczos: Maximum number of Lanczos iterations. 
+  
+    **Type** ``int``
+  
+    **Default** ``5``
+  
+   :tol_split: Tolerance for the split step in the DMRG calculation. 
+  
+    **Type** ``float``
+  
+    **Default** ``1e-08``
+  
+   :optimize_assembly: Whether to optimize the assembly of the Hamiltonian in the DMRG calculation. 
+  
+    **Type** ``bool``
+  
+    **Default** ``True``
+  
  :PCM: Includes parameters related to the computation of the reaction field energy of a system in an environment within the Polarizable Continuum Model. 
 
   :red:`Sections`

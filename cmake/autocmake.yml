@@ -20,6 +20,7 @@ modules:
     - '%(url_root)modules/code_coverage.cmake'
 - custom:
   - source:
+    - 'custom/chemtensor.cmake'
     - 'custom/mpi.cmake'
     - 'custom/omp.cmake'
     - 'custom/sad_basis.cmake'
