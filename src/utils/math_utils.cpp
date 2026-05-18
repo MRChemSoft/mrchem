@@ -195,11 +195,55 @@ u_int64_t binomial(u_int64_t n, u_int64_t k) {
     if (k > (n >> 1)) { k = n - k; }
     if (k == 0) { return 1; }
 
-    uint64_t x = n - k + 1;
+    u_int64_t x = n - k + 1;
 
-    for (uint64_t nn = x + 1, rr = 2; rr <= k; rr++, nn++) { x = (x * nn) / rr; }
+    for (u_int64_t nn = x + 1, rr = 2; rr <= k; rr++, nn++) { x = (x * nn) / rr; }
 
     return x;
+}
+
+// TODO: Docs
+double factorial(int n) {
+    double acc = 1.0;
+
+    for (int i = 2; i <= n; i++) {
+        acc *= static_cast<double>(i);
+    }
+
+    return acc;
+}
+
+// TODO: Docs
+double double_factorial(int n) {
+    double acc = 1.0;
+
+    while (n >= 2) {
+        acc *= static_cast<double>(n);
+        n -= 2;
+    }
+
+    return acc;
+}
+
+// TODO: Docs
+double pow_by_squaring(double b, int e) {
+    if (e < 0) {
+        e = -e;
+        b = 1.0 / b;
+    }
+
+    double p = b;
+    double acc = 1.0;
+
+    while (e != 0) {
+        if (e & 1 != 0) {
+            acc *= p;
+        }
+        p *= p;
+        e >>= 1;
+    }
+
+    return acc;
 }
 
 } // namespace math_utils

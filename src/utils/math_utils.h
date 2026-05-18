@@ -48,6 +48,10 @@ ComplexMatrix diagonalize_hermitian_matrix(const ComplexMatrix &A, DoubleVector 
 void diagonalize_block(ComplexMatrix &M, ComplexMatrix &U, int nstart, int nsize);
 double logsumexp(const Eigen::VectorXd &x);
 u_int64_t binomial(u_int64_t n, u_int64_t, k);
+double factorial(int i);
+double double_factorial(int i);
+double pow_by_squaring(double b, int e);
+
 
 } // namespace math_utils
 } // namespace mrchem
