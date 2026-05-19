@@ -35,8 +35,25 @@ using mrcpp::GaussFunc;
 namespace mrchem {
 namespace gto_utils {
 
-// TODO: Docs
-static std::array<int, 3> ind_to_crt(int l, int i) {
+/**
+ * This computes directly the exponents of the ith cartesian orbital with angular momentum l.
+ * For example, the f orbitals (l = 3) come in the order:
+ * index_to_cartesian(3, 0) == {3, 0, 0} (x^3)
+ * index_to_cartesian(3, 1) == {2, 1, 0} (x^2 y)
+ * index_to_cartesian(3, 2) == {2, 0, 1} (x^2 z)
+ * index_to_cartesian(3, 3) == {1, 2, 0} (x y^2)
+ * index_to_cartesian(3, 4) == {1, 1, 1} (x y z)
+ * index_to_cartesian(3, 5) == {1, 0, 2} (x z^2)
+ * index_to_cartesian(3, 6) == {0, 3, 0} (y^3)
+ * index_to_cartesian(3, 7) == {0, 2, 1} (y^2 z)
+ * index_to_cartesian(3, 8) == {0, 1, 2} (y z^2)
+ * index_to_cartesian(3, 9) == {0, 0, 3} (z^3)
+ * 
+ * @brief Compute the exponents of the ith cartesian orbital with angular momentum l
+ * @param l total angular momentum quantum number
+ * @param i index of specific cartesian orbital
+ */
+static std::array<int, 3> index_to_cartesian(int l, int i) {
     int lx = l;
 
     for (int j = 1; i > l - lx; j++) {
@@ -61,6 +78,10 @@ GaussExp<3> AOContraction::getNormContraction(int m, const mrcpp::Coord<3> &cent
     return ctr;
 }
 
+double cartesianNormFac(int l) {
+    return math_utils::double_factorial(2 * l - 1);
+}
+
 /** Normalization goes like this (thanks Radovan)
 
     < AO | AO > =   1 for s, px, py, pz, dxy, dxz, dyz, fxyz
@@ -70,11 +91,9 @@ GaussExp<3> AOContraction::getNormContraction(int m, const mrcpp::Coord<3> &cent
               ...     ...
             9 for gxxyy, ...
               etc     ...
-*/
-double cartesianNormFac(int l) {
-    return math_utils::double_factorial(2 * l - 1);
-}
 
+    This conveniently can be expressed using the double factorial in each dimension
+*/
 double cartesianNormFac(int lx, int ly, int lz) {
     int l = lx + ly + lz;
 
@@ -86,7 +105,7 @@ double cartesianNormFac(int lx, int ly, int lz) {
 GaussExp<3> AOContraction::getContraction(int m, const mrcpp::Coord<3> &center) const {
     assert(m >= 0 and m < this->nComp);
     GaussExp<3> ctr;
-    std::array<int, 3> pow = ind_to_crt(this->L, m);
+    std::array<int, 3> pow = index_to_cartesian(this->L, m);
     double normFac = cartesianNormFac(pow[0], pow[1], pow[2]);
 
     for (unsigned int i = 0; i < expo.size(); i++) {

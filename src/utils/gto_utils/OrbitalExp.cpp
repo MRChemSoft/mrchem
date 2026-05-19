@@ -137,6 +137,9 @@ void OrbitalExp::readAOExpansion(Intgrl &intgrl) {
     transformToSpherical();
 }
 
+/**
+ * Computes the Ns coefficient from equation 6.4.49 on page 215 of the "Molecular Electronic Structure Theory" Book
+ */
 static double ns_coeff(int l, int m) {
     double lf = math_utils::factorial(l);
     double f1 = math_utils::factorial(l + m) / lf;
@@ -146,6 +149,9 @@ static double ns_coeff(int l, int m) {
     return std::sqrt(f1 * f2 * f3);
 }
 
+/**
+ * Computes the C_tuv^lm coefficient from equation 6.4.48 on page 215 of the "Molecular Electronic Structure Theory" Book
+ */
 static double c_coeff(int l, int m, int t, int u, int v) {
     uint64_t c = math_utils::binomial(l, t) * math_utils::binomial(l - t, std::abs(m) + t) *
                  math_utils::binomial(t, u) *
@@ -156,10 +162,33 @@ static double c_coeff(int l, int m, int t, int u, int v) {
     return ((t + v) % 2 == 0 ? cd : -cd) * math_utils::pow_by_squaring(4.0, -t);
 }
 
-static int crt_to_ind(int ly, int lz) {
+/**
+ * This computes directly the index a cartesian orbital given only the exponents of y and z.
+ * (Note that the exponent of x is not needed)
+ *
+ * For example, the f orbitals (l = 3) come in the order:
+ * cartesian_to_index(0, 0) == 0 (x^3)
+ * cartesian_to_index(1, 0) == 1 (x^2 y)
+ * cartesian_to_index(0, 1) == 2 (x^2 z)
+ * cartesian_to_index(2, 0) == 3 (x y^2)
+ * cartesian_to_index(1, 1) == 4 (x y z)
+ * cartesian_to_index(0, 2) == 5 (x z^2)
+ * cartesian_to_index(3, 0) == 6 (y^3)
+ * cartesian_to_index(2, 1) == 7 (y^2 z)
+ * cartesian_to_index(1, 2) == 8 (y z^2)
+ * cartesian_to_index(0, 3) == 9 (z^3)
+ *
+ * @param ly exponent of y
+ * @param lz exponent of z
+ */
+static int cartesian_to_index(int ly, int lz) {
     return (ly * (ly + 2 * lz + 1) + lz * (lz + 3)) / 2;
 }
 
+/**
+ * Computes the coefficients for the solid spherical harmonics using
+ * equation 6.4.47 on page 215 of the "Molecular Electronic Structure Theory" Book
+ */
 static CartToSphTransformation initializeSphCoeffs(int l) {
     CartToSphTransformation transformation;
 
@@ -177,7 +206,7 @@ static CartToSphTransformation initializeSphCoeffs(int l) {
                     int ly = 2 * u + 2 * v + ml0;
                     int lz = l - 2 * t - std::abs(m);
 
-                    int ind = crt_to_ind(ly, lz);
+                    int ind = cartesian_to_index(ly, lz);
 
                     double coeff = c_coeff(l, m, t, u, v);
                     double norm = cartesianNormFac(lx, ly, lz);

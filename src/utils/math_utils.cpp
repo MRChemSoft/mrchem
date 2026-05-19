@@ -202,7 +202,11 @@ u_int64_t binomial(u_int64_t n, u_int64_t k) {
     return x;
 }
 
-// TODO: Docs
+/**
+ * @brief Compute n! using floating point numbers to allow for higher inputs
+ * @param n
+ * @result n! = 1 * 2 * ... * (n - 1) * n
+ */
 double factorial(int n) {
     double acc = 1.0;
 
@@ -213,7 +217,12 @@ double factorial(int n) {
     return acc;
 }
 
-// TODO: Docs
+/**
+ * @brief Compute the double factorial n!!
+ * @warning This is not the same as the factorial of the factorial of n. n!! != (n!)!
+ * @param n
+ * @result n!! = n * (n - 2) * (n - 4) * ...
+ */
 double double_factorial(int n) {
     double acc = 1.0;
 
@@ -225,7 +234,12 @@ double double_factorial(int n) {
     return acc;
 }
 
-// TODO: Docs
+/**
+ * @brief Compute b^e using the power by squaring method (https://en.wikipedia.org/wiki/Exponentiation_by_squaring)
+ * @param b Base
+ * @param e Integer exponent. Can be negative.
+ * @result b^e
+ */
 double pow_by_squaring(double b, int e) {
     if (e < 0) {
         e = -e;
