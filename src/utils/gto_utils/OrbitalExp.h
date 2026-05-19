@@ -36,6 +36,11 @@ namespace mrchem {
 namespace gto_utils {
 class Intgrl;
 
+struct CartToSphTransformation {
+    std::vector<std::vector<int>> inds;
+    std::vector<std::vector<double>> coeffs;
+};
+
 class OrbitalExp final {
 public:
     OrbitalExp(Intgrl &intgrl);
@@ -54,8 +59,12 @@ protected:
     bool cartesian;
     std::vector<mrcpp::GaussExp<3> *> orbitals;
 
+    std::vector<CartToSphTransformation> sph_transformation_data;
+
     void readAOExpansion(Intgrl &intgrl);
     void transformToSpherical();
+
+    CartToSphTransformation &getSphTransformation(int l);
 };
 
 } // namespace gto_utils

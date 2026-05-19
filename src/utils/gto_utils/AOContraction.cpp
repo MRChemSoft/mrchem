@@ -71,14 +71,14 @@ GaussExp<3> AOContraction::getNormContraction(int m, const mrcpp::Coord<3> &cent
             9 for gxxyy, ...
               etc     ...
 */
-static double computeNormFac(int l) {
+double cartesianNormFac(int l) {
     return math_utils::double_factorial(2 * l - 1);
 }
 
-static double computeNormFac(int lx, int ly, int lz) {
+double cartesianNormFac(int lx, int ly, int lz) {
     int l = lx + ly + lz;
 
-    double n = computeNormFac(lx) * computeNormFac(ly) * computeNormFac(lz) / computeNormFac(l);
+    double n = cartesianNormFac(lx) * cartesianNormFac(ly) * cartesianNormFac(lz) / cartesianNormFac(l);
 
     return std::sqrt(n);
 }
@@ -87,7 +87,7 @@ GaussExp<3> AOContraction::getContraction(int m, const mrcpp::Coord<3> &center) 
     assert(m >= 0 and m < this->nComp);
     GaussExp<3> ctr;
     std::array<int, 3> pow = ind_to_crt(this->L, m);
-    double normFac = computeNormFac(pow[0], pow[1], pow[2]);
+    double normFac = cartesianNormFac(pow[0], pow[1], pow[2]);
 
     for (unsigned int i = 0; i < expo.size(); i++) {
         GaussFunc<3> gto(this->expo[i], 1.0, center, pow);
