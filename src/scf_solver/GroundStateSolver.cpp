@@ -135,9 +135,9 @@ void GroundStateSolver::printParameters(const std::string &calculation) const {
 
     std::stringstream o_kain;
     if (this->history > 0) {
-        o_kain << this->history;
+        o_kain << "Grassmann";
     } else {
-        o_kain << "Off";
+        o_kain << "Stiefel";
     }
 
     std::stringstream o_loc;
@@ -217,29 +217,10 @@ void GroundStateSolver::reset() {
     this->energy.clear();
 }
 
-/** @brief Run orbital optimization
+/** @brief Run conjugate orbital optimization
  *
  * @param mol: Molecule to optimize
  * @param F: FockBuilder defining the SCF equations
- *
- * Optimize orbitals until convergence thresholds are met. This algorithm computes
- * the Fock matrix explicitly using the kinetic energy operator, and uses a KAIN
- * accelerator to improve convergence. Diagonalization or localization may be performed
- * during the SCF iterations. Main points of the algorithm:
- *
- * Pre SCF: setup Fock operator and compute Fock matrix
- *
- *  1) Diagonalize/localize orbitals
- *  2) Compute current SCF energy
- *  3) Apply Helmholtz operator on all orbitals
- *  4) Orthonormalize orbitals (Löwdin)
- *  5) Compute orbital updates
- *  6) Compute KAIN update
- *  7) Compute errors and check for convergence
- *  8) Add orbital updates
- *  9) Orthonormalize orbitals (Löwdin)
- * 10) Setup Fock operator
- * 11) Compute Fock matrix
  *
  */
 json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
@@ -270,6 +251,31 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceRow(0);
     }
 
+    // Initialize Resolvent (Attention: HelmholtzVector = -2 Helmholtz)
+    ResolventVector         Resolvent(getHelmholtzPrec(), Eigen::VectorXd::Constant(Phi_n.size(), -1.0));
+
+    // Parameters for line search
+    double alpha = 1.0;                          // current step size (adaptive across iterations)
+    const double beta = 0.5;                     // shrink factor (0 < beta < 1)
+    const double gamma = 1.4;                    // growth factor (>1)
+    const double armijo_parameter = 1e-4;        // Armijo parameter
+    const double alpha_min = 1e-10;              // safeguard lower bound
+    const double alpha_max = 10.0;               // safeguard upper bound
+
+    // Parameters for restarting and momentum
+    int last_restart_iter = 0;
+    const int restart_cooldown = 4;        // no restarts within these many iterations of previous restart
+    const double eta_powell = 0.3;         // Powell threshold (tune 0.1..0.3)
+    const double polak_max = 5.0;          // cap on beta (safeguard)
+
+    OrbitalVector direction = orbital::param_copy(Phi_n);
+    OrbitalVector previous_grad_E = orbital::param_copy(Phi_n);
+    OrbitalVector previous_preconditioned_grad_E = orbital::param_copy(Phi_n);
+
+    double previous_h1_inner_product_preconditioned_grad_E_grad_E = 0.0;
+    int rejectness_count = 0;
+    std::vector<double> grad_E_array;
+        
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -283,90 +289,266 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Initialize SCF cycle
         Timer t_scf;
         double orb_prec = adjustPrecision(err_o);
-        double helm_prec = getHelmholtzPrec();
         if (nIter < 2) {
             if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
             F.setup(orb_prec);
         }
 
-        // Init Helmholtz operator
-        HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        ComplexMatrix L_mat = H.getLambdaMatrix();
-
-        // Apply Helmholtz operator
-        OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
-        OrbitalVector Phi_np1 = H(Psi);
-        Psi.clear();
+        // Calculate Euclidian gradient
+        OrbitalVector grad_E = F.potential()(Phi_n);
         F.clear();
+        grad_E = orbital::add(-0.5, Phi_n, 1.0, grad_E, orb_prec);
+        grad_E = Resolvent(grad_E);
+        grad_E = orbital::add(2.0, Phi_n, 4.0, grad_E, orb_prec);
 
-        // Orthonormalize
-        orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
+        // Evaluate resolvent and its quadratic form
+        OrbitalVector Resolvent_Phi = Resolvent(Phi_n);
+        ComplexMatrix B_proj1 = orbital::calc_overlap_matrix(Resolvent_Phi, Phi_n);
 
-        // Compute orbital updates
-        OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
-        Phi_np1.clear();
+        // Project the Euclidian gradient to tangent space
+        ComplexMatrix C_proj_complex1 = orbital::calc_overlap_matrix(grad_E, Phi_n);
+        DoubleMatrix C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+        DoubleMatrix B_proj_real = (B_proj1.real() + B_proj1.real().transpose()) * 0.5;
+        DoubleMatrix A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+        OrbitalVector AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+        grad_E = orbital::add(1.0, grad_E, -1.0, AR_Phi, orb_prec);
+        AR_Phi.clear();
 
-        kain.accelerate(orb_prec, Phi_n, dPhi_n);
+        // ==============================
+        // Preconditioning
+        // ==============================
 
-        // Compute errors
-        errors = orbital::get_norms(dPhi_n);
-        err_o = errors.maxCoeff();
+        OrbitalVector preconditioned_grad_E = grad_E;
+
+        // Diagonalize A_proj
+        Eigen::SelfAdjointEigenSolver<DoubleMatrix> eigensolver(A_proj);
+        if (eigensolver.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of A_proj failed");
+        }
+
+        Eigen::VectorXd sigma_A_proj = eigensolver.eigenvalues();
+        DoubleMatrix U_A_proj = eigensolver.eigenvectors();
+
+        // Check norm(A - 4F) tends to zero
+        mrcpp::print::separator(0, '-');
+        println(0, "norm(A_proj - 4F) = " << (A_proj - 4.0 * F_mat.real()).norm());
+        
+        
+        if (sigma_A_proj.maxCoeff() < 0.0) {
+
+            Eigen::VectorXd orbital_energy = 0.5 * sigma_A_proj;
+            Eigen::MatrixXd one_plus_orbital_energy = (Eigen::VectorXd::Ones(orbital_energy.size()) + orbital_energy).asDiagonal();
+
+            ResolventVector Resolvent_mu( getHelmholtzPrec(), orbital_energy );
+
+            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj.transpose(), orb_prec);
+            auto temp = Resolvent_mu(preconditioned_grad_E);
+            temp = orbital::rotate(temp, one_plus_orbital_energy, orb_prec);
+            preconditioned_grad_E = orbital::add( 0.5, preconditioned_grad_E, 0.5, temp, orb_prec );
+            temp.clear();
+            preconditioned_grad_E = orbital::rotate(preconditioned_grad_E, U_A_proj, orb_prec);
+
+            C_proj_complex1 = orbital::calc_overlap_matrix(preconditioned_grad_E, Phi_n);
+            C_proj_sym1 = C_proj_complex1.real() + C_proj_complex1.real().transpose();
+            A_proj = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_sym1);
+            AR_Phi = orbital::rotate(Resolvent_Phi, A_proj, orb_prec);
+            preconditioned_grad_E = orbital::add(1.0, preconditioned_grad_E, -1.0, AR_Phi, orb_prec);
+        }
+
+
+        // Set the spatial derivatives
+        auto &nabla = F.momentum();
+        nabla.setup(orb_prec);
+
+
+        // Necessary for Grassmann: 
+        if (this->history > 0)
+        {
+            preconditioned_grad_E = orbital::project_to_horizontal(preconditioned_grad_E, Phi_n, nabla, orb_prec);
+        }
+        // End Preconditioning
+        // ==============================
+
+        // Check norm of gradient
+        auto grad_E_norm = orbital::h1_norm(grad_E, nabla);
+        println(0, "norm(grad_E) = " << grad_E_norm);
+        grad_E_array.push_back(grad_E_norm);
+
+        // Safeguard: if not descent direction, skip preconditioning
+        double h1_inner_product_preconditioned_grad_E_grad_E = orbital::h1_inner_product(preconditioned_grad_E, grad_E, nabla);
+        if (h1_inner_product_preconditioned_grad_E_grad_E <= 0.0) {
+            println(0, "Preconditioning skipped (not a descent direction): " << h1_inner_product_preconditioned_grad_E_grad_E);
+            preconditioned_grad_E = grad_E;
+            h1_inner_product_preconditioned_grad_E_grad_E = grad_E_norm * grad_E_norm;
+        }
+
+        // ======================================================
+        // Conjugate-gradient direction (H1, Polak-Ribière)
+        // ======================================================
+        
+        double descent_directional_product;
+
+        if (nIter == 1) {
+            // First iteration: steepest descent
+            direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E, orb_prec);
+            descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
+        }
+        else {
+            // Polak–Ribière coefficient
+            OrbitalVector diff_pc_grad = orbital::add(1.0, preconditioned_grad_E, -1.0, previous_preconditioned_grad_E, orb_prec);
+            double polak_ribiere = orbital::h1_inner_product(diff_pc_grad, grad_E, nabla);
+            polak_ribiere = polak_ribiere / (previous_h1_inner_product_preconditioned_grad_E_grad_E + mrcpp::MachineZero);
+            polak_ribiere = std::max(0.0, polak_ribiere);
+            polak_ribiere = std::min(polak_ribiere, polak_max);
+            println(0, "Polak-Ribiere coefficient = " << polak_ribiere);
+            bool polak_ribiere_is_small = (polak_ribiere <= mrcpp::MachineZero);
+
+            if (not polak_ribiere_is_small)
+            {
+                // Project previous direction to tangent space
+                ComplexMatrix C_proj_dir = orbital::calc_overlap_matrix(direction, Phi_n);
+                DoubleMatrix C_proj_dir_sym = (C_proj_dir.real() + C_proj_dir.real().transpose()) * 0.5;
+                DoubleMatrix A_proj_dir = mrchem::math_utils::solve_symmetric_sylvester(B_proj_real, C_proj_dir_sym);
+
+                OrbitalVector projected_direction = orbital::rotate(Resolvent_Phi, A_proj_dir, orb_prec);
+                projected_direction = orbital::add(1.0, direction, -1.0, projected_direction, orb_prec);
+                // Necessary for Grassmann:
+                if (this->history > 0)
+                    projected_direction = orbital::project_to_horizontal(projected_direction, Phi_n, nabla, orb_prec);
+
+                direction = orbital::add(polak_ribiere, projected_direction, -1.0, preconditioned_grad_E, orb_prec);
+            }
+            else
+            {
+                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E, orb_prec);
+                descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
+            }
+
+
+            // ---------- Robust restart checks ----------
+            bool do_restart = false;
+            auto reason = "no reason";
+
+            // (1) Descent check
+            double descent;
+            if (not polak_ribiere_is_small) descent = orbital::h1_inner_product(direction, grad_E, nabla);
+            else descent = descent_directional_product;
+            
+            if (descent >= 0.0) {
+                do_restart = true;
+                reason = "non-descent";
+            }
+
+            // (2) Powell restart
+            else if ((nIter - last_restart_iter) > restart_cooldown) {
+                double inner =
+                    orbital::h1_inner_product(grad_E, previous_preconditioned_grad_E, nabla);
+
+                if (inner >= eta_powell * previous_h1_inner_product_preconditioned_grad_E_grad_E)
+                {
+                    do_restart = true;
+                    reason = "powell";
+                }
+            }
+
+            if (do_restart) {
+                println(0, "Powell/guarded restart (reason: " << reason << ")");
+                direction = orbital::add(-1.0, preconditioned_grad_E, 0.0, preconditioned_grad_E, orb_prec);
+                descent_directional_product = - h1_inner_product_preconditioned_grad_E_grad_E;
+                last_restart_iter = nIter;
+            }
+            else descent_directional_product = descent;
+            // ------------------------------------------
+        }
+
+
+
+        previous_preconditioned_grad_E = preconditioned_grad_E;
+        previous_grad_E = grad_E;
+        previous_h1_inner_product_preconditioned_grad_E_grad_E = h1_inner_product_preconditioned_grad_E_grad_E;
+
+        // WARNING: FockBuilder implicitly depends on mol.getOrbitals()
+        // Orbital swapping must be scoped and restored
+        OrbitalVector Phi_backup = orbital::deep_copy(Phi_n);
+        auto Energy = this->property.back();
+
+        // Backtracking line search
+        auto alpha_trial = alpha;
+        double Energy_candidate;
+        SCFEnergy SCF_Energy_candidate;
+        OrbitalVector dPhi_n;
+        while (true) {
+            F.clear();
+            // Retraction to Stiefel is Lowdin based:
+            Phi_n = orbital::add(1.0, Phi_backup, alpha_trial, direction, orb_prec);
+            // Orthonormalization updates F_mat as a side effect?!
+            orbital::orthonormalize(orb_prec, Phi_n, F_mat);
+            // Compute Fock matrix and energy
+            if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
+            F.setup(orb_prec);
+            F_mat = F(Phi_n, Phi_n);
+            SCF_Energy_candidate = F.trace(Phi_n, nucs);
+            Energy_candidate = SCF_Energy_candidate.getTotalEnergy();
+            println(0, "Candidate energy: " << Energy_candidate);
+
+            dPhi_n = orbital::add(1.0, Phi_n, -1.0, Phi_backup, orb_prec);
+            errors = orbital::get_norms(dPhi_n);
+            dPhi_n.clear();
+            err_o = errors.maxCoeff();
+            if (checkConvergence(err_o, 0.0))
+            {
+                println(0, "Line search step is negligible; accepting.");
+                break;
+            }
+
+            // Directional Armijo condition:
+            if (Energy_candidate <= Energy + armijo_parameter * alpha_trial * descent_directional_product) {
+                // Accept step
+                println(0, "update: " << err_o << " (step size = " << alpha_trial << ")");
+                break;
+            }
+            alpha_trial *= beta;
+            if (alpha_trial < alpha_min) {
+                println(0, "Warning: step size too small, stopping search.");
+                break;
+            }
+            rejectness_count += 1;
+        }
+
+        // Step-size growth safeguard
+        if (Energy_candidate <= Energy + 0.7 * alpha_trial * descent_directional_product) {
+            alpha = std::min(alpha_trial * gamma, alpha_max);   // grow step size
+        } else {
+            alpha = alpha_trial;                          // keep shrunk step size
+        }
+    
+
+        // Compute total update norm and collect convergence data
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
-
-        // Update orbitals
-        Phi_n = orbital::add(1.0, Phi_n, 1.0, dPhi_n);
-        dPhi_n.clear();
-
-        // MOM / IMOM: get the new occupation vector for the current scf iteration
-        OrbitalVector &Phi_mom = mol.getOrbitalsMom();
-        if (Phi_mom.size() > 0) {
-            bool restricted = (orbital::size_doubly(Phi_n) != 0);
-            if (restricted) {
-                DoubleVector occNew = getNewOccupations(Phi_n, Phi_mom);
-                orbital::set_occupations(Phi_n, occNew);
-                mol.calculateOrbitalPositions();
-                if (plevel >= 2)
-                    mol.printOrbitalPositions();
-            }
-            else {
-                // in case of unrestricted calculation, get the new occupation for alpha and beta spins independently
-                OrbitalVector Phi_n_beta = orbital::deep_copy(Phi_n);
-                OrbitalVector Phi_mom_beta = orbital::deep_copy(Phi_mom);
-                OrbitalVector Phi_n_a = orbital::disjoin(Phi_n_beta, SPIN::Alpha);
-                OrbitalVector Phi_mom_a = orbital::disjoin(Phi_mom_beta, SPIN::Alpha);
-                DoubleVector occAlpha = getNewOccupations(Phi_n_a, Phi_mom_a);
-                DoubleVector occBeta = getNewOccupations(Phi_n_beta, Phi_mom_beta);
-                DoubleVector occNew(occAlpha.size() + occBeta.size());
-                occNew << occAlpha, occBeta;
-                orbital::set_occupations(Phi_n, occNew);
-                mol.calculateOrbitalPositions();
-                if (plevel >= 2)
-                    mol.printOrbitalPositions();
-            }
-        }
-        // MOM: save orbitals of current iteration for next iteration of the SCF procedure
-        if (deltaSCFMethod == "MOM")
-            Phi_mom = orbital::deep_copy(Phi_n);
-
-        orbital::orthonormalize(orb_prec, Phi_n, F_mat);
-
-        // Compute Fock matrix and energy
-        if (F.getReactionOperator() != nullptr) F.getReactionOperator()->updateMOResidual(err_t);
-        F.setup(orb_prec);
-        F_mat = F(Phi_n, Phi_n);
-        E_n = F.trace(Phi_n, nucs);
-
-        // Collect convergence data
         this->error.push_back(err_t);
+
+        // Energy_candidate < Energy, unless convergence is reached
+        if (Energy_candidate >= Energy) {
+            println(0, "Energy cannot be decreased more in the backtracking search.");
+            converged = true;
+            Phi_n = Phi_backup;
+        }
+        else {
+            E_n = SCF_Energy_candidate;
+        }
         this->energy.push_back(E_n);
         this->property.push_back(E_n.getTotalEnergy());
+        Phi_backup.clear();
+
         auto err_p = calcPropertyError();
-        converged = checkConvergence(err_o, err_p);
+        if (not converged) converged = checkConvergence(err_o, err_p);
 
         json_cycle["energy_terms"] = E_n.json();
         json_cycle["energy_total"] = E_n.getTotalEnergy();
         json_cycle["energy_update"] = err_p;
+
+        mrcpp::print::separator(0, '-');
 
         // Rotate orbitals
         if (needLocalization(nIter, converged)) {
@@ -415,6 +597,14 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 
     json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;
+
+    // Print energies, gradients, properties for debugging
+    println(0, "The amount of Armijo rejections: " << rejectness_count);
+    println(0, "norm(grad_E):");
+    for (std::size_t i = 0; i < grad_E_array.size(); ++i)
+        println(0, "norm(grad_E)[" << i << "] = " << grad_E_array[i]);
+    
+
     return json_out;
 }
 
@@ -458,53 +648,6 @@ bool GroundStateSolver::needDiagonalization(int nIter, bool converged) const {
         diag = true;
     }
     return diag;
-}
-
-/** 
- * @brief Determine new occupation vector according to MOM/IMOM procedure
- * @param Phi_n: orbitals of current iteration n.
- * @param Phi_mom: orbitals of last iteration n-1 (MOM) or first iteration (IMOM).
- * 
- * According to MOM/IMOM procedure the occupation numbers for the current iteration get
- * determined based on the overlap with the orbitals of an earlier iteration of the SCF procedure.
- */
-DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalVector &Phi_mom) {
-    DoubleMatrix overlap = orbital::calc_overlap_matrix(Phi_mom, Phi_n).real();
-    DoubleVector occup = orbital::get_occupations(Phi_mom); // get occupation numbers of the orbitals of the first iteration
-    double occ1 = occup(0);
-    DoubleVector occNew = DoubleVector::Constant(occup.size(), occ1);
-
-    // create vector which contains the positions of the second occupation number
-    DoubleVector currOcc = DoubleVector::Zero(occup.size());
-    unsigned int nCurrOcc = 0;
-    double occ2 = 0.0;
-    for (unsigned int i = 1; i < occup.size(); i++) {
-        if (occup(i) != occ1) {
-            occ2 = occup(i);
-            currOcc(i) = 1.0;
-            nCurrOcc++;
-        }
-    }
-
-    // only consider overlap with orbitals with the second occupation number
-    DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
-    DoubleVector p = occOverlap.colwise().norm();
-
-    // debug print section
-    print_utils::matrix(3, "MOM overlap matrix", overlap, 2);
-    print_utils::vector(3, "MOM total overlap", p, 2);
-
-    // sort by highest overlap
-    std::vector<std::pair<double, unsigned int>> sortme;
-    for (unsigned int q = 0; q < p.size(); q++)
-        sortme.push_back(std::pair<double, unsigned int>(p(q), q));
-    std::stable_sort(sortme.begin(), sortme.end());
-    std::reverse(sortme.begin(), sortme.end());
-
-    // assign the second occupation number to orbitals with highest overlap
-    for (unsigned int q = 0; q < nCurrOcc; q++)
-        occNew(sortme[q].second) = occ2;
-    return occNew;
 }
 
 } // namespace mrchem
