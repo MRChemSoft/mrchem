@@ -27,78 +27,28 @@
 
 #include "AOContraction.h"
 
+#include "utils/math_utils.h"
+
 using mrcpp::GaussExp;
 using mrcpp::GaussFunc;
 
 namespace mrchem {
 namespace gto_utils {
 
-// clang-format off
-static const int s_gto[][3] = {
-    {0, 0, 0}
-};
+// TODO: Docs
+static std::array<int, 3> ind_to_crt(int l, int i) {
+    int lx = l;
 
-int p_gto[][3] = {
-    {1, 0, 0},
-    {0, 1, 0},
-    {0, 0, 1}
-};
+    for (int j = 1; i > l - lx; j++) {
+        lx--;
+        i -= j;
+    }
 
-static const int d_gto[][3] = {
-    {2, 0, 0},
-    {1, 1, 0},
-    {1, 0, 1},
-    {0, 2, 0},
-    {0, 1, 1},
-    {0, 0, 2}
-};
+    int ly = l - lx - i;
+    int lz = l - lx - ly;
 
-static const int f_gto[][3] = {
-    {3, 0, 0},
-    {2, 1, 0},
-    {2, 0, 1},
-    {1, 2, 0},
-    {1, 1, 1},
-    {1, 0, 2},
-    {0, 3, 0},
-    {0, 2, 1},
-    {0, 1, 2},
-    {0, 0, 3}
-};
-
-static const int g_gto[][3] = {
-    {4, 0, 0},
-    {3, 1, 0},
-    {3, 0, 1},
-    {2, 2, 0},
-    {2, 1, 1},
-    {2, 0, 2},
-    {1, 3, 0},
-    {1, 2, 1},
-    {1, 1, 2},
-    {1, 0, 3},
-    {0, 4, 0},
-    {0, 3, 1},
-    {0, 2, 2},
-    {0, 1, 3},
-    {0, 0, 4}
-};
-
-struct gtoDef {
-    int l;
-    int ncomp;
-    const int *comp[(MAX_L + 1) * (MAX_L + 2) / 2];
-
-};
-
-static const gtoDef GTOS[MAX_L+1] = {
-    { 0,  1, {s_gto[0]} },
-    { 1,  3, {p_gto[0], p_gto[1], p_gto[2]}},
-    { 2,  6, {d_gto[0], d_gto[1], d_gto[2], d_gto[3], d_gto[4], d_gto[5]}},
-    { 3, 10, {f_gto[0], f_gto[1], f_gto[2], f_gto[3], f_gto[4], f_gto[5], f_gto[6], f_gto[7], f_gto[8], f_gto[9]}},
-    { 4, 15, {g_gto[0], g_gto[1], g_gto[2], g_gto[3], g_gto[4], g_gto[5], g_gto[6], g_gto[7], g_gto[8], g_gto[9], g_gto[10], g_gto[11], g_gto[12], g_gto[13], g_gto[14]}}
-};
-// clang-format on
+    return {lx, ly, lz};
+}
 
 AOContraction::AOContraction(int l) {
     this->L = l;
@@ -121,35 +71,24 @@ GaussExp<3> AOContraction::getNormContraction(int m, const mrcpp::Coord<3> &cent
             9 for gxxyy, ...
               etc     ...
 */
+static double computeNormFac(int l) {
+    return math_utils::double_factorial(2 * l - 1);
+}
+
+static double computeNormFac(int lx, int ly, int lz) {
+    int l = lx + ly + lz;
+
+    double n = computeNormFac(lx) * computeNormFac(ly) * computeNormFac(lz) / computeNormFac(l);
+
+    return std::sqrt(n);
+}
+
 GaussExp<3> AOContraction::getContraction(int m, const mrcpp::Coord<3> &center) const {
     assert(m >= 0 and m < this->nComp);
     GaussExp<3> ctr;
-    double normFac = 1.0;
-    const int *angMom = GTOS[this->L].comp[m];
-    for (int i = 0; i < 3; i++) {
-        switch (angMom[i]) {
-            case 0:
-                normFac *= 1.0;
-                break;
-            case 1:
-                normFac *= 1.0;
-                break;
-            case 2:
-                normFac *= 3.0;
-                break;
-            case 3:
-                normFac *= 15.0;
-                break;
-            case 4:
-                normFac *= 105.0;
-                break;
-            default:
-                MSG_ERROR("We don't support h-functions at the moment");
-        }
-    }
-    normFac = std::sqrt(normFac);
+    std::array<int, 3> pow = ind_to_crt(this->L, m);
+    double normFac = computeNormFac(pow[0], pow[1], pow[2]);
 
-    std::array<int, 3> pow{angMom[0], angMom[1], angMom[2]};
     for (unsigned int i = 0; i < expo.size(); i++) {
         GaussFunc<3> gto(this->expo[i], 1.0, center, pow);
         gto.normalize();

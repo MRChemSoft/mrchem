@@ -236,7 +236,7 @@ double pow_by_squaring(double b, int e) {
     double acc = 1.0;
 
     while (e != 0) {
-        if (e & 1 != 0) {
+        if ((e & 1) != 0) {
             acc *= p;
         }
         p *= p;
