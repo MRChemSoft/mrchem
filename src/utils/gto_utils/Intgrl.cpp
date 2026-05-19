@@ -104,7 +104,6 @@ void Intgrl::readAtomData(std::ifstream &ifs, int n_atoms, double z) {
 }
 
 void Intgrl::readContractionBlock(std::ifstream &ifs, AOBasis &bas, int l) {
-    if (l > 4) MSG_ABORT("Only s, p, d, f and g orbitals are currently supported");
     int nprim, nctr;
     ifs >> nprim;
     ifs >> nctr;
