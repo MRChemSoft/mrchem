@@ -123,6 +123,7 @@ angmom_to_l = {
     'f': 3,
     'g': 4,
     'h': 5,
+    'i': 6,
 }
 
 
@@ -145,15 +146,16 @@ def shell_permutation(angmom):
 
 def shell_signs(angmom):
     l = angmom_to_l[angmom]
-    if l <= 2:
-        return [1] * (2 * l + 1)
+    signs = [1]
 
-    if angmom == 'f':
-        return [-1, 1, 1, 1, 1, 1, -1]
-    elif angmom == 'g':
-        return [-1, -1, 1, 1, 1, 1, 1, -1, -1]
-    else:
-        raise NotImplementedError
+    for m in range(1, l + 1):
+        if m in (3, 4): # Flip signs of ml = -4, -3, 3, 4
+            s = -1
+        else:
+            s = 1
+        signs = [s] + signs + [s]
+
+    return signs
 
 
 def atom_basis_permutation(atom_basis):

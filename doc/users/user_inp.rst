@@ -561,9 +561,9 @@ The ``gto`` initial guess requires ``.bas`` and ``.mop`` (or ``.moa/.mob``)
 files containing information about the gto basis (in the ``.bas`` file), and the
 mo coefficients (in the ``.mo...`` files). These files are in dalton format, but
 can be generated from orca calculations using the script ``tools/initial_guess/from_orca.py``.
-Currently, MRChem only supports reading AO basis functions with angular momentum
-up to ``l = 4`` (g orbitals), which in practice means that basis sets up to quadruple zeta
-(e.g. ``def2-QZVP`` and ``cc-pVQZ``) will work for most elements.
+.. note::
+    For previous users of MRChem: The code for gto initial guess has been generalized
+    to allow for arbitrary high angular momentum.
 
 Checkpointing
 +++++++++++++

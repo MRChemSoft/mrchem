@@ -180,5 +180,85 @@ double logsumexp(const Eigen::VectorXd &x) {
     return max + std::log((x.array() - max).exp().sum());
 }
 
+/**
+ * @brief Compute the binomial coefficient (n, k).
+ * @warning Will not warn or crash in case of overflow, use at own risk!
+ * @param n Number of elements in collection
+ * @param k Number of elements in selection
+ * @result Number of ways to chose k unordered elements from n.
+ */
+u_int64_t binomial(u_int64_t n, u_int64_t k) {
+    // The implementation is translated to C++ from the Julia standard library
+    // (https://github.com/JuliaLang/julia/blob/15346901f0039751c5488744f1f62de7d87510a8/base/intfuncs.jl#L1252-L1279)
+
+    if (k > n) { return 0; }
+    if (k > (n >> 1)) { k = n - k; }
+    if (k == 0) { return 1; }
+
+    u_int64_t x = n - k + 1;
+
+    for (u_int64_t nn = x + 1, rr = 2; rr <= k; rr++, nn++) { x = (x * nn) / rr; }
+
+    return x;
+}
+
+/**
+ * @brief Compute n! using floating point numbers to allow for higher inputs
+ * @param n
+ * @result n! = 1 * 2 * ... * (n - 1) * n
+ */
+double factorial(int n) {
+    double acc = 1.0;
+
+    for (int i = 2; i <= n; i++) {
+        acc *= static_cast<double>(i);
+    }
+
+    return acc;
+}
+
+/**
+ * @brief Compute the double factorial n!!
+ * @warning This is not the same as the factorial of the factorial of n. n!! != (n!)!
+ * @param n
+ * @result n!! = n * (n - 2) * (n - 4) * ...
+ */
+double double_factorial(int n) {
+    double acc = 1.0;
+
+    while (n >= 2) {
+        acc *= static_cast<double>(n);
+        n -= 2;
+    }
+
+    return acc;
+}
+
+/**
+ * @brief Compute b^e using the power by squaring method (https://en.wikipedia.org/wiki/Exponentiation_by_squaring)
+ * @param b Base
+ * @param e Integer exponent. Can be negative.
+ * @result b^e
+ */
+double pow_by_squaring(double b, int e) {
+    if (e < 0) {
+        e = -e;
+        b = 1.0 / b;
+    }
+
+    double p = b;
+    double acc = 1.0;
+
+    while (e != 0) {
+        if ((e & 1) != 0) {
+            acc *= p;
+        }
+        p *= p;
+        e >>= 1;
+    }
+
+    return acc;
+}
+
 } // namespace math_utils
 } // namespace mrchem
