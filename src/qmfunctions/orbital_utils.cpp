@@ -201,22 +201,23 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
     return Psi;
 }
 
-/** @brief Deep copy that changes type from real to complex
- *
- * New orbitals are constructed as deep copies of the input set and type of output
- * orbitals is always redefined as complex.
- * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
- *
- */
-OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
-    OrbitalVector out;
-    for (auto &i : Phi) {
-        Orbital out_i;
-        mrcpp::CopyToComplex(out_i, i);
-        out.push_back(out_i);
-    }
-    return out;
-}
+// This functionality has been removed from mrcpp::CompFunction and was not used in MRChem.
+// /** @brief Deep copy that changes type from real to complex
+//  *
+//  * New orbitals are constructed as deep copies of the input set and type of output
+//  * orbitals is always redefined as complex.
+//  * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
+//  *
+//  */
+// OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
+//     OrbitalVector out;
+//     for (auto &i : Phi) {
+//         Orbital out_i;
+//         mrcpp::CopyToComplex(out_i, i);
+//         out.push_back(out_i);
+//     }
+//     return out;
+// }
 
 
 /** @brief Deep copy
