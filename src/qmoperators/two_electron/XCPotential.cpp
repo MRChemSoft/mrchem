@@ -150,7 +150,7 @@ void XCPotential::setup(double prec) {
     if (plevel == 2) {
         int totNodes = 0;
         int totSize = 0;
-        for (auto i = 0; i < this->potentials.size(); i++) {
+        for (size_t i = 0; i < this->potentials.size(); i++) {
             auto &f_i = mrcpp::get_func(this->potentials, i);
             totNodes += f_i.getNNodes();
             totSize += f_i.getSizeNodes();
@@ -246,6 +246,7 @@ Orbital XCPotential::dagger(Orbital phi) {
 }
 
 QMOperatorVector XCPotential::apply(QMOperator_p &O) {
+    (void)O;
     NOT_IMPLEMENTED_ABORT;
 }
 

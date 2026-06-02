@@ -58,9 +58,13 @@ public:
     Orbital() = default;
     Orbital(SPIN::type spin);
     Orbital(const Orbital &orb);
+    Orbital &operator=(const Orbital &orb) = default;
     Orbital(const mrcpp::CompFunction<3> &orb);
     Orbital(int spin, double occ, int rank = -1);
     Orbital dagger() const;
+
+    // Explicitly declare operator= to suppress -Wdeprecated-copy warnings
+    Orbital& operator=(const Orbital &orb) = default;
 
     char printSpin() const;
     void setSpin(int spin) { this->func_ptr->data.n1[0] = spin; }

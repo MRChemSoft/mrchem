@@ -146,7 +146,7 @@ void NuclearOperator::setupLocalPotential(NuclearFunction &f_loc, const Nuclei &
     println(1, o_head.str());
     mrcpp::print::separator(1, '-');
 
-    for (int k = 0; k < nucs.size(); k++) {
+    for (size_t k = 0; k < nucs.size(); k++) {
         const Nucleus &nuc = nucs[k];
         double p1 = f_loc.calcParam1(smooth_prec, nuc);
         double p2 = f_loc.calcParam2(smooth_prec, nuc);

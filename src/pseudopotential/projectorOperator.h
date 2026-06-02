@@ -86,9 +86,7 @@ public:
             this->pp.push_back(*nucs[i].getPseudopotentialData());
         }
 
-        this->pp = pp;
         this->prec = prec;
-        int npp = 0;
 
         // loop over all atoms and create projectors
         for (size_t i = 0; i < nucs.size(); i++) {
@@ -102,7 +100,6 @@ public:
                     for (int idim = 0; idim < pp[i].dim_h[l]; idim++){
                         ProjectorFunction pppp(pos, pp[i].rl[l], idim, l, m, prec);
                         proj[i].lProj[l].mProj[mIndex].iProj.push_back(pppp);
-                        npp++;
                     }
                 }
             }
@@ -134,7 +131,6 @@ protected:
      * momenta, and projector indices of h_ij^l * <p_i|phi> * |p_j>.
      */
     mrchem::Orbital apply(mrchem::Orbital phi) override {
-    // std::cout << "Applying projector operator" << std::endl;
     // loop over all atoms
     ComplexDouble dotComplex;
 
@@ -146,21 +142,13 @@ protected:
         // loop over all angular momenta
         for (int l = 0; l < pp[iat].nsep; l++){
             // loop over all magnetic quantum numbers
-            // std::cout << "h: " << pp[iat].h[l] << std::endl;
             for (int m = -l; m <= l; m++){
                 int mm = m + l;
                 // loop over all projectors
                 Eigen::VectorXd dot_products(pp[iat].dim_h[l]);
-                // std::cout << "Projector " << iat << " " << l << " " << m << std::endl;
-                // std::cout << "Number of projectors " << pp[iat].dim_h[l] << std::endl;
                 for (int ip = 0; ip < pp[iat].dim_h[l]; ip++){
-                    // dotComplex = mrchem::qmfunction::dot(phi, proj[iat].lProj[l].mProj[m].iProj[ip]);
-                    // std::cout << "computing dot product " << ip << std::endl;
-                    mrcpp::Coord<3> r = {0.0, 0.0, 0.3};
-                    // std::cout << "projector value at origin: " << proj[iat].lProj[l].mProj[mm].iProj[ip].real().evalf(r) << std::endl;
                     dotComplex = mrcpp::dot(phi, *proj[iat].lProj[l].mProj[mm].iProj[ip].projector_ptr);
                     dot_products(ip) = dotComplex.real();
-                    // std::cout << "Dot product " << ip << " " << dotComplex << std::endl;
                 }
                 dot_products = pp[iat].h[l] * dot_products;
                 // loop over all projectors
@@ -176,13 +164,8 @@ protected:
     mrchem::ComplexVector complexCoefficientsEigen = Eigen::Map<Eigen::VectorXcd>(complexCoefficients.data(), complexCoefficients.size());
 
     mrchem::Orbital result;
-    // result.add()
-    // mrchem::qmfunction::linear_combination(result, complexCoefficientsEigen, complexFunctionVector, prec);
-
-    // std::cout << "size of complexCoefficients " << complexCoefficients.size() << std::endl;
 
     for (size_t i = 0; i < complexCoefficients.size(); i++){
-        // std::cout << "Adding to result " << i << " " << complexCoefficients[i] << std::endl;
         result.add(complexCoefficients[i], complexFunctionVector[i]);
     }
 
@@ -204,6 +187,7 @@ protected:
      * @return Zero (placeholder).
      */
     mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const override {
+        (void)r;
         return ComplexDouble(0.0, 0.0);
     }
 
@@ -212,6 +196,7 @@ protected:
      * @param O The input operator.
      */
     mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) override {
+        (void)O;
         NOT_IMPLEMENTED_ABORT;
     }
 };

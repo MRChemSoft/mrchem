@@ -230,7 +230,7 @@ TEST_CASE("OrbitalVector", "[orbital_vector]") {
 
         // Complex phase rotation
         // NB: Phi becomes complex
-        for (int n = 0; n < Phi.size(); n++) {
+        for (size_t n = 0; n < Phi.size(); n++) {
             double theta = (n + 1.0) * mrcpp::pi / 7.0;
             ComplexDouble phase(std::cos(theta), std::sin(theta));
             Phi[n].rescale(phase);

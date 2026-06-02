@@ -1,4 +1,4 @@
-find_package(nlohmann_json 3.6 CONFIG QUIET
+find_package(nlohmann_json 3.12 CONFIG QUIET
   NO_CMAKE_PATH
   NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
   )
@@ -15,13 +15,13 @@ else()
   FetchContent_Declare(nlohmann_json_sources
     QUIET
     URL
-      https://github.com/nlohmann/json/archive/v3.6.1.tar.gz
+      https://github.com/nlohmann/json/archive/v3.12.0.tar.gz
     )
 
   FetchContent_GetProperties(nlohmann_json_sources)
 
   set(JSON_BuildTests OFF CACHE BOOL "" FORCE)
-  set(JSON_ImplicitConversions OFF CACHE BOOL "" FORCE)
+  set(JSON_ImplicitConversions ON CACHE BOOL "" FORCE)
 
   if(NOT nlohmann_json_sources_POPULATED)
     FetchContent_Populate(nlohmann_json_sources)

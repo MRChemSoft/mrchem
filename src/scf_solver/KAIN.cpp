@@ -175,7 +175,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             }
 
             std::vector<ComplexDouble> coefsVec(totCoefs.size());
-            for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
+            for (size_t i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
 
             dPhi[n] = Phi[n].paramCopy(true);
             mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec);

@@ -26,7 +26,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
     if (mrcpp::mpi::bank_size <= 0) {
         Vij_vec.resize(N*(N+1)/2);
     } else {
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             if (mrcpp::mpi::my_func(i)) PhiBank.put_func(i, Phi[i]);
         }
     }
@@ -159,7 +159,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
                 phi_j = Phi[jorb];
             t_get.stop();
 
-            for (int i = 0; i < iorb_vec.size(); i++) {
+            for (size_t i = 0; i < iorb_vec.size(); i++) {
                 int iorb = itasks[task][i];
                 Orbital &phi_i = iorb_vec[i];
                 Orbital Vij = phi_i.paramCopy(true);

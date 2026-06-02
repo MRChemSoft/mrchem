@@ -54,7 +54,7 @@ NuclearFunction::NuclearFunction(const Nuclei &nucs, double smooth_prec, double 
     mrcpp::print::separator(2, '-');
     this->prec = prec;
 
-    for (int k = 0; k < nucs.size(); k++) {
+    for (size_t k = 0; k < nucs.size(); k++) {
         const Nucleus &nuc = nucs[k];
         double Z = nuc.getCharge();
         double c = detail::nuclear_potential_smoothing(smooth_prec, Z);
@@ -91,7 +91,7 @@ bool NuclearFunction::isVisibleAtScale(int scale, int nQuadPts) const {
 
 bool NuclearFunction::isZeroOnInterval(const double *a, const double *b) const {
     int totSplit = 0;
-    for (int i = 0; i < this->nuclei.size(); i++) {
+    for (size_t i = 0; i < this->nuclei.size(); i++) {
         const mrcpp::Coord<3> &R = this->nuclei[i].getCoord();
         int split = 1;
         if (a[0] > R[0] or b[0] < R[0]) split = 0;

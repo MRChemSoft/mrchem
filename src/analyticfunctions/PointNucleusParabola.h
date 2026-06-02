@@ -38,7 +38,7 @@ public:
     // second order, the value and first derivative are equal at R0
     double evalf(const mrcpp::Coord<3> &r) const override {
         double result = 0.0;
-        for (int i = 0; i < this->nuclei.size(); i++) {
+        for (size_t i = 0; i < this->nuclei.size(); i++) {
             const auto &R = this->nuclei[i].getCoord();
             auto R1 = math_utils::calc_distance(R, r);
             auto Z = this->nuclei[i].getCharge();
@@ -56,7 +56,7 @@ public:
 
     std::string getParamName1() const override { return "Precision"; }
     std::string getParamName2() const override { return "Smoothing"; }
-    double calcParam1(double prec, const Nucleus &nuc) const override { return prec; }
+    double calcParam1(double prec, const Nucleus &nuc) const override { (void)nuc; return prec; }
     double calcParam2(double prec, const Nucleus &nuc) const override {
         auto Z = nuc.getCharge();
         double tmp = 0.00435 * prec / std::pow(Z, 5.0);

@@ -133,7 +133,7 @@ protected:
 inline RankZeroOperator operator*(double a, RankZeroOperator A) {
     RankZeroOperator out;
     out.name() = A.name();
-    for (int i = 0; i < A.oper_exp.size(); i++) {
+    for (size_t i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(a * A.coef_exp[i]);
         out.oper_exp.push_back(A.oper_exp[i]);
     }
@@ -168,11 +168,11 @@ inline RankZeroOperator operator+(RankZeroOperator A, RankZeroOperator B) {
     out.name() = A.name() + " + " + B.name();
     if (not(A.imag == B.imag)) MSG_ABORT("Cannot add real and imaginary operators " + out.name());
     out.imag = A.imag;
-    for (int i = 0; i < A.oper_exp.size(); i++) {
+    for (size_t i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(A.coef_exp[i]);
         out.oper_exp.push_back(A.oper_exp[i]);
     }
-    for (int i = 0; i < B.oper_exp.size(); i++) {
+    for (size_t i = 0; i < B.oper_exp.size(); i++) {
         out.coef_exp.push_back(B.coef_exp[i]);
         out.oper_exp.push_back(B.oper_exp[i]);
     }
@@ -184,11 +184,11 @@ inline RankZeroOperator operator-(RankZeroOperator A, RankZeroOperator B) {
     out.name() = A.name() + " - " + B.name();
     if (not(A.imag == B.imag)) MSG_ABORT("Cannot add real and imaginary operators " + out.name());
     out.imag = A.imag;
-    for (int i = 0; i < A.oper_exp.size(); i++) {
+    for (size_t i = 0; i < A.oper_exp.size(); i++) {
         out.coef_exp.push_back(A.coef_exp[i]);
         out.oper_exp.push_back(A.oper_exp[i]);
     }
-    for (int i = 0; i < B.oper_exp.size(); i++) {
+    for (size_t i = 0; i < B.oper_exp.size(); i++) {
         out.coef_exp.push_back(-B.coef_exp[i]);
         out.oper_exp.push_back(B.oper_exp[i]);
     }

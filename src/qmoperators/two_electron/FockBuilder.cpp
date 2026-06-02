@@ -344,7 +344,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     // Compute transformed orbitals scaled by diagonal Fock elements
     Timer t_3;
     OrbitalVector epsPhi = orbital::deep_copy(Phi);
-    for (int i = 0; i < epsPhi.size(); i++) {
+    for (size_t i = 0; i < epsPhi.size(); i++) {
         if (not mrcpp::mpi::my_func(epsPhi[i])) continue;
         epsPhi[i].rescale(eps[i] / two_cc);
     }
@@ -358,7 +358,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
     // Add up all the terms
     Timer t_add;
     OrbitalVector arg = orbital::deep_copy(termOne);
-    for (int i = 0; i < arg.size(); i++) {
+    for (size_t i = 0; i < arg.size(); i++) {
         if (not mrcpp::mpi::my_func(arg[i])) continue;
         arg[i].add(1.0, termTwo[i]);
         arg[i].add(1.0, termThree[i]);
@@ -371,7 +371,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentZORA(OrbitalVector &Phi, Orbita
 
     Timer t_kappa;
     mrchem::OrbitalVector out = chi_m1(arg);
-    for (int i = 0; i < arg.size(); i++) {
+    for (size_t i = 0; i < arg.size(); i++) {
         if (not mrcpp::mpi::my_func(out[i])) continue;
         out[i].add(1.0, arg[i]);
     }
@@ -393,7 +393,7 @@ OrbitalVector FockBuilder::buildHelmholtzArgumentNREL(OrbitalVector &Phi, Orbita
     // Add up all the terms
     Timer t_add;
     OrbitalVector out = orbital::deep_copy(termOne);
-    for (int i = 0; i < out.size(); i++) {
+    for (size_t i = 0; i < out.size(); i++) {
         if (not mrcpp::mpi::my_func(out[i])) continue;
         out[i].add(1.0, Psi[i]);
     };

@@ -82,7 +82,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     SECTION("vector apply") {
         OrbitalVector TPhi = T(Phi);
         ComplexMatrix t = orbital::calc_overlap_matrix(Phi, TPhi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             ComplexDouble T_ii = mrcpp::dot(Phi[i], TPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(T_ii.real() == Catch::Approx(E_K(i)));
@@ -105,7 +105,7 @@ TEST_CASE("KineticOperator", "[kinetic_operator]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix t = T(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             REQUIRE(t(i, i).real() == Catch::Approx(E_K(i)));
             REQUIRE(t(i, i).imag() < thrs);
         }

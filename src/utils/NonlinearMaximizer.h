@@ -53,9 +53,9 @@ protected:
     virtual double functional() const { return 0.0; }
     virtual double make_gradient() { return -1.0; }
     virtual double make_hessian() { return -1.0; }
-    virtual double get_hessian(int i, int j) { return -1.0; }
-    virtual void multiply_hessian(DoubleVector &vec, DoubleVector &Hv) {}
-    virtual void do_step(const DoubleVector &step) {}
+    virtual double get_hessian(int i, int j) { (void)i; (void)j; return -1.0; }
+    virtual void multiply_hessian(DoubleVector &vec, DoubleVector &Hv) { (void)vec; (void)Hv; }
+    virtual void do_step(const DoubleVector &step) { (void)step; }
 };
 
 } // namespace mrchem

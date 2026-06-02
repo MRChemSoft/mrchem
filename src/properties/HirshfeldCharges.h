@@ -43,7 +43,7 @@ public:
     void print(const std::string &id) const {
         mrcpp::print::header(0, "Hirshfeld Charges (" + id + ")");
         mrcpp::print::separator(0, '-');
-        for (int i = 0; i < hirshfeld_charges.size(); i++) {
+        for (size_t i = 0; i < hirshfeld_charges.size(); i++) {
             std::string text = "Charge of atom " + std::to_string(i);
             print_utils::scalar(0, text, hirshfeld_charges(i));
         }

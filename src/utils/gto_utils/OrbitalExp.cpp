@@ -298,7 +298,7 @@ void OrbitalExp::transformToSpherical() {
 int OrbitalExp::getAngularMomentum(int n) const {
     int l = -1;
     GaussExp<3> &gExp = *this->orbitals[n];
-    for (int i = 0; i < gExp.size(); i++) {
+    for (size_t i = 0; i < gExp.size(); i++) {
         const auto &pow = gExp.getPower(i);
         int iL = pow[0] + pow[1] + pow[2];
         if (l < 0) {

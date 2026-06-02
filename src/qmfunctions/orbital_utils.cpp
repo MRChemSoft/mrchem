@@ -177,7 +177,7 @@ OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble 
     if (Phi_a.size() != Phi_b.size()) MSG_ERROR("Size mismatch");
 
     OrbitalVector out = orbital::param_copy(Phi_a);
-    for (int i = 0; i < Phi_a.size(); i++) {
+    for (size_t i = 0; i < Phi_a.size(); i++) {
         if (mrcpp::mpi::my_func(Phi_a[i]) != mrcpp::mpi::my_func(Phi_b[i])) MSG_ABORT("MPI rank mismatch");
         mrcpp::add(out[i], a, Phi_a[i], b, Phi_b[i], prec);
     }
@@ -201,22 +201,23 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
     return Psi;
 }
 
-/** @brief Deep copy that changes type from real to complex
- *
- * New orbitals are constructed as deep copies of the input set and type of output
- * orbitals is always redefined as complex.
- * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
- *
- */
-OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
-    OrbitalVector out;
-    for (auto &i : Phi) {
-        Orbital out_i;
-        mrcpp::CopyToComplex(out_i, i);
-        out.push_back(out_i);
-    }
-    return out;
-}
+// This functionality has been removed from mrcpp::CompFunction and was not used in MRChem.
+// /** @brief Deep copy that changes type from real to complex
+//  *
+//  * New orbitals are constructed as deep copies of the input set and type of output
+//  * orbitals is always redefined as complex.
+//  * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
+//  *
+//  */
+// OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
+//     OrbitalVector out;
+//     for (auto &i : Phi) {
+//         Orbital out_i;
+//         mrcpp::CopyToComplex(out_i, i);
+//         out.push_back(out_i);
+//     }
+//     return out;
+// }
 
 
 /** @brief Deep copy
@@ -347,7 +348,7 @@ void orbital::save_orbitals(OrbitalVector &Phi, const std::string &file, int spi
     mrcpp::print::separator(2, '-');
 
     auto n = 0;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if ((Phi[i].spin() == spin) or (spin < 0)) {
             Timer t1;
             std::stringstream orbname;
@@ -418,7 +419,7 @@ void orbital::orthogonalize(double prec, Orbital &&phi, Orbital psi) {
 /** @brief Gram-Schmidt orthogonalize orbitals within the set */
 void orbital::orthogonalize(double prec, OrbitalVector &Phi) {
     mrcpp::mpi::free_foreign(Phi);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         for (int j = 0; j < i; j++) {
             int tag = 7632 * i + j;
             int src = (Phi[j].getRank()) % mrcpp::mpi::wrk_size;
@@ -749,7 +750,7 @@ IntVector orbital::get_spins(const OrbitalVector &Phi) {
  */
 void orbital::set_spins(OrbitalVector &Phi, const IntVector &spins) {
     if (Phi.size() != spins.size()) MSG_ERROR("Size mismatch");
-    for (int i = 0; i < Phi.size(); i++) Phi[i].spin() = i;
+    for (size_t i = 0; i < Phi.size(); i++) Phi[i].spin() = i;
 }
 
 /** @brief Returns a vector containing the orbital occupations */
@@ -767,7 +768,7 @@ DoubleVector orbital::get_occupations(const OrbitalVector &Phi) {
  */
 void orbital::set_occupations(OrbitalVector &Phi, const DoubleVector &occup) {
     if (Phi.size() != occup.size()) MSG_ERROR("Size mismatch");
-    for (int i = 0; i < Phi.size(); i++) Phi[i].occ() = occup(i);
+    for (size_t i = 0; i < Phi.size(); i++) Phi[i].occ() = occup(i);
 }
 
 /** @brief Returns a vector containing the orbital square norms */
@@ -863,7 +864,7 @@ void orbital::print(const OrbitalVector &Phi) {
 
     auto nodes = 0;
     auto memory = 0.0;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         nodes += Phi[i].getNNodes();
         memory += Phi[i].getSizeNodes() / 1024.0;
         std::stringstream o_txt;
@@ -930,10 +931,10 @@ int orbital::print_size_nodes(const OrbitalVector &Phi, const std::string &txt, 
     println(0, "OrbitalVector sizes statistics " << txt << " (MB)");
 
     IntVector sNodes = IntVector::Zero(Phi.size());
-    for (int i = 0; i < Phi.size(); i++) sNodes[i] = Phi[i].getSizeNodes();
+    for (size_t i = 0; i < Phi.size(); i++) sNodes[i] = Phi[i].getSizeNodes();
 
     // stats for own orbitals
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (sNodes[i] > 0) {
             nOwnOrbs++;
             if (sNodes[i] > nMax) nMax = sNodes[i];
