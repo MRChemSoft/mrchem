@@ -74,7 +74,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
 
     Phi.distribute();
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
@@ -95,7 +95,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     Phi_x.push_back(Orbital(SPIN::Paired));
     Phi_x.distribute();
 
-    for (int i = 0; i < Phi_x.size(); i++) {
+    for (size_t i = 0; i < Phi_x.size(); i++) {
         HydrogenFunction f(ns_x[i], ls_x[i], ms_x[i]);
         if (mrcpp::mpi::my_func(Phi_x[i])) mrcpp::project(Phi_x[i], f, prec);
     }
@@ -121,7 +121,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i, i)).epsilon(thrs));
@@ -144,7 +144,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             for (int j = 0; j <= i; j++) {
                 // printf("V_%d%d: %.12e + %.12e i\n", i, j, v(i, j).real(), v(i, j).imag());
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));

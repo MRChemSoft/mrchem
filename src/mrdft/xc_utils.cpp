@@ -126,7 +126,7 @@ void xc_utils::fill_output_mask(Eigen::MatrixXi &mask, int value) {
  */
 std::vector<mrcpp::FunctionNode<3> *> xc_utils::fetch_nodes(int n, mrcpp::FunctionTreeVector<3> &inp_trees) {
     std::vector<mrcpp::FunctionNode<3> *> out_nodes;
-    for (auto i = 0; i < inp_trees.size(); i++) {
+    for (size_t i = 0; i < inp_trees.size(); i++) {
         auto &iTree = mrcpp::get_func(inp_trees, i);
         auto &iNode = iTree.getEndFuncNode(n);
         out_nodes.push_back(&iNode);

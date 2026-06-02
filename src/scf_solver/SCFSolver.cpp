@@ -192,7 +192,7 @@ void SCFSolver::printOrbitals(const DoubleVector &norms, const DoubleVector &err
     if (print_head) println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         bool conv_i = (errors(i) < this->orbThrs) or (this->orbThrs < 0.0);
         std::stringstream o_row;
         o_row << std::setw(w1) << i;

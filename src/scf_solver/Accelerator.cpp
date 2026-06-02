@@ -227,7 +227,7 @@ void Accelerator::accelerate(double prec, OrbitalVector &Phi, OrbitalVector &dPh
 void Accelerator::solveLinearSystem() {
     Timer t_tot;
     this->c.clear();
-    for (int n = 0; n < this->A.size(); n++) {
+    for (size_t n = 0; n < this->A.size(); n++) {
         auto tmpC = this->A[n].colPivHouseholderQr().solve(this->b[n]).eval();
         this->c.push_back(tmpC);
     }
@@ -275,6 +275,8 @@ void Accelerator::copyOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
  * Deletes the old orbital set and copies the new. Counts backwards,
  * zero input returns latest orbital set. */
 void Accelerator::replaceOrbitals(OrbitalVector &Phi, int nHistory) {
+    (void)Phi;
+    (void)nHistory;
     NOT_IMPLEMENTED_ABORT;
     //    int totHistory = this->orbitals.size();
     //    if (nHistory >= totHistory or nHistory < 0) {
@@ -297,6 +299,8 @@ void Accelerator::replaceOrbitals(OrbitalVector &Phi, int nHistory) {
  * Deletes the old orbital set and copies the new. Counts backwards,
  * zero input returns latest orbital set. */
 void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
+    (void)dPhi;
+    (void)nHistory;
     NOT_IMPLEMENTED_ABORT;
     //    int totHistory = this->dOrbitals.size();
     //    if (nHistory >= totHistory or nHistory < 0) {
@@ -322,7 +326,7 @@ void Accelerator::replaceOrbitalUpdates(OrbitalVector &dPhi, int nHistory) {
  */
 void Accelerator::sortLinearSystem(std::vector<ComplexMatrix> &A_matrices, std::vector<ComplexVector> &b_vectors) {
     if (this->sepOrbitals) {
-        for (int i = 0; i < b_vectors.size(); i++) {
+        for (size_t i = 0; i < b_vectors.size(); i++) {
             auto tmpA(A_matrices[i]);
             auto tmpB(b_vectors[i]);
             this->A.push_back(tmpA);
@@ -333,7 +337,7 @@ void Accelerator::sortLinearSystem(std::vector<ComplexMatrix> &A_matrices, std::
         auto tmpB(b_vectors[0]);
         tmpA.setZero();
         tmpB.setZero();
-        for (int i = 0; i < b_vectors.size(); i++) {
+        for (size_t i = 0; i < b_vectors.size(); i++) {
             tmpA += A_matrices[i];
             tmpB += b_vectors[i];
         }

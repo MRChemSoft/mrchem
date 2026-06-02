@@ -52,6 +52,9 @@ namespace surface_force {
  * @param gridPos The positions of the grid points where the field should be evaluated. Shape (nGrid, 3).
  */
 MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const VectorXd &nucSmoothing, const MatrixXd gridPos) {
+
+    (void)nucSmoothing;
+
     int nGrid = gridPos.rows();
     int nNuc = nucPos.rows();
     MatrixXd Efield = MatrixXd::Zero(nGrid, 3);
@@ -147,6 +150,9 @@ std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, std::vector<Orbi
  */
 std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std::vector<std::vector<mrchem::Orbital>> &nablaPhi, std::vector<Orbital> &hessRho, double prec, const MatrixXd &gridPos) {
 
+    (void)mol;
+    (void)prec;
+
     // original formula for kinetic stress:
     // sigma_ij = 0.5 \sum_k phi_k del_i del_j phi_k - (del_i phi_k) (del_j phi_k)
     // using the product rule for the first term:
@@ -161,7 +167,7 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
     std::array<double, 3> pos;
     double n1, n2, n3;
     double occ;
-    for (int iOrb = 0; iOrb < Phi.size(); iOrb++) {
+    for (size_t iOrb = 0; iOrb < Phi.size(); iOrb++) {
         occ = Phi[iOrb].occ();
 
         for (int i = 0; i < nGrid; i++) {
@@ -265,7 +271,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
 
     std::vector<std::vector<Orbital>> nablaPhi(Phi.size());
     std::vector<Orbital> hessRho = hess(rho);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (mrcpp::mpi::my_func(i)) { nablaPhi[i] = nabla(Phi[i]); }
     }
     // setup xc stuff:

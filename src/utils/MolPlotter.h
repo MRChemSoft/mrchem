@@ -111,7 +111,7 @@ protected:
 
         // Function values
         o.precision(4);
-        for (int n = 0; n < values.size(); n++) {
+        for (size_t n = 0; n < values.size(); n++) {
             o << std::setw(12) << values[n];
             if (n % 6 == 5) o << std::endl; // Line break after 6 values
         }

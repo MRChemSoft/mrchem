@@ -51,7 +51,7 @@ extern mrcpp::MultiResolutionAnalysis<3> *MRA; // Global MRA
 HelmholtzVector::HelmholtzVector(double pr, const DoubleVector &l)
         : prec(pr) {
     this->lambda = l;
-    for (int i = 0; i < this->lambda.size(); i++) {
+    for (size_t i = 0; i < this->lambda.size(); i++) {
         if (this->lambda(i) > 0.0) this->lambda(i) = -0.5;
     }
 }
@@ -74,7 +74,7 @@ OrbitalVector HelmholtzVector::operator()(OrbitalVector &Phi) const {
 
     int pprec = Printer::getPrecision();
     OrbitalVector out = orbital::param_copy(Phi);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (not mrcpp::mpi::my_func(out[i])) continue;
 
         t_lap.start();
@@ -113,7 +113,7 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
     if (Phi.size() != Psi.size()) MSG_ABORT("OrbitalVector size mismatch");
 
     OrbitalVector out = orbital::param_copy(Phi);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (not mrcpp::mpi::my_func(out[i])) continue;
 
         t_lap.start();

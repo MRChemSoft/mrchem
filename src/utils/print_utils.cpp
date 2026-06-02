@@ -41,7 +41,7 @@ namespace mrchem {
 
 std::vector<double> print_utils::eigen_to_vector(const DoubleVector &inp, double thrs) {
     std::vector<double> out;
-    for (int i = 0; i < inp.size(); i++) {
+    for (size_t i = 0; i < inp.size(); i++) {
         auto out_i = inp(i);
         if (std::abs(out_i) < thrs) out_i = 0.0;
         out.push_back(out_i);
@@ -203,7 +203,7 @@ void print_utils::vector(int level, const std::string &txt, const DoubleVector &
 
     std::stringstream o;
     o << " " << txt << std::string(w3, ' ') << ":";
-    for (int i = 0; i < val.size(); i++) {
+    for (size_t i = 0; i < val.size(); i++) {
         if (std::isnan(val(i))) {
             o << std::setw(w1) << "N/A";
         } else if (s) {

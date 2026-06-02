@@ -66,7 +66,7 @@ public:
     double evalf(const mrcpp::Coord<3> &r) const override {
         double result = 0.0;
         double temp_exp;
-        for (int i = 0; i < this->nuclei.size(); i++) {
+        for (size_t i = 0; i < this->nuclei.size(); i++) {
             const auto &R = this->nuclei[i].getCoord();
             auto R1 = math_utils::calc_distance(R, r);
 
@@ -106,7 +106,7 @@ public:
      * @return The precision value unchanged.
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    double calcParam1(double prec, const Nucleus &nuc) const override { return prec; }
+    double calcParam1(double prec, const Nucleus &nuc) const override { (void)nuc; return prec; }
 
     /**
      * @brief Calculates the second parameter (required by NuclearFunction base class).
@@ -115,7 +115,7 @@ public:
      * @return The precision value unchanged.
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
-    double calcParam2(double prec, const Nucleus &nuc) const override { return prec; }
+    double calcParam2(double prec, const Nucleus &nuc) const override { (void)nuc; return prec; }
 
 protected:
     std::vector<PseudopotentialData> pps;

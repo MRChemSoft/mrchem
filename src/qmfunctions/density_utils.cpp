@@ -158,7 +158,7 @@ void density::compute_local_X(double prec, Density &rho, OrbitalVector &Phi, Orb
     if (rho.Ncomp() == 0) rho.alloc(1);
 
     // Compute local density from own orbitals
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (mrcpp::mpi::my_func(Phi[i])) {
             if (not mrcpp::mpi::my_func(X[i])) MSG_ABORT("Inconsistent MPI distribution");
             Orbital phi_i = Phi[i];
@@ -185,7 +185,7 @@ void density::compute_local_XY(double prec, Density &rho, OrbitalVector &Phi, Or
 
     // Compute local density from own orbitals
     rho.real().setZero();
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (mrcpp::mpi::my_func(Phi[i])) {
             Orbital phi_i = Phi[i];
             if (not mrcpp::mpi::my_func(X[i])) MSG_ABORT("Inconsistent MPI distribution");

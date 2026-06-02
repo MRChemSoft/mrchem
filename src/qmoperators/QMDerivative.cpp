@@ -85,6 +85,7 @@ Orbital QMDerivative::apply(Orbital inp) {
 }
 
 Orbital QMDerivative::dagger(Orbital inp) {
+    (void)inp;
     NOT_IMPLEMENTED_ABORT;
 }
 

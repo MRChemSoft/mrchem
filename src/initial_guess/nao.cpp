@@ -81,7 +81,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     mrcpp::print::separator(0, '~', 2);
 
     bool use_pp = false;
-    for (int i = 0; i < nucs.size(); i++) {
+    for (size_t i = 0; i < nucs.size(); i++) {
         if (nucs[i].hasPseudopotential()) {
             use_pp = true;
             break;
@@ -114,7 +114,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     Density rho_new(false);
     initial_guess::nao::project_atomic_densities(prec, rho_new, nucs);
     double total_charge = 0.0;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         total_charge += Phi[i].occ();
     }
     double rho_int = rho_new.integrate().real();
@@ -135,7 +135,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
         XC_.setNuclei(std::make_shared<Nuclei>(nucs));
         Nuclei nucs_pp;
         Nuclei nucs_all_el;
-        for (int i = 0; i < nucs.size(); i++) {
+        for (size_t i = 0; i < nucs.size(); i++) {
             if (nucs[i].hasPseudopotential()) {
                 nucs_pp.push_back(nucs[i]);
             } else {
@@ -263,7 +263,7 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
         atomic_densities.push_back(atomic_density);
     }
 
-    for (int i = 0; i < nucs.size(); i++) {
+    for (size_t i = 0; i < nucs.size(); i++) {
         if (mrcpp::mpi::wrk_rank != i % mrcpp::mpi::wrk_size) continue;
 
         bool need_rescale = nucs[i].getCharge() != nucs[i].getAtomicNumber();
@@ -355,7 +355,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
 
     print_utils::text(1, "NAO data directory", data_dir);
 
-    for (int iNuc = 0; iNuc < nucs.size(); iNuc++) {
+    for (size_t iNuc = 0; iNuc < nucs.size(); iNuc++) {
         std::string element = nucs[iNuc].getElement().getSymbol();
         std::string file = data_dir + "/" + element + ".json";
         std::ifstream ifs(file);

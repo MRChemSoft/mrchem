@@ -55,7 +55,7 @@ public:
 private:
     const int D;
 
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
@@ -89,7 +89,7 @@ public:
     QMAlpha() = default;
 
 private:
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;
@@ -123,7 +123,7 @@ public:
     QMBeta() = default;
 
 private:
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital inp) override;
     Orbital dagger(Orbital inp) override;

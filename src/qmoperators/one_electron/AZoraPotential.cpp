@@ -86,7 +86,7 @@ void AZoraPotential::project(double proj_prec) {
 double AZoraPotential::evalf_analytic(const mrcpp::Coord<3> &r) {
     double V = 0.0;
     // Loop over all atoms:
-    for (int i = 0; i < this->atomicPotentials.size(); i++) {
+    for (size_t i = 0; i < this->atomicPotentials.size(); i++) {
         mrcpp::Coord<3> r_i = nucs[i].getCoord();
         double rr = std::sqrt((r[0] - r_i[0]) * (r[0] - r_i[0]) + (r[1] - r_i[1]) * (r[1] - r_i[1]) + (r[2] - r_i[2]) * (r[2] - r_i[2]));
         V += this->atomicPotentials[i].evalfLeftNoRightConstant(rr);

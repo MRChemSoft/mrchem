@@ -187,6 +187,7 @@ protected:
      * @return Zero (placeholder).
      */
     mrchem::ComplexDouble evalf(const mrcpp::Coord<3> &r) const override {
+        (void)r;
         return ComplexDouble(0.0, 0.0);
     }
 
@@ -195,6 +196,7 @@ protected:
      * @param O The input operator.
      */
     mrchem::QMOperatorVector apply(std::shared_ptr<mrchem::QMOperator> &O) override {
+        (void)O;
         NOT_IMPLEMENTED_ABORT;
     }
 };
