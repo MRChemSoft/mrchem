@@ -73,6 +73,8 @@ def main():
         user_dict["SCF"]["path_orbitals"],
         user_dict["Response"]["path_checkpoint"],
         user_dict["Response"]["path_orbitals"],
+        user_dict["Lagrangian"]["path_checkpoint"],
+        user_dict["Lagrangian"]["path_orbitals"],
         user_dict["Plotter"]["path"],
     ]:
         if not Path(d).exists():

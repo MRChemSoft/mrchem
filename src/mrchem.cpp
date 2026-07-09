@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
     const auto &mol_inp = json_inp["molecule"];
     const auto &scf_inp = json_inp["scf_calculation"];
     const auto &rsp_inp = json_inp["rsp_calculations"];
+    const auto &lag_inp = json_inp["lag_calculations"];
     const auto &con_inp = json_inp["constants"];
     const auto &geopt_inp = json_inp["geom_opt"];
 
@@ -68,10 +69,29 @@ int main(int argc, char **argv) {
     Timer timer;
     json json_out;
 
+    //std::cout << std:: endl << std::endl << "H E L L O W O R L D!!!" << std::endl << std::endl << std::endl;
+    //std::cout << lag_inp << std::endl;
+    //std::exit(0);
+
     if (geopt_inp["run"]) {
         json_out = optimize_positions(scf_inp, mol_inp, geopt_inp, json_inp["printer"]["file_name"]);
         mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
-    } else {
+    
+    }else if(lag_inp.contains("lag_solver")) {
+        Molecule mol;
+        driver::init_molecule(mol_inp, mol);
+        auto lag_out = driver::lag::run(lag_inp, mol);
+        mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
+        // Name and version of the output schema
+        json_out["schema_name"] = "mrchem_output";
+        json_out["schema_version"] = 1;
+        // Computed values
+        json_out["lag_calculation"] = lag_out;
+        json_out["properties"] = driver::print_properties(mol);
+        // Global success field: true if all requested calculations succeeded
+        json_out["success"] = detail::all_success(json_out); 
+    
+    }else {
         Molecule mol;
         driver::init_molecule(mol_inp, mol);
         auto scf_out = driver::scf::run(scf_inp, mol);
