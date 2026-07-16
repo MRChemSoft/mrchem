@@ -1,3 +1,28 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
 #include "surface_forces/xcStress.h"
 
 #include "mrdft/MRDFT.h"
@@ -22,7 +47,7 @@ namespace surface_force {
 std::vector<Eigen::Matrix3d> xcLDAStress(unique_ptr<mrdft::MRDFT> &mrdft_p, Eigen::MatrixXd &rhoGrid) {
     int nGrid = rhoGrid.rows();
     std::vector<Eigen::Matrix3d> out(nGrid);
-    Eigen::MatrixXd xcOUT = mrdft_p->functional().evaluate_transposed(rhoGrid);
+    Eigen::MatrixXd xcOUT = mrdft_p->functional().evaluate(rhoGrid);
     for (int i = 0; i < nGrid; i++) {
         out[i] = Matrix3d::Zero();
         for (int j = 0; j < 3; j++) { out[i](j, j) = xcOUT(i, 0) - xcOUT(i, 1) * rhoGrid(i); }
@@ -44,7 +69,7 @@ std::vector<Matrix3d> xcLDASpinStress(unique_ptr<mrdft::MRDFT> &mrdft_p, MatrixX
     std::vector<Matrix3d> out = std::vector<Eigen::Matrix3d>(nGrid);
     inp.col(0) = rhoGridAlpha.col(0);
     inp.col(1) = rhoGridBeta.col(0);
-    Eigen::MatrixXd xc = mrdft_p->functional().evaluate_transposed(inp);
+    Eigen::MatrixXd xc = mrdft_p->functional().evaluate(inp);
     for (int i = 0; i < rhoGridAlpha.rows(); i++) {
         out[i] = Matrix3d::Zero();
         for (int j = 0; j < 3; j++) { out[i](j, j) = xc(i, 0) - xc(i, 1) * rhoGridAlpha(i) - xc(i, 2) * rhoGridBeta(i); }
@@ -67,7 +92,7 @@ std::vector<Matrix3d> xcGGAStress(unique_ptr<mrdft::MRDFT> &mrdft_p, mrcpp::Func
     inp.col(1) = nablaRhoGrid.col(0);
     inp.col(2) = nablaRhoGrid.col(1);
     inp.col(3) = nablaRhoGrid.col(2);
-    Eigen::MatrixXd xcOUT = mrdft_p->functional().evaluate_transposed(inp);
+    Eigen::MatrixXd xcOUT = mrdft_p->functional().evaluate(inp);
     std::vector<Matrix3d> out(nGrid);
     std::array<double, 3> pos;
     for (int i = 0; i < rhoGrid.rows(); i++) {
@@ -111,7 +136,7 @@ std::vector<Matrix3d> xcGGASpinStress(unique_ptr<mrdft::MRDFT> &mrdft_p,
     inp.col(5) = nablaRhoGridBeta.col(0);
     inp.col(6) = nablaRhoGridBeta.col(1);
     inp.col(7) = nablaRhoGridBeta.col(2);
-    Eigen::MatrixXd xc = mrdft_p->functional().evaluate_transposed(inp);
+    Eigen::MatrixXd xc = mrdft_p->functional().evaluate(inp);
     std::array<double, 3> pos;
     for (int i = 0; i < rhoGridAlpha.rows(); i++) {
         out[i] = Matrix3d::Zero();

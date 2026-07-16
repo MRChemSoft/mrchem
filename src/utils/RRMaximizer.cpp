@@ -62,7 +62,7 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     OrbitalVector xPhi_Vec = r_x(Phi);
     r_x.clear();
     R_x = orbital::calc_overlap_matrix(Phi, xPhi_Vec);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (!mrcpp::mpi::my_func(i)) continue;
         xPhi_Vec[i].free();
     }
@@ -70,7 +70,7 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     OrbitalVector yPhi_Vec = r_y(Phi);
     r_y.clear();
     R_y = orbital::calc_overlap_matrix(Phi, yPhi_Vec);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (!mrcpp::mpi::my_func(i)) continue;
         yPhi_Vec[i].free();
     }
@@ -78,7 +78,7 @@ RRMaximizer::RRMaximizer(double prec, OrbitalVector &Phi) {
     OrbitalVector zPhi_Vec = r_z(Phi);
     r_z.clear();
     R_z = orbital::calc_overlap_matrix(Phi, zPhi_Vec);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (!mrcpp::mpi::my_func(i)) continue;
         zPhi_Vec[i].free();
     }

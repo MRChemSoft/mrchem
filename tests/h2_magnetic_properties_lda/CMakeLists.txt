@@ -2,6 +2,7 @@ if(ENABLE_MPI)
     set(_h2_mag_lda_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
+if(ENABLE_XCFUN)
 add_integration_test(
   NAME "H2_magnetic_properties_LDA"
   LABELS "mrchem;H2;magnetizability;scf;nmr;lda;xcfun;short"
@@ -9,3 +10,4 @@ add_integration_test(
   LAUNCH_AGENT ${_h2_mag_lda_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess
   )
+endif()

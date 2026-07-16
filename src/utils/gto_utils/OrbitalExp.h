@@ -46,7 +46,7 @@ public:
     OrbitalExp(Intgrl &intgrl);
     ~OrbitalExp();
 
-    int size() const { return this->orbitals.size(); }
+    size_t size() const { return this->orbitals.size(); }
     int getAngularMomentum(int n) const;
 
     mrcpp::GaussExp<3> getAO(int i) const { return *this->orbitals[i]; }

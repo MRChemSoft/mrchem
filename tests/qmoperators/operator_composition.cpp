@@ -529,7 +529,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
                 REQUIRE(curlV[i].size(1) == 1);
                 OrbitalVector Psi = curlV[i](Phi);
                 const DoubleVector val = orbital::get_norms(Psi);
-                for (int n = 0; n < Psi.size(); n++) REQUIRE(val(n) == Catch::Approx(0.0).margin(thrs));
+                for (size_t n = 0; n < Psi.size(); n++) REQUIRE(val(n) == Catch::Approx(0.0).margin(thrs));
             }
             curlV.clear();
         }
@@ -543,7 +543,7 @@ TEST_CASE("Operator composition", "[operator_composition]") {
                     REQUIRE(jacV_ij.size(0) == 1);
                     OrbitalVector Psi = jacV_ij(Phi);
                     const DoubleVector val = orbital::get_norms(Psi);
-                    for (int n = 0; n < Psi.size(); n++) {
+                    for (size_t n = 0; n < Psi.size(); n++) {
                         if (i == j) {
                             REQUIRE(val(n) == Catch::Approx(1.0).epsilon(thrs));
                         } else {

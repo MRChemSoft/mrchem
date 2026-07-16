@@ -21,6 +21,7 @@ WaveFunction {
 DFT {
   functionals = SVWN5
   xc_library  = xcfun
+  density_cutoff = 0.0
 }
 
 Properties {

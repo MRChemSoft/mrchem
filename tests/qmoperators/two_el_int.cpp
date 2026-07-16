@@ -60,7 +60,7 @@ TEST_CASE("TwoElInt", "[two_el_int]") {
     Phi.push_back(Orbital(SPIN::Paired));
     Phi.distribute();
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }

@@ -1,3 +1,28 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
 #include "pseudopotential/sphericalHarmonics.h"
 #include <cmath>
 #include <array>
@@ -38,26 +63,33 @@ double (*get_spherical_harmonics(const int &l, const int &m))(const std::array<d
 }
 
 double s0(const std::array<double, 3> &r, const double &normr) {
+    (void)r;
+    (void)normr;
     return 0.5 * std::sqrt(1.0 / M_PI);
 }
 
 double s1m1(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return std::sqrt(3.0 / (4.0 * M_PI)) * r[1];
 }
 
 double s10(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return std::sqrt(3.0 / (4.0 * M_PI)) * r[2];
 }
 
 double s11(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return std::sqrt(3.0 / (4.0 * M_PI)) * r[0];
 }
 
 double s2m2(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.5 * std::sqrt(15.0 / ( M_PI)) * r[0] * r[1];
 }
 
 double s2m1(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.5 * std::sqrt(15.0 / ( M_PI)) * r[1] * r[2];
 }
 
@@ -66,18 +98,22 @@ double s20(const std::array<double, 3> &r, const double &normr) {
 }
 
 double s21(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.5 * std::sqrt(15.0 / ( M_PI)) * r[0] * r[2];
 }
 
 double s22(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.25 * std::sqrt(15.0 / ( M_PI)) * (r[0] * r[0] - r[1] * r[1]);
 }
 
 double s3m3(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.25 * std::sqrt(35.0 / ( 2 * M_PI)) * (r[1] * (3 * r[0] * r[0] - r[1] * r[1]));
 }
 
 double s3m2(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.5 * std::sqrt(105.0 / ( M_PI)) * r[0] * r[1] * r[2];
 }
 
@@ -94,18 +130,22 @@ double s31(const std::array<double, 3> &r, const double &normr) {
 }
 
 double s32(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.25 * std::sqrt(105.0 / ( M_PI)) * (r[0] * r[0] - r[1] * r[1]) * r[2];
 }
 
 double s33(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return 0.25 * std::sqrt(35.0 / ( 2 * M_PI)) * (r[0] * r[0] * r[0] - 3 * r[1] * r[1] * r[0]);
 }
 
 double s4m4(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return .75 * std::sqrt(35.0 / ( M_PI)) * (r[0] * r[1]) * (r[0] * r[0] - r[1] * r[1]);
 }
 
 double s4m3(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return .75 * std::sqrt(35.0 / ( 2 * M_PI)) * r[1] * (3 * r[0] * r[0] - r[1] * r[1]) * r[2];
 }
 
@@ -130,11 +170,13 @@ double s42(const std::array<double, 3> &r, const double &normr) {
 }
 
 double s43(const std::array<double, 3> &r, const double &normr) {
+    (void)normr;
     return .75 * std::sqrt(35.0 / ( 2 * M_PI)) * r[0] * (r[0] * r[0] - 3 * r[1] * r[1]) * r[2];
 }
 
 double s44(const std::array<double, 3> &r, const double &normr) {
-    return (3. / 16.) * std::sqrt(35.0 / ( M_PI)) * ( 
+    (void)normr;
+    return (3. / 16.) * std::sqrt(35.0 / ( M_PI)) * (
         r[0] * r[0] * ( r[0] * r[0] - 3 * r[1] * r[1] ) -
         r[1] * r[1] * ( 3 * r[0] * r[0] - r[1] * r[1] ));
 }

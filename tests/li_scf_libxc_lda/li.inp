@@ -28,4 +28,5 @@ SCF {
 
 DFT {
   xc_library = libxc
+  density_cutoff = 0.0
 }

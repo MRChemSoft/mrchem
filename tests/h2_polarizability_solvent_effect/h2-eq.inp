@@ -44,3 +44,7 @@ Response {
   orbital_thrs = 0.01
   run = [false, false, true]
 }
+
+DFT {
+  density_cutoff = -1.0
+}

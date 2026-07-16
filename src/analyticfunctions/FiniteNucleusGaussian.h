@@ -37,7 +37,7 @@ public:
 
     double evalf(const mrcpp::Coord<3> &r) const override {
         double result = 0.0;
-        for (int i = 0; i < this->nuclei.size(); i++) {
+        for (size_t i = 0; i < this->nuclei.size(); i++) {
             const auto &R = this->nuclei[i].getCoord();
             auto R1 = math_utils::calc_distance(r, R);
             auto Z = this->nuclei[i].getCharge();
@@ -49,8 +49,9 @@ public:
 
     std::string getParamName1() const override { return "RMS"; }
     std::string getParamName2() const override { return "Xi"; }
-    double calcParam1(double prec, const Nucleus &nuc) const override { return nuc.getRMSRadius(); }
+    double calcParam1(double prec, const Nucleus &nuc) const override { (void)prec; return nuc.getRMSRadius(); }
     double calcParam2(double prec, const Nucleus &nuc) const override {
+        (void)prec;
         auto RMS = nuc.getRMSRadius();
         auto RMS2 = RMS*RMS;
         auto xi = 3.0 / (2.0 * RMS2);

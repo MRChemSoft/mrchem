@@ -34,3 +34,8 @@ SCF {
   orbital_thrs = 1.0e-2           # Convergence threshold in orbital residual
   guess_type = SAD_DZ             # Type of initial guess: none, mw, gto
 }
+
+DFT {
+  xc_library = xcfun
+  density_cutoff = -1.0
+}

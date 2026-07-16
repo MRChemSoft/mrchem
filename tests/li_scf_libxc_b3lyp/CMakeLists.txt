@@ -2,6 +2,7 @@ if(ENABLE_MPI)
     set(_li_b3lyp_scf_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
+if(ENABLE_LIBXC)
 add_integration_test(
   NAME "Li_SCF_Libxc_B3LYP"
   LABELS "mrchem;Li;scf;dft;b3lyp;gga;unrestricted;energy;libxc;short"
@@ -9,3 +10,4 @@ add_integration_test(
   LAUNCH_AGENT ${_li_scf_libxc_b3lyp_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess
   )
+endif()

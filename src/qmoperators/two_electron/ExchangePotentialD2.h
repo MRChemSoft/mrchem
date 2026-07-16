@@ -67,7 +67,7 @@ private:
     void setupBank() override;
     void clearBank() override;
 
-    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { return 0.0; }
+    ComplexDouble evalf(const mrcpp::Coord<3> &r) const override { (void)r; return 0.0; }
 
     Orbital apply(Orbital phi_p) override;
     Orbital dagger(Orbital phi_p) override;

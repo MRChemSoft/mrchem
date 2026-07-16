@@ -47,7 +47,7 @@ public:
     AOContraction &getContraction(int n) { return *this->ctrs[n]; }
     const AOContraction &getContraction(int n) const { return *this->ctrs[n]; }
 
-    int size() const { return this->ctrs.size(); }
+    size_t size() const { return this->ctrs.size(); }
     int getNFunc() const { return this->nFunc; }
 
     // This should print shell by shell

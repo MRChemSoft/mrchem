@@ -1,3 +1,28 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
 #include "two_electron_utils.h"
 #include "qmfunctions/density_utils.h"
 #include <MRCPP/Parallel>
@@ -26,7 +51,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
     if (mrcpp::mpi::bank_size <= 0) {
         Vij_vec.resize(N*(N+1)/2);
     } else {
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             if (mrcpp::mpi::my_func(i)) PhiBank.put_func(i, Phi[i]);
         }
     }
@@ -136,7 +161,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
         if (task < 0) break;
         // we fetch all required i (but only one j at a time)
         std::vector<Orbital> iorb_vec;
-        for (int i = 0; i < itasks[task].size(); i++) {
+        for (size_t i = 0; i < itasks[task].size(); i++) {
             int iorb = itasks[task][i];
             Orbital phi_i;
             t_get.resume();
@@ -149,7 +174,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
             t_get.stop();
         }
 
-        for (int j = 0; j < jtasks[task].size(); j++) {
+        for (size_t j = 0; j < jtasks[task].size(); j++) {
             int jorb = jtasks[task][j];
             Orbital phi_j;
             t_get.resume();
@@ -159,7 +184,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
                 phi_j = Phi[jorb];
             t_get.stop();
 
-            for (int i = 0; i < iorb_vec.size(); i++) {
+            for (size_t i = 0; i < iorb_vec.size(); i++) {
                 int iorb = itasks[task][i];
                 Orbital &phi_i = iorb_vec[i];
                 Orbital Vij = phi_i.paramCopy(true);

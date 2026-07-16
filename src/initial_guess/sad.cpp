@@ -61,7 +61,7 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 } // namespace sad
 } // namespace initial_guess
 
-bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta) {
+bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib, double cutoff, int zeta) {
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_doubly(Phi)) ? true : false;
@@ -72,7 +72,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "XC Library  ", (mrdft::Factory::libxc) ? "LibXC" : "XCFun");
+    print_utils::text(0, "XC Library  ", xclib);
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
@@ -82,8 +82,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(false);
+    mrdft::Factory xc_factory(*MRA, false, xclib);
+    xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
@@ -141,7 +141,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     return true;
 }
 
-bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs) {
+bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib, double cutoff) {
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_doubly(Phi)) ? true : false;
@@ -152,7 +152,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "XC Library  ", (mrdft::Factory::libxc) ? "LibXC" : "XCFun");
+    print_utils::text(0, "XC Library  ", xclib);
     print_utils::text(0, "AO basis    ", "3-21G");
     mrcpp::print::separator(0, '~', 2);
 
@@ -161,8 +161,8 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(false);
+    mrdft::Factory xc_factory(*MRA, false, xclib);
+    xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
@@ -254,7 +254,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     Timer t_loc;
     auto N_nucs = nucs.size();
     DoubleVector charges = DoubleVector::Zero(2 * N_nucs);
-    for (int k = 0; k < N_nucs; k++) {
+    for (size_t k = 0; k < N_nucs; k++) {
         if (mrcpp::mpi::wrk_rank != k % mrcpp::mpi::wrk_size) continue;
 
         const std::string &sym = nucs[k].getElement().getSymbol();
@@ -275,7 +275,7 @@ void initial_guess::sad::project_atomic_densities(double prec, Density &rho_tot,
     density::allreduce_density(rho_tot, rho_loc);
     t_com.stop();
 
-    for (int k = 0; k < N_nucs; k++) {
+    for (size_t k = 0; k < N_nucs; k++) {
         std::stringstream o_row;
         o_row << std::setw(w1) << k;
         o_row << std::setw(w2) << nucs[k].getElement().getSymbol();

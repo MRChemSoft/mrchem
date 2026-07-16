@@ -116,7 +116,7 @@ bool initial_guess::cube::project_mo(OrbitalVector &Phi, double prec, const std:
     auto CUBEVector = initial_guess::cube::getCUBEFunction(cube_inp);
 
     bool success = true;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         Timer t_i;
         if (mrcpp::mpi::my_func(Phi[i])) {
             CUBEfunction phi_i = CUBEVector[i];

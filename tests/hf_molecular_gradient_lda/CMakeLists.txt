@@ -2,9 +2,11 @@ if(ENABLE_MPI)
     set(_hf_grad_lda_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
+if(ENABLE_XCFUN)
 add_integration_test(
   NAME "HF_molecular_gradient_LDA"
   LABELS "mrchem;HF;scf;lda;dft;gradient;xcfun;short"
   COST 200
   LAUNCH_AGENT ${_hf_grad_lda_launcher}
   )
+endif()

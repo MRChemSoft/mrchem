@@ -66,7 +66,7 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int n_mix, double alpha_mix, std::string nao_directory) {
+bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int n_mix, double alpha_mix, const std::string &xclib, double cutoff, std::string nao_directory) {
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
@@ -81,7 +81,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     mrcpp::print::separator(0, '~', 2);
 
     bool use_pp = false;
-    for (int i = 0; i < nucs.size(); i++) {
+    for (size_t i = 0; i < nucs.size(); i++) {
         if (nucs[i].hasPseudopotential()) {
             use_pp = true;
             break;
@@ -93,8 +93,8 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(false);
+    mrdft::Factory xc_factory(*MRA, false, xclib);
+    xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
@@ -114,7 +114,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     Density rho_new(false);
     initial_guess::nao::project_atomic_densities(prec, rho_new, nucs);
     double total_charge = 0.0;
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         total_charge += Phi[i].occ();
     }
     double rho_int = rho_new.integrate().real();
@@ -127,7 +127,6 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
 
     // Compute XC density
     Density &rho_xc = XC_.getDensity(DensityType::Total);
-    // mrcpp::deep_copy(rho_j, rho_j);
 
     std::shared_ptr<NuclearOperator> V_nuc;
     std::shared_ptr<ProjectorOperator> P;
@@ -136,7 +135,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
         XC_.setNuclei(std::make_shared<Nuclei>(nucs));
         Nuclei nucs_pp;
         Nuclei nucs_all_el;
-        for (int i = 0; i < nucs.size(); i++) {
+        for (size_t i = 0; i < nucs.size(); i++) {
             if (nucs[i].hasPseudopotential()) {
                 nucs_pp.push_back(nucs[i]);
             } else {
@@ -145,18 +144,13 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
         }
         P = std::make_shared<ProjectorOperator>(nucs_pp, prec);
         std::string model_pp = "point_like";
-        // NuclearOperator V_nuc_all_el(nucs_all_el, prec, prec, false, model_pp);
         V_nuc = std::make_shared<NuclearOperator>(nucs_all_el, prec, prec, false, model_pp);
         model_pp = "pp";
         NuclearOperator pp_nuc(nucs_pp, prec, prec, false,  model_pp);
         V_nuc->add(pp_nuc);
         V = V + (*P);
-        // V_nuc_ptr = std::make_shared<NuclearOperator>(V_nuc_all_el);
     } else{
-        // NuclearOperator V_nuc(nucs, prec);
-        // std::make_shared<NuclearOperator>(V_nuc);
         V_nuc = std::make_shared<NuclearOperator>(nucs, prec);
-        // V = V;
     }
 
     if (plevel == 1) mrcpp::print::time(1, "Projecting GTO density", t_lap);
@@ -269,8 +263,7 @@ void initial_guess::nao::project_atomic_densities(double prec, Density &rho, con
         atomic_densities.push_back(atomic_density);
     }
 
-    int N_nucs = nucs.size();
-    for (int i = 0; i < nucs.size(); i++) {
+    for (size_t i = 0; i < nucs.size(); i++) {
         if (mrcpp::mpi::wrk_rank != i % mrcpp::mpi::wrk_size) continue;
 
         bool need_rescale = nucs[i].getCharge() != nucs[i].getAtomicNumber();
@@ -362,7 +355,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
 
     print_utils::text(1, "NAO data directory", data_dir);
 
-    for (int iNuc = 0; iNuc < nucs.size(); iNuc++) {
+    for (size_t iNuc = 0; iNuc < nucs.size(); iNuc++) {
         std::string element = nucs[iNuc].getElement().getSymbol();
         std::string file = data_dir + "/" + element + ".json";
         std::ifstream ifs(file);
@@ -409,8 +402,7 @@ void initial_guess::nao::project_atomic_orbitals(double prec, OrbitalVector &Phi
                 mrcpp::project(orb_mw, gauss_match, prec);
 
                 mrcpp::project(orb_mw, orb, prec);
-                double nrm1 = orb_mw.norm();
-                // orb_mw.crop(prec);
+                // Note: Might want to crop after project
                 double nrm = orb_mw.norm();
                 int nnodes = orb_mw.getNNodes();
                 if (nnodes < 10) {

@@ -53,7 +53,7 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
 
     auto Phi_p = std::make_shared<OrbitalVector>();
 
-    mrdft::Factory xc_factory(*MRA);
+    mrdft::Factory xc_factory(*MRA, false, "auto");
     xc_factory.setOrder(MRDFT::Gradient);
     xc_factory.setFunctional("LDA", 1.0);
     xc_factory.setDensityCutoff(1.0e-10);
@@ -75,7 +75,7 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
         }
     }
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
@@ -105,7 +105,7 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i, i)).epsilon(thrs));
@@ -128,8 +128,8 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
-            for (int j = 0; j <= i; j++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
+            for (size_t j = 0; j <= i; j++) {
                 if (std::abs(v(i, j).real()) > thrs) REQUIRE(v(i, j).real() == Catch::Approx(E_P(i, j)).epsilon(thrs));
                 REQUIRE(v(i, j).imag() < thrs);
             }

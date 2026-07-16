@@ -44,7 +44,7 @@ public:
     Intgrl(const std::string &file);
     ~Intgrl();
 
-    int getNNuclei() const { return this->nuclei.size(); }
+    size_t getNNuclei() const { return this->nuclei.size(); }
 
     const Nucleus &getNucleus(int i) const { return *this->nuclei[i]; }
     const AOBasis &getAOBasis(int i) const { return *this->basis[i]; }

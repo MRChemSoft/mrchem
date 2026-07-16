@@ -1,5 +1,5 @@
 if(NOT DEFINED ENV{CXXFLAGS})
-    if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|IntelLLVM")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-padded -Wno-c++98-compat -Wno-c++11-compat -Wno-unknown-pragmas -Woverloaded-virtual -Wwrite-strings -fcolor-diagnostics")
         set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
         set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O3 -g3 -DDEBUG -glldb -fno-limit-debug-info")

@@ -63,11 +63,14 @@ add_Catch_test(
   LABELS "exchange;hessian;short"
   )
 
+if(ENABLE_XCFUN OR ENABLE_LIBXC)
 add_Catch_test(
   NAME xc_operator_lda
   LABELS "xc;operator;lda;short"
   )
+endif()
 
+if(ENABLE_XCFUN)
 add_Catch_test(
   NAME xc_operator_blyp
   LABELS "xc;operator;blyp;short"
@@ -82,6 +85,7 @@ add_Catch_test(
   NAME xc_hessian_pbe
   LABELS "xc;hessian;pbe;short"
   )
+endif()
 
 add_Catch_test(
   NAME electric_field_operator

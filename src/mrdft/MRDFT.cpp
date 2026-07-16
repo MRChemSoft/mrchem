@@ -114,7 +114,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     functional().clear();
     int outNodes = 0;
     int outSize = 0;
-    for (int i = 1; i < PotVec.size(); i++) {
+    for (size_t i = 1; i < PotVec.size(); i++) {
         mrcpp::FunctionTree<3> &f_i = mrcpp::get_func(PotVec, i);
         f_i.mwTransform(mrcpp::BottomUp);
         f_i.calcSquareNorm();
