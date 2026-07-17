@@ -41,7 +41,7 @@ namespace mrchem {
 namespace initial_guess {
 namespace mw {
 
-bool setup(OrbitalVector &Phi, double prec, const std::string &file_p, const std::string &file_a, const std::string &file_b);
+bool setup(OrbitalVector &Phi, double prec, const std::string &file_p, const std::string &file_a, const std::string &file_b, int n_components = 1);
 
 } // namespace mw
 } // namespace initial_guess

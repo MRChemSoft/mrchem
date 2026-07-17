@@ -64,7 +64,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
 
     // Setup local analytic function
     Timer t_loc;
-    NuclearFunction *f_loc = nullptr;
+    NuclearFunction *f_loc = nullptr; //NuclearFunction is a child of RepresentableFunction
 
     if (model == "point_like") {
         mrcpp::print::header(1, "Projecting nuclear potential (point-like HFYGB)");
@@ -104,7 +104,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
 
     // Project local potential
     mrcpp::CompFunction<3> V_loc(false);
-    mrcpp::project(V_loc, *f_loc, loc_prec);
+    mrcpp::project(V_loc, *f_loc, loc_prec, 1); //Creates a 1C CompFunction no matter the physical model selected. Ok since it is the potential in RankZeroOperator, and the zero^th component will be applied over all components uniformly.
     t_loc.stop();
     mrcpp::print::separator(1, '-');
     print_utils::qmfunction(1, "Local potential", V_loc, t_loc);
@@ -121,9 +121,9 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     mrcpp::print::footer(1, t_tot, 2);
 
     // Invoke operator= to assign *this operator
-    RankZeroOperator &O = (*this);
-    O = V_tot;
-    O.name() = "V_nuc";
+    RankZeroOperator &O = (*this); //Used to set the name, notably. Someone smarter should document why this line and the 2 next exist
+    O = V_tot; 
+    O.name() = "V_nuc"; 
     delete f_loc;
 }
 

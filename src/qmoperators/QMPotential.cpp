@@ -53,8 +53,8 @@ namespace mrchem {
  * potential grid. The argument sets how many extra refinement levels is allowed
  * beyond this initial refinement.
  */
-QMPotential::QMPotential(int adap, bool shared)
-        : mrcpp::CompFunction<3>(0, shared)
+QMPotential::QMPotential(int adap, bool shared, int nComponents)
+        : mrcpp::CompFunction<3>(0, shared, nComponents)
         , QMOperator()
         , adap_build(adap) {}
 
@@ -72,7 +72,6 @@ QMPotential::QMPotential(const QMPotential &inp)
  */
 Orbital QMPotential::apply(Orbital inp) {
     if (this->apply_prec < 0.0) MSG_ERROR("Uninitialized operator");
-
     Orbital out;
     calc(out, inp, false);
 
@@ -132,13 +131,21 @@ void QMPotential::calc(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> &inp,
     double prec = this->apply_prec;
     if (out.Ncomp() > 0) MSG_ABORT("Output not empty");
     if (out.isShared()) MSG_ABORT("Cannot share this function");
-    if (dagger and inp.iscomplex()) MSG_ERROR("Not implemented");
+    // if (dagger and inp.iscomplex()) MSG_INFO("DAGGER OPERATOR NEEDS TO BE CHECKED"); //it should be good now
     if (inp.conjugate()) MSG_ERROR("Not implemented");
 
-    mrcpp::CompFunction<3> &V = *this;
+    mrcpp::CompFunction<3> V = this->paramCopy(true); 
+    mrcpp::deep_copy(V, *this); 
     double coef = 1.0;
     mrcpp::copy_grid(out, inp);
-    mrcpp::multiply(prec, out, coef, inp, V, adap);
+    if (inp.Ncomp() == V.Ncomp()){ 
+        mrcpp::multiply(out, inp, V, prec, false, false, dagger); 
+    } else { 
+        //single component potential 
+        mrcpp::multiply(out, inp, *V.CompD[0], prec, false, false, dagger);
+        //since we treat V as a functionTree we need to apply its prefactor c1 manually.
+        for (int comp = 0; comp < out.Ncomp(); comp++) out.func_ptr->data.c1[comp] *= V.func_ptr->data.c1[0];
+    } 
 }
 
 } // namespace mrchem

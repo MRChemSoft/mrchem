@@ -73,7 +73,9 @@ int main(int argc, char **argv) {
         mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
     } else {
         Molecule mol;
+        std::cout << "main; Initializing molecule from input..." << std::endl;
         driver::init_molecule(mol_inp, mol);
+        std::cout << "main; Molecule initialized." << std::endl;
         auto scf_out = driver::scf::run(scf_inp, mol);
         json rsp_out = {};
         if (scf_out["success"]) {

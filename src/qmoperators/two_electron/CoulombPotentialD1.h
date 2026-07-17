@@ -29,6 +29,7 @@
 
 namespace mrchem {
 
+//SCF solver implementation of the Coulomb potential
 class CoulombPotentialD1 final : public CoulombPotential {
 public:
     CoulombPotentialD1(std::shared_ptr<mrcpp::PoissonOperator> P, std::shared_ptr<OrbitalVector> Phi, bool mpi_share = false)

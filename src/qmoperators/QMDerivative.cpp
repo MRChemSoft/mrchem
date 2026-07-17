@@ -79,7 +79,7 @@ Orbital QMDerivative::apply(Orbital inp) {
     mrcpp::apply(out, D, inp, dir, metric);
     if (isImag() and !inp.iscomplex()) { // output is real, but we keep a soft complex scalar factor
         ComplexDouble i1(0.0, 1.0);
-        out.func_ptr->data.c1[0] *= i1;
+        for (int comp=0; comp<out.Ncomp(); comp++) out.func_ptr->data.c1[comp] *= i1;
     }
     return out;
 }

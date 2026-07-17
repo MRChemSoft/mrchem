@@ -52,6 +52,24 @@ template <int I, int J> RankTwoOperator<I, J> tensor::outer(RankOneOperator<I> A
     return out;
 }
 
+// /*
+//  * @brief: shuffles the indices of a spinor, simulating the application of a Dirac matrix to it
+//  * alpha represents the index of the Dirac matrices.
+//  * For scalar operators, it is unused.
+//  * For 2 component (Weyl/Pauli) spinors, alpha = 0,1,2,3 corresponds to indentiy, sigma_x, y and z respectively.
+//  * For 4 component (Dirac) spinors, alpha = 0,1,2,3 corresponds to indentiy, alpha_x, y and z respectively,
+//  * 
+// */
+// int shuffle_Dirac(int alpha, int j) {
+//     if (alpha > 0) { //not identity
+        
+//     }
+//     else if (alpha == 3) { //gamma 3 (alpha_z) or sigma_z depending on the number of spinor components
+ 
+//     }
+//     return j;
+// }
+
 namespace tensor {
 template RankZeroOperator dot<3>(RankOneOperator<3> A, RankOneOperator<3> B);
 template RankTwoOperator<3, 3> outer<3, 3>(RankOneOperator<3> A, RankOneOperator<3> B);

@@ -71,7 +71,9 @@ CoulombPotential::CoulombPotential(PoissonOperator_p P, OrbitalVector_p Phi, boo
  *
  */
 void CoulombPotential::setup(double prec) {
-    if (isSetup(prec)) return;
+    if (isSetup(prec)) {
+        return;
+    }
     setApplyPrec(prec);
     Timer timer;
     auto plevel = Printer::getPrintLevel();

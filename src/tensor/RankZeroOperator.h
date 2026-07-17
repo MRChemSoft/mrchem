@@ -80,10 +80,10 @@ public:
     ComplexDouble operator()(const mrcpp::Coord<3> &r) const;
     ComplexDouble dagger(const mrcpp::Coord<3> &r) const;
 
-    Orbital operator()(Orbital inp);
+    Orbital operator()(Orbital inp, int alpha = 0);
     Orbital dagger(Orbital inp);
 
-    OrbitalVector operator()(OrbitalVector &inp);
+    OrbitalVector operator()(OrbitalVector &inp, int alpha = 0); //todo implémenter alpha
     OrbitalVector dagger(OrbitalVector &inp);
 
     ComplexDouble operator()(Orbital bra, Orbital ket);
@@ -117,6 +117,8 @@ public:
 
     bool isImag() { return this->imag; }
     void setImag(bool im) { this->imag = im; }
+
+    std::vector<QMOperatorVector> getOperatorExpansion() const { return this->oper_exp; }
 
 protected:
     std::string oper_name{"O"};

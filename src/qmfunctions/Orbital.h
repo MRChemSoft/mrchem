@@ -27,6 +27,7 @@
 
 #include "MRCPP/MWFunctions"
 #include "MRCPP/Parallel"
+#include "MRCPP/utils/CompFunction.h"
 
 #include "mrchem.h"
 
@@ -52,20 +53,23 @@ namespace mrchem {
 
 // Note: cannot only define "getSpin()", because sometime we only have a CompFunction, not an Orbital
 #define spin() func_ptr->data.n1[0]
+
 #define occ() func_ptr->data.d1[0]
 class Orbital : public mrcpp::CompFunction<3> {
 public:
     Orbital() = default;
-    Orbital(SPIN::type spin);
+    Orbital(SPIN::type spin, int n_comp = 1);
     Orbital(const Orbital &orb);
     Orbital(const mrcpp::CompFunction<3> &orb);
-    Orbital(int spin, double occ, int rank = -1);
+    Orbital(int spin, double occ, int rank = -1, int n_comp = 1);
     Orbital dagger() const;
+
+    // Orbital apply_alpha_matrix(int alpha, bool conjugate = false) const; //redundant, apply_Pauli can be used instead
 
     char printSpin() const;
     void setSpin(int spin) { this->func_ptr->data.n1[0] = spin; }
-    void saveOrbital(const std::string &file);
-    void loadOrbital(const std::string &file);
+    // void saveOrbital(const std::string &file); //DEPRECATED -- implemented in orbital_utils
+    // void loadOrbital(const std::string &file); //DEPRECATED -- implemented in orbital_utils
 };
 
 // All MPI processes have a vector of full length, but

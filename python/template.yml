@@ -325,7 +325,7 @@ sections:
         predicates:
           - value.lower() in ['none', 'pcm', 'pcm_pb', 'pcm_lpb']
         docstring: |
-          Set method for treatment of environment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model,
+          Set method for treatment of envicononment. ``none`` for vacuum calculation. ``PCM`` for Polarizable Continuum Model,
           which will activate the ``PCM`` input section for further parametrization options. The ``PB`` and ``LPB`` variants add the
           Poisson-Boltzmann and Linearized Poisson-Boltzmann solvers, respectively.
       - name: nuclear_model
@@ -339,6 +339,14 @@ sections:
           Point-like (numerical smoothing): HFYGB (default), parabola or minimal.
           Finite models (physical smoothing): Gaussian or Homogeneous sphere
           Finite models are derived from nuclear RMS radius, Visscher (1997)
+      - name: spinor_components
+        type: int
+        default: 1
+        predicates:
+          - 0 < value < 5
+        docstring: |
+          Number of spinor components in the wavefunction. 1 corresponds to scalar wavefunctions, 
+          2 for Weyl or Pauli spinors (Standard for 2C methods), and 4 represent Dirac spinors.
   - name: Pseudopotential
     docstring: |
       Define the pseudopotentials.

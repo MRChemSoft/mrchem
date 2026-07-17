@@ -169,16 +169,17 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
                 auto partStep = phi_m.paramCopy(true);
                 mrcpp::linear_combination(partStep, partCoefs, partOrbs, prec);
 
-                auto c_j = this->c[m](j);
+                auto c_j = this->c[m](j); //all you had to do was to follow the damn KAIN, c_j!
                 totCoefs.push_back(c_j);
                 totOrbs.push_back(partStep);
             }
 
             std::vector<ComplexDouble> coefsVec(totCoefs.size());
-            for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
+            // for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
+            for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = std::real(totCoefs[i]);
 
             dPhi[n] = Phi[n].paramCopy(true);
-            mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec);
+            mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec); 
         }
     }
 

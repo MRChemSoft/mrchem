@@ -372,6 +372,15 @@ User input reference
   
     **Predicates**
       - ``value.lower() in ['point_like', 'point_parabola', 'point_minimal', 'finite_gaussian', 'finite_sphere']``
+    
+   :spinor_components: Number of spinor components in the wavefunction. 1 corresponds to scalar wavefunctions,  2 for Weyl or Pauli spinors (Standard for 2C methods), and 4 represent Dirac spinors. 
+  
+    **Type** ``int``
+  
+    **Default** ``1``
+  
+    **Predicates**
+      - ``0 < value < 5``
   
  :Pseudopotential: Define the pseudopotentials. 
 
@@ -388,7 +397,7 @@ User input reference
   
     **Default** ``user['world_prec']``
   
- :ZORA: Define required parameters for the ZORA Hamiltonian. 
+ :ZORA: Define required parameters for the ZORA Hamiltonian.  
 
   :red:`Keywords`
    :include_nuclear: Include the nuclear potential ``V_nuc`` in the ZORA potential. 

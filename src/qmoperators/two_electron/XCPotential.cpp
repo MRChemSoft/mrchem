@@ -227,9 +227,56 @@ Orbital XCPotential::apply(Orbital phi) {
     QMPotential &V = *this;
     if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
-    FunctionTree<3> &pot = getPotential(phi.spin());
-    V.setReal(&pot);
-    Orbital Vphi = QMPotential::apply(phi);
+    // MSG_INFO("pouet");
+    // FunctionTree<3> &pot = getPotential(phi.spin()); //original
+    // V.setReal(&pot); //original
+    // Orbital Vphi = QMPotential::apply(phi); //original
+    Orbital Vphi;
+    // if (phi.Ncomp()> 1) {
+    //     //two component case (only, for now)
+    //     //applies the alpha XC to the alpha comp and same for beta
+    //     if (phi.Ncomp()>2) MSG_WARN("Not implemented for 4 components, undefined behaviour! Have fun, Jacomo");
+    //     //Alpha XC potential 
+    //     FunctionTree<3> &pot_a = getPotential(SPIN::Alpha); 
+    //     V.setReal(&pot_a);
+    //     Orbital Vphi_a = QMPotential::apply(phi); //This applies the potential to both components (which is a waste of computation time), but I AM NOT implementing a new apply just to save a microsecond per SCF iteration
+    //     //beta XC potential
+    //     FunctionTree<3> &pot_b = getPotential(SPIN::Beta); 
+    //     V.setReal(&pot_b);
+    //     Orbital Vphi_b = QMPotential::apply(phi);
+    //     //Setting the alpha contribution as Vphi's first component (and copying its metadata, to avoid future problems)
+    //     mrcpp::deep_copy(Vphi, Vphi_a);
+    //     //And setting the beta contribution as the second component
+    //     if (Vphi.isreal() and Vphi_b.isreal()) Vphi_b.CompD[1]->deep_copy(Vphi.CompD[1]); //Vphi.setReal(new FunctionTree<3, double> Vphi_b.CompD[1],1);
+    //     if (Vphi.iscomplex() and Vphi_b.iscomplex()) Vphi_b.CompC[1]->deep_copy(Vphi.CompC[1]);
+    //     //These cases are will probably never happen but I cannot bring myself to consciously write fault with obvious failure points
+    //     // if there's a type mismatch between alpha and beta, copy all to complex
+    //     if (Vphi.isreal() and Vphi_b.iscomplex()){
+    //         //Transfering to complex, ridding of real tree
+    //         Vphi.CompC[0] = Vphi.CompD[0]->CopyTreeToComplex();
+    //         delete Vphi.CompD[0];
+    //         Vphi.CompD[0] = nullptr;
+    //         Vphi.defcomplex();
+    //         //Set second element to beta contribution
+    //         Vphi_b.CompC[1]->deep_copy(Vphi.CompC[1]);
+    //     } 
+    //     if (Vphi.iscomplex() and Vphi_b.isreal()){
+    //         //Transfering to complex, ridding of real tree
+    //         Vphi_b.CompC[1] = Vphi_b.CompD[1]->CopyTreeToComplex();
+    //         // Vphi_b.defcomplex();
+    //         //Set second element to beta contribution
+    //         Vphi_b.CompC[1]->deep_copy(Vphi.CompC[1]);
+    //         delete Vphi_b.CompD[0]; //as a good measure
+    //         delete Vphi_b.CompD[1];
+    //         Vphi_b.CompD[1] = nullptr;
+    //     } 
+
+    // } else {
+        //scalar case, apply the total density to the function phi
+        FunctionTree<3> &pot = getPotential(phi.spin());
+        V.setReal(&pot);
+        Vphi = QMPotential::apply(phi);
+    // }
     V.setReal(nullptr);
     return Vphi;
 }

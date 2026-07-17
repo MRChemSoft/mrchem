@@ -328,7 +328,11 @@ def stencil() -> JSONDict:
                                                               "'point_minimal', "
                                                               "'finite_gaussian', "
                                                               "'finite_sphere']"],
-                                            'type': 'str'}],
+                                            'type': 'str'},
+                                        {   'default': 1,
+                                            'name': 'spinor_components',
+                                            'predicates': ['0 < value < 5'],
+                                            'type': 'int'}],
                         'name': 'WaveFunction'},
                     {   'keywords': [   {   'default': '{}',
                                             'name': 'pp_files',

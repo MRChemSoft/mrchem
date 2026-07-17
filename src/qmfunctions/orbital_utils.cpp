@@ -29,6 +29,8 @@
 #include <MRCPP/Timer>
 #include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/utils/details.h>
+#include <MRCPP/utils/CompFunction.h>
+#include <MRCPP/utils/spinor_utils.h>
 
 #include "utils/RRMaximizer.h"
 #include "utils/math_utils.h"
@@ -175,9 +177,10 @@ bool orbital::compare(const OrbitalVector &Phi_a, const OrbitalVector &Phi_b) {
  */
 OrbitalVector orbital::add(ComplexDouble a, OrbitalVector &Phi_a, ComplexDouble b, OrbitalVector &Phi_b, double prec) {
     if (Phi_a.size() != Phi_b.size()) MSG_ERROR("Size mismatch");
-
     OrbitalVector out = orbital::param_copy(Phi_a);
     for (int i = 0; i < Phi_a.size(); i++) {
+        //resetting out's c1 prefactors that were inherited from Phi_a from the param_copy
+        for (int comp=0; comp<4; comp++) out[i].func_ptr->data.c1[comp] = {1.0,0.0};
         if (mrcpp::mpi::my_func(Phi_a[i]) != mrcpp::mpi::my_func(Phi_b[i])) MSG_ABORT("MPI rank mismatch");
         mrcpp::add(out[i], a, Phi_a[i], b, Phi_b[i], prec);
     }
@@ -208,9 +211,9 @@ OrbitalVector orbital::rotate(OrbitalVector &Phi, const ComplexMatrix &U, double
  * Metadata of orbitals are always copied, and trees are only copied for own orbitals.
  *
  */
-OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) {
+OrbitalVector orbital::CopyToComplex(OrbitalVector &Phi) { //TODO: recompile with gcc 13
     OrbitalVector out;
-    for (auto &i : Phi) {
+    for (const auto &i : Phi) {
         Orbital out_i;
         mrcpp::CopyToComplex(out_i, i);
         out.push_back(out_i);
@@ -299,7 +302,7 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
     OrbitalVector out;
     OrbitalVector tmp;
     for (auto &Phi_i : Phi) {
-        Orbital i(Phi_i);
+        Orbital i(Phi_i); 
         if (i.spin() == spin) {
             if (i.getRank() % mrcpp::mpi::wrk_size != out.size() % mrcpp::mpi::wrk_size) {
                 // need to send orbital from owner to new owner
@@ -315,6 +318,7 @@ OrbitalVector orbital::disjoin(OrbitalVector &Phi, int spin) {
                 if (mrcpp::mpi::my_func(tmp.size())) { mrcpp::mpi::recv_function(i, i.getRank() % mrcpp::mpi::wrk_size, i.getRank(), mrcpp::mpi::comm_wrk); }
             }
             i.setRank(tmp.size());
+            // i.setNcomp(Phi_i.Ncomp()); //copying the number of components, but redundant. Will be cleaned if so.
             tmp.push_back(i);
         }
     }
@@ -570,7 +574,7 @@ ComplexMatrix orbital::calc_localization_matrix(double prec, OrbitalVector &Phi)
 ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     Timer t_tot;
     auto plevel = Printer::getPrintLevel();
-    mrcpp::print::header(2, "Digonalizing Fock matrix");
+    mrcpp::print::header(2, "Diagonalizing Fock matrix");
 
     ComplexMatrix S_m12 = orbital::calc_lowdin_matrix(Phi);
     F = S_m12.adjoint() * F * S_m12;
@@ -619,6 +623,49 @@ ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi, ComplexMa
     if (plevel == 1) mrcpp::print::time(1, "Lowdin orthonormalization", t_tot);
 
     return U;
+}
+
+/** @brief Perform the Löwdin orthonormalization on a set of orbitals verifying the time-reversal symmetry (Kramers theorem)
+ *
+ * @param Phi: orbitals to orthonormalize
+ * @param F: Fock matrix in the Phi basis
+ *
+ * Orthonormalizes the orbitals by multiplication of the Löwdin matrix S^(-1/2).
+ * Orbitals are rotated in place, and the transformation matrix is returned.
+ */
+ComplexMatrix orbital::kramers_orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
+    Timer t_tot, t_lap;
+    auto plevel = Printer::getPrintLevel();
+    mrcpp::print::header(2, "Lowdin orthonormalization");
+
+    // number of represented electrons
+    int N = Phi.size();
+
+    // Compute complete 2N x 2N overlap matrix 
+    ComplexMatrix S = mrcpp::calc_kramers_overlap_matrix(Phi, Phi); 
+
+    // Compute S^-1/2 
+    ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S, -1.0 / 2.0);
+
+    // Isolate the upper left N x X block 
+    ComplexMatrix S_restricted (N,N);
+    for (int i=0; i < N; i++){
+        for (int j=0; j < N; j++){
+            S_restricted(i,j) = S_m12(i,j);
+        }
+    }
+
+    // orthonormalise the orbitals
+    t_lap.start();
+    mrcpp::rotate(Phi, S_restricted, prec);
+    mrcpp::print::time(2, "Rotating orbitals", t_lap);
+
+    // Transform Fock matrix
+    F = S_restricted.adjoint() * F * S_restricted;
+    mrcpp::print::footer(2, t_tot, 2);
+    if (plevel == 1) mrcpp::print::time(1, "Lowdin orthonormalization", t_tot);
+
+    return S_restricted;
 }
 
 /** @brief Returns the number of occupied orbitals */
@@ -1015,24 +1062,28 @@ void orbital::saveOrbital(const std::string &file, const Orbital &orb, int text_
         f.close();
     }
 
-    // writing real tree
-    if (orb.isreal()) {
-        std::stringstream fname;
-        fname << file << "_real";
-        if (text_format)
-            orb.CompD[0]->saveTreeTXT(fname.str());
-        else
-            orb.CompD[0]->saveTree(fname.str());
-    }
-
-    // writing complex tree
-    if (orb.iscomplex()) {
-        std::stringstream fname;
-        fname << file << "_complex";
-        if (text_format)
-            orb.CompC[0]->saveTreeTXT(fname.str());
-        else
-            orb.CompC[0]->saveTree(fname.str());
+    for (int comp=0; comp<orb.Ncomp(); comp++){
+        // writing real tree
+        if (orb.isreal()) {
+            std::stringstream fname;
+            fname << file << "_real";
+            if (comp > 0) fname << "_" << comp; // first component retains the standard file name. Other components gain a "_i" suffix
+            if (text_format)
+                orb.CompD[comp]->saveTreeTXT(fname.str());
+            else
+                orb.CompD[comp]->saveTree(fname.str());
+        }
+    
+        // writing complex tree
+        if (orb.iscomplex()) {
+            std::stringstream fname;
+            fname << file << "_complex";
+            if (comp > 0) fname << "_" << comp; // first component retains the standard file name. Other components gain a "_i" suffix
+            if (text_format)
+                orb.CompC[comp]->saveTreeTXT(fname.str());
+            else
+                orb.CompC[comp]->saveTree(fname.str());
+        }
     }
 }
 
@@ -1091,26 +1142,33 @@ void orbital::loadOrbital(const std::string &file, Orbital &orb) {
         mrcpp::InterpolatingBasis basis(orb.data().order);
         mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, orb.data().depth);
     } else if (orb.data().type == mrcpp::Legendre) {
+        //BUG: this will always trigger by default, as mrcpp::Legendre = 0 and it is the default value in CompFunctionData
         mrcpp::LegendreBasis basis(orb.data().order);
         mra = new mrcpp::MultiResolutionAnalysis<3>(world, basis, orb.data().depth);
     } else {
         MSG_ABORT("Invalid basis type!");
     }
 
-    // reading real orbital
-    if (orb.isreal()) {
-        std::stringstream fname;
-        fname << file << "_real";
-        orb.alloc(1);
-        orb.CompD[0]->loadTree(fname.str());
-    }
+    // allocate all components according to the meta data, then read each one
+    int nComp = std::max(orb.Ncomp(), 1);
+    orb.alloc(nComp);
 
-    // reading complex orbital
-    if (orb.iscomplex()) {
-        std::stringstream fname;
-        fname << file << "_complex";
-        orb.alloc(1);
-        orb.CompC[0]->loadTree(fname.str());
+    for (int i = 0; i < nComp; i++) {
+        // reading real orbital
+        if (orb.isreal()) {
+            std::stringstream fname;
+            fname << file << "_real";
+            if (i > 0) fname << "_" << i;
+            orb.CompD[i]->loadTree(fname.str());
+        }
+
+        // reading complex orbital
+        if (orb.iscomplex()) {
+            std::stringstream fname;
+            fname << file << "_complex";
+            if (i > 0) fname << "_" << i;
+            orb.CompC[i]->loadTree(fname.str());
+        }
     }
     delete mra;
 }

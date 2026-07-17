@@ -66,7 +66,7 @@ using mrcpp::Timer;
 
 namespace mrchem {
 
-bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int n_mix, double alpha_mix, std::string nao_directory) {
+bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int n_mix, double alpha_mix, std::string nao_directory, int n_components) {
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
@@ -226,6 +226,23 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
         initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
         initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
         initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
+        //Alpha and Beta electrons are Kramers partners, and this
+        //needs to be reflected in the geometry of the spinors
+        //Therefore we swap the beta guess over to the second component
+        //to emulate the time-reversal operator -iσ_y K0
+        if (n_components>1) {
+            for (auto &phi : Phi_b) {
+                if (not mrcpp::mpi::my_func(phi)) continue;
+                //swapping trees
+                std::swap(phi.CompD[0], phi.CompD[1]);
+                std::swap(phi.CompC[0], phi.CompC[1]);
+                //swapping tree metadata
+                std::swap(phi.func_ptr->data.Nchunks[0], phi.func_ptr->data.Nchunks[1]);
+                //multiplying prefactors with -i σ_y
+                std::swap(phi.func_ptr->data.c1[0], phi.func_ptr->data.c1[1]);
+                phi.func_ptr->data.c1[1] *= -1.0;
+            }
+        }
         Phi = orbital::adjoin(Phi, Phi_a);
         Phi = orbital::adjoin(Phi, Phi_b);
 

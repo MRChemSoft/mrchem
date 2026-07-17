@@ -72,8 +72,11 @@ public:
     auto &getPoisson() { return this->potential->getPoisson(); }
     auto &getDensity() { return this->potential->getDensity(); }
 
-private:
-    std::shared_ptr<CoulombPotential> potential{nullptr};
+    auto &getPotential() const { return this->potential; }
+
+    std::shared_ptr<CoulombPotential> potential{nullptr}; //TODO: Revert 
+// private:
+//     std::shared_ptr<CoulombPotential> potential{nullptr};
 };
 
 } // namespace mrchem

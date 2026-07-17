@@ -27,6 +27,7 @@
 #include <MRCPP/Parallel>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
+#include <MRCPP/utils/CompFunction.h>
 
 #include "core.h"
 
@@ -85,7 +86,7 @@ int PT[29][2] = {
  * and fills the resulting orbitals by the Aufbau principle.
  *
  */
-bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
+bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta, int n_components) { //TODO: adapt to multiple  components
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize Core Hamiltonian matrix");
@@ -110,7 +111,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     // Project AO basis of hydrogen functions
     t_lap.start();
     OrbitalVector Psi;
-    initial_guess::core::project_ao(Psi, prec, nucs, zeta);
+    initial_guess::core::project_ao(Psi, prec, nucs, zeta, n_components);
     if (plevel == 1) mrcpp::print::time(1, "Projecting Hydrogen AOs", t_lap);
 
     p.setup(prec);
@@ -128,6 +129,23 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
     initial_guess::core::rotate_orbitals(Phi, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_a, prec, U, Psi);
     initial_guess::core::rotate_orbitals(Phi_b, prec, U, Psi);
+    //Alpha and Beta electrons are Kramers partners, and this
+    //needs to be reflected in the geometry of the spinors
+    //Therefore we swap the beta guess over to the second component
+    //to emulate the time-reversal operator -iσ_y K0
+    if (n_components>1) {
+        for (auto &phi : Phi_b) {
+            if (not mrcpp::mpi::my_func(phi)) continue;
+            //swapping trees
+            std::swap(phi.CompD[0], phi.CompD[1]);
+            std::swap(phi.CompC[0], phi.CompC[1]);
+            //swapping tree metadata
+            std::swap(phi.func_ptr->data.Nchunks[0], phi.func_ptr->data.Nchunks[1]);
+            //multiplying prefactors with -i σ_y
+            std::swap(phi.func_ptr->data.c1[0], phi.func_ptr->data.c1[1]);
+            phi.func_ptr->data.c1[1] *= -1.0;
+        }
+    }
     Phi = orbital::adjoin(Phi, Phi_a);
     Phi = orbital::adjoin(Phi, Phi_b);
 
@@ -159,7 +177,7 @@ bool initial_guess::core::setup(OrbitalVector &Phi, double prec, const Nuclei &n
  * QZ: 1s2s2p3s3p4s3d4p5s4d5p (5s + 12p + 10d)
  *
  */
-void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta) {
+void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nuclei &nucs, int zeta, int n_components) {
     Timer t_tot;
     auto w0 = Printer::getWidth() - 2;
     auto w1 = 5;
@@ -199,14 +217,19 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
             if (minAOReached and l == 0) zetaReached++;
             if (zetaReached >= zeta) break;
 
-            for (int m = 0; m < M; m++) {
+            for (int m = 0; m < M; m++) { //loop over the magnetic quantum number
                 Timer t_i;
                 HydrogenFunction h_func(n, l, m, Z, R);
-                Phi.push_back(Orbital(SPIN::Paired));
+                Phi.push_back(Orbital(SPIN::Paired, n_components));
                 Phi.back().setRank(Phi.size() - 1);
                 if (mrcpp::mpi::my_func(Phi.back())) {
-                    mrcpp::project(Phi.back(), h_func, prec);
+                    //The AOs are all projected to the first component of Phi regardless of the number of components
+                    //It is easier to distribute them among the components in rotate() than to create a
+                    //degenerate guess (for 2C+) here that will be mixed during diagonalisation
+                    mrcpp::project(Phi.back(), h_func, prec, 1); 
+                    // Phi.back().alloc_comp(n_components, true);
                     if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
+                    MSG_INFO("Norm="<<std::abs(Phi.back().norm()));
                 }
 
                 std::stringstream o_txt;
@@ -225,6 +248,7 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 
 void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, ComplexMatrix &U, OrbitalVector &Phi) {
     if (Psi.size() == 0) return;
+
     Timer t_tot;
     mrcpp::rotate(Phi, U, Psi, prec);
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
@@ -233,6 +257,9 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
 ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOperator &p, RankZeroOperator &V) {
     Timer t1;
     ComplexMatrix S_m12 = mrcpp::calc_lowdin_matrix(Phi);
+
+
+    OrbitalVector VPhi = V(Phi);
     mrcpp::print::separator(2, '-');
     ComplexMatrix t_tilde = qmoperator::calc_kinetic_matrix(p, Phi, Phi);
     ComplexMatrix v_tilde = V(Phi, Phi);
@@ -245,6 +272,7 @@ ComplexMatrix initial_guess::core::diagonalize(OrbitalVector &Phi, MomentumOpera
     DoubleVector eig;
     ComplexMatrix U = math_utils::diagonalize_hermitian_matrix(f, eig);
     mrcpp::print::time(1, "Diagonalizing Fock matrix", t2);
+
 
     return S_m12 * U;
 }

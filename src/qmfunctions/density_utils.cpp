@@ -25,6 +25,7 @@
 
 #include "MRCPP/Gaussians"
 #include "MRCPP/MWFunctions"
+// #include "MRCPP/utils/CompFunction.h"
 #include "MRCPP/Parallel"
 #include "MRCPP/Printer"
 #include "MRCPP/Timer"
@@ -77,13 +78,25 @@ double density::compute_occupation(const Orbital &phi, DensityType dens_spin) {
  * slightly faster.
  *
  */
-Density density::compute(double prec, Orbital phi, DensityType spin) {
-    double occ = density::compute_occupation(phi, spin);
-    if (std::abs(occ) < mrcpp::MachineZero) return Density(false);
+Density density::compute(double prec, Orbital phi, DensityType spin) {//outputs a multi-component density if phi is 2C or more
+    double occup = density::compute_occupation(phi, spin);
+    if (std::abs(occup) < mrcpp::MachineZero) return Density(false);
     Density rho(false);
-    mrcpp::copy_grid(rho, phi);
-    mrcpp::multiply(prec, rho, occ, phi, phi, -1, false, false, true); // the last "true" means use complex conjugate of the first phi
 
+    // copy_grid in 1C to match the master branch and tests. Doesn't work for 2C
+    // Haven't really investigated, don't have(/want to spend) the time to find
+    // what's wrong just for performance right now
+    // The cost in performance _is_ great, though. ~3x the time to build a 2C density
+    // partly because of the trees needing to be rebuilt.
+    if (phi.Ncomp() == 1) mrcpp::copy_grid(rho, phi); //faster, but problematic because it doesn't work for 2C.
+    else rho.alloc(1, true); //2C consistent, but slow
+    // mrcpp::copy_grid(rho, phi, 1); // doesn't work in 2C
+
+    mrcpp::make_density(rho, phi, prec); // always returns real density
+
+    //note that we crop the phi*phi, because the square makes small smaller
+    rho.crop(prec);  // Truncates to given precision
+    rho.func_ptr->data.c1[0] *= occup;
     return rho;
 }
 
@@ -124,17 +137,41 @@ void density::compute(double prec, Density &rho, OrbitalVector &Phi, OrbitalVect
 /** @brief Compute local density as the sum of own (MPI) orbitals
  */
 void density::compute_local(double prec, Density &rho, OrbitalVector &Phi, DensityType spin) {
+    rho.alloc(1);
     for (auto &phi_i : Phi) {
         if (mrcpp::mpi::my_func(phi_i)) {
-            double occ = density::compute_occupation(phi_i, spin);
-            if (std::abs(occ) < mrcpp::MachineZero) continue;
-            Density rho_i;
-            mrcpp::copy_grid(rho_i, phi_i);
-            mrcpp::make_density(rho_i, phi_i, prec); // always returns real density
+            double occup = 1.0;
+            std::vector<bool> comp_contribution (4, true); //All components contribute to the density (default case) 
+            occup = density::compute_occupation(phi_i, spin);
+            if (std::abs(occup) < mrcpp::MachineZero) continue;
+            if (std::abs(phi_i.occ()-1.0)>mrcpp::MachineZero) MSG_WARN("Occupation contribution not implemented. Spinor will contribute as if occ()==1.0");
+            if (phi_i.Ncomp()>2) MSG_WARN("not tested for 4C, might be undefined behaviour here, have fun Jacopo");
+            // if (phi_i.Ncomp()<2){
+            //     //Scalar case
+            // } else { 
+            //     //spinorial case 
+            //     //See above, default contribution is {true, true, true, true}
+            //     //NOTE: These contributions below are non-physical
+            //     // if (spin == DensityType::Alpha) comp_contribution = {true, false, true, false}; //Alpha spin contributions only 
+            //     // if (spin == DensityType::Beta) comp_contribution = {false, true, false, true}; //Beta spin contributions only   
+            // }
+            Density rho_i; 
+
+            // copy_grid in 1C to match the master branch and tests. Doesn't work for 2C
+            // Haven't really investigated, don't have(/want to spend) the time to find
+            // what's wrong just for performance right now
+            // The cost in performance _is_ great, though. ~3x the time to build a 2C density
+            // partly because of the trees needing to be rebuilt.
+            if (phi_i.Ncomp() == 1) mrcpp::copy_grid(rho_i, phi_i); //faster, but problematic because it doesn't work for 2C.
+            else rho_i.alloc(1, true); //2C consistent, but slow
+            // mrcpp::copy_grid(rho_i, phi_i, 1); // doesn't work in 2C
+
+            mrcpp::make_density(rho_i, phi_i, prec, comp_contribution); // always returns real density
+
             //note that we crop the phi_i*phi_i, because the square makes small smaller
             rho_i.crop(prec);  // Truncates to given precision
             // we do not crop rho, since the rho_i do not cancel out
-            rho.add(occ, rho_i); // Extends to union grid
+            rho.add(occup, rho_i); // Extends to union grid
         }
     }
 }
