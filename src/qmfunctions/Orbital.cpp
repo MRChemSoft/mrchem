@@ -53,6 +53,7 @@ Orbital::Orbital(SPIN::type spin)
  */
 Orbital::Orbital(int spin, double occ, int rank)
         : mrcpp::CompFunction<3>(spin) {
+    (void)occ;
     if (this->spin() < 0) INVALID_ARG_ABORT;
     if (this->occ() < 0) {
         // d1 is defined as occupancy

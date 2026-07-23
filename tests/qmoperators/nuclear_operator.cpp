@@ -64,7 +64,7 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     }
     Phi.distribute();
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
@@ -101,7 +101,7 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i)).epsilon(prec));
@@ -124,7 +124,7 @@ TEST_CASE("PointNucleusHFYGB", "[nuclear_operator]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             REQUIRE(v(i, i).real() == Catch::Approx(E_P(i)).epsilon(prec));
             REQUIRE(v(i, i).imag() < thrs);
         }
@@ -156,7 +156,7 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     }
     Phi.distribute();
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
@@ -193,7 +193,7 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i)).epsilon(prec));
@@ -216,7 +216,7 @@ TEST_CASE("PointNucleusParabola", "[nuclear_operator]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             REQUIRE(v(i, i).real() == Catch::Approx(E_P(i)).epsilon(prec));
             REQUIRE(v(i, i).imag() < thrs);
         }
@@ -248,7 +248,7 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     }
     Phi.distribute();
 
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         HydrogenFunction f(ns[i], ls[i], ms[i]);
         if (mrcpp::mpi::my_func(Phi[i])) mrcpp::project(Phi[i], f, prec);
     }
@@ -285,7 +285,7 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     }
     SECTION("vector apply") {
         OrbitalVector VPhi = V(Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             ComplexDouble V_ii = mrcpp::dot(Phi[i], VPhi[i]);
             if (mrcpp::mpi::my_func(Phi[i])) {
                 REQUIRE(V_ii.real() == Catch::Approx(E_P(i)).epsilon(prec));
@@ -308,7 +308,7 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
     }
     SECTION("expectation matrix ") {
         ComplexMatrix v = V(Phi, Phi);
-        for (int i = 0; i < Phi.size(); i++) {
+        for (size_t i = 0; i < Phi.size(); i++) {
             REQUIRE(v(i, i).real() == Catch::Approx(E_P(i)).epsilon(prec));
             REQUIRE(v(i, i).imag() < thrs);
         }

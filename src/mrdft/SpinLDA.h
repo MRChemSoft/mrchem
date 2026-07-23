@@ -25,37 +25,55 @@
 
 #pragma once
 
-#include <XCFun/xcfun.h>
-
 #include "Functional.h"
-#include "Factory.h" // only to call Factory::libxc
+#include "MRCPP/Printer"
+#include "xc_utils.h"
 
 namespace mrdft {
 
+/**
+ * @class LDA
+ * @brief Local Density Approximation xc functional
+ * @details Implements a spin‑polarized LDA functional on the MRA grid
+ */
 class SpinLDA final : public Functional {
 public:
-    SpinLDA(int k, XC_p &f);
+    /**
+     * @brief Construct a LDA functional
+     * @param[in] k Polynomial order of the functional derivatives (0: energy,
+     *             1: potential, etc.)
+     * @param[in] f XC library handle (Libxc/XCFun); ownership is transferred
+     */
+    SpinLDA(int k, XCLib_p &f)
+            : Functional(k, f) {
+        xc_mask = xc_utils::build_output_mask(true, true, this->order);
+        d_mask = xc_utils::build_density_mask(true, true, this->order);
+    }
     ~SpinLDA() override = default;
 
     bool isSpin() const override { return true; }
     bool isGGA() const override { return false; }
     bool isMetaGGA() const override { return false; }
-    int numIn() const override { return 2; }
-    int numOut() const override { if (Factory::libxc) {return 3;} else {return xcfun_output_length(xcfun.get());} }
+
+    int numIn() const override { return 2; }                 ///< @brief Number of input components: 1 densities (alpha, beta)
+    int numOut() const override { return xclib->getnOut(); } ///< @brief Number of raw outputs provided by the xc backend
+    int densityChannels() const override { return 2; }       ///< @brief Two density channels; rho_alpha, rho_beta
+    bool usesGradients() const override { return false; }    ///< @brief LDA does not require density gradients
 
 private:
     mrcpp::FunctionTreeVector<3> rho_a;
     mrcpp::FunctionTreeVector<3> rho_b;
 
-    int getCtrInputLength() const override;
-    int getCtrOutputLength() const override { return 3; }
+    int getCtrOutputLength() const override { return 3; } ///< @brief Number of contracted outputs (energy + 2 components for LDA)
 
-    void clear() override;
-    virtual mrcpp::FunctionTreeVector<3> setupXCInput() override;
-    virtual mrcpp::FunctionTreeVector<3> setupCtrInput() override;
-
-    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
-    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    /** @brief Clear internal functions
+     *
+     * Ownership of densities (alpha, beta) is outside MRDFT -> clear
+     */
+    void clear() override {
+        mrcpp::clear(this->rho_a, false);
+        mrcpp::clear(this->rho_b, false);
+    }
 };
 
 } // namespace mrdft

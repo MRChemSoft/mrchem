@@ -181,7 +181,7 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
 
     const char label[10] = "spdfg";
 
-    for (int i = 0; i < nucs.size(); i++) {
+    for (size_t i = 0; i < nucs.size(); i++) {
         const Nucleus &nuc = nucs[i];
         int minAO = std::ceil(nuc.getElement().getZ() / 2.0);
         double Z = nuc.getCharge();

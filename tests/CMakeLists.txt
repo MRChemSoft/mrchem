@@ -15,6 +15,11 @@ endif()
 
 add_executable(mrchem-tests unit_tests.cpp)
 
+# Suppress warnings from Eigen headers (-isystem instead of -I)
+target_include_directories(mrchem-tests SYSTEM PRIVATE
+  $<TARGET_PROPERTY:Eigen3::Eigen,INTERFACE_INCLUDE_DIRECTORIES>
+  )
+
 add_subdirectory(qmfunctions)
 add_subdirectory(qmoperators)
 add_subdirectory(solventeffect)

@@ -1,3 +1,28 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
 #include "AZoraPotential.h"
 
 #include "chemistry/Molecule.h"
@@ -86,7 +111,7 @@ void AZoraPotential::project(double proj_prec) {
 double AZoraPotential::evalf_analytic(const mrcpp::Coord<3> &r) {
     double V = 0.0;
     // Loop over all atoms:
-    for (int i = 0; i < this->atomicPotentials.size(); i++) {
+    for (size_t i = 0; i < this->atomicPotentials.size(); i++) {
         mrcpp::Coord<3> r_i = nucs[i].getCoord();
         double rr = std::sqrt((r[0] - r_i[0]) * (r[0] - r_i[0]) + (r[1] - r_i[1]) * (r[1] - r_i[1]) + (r[2] - r_i[2]) * (r[2] - r_i[2]));
         V += this->atomicPotentials[i].evalfLeftNoRightConstant(rr);

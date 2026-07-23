@@ -25,7 +25,6 @@
 
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
-#include <XCFun/xcfun.h>
 
 namespace mrdft {
 namespace xc_utils {

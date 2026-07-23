@@ -119,7 +119,7 @@ void print_utils::json(int level, const nlohmann::json &j, bool ralign) {
     // the other sections
     int lshift = 0;
     for (const auto &item : j.items()) {
-        if (item.key().size() > lshift) lshift = item.key().size();
+        if (static_cast<int>(item.key().size()) > lshift) lshift = item.key().size();
     }
 
     // Loop over json items

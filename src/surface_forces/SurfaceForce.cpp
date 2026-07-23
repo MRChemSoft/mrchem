@@ -1,3 +1,28 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
 #include "surface_forces/SurfaceForce.h"
 
 #include <MRCPP/MWOperators>
@@ -52,6 +77,9 @@ namespace surface_force {
  * @param gridPos The positions of the grid points where the field should be evaluated. Shape (nGrid, 3).
  */
 MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const VectorXd &nucSmoothing, const MatrixXd gridPos) {
+
+    (void)nucSmoothing;
+
     int nGrid = gridPos.rows();
     int nNuc = nucPos.rows();
     MatrixXd Efield = MatrixXd::Zero(nGrid, 3);
@@ -147,6 +175,9 @@ std::vector<Eigen::Matrix3d> maxwellStress(const Molecule &mol, std::vector<Orbi
  */
 std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std::vector<std::vector<mrchem::Orbital>> &nablaPhi, std::vector<Orbital> &hessRho, double prec, const MatrixXd &gridPos) {
 
+    (void)mol;
+    (void)prec;
+
     // original formula for kinetic stress:
     // sigma_ij = 0.5 \sum_k phi_k del_i del_j phi_k - (del_i phi_k) (del_j phi_k)
     // using the product rule for the first term:
@@ -161,7 +192,7 @@ std::vector<Matrix3d> kineticStress(const Molecule &mol, OrbitalVector &Phi, std
     std::array<double, 3> pos;
     double n1, n2, n3;
     double occ;
-    for (int iOrb = 0; iOrb < Phi.size(); iOrb++) {
+    for (size_t iOrb = 0; iOrb < Phi.size(); iOrb++) {
         occ = Phi[iOrb].occ();
 
         for (int i = 0; i < nGrid; i++) {
@@ -265,7 +296,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
 
     std::vector<std::vector<Orbital>> nablaPhi(Phi.size());
     std::vector<Orbital> hessRho = hess(rho);
-    for (int i = 0; i < Phi.size(); i++) {
+    for (size_t i = 0; i < Phi.size(); i++) {
         if (mrcpp::mpi::my_func(i)) { nablaPhi[i] = nabla(Phi[i]); }
     }
     // setup xc stuff:
@@ -274,11 +305,11 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     bool xc_spin = json_xcfunc["spin"];
     auto xc_cutoff = json_xcfunc["cutoff"];
     auto xc_funcs = json_xcfunc["functionals"];
+    auto xc_lib = json_fock["xc_library"];
     auto xc_order = order + 1;
     auto funcVectorShared = std::make_shared<OrbitalVector>(Phi);
 
-    mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(xc_spin);
+    mrdft::Factory xc_factory(*MRA, xc_spin, xc_lib);
     xc_factory.setOrder(xc_order);
     xc_factory.setDensityCutoff(xc_cutoff);
     for (const auto &f : xc_funcs) {
@@ -288,8 +319,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     }
     std::unique_ptr<mrdft::MRDFT> mrdft_p = xc_factory.build();
 
-    mrdft::Factory xc_factory2(*MRA);
-    xc_factory2.setSpin(xc_spin);
+    mrdft::Factory xc_factory2(*MRA, xc_spin, xc_lib);
     xc_factory2.setOrder(xc_order);
     xc_factory2.setDensityCutoff(xc_cutoff);
     for (const auto &f : xc_funcs) {

@@ -27,6 +27,7 @@
 
 #include "qmfunctions/Density.h"
 #include "qmoperators/QMPotential.h"
+#include "tensor/RankZeroOperator.h"
 #include "chemistry/Nucleus.h"
 
 #include "mrdft/MRDFT.h"
@@ -68,6 +69,7 @@ public:
      * @brief Get the XC potential. For unrestricted calculations, the potential is a vector of two functions.
      */
     std::shared_ptr<mrcpp::FunctionTreeVector<3>> getPotentialVector() { return std::make_shared<mrcpp::FunctionTreeVector<3>>(potentials); }
+    RankZeroOperator &getTauPotential() { return tauPotential; }
 
     friend class XCOperator;
 
@@ -79,6 +81,7 @@ protected:
     double energy;                                          ///< XC energy
     std::vector<Density> densities;                         ///< XC densities (total or alpha/beta)
     mrcpp::FunctionTreeVector<3> potentials;                ///< XC Potential functions collected in a vector
+    RankZeroOperator tauPotential;                          ///< XC tau potential used by meta-GGA kinetic corrections
     std::shared_ptr<mrcpp::FunctionTree<3>> v_tot{nullptr}; ///< Total XC potential
     std::shared_ptr<OrbitalVector> orbitals;                ///< External set of orbitals used to build the density
     std::unique_ptr<mrdft::MRDFT> mrdft;                    ///< External XC functional to be used

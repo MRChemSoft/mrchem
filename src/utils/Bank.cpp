@@ -143,7 +143,7 @@ void Bank::open() {
             this->clear_bank();
             for (auto const &block : nodeid2block) {
                 if (block.second == nullptr) continue;
-                for (int i = 0; i < block.second->data.size(); i++) {
+                for (size_t i = 0; i < block.second->data.size(); i++) {
                     if (not block.second->deleted[i]) {
                         currentsize[account] -= block.second->N_rows[i] / 128; // converted into kB
                         totcurrentsize -= block.second->N_rows[i] / 128;       // converted into kB
@@ -164,7 +164,7 @@ void Bank::open() {
                 if (block.second == nullptr) toeraseVec.push_back(block.first);
                 if (block.second == nullptr) continue;
                 if (block.first >= idmax and idmax != 0) continue;
-                for (int i = 0; i < block.second->data.size(); i++) {
+                for (size_t i = 0; i < block.second->data.size(); i++) {
                     if (not block.second->deleted[i]) {
                         currentsize[account] -= block.second->N_rows[i] / 128; // converted into kB
                         totcurrentsize -= block.second->N_rows[i] / 128;       // converted into kB
@@ -185,7 +185,7 @@ void Bank::open() {
                 if (block.second == nullptr) toeraseVec.push_back(block.first);
                 if (block.second == nullptr) continue;
                 datatoeraseVec.clear();
-                for (int i = 0; i < block.second->data.size(); i++) {
+                for (size_t i = 0; i < block.second->data.size(); i++) {
                     if (block.second->id[i] < idmax or idmax == 0) datatoeraseVec.push_back(i);
                     if (block.second->id[i] < idmax or idmax == 0) block.second->data[i] = nullptr;
                 }
@@ -230,11 +230,11 @@ void Bank::open() {
                     block->BlockData.resize(block->N_rows[0], block->data.size());
                     size = block->N_rows[0] * block->data.size();
                     if (printinfo) std::cout << " rewrite into superblock " << block->data.size() << " " << block->N_rows[0] << " nodeid " << nodeid << std::endl;
-                    for (int j = 0; j < block->data.size(); j++) {
+                    for (size_t j = 0; j < block->data.size(); j++) {
                         for (int i = 0; i < block->N_rows[j]; i++) { block->BlockData(i, j) = block->data[j][i]; }
                     }
                     // repoint to the data in BlockData
-                    for (int j = 0; j < block->data.size(); j++) {
+                    for (size_t j = 0; j < block->data.size(); j++) {
                         if (block->deleted[j] == true) std::cout << "ERROR data already deleted " << std::endl;
                         assert(block->deleted[j] == false);
                         delete[] block->data[j];
@@ -284,11 +284,11 @@ void Bank::open() {
                 // Prepare the data as one contiguous block
                 if (block->data.size() == 0) std::cout << "Zero size blockdata! C " << orbid << " " << block->N_rows.size() << std::endl;
                 size = 0;
-                for (int j = 0; j < block->data.size(); j++) size += block->N_rows[j];
+                for (size_t j = 0; j < block->data.size(); j++) size += block->N_rows[j];
 
                 std::vector<double> coeff(size);
                 int ij = 0;
-                for (int j = 0; j < block->data.size(); j++) {
+                for (size_t j = 0; j < block->data.size(); j++) {
                     for (int i = 0; i < block->N_rows[j]; i++) { coeff[ij++] = block->data[j][i]; }
                 }
                 // send info about the size of the superblock
@@ -540,7 +540,7 @@ void Bank::remove_account(int account) {
     for (auto const &block : nodeid2block) {
         if (block.second == nullptr) toeraseVec.push_back(block.first);
         if (block.second == nullptr) continue;
-        for (int i = 0; i < block.second->data.size(); i++) {
+        for (size_t i = 0; i < block.second->data.size(); i++) {
             if (not block.second->deleted[i]) {
                 currentsize[account] -= block.second->N_rows[i] / 128; // converted into kB
                 totcurrentsize -= block.second->N_rows[i] / 128;       // converted into kB
@@ -560,7 +560,7 @@ void Bank::remove_account(int account) {
         if (block.second == nullptr) toeraseVec.push_back(block.first);
         if (block.second == nullptr) continue;
         datatoeraseVec.clear();
-        for (int i = 0; i < block.second->data.size(); i++) {
+        for (size_t i = 0; i < block.second->data.size(); i++) {
             datatoeraseVec.push_back(i);
             block.second->data[i] = nullptr;
         }

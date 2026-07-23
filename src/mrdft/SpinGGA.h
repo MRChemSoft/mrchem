@@ -25,40 +25,63 @@
 
 #pragma once
 
-#include <XCFun/xcfun.h>
-
 #include "Functional.h"
-#include "Factory.h" // only to call Factory::libxc
+#include "MRCPP/Printer"
+#include "xc_utils.h"
 
 namespace mrdft {
 
+/**
+ * @class spinGGA
+ * @brief Generalized Gradient Approximation xc functional
+ * @details Implements a spin‑polarized GGA functional on the MRA grid
+ */
 class SpinGGA final : public Functional {
 public:
-    SpinGGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d);
+    /**
+     * @brief Construct a spin GGA functional
+     * @param[in] k Polynomial order of the functional derivatives (0: energy,
+     *             1: potential, etc.)
+     * @param[in] f XC library handle (Libxc/XCFun); ownership is transferred
+     * @param[in] d Numerical derivative operator used to compute density gradients
+     */
+    SpinGGA(int k, XCLib_p &f, std::shared_ptr<mrcpp::DerivativeOperator<3>> &d)
+            : Functional(k, f)
+            , derivative(std::move(d)) {
+        xc_mask = xc_utils::build_output_mask(false, true, this->order);
+        d_mask = xc_utils::build_density_mask(false, true, this->order);
+    }
     ~SpinGGA() override = default;
 
     bool isSpin() const override { return true; }
     bool isGGA() const override { return true; }
     bool isMetaGGA() const override { return false; }
-    int numIn() const override { return 8; }
-    int numOut() const override { if (Factory::libxc) {return 9;} else {return xcfun_output_length(xcfun.get());} }
+
+    int numIn() const override { return 8; }                 ///< @brief Number of input components: 2 densities + 6 gradient components
+    int numOut() const override { return xclib->getnOut(); } ///< @brief Number of raw outputs provided by the xc backend
+    int densityChannels() const override { return 2; }       ///< @brief Two density channels; rho_alpha, rho_beta
+    bool usesGradients() const override { return true; }     ///< @brief spinGGA requires density gradients
 
 private:
-    std::unique_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
     mrcpp::FunctionTreeVector<3> rho_a;
     mrcpp::FunctionTreeVector<3> rho_b;
     mrcpp::FunctionTreeVector<3> grad_a;
     mrcpp::FunctionTreeVector<3> grad_b;
 
-    int getCtrInputLength() const override;
-    int getCtrOutputLength() const override { return 9; }
+    int getCtrOutputLength() const override { return 9; } ///< @brief Number of contracted outputs (energy + 8 components for spinGGA)
 
-    void clear() override;
-    virtual mrcpp::FunctionTreeVector<3> setupXCInput() override;
-    virtual mrcpp::FunctionTreeVector<3> setupCtrInput() override;
-
-    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
-    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    /** @brief Clear internal functions
+     *
+     * Ownership of densities (alpha, beta) is outside MRDFT -> clear
+     * Ownership of gradients (alpha, beta) is inside MRDFT -> free
+     */
+    void clear() override {
+        mrcpp::clear(this->rho_a, false);
+        mrcpp::clear(this->rho_b, false);
+        mrcpp::clear(this->grad_a, true);
+        mrcpp::clear(this->grad_b, true);
+    }
 };
 
 } // namespace mrdft

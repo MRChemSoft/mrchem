@@ -48,14 +48,14 @@ namespace mrchem {
  */
 void KAIN::setupLinearSystem() {
     Timer t_tot;
-    int nHistory = this->orbitals.size() - 1;
-    if (nHistory < 1) MSG_ABORT("Not enough history to setup system of equations");
+    if (this->orbitals.size() < 2) MSG_ABORT("Not enough history to setup system of equations");
+    size_t nHistory = this->orbitals.size() - 1;
 
     std::vector<ComplexMatrix> A_matrices;
     std::vector<ComplexVector> b_vectors;
 
-    int nOrbitals = this->orbitals[nHistory].size();
-    for (int n = 0; n < nOrbitals; n++) {
+    size_t nOrbitals = this->orbitals[nHistory].size();
+    for (size_t n = 0; n < nOrbitals; n++) {
         auto orbA = ComplexMatrix::Zero(nHistory, nHistory).eval();
         auto orbB = ComplexVector::Zero(nHistory).eval();
 
@@ -63,12 +63,12 @@ void KAIN::setupLinearSystem() {
         auto &fPhi_m = this->dOrbitals[nHistory][n];
         if (mrcpp::mpi::my_func(phi_m)) {
 
-            for (int i = 0; i < nHistory; i++) {
+            for (size_t i = 0; i < nHistory; i++) {
                 auto &phi_i = this->orbitals[i][n];
                 auto dPhi_im = phi_m.paramCopy(true);
                 mrcpp::add(dPhi_im, 1.0, phi_i, -1.0, phi_m, -1.0);
 
-                for (int j = 0; j < nHistory; j++) {
+                for (size_t j = 0; j < nHistory; j++) {
                     auto &fPhi_j = this->dOrbitals[j][n];
                     auto dfPhi_jm = fPhi_m.paramCopy(true);
                     mrcpp::add(dfPhi_jm, 1.0, fPhi_j, -1.0, fPhi_m, -1.0);
@@ -85,7 +85,7 @@ void KAIN::setupLinearSystem() {
         b_vectors.push_back(orbB);
     }
 
-    for (int i = 0; i < nOrbitals; i++) {
+    for (size_t i = 0; i < nOrbitals; i++) {
         mrcpp::mpi::allreduce_matrix(A_matrices[i], mrcpp::mpi::comm_wrk);
         mrcpp::mpi::allreduce_vector(b_vectors[i], mrcpp::mpi::comm_wrk);
     }
@@ -98,10 +98,10 @@ void KAIN::setupLinearSystem() {
         auto fockA = ComplexMatrix::Zero(nHistory, nHistory).eval();
         auto fockB = ComplexVector::Zero(nHistory).eval();
 
-        for (int i = 0; i < nHistory; i++) {
+        for (size_t i = 0; i < nHistory; i++) {
             const auto &X_i = this->fock[i];
             auto dX_im = X_i - X_m;
-            for (int j = 0; j < nHistory; j++) {
+            for (size_t j = 0; j < nHistory; j++) {
                 const auto &fX_j = this->dFock[j];
                 auto dfX_jm = fX_j - fX_m;
                 auto prod = dX_im.adjoint() * dfX_jm;
@@ -175,7 +175,7 @@ void KAIN::expandSolution(double prec, OrbitalVector &Phi, OrbitalVector &dPhi, 
             }
 
             std::vector<ComplexDouble> coefsVec(totCoefs.size());
-            for (int i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
+            for (size_t i = 0; i < totCoefs.size(); i++) coefsVec[i] = totCoefs[i];
 
             dPhi[n] = Phi[n].paramCopy(true);
             mrcpp::linear_combination(dPhi[n], coefsVec, totOrbs, prec);

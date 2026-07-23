@@ -1,7 +1,7 @@
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
 
-if("${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}" VERSION_LESS 3.6)
-    message(FATAL_ERROR "You will need Python >= 3.6 to run MRChem")
+if("${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}" VERSION_LESS 3.10)
+    message(FATAL_ERROR "You will need Python >= 3.10 to run MRChem")
 endif()
 
 if(NOT DEFINED PYMOD_INSTALL_LIBDIR)

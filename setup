@@ -5,7 +5,7 @@
 
 import os
 import sys
-assert sys.version_info >= (2, 6), 'Python >= 2.6 is required'
+assert sys.version_info >= (3, 10), 'Python >= 3.10 is required'
 
 sys.path.insert(0, 'cmake')
 from autocmake import configure
@@ -24,6 +24,12 @@ Options:
   --coverage                             Enable code coverage [default: OFF].
   --mpi                                  Enable MPI parallelization [default: False].
   --omp                                  Enable OpenMP parallelization [default: False].
+  --xcfun-old-pbe                        Compile xcfun with old definition of pbe parameters [default: False].
+  --nlohmann_json=<STRING>               Behaviour for finding/fetching nlohmann_json (default, onlylocal, onlyfetch) [default: default].
+  --xcfun=<STRING>                       Behaviour for finding/fetching XCFun (default, onlylocal, onlyfetch) [default: default].
+  --libxc=<STRING>                       Behaviour for finding/fetching LibXC (default, onlylocal, onlyfetch) [default: default].
+  --eigen3=<STRING>                      Behaviour for finding/fetching Eigen3 (default, onlylocal, onlyfetch) [default: default].
+  --mrcpp=<STRING>                       Behaviour for finding/fetching MRCPP (default, onlylocal, onlyfetch) [default: default].
   --type=<TYPE>                          Set the CMake build type (debug, release, relwithdebinfo, minsizerel) [default: release].
   --generator=<STRING>                   Set the CMake build system generator [default: Unix Makefiles].
   --show                                 Show CMake command and exit.
@@ -47,7 +53,12 @@ def gen_cmake_command(options, arguments):
     command.append('-DENABLE_MPI={0}'.format(arguments['--mpi']))
     command.append('-DENABLE_OPENMP={0}'.format(arguments['--omp']))
     command.append('-DCMAKE_BUILD_TYPE={0}'.format(arguments['--type']))
-    command.append('-DCMAKE_POLICY_VERSION_MINIMUM=3.5')
+    command.append('-DXCFUN_OLD_PBE={0}'.format(arguments['--xcfun-old-pbe']))
+    command.append('-DNLOHMANN_JSON_FIND_BEHAVIOUR={0}'.format(arguments['--nlohmann_json']))
+    command.append('-DXCFUN_FIND_BEHAVIOUR={0}'.format(arguments['--xcfun']))
+    command.append('-DLIBXC_FIND_BEHAVIOUR={0}'.format(arguments['--libxc']))
+    command.append('-DEIGEN3_FIND_BEHAVIOUR={0}'.format(arguments['--eigen3']))
+    command.append('-DMRCPP_FIND_BEHAVIOUR={0}'.format(arguments['--mrcpp']))
     command.append('-G"{0}"'.format(arguments['--generator']))
     if arguments['--cmake-options'] != "''":
         command.append(arguments['--cmake-options'])

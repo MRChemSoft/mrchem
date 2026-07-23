@@ -60,6 +60,11 @@ target_link_libraries(mrchem
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MPI::MPI_CXX>
   )
 
+# Suppress warnings from Eigen headers (-isystem instead of -I)
+target_include_directories(mrchem SYSTEM PRIVATE
+  $<TARGET_PROPERTY:Eigen3::Eigen,INTERFACE_INCLUDE_DIRECTORIES>
+  )
+
 set_target_properties(mrchem
   PROPERTIES
     POSITION_INDEPENDENT_CODE 1

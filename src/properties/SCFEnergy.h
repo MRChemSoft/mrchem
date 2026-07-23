@@ -46,14 +46,18 @@ public:
     explicit SCFEnergy(double kin = 0.0, double nn = 0.0,
                        double en = 0.0, double ee = 0.0,
                        double x = 0.0, double xc = 0.0,
+                    //    double xc_tau = 0.0,
                        double next = 0.0, double eext = 0.0,
                        double rt = 0.0, double rn = 0.0, double re = 0.0,
                        double nl = 0.0) :
         E_kin(kin), E_nn(nn), E_en(en), E_ee(ee),
+        //   E_x(x), E_xc(xc), E_xc_tau(xc_tau), E_next(next), E_eext(eext), Er_tot(rt), 
           E_x(x), E_xc(xc), E_next(next), E_eext(eext), Er_tot(rt), 
           Er_nuc(rn), Er_el(re), E_nl(nl) {
             E_nuc = E_nn + E_next + Er_nuc;
-            E_el = E_kin + E_en + E_ee + E_xc + E_x + E_eext + Er_el + E_nl;
+            // double E_xc_tot = E_xc + E_xc_tau;
+            double E_xc_tot = E_xc;
+            E_el = E_kin + E_en + E_ee + E_xc_tot + E_x + E_eext + Er_el + E_nl;
         }
 
     double getTotalEnergy() const { return this->E_nuc + this->E_el; }
@@ -67,6 +71,7 @@ public:
     double getElectronExternalEnergy() const { return this->E_eext; }
     double getNuclearExternalEnergy() const { return this->E_next; }
     double getExchangeCorrelationEnergy() const { return this->E_xc; }
+    // double getTauXCContribution() const { return this->E_xc_tau; }
     double getExchangeEnergy() const { return this->E_x; }
     double getReactionEnergy() const { return this->Er_tot; }
     double getElectronReactionEnergy() const { return this->Er_el; }
@@ -124,6 +129,7 @@ public:
             {"E_eext", E_eext},
             {"E_x", E_x},
             {"E_xc", E_xc},
+            // {"E_xc_tau", E_xc_tau},
             {"E_el", E_el},
             {"Er_tot", Er_tot},
             {"Er_el", Er_el},
@@ -144,6 +150,7 @@ private:
     double E_ee{0.0};
     double E_x{0.0};
     double E_xc{0.0};
+    // double E_xc_tau{0.0};
     double E_next{0.0};
     double E_eext{0.0};
     double Er_tot{0.0};

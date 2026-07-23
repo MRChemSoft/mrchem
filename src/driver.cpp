@@ -280,8 +280,10 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     std::string xc_lib;
 
     if (json_scf["fock_operator"].contains("xc_library")) {
-        xc_lib = json_scf["fock_operator"]["xc_library"][0].get<std::string>();
-    } else {xc_lib = "xcfun";}
+        xc_lib = json_scf["fock_operator"]["xc_library"].get<std::string>();
+    } else {
+        xc_lib = "xcfun";
+    }
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
@@ -347,7 +349,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
         solver.setRotation(rotation);
         solver.setLocalize(localize);
         solver.setMethodName(method);
-        solver.setLibxc((xc_lib == "libxc") ? true : false);
+        solver.setXCLibName(xc_lib);
         solver.setRelativityName(relativity);
         solver.setEnvironmentName(environment);
         solver.setExternalFieldName(external_field);
@@ -408,6 +410,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     auto cube_p = json_guess["file_CUBE_p"];
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
+    auto xclib = json_guess["xc_library"];
 
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
@@ -521,15 +524,14 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     } else if (type == "core") {
         success = initial_guess::core::setup(Phi, prec, nucs, zeta);
     } else if (type == "sad") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs, zeta);
+        success = initial_guess::sad::setup(Phi, prec, screen, nucs, xclib, zeta);
     } else if (type == "sad_gto") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs);
+        success = initial_guess::sad::setup(Phi, prec, screen, nucs, xclib);
     } else if (type == "gto") {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {
         success = initial_guess::cube::setup(Phi, prec, cube_p, cube_a, cube_b);
     } else if (type == "nao") {
-
         int nmix = 1;
         std::string key = "initial_mixing_steps";
         if (json_guess.contains(key)) nmix = json_guess[key];
@@ -540,8 +542,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
         std::string nao_directory = "";
         if (json_guess.contains(key)) nao_directory = json_guess[key];
 
-
-        success = initial_guess::nao::setup(Phi, prec, nucs, nmix, alpha_mix, nao_directory);
+        success = initial_guess::nao::setup(Phi, prec, nucs, nmix, alpha_mix, xclib, nao_directory);
     } else {
         MSG_ERROR("Invalid initial guess");
         success = false;
@@ -569,7 +570,7 @@ bool driver::scf::guess_energy(const json &json_guess, Molecule &mol, FockBuilde
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation    ", "Compute initial energy");
     print_utils::text(0, "Method         ", method);
-    print_utils::text(0, "XC Library     ", (xc_lib == "libxc") ? "LibXC" : "XCFun");
+    print_utils::text(0, "XC Library     ", xc_lib);
     print_utils::text(0, "Relativity     ", relativity);
     print_utils::text(0, "Environment    ", environment);
     print_utils::text(0, "External fields", external_field);
@@ -933,7 +934,7 @@ void driver::scf::plot_quantities(const json &json_plot, Molecule &mol) {
     if (orb_idx.size() > 0) {
         if (orb_idx[0] < 0) {
             // Plotting ALL orbitals
-            for (auto i = 0; i < Phi.size(); i++) {
+            for (size_t i = 0; i < Phi.size(); i++) {
                 if (not mrcpp::mpi::my_func(Phi[i])) continue;
                 t_lap.start();
                 std::stringstream name;
@@ -1187,6 +1188,8 @@ void driver::rsp::write_orbitals(const json &json_orbs, Molecule &mol, bool dyna
  * input section, and will compute all properties which are present in this input.
  */
 void driver::rsp::calc_properties(const json &json_prop, Molecule &mol, int dir, double omega) {
+    (void)omega;
+
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     if (plevel == 1) mrcpp::print::header(1, "Computing linear response properties");
@@ -1432,7 +1435,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
             auto radii_0 = cavity_p->getOriginalRadii();
             auto radii_ion = std::vector<double>(radii_0.size());
 
-            for (int i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
+            for (size_t i = 0; i < radii_0.size(); i++) { radii_ion[i] = radii_0[i] + ion_radius; }
             auto cavity_centers = cavity_p->getCoordinates();
             cavity_ion = std::make_shared<Cavity>(cavity_centers, radii_ion, width_ion);
         } else {
@@ -1480,18 +1483,12 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         // TODO: Look over and input parser so this is not necessary
         std::string xc_lib;
         if (json_fock.contains("xc_library")) {
-            if(json_fock["xc_library"].is_array()){
-                xc_lib = json_fock["xc_library"][0].get<std::string>();
-            }else{
-                xc_lib = json_fock["xc_library"]["xc_library"].get<std::string>();
-            }
+            xc_lib = json_fock["xc_library"].get<std::string>();
         } else {
             xc_lib = "xcfun";
         }
 
-        mrdft::Factory xc_factory(*MRA);
-        xc_factory.setSpin(xc_spin);
-        xc_factory.setLibxc((xc_lib == "libxc") ? true : false);
+        mrdft::Factory xc_factory(*MRA, xc_spin, xc_lib);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
         for (const auto &f : xc_funcs) {

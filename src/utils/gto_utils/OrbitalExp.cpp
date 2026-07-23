@@ -54,10 +54,10 @@ OrbitalExp::~OrbitalExp() {
 }
 
 GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M, const double threshold) const {
-    if (M.cols() != size()) MSG_ERROR("Size mismatch");
+    if (M.cols() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
     GaussExp<3> mo_i;
     int n = 0;
-    for (int j = 0; j < size(); j++) {
+    for (size_t j = 0; j < size(); j++) {
         GaussExp<3> ao_j = getAO(j);
         // ao_i.normalize();
         if (std::abs(M(i, j)) > threshold) {
@@ -78,12 +78,12 @@ GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M, const double thresho
 }
 
 GaussExp<3> OrbitalExp::getDens(const DoubleMatrix &D) const {
-    if (D.rows() != size()) MSG_ERROR("Size mismatch");
-    if (D.cols() != size()) MSG_ERROR("Size mismatch");
+    if (D.rows() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
+    if (D.cols() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
 
     GaussExp<3> d_exp;
-    for (int i = 0; i < size(); i++) {
-        for (int j = 0; j < size(); j++) {
+    for (size_t i = 0; i < size(); i++) {
+        for (size_t j = 0; j < size(); j++) {
             GaussExp<3> ao_i = getAO(i);
             GaussExp<3> ao_j = getAO(j);
             GaussExp<3> d_ij = ao_i * ao_j;
@@ -96,10 +96,10 @@ GaussExp<3> OrbitalExp::getDens(const DoubleMatrix &D) const {
 
 void OrbitalExp::rotate(const DoubleMatrix &U) {
     std::vector<GaussExp<3> *> tmp;
-    for (int i = 0; i < size(); i++) {
+    for (size_t i = 0; i < size(); i++) {
         auto *mo_i = new GaussExp<3>;
         int n = 0;
-        for (int j = 0; j < size(); j++) {
+        for (size_t j = 0; j < size(); j++) {
             GaussExp<3> ao_j = getAO(j);
             // ao_j.normalize();
             if (std::abs(U(i, j)) > mrcpp::MachineZero) {
@@ -118,7 +118,7 @@ void OrbitalExp::rotate(const DoubleMatrix &U) {
         // mo_i->normalize();
         tmp.push_back(mo_i);
     }
-    for (int i = 0; i < size(); i++) {
+    for (size_t i = 0; i < size(); i++) {
         delete orbitals[i];
         orbitals[i] = tmp[i];
         tmp[i] = nullptr;
@@ -126,7 +126,7 @@ void OrbitalExp::rotate(const DoubleMatrix &U) {
 }
 
 void OrbitalExp::readAOExpansion(Intgrl &intgrl) {
-    for (int i = 0; i < intgrl.getNNuclei(); i++) {
+    for (size_t i = 0; i < intgrl.getNNuclei(); i++) {
         Nucleus &nuc = intgrl.getNucleus(i);
         AOBasis &aoBasis = intgrl.getAOBasis(i);
         for (int j = 0; j < aoBasis.getNFunc(); j++) {
@@ -225,7 +225,7 @@ static CartToSphTransformation initializeSphCoeffs(int l) {
 }
 
 CartToSphTransformation &OrbitalExp::getSphTransformation(int l) {
-    while (sph_transformation_data.size() <= l) {
+    while (sph_transformation_data.size() <= static_cast<size_t>(l)) {
         int new_l = sph_transformation_data.size();
         CartToSphTransformation new_transformation = initializeSphCoeffs(new_l);
         sph_transformation_data.push_back(new_transformation);
@@ -263,7 +263,7 @@ void OrbitalExp::transformToSpherical() {
                     std::vector<int> &inds = trans_data.inds[j];
                     std::vector<double> &coeffs = trans_data.coeffs[j];
 
-                    for (int k = 0; k < inds.size(); k++) {
+                    for (size_t k = 0; k < inds.size(); k++) {
                         int ind = inds[k];
                         double coeff = coeffs[k];
 
@@ -298,7 +298,7 @@ void OrbitalExp::transformToSpherical() {
 int OrbitalExp::getAngularMomentum(int n) const {
     int l = -1;
     GaussExp<3> &gExp = *this->orbitals[n];
-    for (int i = 0; i < gExp.size(); i++) {
+    for (size_t i = 0; i < gExp.size(); i++) {
         const auto &pow = gExp.getPower(i);
         int iL = pow[0] + pow[1] + pow[2];
         if (l < 0) {

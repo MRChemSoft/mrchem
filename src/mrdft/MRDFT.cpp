@@ -69,26 +69,36 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     // Note: we do not need to make the complete energy density (PotVec[0]) for each mpi,
     //       instead we compute the energy directly.
     mrcpp::Timer t_post;
-    int potvecSize = 2; // this size include PotVec[0], which is not used
-    if (functional().isSpin()) potvecSize = 3;
+    int potvecSize = 2; // this size includes PotVec[0], which is not used
+    if (functional().isMetaGGA() && !functional().isSpin()) {
+        potvecSize = 3;
+    } else if (functional().isSpin()) {
+        potvecSize = 3;
+    }
     mrcpp::FunctionTreeVector<3> PotVec = grid().generate(potvecSize);
     int nNodes = grid().size();
     // parallelization of loop both with omp (pragma omp for) and
     // mpi (each mpi has a portion of the loop, defined by n_start and n_end)
     int n_start = (mrcpp::mpi::wrk_rank * nNodes) / mrcpp::mpi::wrk_size;
     int n_end = ((mrcpp::mpi::wrk_rank + 1) * nNodes) / mrcpp::mpi::wrk_size;
-    DoubleVector XCenergy = DoubleVector::Zero(1);
-    double sum = 0.0;
-#pragma omp parallel
+    DoubleVector XCenergy = DoubleVector::Zero(2);  // [0] standard XC, [1] vtau-contribution
+    double sum_fxc = 0.0;
+    double sum_vtau = 0.0;
+    #pragma omp parallel
     {
-#pragma omp for schedule(guided) reduction (+: sum)
+    #pragma omp for schedule(guided) reduction (+: sum_fxc, sum_vtau)
         for (int n = n_start; n < n_end; n++) {
             vector<mrcpp::FunctionNode<3> *> xcNodes = xc_utils::fetch_nodes(n, PotVec);
             functional().makepot(inp, xcNodes);
-            sum += xcNodes[0]->integrate();
+            sum_fxc  += xcNodes[0]->integrate();
         }
     }
-    XCenergy[0] = sum;
+
+    // sum_fxc: local XC energy from f_xc * rho
+    XCenergy[0] = sum_fxc;
+
+    // XCenergy_vtau: accumulated vtau contribution over all nodes on this rank
+    XCenergy[1] = this->functional().XCenergy_vtau;
 
     // each mpi only has part of the results. All send their results to bank and then fetch
     if(mrcpp::mpi::wrk_size > 1) {
@@ -110,11 +120,14 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
                 PotVecBank.get_data(potvecSize*n+i, nCoefs, xcNodes[i]->getCoefs());
         }
     }
-    this->functional().XCenergy = XCenergy[0];
+    // XCenergy[0] : standard f_xc * rho contribution
+    // XCenergy[1] : vtau-related contribution (currently zero, no explicit vtau energy)
+    this->functional().XCenergy      = XCenergy[0];
+    this->functional().XCenergy_vtau = XCenergy[1];
     functional().clear();
     int outNodes = 0;
     int outSize = 0;
-    for (int i = 1; i < PotVec.size(); i++) {
+    for (size_t i = 1; i < PotVec.size(); i++) {
         mrcpp::FunctionTree<3> &f_i = mrcpp::get_func(PotVec, i);
         f_i.mwTransform(mrcpp::BottomUp);
         f_i.calcSquareNorm();

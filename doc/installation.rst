@@ -2,13 +2,30 @@
 Installation
 ============
 
+------------------
+Obtaining the code
+------------------
+
+The latest development version of MRChem can be found on the ``master``
+branch on GitHub::
+
+    $ git clone https://github.com/MRChemSoft/mrchem.git
+
+The released versions can be found from Git tags ``vX.Y.Z`` under the
+``release/X.Y`` branches in the same repository, or a zip file can be
+downloaded from `Zenodo <https://doi.org/10.5281/zenodo.3606658>`_.
+
+By default, all dependencies will be **fetched** at configure time if they are
+not already available.
+
+
 -------------------
 Build prerequisites
 -------------------
 
-- Python-3.9 (or later)
-- CMake-3.14 (or later)
-- GNU-5.4 or Intel-17 (or later) compilers (C++14 standard)
+- Python-3.10 (or later)
+- CMake-3.22 (or later)
+- GNU-11.2, Clang-14.0 or IntelLLVM-2022.1 (or later) compilers (C++17 standard)
 
 .. hint::
     We have collected the recommended modules for the different Norwegian HPC
@@ -22,10 +39,10 @@ C++ dependencies
 
 The MRChem program depends on the following C++ libraries:
 
-- Input handling: `nlohmann/json-3.6  <https://github.com/nlohmann/json>`_
+- Input handling: `nlohmann/json-3.12  <https://github.com/nlohmann/json>`_
 - Multiwavelets: `MRCPP-1.4  <https://github.com/MRChemSoft/mrcpp>`_
 - Linear algebra: `Eigen-3.4  <https://gitlab.com/libeigen/eigen>`_
-- DFT functionals: `XCFun-2.0  <https://github.com/dftlibs/xcfun>`_
+- DFT functionals: `XCFun-2.1  <https://github.com/dftlibs/xcfun>`_
 
 All these dependencies will be downloaded automatically at configure time by
 CMake, but can also be linked manually by setting the variables::
@@ -66,22 +83,9 @@ doing::
     $ pipenv run python -c "print('Hello, world')"
 
 
--------------------------------
-Obtaining and building the code
--------------------------------
-
-The latest development version of MRChem can be found on the ``master``
-branch on GitHub::
-
-    $ git clone https://github.com/MRChemSoft/mrchem.git
-
-The released versions can be found from Git tags ``vX.Y.Z`` under the
-``release/X.Y`` branches in the same repository, or a zip file can be
-downloaded from `Zenodo <https://doi.org/10.5281/zenodo.3606658>`_.
-
-By default, all dependencies will be **fetched** at configure time if they are
-not already available.
-
+-----------------
+Building the code
+-----------------
 
 Configure
 ---------
@@ -121,9 +125,9 @@ The default build is *without* parallelization and using GNU compilers::
 
     $ ./setup --prefix=<install-dir> <build-dir>
 
-To use Intel compilers you need to specify the ``--cxx`` option::
+To use clang compilers you need to specify the ``--cxx`` option::
 
-    $ ./setup --prefix=<install-dir> --cxx=icpc <build-dir>
+    $ ./setup --prefix=<install-dir> --cxx=clang++ <build-dir>
 
 To build the code with shared memory (OpenMP) parallelization,
 add the ``--omp`` option::
@@ -132,7 +136,7 @@ add the ``--omp`` option::
 
 To build the code with distributed memory (MPI) parallelization, add the
 ``--mpi`` option *and* change to the respective MPI compilers (``--cxx=mpicxx``
-for GNU and ``--cxx=mpiicpc`` for Intel)::
+for GNU)::
 
     $ ./setup --prefix=<install-dir> --omp --mpi --cxx=mpicxx <build-dir>
 
@@ -193,11 +197,11 @@ Please refer to the :ref:`User's Manual` for instructions for how to run the pro
     version on the different Norwegian HPC systems under ``tools/<machine>.sh``.
     These scripts will build the current version under ``build-${version}``,
     run the unit tests and install under ``install-${version}``, e.g. to build
-    version v1.0.0 on Fram::
+    version v1.1.4 on Olivia::
 
         $ cd mrchem
-        $ git checkout v1.0.0
-        $ tools/fram.sh
+        $ git checkout v1.1.4
+        $ tools/olivia.sh
 
     The configure step requires internet access, so the scripts must be run on
     the login nodes, and it will run on a single core, so it might take some

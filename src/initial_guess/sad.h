@@ -41,8 +41,8 @@ class Nuclei;
 namespace initial_guess {
 namespace sad {
 
-bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, int zeta);
-bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs);
+bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib, int zeta);
+bool setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib);
 
 } // namespace sad
 } // namespace initial_guess

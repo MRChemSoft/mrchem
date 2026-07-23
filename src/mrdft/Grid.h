@@ -50,12 +50,12 @@ public:
 
     void unify(mrcpp::FunctionTreeVector<3> &inp) {
         // Extend current grid
-        for (auto i = 0; i < inp.size(); i++) {
+        for (size_t i = 0; i < inp.size(); i++) {
             auto &inp_i = mrcpp::get_func(inp, i);
             tree.appendTreeNoCoeff(inp_i);
         }
         // Unify input grids
-        for (auto i = 0; i < inp.size(); i++) {
+        for (size_t i = 0; i < inp.size(); i++) {
             auto &inp_i = mrcpp::get_func(inp, i);
             while (mrcpp::refine_grid(inp_i, tree)) {};
         }

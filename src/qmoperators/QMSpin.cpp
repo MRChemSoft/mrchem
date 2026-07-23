@@ -78,6 +78,7 @@ Orbital QMSpin::apply(Orbital inp) {
 }
 
 Orbital QMSpin::dagger(Orbital inp) {
+    (void)inp;
     NOT_IMPLEMENTED_ABORT;
 }
 

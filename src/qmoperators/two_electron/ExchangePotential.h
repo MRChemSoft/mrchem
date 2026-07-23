@@ -75,8 +75,8 @@ protected:
     virtual void setupBank() = 0;
     virtual void clearBank() {}
 
-    virtual int testInternal(Orbital phi_p) const { return -1; }
-    virtual void setupInternal(double prec) {}
+    virtual int testInternal(Orbital phi_p) const { (void)phi_p; return -1; }
+    virtual void setupInternal(double prec) { (void)prec; }
     void clearInternal() { this->exchange.clear(); }
 
     void calcExchange_kij(double prec, Orbital phi_k, Orbital phi_i, Orbital phi_j, Orbital &out_kij, Orbital *out_jji = nullptr);
