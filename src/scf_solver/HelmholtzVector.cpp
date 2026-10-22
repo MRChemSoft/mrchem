@@ -141,7 +141,6 @@ OrbitalVector HelmholtzVector::apply(RankZeroOperator &V, OrbitalVector &Phi, Or
 Orbital HelmholtzVector::apply(int i, const Orbital &phi) const {
     ComplexDouble mu_i = std::sqrt(-2.0 * this->lambda(i));
     if (std::abs(mu_i.imag()) > mrcpp::MachineZero) MSG_ABORT("Mu cannot be complex");
-    mrcpp::HelmholtzOperator H(*MRA, mu_i.real(), this->prec);
 
     Orbital out = phi.paramCopy(true);
     ComplexDouble metric[4][4];
@@ -153,6 +152,16 @@ Orbital HelmholtzVector::apply(int i, const Orbital &phi) const {
                 metric[i][j] = 0.0;
         }
     }
+
+    // vanishing lambda: the Helmholtz kernel cannot be built (mu = 0), use its limit, the Poisson kernel
+    if (std::abs(this->lambda(i)) < this->poisson_threshold) {
+        mrcpp::PoissonOperator P(*MRA, this->prec);
+        mrcpp::apply(this->prec, out, P, phi, metric, -1, true); // Absolute prec
+        out.rescale(-1.0 / (2.0 * mrcpp::pi));
+        return out;
+    }
+
+    mrcpp::HelmholtzOperator H(*MRA, mu_i.real(), this->prec);
     mrcpp::apply(this->prec, out, H, phi, metric, -1, true); // Absolute prec
     out.rescale(-1.0 / (2.0 * mrcpp::pi));
 
