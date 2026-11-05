@@ -65,7 +65,11 @@ void PBESolver::computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_f
     // create a lambda function for the sinh(V) term and multiply it with kappa and salt factor to get the PB term
     // as of today 5.11.2026 this is untested and assumed to be unstable
     double beta = 1059.1146228545033; // taken from NIST codata2018 values for 298.15 K
-    auto sinh_f = [salt_factor, beta](const double &V) { return (salt_factor / (4.0 * mrcpp::pi * beta)) * std::sinh(beta * V); };
+    auto sinh_f = [salt_factor, beta](const double &V) {
+        auto x_max = 100.0;
+        double x = std::clamp(beta * V, -x_max, x_max);
+        return (salt_factor / (4.0 * mrcpp::pi * beta)) * std::sinh(x);
+    };
     resetComplexFunction(pb_term);
     mrcpp::CompFunction<3> sinhV;
     sinhV.func_ptr->isreal = 1;
