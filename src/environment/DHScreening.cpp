@@ -32,8 +32,7 @@ DHScreening::DHScreening(std::shared_ptr<mrchem::Cavity> cavity_ion, double kapp
         , formulation(formulation) {}
 
 double DHScreening::evalf(const mrcpp::Coord<3> &r) const {
-    auto c_pin = this->cavity_p;
-    auto kappa_squared = std::pow(this->out, 2) * (1 - c_pin->evalf(r));
+    auto kappa_squared = std::pow(this->out, 2) * (1 - this->cavity_p->evalf(r));
     return kappa_squared;
 }
 

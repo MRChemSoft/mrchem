@@ -63,7 +63,9 @@ PBESolver::~PBESolver() {
 
 void PBESolver::computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_factor, mrcpp::CompFunction<3> &pb_term) {
     // create a lambda function for the sinh(V) term and multiply it with kappa and salt factor to get the PB term
-    auto sinh_f = [salt_factor](const double &V) { return (salt_factor / (4.0 * mrcpp::pi)) * std::sinh(V); };
+    // as of today 5.11.2026 this is untested and assumed to be unstable
+    double beta = 1059.1146228545033; // taken from NIST codata2018 values for 298.15 K
+    auto sinh_f = [salt_factor, beta](const double &V) { return (salt_factor / (4.0 * mrcpp::pi * beta)) * std::sinh(beta * V); };
     resetComplexFunction(pb_term);
     mrcpp::CompFunction<3> sinhV;
     sinhV.func_ptr->isreal = 1;
@@ -79,11 +81,11 @@ void PBESolver::computeGamma(mrcpp::CompFunction<3> &potential, mrcpp::CompFunct
     resetComplexFunction(out_gamma);
 
     for (int d = 0; d < 3; d++) {
-        auto C_pin = this->epsilon.getCavity_p();
-        mrcpp::AnalyticFunction<3> d_cav(C_pin->getGradVector()[d]);
+        auto C_p = this->epsilon.getCavity_p();
+        mrcpp::AnalyticFunction<3> d_cav_di(C_p->getGradVector()[d]);
         mrcpp::CompFunction<3> cplxfunc_prod;
-        mrcpp::FunctionTree<3, double> &Tree = get_func(d_V, d);
-        mrcpp::multiply(cplxfunc_prod, Tree, d_cav, this->apply_prec, 1);
+        mrcpp::FunctionTree<3, double> &d_V_di = get_func(d_V, d);
+        mrcpp::multiply(cplxfunc_prod, d_V_di, d_cav_di, this->apply_prec, 1);
         // add result into out_gamma
         if (d == 0) {
             mrcpp::deep_copy(out_gamma, cplxfunc_prod);
