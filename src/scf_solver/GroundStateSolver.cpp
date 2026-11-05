@@ -297,8 +297,25 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Phi_np1 = H(Psi);
         Psi.clear();
-        F.clear();
 
+        // Born-Neumann second term: delta_Phi += R_0 * W * R_0 * source
+        // W is still set up here (F.clear() has not been called yet)
+        {
+            auto &W = F.perturbation();
+            if (not W.name().empty()) {
+                OrbitalVector W_Phi = W(Phi_np1);        // W * (R_0 * source)
+                OrbitalVector corr  = H(W_Phi);           // R_0 * W * R_0 * source
+                W_Phi.clear();
+                for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
+                    if (mrcpp::mpi::my_func(Phi_np1[i]))
+                        Phi_np1[i].add(1.0, corr[i]);
+                }
+                corr.clear();
+            }
+        }
+
+        F.clear();
+        
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 

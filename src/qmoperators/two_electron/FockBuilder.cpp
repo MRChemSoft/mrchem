@@ -257,7 +257,16 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing Fock matrix", t_tot);
-    return T_mat + V_mat;
+    ComplexMatrix F_mat = T_mat + V_mat;
+
+    // Born-Neumann orbital energy shift: F_B = F_0 - W
+    // (W is set up by FockBuilder::setup and cleared by FockBuilder::clear)
+    if (not this->perturbation().name().empty()) {
+        ComplexMatrix W_mat = this->perturbation()(bra, ket);
+        F_mat -= W_mat;
+    }
+
+    return F_mat;
 }
 
 ComplexMatrix FockBuilder::kineticMatrix(OrbitalVector &bra, OrbitalVector &ket) {
