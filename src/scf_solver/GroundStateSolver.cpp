@@ -298,13 +298,30 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_np1 = H(Psi);
         Psi.clear();
 
-        // Born-Neumann second term: delta_Phi += R_0 * W * R_0 * source
-        // W is still set up here (F.clear() has not been called yet)
+        // Born-Neumann second term: Phi += R_0 * W * R_0 * source
         {
-            auto &W = F.perturbation();
-            if (not W.name().empty()) {
-                OrbitalVector W_Phi = W(Phi_np1);        // W * (R_0 * source)
-                OrbitalVector corr  = H(W_Phi);           // R_0 * W * R_0 * source
+            auto &W_para = F.perturbation();
+            auto &W_dia  = F.diaField();
+            bool has_W   = (not W_para.name().empty()) || (not W_dia.name().empty());
+            if (has_W) {
+                // Accumulate W * Phi_np1 term by term
+                OrbitalVector W_Phi;
+                if (not W_para.name().empty()) {
+                    W_Phi = W_para(Phi_np1);
+                }
+                if (not W_dia.name().empty()) {
+                    OrbitalVector tmp = W_dia(Phi_np1);
+                    if (W_Phi.empty()) {
+                        W_Phi = std::move(tmp);
+                    } else {
+                        for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
+                            if (mrcpp::mpi::my_func(Phi_np1[i]))
+                                W_Phi[i].add(1.0, tmp[i]);
+                        }
+                        tmp.clear();
+                    }
+                }
+                OrbitalVector corr = H(W_Phi);
                 W_Phi.clear();
                 for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
                     if (mrcpp::mpi::my_func(Phi_np1[i]))
@@ -315,7 +332,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
         F.clear();
-        
+
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 

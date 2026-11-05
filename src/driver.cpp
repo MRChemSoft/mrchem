@@ -1557,9 +1557,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto diff = json_fock["magnetic_operator"]["derivative"].get<std::string>();
         auto c    = PhysicalConstants::get("light_speed");
         auto D_p  = driver::get_derivative(diff);
-        F.perturbation() = MagneticPerturbationOperator(B3, c, D_p, r_O);
+        F.perturbation() = MagneticPerturbationPara(B3, c, D_p, r_O);
+        F.diaField()     = MagneticPerturbationDia(B3, c, r_O);
     }
-
+    
     F.build(exx);
 }
 

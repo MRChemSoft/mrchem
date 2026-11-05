@@ -94,6 +94,7 @@ void FockBuilder::setup(double prec) {
     if (this->mom != nullptr) this->momentum().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
+    this->H_B_dia.setup(prec);  
 
     if (isZora()) {
         Timer t_zora;
@@ -150,6 +151,7 @@ void FockBuilder::clear() {
     if (this->mom != nullptr) this->momentum().clear();
     this->potential().clear();
     this->perturbation().clear();
+    this->H_B_dia.clear();
     if (isZora()) {
         this->chi->clear();
         this->chi_inv->clear();
@@ -262,8 +264,12 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
     // Born-Neumann orbital energy shift: F_B = F_0 - W
     // (W is set up by FockBuilder::setup and cleared by FockBuilder::clear)
     if (not this->perturbation().name().empty()) {
-        ComplexMatrix W_mat = this->perturbation()(bra, ket);
-        F_mat -= W_mat;
+        ComplexMatrix W_para = this->perturbation()(bra, ket);
+        F_mat -= W_para;
+    }
+    if (not this->H_B_dia.name().empty()) {
+        ComplexMatrix W_dia = this->H_B_dia(bra, ket);
+        F_mat -= W_dia;
     }
 
     return F_mat;

@@ -64,6 +64,7 @@ public:
     MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
+    RankZeroOperator &diaField()     { return this->H_B_dia; }
 
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -115,6 +116,7 @@ private:
 
     RankZeroOperator V;   ///< Total potential energy operator
     RankZeroOperator H_1; ///< Perturbation operators
+    RankZeroOperator H_B_dia;  ///< Diamagnetic field operator (real, H_BB_dia)
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
