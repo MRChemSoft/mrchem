@@ -270,6 +270,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceRow(0);
     }
 
+    // Convert to complex if magnetic perturbation is active
+    if (not F.perturbation().name().empty()) {
+        Phi_n = orbital::CopyToComplex(Phi_n);
+    }
+
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -298,6 +303,19 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         OrbitalVector Phi_np1 = H(Psi);
         Psi.clear();
 
+        // Born-Neumann second term: paramagnetic  R_0 * W_para * R_0 * source
+        // Requires complex orbitals — enabled after CopyToComplex above
+        if (not F.perturbation().name().empty()) {
+            OrbitalVector W_para_Phi = F.perturbation()(Phi_np1);
+            OrbitalVector corr       = H(W_para_Phi);
+            W_para_Phi.clear();
+            for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
+                if (mrcpp::mpi::my_func(Phi_np1[i]))
+                    Phi_np1[i].add(1.0, corr[i]);
+            }
+            corr.clear();
+        }
+        
         // Born-Neumann second term: Phi += R_0 * W_dia * R_0 * source  (real, diamagnetic only)
         // The paramagnetic term (W_para) maps real->imaginary and requires complex orbital
         // support in MRCPP; it is skipped until that is available.
@@ -313,7 +331,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
         F.clear();
-        
+
         // Orthonormalize
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
