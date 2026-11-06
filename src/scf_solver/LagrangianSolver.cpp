@@ -186,7 +186,10 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
 
 }
 
-void LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S){
+void LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S) {
+    mrcpp::print::header(3, "Computing orbital update", 0, '-');
+    Timer t_tot, t_1e(false), t_2e(false);
+
     const int L = this->orbitals->size();
 
     // calculate Lagrange multipliersin the old basis
@@ -219,9 +222,21 @@ void LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S){
     // new orbitals
     OrbitalVector new_Phi(L);
 
+    t_1e.resume();
     orbital_update_one_body(F, S, new_Phi);
+    t_1e.stop();
+
+    t_2e.resume();
     orbital_update_two_body(F, S, old_Phi, new_Phi);
-    
+    t_2e.stop();
+
+    t_tot.stop();
+
+    mrcpp::print::time(3, "Time 1e terms", t_1e);
+    mrcpp::print::time(3, "Time 2e terms", t_2e);
+    mrcpp::print::time(3, "Time updating orbitals", t_tot);
+    mrcpp::print::separator(3, '-');
+
     // apply Helmholtz kernel and update orbitals
     (*this->orbitals) = H(new_Phi);
 }
