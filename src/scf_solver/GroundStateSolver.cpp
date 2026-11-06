@@ -294,35 +294,52 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             F.setup(orb_prec);
         }
 
+        // Diagonalize F_mat
+        Eigen::SelfAdjointEigenSolver<ComplexMatrix> eigensolver(F_mat);
+        if (eigensolver.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of F_mat failed");
+        }
+
+        Eigen::VectorXd sigma_F = eigensolver.eigenvalues();
+        ComplexMatrix U_F = eigensolver.eigenvectors();
+
         // Init Helmholtz operator
-        HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        ComplexMatrix L_mat = H.getLambdaMatrix();
+        HelmholtzVector H(helm_prec, sigma_F);
+        //ComplexMatrix L_mat = H.getLambdaMatrix();
 
         // Apply Helmholtz operator
-        OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
+        //OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
+        OrbitalVector Psi = F.potential()(Phi_n);
+        Psi = orbital::rotate(Psi, U_F.adjoint(), orb_prec);
         OrbitalVector Phi_np1 = H(Psi);
         Psi.clear();
+        Phi_np1 = orbital::rotate(Phi_np1, U_F, orb_prec);
+
 
         // Born-Neumann second term: paramagnetic  R_0 * W_para * R_0 * source
         // Requires complex orbitals — enabled after CopyToComplex above
         if (not F.perturbation().name().empty()) {
             OrbitalVector W_para_Phi = F.perturbation()(Phi_np1);
+            W_para_Phi = orbital::rotate(W_para_Phi, U_F.adjoint(), orb_prec);
             OrbitalVector corr       = H(W_para_Phi);
             W_para_Phi.clear();
+            corr = orbital::rotate(corr, U_F, orb_prec);
             for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
                 if (mrcpp::mpi::my_func(Phi_np1[i]))
                     Phi_np1[i].add(1.0, corr[i]);
             }
             corr.clear();
         }
-        
+
         // Born-Neumann second term: Phi += R_0 * W_dia * R_0 * source  (real, diamagnetic only)
         // The paramagnetic term (W_para) maps real->imaginary and requires complex orbital
         // support in MRCPP; it is skipped until that is available.
         if (not F.diaField().name().empty()) {
             OrbitalVector W_dia_Phi = F.diaField()(Phi_np1);
+            W_dia_Phi = orbital::rotate(W_dia_Phi, U_F.adjoint(), orb_prec);
             OrbitalVector corr      = H(W_dia_Phi);
             W_dia_Phi.clear();
+            corr = orbital::rotate(corr, U_F, orb_prec);
             for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
                 if (mrcpp::mpi::my_func(Phi_np1[i]))
                     Phi_np1[i].add(1.0, corr[i]);
