@@ -33,6 +33,7 @@ extern "C" {
 #include "qnumber.h"
 #include "gradient.h"
 #include "aligned_memory.h"
+#include "logging.h"
 }
 
 #include <limits>
@@ -51,6 +52,8 @@ ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, Nuclei &n
     this->maxiter_lanczos = dict_chemtensor["maxiter_lanczos"];
     this->tol_split = dict_chemtensor["tol_split"];
     this->start_from_previous_mps = dict_chemtensor["start_from_previous_mps"];
+
+    ct_verbosity = CT_VERBOSITY_TIMING;
 
     // seed of the random initial MPS: if negative, draw a random one
     int seed = dict_chemtensor["mps_seed"];
