@@ -29,7 +29,6 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-#include <algorithm>
 
 #include "GPESolver.h"
 #include "chemistry/PhysicalConstants.h"
@@ -67,8 +66,8 @@ void PBESolver::computePBTerm(mrcpp::CompFunction<3> &V_tot, const double salt_f
     // as of today 5.11.2026 this is untested and assumed to be unstable
     double beta = 1059.1146228545033; // taken from NIST codata2018 values for 298.15 K
     auto sinh_f = [salt_factor, beta](const double &V) {
-        double x_max = 50;
-        double x = std::clamp(beta * V, -x_max, x_max);
+        double x_max = 7.0;
+        double x = x_max * std::tanh(beta * V / x_max);
         return (salt_factor / (4.0 * mrcpp::pi * beta)) * std::sinh(x);
     };
     resetComplexFunction(pb_term);
