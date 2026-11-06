@@ -117,6 +117,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     S.set_real(true);
     if (this->force_complex or any_complex) set_complex_orbitals(S);
     print_utils::text(0, "Orbitals", this->real_orbitals ? "real" : "complex");
+    DoubleVector errors = DoubleVector::Ones(orbitals->size());
 
     bool converged = false;
     json_out["cycles"] = {};
@@ -147,7 +148,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
 
         // update orbitals (not needed if converged or in the last iteration)
         if (not converged and nIter < this->maxIter - 1) {
-            orbital_update(F, S);
+            errors = orbital_update(F, S);
             make_uniform_type(*this->orbitals);
 
             // reinforce orthonormalization immediately (Loewdin: Phi = S^(-1/2) Phi)
@@ -159,6 +160,8 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
                 for (auto &phi : *this->orbitals)
                     if (phi.iscomplex()) MSG_ABORT("Complex orbital in the real mode");
         }
+
+        printOrbitals(S.get_lagrange_multipliers()->real().diagonal(), errors, *this->orbitals, 0);
 
         t_scf.stop();
         json_cycle["wall_time"] = t_scf.elapsed();
@@ -186,7 +189,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
 
 }
 
-void LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S) {
+DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S) {
     mrcpp::print::header(3, "Computing orbital update", 0, '-');
     Timer t_tot, t_1e(false), t_2e(false);
 
@@ -238,7 +241,11 @@ void LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S) {
     mrcpp::print::separator(3, '-');
 
     // apply Helmholtz kernel and update orbitals
-    (*this->orbitals) = H(new_Phi);
+    OrbitalVector new_orbitals = H(new_Phi);
+    OrbitalVector diff_orbitals = orbital::add(1.0, new_Phi, -1.0, *this->orbitals);
+    DoubleVector errors = orbital::get_norms(diff_orbitals);
+    (*this->orbitals) = new_orbitals;
+    return errors;
 }
 
 void LagrangianSolver::orbital_basis_change(std::shared_ptr<ComplexMatrix> basis_change){

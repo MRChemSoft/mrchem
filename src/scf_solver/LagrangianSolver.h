@@ -74,7 +74,7 @@ protected:
     void set_complex_orbitals(ChemTensorSolver &S);
     ComplexDouble coeff(ComplexDouble c) const { return this->real_orbitals ? ComplexDouble(c.real(), 0.0) : c; }
 
-    void orbital_update(FockBuilder &F, ChemTensorSolver &S);
+    DoubleVector orbital_update(FockBuilder &F, ChemTensorSolver &S);
     void orbital_basis_change(std::shared_ptr<ComplexMatrix> basis_change);
     void orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
     void orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &old_Phi, OrbitalVector &new_Phi);
