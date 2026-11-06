@@ -232,6 +232,12 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
+
+    // Add magnetic perturbation energy: <W_para> + <W_dia>
+    // (magnetic field is an external field, so fold into E_eext)
+    if (not this->perturbation().name().empty()) E_eext += this->perturbation().trace(Phi).real();
+    if (not this->H_B_dia.name().empty()) E_eext += this->H_B_dia.trace(Phi).real();
+
     if (getProjectorOperator() != nullptr) {
         E_nl = this->pp_projector->trace(Phi).real();
     }
