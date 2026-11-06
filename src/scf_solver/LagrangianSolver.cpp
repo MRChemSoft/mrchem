@@ -242,7 +242,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
 
     // apply Helmholtz kernel and update orbitals
     OrbitalVector new_orbitals = H(new_Phi);
-    OrbitalVector diff_orbitals = orbital::add(1.0, new_Phi, -1.0, *this->orbitals);
+    OrbitalVector diff_orbitals = orbital::add(1.0, new_orbitals, -1.0, *this->orbitals);
     DoubleVector errors = orbital::get_norms(diff_orbitals);
     (*this->orbitals) = new_orbitals;
     return errors;
