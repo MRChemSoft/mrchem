@@ -235,8 +235,20 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     // Add magnetic perturbation energy: <W_para> + <W_dia>
     // (magnetic field is an external field, so fold into E_eext)
-    if (not this->perturbation().name().empty()) E_eext += this->perturbation().trace(Phi).real();
-    if (not this->H_B_dia.name().empty()) E_eext += this->H_B_dia.trace(Phi).real();
+//    if (not this->perturbation().name().empty()) E_eext += this->perturbation().trace(Phi).real();
+//    if (not this->H_B_dia.name().empty()) E_eext += this->H_B_dia.trace(Phi).real();
+    // Magnetic energy: <W_para> + <W_dia>
+    // Use operator()(bra,ket) — trace() doesn't handle differential operators
+    if (not this->perturbation().name().empty()) {
+        ComplexMatrix W_para = this->perturbation()(Phi, Phi);
+        for (int i = 0; i < static_cast<int>(Phi.size()); i++)
+            E_eext += Phi[i].occ() * W_para(i, i).real();
+    }
+    if (not this->H_B_dia.name().empty()) {
+        ComplexMatrix W_dia = this->H_B_dia(Phi, Phi);
+        for (int i = 0; i < static_cast<int>(Phi.size()); i++)
+            E_eext += Phi[i].occ() * W_dia(i, i).real();
+    }
 
     if (getProjectorOperator() != nullptr) {
         E_nl = this->pp_projector->trace(Phi).real();
@@ -244,6 +256,8 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
+
+    mrcpp::print::value(0, "Magnetic energy <W>", E_eext, "(au)", 10);
 
     return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el, E_nl};
 }
