@@ -46,19 +46,18 @@ public:
      * @brief Get the AOBasis object. If the basis file has not been read yet, this will read it.
      * @return shared pointer to AOBasis object
     */
-    std::shared_ptr<gto_utils::AOBasis> getAOBasis() { return this->aoBasis; }
+    std::shared_ptr<gto_utils::AOBasis> getAOBasis();
     
-private:
+protected:
     /**
-     * @brief Read the basis set from the specified file.
-     * @param file The path to the basis set file.
+     * @brief Read the basis set.
      *
      * This method should be implemented by derived classes to read the basis set
      * from the specified file and populate the aoBasis member variable.
      */
-    virtual void readBasisFile(const std::string &file) = 0;
+    virtual void readBasisFile() = 0;
 
     std::shared_ptr<gto_utils::AOBasis> aoBasis; ///< Shared pointer to the AOBasis object
-
+    std::string AOFile; ///< Path to the basis file
 };
 } // namespace mrchem

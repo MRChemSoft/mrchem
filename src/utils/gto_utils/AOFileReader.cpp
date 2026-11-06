@@ -25,3 +25,12 @@
 
 #include "utils/gto_utils/AOFileReader.h"
 
+namespace mrchem {
+
+std::shared_ptr<gto_utils::AOBasis> AOFileReader::getAOBasis() {
+    if (!this->aoBasis)
+        this->readBasisFile();
+    return this->aoBasis;
+}
+
+} // namespace mrchem
