@@ -51,7 +51,7 @@ public:
     void set_integrals(OrbitalVector &Phi);
 
     const int* get_bond_dimensions() const { return this->bond_dimensions.data(); }
-    const double* get_en_sweeps() const { return this->en_sweeps.data(); }
+    // const double* get_en_sweeps() const { return this->en_sweeps.data(); }
 
     void optimize() override;
 
@@ -83,7 +83,7 @@ private:
     int32_t qnum_sector{};
 
     std::vector<int> bond_dimensions{};
-    std::vector<double> en_sweeps{};
+    // std::vector<double> en_sweeps{};
 
     void set_dense_tensors();
     void calculate_rdms() override;

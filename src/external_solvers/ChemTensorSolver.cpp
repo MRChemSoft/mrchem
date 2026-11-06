@@ -179,19 +179,24 @@ void ChemTensorSolver::optimize() {
 	// printf("OpenMP not available\n");
 	// #endif
 
-	// run two-site DMRG
-	this->en_sweeps.assign(this->num_sweeps, 0.0);
-	std::vector<double> entropy(hamiltonian.nsites - 1);
-	if (dmrg_twosite(&hamiltonian, this->num_sweeps, this->maxiter_lanczos, this->tol_split, this->max_vdim, this->psi, this->en_sweeps.data(), entropy.data()) < 0)
-		std::cerr << "'dmrg_twosite' failed internally" << std::endl;
-    
-    
-    if(this->energy_correction) {
-        for(auto i=0; i<this->num_sweeps; i++)
-            this->en_sweeps[i] += this->E_nn;
+    // run two-site DMRG
+    // this->en_sweeps.assign(this->num_sweeps, 0.0);
+    // std::vector<double> entropy(hamiltonian.nsites - 1);
+    dmrg_twosite_options options;
+    dmrg_twosite_default_options(&options);
+    options.max_num_sweeps = this->num_sweeps;
+    options.maxiter_lanczos = this->maxiter_lanczos;
+    options.tol_split = this->tol_split;
+    options.max_vdim = this->max_vdim;
+    dmrg_twosite_info info;
+    if (dmrg_twosite(&hamiltonian, &options, this->psi, &info) < 0)
+        MSG_ERROR("'dmrg_twosite' failed internally");
+
+    if (this->energy_correction) {
+        for (auto i = 0; i < info.num_sweeps; i++) info.en_sweeps[i] += this->E_nn;
     }
-    
-	this->energy = this->en_sweeps[this->num_sweeps - 1];
+
+    this->energy = info.en_sweeps[info.num_sweeps - 1];
 
 
 
