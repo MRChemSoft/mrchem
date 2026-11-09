@@ -52,21 +52,20 @@ void DaltonAOReader::readBasisFile() {
         MSG_ABORT("Unexpected end of file " << this->AOFile << "  while reading basis sets!");
     std::istringstream iss(line);
     iss >> nTypes;
-    for (int i = 0; i < nTypes; i++)
+    for (size_t i = 0; i < nTypes; i++)
         readAtomBlock(ifs);
 }
 
 void DaltonAOReader::readAtomBlock(std::ifstream &ifs) {
     double z;
-    size_t nAtoms;
-    size_t nShell;
+    size_t nAtoms, nShell;
 
     ifs >> z;
     ifs >> nAtoms;
     ifs >> nShell;
 
     IntVector funcsPerShell(nShell);
-    for (int i = 0; i < nShell; i++)
+    for (size_t i = 0; i < nShell; i++)
         ifs >> funcsPerShell(i);
 
     readAtomData(ifs, nAtoms, z);
@@ -74,10 +73,8 @@ void DaltonAOReader::readAtomBlock(std::ifstream &ifs) {
     for (size_t i = 0; i < nShell; i++)
         for (size_t j = 0; j < funcsPerShell(i); j++)
             readContractionBlock(ifs, bas, i);
-    for (size_t i = 0; i < nAtoms; i++) {
-        auto *aoBas = new gto_utils::AOBasis(bas);
-        this->basis.push_back(aoBas);
-    }
+    for (size_t i = 0; i < nAtoms; i++)
+        this->basis.push_back(std::make_shared<gto_utils::AOBasis>(bas));
 }
 
 void DaltonAOReader::readAtomData(std::ifstream &ifs, size_t n_atoms, double z) {
@@ -91,9 +88,7 @@ void DaltonAOReader::readAtomData(std::ifstream &ifs, size_t n_atoms, double z) 
             ifs >> coord[d];
         PeriodicTable pt;
         const Element &element = pt.getElement(sym.c_str());
-
-        auto *nuc = new Nucleus(element, z, coord);
-        this->nuclei.push_back(nuc);
+        this->nuclei.push_back(std::make_shared<Nucleus>(element, z, coord));
     }
 }
 
@@ -108,8 +103,7 @@ void DaltonAOReader::readContractionBlock(std::ifstream &ifs, gto_utils::AOBasis
         bas.append(ctr);
     }
 
-    double expo;
-    double coef;
+    double expo, coef;
     for (size_t k = 0; k < nprim; k++) {
         ifs >> expo;
         for (size_t i = 0; i < nctr; i++) {

@@ -46,11 +46,29 @@ private:
      */
     void readBasisFile() override final;
 
+    /**
+     * @brief Read the basis set for a single atom type.
+     * @param ifs The input file stream.
+     */
     void readAtomBlock(std::ifstream &ifs);
+
+    /**
+     * @brief Read the atomic data for a single atom type.
+     * @param ifs The input file stream.
+     * @param nAtoms The number of atoms of this type.
+     * @param z The atomic number of this atom type.
+     */
     void readAtomData(std::ifstream &ifs, size_t nAtoms, double z);
+
+    /**
+     * @brief Read the contraction block for a single shell.
+     * @param ifs The input file stream.
+     * @param bas The AOBasis object to populate.
+     * @param l The angular momentum quantum number of the shell.
+     */
     void readContractionBlock(std::ifstream &ifs, gto_utils::AOBasis &bas, size_t l);
 
-    std::vector<Nucleus *> nuclei;
-    std::vector<gto_utils::AOBasis *> basis;
+    std::vector<std::shared_ptr<Nucleus>> nuclei;           ///< Nucleus objects representing the nuclei in the basis set
+    std::vector<std::shared_ptr<gto_utils::AOBasis>> basis; ///< AOBasis objects representing the basis sets for each atom type
 };
 } // namespace mrchem
