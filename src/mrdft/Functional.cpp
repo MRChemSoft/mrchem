@@ -289,7 +289,7 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
 }
 
 Eigen::MatrixXd Functional::evaluate_transposed(Eigen::MatrixXd &inp) const {
-  // NB: the data is stored colomn major, i.e. two consecutive points of for example energy density, are not consecutive in memory
+  // NB: the data is stored column major, i.e. two consecutive points of for example energy density, are not consecutive in memory
   // That means that we cannot extract the energy density data with out.row(0).data() for example.
   Eigen::MatrixXd inp_trans(inp.transpose());
   Eigen::MatrixXd out_trans(numOut(), inp.rows());

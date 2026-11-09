@@ -47,9 +47,9 @@
  * if the function is real, only the soft factor (out.func_ptr->data.c1[0]) is multiplied.
  *
  * Notes on naming conventions of derived operator classes:
- * Direct decendants of QMOperator should START with "QM", like QMPotential, QMSpin,
- * QMMomentum. Further decendants of QMPotential should END with "Potential", like
- * PositionPotential, NuclearPotential, CoulombPotential. Decendants of the
+ * Direct descendants of QMOperator should START with "QM", like QMPotential, QMSpin,
+ * QMMomentum. Further descendants of QMPotential should END with "Potential", like
+ * PositionPotential, NuclearPotential, CoulombPotential. Descendants of the
  * TensorOperators should end with "Operator" (except the perturbation operators
  * H_E_dip, H_B_dip, etc). E.i. the NuclearOperator IS a TensorOperator that
  * CONTAINS a NuclearPotential which IS a QMPotential which IS a QMOperator.

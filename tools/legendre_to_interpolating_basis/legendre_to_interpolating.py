@@ -24,11 +24,11 @@ def scaling_L(k, j, x):
 def scaling_I(k, j, x):
     """Returns the Legendre Interpolating Scaling function defined
        on \in [0, 1]"""
-    weigth = leg.leggauss(k)[1]/2
+    weight = leg.leggauss(k)[1]/2
     roots = leg.Legendre.basis(k, domain=[0, 1]).roots()
     tmp = 0
     for i in range(k):
-        tmp = tmp+sqrt(weigth[j])*scaling_L(k, i, roots[j])*scaling_L(k, i, x)
+        tmp = tmp+sqrt(weight[j])*scaling_L(k, i, roots[j])*scaling_L(k, i, x)
     return tmp
 
 

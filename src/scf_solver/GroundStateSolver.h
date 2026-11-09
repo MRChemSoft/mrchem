@@ -35,7 +35,7 @@
  * @brief Ground state SCF optimization with kinetic energy operator
  *
  * This ground state SCF solver computes the Fock matrix explicitly by application of
- * the kinetic energy operator. This simplifies the algorithm significanly when a KAIN
+ * the kinetic energy operator. This simplifies the algorithm significantly when a KAIN
  * iterative accelerator is present, or when diagonalization/localization occurs.
  * The derivative operator in the kinetic energy MIGHT affect the quadratic precision
  * in the energy, but this point seems to no longer be critical.

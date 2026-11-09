@@ -292,7 +292,7 @@ sections:
           ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda``
           is an alias for ``svwn5``. You can set a non-standard DFT functional
           (e.g. varying the amount of exact exchange) by choosing ``dft`` and
-          specifing the functional(s) in the ``DFT`` section below.
+          specifying the functional(s) in the ``DFT`` section below.
       - name: restricted
         type: bool
         default: true
@@ -980,7 +980,7 @@ sections:
             default: user['SCF']['kain']
             docstring: |
               Number of previous reaction field iterates kept for convergence
-              acceleration during the nested precedure.
+              acceleration during the nested procedure.
           - name: density_type
             type: str
             default: total
@@ -1209,7 +1209,7 @@ sections:
         type: float
         default: 0.005
         docstring: |
-          The geometry optimization stopps when the absolute value of all force components is smaller than this keyword.
+          The geometry optimization stops when the absolute value of all force components is smaller than this keyword.
           A value between 1e-3 and 1e-4 is tight enough for most applications.
   - name: OrbitalOccupancies
     docstring: |

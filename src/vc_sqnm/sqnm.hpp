@@ -1,7 +1,7 @@
 /**
  * @file sqnm.hpp
  * @author Moritz Gubler (moritz.gubler@unibas.ch)
- * @brief Implementation of the SQNM method. More informations about the algorithm can be found here: https://aip.scitation.org/doi/10.1063/1.4905665
+ * @brief Implementation of the SQNM method. More information about the algorithm can be found here: https://aip.scitation.org/doi/10.1063/1.4905665
  * @date 2022-07-13
  * 
  */
@@ -228,7 +228,7 @@ namespace sqnm_space
         }
         dir_of_descent *= alpha;
 
-        // appy preconditioning to subspace gradient (eq. 21)
+        // apply preconditioning to subspace gradient (eq. 21)
         for (int idim = 0; idim < dim_subsp; idim++)
         {
           dir_of_descent += (df_dx.dot(h_evec.col(idim)) / h_eval(idim)) * h_evec.col(idim);

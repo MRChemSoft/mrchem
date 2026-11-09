@@ -114,7 +114,7 @@ int main() {
         LebedevIntegrator integrator("lebedev.txt", radius, shift);
 
         double sum = integrator.getWeights().sum();
-        std::cout << "Sum of weights: " << sum << " Refererence 4 * pi * r**2 " << 4 * M_PI * radius * radius << std::endl;
+        std::cout << "Sum of weights: " << sum << " Reference 4 * pi * r**2 " << 4 * M_PI * radius * radius << std::endl;
 
         Eigen::MatrixXd fields = integrator.getPoints();
         for (int i = 0; i < integrator.n; i++)

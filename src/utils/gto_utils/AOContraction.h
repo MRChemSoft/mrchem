@@ -37,7 +37,7 @@ static const int MAX_L = 4; // Max f-functions
 
 /** Contracted atomic orbital.
  *
- * AOContraction defines a singel, contracted atomic orbital as a GaussExp
+ * AOContraction defines a single, contracted atomic orbital as a GaussExp
  * with coefficients.
  *
  */

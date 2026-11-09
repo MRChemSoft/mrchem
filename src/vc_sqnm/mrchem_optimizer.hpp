@@ -50,7 +50,7 @@ void writeXYZFile(std::ofstream& xyzFile, const Eigen::MatrixXd& atomicPositions
 }
 
 /**
- * @brief Gets postion from a molecule in json format.
+ * @brief Gets position from a molecule in json format.
  * @param mol_inp Molecule in json format.
  * 
  * @return Positions as an Eigen::matrix of shape (3, num_atoms)

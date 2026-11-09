@@ -152,7 +152,7 @@ public:
      * @param[out] out out_data Matrix of output values (energy, potential, ...)
      * @details Each column corresponds to one grid point
      * From a performance point of view, (in pre and postprocessing) it is much more
-     * efficient to have the two consecutive points in two consecutive adresses in memory
+     * efficient to have the two consecutive points in two consecutive addresses in memory
      */
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
 

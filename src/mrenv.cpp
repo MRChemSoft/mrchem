@@ -52,7 +52,7 @@ json mrenv::fetch_json(int argc, char **argv) {
     } else if (argc == 2) {
         infile = argv[1];
     } else {
-        MSG_ERROR("Ivalid number of arguments!");
+        MSG_ERROR("Invalid number of arguments!");
     }
 
     // Read JSON input

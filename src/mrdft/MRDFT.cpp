@@ -92,7 +92,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
 
     // each mpi only has part of the results. All send their results to bank and then fetch
     if(mrcpp::mpi::wrk_size > 1) {
-        // sum up the energy contrbutions from all mpi
+        // sum up the energy contributions from all mpi
         mrcpp::mpi::allreduce_vector(XCenergy, mrcpp::mpi::comm_wrk);
         // send to bank, note that this cannot be done in the omp loop above,
         // because omp threads cannot use mpi

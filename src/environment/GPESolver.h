@@ -54,7 +54,7 @@ enum class SCRFDensityType : int { TOTAL = 0, ELECTRONIC = 1, NUCLEAR = 2 };
  * \rho(\mathbf{r}) = \rho_{el}(\mathbf{r}) + \rho_{nuc}(\mathbf{r})
  * \f]
  * where \f$\rho_{el}\f$ is the electronic charge density and \f$\rho_{nuc}\f$ is the nuclear charge density.
- * The Generalized Poisson equation is solved iteratively through a set of micro-iteration on each SCF-iteration by appliation of the Poisson operator \f$\mathcal{P}\f$  :cite:`Fosso-Tande2013`
+ * The Generalized Poisson equation is solved iteratively through a set of micro-iteration on each SCF-iteration by application of the Poisson operator \f$\mathcal{P}\f$  :cite:`Fosso-Tande2013`
  * \f[
  * V_R(\mathbf{r}) = \mathcal{P} \star \left[ \rho_{eff}(\mathbf{r}) - \rho(\mathbf{r}) + \gamma_s(\mathbf{r}) \right]
  * \f]
@@ -150,7 +150,7 @@ protected:
      */
     void computeDensities(const Density &rho_el, Density &rho_out);
 
-    /** @brief Computes the surface charge distibution due to polarization at the solute-solvent boundary
+    /** @brief Computes the surface charge distribution due to polarization at the solute-solvent boundary
      * @param potential Potential used to compute \f$\nabla V(\mathbf{r})\f$
      * @param out_gamma CompFunction<3> in which the surface charge distribution will be computed.
      * @details The surface charge distribution is given by

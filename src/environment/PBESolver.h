@@ -78,7 +78,7 @@ protected:
     DHScreening kappa; ///< the DHScreening object used to compute the PB term \f$\kappa\f$
     std::string solver_name{"Poisson-Boltzmann"};
 
-    /** @brief constructs the surface chage distribution and adds it to the PB term
+    /** @brief constructs the surface charge distribution and adds it to the PB term
      * @param[in] potential the potential to compute \f$\nabla V\f$ from
      * @param[out] out_gamma the CompFunction<3> in which to store the result
      * @details Method follows the implementation in GPESolver::computeGamma, but adds the PB term to the surface charge distribution.

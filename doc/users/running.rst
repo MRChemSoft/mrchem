@@ -196,7 +196,7 @@ first process can not use the first 33 cores, then it can use the cores from pos
 
 ``--distribution=cyclic:cyclic``
 The first cyclic will put the first rank on the first node, the second rank on the
-second node etc. The second cyclic distribute the ranks withing the nodes.
+second node etc. The second cyclic distribute the ranks within the nodes.
 
 More examples can be found in the `mrchem-examples <https://github.com/MRChemSoft/mrchem-examples>`_
 repository on GitHub.
@@ -209,7 +209,7 @@ Parallel pitfalls
     Parallel program execution is not a black box procedure, and the behavior and
     efficiency of the run depends on several factors, like hardware configuration,
     operating system, compiler type and flags, libraries for OpenMP and MPI, type
-    of queing system on a shared cluster, etc. Please make sure that the program
+    of queueing system on a shared cluster, etc. Please make sure that the program
     runs correctly on *your* system and is able to utilize the computational
     resources before commencing production calculations.
 

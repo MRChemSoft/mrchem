@@ -62,9 +62,9 @@ CUBEfunction::CUBEfunction(const int N_atoms,
 double CUBEfunction::evalf(const mrcpp::Coord<3> &r) const {
 
     /** I'm assuming that we can describe any arbitrary point as r = (c_i + d_i)X + (c_j + dc_j)Y + (c_k + dc_k)Z
-     * where X, Y, and Z are the three voxel basis vectors descibing the step size and direction of the three main vertexes of the CUBE.
+     * where X, Y, and Z are the three voxel basis vectors describing the step size and direction of the three main vertices of the CUBE.
      * Here I am assuming two things, first that the X, Y, and Z basis vectors are orthogonal to each other
-     * (X \cdot Y = X \cdot Z=Y \cdot Z = 0),and that they are respectivelly orthogonal to the cartesian basis vectors, for example, with
+     * (X \cdot Y = X \cdot Z=Y \cdot Z = 0),and that they are respectively orthogonal to the cartesian basis vectors, for example, with
      * the \hat{x} basis vector:\hat{x} \cdot Y = \hat{x} \cdot Z = 0 and \hat{x} \cdot X = X_x.
      * I believe that this might be generalizable to non-orthogonal basis, but I will not confirm that right now.
      * I also do not want to convert to cartesian coordinates either, as I think it is a waste of time.

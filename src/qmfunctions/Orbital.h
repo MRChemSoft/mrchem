@@ -39,11 +39,11 @@
  * Note that there are several options for copying/assignment: the proper copy
  * constructor and assignment operator are *shallow* copies, which means that
  * they simply copy the *re and *im pointers (no transfer of ownership).
- * Additionaly, there is a deepCopy() which returns a *full* copy of the orbital,
+ * Additionally, there is a deepCopy() which returns a *full* copy of the orbital,
  * and a paramCopy() which returns an empty orbital with the same rank_id/spin/occ.
  *
  * NOTE: since the standard copies are shallow copies and several orbitals can
- * point to the same MW functions, it is YOUR responibility to keep track of the
+ * point to the same MW functions, it is YOUR responsibility to keep track of the
  * ownership and free the FunctionTree pointers before the last orbital goes out
  * of scope.
  */
@@ -71,7 +71,7 @@ public:
 // All MPI processes have a vector of full length, but
 // only "my_func" are fully defined.
 // The others orbitals (not my_func) have only basic data (spin etc) but no trees defined.
-// Vector of orbitals where all orbitals are defined for all MPI, should not have typoe
+// Vector of orbitals where all orbitals are defined for all MPI, should not have type
 // OrbitalVectors, but directly vector<Orbital>.
 class OrbitalVector : public mrcpp::CompFunctionVector {
 public:

@@ -325,7 +325,7 @@ User input reference
  :WaveFunction: Define the wavefunction method. 
 
   :red:`Keywords`
-   :method: Wavefunction method. See predicates for valid methods. ``hf``, ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda`` is an alias for ``svwn5``. You can set a non-standard DFT functional (e.g. varying the amount of exact exchange) by choosing ``dft`` and specifing the functional(s) in the ``DFT`` section below. 
+   :method: Wavefunction method. See predicates for valid methods. ``hf``, ``hartreefock`` and ``hartree-fock`` all mean the same thing, while ``lda`` is an alias for ``svwn5``. You can set a non-standard DFT functional (e.g. varying the amount of exact exchange) by choosing ``dft`` and specifying the functional(s) in the ``DFT`` section below. 
   
     **Type** ``str``
   
@@ -1001,7 +1001,7 @@ User input reference
         **Predicates**
           - ``value.lower() in ['total', 'nuclear', 'electronic']``
       
-       :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested precedure. 
+       :kain: Number of previous reaction field iterates kept for convergence acceleration during the nested procedure. 
       
         **Type** ``int``
       
@@ -1161,7 +1161,7 @@ User input reference
   
     **Default** ``100``
   
-   :max_force_component: The geometry optimization stopps when the absolute value of all force components is smaller than this keyword. A value between 1e-3 and 1e-4 is tight enough for most applications. 
+   :max_force_component: The geometry optimization stops when the absolute value of all force components is smaller than this keyword. A value between 1e-3 and 1e-4 is tight enough for most applications. 
   
     **Type** ``float``
   

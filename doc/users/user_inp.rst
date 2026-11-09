@@ -71,7 +71,7 @@ the `construction` of the Poisson and Helmholtz integral operators.
     Precisions {
       nuclear_prec = 1.0e-6                 # For construction of nuclear potential
       poisson_prec = 1.0e-6                 # For construction of Poisson operators
-      helmholtz_prec = 1.0e-6               # For construction of Helmholtz operatos
+      helmholtz_prec = 1.0e-6               # For construction of Helmholtz operators
     }
 
 By default, all precision parameters follow ``world_prec`` and usually don't
@@ -552,7 +552,7 @@ The ``core`` and ``sad`` guesses are fully specified with the following keywords
 
     SCF {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = sad_gto                  # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
+      guess_type = sad_gto                  # Type of initial guess (chk, mw, cube, core_XX, sad_XX)
       guess_screen = 12.0                   # Number of StdDev before a GTO is set to zero (sad_gto)
       guess_rotate = true                   # Localize/Diagonalize guess orbitals before calculating the initial guess energy
     }
@@ -585,7 +585,7 @@ chk`` in the subsequent calculation:
 .. code-block:: bash
 
     SCF {
-      guess_type = chk                      # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
+      guess_type = chk                      # Type of initial guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 In this case the ``path_checkpoint`` must be the same as the previous
@@ -614,7 +614,7 @@ calculations using the ``guess_type = mw`` initial guess:
 
     SCF {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = mw                       # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
+      guess_type = mw                       # Type of initial guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 Here the orbitals will be re-projected onto the current MW basis with precision
@@ -749,7 +749,7 @@ chk`` in the subsequent calculation:
 .. code-block:: bash
 
     Response {
-      guess_type = chk                      # Type of inital guess (none, chk, mw)
+      guess_type = chk                      # Type of initial guess (none, chk, mw)
     }
 
 In this case the ``path_checkpoint`` must be the same as the previous
@@ -777,7 +777,7 @@ calculations using the ``guess_type = mw`` initial guess:
 
     Response {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = mw                       # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
+      guess_type = mw                       # Type of initial guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 Here the orbitals will be re-projected onto the current MW basis with precision

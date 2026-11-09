@@ -31,7 +31,7 @@ the installation folder is in your ``PATH``.
 .. note::
 
    If you want to use the precompiled, MPI-parallel version of MRChem with
-   OpenMPI, install ``mrchem=*=*openmpi*`` insted of just ``mrchem``.
+   OpenMPI, install ``mrchem=*=*openmpi*`` instead of just ``mrchem``.
    A binary package compiled against MPICH is also available:
    ``mrchem=*=*mpich*``.
 

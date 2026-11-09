@@ -110,10 +110,10 @@ double ExchangePotential::getSpinFactor(Orbital phi_i, Orbital phi_j) const {
 
 /** @brief Prepare operator for application
  *
- * @param[in] prec reqested precision
+ * @param[in] prec requested precision
  *
  * This will save the defining orbitals in the orbital bank
- * and optionally compute the internal constributions.
+ * and optionally compute the internal contributions.
  */
 void ExchangePotential::setup(double prec) {
     Timer timer;

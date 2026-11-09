@@ -1,7 +1,7 @@
 /**
  * @file periodic_optimizer.hpp
  * @author Moritz Gubler (moritz.gubler@unibas.ch)
- * @brief Implementation of the vc-sqnm method. More informations about the algorithm can be found here: https://arxiv.org/abs/2206.07339
+ * @brief Implementation of the vc-sqnm method. More information about the algorithm can be found here: https://arxiv.org/abs/2206.07339
  * @date 2022-07-13
  * 
  */

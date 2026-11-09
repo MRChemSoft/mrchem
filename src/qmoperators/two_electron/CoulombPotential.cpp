@@ -148,7 +148,7 @@ mrcpp::CompFunction<3> CoulombPotential::setupLocalPotential(double prec) {
     Timer timer;
     mrcpp::CompFunction<3> V(false);
     V.alloc(1);
-    // We use absolute precision, so that the final precision does not dependend
+    // We use absolute precision, so that the final precision does not depend
     // on the number of local orbitals
     mrcpp::apply(prec, V.real(), P, rho.real(), -1, true);
     print_utils::qmfunction(3, "Compute local potential", V, timer);
