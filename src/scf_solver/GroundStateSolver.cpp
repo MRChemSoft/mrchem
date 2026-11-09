@@ -494,6 +494,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
                 Phi_np1 = orbital::add(ComplexDouble(1.0, 0.0), Phi_np1,
                                     ComplexDouble(1.0, 0.0), corr, orb_prec);
                 corr.clear();
+                println(0, "  Born-Neumann correction applied to Phi_np1");
             }
             // Clear is called by F.clear() below
         }
