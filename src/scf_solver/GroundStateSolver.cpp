@@ -37,6 +37,160 @@
 #include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
+////////////////
+// Debugging
+///////////////
+#include "qmoperators/one_electron/H_B_dip.h"
+#include "qmoperators/one_electron/H_BB_dia.h"
+
+namespace mrchem {
+
+static void testMagneticOperators(double prec,
+                                   std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
+                                   const mrcpp::Coord<3> &o) {
+    mrcpp::print::separator(0, '=');
+    println(0, "  Testing H_B_dip[2] and H_BB_dia[2][2] on Gaussians");
+    mrcpp::print::separator(0, '-');
+
+    const double alpha = 1.0;
+
+    // Helper: norm of a FunctionTree (getSquareNorm() returns ||f||^2)
+    auto treeNorm = [](const mrcpp::FunctionTree<3> &t) {
+        return std::sqrt(t.getSquareNorm());
+    };
+
+    // =========================================================
+    // Test 1: H_BB_dia[2][2] on phi = exp(-alpha*r^2)
+    // Expected (real): (1/4)*((x-ox)^2+(y-oy)^2)*exp(-alpha*r^2)
+    // =========================================================
+    {
+        Orbital phi(SPIN::Alpha);
+        phi.alloc(NUMBER::Real);
+        std::function<double(const mrcpp::Coord<3> &)> f_phi =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return std::exp(-alpha * (r[0]*r[0] + r[1]*r[1] + r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, phi.real(), f_phi);  // <-- explicit template arg
+
+        H_BB_dia h_dia(o);
+        Orbital result = h_dia[2][2](phi);
+
+        auto &MRA = phi.real().getMRA();
+        mrcpp::FunctionTree<3> expected(MRA);
+        std::function<double(const mrcpp::Coord<3> &)> f_exp =
+            [alpha, o](const mrcpp::Coord<3> &r) -> double {
+            double dx = r[0]-o[0], dy = r[1]-o[1];
+            return 0.25*(dx*dx+dy*dy)*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, expected, f_exp);
+
+        double nrm = result.hasReal() ? treeNorm(result.real()) : 0.0;
+        double err = -1.0;
+        if (result.hasReal()) {
+            mrcpp::FunctionTree<3> diff(MRA);
+            mrcpp::add(prec, diff, 1.0, result.real(), -1.0, expected);
+            err = treeNorm(diff);
+        }
+        println(0, "  H_BB_dia[2][2] on exp(-r^2):");
+        println(0, "    ||result_real||  = " << nrm << "  (expected ~0.741)");
+        println(0, "    ||imag||         = " << (result.hasImag() ? treeNorm(result.imag()) : 0.0) << "  (expected: 0)");
+        println(0, "    ||error||        = " << err);
+        println(0, "    relative err     = " << (nrm > 0 ? err/nrm : -1.0));
+
+        phi.free(NUMBER::Total);
+        result.free(NUMBER::Total);
+    }
+
+    // =========================================================
+    // Test 2: H_B_dip[2] on phi = x*exp(-alpha*r^2)
+    // Expected: real = 0,  imag = +(1/2)*y*exp(-alpha*r^2)
+    // =========================================================
+    {
+        Orbital phi(SPIN::Alpha);
+        phi.alloc(NUMBER::Real);
+        std::function<double(const mrcpp::Coord<3> &)> f_phi =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return r[0]*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, phi.real(), f_phi);
+
+        H_B_dip h_dip(D, o);
+        Orbital result = h_dip[2](phi);
+
+        auto &MRA = phi.real().getMRA();
+        mrcpp::FunctionTree<3> expected_imag(MRA);
+        std::function<double(const mrcpp::Coord<3> &)> f_exp =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return 0.5*r[1]*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, expected_imag, f_exp);
+
+        double real_nrm = result.hasReal() ? treeNorm(result.real()) : 0.0;
+        double imag_nrm = result.hasImag() ? treeNorm(result.imag()) : 0.0;
+        double err = -1.0;
+        if (result.hasImag()) {
+            mrcpp::FunctionTree<3> diff(MRA);
+            mrcpp::add(prec, diff, 1.0, result.imag(), -1.0, expected_imag);
+            err = treeNorm(diff);
+        }
+        println(0, "  H_B_dip[2] on x*exp(-r^2):");
+        println(0, "    ||real part||    = " << real_nrm << "  (expected: 0)");
+        println(0, "    ||imag part||    = " << imag_nrm << "  (expected ~0.370)");
+        println(0, "    ||imag error||   = " << err);
+
+        phi.free(NUMBER::Total);
+        result.free(NUMBER::Total);
+    }
+
+    // =========================================================
+    // Test 3: H_B_dip[2] on phi = exp(-alpha*r^2), gauge o=(0,1,0)
+    // Expected: real = 0,  imag = alpha*x*exp(-alpha*r^2)
+    // =========================================================
+    {
+        mrcpp::Coord<3> o_offset = {0.0, 1.0, 0.0};
+        Orbital phi(SPIN::Alpha);
+        phi.alloc(NUMBER::Real);
+        std::function<double(const mrcpp::Coord<3> &)> f_phi =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, phi.real(), f_phi);
+
+        H_B_dip h_dip(D, o_offset);
+        Orbital result = h_dip[2](phi);
+
+        auto &MRA = phi.real().getMRA();
+        mrcpp::FunctionTree<3> expected_imag(MRA);
+        std::function<double(const mrcpp::Coord<3> &)> f_exp =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return alpha*r[0]*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, expected_imag, f_exp);
+
+        double real_nrm = result.hasReal() ? treeNorm(result.real()) : 0.0;
+        double imag_nrm = result.hasImag() ? treeNorm(result.imag()) : 0.0;
+        double err = -1.0;
+        if (result.hasImag()) {
+            mrcpp::FunctionTree<3> diff(MRA);
+            mrcpp::add(prec, diff, 1.0, result.imag(), -1.0, expected_imag);
+            err = treeNorm(diff);
+        }
+        println(0, "  H_B_dip[2] on exp(-r^2), gauge=(0,1,0):");
+        println(0, "    ||real part||    = " << real_nrm << "  (expected: 0)");
+        println(0, "    ||imag part||    = " << imag_nrm << "  (expected ~0.741)");
+        println(0, "    ||imag error||   = " << err);
+
+        phi.free(NUMBER::Total);
+        result.free(NUMBER::Total);
+    }
+
+    mrcpp::print::separator(0, '=');
+}
+
+} // namespace mrchem
+////////////////
+////////////////
+
 using mrcpp::Printer;
 using mrcpp::Timer;
 using nlohmann::json;
@@ -274,6 +428,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     if (not F.perturbation().name().empty()) {
         Phi_n = orbital::CopyToComplex(Phi_n);
     }
+
+    //////////////////////////////
+    // Debugging: test magnetic operators
+    if (not F.perturbation().name().empty()) {
+        auto D_test = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
+        mrcpp::Coord<3> o_test = {0.0, 0.0, 0.0};
+        testMagneticOperators(this->orbPrec[0], D_test, o_test);
+    }
+    //////////////////////////////
 
     int nIter = 0;
     bool converged = false;
