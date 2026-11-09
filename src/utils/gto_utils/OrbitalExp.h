@@ -26,6 +26,7 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "MRCPP/Gaussians"
 
@@ -33,8 +34,8 @@
 
 namespace mrchem {
 
+class AOFileReader;
 namespace gto_utils {
-class Intgrl;
 
 struct CartToSphTransformation {
     std::vector<std::vector<int>> inds;
@@ -43,25 +44,25 @@ struct CartToSphTransformation {
 
 class OrbitalExp final {
 public:
-    OrbitalExp(Intgrl &intgrl);
-    ~OrbitalExp();
+    OrbitalExp(AOFileReader &reader);
+    ~OrbitalExp() = default;
 
     size_t size() const { return this->orbitals.size(); }
-    int getAngularMomentum(int n) const;
-
+    
     mrcpp::GaussExp<3> getAO(int i) const { return *this->orbitals[i]; }
     mrcpp::GaussExp<3> getMO(int i, const DoubleMatrix &M, const double threshold=mrcpp::MachineZero) const;
     mrcpp::GaussExp<3> getDens(const DoubleMatrix &D) const;
-
+    
     void rotate(const DoubleMatrix &U);
-
-protected:
+    
+    private:
     bool cartesian;
-    std::vector<mrcpp::GaussExp<3> *> orbitals;
-
+    std::vector<std::shared_ptr<mrcpp::GaussExp<3>>> orbitals;
+    
     std::vector<CartToSphTransformation> sph_transformation_data;
-
-    void readAOExpansion(Intgrl &intgrl);
+    
+    int getAngularMomentum(int n) const;
+    void readAOExpansion(AOFileReader &reader);
     void transformToSpherical();
 
     CartToSphTransformation &getSphTransformation(int l);

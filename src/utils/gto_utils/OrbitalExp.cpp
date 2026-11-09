@@ -23,17 +23,16 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <fstream>
-#include <string>
-
 #include "MRCPP/Printer"
 
 #include "AOBasis.h"
 #include "AOContraction.h"
-#include "Intgrl.h"
+#include "AOFileReader.h"
 #include "OrbitalExp.h"
 #include "chemistry/Nucleus.h"
 #include "utils/math_utils.h"
+
+#include <cmath>
 
 using mrcpp::GaussExp;
 using mrcpp::GaussFunc;
@@ -42,25 +41,19 @@ using mrcpp::Gaussian;
 namespace mrchem {
 namespace gto_utils {
 
-OrbitalExp::OrbitalExp(Intgrl &intgrl)
+OrbitalExp::OrbitalExp(AOFileReader &reader)
         : cartesian(true) {
-    readAOExpansion(intgrl);
-}
-
-OrbitalExp::~OrbitalExp() {
-    for (auto &orbital : this->orbitals) {
-        if (orbital != nullptr) { delete orbital; }
-    }
+    readAOExpansion(reader);
 }
 
 GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M, const double threshold) const {
     if (M.cols() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
     GaussExp<3> mo_i;
     int n = 0;
-    for (size_t j = 0; j < size(); j++) {
-        GaussExp<3> ao_j = getAO(j);
+    for (size_t j = 0; j < this->size(); j++) {
         // ao_i.normalize();
         if (std::abs(M(i, j)) > threshold) {
+            GaussExp<3> ao_j = getAO(j);
             ao_j *= M(i, j);
             mo_i.append(ao_j);
             n++;
@@ -82,11 +75,10 @@ GaussExp<3> OrbitalExp::getDens(const DoubleMatrix &D) const {
     if (D.cols() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
 
     GaussExp<3> d_exp;
-    for (size_t i = 0; i < size(); i++) {
-        for (size_t j = 0; j < size(); j++) {
-            GaussExp<3> ao_i = getAO(i);
-            GaussExp<3> ao_j = getAO(j);
-            GaussExp<3> d_ij = ao_i * ao_j;
+    for (size_t i = 0; i < this->size(); i++) {
+        GaussExp<3> ao_i = *this->orbitals[i];
+        for (size_t j = 0; j < this->size(); j++) {
+            GaussExp<3> d_ij = ao_i * *this->orbitals[j];
             d_ij *= D(i, j);
             d_exp.append(d_ij);
         }
@@ -95,44 +87,18 @@ GaussExp<3> OrbitalExp::getDens(const DoubleMatrix &D) const {
 }
 
 void OrbitalExp::rotate(const DoubleMatrix &U) {
-    std::vector<GaussExp<3> *> tmp;
-    for (size_t i = 0; i < size(); i++) {
-        auto *mo_i = new GaussExp<3>;
-        int n = 0;
-        for (size_t j = 0; j < size(); j++) {
-            GaussExp<3> ao_j = getAO(j);
-            // ao_j.normalize();
-            if (std::abs(U(i, j)) > mrcpp::MachineZero) {
-                ao_j *= U(i, j);
-                mo_i->append(ao_j);
-                n++;
-            }
-        }
-        if (n == 0) {
-            MSG_WARN("No contributing orbital");
-            GaussFunc<3> zeroFunc(0.0, 0.0);
-            GaussExp<3> ao_j;
-            ao_j.append(zeroFunc);
-            mo_i->append(ao_j);
-        }
-        // mo_i->normalize();
-        tmp.push_back(mo_i);
-    }
-    for (size_t i = 0; i < size(); i++) {
-        delete orbitals[i];
-        orbitals[i] = tmp[i];
-        tmp[i] = nullptr;
-    }
+    std::vector<std::shared_ptr<GaussExp<3>>> tmp;
+    for (size_t i = 0; i < this->size(); i++)
+        tmp.push_back(std::make_shared<GaussExp<3>>(getMO(i, U)));
+    this->orbitals = std::move(tmp);
 }
 
-void OrbitalExp::readAOExpansion(Intgrl &intgrl) {
-    for (size_t i = 0; i < intgrl.getNNuclei(); i++) {
-        Nucleus &nuc = intgrl.getNucleus(i);
-        AOBasis &aoBasis = intgrl.getAOBasis(i);
-        for (int j = 0; j < aoBasis.getNFunc(); j++) {
-            GaussExp<3> *ao = new GaussExp<3>(aoBasis.getAO(j, nuc.getCoord()));
-            this->orbitals.push_back(ao);
-        }
+void OrbitalExp::readAOExpansion(AOFileReader &reader) {
+    for (size_t i = 0; i < reader.getNNuclei(); i++) {
+        std::shared_ptr<Nucleus> nuc = reader.getNucleus(i);
+        std::shared_ptr<AOBasis> aoBasis = reader.getAOBasis(i);
+        for (int j = 0; j < aoBasis->getNFunc(); j++)
+            this->orbitals.push_back(std::make_shared<GaussExp<3>>(aoBasis->getAO(j, nuc->getCoord())));
     }
     transformToSpherical();
 }
@@ -236,23 +202,22 @@ CartToSphTransformation &OrbitalExp::getSphTransformation(int l) {
 
 void OrbitalExp::transformToSpherical() {
     if (not this->cartesian) { return; }
-    std::vector<GaussExp<3> *> tmp;
+    std::vector<std::shared_ptr<GaussExp<3>>> tmp;
     int nOrbs = this->size();
     int n = 0;
     while (n < nOrbs) {
         int l = getAngularMomentum(n);
         if (l < 2) {
-            GaussExp<3> *orb = this->orbitals[n];
-            tmp.push_back(orb);
-            this->orbitals[n] = nullptr;
+            tmp.push_back(std::move(this->orbitals[n]));
             n++;
         } else {
-            std::vector<GaussExp<3> *> sph;
+            std::vector<std::shared_ptr<GaussExp<3>>> sph;
 
             int ncart = ((l + 1) * (l + 2)) / 2;
             int nsph = 2 * l + 1;
 
-            for (int i = 0; i < nsph; i++) { sph.push_back(new GaussExp<3>); }
+            for (int i = 0; i < nsph; i++)
+                sph.push_back(std::make_shared<GaussExp<3>>());
 
             int nprim = this->orbitals[n]->size();
 
@@ -274,38 +239,25 @@ void OrbitalExp::transformToSpherical() {
                 }
             }
 
-            for (int i = 0; i < nsph; i++) {
+            for (int i = 0; i < nsph; i++)
                 tmp.push_back(sph[i]);
-            }
 
             n += ncart;
         }
     }
-    for (int i = 0; i < nOrbs; i++) {
-        if (this->orbitals[i] != nullptr) {
-            delete this->orbitals[i];
-            this->orbitals[i] = nullptr;
-        }
-    }
-    this->orbitals.clear();
-    for (auto &i : tmp) {
-        this->orbitals.push_back(i);
-        i = nullptr;
-    }
+    this->orbitals = std::move(tmp);
     this->cartesian = false;
 }
 
 int OrbitalExp::getAngularMomentum(int n) const {
     int l = -1;
-    GaussExp<3> &gExp = *this->orbitals[n];
-    for (size_t i = 0; i < gExp.size(); i++) {
-        const auto &pow = gExp.getPower(i);
+    for (size_t i = 0; i < this->orbitals[n]->size(); i++) {
+        const auto &pow = this->orbitals[n]->getPower(i);
         int iL = pow[0] + pow[1] + pow[2];
-        if (l < 0) {
+        if (l < 0)
             l = iL;
-        } else if (iL != l) {
+        else if (iL != l)
             MSG_ABORT("Orbital is not pure angular momentum function");
-        }
     }
     return l;
 }

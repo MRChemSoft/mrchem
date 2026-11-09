@@ -25,6 +25,7 @@
 
 #pragma once
 
+#include "chemistry/Nucleus.h"
 #include "utils/gto_utils/AOBasis.h"
 
 #include <string>
@@ -43,10 +44,24 @@ public:
     virtual ~AOFileReader() = default;
 
     /**
-     * @brief Get the AOBasis object. If the basis file has not been read yet, this will read it.
-     * @return shared pointer to AOBasis object
-    */
-    std::shared_ptr<gto_utils::AOBasis> getAOBasis();
+     * @brief Get the number of nuclei in the basis set.
+     * @return The number of nuclei.
+     */
+    size_t getNNuclei() const { return this->nuclei.size(); }
+
+    /**
+     * @brief Get the Nucleus object for the specified index.
+     * @param i The index of the nucleus.
+     * @return A shared pointer to the Nucleus object.
+     */
+    std::shared_ptr<Nucleus> getNucleus(size_t i) const { return this->nuclei[i]; }
+
+    /**
+     * @brief Get the AOBasis object for the specified index.
+     * @param i The index of the basis set.
+     * @return A shared pointer to the AOBasis object.
+     */
+    std::shared_ptr<gto_utils::AOBasis> getAOBasis(size_t i) const { return this->basis[i]; }
     
 protected:
     /**
@@ -57,7 +72,8 @@ protected:
      */
     virtual void readBasisFile() = 0;
 
-    std::shared_ptr<gto_utils::AOBasis> aoBasis; ///< Shared pointer to the AOBasis object
-    std::string AOFile; ///< Path to the basis file
+    std::vector<std::shared_ptr<Nucleus>> nuclei;           ///< Nucleus objects representing the nuclei in the basis set
+    std::vector<std::shared_ptr<gto_utils::AOBasis>> basis; ///< AOBasis objects representing the basis sets for each atom type
+    std::string AOFile;                                     ///< Path to the basis file
 };
 } // namespace mrchem

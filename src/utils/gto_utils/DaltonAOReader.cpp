@@ -35,13 +35,11 @@ DaltonAOReader::DaltonAOReader(const std::string &file) {
     if (not std::filesystem::is_regular_file(file))
         MSG_ABORT("Failed to open basis set file: " << file);
     this->AOFile = file;
+    readBasisFile();
 }
 
 void DaltonAOReader::readBasisFile() {
     std::ifstream ifs(this->AOFile.c_str());
-    // Check just in case the file has been moved or deleted since the constructor was called
-    if (not ifs)
-        MSG_ABORT("Failed to open basis set file: " << this->AOFile);
     size_t nTypes;
     std::string line;
     // First line is a comment
@@ -70,9 +68,10 @@ void DaltonAOReader::readAtomBlock(std::ifstream &ifs) {
 
     readAtomData(ifs, nAtoms, z);
     gto_utils::AOBasis bas;
-    for (size_t i = 0; i < nShell; i++)
+    for (size_t i = 0; i < nShell; i++) {
         for (size_t j = 0; j < funcsPerShell(i); j++)
             readContractionBlock(ifs, bas, i);
+    }
     for (size_t i = 0; i < nAtoms; i++)
         this->basis.push_back(std::make_shared<gto_utils::AOBasis>(bas));
 }

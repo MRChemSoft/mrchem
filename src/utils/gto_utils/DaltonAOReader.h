@@ -26,13 +26,12 @@
 #pragma once
 
 #include "utils/gto_utils/AOFileReader.h"
-#include "chemistry/Nucleus.h"
 
 #include <fstream>
 
 namespace mrchem {
 
-class DaltonAOReader : public AOFileReader {
+class DaltonAOReader final : public AOFileReader {
 public:
     /**
      * @brief Construct a new DaltonAOReader object.
@@ -67,8 +66,5 @@ private:
      * @param l The angular momentum quantum number of the shell.
      */
     void readContractionBlock(std::ifstream &ifs, gto_utils::AOBasis &bas, size_t l);
-
-    std::vector<std::shared_ptr<Nucleus>> nuclei;           ///< Nucleus objects representing the nuclei in the basis set
-    std::vector<std::shared_ptr<gto_utils::AOBasis>> basis; ///< AOBasis objects representing the basis sets for each atom type
 };
 } // namespace mrchem

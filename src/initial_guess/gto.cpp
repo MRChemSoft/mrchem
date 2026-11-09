@@ -30,7 +30,7 @@
 
 #include "gto.h"
 
-#include "utils/gto_utils/Intgrl.h"
+#include "utils/gto_utils/DaltonAOReader.h"
 #include "utils/gto_utils/OrbitalExp.h"
 #include "utils/math_utils.h"
 #include "utils/print_utils.h"
@@ -135,8 +135,8 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
 
     // Setup AO basis
     Timer t1;
-    gto_utils::Intgrl intgrl(bas_file);
-    gto_utils::OrbitalExp gto_exp(intgrl);
+    DaltonAOReader reader(bas_file);
+    gto_utils::OrbitalExp gto_exp(reader);
     t1.stop();
 
     // Read MO file (transpose)
@@ -223,10 +223,9 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         std::stringstream o_bas;
         o_bas << sad_path << "/" << sym << ".bas";
 
-        // Setup AO basis
-        gto_utils::Intgrl intgrl(o_bas.str());
-        intgrl.getNucleus(0).setCoord(nuc.getCoord());
-        gto_utils::OrbitalExp gto_exp(intgrl);
+        DaltonAOReader reader(o_bas.str());
+        reader.getNucleus(0)->setCoord(nuc.getCoord());
+        gto_utils::OrbitalExp gto_exp(reader);
 
         for (size_t i = 0; i < gto_exp.size(); i++) {
             Timer t_i;
@@ -256,9 +255,9 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
 
 Density initial_guess::gto::project_density(double prec, const Nucleus &nuc, const std::string &bas_file, const std::string &dens_file, double screen) {
     // Setup AO basis
-    gto_utils::Intgrl intgrl(bas_file);
-    intgrl.getNucleus(0).setCoord(nuc.getCoord());
-    gto_utils::OrbitalExp gto_exp(intgrl);
+    DaltonAOReader reader(bas_file);
+    reader.getNucleus(0)->setCoord(nuc.getCoord());
+    gto_utils::OrbitalExp gto_exp(reader);
 
     // Read density matrix file
     DoubleMatrix D = math_utils::read_matrix_file(dens_file);
