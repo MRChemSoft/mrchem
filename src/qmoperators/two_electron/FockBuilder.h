@@ -58,6 +58,7 @@ class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
 class ReactionOperator;
+class MagneticPerturbation; 
 
 class FockBuilder final {
 public:
@@ -76,6 +77,12 @@ public:
     std::shared_ptr<AZoraPotential> &getAZoraChiPotential() { return this->chiPot; }
     std::shared_ptr<ProjectorOperator> &getProjectorOperator() { return this->pp_projector; }
 
+    std::shared_ptr<MagneticPerturbation> &getMagneticPerturbation() { return this->mag_pert; }
+    void setMagneticPerturbation(std::shared_ptr<MagneticPerturbation> mp) {
+        this->mag_pert = mp;
+        if (mp) this->H_1.name() = "W_B";  // keep name check working
+    }
+    
     void rotate(const ComplexMatrix &U);
 
     void build(double exx = 1.0);
@@ -128,6 +135,7 @@ private:
     std::shared_ptr<ZoraOperator> chi{nullptr};
     std::shared_ptr<ZoraOperator> chi_inv{nullptr};
     std::shared_ptr<ProjectorOperator> pp_projector{nullptr};
+    std::shared_ptr<MagneticPerturbation> mag_pert{nullptr};
 
 
     std::shared_ptr<QMPotential> collectZoraBasePotential();

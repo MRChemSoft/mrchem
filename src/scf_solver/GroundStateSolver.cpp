@@ -36,7 +36,8 @@
 #include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
-
+#include "qmoperators/one_electron/MagneticPerturbation.h"
+/*
 ////////////////
 // Debugging
 ///////////////
@@ -190,7 +191,7 @@ static void testMagneticOperators(double prec,
 } // namespace mrchem
 ////////////////
 ////////////////
-
+*/
 using mrcpp::Printer;
 using mrcpp::Timer;
 using nlohmann::json;
@@ -425,10 +426,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
     }
 
     // Convert to complex if magnetic perturbation is active
-    if (not F.perturbation().name().empty()) {
+    if (F.getMagneticPerturbation() != nullptr) {
         Phi_n = orbital::CopyToComplex(Phi_n);
+        println(0, "  COMPLEX orbitals activated due to magnetic perturbation!!!!");
     }
-
+/*
     //////////////////////////////
     // Debugging: test magnetic operators
     if (not F.perturbation().name().empty()) {
@@ -437,6 +439,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         testMagneticOperators(this->orbPrec[0], D_test, o_test);
     }
     //////////////////////////////
+*/
 
     int nIter = 0;
     bool converged = false;
@@ -479,42 +482,20 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Phi_np1 = orbital::rotate(Phi_np1, U_F, orb_prec);
 
 
-        // Born-Neumann second term: paramagnetic  R_0 * W_para * R_0 * source
-        // Requires complex orbitals — enabled after CopyToComplex above
-        if (not F.perturbation().name().empty()) {
-            OrbitalVector W_para_Phi = F.perturbation()(Phi_np1);
-
-            // H_B_dip stores result in real part (isImag not honored by CompFunction).
-            // Multiply by i: orbital::add with ComplexDouble coefficient correctly
-            // routes  real→imag and imag→−real, handling both components.
-            OrbitalVector zeros = orbital::param_copy(W_para_Phi);  // right structure, no trees
-            W_para_Phi = orbital::add(ComplexDouble(0.0, 1.0), W_para_Phi,
-                                    ComplexDouble(0.0, 0.0), zeros, orb_prec);
-            zeros.clear();
-
-            W_para_Phi = orbital::rotate(W_para_Phi, U_F.adjoint(), orb_prec);
-            OrbitalVector corr = H(W_para_Phi);
-            W_para_Phi.clear();
-            corr = orbital::rotate(corr, U_F, orb_prec);
-            for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++)
-                if (mrcpp::mpi::my_func(Phi_np1[i])) Phi_np1[i].add(1.0, corr[i]);
-            corr.clear();
-        }
-
-        // Born-Neumann second term: Phi += R_0 * W_dia * R_0 * source  (real, diamagnetic only)
-        // The paramagnetic term (W_para) maps real->imaginary and requires complex orbital
-        // support in MRCPP; it is skipped until that is available.
-        if (not F.diaField().name().empty()) {
-            OrbitalVector W_dia_Phi = F.diaField()(Phi_np1);
-            W_dia_Phi = orbital::rotate(W_dia_Phi, U_F.adjoint(), orb_prec);
-            OrbitalVector corr      = H(W_dia_Phi);
-            W_dia_Phi.clear();
-            corr = orbital::rotate(corr, U_F, orb_prec);
-            for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
-                if (mrcpp::mpi::my_func(Phi_np1[i]))
-                    Phi_np1[i].add(1.0, corr[i]);
+        // Born-Neumann second term: R_0 * W * R_0
+        auto mag_pert = F.getMagneticPerturbation();
+        if (mag_pert != nullptr) {
+            // Setup is already done by F.setup() above
+            for (size_t born = 0; born < 1; born++) {
+                OrbitalVector W_Phi = (*mag_pert)(Phi_np1);
+                OrbitalVector corr = orbital::rotate(W_Phi, U_F.adjoint(), orb_prec);
+                corr = H(corr);
+                corr = orbital::rotate(corr, U_F, orb_prec);
+                Phi_np1 = orbital::add(ComplexDouble(1.0, 0.0), Phi_np1,
+                                    ComplexDouble(1.0, 0.0), corr, orb_prec);
+                corr.clear();
             }
-            corr.clear();
+            // Clear is called by F.clear() below
         }
 
         F.clear();

@@ -53,7 +53,7 @@
 #include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 
-#include "qmoperators/one_electron/MagneticPerturbationOperator.h"
+#include "qmoperators/one_electron/MagneticPerturbation.h"
 
 #include "qmoperators/one_electron/AZoraPotential.h"
 #include "qmoperators/one_electron/ElectricFieldOperator.h"
@@ -1557,10 +1557,10 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto diff = json_fock["magnetic_operator"]["derivative"].get<std::string>();
         auto c    = PhysicalConstants::get("light_speed");
         auto D_p  = driver::get_derivative(diff);
-        F.perturbation() = MagneticPerturbationPara(B3, c, D_p, r_O);
-        F.diaField()     = MagneticPerturbationDia(B3, c, r_O);
+        auto mp   = std::make_shared<MagneticPerturbation>(B3, c, D_p, r_O);
+        F.setMagneticPerturbation(mp);
     }
-    
+
     F.build(exx);
 }
 
