@@ -483,14 +483,21 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Requires complex orbitals — enabled after CopyToComplex above
         if (not F.perturbation().name().empty()) {
             OrbitalVector W_para_Phi = F.perturbation()(Phi_np1);
+
+            // H_B_dip stores result in real part (isImag not honored by CompFunction).
+            // Multiply by i: orbital::add with ComplexDouble coefficient correctly
+            // routes  real→imag and imag→−real, handling both components.
+            OrbitalVector zeros = orbital::param_copy(W_para_Phi);  // right structure, no trees
+            W_para_Phi = orbital::add(ComplexDouble(0.0, 1.0), W_para_Phi,
+                                    ComplexDouble(0.0, 0.0), zeros, orb_prec);
+            zeros.clear();
+
             W_para_Phi = orbital::rotate(W_para_Phi, U_F.adjoint(), orb_prec);
-            OrbitalVector corr       = H(W_para_Phi);
+            OrbitalVector corr = H(W_para_Phi);
             W_para_Phi.clear();
             corr = orbital::rotate(corr, U_F, orb_prec);
-            for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++) {
-                if (mrcpp::mpi::my_func(Phi_np1[i]))
-                    Phi_np1[i].add(1.0, corr[i]);
-            }
+            for (int i = 0; i < static_cast<int>(Phi_np1.size()); i++)
+                if (mrcpp::mpi::my_func(Phi_np1[i])) Phi_np1[i].add(1.0, corr[i]);
             corr.clear();
         }
 
