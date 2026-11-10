@@ -461,6 +461,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         }
 
         // Diagonalize F_mat
+        F_mat = (0.5 * (F_mat + F_mat.adjoint())).eval();
         Eigen::SelfAdjointEigenSolver<ComplexMatrix> eigensolver(F_mat);
         if (eigensolver.info() != Eigen::Success) {
             MSG_ABORT("Eigen-decomposition of F_mat failed");
@@ -469,6 +470,15 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Eigen::VectorXd sigma_F = eigensolver.eigenvalues();
         ComplexMatrix U_F = eigensolver.eigenvectors();
 
+
+        println(0, "  " );
+
+        println(0, "  Diagonalization of Fock matrix:" );
+        println(0, "  U_F*sigma_F*adjoint(U_F) - F_mat:" << std::endl << (U_F*sigma_F.asDiagonal()*U_F.adjoint() - F_mat).real());
+        //println(0, "  adjoint(U_F)*sigma_F*U_F - F_mat:" << std::endl << U_F.adjoint().real()*sigma_F.asDiagonal()*U_F.real() - F_mat.real());
+        
+        println(0, "  " );
+        
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, sigma_F);
         //ComplexMatrix L_mat = H.getLambdaMatrix();
@@ -476,12 +486,13 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         // Apply Helmholtz operator
         //OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Psi = F.potential()(Phi_n);
-        Psi = orbital::rotate(Psi, U_F.adjoint(), orb_prec);
-        OrbitalVector Phi_np1 = H(Psi);
+        OrbitalVector Phi_np1 = orbital::rotate(Psi, U_F.conjugate(), orb_prec);
+        Psi = H(Phi_np1);
+        Phi_np1.clear();
+        Phi_np1 = orbital::rotate(Psi, U_F.transpose(), orb_prec);
         Psi.clear();
-        Phi_np1 = orbital::rotate(Phi_np1, U_F, orb_prec);
 
-
+/*
         // Born-Neumann second term: R_0 * W * R_0
         auto mag_pert = F.getMagneticPerturbation();
         if (mag_pert != nullptr) {
@@ -498,10 +509,11 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             }
             // Clear is called by F.clear() below
         }
-
+*/
         F.clear();
 
         // Orthonormalize
+        F_mat = 0.0 * F_mat;  // Clear F_mat to avoid accumulation of old values
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
         // Compute orbital updates
@@ -509,9 +521,21 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Phi_np1.clear();
 
         kain.accelerate(orb_prec, Phi_n, dPhi_n);
-
+/*
+        if (mrcpp::mpi::my_func(dPhi_n[0]))
+        {
+            std::cout << "dPhi_n[0]: " << std::endl << dPhi_n[0].real(0) << std::endl;
+            //std::cout << "dPhi_n[0]: " << std::endl << dPhi_n[0].imag(0) << std::endl;
+        }
+        if (mrcpp::mpi::my_func(dPhi_n[1]))
+        {
+            std::cout << "dPhi_n[1]: " << std::endl << dPhi_n[1].real(0) << std::endl;
+            //std::cout << "dPhi_n[1]: " << std::endl << dPhi_n[1].imag(0) << std::endl;
+        }
+*/
         // Compute errors
         errors = orbital::get_norms(dPhi_n);
+//        println(0, "  Orbital update norms: " << errors.transpose());
         err_o = errors.maxCoeff();
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
