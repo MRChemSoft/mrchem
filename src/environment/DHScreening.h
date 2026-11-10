@@ -56,14 +56,14 @@ class DHScreening final : public StepFunction {
 public:
     /** @brief Standard constructor. Initializes the #cavity_ion and #kappa_out with the input parameters.
      *  @param cavity_ion interlocking spheres of Cavity class.
-     *  @param kappa_out value of the screening function outside the #cavity_ion.
+     *  @param kappa_out squareroot of the value of the  screening function outside the #cavity_ion.
      *  @param formulation Decides which formulation of the #DHScreening function to implement, only continuous screening function available.
      * @details #kappa_out is given by
      * \f[
-     * \kappa = \sqrt{\frac{2000 I_{0} e^2 N_a I_0}{\epsilon_{out} \epsilon_{in} k_B T}}
+     * \kappa^2 = \frac{8000 \pi a_0^3 I_{0} N_a I}{\epsilon_{out} k_B T}
      * \f]
-     * where \f$N_a\f$ is the Avogadro constant, e is the elementary charge, \f$I_0\f$ is the concentration of the ions,
-     * \f$k_B\f$ is the Boltzmann constant, \f$T\f$ is the temperature, \f$\epsilon_{out}\f$ is the permittivity of the solvent and \f$\epsilon_{in}\f$ is the permittivity of free space.
+     * where \f$N_a\f$ is the Avogadro constant in mol^{-1}, \f$I\f$ is the concentration of the ions in mol/L, a_0 is the bohr radius, for unit conversion from m^{-3} to atomic units
+     * \f$k_B\f$ is the Boltzmann constant in hartree K^-1, \f$T\f$ is the temperature in K, \f$\epsilon_{out}\f$ is the relative permittivity of the solvent which is unitless.
      */
     DHScreening(std::shared_ptr<Cavity> cavity_ion, double kappa_out, const std::string &formulation);
 

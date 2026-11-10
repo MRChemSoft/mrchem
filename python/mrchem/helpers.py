@@ -812,6 +812,13 @@ def parse_wf_method(user_dict):
     return wf_dict
 
 def compute_kappa(constants, eps, I):
+    # this returns kappa, which is the inverse of the debye length
+    # in poisson-boltzmann we actually use kappa^2 but
+    # we keep it this this way since the units and formulation of this constant
+    # are quite confusing due to litterature using different units everytime 
+    # they reimplement Poisson-Boltzmann
+    
+    # units and factors
     kb = constants["boltzmann_constant"]
     e = constants["elementary_charge"]
     e_0 = constants["e0"]

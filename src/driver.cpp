@@ -1401,7 +1401,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         // info for the poisson-boltzmann solver, this will anyways be ignored if we are not using it
         double ion_radius = json_fock["reaction_operator"]["ion_radius"];
-        auto kappa_o = json_fock["reaction_operator"]["kappa_out"];
+        auto kappa_o = json_fock["reaction_operator"]["kappa_out"]; // inverse of debye length
         auto width_ion = json_fock["reaction_operator"]["ion_width"];
         auto kformulation = json_fock["reaction_operator"]["formulation"];
 
@@ -1431,6 +1431,8 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         std::shared_ptr<Cavity> cavity_ion;
         if (ion_radius != 0.0) {
+            // working with the average size of the ions. this
+            // probably is wrong
             auto radii_0 = cavity_p->getOriginalRadii();
             auto radii_ion = std::vector<double>(radii_0.size());
 
