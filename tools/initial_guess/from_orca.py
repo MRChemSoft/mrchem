@@ -251,15 +251,21 @@ def scale(array, factors):
 def read_occ_mo(mol, mo_perm, mo_sign, all):
     restricted = mol["HFTyp"] in ("RHF", "CASSCF")
 
-    mo_buf = [0.0 for _ in mo_perm]
+    orbitals = mol["MolecularOrbitals"]["MOs"]
+
+    nmo = len(orbitals)
+    if restricted:
+        na = nmo
+        nb = 0
+    else:
+        na = nmo // 2
+        nb = na
 
     moa = []
 
     i = 0
 
-    orbitals = mol["MolecularOrbitals"]["MOs"]
-
-    while all or orbitals[i]["Occupancy"] > 0:
+    while i < na and (all or orbitals[i]["Occupancy"] > 0):
         moa.extend(
             scale(permute(orbitals[i]["MOCoefficients"], mo_perm), mo_sign))
         i += 1
@@ -267,12 +273,11 @@ def read_occ_mo(mol, mo_perm, mo_sign, all):
     if restricted:
         return (moa, None)
 
-    while not all and orbitals[i]["Occupancy"] == 0:
-        i += 1
+    i = na
 
     mob = []
 
-    while all or orbitals[i]["Occupancy"] > 0:
+    while i < len(orbitals) and (all or orbitals[i]["Occupancy"] > 0):
         mob.extend(
             scale(permute(orbitals[i]["MOCoefficients"], mo_perm), mo_sign))
         i += 1
