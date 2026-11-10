@@ -43,7 +43,7 @@ namespace mrchem {
  *              + \cdots
  *
  * The class has two main purposes:
- * (1)  it provides an easy, intuitive way to contruct new (more complicated) operators from
+ * (1)  it provides an easy, intuitive way to construct new (more complicated) operators from
  *      simple fundamental operators by implementing the arithmetic operators (+,-,*). E.g.
  *      the x component of the angular momentum can be written explicitly from position
  *      and linear momentum as: l_x = r_y*p_z - r_z*p_y

@@ -157,7 +157,7 @@ void Bank::open() {
             // send message that it is ready (value of message is not used)
             MPI_Ssend(&message, 1, MPI_INT, status.MPI_SOURCE, 77, comm_bank);
         } else if (message == CLEAR_BLOCKS) {
-            // clear only blocks whith id less than idmax.
+            // clear only blocks with id less than idmax.
             int idmax = messages[2];
             std::vector<int> toeraseVec; // it is dangerous to erase an iterator within its own loop
             for (auto const &block : nodeid2block) {

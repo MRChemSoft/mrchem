@@ -505,7 +505,7 @@ ComplexMatrix orbital::localize(double prec, OrbitalVector &Phi, ComplexMatrix &
 
 /** @brief Localize a set of orbitals with the same spin
 
-@param Phi_s: Orbital vector containig orbitals with given spin (p/a/b)
+@param Phi_s: Orbital vector containing orbitals with given spin (p/a/b)
 
 Localization is done for each set of spins separately (we don't want to mix spins when localizing).
 The localization matrix is returned for further processing.

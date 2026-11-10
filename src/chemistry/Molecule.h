@@ -108,7 +108,7 @@ public:
     bool hasNLCCPseudopotential() const;
 
     /**
-     * @brief return trun if the molecule has a pseudopotential with projectors, false otherwise
+     * @brief return true if the molecule has a pseudopotential with projectors, false otherwise
      */
     bool hasProjectorPseudopotential() const;
 

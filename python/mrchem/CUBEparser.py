@@ -153,7 +153,7 @@ def parse_cube_file(cube_path, world_unit, pc):
 
     # The molecular geometry is a variable-length list of `geom_field_t` tokens.
     # We use a modified implementation of `pyparsing`'s `countedArray` to define
-    # the token for thte whole cubefile preamble, with:
+    # the token for the whole cubefile preamble, with:
 
     # - `before_t`: the tokens to be matched _before_ the molecular geometry:
     #  `NATOMS`, `ORIGIN`, `NVAL` (defaults to 1 if absent), and the cube axes (`XAXIS`, `YAXIS`, `ZAXIS`)

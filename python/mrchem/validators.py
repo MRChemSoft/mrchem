@@ -107,7 +107,7 @@ class MoleculeValidator:
         Parameters
         ----------
         user_dict: dict, dictionary of user input
-        origin: List[float], origin to be used in the calcuation
+        origin: List[float], origin to be used in the calculation
         """
         self.user_dict = user_dict
         self.origin = origin
@@ -539,12 +539,12 @@ class MoleculeValidator:
         error_pairs = []
         warning_pairs = []
 
-        # Loop over all unique atom pairs and compute euclidian distance
+        # Loop over all unique atom pairs and compute euclidean distance
         for (ca, la), (cb, lb) in itertools.combinations(
             zip(self.atomic_coords, self.atomic_symbols), 2
         ):
             pair_label = f"{la}: {ca}\n{lb}: {cb}"
-            R = self.euclidian_distance(ca, cb)
+            R = self.euclidean_distance(ca, cb)
 
             # Compare distance to internal thresholds
             if R < self.THRESHOLD_NUCLEAR_SINGULARITY_ERROR:
@@ -619,9 +619,9 @@ class MoleculeValidator:
                 self.atomic_coords[atom][dim] -= com[dim]
 
     @staticmethod
-    def euclidian_distance(a, b):
+    def euclidean_distance(a, b):
         """Helper function for the nuclear singularies validation.
-        Computes the euclidian distance between two vectors, a and b."""
+        Computes the euclidean distance between two vectors, a and b."""
         squared_deviations = [(a[i] - b[i]) ** 2 for i in range(3)]
         return math.sqrt(sum(squared_deviations))
 

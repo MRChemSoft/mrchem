@@ -1,7 +1,7 @@
 /**
  * @file historylist.hpp
  * @author Moritz Gubler (moritz.gubler@unibas.ch)
- * @brief Implementation of the SQNM method. More informations about the algorithm can be found here: https://aip.scitation.org/doi/10.1063/1.4905665
+ * @brief Implementation of the SQNM method. More information about the algorithm can be found here: https://aip.scitation.org/doi/10.1063/1.4905665
  * @date 2022-07-13
  * 
  */

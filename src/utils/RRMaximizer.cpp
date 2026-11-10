@@ -161,7 +161,7 @@ double RRMaximizer::make_gradient() {
  */
 // clang-format off
 double RRMaximizer::make_hessian() {
-    MSG_ABORT("Hessian is not explicitely constructed");
+    MSG_ABORT("Hessian is not explicitly constructed");
 
     hessian = DoubleMatrix::Zero(this->N2h, this->N2h);
 

@@ -39,11 +39,11 @@
  * Note that there are several options for copying/assignment: the proper copy
  * constructor and assignment operator are *shallow* copies, which means that
  * they simply copy the *re and *im pointers (no transfer of ownership).
- * Additionaly, there is a deepCopy() which returns a *full* copy of the orbital,
+ * Additionally, there is a deepCopy() which returns a *full* copy of the orbital,
  * and a paramCopy() which returns an empty orbital with the same rank_id/spin/occ.
  *
  * NOTE: since the standard copies are shallow copies and several orbitals can
- * point to the same MW functions, it is YOUR responibility to keep track of the
+ * point to the same MW functions, it is YOUR responsibility to keep track of the
  * ownership and free the FunctionTree pointers before the last orbital goes out
  * of scope.
  */

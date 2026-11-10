@@ -2,7 +2,7 @@ Documentation
 =============
 
 This documentation is generated using `Sphinx <http://sphinx-doc.org/>`_ and
-`Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_ The two softwares are
+`Doxygen <http://www.stack.nl/~dimitri/doxygen/>`_ The two software are
 bridged by means of the `Breathe extension <https://breathe.readthedocs.org/>`_
 The online version of this documentation is built and served by `Read The Docs
 <https://readthedocs.org/>`_.  The webpage http://mrchem.readthedocs.io/ is
@@ -25,7 +25,7 @@ as extensive as for reStructuredText, see `these comments
 <https://blog.readthedocs.com/adding-markdown-support/>`_ Follow the guidelines
 in :cite:`Wilson2014` regarding what to document.
 
-Documeting methods in derived classes
+Documenting methods in derived classes
 -------------------------------------
 
 Virtual methods should only be documented in the base classes.

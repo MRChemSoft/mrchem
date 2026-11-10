@@ -39,7 +39,7 @@ double cartesianNormFac(int lx, int ly, int lz);
 
 /** Contracted atomic orbital.
  *
- * AOContraction defines a singel, contracted atomic orbital as a GaussExp
+ * AOContraction defines a single, contracted atomic orbital as a GaussExp
  * with coefficients.
  *
  */

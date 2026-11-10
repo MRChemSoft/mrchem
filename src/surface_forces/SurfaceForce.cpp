@@ -95,7 +95,7 @@ MatrixXd nuclearEfield(const MatrixXd &nucPos, const VectorXd &nucCharge, const 
             r2 = r * r;
             r3 = r2 * r;
             Efield.row(j) += q * r_vect / r3;
-            // This would compute the electric field for the finite point like nucleus. It does not improve accuracy since the integration speres
+            // This would compute the electric field for the finite point like nucleus. It does not improve accuracy since the integration spheres
             // are large enough to not be affected by the finite point like nucleus. It is kept here for reference.
             // Efield.row(j) += q * r_vect / r * (std::erf(r / c) / r2 - 2 * std::exp(-r2/c2)/(sqrt_pi * c * r) + 2.0 * r * std::exp(-r2 / c2) / c3_times_sqrt_pi_times_three
             //     + 128.0 * r * std::exp(-4.0 * r2 / c2) / c3_times_sqrt_pi_times_three);

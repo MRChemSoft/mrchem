@@ -446,7 +446,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
         DoubleVector core_occupancies;    // the occupancies associated with those orbitals
         unsigned int nCH;                 // the number of orbitals whose occupancies will be modified
 
-        // In the restricted case, there is a one-to-one correspondance with the input file format
+        // In the restricted case, there is a one-to-one correspondence with the input file format
         if (restricted) {
             nCH = json_occ.size();
             core_orbitals = IntVector::Zero(nCH);
