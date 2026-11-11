@@ -55,7 +55,7 @@ public:
     
     void rotate(const DoubleMatrix &U);
     
-    private:
+private:
     bool cartesian;
     std::vector<std::shared_ptr<mrcpp::GaussExp<3>>> orbitals;
     
