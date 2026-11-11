@@ -153,6 +153,14 @@ def write_scf_calculation(user_dict, origin):
 
     scf_dict = {}
     scf_dict["fock_operator"] = write_scf_fock(user_dict, wf_dict, origin)
+    # External uniform magnetic field (Born-Neumann SCF)
+    mag_b3 = user_dict.get("ExternalField", {}).get("B3", 0.0)
+    if mag_b3 != 0.0:
+        scf_dict["fock_operator"]["magnetic_operator"] = {
+            "B3": mag_b3,
+            "r_O": origin,
+            "derivative": user_dict.get("ExternalField", {}).get("derivative", "abgv_55"),
+        }
     scf_dict["initial_guess"] = write_scf_guess(user_dict, wf_dict)
 
     path_orbitals = user_dict["SCF"]["path_orbitals"]

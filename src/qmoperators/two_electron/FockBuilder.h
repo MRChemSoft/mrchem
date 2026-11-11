@@ -58,12 +58,14 @@ class ExchangeOperator;
 class XCOperator;
 class ElectricFieldOperator;
 class ReactionOperator;
+class MagneticPerturbation; 
 
 class FockBuilder final {
 public:
     MomentumOperator &momentum() { return *this->mom; }
     RankZeroOperator &potential() { return this->V; }
     RankZeroOperator &perturbation() { return this->H_1; }
+    RankZeroOperator &diaField()     { return this->H_B_dia; }
 
     std::shared_ptr<MomentumOperator> &getMomentumOperator() { return this->mom; }
     std::shared_ptr<NuclearOperator> &getNuclearOperator() { return this->nuc; }
@@ -75,6 +77,12 @@ public:
     std::shared_ptr<AZoraPotential> &getAZoraChiPotential() { return this->chiPot; }
     std::shared_ptr<ProjectorOperator> &getProjectorOperator() { return this->pp_projector; }
 
+    std::shared_ptr<MagneticPerturbation> &getMagneticPerturbation() { return this->mag_pert; }
+    void setMagneticPerturbation(std::shared_ptr<MagneticPerturbation> mp) {
+        this->mag_pert = mp;
+        if (mp) this->H_1.name() = "W_B";  // keep name check working
+    }
+    
     void rotate(const ComplexMatrix &U);
 
     void build(double exx = 1.0);
@@ -115,6 +123,7 @@ private:
 
     RankZeroOperator V;   ///< Total potential energy operator
     RankZeroOperator H_1; ///< Perturbation operators
+    RankZeroOperator H_B_dia;  ///< Diamagnetic field operator (real, H_BB_dia)
 
     std::shared_ptr<MomentumOperator> mom{nullptr};
     std::shared_ptr<NuclearOperator> nuc{nullptr};
@@ -126,6 +135,7 @@ private:
     std::shared_ptr<ZoraOperator> chi{nullptr};
     std::shared_ptr<ZoraOperator> chi_inv{nullptr};
     std::shared_ptr<ProjectorOperator> pp_projector{nullptr};
+    std::shared_ptr<MagneticPerturbation> mag_pert{nullptr};
 
 
     std::shared_ptr<QMPotential> collectZoraBasePotential();

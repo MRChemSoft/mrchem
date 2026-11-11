@@ -36,7 +36,162 @@
 #include "qmoperators/one_electron/ZoraOperator.h"
 #include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
+#include "qmoperators/one_electron/MagneticPerturbation.h"
+/*
+////////////////
+// Debugging
+///////////////
+#include "qmoperators/one_electron/H_B_dip.h"
+#include "qmoperators/one_electron/H_BB_dia.h"
 
+namespace mrchem {
+
+static void testMagneticOperators(double prec,
+                                   std::shared_ptr<mrcpp::DerivativeOperator<3>> D,
+                                   const mrcpp::Coord<3> &o) {
+    mrcpp::print::separator(0, '=');
+    println(0, "  Testing H_B_dip[2] and H_BB_dia[2][2] on Gaussians");
+    mrcpp::print::separator(0, '-');
+
+    const double alpha = 1.0;
+
+    // Helper: norm of a FunctionTree (getSquareNorm() returns ||f||^2)
+    auto treeNorm = [](const mrcpp::FunctionTree<3> &t) {
+        return std::sqrt(t.getSquareNorm());
+    };
+
+    // =========================================================
+    // Test 1: H_BB_dia[2][2] on phi = exp(-alpha*r^2)
+    // Expected (real): (1/4)*((x-ox)^2+(y-oy)^2)*exp(-alpha*r^2)
+    // =========================================================
+    {
+        Orbital phi(SPIN::Alpha);
+        phi.alloc(NUMBER::Real);
+        std::function<double(const mrcpp::Coord<3> &)> f_phi =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return std::exp(-alpha * (r[0]*r[0] + r[1]*r[1] + r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, phi.real(), f_phi);  // <-- explicit template arg
+
+        H_BB_dia h_dia(o);
+        Orbital result = h_dia[2][2](phi);
+
+        auto &MRA = phi.real().getMRA();
+        mrcpp::FunctionTree<3> expected(MRA);
+        std::function<double(const mrcpp::Coord<3> &)> f_exp =
+            [alpha, o](const mrcpp::Coord<3> &r) -> double {
+            double dx = r[0]-o[0], dy = r[1]-o[1];
+            return 0.25*(dx*dx+dy*dy)*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, expected, f_exp);
+
+        double nrm = result.hasReal() ? treeNorm(result.real()) : 0.0;
+        double err = -1.0;
+        if (result.hasReal()) {
+            mrcpp::FunctionTree<3> diff(MRA);
+            mrcpp::add(prec, diff, 1.0, result.real(), -1.0, expected);
+            err = treeNorm(diff);
+        }
+        println(0, "  H_BB_dia[2][2] on exp(-r^2):");
+        println(0, "    ||result_real||  = " << nrm << "  (expected ~0.741)");
+        println(0, "    ||imag||         = " << (result.hasImag() ? treeNorm(result.imag()) : 0.0) << "  (expected: 0)");
+        println(0, "    ||error||        = " << err);
+        println(0, "    relative err     = " << (nrm > 0 ? err/nrm : -1.0));
+
+        phi.free(NUMBER::Total);
+        result.free(NUMBER::Total);
+    }
+
+    // =========================================================
+    // Test 2: H_B_dip[2] on phi = x*exp(-alpha*r^2)
+    // Expected: real = 0,  imag = +(1/2)*y*exp(-alpha*r^2)
+    // =========================================================
+    {
+        Orbital phi(SPIN::Alpha);
+        phi.alloc(NUMBER::Real);
+        std::function<double(const mrcpp::Coord<3> &)> f_phi =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return r[0]*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, phi.real(), f_phi);
+
+        H_B_dip h_dip(D, o);
+        Orbital result = h_dip[2](phi);
+
+        auto &MRA = phi.real().getMRA();
+        mrcpp::FunctionTree<3> expected_imag(MRA);
+        std::function<double(const mrcpp::Coord<3> &)> f_exp =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return 0.5*r[1]*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, expected_imag, f_exp);
+
+        double real_nrm = result.hasReal() ? treeNorm(result.real()) : 0.0;
+        double imag_nrm = result.hasImag() ? treeNorm(result.imag()) : 0.0;
+        double err = -1.0;
+        if (result.hasImag()) {
+            mrcpp::FunctionTree<3> diff(MRA);
+            mrcpp::add(prec, diff, 1.0, result.imag(), -1.0, expected_imag);
+            err = treeNorm(diff);
+        }
+        println(0, "  H_B_dip[2] on x*exp(-r^2):");
+        println(0, "    ||real part||    = " << real_nrm << "  (expected: 0)");
+        println(0, "    ||imag part||    = " << imag_nrm << "  (expected ~0.370)");
+        println(0, "    ||imag error||   = " << err);
+
+        phi.free(NUMBER::Total);
+        result.free(NUMBER::Total);
+    }
+
+    // =========================================================
+    // Test 3: H_B_dip[2] on phi = exp(-alpha*r^2), gauge o=(0,1,0)
+    // Expected: real = 0,  imag = alpha*x*exp(-alpha*r^2)
+    // =========================================================
+    {
+        mrcpp::Coord<3> o_offset = {0.0, 1.0, 0.0};
+        Orbital phi(SPIN::Alpha);
+        phi.alloc(NUMBER::Real);
+        std::function<double(const mrcpp::Coord<3> &)> f_phi =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, phi.real(), f_phi);
+
+        H_B_dip h_dip(D, o_offset);
+        Orbital result = h_dip[2](phi);
+
+        auto &MRA = phi.real().getMRA();
+        mrcpp::FunctionTree<3> expected_imag(MRA);
+        std::function<double(const mrcpp::Coord<3> &)> f_exp =
+            [alpha](const mrcpp::Coord<3> &r) -> double {
+            return alpha*r[0]*std::exp(-alpha*(r[0]*r[0]+r[1]*r[1]+r[2]*r[2]));
+        };
+        mrcpp::project<3>(prec, expected_imag, f_exp);
+
+        double real_nrm = result.hasReal() ? treeNorm(result.real()) : 0.0;
+        double imag_nrm = result.hasImag() ? treeNorm(result.imag()) : 0.0;
+        double err = -1.0;
+        if (result.hasImag()) {
+            mrcpp::FunctionTree<3> diff(MRA);
+            mrcpp::add(prec, diff, 1.0, result.imag(), -1.0, expected_imag);
+            err = treeNorm(diff);
+        }
+        println(0, "  H_B_dip[2] on exp(-r^2), gauge=(0,1,0):");
+        println(0, "    ||real part||    = " << real_nrm << "  (expected: 0)");
+        println(0, "    ||imag part||    = " << imag_nrm << "  (expected ~0.741)");
+        println(0, "    ||imag error||   = " << err);
+
+        phi.free(NUMBER::Total);
+        result.free(NUMBER::Total);
+    }
+
+    mrcpp::print::separator(0, '=');
+}
+
+} // namespace mrchem
+////////////////
+////////////////
+*/
 using mrcpp::Printer;
 using mrcpp::Timer;
 using nlohmann::json;
@@ -270,6 +425,22 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         printConvergenceRow(0);
     }
 
+    // Convert to complex if magnetic perturbation is active
+    if (F.getMagneticPerturbation() != nullptr) {
+        Phi_n = orbital::CopyToComplex(Phi_n);
+        println(0, "  COMPLEX orbitals activated due to magnetic perturbation!!!!");
+    }
+/*
+    //////////////////////////////
+    // Debugging: test magnetic operators
+    if (not F.perturbation().name().empty()) {
+        auto D_test = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.5, 0.5);
+        mrcpp::Coord<3> o_test = {0.0, 0.0, 0.0};
+        testMagneticOperators(this->orbPrec[0], D_test, o_test);
+    }
+    //////////////////////////////
+*/
+
     int nIter = 0;
     bool converged = false;
     json_out["cycles"] = {};
@@ -289,17 +460,54 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
             F.setup(orb_prec);
         }
 
+        // Diagonalize F_mat
+        F_mat = (0.5 * (F_mat + F_mat.adjoint())).eval();
+        Eigen::SelfAdjointEigenSolver<ComplexMatrix> eigensolver(F_mat);
+        if (eigensolver.info() != Eigen::Success) {
+            MSG_ABORT("Eigen-decomposition of F_mat failed");
+        }
+
+        Eigen::VectorXd sigma_F = eigensolver.eigenvalues();
+        ComplexMatrix U_F = eigensolver.eigenvectors();
+
+
+        
         // Init Helmholtz operator
-        HelmholtzVector H(helm_prec, F_mat.real().diagonal());
-        ComplexMatrix L_mat = H.getLambdaMatrix();
+        HelmholtzVector H(helm_prec, sigma_F);
+        //ComplexMatrix L_mat = H.getLambdaMatrix();
 
         // Apply Helmholtz operator
-        OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
-        OrbitalVector Phi_np1 = H(Psi);
+        OrbitalVector Psi = F.potential()(Phi_n);
+        OrbitalVector Phi_np1 = orbital::rotate(Psi, U_F.conjugate(), orb_prec);
+        Psi = H(Phi_np1);
+        Phi_np1.clear();
+        Phi_np1 = orbital::rotate(Psi, U_F.transpose(), orb_prec);
         Psi.clear();
+
+/*
+*/
+        // Born-Neumann second term: R_0 * W * R_0
+        auto mag_pert = F.getMagneticPerturbation();
+        if (mag_pert != nullptr) {
+            // Setup is already done by F.setup() above
+            for (size_t born = 0; born < 1; born++) {
+                OrbitalVector W_Phi = (*mag_pert)(Phi_np1);
+                OrbitalVector corr = orbital::rotate(W_Phi, U_F.conjugate(), orb_prec);
+                corr = H(corr);
+                corr = orbital::rotate(corr, U_F.transpose(), orb_prec);
+                Phi_np1 = orbital::add(
+                    ComplexDouble(1.0, 0.0), Phi_np1,
+                    ComplexDouble(1.0, 0.0), corr, orb_prec
+                );
+                corr.clear();
+                println(0, "  Born-Neumann correction applied to Phi_np1");
+            }
+            // Clear is called by F.clear() below
+        }
         F.clear();
 
         // Orthonormalize
+        F_mat = 0.0 * F_mat;  // Clear F_mat to avoid accumulation of old values
         orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
         // Compute orbital updates
@@ -307,7 +515,18 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Phi_np1.clear();
 
         kain.accelerate(orb_prec, Phi_n, dPhi_n);
-
+/*
+        if (mrcpp::mpi::my_func(dPhi_n[0]))
+        {
+            std::cout << "dPhi_n[0]: " << std::endl << dPhi_n[0].real(0) << std::endl;
+            //std::cout << "dPhi_n[0]: " << std::endl << dPhi_n[0].imag(0) << std::endl;
+        }
+        if (mrcpp::mpi::my_func(dPhi_n[1]))
+        {
+            std::cout << "dPhi_n[1]: " << std::endl << dPhi_n[1].real(0) << std::endl;
+            //std::cout << "dPhi_n[1]: " << std::endl << dPhi_n[1].imag(0) << std::endl;
+        }
+*/
         // Compute errors
         errors = orbital::get_norms(dPhi_n);
         err_o = errors.maxCoeff();

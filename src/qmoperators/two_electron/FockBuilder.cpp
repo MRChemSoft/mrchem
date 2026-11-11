@@ -48,6 +48,7 @@
 #include "utils/math_utils.h"
 
 #include "qmoperators/one_electron/AZoraPotential.h"
+#include "qmoperators/one_electron/MagneticPerturbation.h"
 
 #include <filesystem>
 
@@ -94,6 +95,8 @@ void FockBuilder::setup(double prec) {
     if (this->mom != nullptr) this->momentum().setup(prec);
     this->potential().setup(prec);
     this->perturbation().setup(prec);
+    if (this->mag_pert != nullptr) this->mag_pert->setup(prec);
+    this->H_B_dia.setup(prec);  
 
     if (isZora()) {
         Timer t_zora;
@@ -150,6 +153,8 @@ void FockBuilder::clear() {
     if (this->mom != nullptr) this->momentum().clear();
     this->potential().clear();
     this->perturbation().clear();
+    if (this->mag_pert != nullptr) this->mag_pert->clear();
+    this->H_B_dia.clear();
     if (isZora()) {
         this->chi->clear();
         this->chi_inv->clear();
@@ -230,12 +235,33 @@ SCFEnergy FockBuilder::trace(OrbitalVector &Phi, const Nuclei &nucs) {
     if (this->ex != nullptr) E_x = -this->exact_exchange * this->ex->trace(Phi).real();
     if (this->xc != nullptr) E_xc = this->xc->getEnergy();
     if (this->ext != nullptr) E_eext = this->ext->trace(Phi).real();
+
+/*    
+    // Add magnetic perturbation energy: <W_para> + <W_dia>
+    // (magnetic field is an external field, so fold into E_eext)
+//    if (not this->perturbation().name().empty()) E_eext += this->perturbation().trace(Phi).real();
+//    if (not this->H_B_dia.name().empty()) E_eext += this->H_B_dia.trace(Phi).real();
+    // Magnetic energy: <W_para> + <W_dia>
+    // Use operator()(bra,ket) — trace() doesn't handle differential operators
+    if (not this->perturbation().name().empty()) {
+        ComplexMatrix W_para = this->perturbation()(Phi, Phi);
+        for (int i = 0; i < static_cast<int>(Phi.size()); i++)
+            E_eext += Phi[i].occ() * W_para(i, i).real();
+    }
+    if (not this->H_B_dia.name().empty()) {
+        ComplexMatrix W_dia = this->H_B_dia(Phi, Phi);
+        for (int i = 0; i < static_cast<int>(Phi.size()); i++)
+            E_eext += Phi[i].occ() * W_dia(i, i).real();
+    }
+*/
     if (getProjectorOperator() != nullptr) {
         E_nl = this->pp_projector->trace(Phi).real();
     }
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing molecular energy", t_tot);
+
+    //mrcpp::print::value(0, "Magnetic energy <W>", E_eext, "(au)", 10);
 
     return SCFEnergy{E_kin, E_nn, E_en, E_ee, E_x, E_xc, E_next, E_eext, Er_tot, Er_nuc, Er_el, E_nl};
 }
@@ -257,7 +283,20 @@ ComplexMatrix FockBuilder::operator()(OrbitalVector &bra, OrbitalVector &ket) {
 
     mrcpp::print::footer(2, t_tot, 2);
     if (plevel == 1) mrcpp::print::time(1, "Computing Fock matrix", t_tot);
-    return T_mat + V_mat;
+    ComplexMatrix F_mat = T_mat + V_mat;
+/*
+    // Born-Neumann orbital energy shift: F_B = F_0 - W
+    // (W is set up by FockBuilder::setup and cleared by FockBuilder::clear)
+    if (not this->perturbation().name().empty()) {
+        ComplexMatrix W_para = this->perturbation()(bra, ket);
+        F_mat -= W_para;
+    }
+    if (not this->H_B_dia.name().empty()) {
+        ComplexMatrix W_dia = this->H_B_dia(bra, ket);
+        F_mat -= W_dia;
+    }
+*/
+    return F_mat;
 }
 
 ComplexMatrix FockBuilder::kineticMatrix(OrbitalVector &bra, OrbitalVector &ket) {
