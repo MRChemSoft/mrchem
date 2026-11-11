@@ -22,7 +22,7 @@ MagneticPerturbation::MagneticPerturbation(
 {
     // Diamagnetic part: W_dia = –(B3²/8c²)·(x²+y²)
     // H_BB_dia(o)[2][2] = (1/4)·(x²+y²)  →  coefficient = –(B3²/2c²)
-    dia_part_ = -(B3 * B3 / (2.0 * c * c)) * H_BB_dia(o)[2][2];
+    dia_part_ = (B3 * B3 / (2.0 * c * c)) * H_BB_dia(o)[2][2];
     dia_part_.name() = "W_B_dia";
     name() = "W_B";
 }
@@ -77,7 +77,7 @@ Orbital MagneticPerturbation::operator()(Orbital inp) {
     OrbitalVector dia_v;
     dia_v.push_back(dia_phi);
     OrbitalVector out_v = orbital::add(ComplexDouble(1.0, 0.0), dia_v,
-                                        ComplexDouble(0.0, para_coeff_), Lz_v, prec_);
+                                        ComplexDouble(0.0, -para_coeff_), Lz_v, prec_);
 
     Orbital out = out_v[0];
     return out;

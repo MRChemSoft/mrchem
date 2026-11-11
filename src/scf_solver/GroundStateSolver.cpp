@@ -471,20 +471,12 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         ComplexMatrix U_F = eigensolver.eigenvectors();
 
 
-        println(0, "  " );
-
-        println(0, "  Diagonalization of Fock matrix:" );
-        println(0, "  U_F*sigma_F*adjoint(U_F) - F_mat:" << std::endl << (U_F*sigma_F.asDiagonal()*U_F.adjoint() - F_mat).real());
-        //println(0, "  adjoint(U_F)*sigma_F*U_F - F_mat:" << std::endl << U_F.adjoint().real()*sigma_F.asDiagonal()*U_F.real() - F_mat.real());
-        
-        println(0, "  " );
         
         // Init Helmholtz operator
         HelmholtzVector H(helm_prec, sigma_F);
         //ComplexMatrix L_mat = H.getLambdaMatrix();
 
         // Apply Helmholtz operator
-        //OrbitalVector Psi = F.buildHelmholtzArgument(orb_prec, Phi_n, F_mat, L_mat);
         OrbitalVector Psi = F.potential()(Phi_n);
         OrbitalVector Phi_np1 = orbital::rotate(Psi, U_F.conjugate(), orb_prec);
         Psi = H(Phi_np1);
@@ -493,23 +485,25 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Psi.clear();
 
 /*
+*/
         // Born-Neumann second term: R_0 * W * R_0
         auto mag_pert = F.getMagneticPerturbation();
         if (mag_pert != nullptr) {
             // Setup is already done by F.setup() above
             for (size_t born = 0; born < 1; born++) {
                 OrbitalVector W_Phi = (*mag_pert)(Phi_np1);
-                OrbitalVector corr = orbital::rotate(W_Phi, U_F.adjoint(), orb_prec);
+                OrbitalVector corr = orbital::rotate(W_Phi, U_F.conjugate(), orb_prec);
                 corr = H(corr);
-                corr = orbital::rotate(corr, U_F, orb_prec);
-                Phi_np1 = orbital::add(ComplexDouble(1.0, 0.0), Phi_np1,
-                                    ComplexDouble(1.0, 0.0), corr, orb_prec);
+                corr = orbital::rotate(corr, U_F.transpose(), orb_prec);
+                Phi_np1 = orbital::add(
+                    ComplexDouble(1.0, 0.0), Phi_np1,
+                    ComplexDouble(1.0, 0.0), corr, orb_prec
+                );
                 corr.clear();
                 println(0, "  Born-Neumann correction applied to Phi_np1");
             }
             // Clear is called by F.clear() below
         }
-*/
         F.clear();
 
         // Orthonormalize
@@ -535,7 +529,6 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
 */
         // Compute errors
         errors = orbital::get_norms(dPhi_n);
-//        println(0, "  Orbital update norms: " << errors.transpose());
         err_o = errors.maxCoeff();
         err_t = errors.norm();
         json_cycle["mo_residual"] = err_t;
