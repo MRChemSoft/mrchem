@@ -204,8 +204,8 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     S.diagonalize_1rdm();
     std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
     // keep the old orbitals: the two-body term uses them together with the old-basis two-body rdm
-    OrbitalVector old_Phi = *this->orbitals;
-    orbital_basis_change(basis_change);
+    OrbitalVector old_Phi = orbital::deep_copy(*this->orbitals);
+    mrcpp::rotate(*this->orbitals, *basis_change, this->prec);
 
     // initialize Helmholtz operator
     S.calculate_helmholtz_coefficients();
@@ -246,23 +246,6 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     DoubleVector errors = orbital::get_norms(diff_orbitals);
     (*this->orbitals) = new_orbitals;
     return errors;
-}
-
-void LagrangianSolver::orbital_basis_change(std::shared_ptr<ComplexMatrix> basis_change){
-    const int L = this->orbitals->size();
-    OrbitalVector new_Phi;
-
-    for (int i = 0; i < L; i++) {
-        // phi_i = sum_j U(i,j) * Phi[j]
-        std::vector<ComplexDouble> coeffs(L);
-        for (int j = 0; j < L; j++)
-            coeffs[j] = coeff((*basis_change)(i, j));
-        Orbital phi_i;
-        mrcpp::linear_combination(phi_i, coeffs, *this->orbitals, this->prec);
-        new_Phi.push_back(phi_i);
-    }
-
-    *this->orbitals = new_Phi;
 }
 
 void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi){
