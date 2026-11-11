@@ -161,7 +161,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
                     if (phi.iscomplex()) MSG_ABORT("Complex orbital in the real mode");
         }
 
-        printOrbitals(S.get_lagrange_multipliers()->real().diagonal(), errors, *this->orbitals, 0);
+        printOrbitals(S.get_lagrange_multipliers()->real().diagonal(), S.get_one_rdm()->real().diagonal(), errors, *this->orbitals);
 
         t_scf.stop();
         json_cycle["wall_time"] = t_scf.elapsed();
@@ -345,7 +345,46 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
     }
 }
 
+/** @brief Pretty printing of orbitals with energies and occupancies
+ *
+ * @param epsilon: orbital energies
+ * @param Phi: orbital vector
+ */
+void LagrangianSolver::printOrbitals(const DoubleVector &energies, const DoubleVector &occupancies, const DoubleVector &errors, OrbitalVector &Phi, bool print_head) const {
+    int pprec = Printer::getPrecision();
+    int w0 = (Printer::getWidth() - 1);
+    int w1 = 5;
+    int w2 = 7;
+    int w3 = 19;
+    int w4 = 19;
+    int w5 = 17;
+    int w6 = w0 - w1 - w2 - w3 - w4 - w5;
 
+    std::stringstream o_head;
+    o_head << std::setw(w1) << "n";
+    o_head << std::setw(w2) << "Nodes";
+    o_head << std::setw(w3) << "Energy";
+    o_head << std::setw(w4) << "Occupancy";
+    o_head << std::setw(w5) << "Residual";
+    o_head << std::setw(w6) << "Done";
+
+    if (print_head) mrcpp::print::separator(2, '=');
+    if (print_head) println(2, o_head.str());
+    mrcpp::print::separator(2, '-');
+
+    for (size_t i = 0; i < Phi.size(); i++) {
+        bool conv_i = (errors(i) < this->orbThrs) or (this->orbThrs < 0.0);
+        std::stringstream o_row;
+        o_row << std::setw(w1) << i;
+        o_row << std::setw(w2) << Phi[i].getNNodes();
+        o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << energies(i);
+        o_row << std::setw(w4) << std::setprecision(2 * pprec) << std::fixed << occupancies(i);
+        o_row << std::setw(w5) << std::setprecision(pprec) << std::scientific << errors(i);
+        o_row << std::setw(w6) << conv_i;
+        println(2, o_row.str());
+        if (Phi[i].hasReal()) println(5, Phi[i].real());
+    }
+}
 
 
 } // namespace mrchem
