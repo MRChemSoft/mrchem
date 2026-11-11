@@ -377,7 +377,7 @@ void LagrangianSolver::printOrbitals(const DoubleVector &energies, const DoubleV
         std::stringstream o_row;
         o_row << std::setw(w1) << i;
         o_row << std::setw(w2) << Phi[i].getNNodes();
-        o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << energies(i);
+        o_row << std::setw(w3) << std::setprecision(2 * pprec) << std::fixed << energies(i) * 0.5;
         o_row << std::setw(w4) << std::setprecision(2 * pprec) << std::fixed << occupancies(i);
         o_row << std::setw(w5) << std::setprecision(pprec) << std::scientific << errors(i);
         o_row << std::setw(w6) << conv_i;
