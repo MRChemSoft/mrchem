@@ -32,6 +32,7 @@
 #include <memory>
 
 namespace mrchem {
+namespace gto_utils {
 
 /**
  * @brief Abstract base class for reading atomic orbital basis sets from files.
@@ -61,7 +62,7 @@ public:
      * @param i The index of the basis set.
      * @return A shared pointer to the AOBasis object.
      */
-    std::shared_ptr<gto_utils::AOBasis> getAOBasis(size_t i) const { return this->basis[i]; }
+    std::shared_ptr<AOBasis> getAOBasis(size_t i) const { return this->basis[i]; }
     
 protected:
     /**
@@ -73,7 +74,9 @@ protected:
     virtual void readBasisFile() = 0;
 
     std::vector<std::shared_ptr<Nucleus>> nuclei;           ///< Nucleus objects representing the nuclei in the basis set
-    std::vector<std::shared_ptr<gto_utils::AOBasis>> basis; ///< AOBasis objects representing the basis sets for each atom type
+    std::vector<std::shared_ptr<AOBasis>> basis; ///< AOBasis objects representing the basis sets for each atom type
     std::string AOFile;                                     ///< Path to the basis file
 };
+
+} // namespace gto_utils
 } // namespace mrchem

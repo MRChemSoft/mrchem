@@ -134,8 +134,9 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     mrcpp::print::separator(2, '-');
 
     // Setup AO basis
+    // bas_file, ao_type, mo_file, Phi, prec, screen
     Timer t1;
-    DaltonAOReader reader(bas_file);
+    gto_utils::DaltonAOReader reader(bas_file);
     gto_utils::OrbitalExp gto_exp(reader);
     t1.stop();
 
@@ -223,7 +224,7 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
         std::stringstream o_bas;
         o_bas << sad_path << "/" << sym << ".bas";
 
-        DaltonAOReader reader(o_bas.str());
+        gto_utils::DaltonAOReader reader(o_bas.str());
         reader.getNucleus(0)->setCoord(nuc.getCoord());
         gto_utils::OrbitalExp gto_exp(reader);
 
@@ -255,7 +256,7 @@ void initial_guess::gto::project_ao(OrbitalVector &Phi, double prec, const Nucle
 
 Density initial_guess::gto::project_density(double prec, const Nucleus &nuc, const std::string &bas_file, const std::string &dens_file, double screen) {
     // Setup AO basis
-    DaltonAOReader reader(bas_file);
+    gto_utils::DaltonAOReader reader(bas_file);
     reader.getNucleus(0)->setCoord(nuc.getCoord());
     gto_utils::OrbitalExp gto_exp(reader);
 

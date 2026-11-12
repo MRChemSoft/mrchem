@@ -31,6 +31,8 @@
 
 namespace mrchem {
 
+namespace gto_utils {
+
 class DaltonAOReader final : public AOFileReader {
 public:
     /**
@@ -65,6 +67,8 @@ private:
      * @param bas The AOBasis object to populate.
      * @param l The angular momentum quantum number of the shell.
      */
-    void readContractionBlock(std::ifstream &ifs, gto_utils::AOBasis &bas, size_t l);
+    void readContractionBlock(std::ifstream &ifs, AOBasis &bas, size_t l);
 };
+
+} // namespace gto_utils
 } // namespace mrchem

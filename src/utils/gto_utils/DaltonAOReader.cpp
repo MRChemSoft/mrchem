@@ -30,6 +30,7 @@
 #include <filesystem>
 
 namespace mrchem {
+namespace gto_utils {
 
 DaltonAOReader::DaltonAOReader(const std::string &file) {
     if (not std::filesystem::is_regular_file(file))
@@ -73,7 +74,7 @@ void DaltonAOReader::readAtomBlock(std::ifstream &ifs) {
             readContractionBlock(ifs, bas, i);
     }
     for (size_t i = 0; i < nAtoms; i++)
-        this->basis.push_back(std::make_shared<gto_utils::AOBasis>(bas));
+        this->basis.push_back(std::make_shared<AOBasis>(bas));
 }
 
 void DaltonAOReader::readAtomData(std::ifstream &ifs, size_t n_atoms, double z) {
@@ -91,14 +92,14 @@ void DaltonAOReader::readAtomData(std::ifstream &ifs, size_t n_atoms, double z) 
     }
 }
 
-void DaltonAOReader::readContractionBlock(std::ifstream &ifs, gto_utils::AOBasis &bas, size_t l) {
+void DaltonAOReader::readContractionBlock(std::ifstream &ifs, AOBasis &bas, size_t l) {
     size_t nprim, nctr;
     ifs >> nprim;
     ifs >> nctr;
 
     size_t start = bas.size();
     for (size_t i = 0; i < nctr; i++) {
-        gto_utils::AOContraction ctr(l);
+        AOContraction ctr(l);
         bas.append(ctr);
     }
 
@@ -113,4 +114,5 @@ void DaltonAOReader::readContractionBlock(std::ifstream &ifs, gto_utils::AOBasis
     }
 }
 
+} // namespace gto_utils
 } // namespace mrchem

@@ -33,9 +33,9 @@
 #include "mrchem.h"
 
 namespace mrchem {
-
-class AOFileReader;
 namespace gto_utils {
+        
+class AOFileReader;
 
 struct CartToSphTransformation {
     std::vector<std::vector<int>> inds;
