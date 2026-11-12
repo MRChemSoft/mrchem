@@ -202,6 +202,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     // diagonalize 1rdm. change basis of one-body integral, multipliers and orbitals 
     // (two-body integral and rdms not necessary)
     S.diagonalize_1rdm();
+    std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
 
     // initialize Helmholtz operator
     S.calculate_helmholtz_coefficients();
@@ -238,6 +239,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
 
     // apply Helmholtz kernel and update orbitals
     OrbitalVector new_orbitals = H(new_Phi);
+    mrcpp::rotate(new_orbitals, *basis_change); // rotate back to old basis
     OrbitalVector diff_orbitals = orbital::add(1.0, new_orbitals, -1.0, *this->orbitals);
     DoubleVector errors = orbital::get_norms(diff_orbitals);
     (*this->orbitals) = new_orbitals;
