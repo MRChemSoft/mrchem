@@ -304,10 +304,16 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
     // two-body term: m on the new basis (through U_dE2), j, k, l on the old basis (like two_rdm)
     for (int j = 0; j < L; j++) {
         std::cout << "Orbital " << j + 1 << " out of " << L << std::endl;
-        for (int l = 0; l < L; l++) {
+        for (int l = j; l < L; l++) { // Triangular loop l >= j
             // g_jl = poisson(Phi[j]^* * Phi[l]) (the MRCPP kernel is already 1/|r-r'|, no 4*pi as in python)
             Orbital phi_jl, g_jl;
             mrcpp::multiply(phi_jl, orbitals[j], orbitals[l], this->prec, false, false, true);
+
+            if (phi_jl.norm() < this->prec * 1.0e-5) {
+                // std::cout << "Skipping orbital pair: " << j << ", " << l << std::endl;
+                continue;
+            }
+
             mrcpp::apply(this->prec, g_jl, P, phi_jl);
 
             for (int k = 0; k < L; k++) {
@@ -324,7 +330,10 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
                     else
                         continue; // both below threshold, skip
 
-                    new_Phi[m].add(coeff(2.0 * U_dE2(m, j, k, l) / denom), state);
+                    ComplexDouble u = U_dE2(m, j, k, l);
+                    if (l != j) u += U_dE2(m, l, k, j);
+
+                    new_Phi[m].add(coeff(2.0 * u / denom), state);
                 }
             }
         }
