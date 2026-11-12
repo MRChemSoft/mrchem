@@ -69,7 +69,7 @@ public:
      * @param mo_file The path to the molecular orbital file.
      * @return A DoubleMatrix containing the molecular orbital coefficients.
      */
-    DoubleMatrix getMOCoefficients(const std::string &mo_file) const;
+    virtual DoubleMatrix getMOCoefficients(const std::string &MOFile) const = 0;
     
 protected:
     /**

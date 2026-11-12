@@ -41,6 +41,8 @@ public:
      */
     DaltonAOReader(const std::string &basisFile);
 
+    DoubleMatrix getMOCoefficients(const std::string &MOFile) const override;
+
 private:
     /**
      * @brief Read the basis set in Dalton format.

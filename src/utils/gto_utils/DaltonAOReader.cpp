@@ -114,5 +114,27 @@ void DaltonAOReader::readContractionBlock(std::ifstream &ifs, AOBasis &bas, size
     }
 }
 
+DoubleMatrix DaltonAOReader::getMOCoefficients(const std::string &MOFile) const {
+    int nTerms;
+    std::ifstream ifs(MOFile.c_str());
+    if (not ifs)
+        MSG_ERROR("Failed to open file: " << MOFile);
+
+    std::string line;
+    std::getline(ifs, line);
+    std::istringstream iss(line);
+    iss >> nTerms;
+
+    DoubleMatrix C = DoubleMatrix::Zero(nTerms, nTerms);
+    for (int i = 0; i < nTerms; i++) {
+        for (int j = 0; j < nTerms; j++) {
+            std::getline(ifs, line);
+            std::istringstream iss(line);
+            iss >> C(j, i);
+        }
+    }
+    return C;
+}
+
 } // namespace gto_utils
 } // namespace mrchem

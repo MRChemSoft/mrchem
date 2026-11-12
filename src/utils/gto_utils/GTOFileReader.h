@@ -40,7 +40,7 @@ namespace gto_utils {
  * This class provides an interface for reading atomic orbital basis sets from files.
  * Derived classes should implement the readBasisFile method to handle specific file formats.
  */
-class GTOFileReader {
+class GTOFileReader final {
 public:
     /**
      * @brief Construct a new GTOFileReader object.
