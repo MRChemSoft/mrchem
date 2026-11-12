@@ -329,6 +329,7 @@ def write_lag_solver(user_dict):
         "force_complex": lag_dict["force_complex"],
         "file_chk": lag_dict["path_checkpoint"] + "/phi_scf",
         "checkpoint": lag_dict["write_checkpoint"],
+        "localize": lag_dict["localize"],
         "prec": prec,
     }
 

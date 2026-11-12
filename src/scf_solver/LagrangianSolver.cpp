@@ -23,18 +23,18 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-#include <MRCPP/MWOperators>
 
 #include "LagrangianSolver.h"
 
+#include "HelmholtzVector.h"
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
-#include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
-#include "HelmholtzVector.h"
+#include "qmoperators/two_electron/FockBuilder.h"
 #include "utils/print_utils.h"
 #include <iostream>
 
@@ -44,7 +44,6 @@ using nlohmann::json;
 using PoissonOperator = mrcpp::PoissonOperator;
 
 extern mrcpp::MultiResolutionAnalysis<3> *mrchem::MRA;
-
 
 namespace mrchem {
 
@@ -70,23 +69,22 @@ void make_uniform_type(OrbitalVector &Phi, bool force_complex = false) {
 } // namespace
 
 // TODO: read all the settings in input
-LagrangianSolver::LagrangianSolver(double prec){
+LagrangianSolver::LagrangianSolver(double prec) {
     this->prec = prec;
     this->threshold = 1e-10;
     this->P_p = std::make_shared<PoissonOperator>(*MRA, this->prec);
 }
 
-void LagrangianSolver::set_orbitals(OrbitalVector Phi_n){
+void LagrangianSolver::set_orbitals(OrbitalVector Phi_n) {
     this->orbitals = std::make_shared<OrbitalVector>(Phi_n);
 }
 
 /** @brief Switch to complex orbitals (and complex integrals and RDMs in the external solver) */
-void LagrangianSolver::set_complex_orbitals(ChemTensorSolver &S){
+void LagrangianSolver::set_complex_orbitals(ChemTensorSolver &S) {
     this->real_orbitals = false;
     make_uniform_type(*this->orbitals, true);
     S.set_real(false);
 }
-
 
 /** @brief Run Lagrangian orbital optimization
  *
@@ -99,12 +97,12 @@ void LagrangianSolver::set_complex_orbitals(ChemTensorSolver &S){
  * condition of the orbitals. The driver is used to compute the 1-2RDMs.
  */
 json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver &S) {
-    //printParameters("Optimize ground state orbitals");
+    // printParameters("Optimize ground state orbitals");
 
     Timer t_tot;
     json json_out;
 
-    //Nuclei nucs = mol.getNuclei();
+    // Nuclei nucs = mol.getNuclei();
 
     // initial orbitals
     set_orbitals(mol.getOrbitals());
@@ -118,6 +116,11 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     if (this->force_complex or any_complex) set_complex_orbitals(S);
     print_utils::text(0, "Orbitals", this->real_orbitals ? "real" : "complex");
     DoubleVector errors = DoubleVector::Ones(orbitals->size());
+
+    if (this->localize) {
+        ComplexMatrix tmpfock(orbitals->size(), orbitals->size());
+        orbital::localize(this->prec, *this->orbitals, tmpfock);
+    }
 
     bool converged = false;
     json_out["cycles"] = {};
@@ -186,7 +189,6 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     json_out["wall_time"] = t_tot.elapsed();
     json_out["converged"] = converged;
     return json_out;
-
 }
 
 DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S) {
@@ -199,7 +201,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     // (otherwise you need also two-boyd integral and rdm in the new basis)
     S.calculate_lagrange_multipliers();
 
-    // diagonalize 1rdm. change basis of one-body integral, multipliers and orbitals 
+    // diagonalize 1rdm. change basis of one-body integral, multipliers and orbitals
     // (two-body integral and rdms not necessary)
     S.diagonalize_1rdm();
     std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
@@ -218,7 +220,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
         }
     }
     HelmholtzVector H(this->prec, *ptr_helm_coeff);
-    
+
     // new orbitals
     OrbitalVector new_Phi;
 
@@ -246,7 +248,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     return errors;
 }
 
-void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi){
+void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi) {
     const int L = this->orbitals->size();
     NuclearOperator &V = *(F.getNuclearOperator());
     ComplexMatrix &lag_coeff = *(S.get_lagrange_multipliers());
@@ -259,9 +261,7 @@ void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver 
     ComplexMatrix rot_coef(L, L);
     for (size_t i = 0; i < L; i++) {
         ComplexDouble denom = one_rdm(i, i);
-        for (size_t j = 0; j < L; j++) {
-            rot_coef(i, j) = coeff(i != j ? -lag_coeff(i, j) / denom : 0.0);
-        }
+        for (size_t j = 0; j < L; j++) { rot_coef(i, j) = coeff(i != j ? -lag_coeff(i, j) / denom : 0.0); }
     }
 
     ComplexMatrix net_rot_matrix = rot_coef * basis_change;
@@ -270,7 +270,7 @@ void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver 
     new_Phi = orbital::add(1.0, V_phi, 1.0, rotated);
 }
 
-void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi){
+void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi) {
     const int L = this->orbitals->size();
     auto &one_rdm = *(S.get_one_rdm());
     auto &two_rdm = *(S.get_two_rdm());
@@ -286,12 +286,11 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
         for (int i = 0; i < L; i++)
             for (int j = 0; j < L; j++)
                 for (int k = 0; k < L; k++)
-                    for (int l = 0; l < L; l++)
-                        U_dE2(m, j, k, l) += basis_change(m, i) * two_rdm(i, j, k, l);
+                    for (int l = 0; l < L; l++) U_dE2(m, j, k, l) += basis_change(m, i) * two_rdm(i, j, k, l);
 
     // two-body term: m on the new basis (through U_dE2), j, k, l on the old basis (like two_rdm)
     for (int j = 0; j < L; j++) {
-        std::cout << "Orbital " << j+1 << " out of " << L << std::endl;
+        std::cout << "Orbital " << j + 1 << " out of " << L << std::endl;
         for (int l = 0; l < L; l++) {
             // g_jl = poisson(Phi[j]^* * Phi[l]) (the MRCPP kernel is already 1/|r-r'|, no 4*pi as in python)
             Orbital phi_jl, g_jl;
@@ -359,6 +358,5 @@ void LagrangianSolver::printOrbitals(const DoubleVector &energies, const DoubleV
         if (Phi[i].hasReal()) println(5, Phi[i].real());
     }
 }
-
 
 } // namespace mrchem

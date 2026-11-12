@@ -990,6 +990,11 @@ sections:
         docstring: |
           Use complex orbitals throughout. By default, the orbitals are kept real whenever possible
           (real initial orbitals and real integrals), and switched to complex only if needed.
+      - name: localize
+        type: bool
+        default: false
+        docstring: |
+          Localize active orbitals before starting scf
       - name: write_checkpoint
         type: bool
         default: false

@@ -1009,6 +1009,12 @@ User input reference
   
     **Default** ``False``
   
+   :localize: Localize active orbitals before starting scf 
+  
+    **Type** ``bool``
+  
+    **Default** ``False``
+  
    :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``.  
   
     **Type** ``bool``
