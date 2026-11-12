@@ -330,6 +330,7 @@ def write_lag_solver(user_dict):
         "file_chk": lag_dict["path_checkpoint"] + "/phi_scf",
         "checkpoint": lag_dict["write_checkpoint"],
         "localize": lag_dict["localize"],
+        "kain": lag_dict["kain"],
         "prec": prec,
     }
 

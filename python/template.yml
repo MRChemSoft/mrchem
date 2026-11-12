@@ -995,6 +995,11 @@ sections:
         default: false
         docstring: |
           Localize active orbitals before starting scf
+      - name: kain
+        type: int
+        default: 0
+        docstring: |
+          Length of kain history
       - name: write_checkpoint
         type: bool
         default: false

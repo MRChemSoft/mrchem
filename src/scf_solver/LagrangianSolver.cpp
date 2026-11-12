@@ -73,6 +73,7 @@ LagrangianSolver::LagrangianSolver(double prec) {
     this->prec = prec;
     this->threshold = 1e-10;
     this->P_p = std::make_shared<PoissonOperator>(*MRA, this->prec);
+    this->history = 0;
 }
 
 void LagrangianSolver::set_orbitals(OrbitalVector Phi_n) {
@@ -122,6 +123,13 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
         orbital::localize(this->prec, *this->orbitals, tmpfock);
     }
 
+    std::shared_ptr<KAIN> kain;
+
+    if (this->history) {
+        auto scaling = std::vector<double>(orbitals->size(), 1.0);
+        kain = std::make_shared<KAIN>(this->history, 0, false, scaling);
+    }
+
     bool converged = false;
     json_out["cycles"] = {};
     for (int nIter = 0; nIter < this->maxIter; nIter++) {
@@ -151,7 +159,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
 
         // update orbitals (not needed if converged or in the last iteration)
         if (not converged and nIter < this->maxIter - 1) {
-            errors = orbital_update(F, S);
+            errors = orbital_update(F, S, kain);
             make_uniform_type(*this->orbitals);
 
             // reinforce orthonormalization immediately (Loewdin: Phi = S^(-1/2) Phi)
@@ -191,7 +199,7 @@ json LagrangianSolver::optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver 
     return json_out;
 }
 
-DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S) {
+DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &S, std::shared_ptr<KAIN> kain) {
     mrcpp::print::header(3, "Computing orbital update", 0, '-');
     Timer t_tot, t_1e(false), t_2e(false);
 
@@ -243,6 +251,11 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     OrbitalVector new_orbitals = H(new_Phi);
     mrcpp::rotate(new_orbitals, *basis_change); // rotate back to old basis
     OrbitalVector diff_orbitals = orbital::add(1.0, new_orbitals, -1.0, *this->orbitals);
+
+    if (kain) { kain->accelerate(1e-10, *this->orbitals, diff_orbitals); }
+
+    new_orbitals = orbital::add(1.0, *this->orbitals, 1.0, diff_orbitals);
+
     DoubleVector errors = orbital::get_norms(diff_orbitals);
     (*this->orbitals) = new_orbitals;
     return errors;

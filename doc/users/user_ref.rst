@@ -1015,6 +1015,12 @@ User input reference
   
     **Default** ``False``
   
+   :kain: Length of kain history 
+  
+    **Type** ``int``
+  
+    **Default** ``0``
+  
    :write_checkpoint: Write orbitals to disk in each iteration, file name ``<path_checkpoint>/<X/Y>_rsp_<direction>_idx_<0..N>``.  
   
     **Type** ``bool``

@@ -27,14 +27,14 @@
 
 #include <nlohmann/json.hpp>
 
+#include "KAIN.h"
 #include "SCFSolver.h"
-#include "properties/SCFEnergy.h"
-#include "external_solvers/ExternalSolver.h"
 #include "external_solvers/ChemTensorSolver.h"
+#include "external_solvers/ExternalSolver.h"
+#include "properties/SCFEnergy.h"
 
 using PoissonOperator = mrcpp::PoissonOperator;
 using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
-
 
 /** @class LagrangianSolver
  *
@@ -55,20 +55,19 @@ public:
     LagrangianSolver(double prec);
     virtual ~LagrangianSolver() override = default;
 
-    
-    OrbitalVector get_orbitals(){ return *this->orbitals; };
+    OrbitalVector get_orbitals() { return *this->orbitals; };
     void set_force_complex(bool force_complex) { this->force_complex = force_complex; }
     void setLocalize(bool localize) { this->localize = localize; }
 
     nlohmann::json optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver &S);
 
 protected:
-    //std::string chkFile;  ///< Name of checkpoint file
-    double prec{};  ///< MW precision (world_prec)
+    // std::string chkFile;  ///< Name of checkpoint file
+    double prec{}; ///< MW precision (world_prec)
     double threshold{};
-    bool force_complex{false};  ///< use complex orbitals even when real ones are possible
-    bool real_orbitals{true};   ///< current mode: real or complex orbitals
-    bool localize{false};
+    bool force_complex{false}; ///< use complex orbitals even when real ones are possible
+    bool real_orbitals{true};  ///< current mode: real or complex orbitals
+    bool localize{false};      ///< Whether to localize orbitals before starting scf
     PoissonOperator_p P_p{};
     std::shared_ptr<OrbitalVector> orbitals{};
 
@@ -76,7 +75,7 @@ protected:
     void set_complex_orbitals(ChemTensorSolver &S);
     ComplexDouble coeff(ComplexDouble c) const { return this->real_orbitals ? ComplexDouble(c.real(), 0.0) : c; }
 
-    DoubleVector orbital_update(FockBuilder &F, ChemTensorSolver &S);
+    DoubleVector orbital_update(FockBuilder &F, ChemTensorSolver &S, std::shared_ptr<KAIN> kain);
     void orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
     void orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
 
@@ -85,14 +84,11 @@ protected:
 
 } // namespace mrchem
 
-
-
-
 /*  Open questions:
     - Store orbitals separately or override the ones in molecule?
     - save solver as a private element?
     - store copy of integrals and rdms in new basis, or change the originals?
     - with molecular orbitals does it make sense to diagonalize the 1rdm?
     - change of basis is now split between External solver (integrals, rdms and lagrange multipliers) and LagrangianSolver (orbitals)
-    
+
 */
