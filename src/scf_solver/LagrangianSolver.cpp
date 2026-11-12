@@ -202,10 +202,6 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     // diagonalize 1rdm. change basis of one-body integral, multipliers and orbitals 
     // (two-body integral and rdms not necessary)
     S.diagonalize_1rdm();
-    std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
-    // keep the old orbitals: the two-body term uses them together with the old-basis two-body rdm
-    OrbitalVector old_Phi = orbital::deep_copy(*this->orbitals);
-    mrcpp::rotate(*this->orbitals, basis_change->adjoint());
 
     // initialize Helmholtz operator
     S.calculate_helmholtz_coefficients();
@@ -230,7 +226,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     t_1e.stop();
 
     t_2e.resume();
-    orbital_update_two_body(F, S, old_Phi, new_Phi);
+    orbital_update_two_body(F, S, new_Phi);
     t_2e.stop();
 
     t_tot.stop();
@@ -253,8 +249,10 @@ void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver 
     NuclearOperator &V = *(F.getNuclearOperator());
     ComplexMatrix &lag_coeff = *(S.get_lagrange_multipliers());
     ComplexMatrix &one_rdm = *(S.get_one_rdm());
+    ComplexMatrix &basis_change = *(S.get_basis_change());
 
-    new_Phi = V(*this->orbitals);
+    OrbitalVector V_phi = V(*this->orbitals);
+    mrcpp::rotate(V_phi, basis_change.adjoint());
 
     ComplexMatrix rot_coef(L, L);
     for (size_t i = 0; i < L; i++) {
@@ -264,17 +262,20 @@ void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver 
         }
     }
 
-    OrbitalVector rotated = orbital::rotate(*this->orbitals, rot_coef.adjoint());
-    new_Phi = orbital::add(1.0, new_Phi, 1.0, rotated);
+    ComplexMatrix net_rot_matrix = rot_coef * basis_change;
+
+    OrbitalVector rotated = orbital::rotate(*this->orbitals, net_rot_matrix.adjoint());
+    new_Phi = orbital::add(1.0, V_phi, 1.0, rotated);
 }
 
-void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &old_Phi, OrbitalVector &new_Phi){
+void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi){
     const int L = this->orbitals->size();
     auto &one_rdm = *(S.get_one_rdm());
     auto &two_rdm = *(S.get_two_rdm());
     auto &lag_coeff = *(S.get_lagrange_multipliers());
     auto &basis_change = *(S.get_basis_change());
     auto &P = *this->P_p;
+    auto &orbitals = *this->orbitals;
 
     // precompute U_dE2(m,j,k,l) = sum_i U(m,i) * two_rdm(i,j,k,l)
     ComplexTensorR4 U_dE2(L, L, L, L);
@@ -292,13 +293,13 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
         for (int l = 0; l < L; l++) {
             // g_jl = poisson(Phi[j]^* * Phi[l]) (the MRCPP kernel is already 1/|r-r'|, no 4*pi as in python)
             Orbital phi_jl, g_jl;
-            mrcpp::multiply(phi_jl, old_Phi[j], old_Phi[l], this->prec, false, false, true);
+            mrcpp::multiply(phi_jl, orbitals[j], orbitals[l], this->prec, false, false, true);
             mrcpp::apply(this->prec, g_jl, P, phi_jl);
 
             for (int k = 0; k < L; k++) {
                 // state = g_jl * Phi[k]
                 Orbital state;
-                mrcpp::multiply(state, g_jl, old_Phi[k], this->prec);
+                mrcpp::multiply(state, g_jl, orbitals[k], this->prec);
 
                 for (int m = 0; m < L; m++) {
                     ComplexDouble denom;
