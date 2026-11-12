@@ -47,7 +47,7 @@ OrbitalExp::OrbitalExp(AOFileReader &reader)
 }
 
 GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M, const double threshold) const {
-    if (M.cols() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
+    if (M.cols() != static_cast<int>(this->size())) MSG_ERROR("Size mismatch");
     GaussExp<3> mo_i;
     int n = 0;
     for (size_t j = 0; j < this->size(); j++) {
@@ -71,14 +71,15 @@ GaussExp<3> OrbitalExp::getMO(int i, const DoubleMatrix &M, const double thresho
 }
 
 GaussExp<3> OrbitalExp::getDens(const DoubleMatrix &D) const {
-    if (D.rows() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
-    if (D.cols() != static_cast<int>(size())) MSG_ERROR("Size mismatch");
+    if (D.rows() != static_cast<int>(this->size())) MSG_ERROR("Size mismatch");
+    if (D.cols() != static_cast<int>(this->size())) MSG_ERROR("Size mismatch");
 
     GaussExp<3> d_exp;
     for (size_t i = 0; i < this->size(); i++) {
-        GaussExp<3> ao_i = *this->orbitals[i];
+        GaussExp<3> ao_i = this->orbitals[i];
         for (size_t j = 0; j < this->size(); j++) {
-            GaussExp<3> d_ij = ao_i * *this->orbitals[j];
+            GaussExp<3> ao_j = this->orbitals[j];
+            GaussExp<3> d_ij = ao_i * ao_j;
             d_ij *= D(i, j);
             d_exp.append(d_ij);
         }
@@ -87,10 +88,10 @@ GaussExp<3> OrbitalExp::getDens(const DoubleMatrix &D) const {
 }
 
 void OrbitalExp::rotate(const DoubleMatrix &U) {
-    std::vector<std::shared_ptr<GaussExp<3>>> tmp;
+    std::vector<GaussExp<3>> tmp;
     for (size_t i = 0; i < this->size(); i++)
-        tmp.push_back(std::make_shared<GaussExp<3>>(getMO(i, U)));
-    this->orbitals = std::move(tmp);
+        tmp.push_back(getMO(i, U));
+    this->orbitals = tmp;
 }
 
 void OrbitalExp::readAOExpansion(AOFileReader &reader) {
@@ -98,7 +99,7 @@ void OrbitalExp::readAOExpansion(AOFileReader &reader) {
         std::shared_ptr<Nucleus> nuc = reader.getNucleus(i);
         std::shared_ptr<AOBasis> aoBasis = reader.getAOBasis(i);
         for (int j = 0; j < aoBasis->getNFunc(); j++)
-            this->orbitals.push_back(std::make_shared<GaussExp<3>>(aoBasis->getAO(j, nuc->getCoord())));
+            this->orbitals.push_back(GaussExp<3>(aoBasis->getAO(j, nuc->getCoord())));
     }
     transformToSpherical();
 }
@@ -202,24 +203,24 @@ CartToSphTransformation &OrbitalExp::getSphTransformation(int l) {
 
 void OrbitalExp::transformToSpherical() {
     if (not this->cartesian) { return; }
-    std::vector<std::shared_ptr<GaussExp<3>>> tmp;
+    std::vector<GaussExp<3>> tmp;
     int nOrbs = this->size();
     int n = 0;
     while (n < nOrbs) {
         int l = getAngularMomentum(n);
         if (l < 2) {
-            tmp.push_back(std::move(this->orbitals[n]));
+            tmp.push_back(this->orbitals[n]);
             n++;
         } else {
-            std::vector<std::shared_ptr<GaussExp<3>>> sph;
+            std::vector<GaussExp<3>> sph;
 
             int ncart = ((l + 1) * (l + 2)) / 2;
             int nsph = 2 * l + 1;
 
             for (int i = 0; i < nsph; i++)
-                sph.push_back(std::make_shared<GaussExp<3>>());
+                sph.push_back(GaussExp<3>());
 
-            int nprim = this->orbitals[n]->size();
+            int nprim = this->orbitals[n].size();
 
             CartToSphTransformation &trans_data = getSphTransformation(l);
 
@@ -232,27 +233,26 @@ void OrbitalExp::transformToSpherical() {
                         int ind = inds[k];
                         double coeff = coeffs[k];
 
-                        Gaussian<3> &func = this->orbitals[n + ind]->getFunc(i);
-                        sph[j]->append(func);
-                        sph[j]->getFunc(sph[j]->size() - 1).setCoef(coeff * func.getCoef());
+                        Gaussian<3> &func = this->orbitals[n + ind].getFunc(i);
+                        sph[j].append(func);
+                        sph[j].getFunc(sph[j].size() - 1).setCoef(coeff * func.getCoef());
                     }
                 }
             }
 
-            for (int i = 0; i < nsph; i++)
-                tmp.push_back(sph[i]);
-
+            for (const auto &sph_func : sph)
+                tmp.push_back(sph_func);
             n += ncart;
         }
     }
-    this->orbitals = std::move(tmp);
+    this->orbitals = tmp;
     this->cartesian = false;
 }
 
 int OrbitalExp::getAngularMomentum(int n) const {
     int l = -1;
-    for (size_t i = 0; i < this->orbitals[n]->size(); i++) {
-        const auto &pow = this->orbitals[n]->getPower(i);
+    for (size_t i = 0; i < this->orbitals[n].size(); i++) {
+        const auto &pow = this->orbitals[n].getPower(i);
         int iL = pow[0] + pow[1] + pow[2];
         if (l < 0)
             l = iL;
