@@ -205,7 +205,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     std::shared_ptr<ComplexMatrix> basis_change = S.get_basis_change();
     // keep the old orbitals: the two-body term uses them together with the old-basis two-body rdm
     OrbitalVector old_Phi = orbital::deep_copy(*this->orbitals);
-    mrcpp::rotate(*this->orbitals, *basis_change, this->prec);
+    mrcpp::rotate(*this->orbitals, *basis_change, 1e-12); // Convergence seems uncomfortably sensitive to this precision
 
     // initialize Helmholtz operator
     S.calculate_helmholtz_coefficients();
