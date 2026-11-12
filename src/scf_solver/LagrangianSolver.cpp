@@ -223,7 +223,7 @@ DoubleVector LagrangianSolver::orbital_update(FockBuilder &F, ChemTensorSolver &
     HelmholtzVector H(this->prec, *ptr_helm_coeff);
     
     // new orbitals
-    OrbitalVector new_Phi(L);
+    OrbitalVector new_Phi;
 
     t_1e.resume();
     orbital_update_one_body(F, S, new_Phi);
@@ -254,30 +254,18 @@ void LagrangianSolver::orbital_update_one_body(FockBuilder &F, ChemTensorSolver 
     ComplexMatrix &lag_coeff = *(S.get_lagrange_multipliers());
     ComplexMatrix &one_rdm = *(S.get_one_rdm());
 
-    for(auto m=0; m<L; m++){
-        if (std::abs(one_rdm(m, m)) > this->threshold) {
-            // nuclear potential term (on new basis)
-            new_Phi[m] = V((*this->orbitals)[m]);
-            //Orbital tmp = V((*this->orbitals)[m]);
-            //mrcpp::add(new_Phi[m], 1.0, new_Phi[m], 1.0, tmp, this->prec);
-            for (auto j = 0; j < L; j++) {
-                // multipliers' term (on new basis)
-                if (j != m)
-                    new_Phi[m].add(coeff(-lag_coeff(m, j) / one_rdm(m, m)), (*this->orbitals)[j]);
-            }
-        } else if (std::abs(lag_coeff(m, m)) > this->threshold) {
-            std::cerr << "WARNING: lambda_m below threshold, but not helm_coeff'_mm !" << std::endl;
-            // start from zero
-            new_Phi[m] = (*this->orbitals)[m].paramCopy(true);
-            for (auto j = 0; j < L; j++) {
-                if (j != m)
-                    new_Phi[m].add(coeff(-lag_coeff(m, j) / lag_coeff(m, m)), (*this->orbitals)[j]);
-            }
-        } else {
-            std::cerr << "WARNING: Both lambda_m and helm_coeff'_mm below threshold" << std::endl;
-            new_Phi[m] = (*this->orbitals)[m];
+    new_Phi = V(*this->orbitals);
+
+    ComplexMatrix rot_coef(L, L);
+    for (size_t i = 0; i < L; i++) {
+        ComplexDouble denom = one_rdm(i, i);
+        for (size_t j = 0; j < L; j++) {
+            rot_coef(i, j) = coeff(i != j ? -lag_coeff(i, j) / denom : 0.0);
         }
     }
+
+    OrbitalVector rotated = orbital::rotate(*this->orbitals, rot_coef.adjoint());
+    new_Phi = orbital::add(1.0, new_Phi, 1.0, rotated);
 }
 
 void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &old_Phi, OrbitalVector &new_Phi){
