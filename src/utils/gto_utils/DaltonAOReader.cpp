@@ -32,10 +32,10 @@
 namespace mrchem {
 namespace gto_utils {
 
-DaltonAOReader::DaltonAOReader(const std::string &file) {
-    if (not std::filesystem::is_regular_file(file))
-        MSG_ABORT("Failed to open basis set file: " << file);
-    this->AOFile = file;
+DaltonAOReader::DaltonAOReader(const std::string &basisFile) {
+    if (not std::filesystem::is_regular_file(basisFile))
+        MSG_ABORT("Failed to open basis set file: " << basisFile);
+    this->AOFile = basisFile;
     readBasisFile();
 }
 

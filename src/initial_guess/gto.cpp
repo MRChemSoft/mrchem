@@ -134,7 +134,6 @@ void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::
     mrcpp::print::separator(2, '-');
 
     // Setup AO basis
-    // bas_file, ao_type, mo_file, Phi, prec, screen
     Timer t1;
     gto_utils::DaltonAOReader reader(bas_file);
     gto_utils::OrbitalExp gto_exp(reader);

@@ -64,6 +64,13 @@ public:
      */
     std::shared_ptr<AOBasis> getAOBasis(size_t i) const { return this->basis[i]; }
     
+    /**
+     * @brief Get the molecular orbital coefficients from a file.
+     * @param mo_file The path to the molecular orbital file.
+     * @return A DoubleMatrix containing the molecular orbital coefficients.
+     */
+    DoubleMatrix getMOCoefficients(const std::string &mo_file) const;
+    
 protected:
     /**
      * @brief Read the basis set.

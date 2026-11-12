@@ -39,7 +39,7 @@ public:
      * @brief Construct a new DaltonAOReader object.
      * @param file The path to the Dalton basis file.
      */
-    DaltonAOReader(const std::string &file);
+    DaltonAOReader(const std::string &basisFile);
 
 private:
     /**
