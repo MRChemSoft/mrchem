@@ -9,6 +9,6 @@ target_sources(mrchem PRIVATE
   )
 
 # Readers for HDF5-based GTO files (DIRAC, Serenity, VeloxChem) go here, e.g.
-# if(ENABLE_HDF5)
-#   target_sources(mrchem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/VeloxChemAOReader.cpp)
-# endif()
+  if(ENABLE_HDF5)
+    target_sources(mrchem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/DiracAOReader.cpp)
+  endif()

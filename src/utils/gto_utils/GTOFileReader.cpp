@@ -30,6 +30,10 @@
 #include "utils/gto_utils/OrbitalExp.h"
 #include "qmfunctions/Orbital.h"
 
+#ifdef MRCHEM_HAS_HDF5 
+#include "utils/gto_utils/DiracAOReader.h"
+#endif
+
 #include <MRCPP/Gaussians>
 #include <MRCPP/Parallel>
 #include <MRCPP/Printer>
@@ -46,9 +50,9 @@ GTOFileReader::GTOFileReader(const std::string &GTOType, const std::string &basi
         this->reader = std::make_unique<DaltonAOReader>(basisFile);
     else if (GTOType == "orca")
         this->reader = std::make_unique<DaltonAOReader>(basisFile);
-    else if (GTOType == "dirac" or GTOType == "serenity" or GTOType == "veloxchem") {
+    else if (GTOType == "dirac") {
 #ifdef MRCHEM_HAS_HDF5
-        MSG_ABORT("GTOType " << GTOType << " not implemented yet");
+        this->reader = std::make_unique<DiracAOReader>(basisFile);
 #else
         MSG_ABORT("MRChem was built without HDF5 support, which is required for gto_type = '" << GTOType
                   << "'. Reconfigure with --hdf5=default.");
