@@ -57,6 +57,7 @@ namespace mrchem {
  * @param mop_file: file with paired MO coefficients
  * @param moa_file: file with alpha MO coefficients
  * @param mob_file: file with beta MO coefficients
+ * @param gto_type: Type of GTO to use (e.g., "dalton", "orca")
  *
  * Sets up a precomputed MO basis from an unrestricted LSDalton calculation.
  * Requires the LSDalton basis file and the corresponding MO matrices (not in
@@ -67,7 +68,7 @@ namespace mrchem {
  * Projects only the occupied orbitals of each spin.
  *
  */
-bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, const std::string &bas_file, const std::string &mop_file, const std::string &moa_file, const std::string &mob_file) {
+bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, const std::string &bas_file, const std::string &mop_file, const std::string &moa_file, const std::string &mob_file, const std::string &gto_type) {
     if (Phi.size() == 0) return false;
 
     mrcpp::print::separator(0, '~');
@@ -90,9 +91,9 @@ bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, c
     auto Phi_b = orbital::disjoin(Phi, SPIN::Beta);
 
     // Project paired, alpha and beta separately
-    initial_guess::gto::project_mo(Phi, prec, bas_file, mop_file, screen);
-    initial_guess::gto::project_mo(Phi_a, prec, bas_file, moa_file, screen);
-    initial_guess::gto::project_mo(Phi_b, prec, bas_file, mob_file, screen);
+    initial_guess::gto::project_mo(Phi, prec, bas_file, mop_file, gto_type, screen);
+    initial_guess::gto::project_mo(Phi_a, prec, bas_file, moa_file, gto_type, screen);
+    initial_guess::gto::project_mo(Phi_b, prec, bas_file, mob_file, gto_type, screen);
 
     // Collect orbitals into one vector
     Phi = orbital::adjoin(Phi, Phi_a);
@@ -108,19 +109,22 @@ bool initial_guess::gto::setup(OrbitalVector &Phi, double prec, double screen, c
  * @param bas_file String containing basis set file
  * @param mo_file String containing MO matrix file
  * @param screen GTO screening in StdDev
+ * @param gto_type Type of GTO to use (e.g., "dalton", "orca")
  *
  * Projects the N first rows of the MO matrix from GTO orbitals into
  * corresponding MW orbitals.
  *
  */
-void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::string &bas_file, const std::string &mo_file, double screen) {
+void initial_guess::gto::project_mo(OrbitalVector &Phi, double prec, const std::string &bas_file, const std::string &mo_file, const std::string &gto_type, double screen) {
     if (Phi.size() == 0)
         return;
     Timer t_tot;
     mrcpp::print::header(1, "GTO Initial Guess");
 
+    print_utils::text(1, "GTO Type", gto_type);
+
     // Read MO file and project into MW orbitals
-    gto_utils::GTOFileReader reader = gto_utils::GTOFileReader("Dalton", bas_file);
+    gto_utils::GTOFileReader reader = gto_utils::GTOFileReader(gto_type, bas_file);
     reader.projectMO(Phi, mo_file, prec, screen);
 
     mrcpp::print::footer(1, t_tot, 2);

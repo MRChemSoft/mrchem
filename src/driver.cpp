@@ -403,6 +403,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     auto gto_a = json_guess["file_gto_a"];
     auto gto_b = json_guess["file_gto_b"];
     auto gto_bas = json_guess["file_basis"];
+    auto gto_type = json_guess["gto_type"];
     auto file_chk = json_guess["file_chk"];
     auto restricted = json_guess["restricted"];
     auto cube_p = json_guess["file_CUBE_p"];
@@ -525,7 +526,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     } else if (type == "sad_gto") {
         success = initial_guess::sad::setup(Phi, prec, screen, nucs);
     } else if (type == "gto") {
-        success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
+        success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b, gto_type);
     } else if (type == "cube") {
         success = initial_guess::cube::setup(Phi, prec, cube_p, cube_a, cube_b);
     } else if (type == "nao") {

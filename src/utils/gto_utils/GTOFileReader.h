@@ -35,19 +35,17 @@ class OrbitalVector;
 namespace gto_utils {
         
 /**
- * @brief Abstract base class for reading atomic orbital basis sets from files.
- *
- * This class provides an interface for reading atomic orbital basis sets from files.
- * Derived classes should implement the readBasisFile method to handle specific file formats.
+ * @brief Class for reading Gaussian Type Orbitals (GTOs) from files.
  */
 class GTOFileReader final {
 public:
     /**
      * @brief Construct a new GTOFileReader object.
-     * @param GTOType The type of GTOs to use (e.g., "Dalton").
+     * @param GTOType The type of GTOs to use (e.g., "dalton", "orca").
      * @param basisFile The path to the atomic orbital basis set file.
      */
     GTOFileReader(const std::string &GTOType, const std::string &basisFile);
+
     virtual ~GTOFileReader() = default;
 
     /**
@@ -58,9 +56,9 @@ public:
      * @param screen The screening parameter for the GTOs.
      */
     void projectMO(OrbitalVector &Phi, const std::string &mo_file, double prec, double screen);
-private:
 
-    std::unique_ptr<AOFileReader> reader;
+private:
+    std::unique_ptr<AOFileReader> reader = nullptr; ///< Pointer to the AOFileReader for reading basis sets
 };
 
 } // namespace gto_utils

@@ -35,15 +35,25 @@
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
 
+#include <iomanip>
+#include <sstream>
+
 namespace mrchem {
 namespace gto_utils {
 
 GTOFileReader::GTOFileReader(const std::string &GTOType, const std::string &basisFile) {
-    if (GTOType == "Dalton")
+    if (GTOType == "dalton")
         this->reader = std::make_unique<DaltonAOReader>(basisFile);
-    else if (GTOType == "ORCA")
+    else if (GTOType == "orca")
         this->reader = std::make_unique<DaltonAOReader>(basisFile);
-    else    
+    else if (GTOType == "dirac" or GTOType == "serenity" or GTOType == "veloxchem") {
+#ifdef MRCHEM_HAS_HDF5
+        MSG_ABORT("GTOType " << GTOType << " not implemented yet");
+#else
+        MSG_ABORT("MRChem was built without HDF5 support, which is required for gto_type = '" << GTOType
+                  << "'. Reconfigure with --hdf5=default.");
+#endif
+    } else
         MSG_ABORT("GTOType " << GTOType << " not supported");
 }
 
@@ -63,14 +73,12 @@ void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, do
     println(2, o_head.str());
     mrcpp::print::separator(2, '-');
 
-    // Setup AO basis
-    OrbitalExp gto_exp(*this->reader);
-
     // Read MO file (transpose)
     mrcpp::Timer t1;
     DoubleMatrix MO = this->reader->getMOCoefficients(mo_file);
     if (static_cast<size_t>(MO.cols()) < Phi.size())
         MSG_ABORT("Size mismatch");
+    OrbitalExp gto_exp(*this->reader);
     t1.stop();
 
     mrcpp::Timer t2;
@@ -97,8 +105,8 @@ void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, do
             o_txt << '*';
         print_utils::qmfunction(2, o_txt.str(), Phi[i], t_i);
     }
-    t2.stop();
     mrcpp::mpi::barrier(mrcpp::mpi::comm_wrk);
+    t2.stop();
     mrcpp::print::separator(2, '-');
     mrcpp::print::time(1, "Reading MO matrix", t1);
     mrcpp::print::time(1, "Projecting GTO MOs", t2);

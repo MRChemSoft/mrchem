@@ -11,6 +11,7 @@ target_compile_definitions(mrchem
   PUBLIC
     $<$<AND:$<TARGET_EXISTS:OpenMP::OpenMP_CXX>,$<BOOL:${ENABLE_OPENMP}>>:MRCHEM_HAS_OMP>
     $<$<AND:$<TARGET_EXISTS:MPI::MPI_CXX>,$<BOOL:${ENABLE_MPI}>>:MRCHEM_HAS_MPI>
+    $<$<BOOL:${ENABLE_HDF5}>:MRCHEM_HAS_HDF5>
   )
 
 target_include_directories(mrchem
@@ -51,6 +52,7 @@ target_compile_definitions(mrchem PRIVATE
 target_link_libraries(mrchem
   PRIVATE
     Eigen3::Eigen
+    ${MRCHEM_HDF5_LIBRARIES}
   PUBLIC
     Libxc::xc
     XCFun::xcfun

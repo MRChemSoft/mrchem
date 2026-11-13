@@ -66,7 +66,7 @@ public:
     
     /**
      * @brief Get the molecular orbital coefficients from a file.
-     * @param mo_file The path to the molecular orbital file.
+     * @param MOFile The path to the molecular orbital file.
      * @return A DoubleMatrix containing the molecular orbital coefficients.
      */
     virtual DoubleMatrix getMOCoefficients(const std::string &MOFile) const = 0;
@@ -80,9 +80,9 @@ protected:
      */
     virtual void readBasisFile() = 0;
 
-    std::vector<std::shared_ptr<Nucleus>> nuclei;           ///< Nucleus objects representing the nuclei in the basis set
-    std::vector<std::shared_ptr<AOBasis>> basis; ///< AOBasis objects representing the basis sets for each atom type
-    std::string AOFile;                                     ///< Path to the basis file
+    std::vector<std::shared_ptr<Nucleus>> nuclei; ///< Nucleus objects representing the nuclei in the basis set
+    std::vector<std::shared_ptr<AOBasis>> basis;  ///< AOBasis objects representing the basis sets for each atom type
+    std::string AOFile;                           ///< Path to the basis file
 };
 
 } // namespace gto_utils

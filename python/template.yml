@@ -550,22 +550,29 @@ sections:
       Note: all paths must be given in quotes if they contain slashes
       "path/to/file".
     keywords:
-      - name: guess_basis
+      - name: gto_type
+        type: str
+        default: auto
+        predicates:
+          - value.lower() in ['auto', 'dalton', 'orca', 'dirac', 'veloxchem', 'serenity']
+        docstring: |
+          Where does the GTO data come from?
+      - name: gto_basis
         type: str
         default: initial_guess/mrchem.bas
         docstring: |
           File name for GTO basis set, used with ``gto`` guess.
-      - name: guess_gto_p
+      - name: gto_p
         type: str
         default: initial_guess/mrchem.mop
         docstring: |
           File name for paired orbitals, used with ``gto`` guess.
-      - name: guess_gto_a
+      - name: gto_a
         type: str
         default: initial_guess/mrchem.moa
         docstring: |
           File name for alpha orbitals, used with ``gto`` guess.
-      - name: guess_gto_b
+      - name: gto_b
         type: str
         default: initial_guess/mrchem.mob
         docstring: |

@@ -7,3 +7,8 @@ target_sources(mrchem PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Intgrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/OrbitalExp.cpp
   )
+
+# Readers for HDF5-based GTO files (DIRAC, Serenity, VeloxChem) go here, e.g.
+# if(ENABLE_HDF5)
+#   target_sources(mrchem PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/VeloxChemAOReader.cpp)
+# endif()

@@ -30,7 +30,6 @@
 #include <fstream>
 
 namespace mrchem {
-
 namespace gto_utils {
 
 class DaltonAOReader final : public AOFileReader {
@@ -41,6 +40,11 @@ public:
      */
     DaltonAOReader(const std::string &basisFile);
 
+    /**
+     * @brief Get the molecular orbital coefficients from a file.
+     * @param MOFile The path to the molecular orbital file.
+     * @return A DoubleMatrix containing the molecular orbital coefficients.
+     */
     DoubleMatrix getMOCoefficients(const std::string &MOFile) const override;
 
 private:
