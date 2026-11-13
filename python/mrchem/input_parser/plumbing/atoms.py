@@ -75,10 +75,9 @@ int_t = pp.pyparsing_common.signed_integer
 float_t = pp.pyparsing_common.sci_real
 
 quoted_str_t = pp.quoted_string.set_parse_action(pp.remove_quotes)
-unquoted_str_t = pp.Word(pp.alphas + "_", pp.alphanums + "_.-")
+unquoted_str_t = pp.Word(pp.alphas + "_", pp.alphanums + "_")
 """An unquoted string starts with alphabetic characters and underscores,
-followed by alphanumeric characters, underscores, dots, and hyphens.
-Dots and hyphens are included to support unquoted file paths such as 'water.xyz'."""
+followed by alphanumeric characters and underscores."""
 
 I_unit = functools.reduce(
     lambda x, y: x ^ y, map(pp.CaselessLiteral, ["*j", "*i"])  # type: ignore

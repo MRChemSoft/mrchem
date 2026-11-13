@@ -189,7 +189,12 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
                 Orbital &phi_i = iorb_vec[i];
                 Orbital Vij = phi_i.paramCopy(true);
                 t_calc.resume();
-                ij_r12(precf, rho, phi_i, phi_j, Vij);
+                // the potential is stored as V_ij = P[phi_i^dagger * phi_j] with i >= j, but iorb < jorb can happen
+                // in the off-diagonal blocks: swap the orbitals in that case (V_ji = conj(V_ij) for complex orbitals)
+                if (iorb >= jorb)
+                    ij_r12(precf, rho, phi_i, phi_j, Vij);
+                else
+                    ij_r12(precf, rho, phi_j, phi_i, Vij);
                 t_calc.stop();
                 int ij = std::max(iorb,jorb)*(std::max(iorb,jorb)+1)/2 + std::min(iorb,jorb);
                 if (mrcpp::mpi::bank_size > 0) {
@@ -239,7 +244,8 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
             for (int k = 0; k < N; k ++) {
                 for (int l = 0; l < N; l ++) {
                     ikVjl(i,k,j,l) = kl_Vij(k,l);
-                    ikVjl(j,k,i,l) = kl_Vij(k,l);
+                    // V_ji = conj(V_ij), so <k|l V_ji> = conj(<l|k V_ij>) (same as kl_Vij(k,l) for real orbitals)
+                    if (i != j) ikVjl(j,k,i,l) = std::conj(kl_Vij(l,k));
                 }
             }
         }

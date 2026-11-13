@@ -1,0 +1,94 @@
+/*
+ * MRChem, a numerical real-space code for molecular electronic structure
+ * calculations within the self-consistent field (SCF) approximations of quantum
+ * chemistry (Hartree-Fock and Density Functional Theory).
+ * Copyright (C) 2023 Stig Rune Jensen, Luca Frediani, Peter Wind and contributors.
+ *
+ * This file is part of MRChem.
+ *
+ * MRChem is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MRChem is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with MRChem.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ * For information on the complete list of contributors to MRChem, see:
+ * <https://mrchem.readthedocs.io/>
+ */
+
+#pragma once
+
+#include <nlohmann/json.hpp>
+
+#include "KAIN.h"
+#include "SCFSolver.h"
+#include "external_solvers/ChemTensorSolver.h"
+#include "external_solvers/ExternalSolver.h"
+#include "properties/SCFEnergy.h"
+
+using PoissonOperator = mrcpp::PoissonOperator;
+using PoissonOperator_p = std::shared_ptr<mrcpp::PoissonOperator>;
+
+/** @class LagrangianSolver
+ *
+ * @brief Ground state SCF and multi-configurational optimization with Lagrangian optimization
+ *
+ * This ground state solver performs a constraint optimization of the orbitals
+ * where the constraint is the orthonormality of the orbitals.
+ * The solver utilizes an external driver to compute the 1-2RDMs.
+ */
+
+namespace mrchem {
+
+class Molecule;
+class FockBuilder;
+
+class LagrangianSolver : public SCFSolver {
+public:
+    LagrangianSolver(double prec);
+    virtual ~LagrangianSolver() override = default;
+
+    OrbitalVector get_orbitals() { return *this->orbitals; };
+    void set_force_complex(bool force_complex) { this->force_complex = force_complex; }
+    void setLocalize(bool localize) { this->localize = localize; }
+
+    nlohmann::json optimize(Molecule &mol, FockBuilder &F, ChemTensorSolver &S);
+
+protected:
+    // std::string chkFile;  ///< Name of checkpoint file
+    double prec{}; ///< MW precision (world_prec)
+    double threshold{};
+    bool force_complex{false}; ///< use complex orbitals even when real ones are possible
+    bool real_orbitals{true};  ///< current mode: real or complex orbitals
+    bool localize{false};      ///< Whether to localize orbitals before starting scf
+    PoissonOperator_p P_p{};
+    std::shared_ptr<OrbitalVector> orbitals{};
+
+    void set_orbitals(OrbitalVector Phi);
+    void set_complex_orbitals(ChemTensorSolver &S);
+    ComplexDouble coeff(ComplexDouble c) const { return this->real_orbitals ? ComplexDouble(c.real(), 0.0) : c; }
+
+    DoubleVector orbital_update(FockBuilder &F, ChemTensorSolver &S, std::shared_ptr<KAIN> kain);
+    void orbital_update_one_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
+    void orbital_update_two_body(FockBuilder &F, ChemTensorSolver &S, OrbitalVector &new_Phi);
+
+    void printOrbitals(const DoubleVector &energies, const DoubleVector &occupancies, const DoubleVector &errors, OrbitalVector &Phi, bool print_head = true) const;
+};
+
+} // namespace mrchem
+
+/*  Open questions:
+    - Store orbitals separately or override the ones in molecule?
+    - save solver as a private element?
+    - store copy of integrals and rdms in new basis, or change the originals?
+    - with molecular orbitals does it make sense to diagonalize the 1rdm?
+    - change of basis is now split between External solver (integrals, rdms and lagrange multipliers) and LagrangianSolver (orbitals)
+
+*/
