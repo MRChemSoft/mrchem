@@ -52,11 +52,13 @@ bool setup(OrbitalVector &Phi,
            const std::string &bas_file,
            const std::string &mop_file,
            const std::string &moa_file,
-           const std::string &mob_file);
+           const std::string &mob_file,
+           const std::string &gto_type);
 void project_mo(OrbitalVector &Phi,
                 double prec,
                 const std::string &bas_file,
                 const std::string &mo_file,
+                const std::string &gto_type,
                 double screen = -1.0);
 void project_ao(OrbitalVector &Phi,
                 double prec,
