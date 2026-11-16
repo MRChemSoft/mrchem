@@ -28,6 +28,8 @@
 #include "utils/gto_utils/AOFileReader.h"
 
 #include <fstream>
+#include <vector>
+#include <H5Cpp.h>
 
 namespace mrchem {
 namespace gto_utils {
@@ -43,15 +45,46 @@ public:
     /**
      * @brief Get the molecular orbital coefficients from a file.
      * @param MOFile The path to the molecular orbital file.
-     * @return A DoubleMatrix containing the molecular orbital coefficients.
+     * @param nMOs The number of molecular orbitals to read.
+     * @param nSpinors The number of spinors to read.
+     * @return A vector of ComplexMatrix containing the spinor molecular orbital coefficients.
      */
-    DoubleMatrix getMOCoefficients(const std::string &MOFile) const override final;
+    std::vector<ComplexMatrix> getMOCoefficients(const std::string &MOFile, size_t nMOs, size_t nSpinors) const override final;
+
+    /**
+     * @brief Get the small component AOBasis object for the specified index.
+     * @param i The index of the basis set.
+     * @return A shared pointer to the small component AOBasis object, or nullptr if not available.
+     */
+    std::shared_ptr<AOBasis> getSmallAOBasis(size_t i) const override final;
 
 private:
     /**
-     * @brief Read the basis set in Dalton format.
+     * @brief Read the basis set in Dirac format.
      */
     void readBasisFile() override final;
+
+    /**
+     * @brief Read the atoms in the basis set.
+     * @param file The HDF5 file object.
+     */
+    void readAtomBlock(const H5::H5File &file);
+
+    /**
+     * @brief Read one DIRAC AO basis group (/input/aobasis/1 = large, /input/aobasis/2 = small).
+     * @param g The HDF5 group of the basis.
+     * @return One AOBasis per nucleus, in the order of this->nuclei.
+     */
+    std::vector<std::shared_ptr<AOBasis>> readAOBasis(const H5::Group &g) const;
+
+    /**
+     * @brief Find the nucleus at a given position.
+     * @param r Position in bohr.
+     * @return Index into this->nuclei.
+     */
+    size_t findAtom(const mrcpp::Coord<3> &r) const;
+
+    std::vector<std::shared_ptr<AOBasis>> smallBasis; ///< AOBasis objects representing the small component basis sets for each atom type
 };
 
 } // namespace gto_utils

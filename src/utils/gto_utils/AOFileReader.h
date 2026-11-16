@@ -28,8 +28,9 @@
 #include "chemistry/Nucleus.h"
 #include "utils/gto_utils/AOBasis.h"
 
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 namespace mrchem {
 namespace gto_utils {
@@ -63,13 +64,28 @@ public:
      * @return A shared pointer to the AOBasis object.
      */
     std::shared_ptr<AOBasis> getAOBasis(size_t i) const { return this->basis[i]; }
+
+    /**
+     * @brief Get the small component AOBasis object for the specified index.
+     * @param i The index of the basis set.
+     * @return A shared pointer to the small component AOBasis object, or nullptr if not available.
+     */
+    virtual std::shared_ptr<AOBasis> getSmallAOBasis(size_t i) const { return nullptr; }
     
     /**
      * @brief Get the molecular orbital coefficients from a file.
      * @param MOFile The path to the molecular orbital file.
-     * @return A DoubleMatrix containing the molecular orbital coefficients.
+     * @param nMOs The number of molecular orbitals to read.
+     * @param nSpinors The number of spinors to read.
+     * @return A vector of ComplexMatrix containing the molecular orbital coefficients.
      */
-    virtual DoubleMatrix getMOCoefficients(const std::string &MOFile) const = 0;
+    virtual std::vector<ComplexMatrix> getMOCoefficients(const std::string &MOFile, size_t nMOs, size_t nSpinors = 1) const = 0;
+
+    /**
+     * @brief Check if the basis set is in Cartesian form.
+     * @return True if the basis set is in Cartesian form, false otherwise.
+     */
+    bool isCartesian() const { return this->cartesian; }
     
 protected:
     /**
@@ -83,6 +99,7 @@ protected:
     std::vector<std::shared_ptr<Nucleus>> nuclei; ///< Nucleus objects representing the nuclei in the basis set
     std::vector<std::shared_ptr<AOBasis>> basis;  ///< AOBasis objects representing the basis sets for each atom type
     std::string AOFile;                           ///< Path to the basis file
+    bool cartesian = false;                       ///< Flag indicating whether the basis set is in Cartesian form
 };
 
 } // namespace gto_utils

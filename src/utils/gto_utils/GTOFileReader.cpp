@@ -27,7 +27,6 @@
 
 #include "utils/print_utils.h"
 #include "utils/gto_utils/DaltonAOReader.h"
-#include "utils/gto_utils/OrbitalExp.h"
 #include "qmfunctions/Orbital.h"
 
 #ifdef MRCHEM_HAS_HDF5 
@@ -61,7 +60,7 @@ GTOFileReader::GTOFileReader(const std::string &GTOType, const std::string &basi
         MSG_ABORT("GTOType " << GTOType << " not supported");
 }
 
-void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, double prec, double screen) {
+void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, double prec, double screen, size_t nSpinors) {
     auto pprec = mrcpp::Printer::getPrecision();
     auto w0 = mrcpp::Printer::getWidth() - 2;
     auto w1 = 5;
@@ -79,10 +78,16 @@ void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, do
 
     // Read MO file (transpose)
     mrcpp::Timer t1;
-    DoubleMatrix MO = this->reader->getMOCoefficients(mo_file);
-    if (static_cast<size_t>(MO.cols()) < Phi.size())
-        MSG_ABORT("Size mismatch");
-    OrbitalExp gto_exp(*this->reader);
+    std::vector<ComplexMatrix> MOCoefficients = this->reader->getMOCoefficients(mo_file, Phi.size(), nSpinors);
+    std::vector<DoubleMatrix> Re(nSpinors), Im(nSpinors);
+    for (size_t c = 0; c < nSpinors; c++) {
+        Re[c] = MOCoefficients[c].real().transpose(); // nMOs x nAO
+        Im[c] = MOCoefficients[c].imag().transpose();
+    }
+    OrbitalExp gto_exp(*this->reader);     // large (or only) component
+    std::unique_ptr<OrbitalExp> small_exp; // small component, only for 4-component spinors
+    if (MOCoefficients.size() == 4)
+        small_exp = std::make_unique<OrbitalExp>(*this->reader, true);
     t1.stop();
 
     mrcpp::Timer t2;
@@ -90,16 +95,21 @@ void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, do
         mrcpp::Timer t_i;
         bool grid_was_built = false;
         if (mrcpp::mpi::my_func(Phi[i])) {
-            mrcpp::GaussExp<3> mo_i = gto_exp.getMO(i, MO.transpose());
-            mo_i.calcScreening(screen);
-            mrcpp::project(prec, Phi[i].real(), mo_i);
-            if (std::abs(Phi[i].norm() - 1.0) > 1e2 * prec) {
-                mrcpp::GaussExp<3> mo_i_grid = gto_exp.getMO(i, MO.transpose(), prec * 1e-1);
-                mrcpp::GaussExp<3> mo_i_screened = gto_exp.getMO(i, MO.transpose(), prec * 1e-2);
-                grid_was_built = true;
-                mrcpp::build_grid(Phi[i].real(), mo_i_grid);
-                mrcpp::project(prec, Phi[i].real(), mo_i_screened);
-                Phi[i].real().crop(prec * 1e-1, false);
+            if (nSpinors == 1) {
+                grid_was_built = projectRealPart(Phi[i].real(), gto_exp, i, Re[0], prec, screen);
+            } else {
+                // DIRAC: nComp complex components
+                Phi[i].free();       // remove any existing trees
+                Phi[i].defcomplex(); // isreal = 0, iscomplex = 1
+                for (size_t c = 0; c < nSpinors; c++) {
+                    const OrbitalExp &exp = (c < 2) ? gto_exp : *small_exp; // components 0,1 large, 2,3 small
+                    mrcpp::FunctionTree<3, double> reTree(*MRA);
+                    mrcpp::FunctionTree<3, double> imTree(*MRA);
+                    grid_was_built |= projectRealPart(reTree, exp, i, Re[c], prec, screen);
+                    grid_was_built |= projectRealPart(imTree, exp, i, Im[c], prec, screen);
+                    // re + i*im as one complex tree; the orbital takes ownership
+                    Phi[i].setCplx(new mrcpp::FunctionTree<3, ComplexDouble>(reTree, imTree), c);
+                }
             }
         }
         std::stringstream o_txt;
@@ -114,6 +124,30 @@ void GTOFileReader::projectMO(OrbitalVector &Phi, const std::string &mo_file, do
     mrcpp::print::separator(2, '-');
     mrcpp::print::time(1, "Reading MO matrix", t1);
     mrcpp::print::time(1, "Projecting GTO MOs", t2);
+}
+
+bool GTOFileReader::projectRealPart(mrcpp::FunctionTree<3, double> &out, const OrbitalExp &exp, int i, const DoubleMatrix &M, double prec, double screen) {
+    out.setZero();
+    if (M.row(i).cwiseAbs().maxCoeff() < mrcpp::MachineZero)
+        return false; // this part is exactly zero: keep the zero tree
+
+    mrcpp::GaussExp<3> mo = exp.getMO(i, M);
+    mo.calcScreening(screen);
+    mrcpp::project(prec, out, mo);
+
+    // Compare with the analytic norm of the Gaussian expansion (works for every component,
+    // unlike the old check against 1, which only holds for a complete normalised orbital)
+    const double refNorm = std::sqrt(mo.calcSquareNorm());
+    if (std::abs(std::sqrt(out.getSquareNorm()) - refNorm) <= 1e2 * prec)
+        return false;
+
+    // Fallback, as before: refine the grid with a less screened expansion, then project again
+    mrcpp::GaussExp<3> mo_grid = exp.getMO(i, M, prec * 1e-1);
+    mrcpp::GaussExp<3> mo_screened = exp.getMO(i, M, prec * 1e-2);
+    mrcpp::build_grid(out, mo_grid);
+    mrcpp::project(prec, out, mo_screened);
+    out.crop(prec * 1e-1, false);
+    return true;
 }
 
 } // namespace gto_utils

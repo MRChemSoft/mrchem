@@ -26,6 +26,7 @@
 #pragma once
 
 #include "utils/gto_utils/AOFileReader.h"
+#include "utils/gto_utils/OrbitalExp.h"
 
 #include <string>
 #include <memory>
@@ -54,11 +55,24 @@ public:
      * @param mo_file The path to the molecular orbital file.
      * @param prec The precision for the projection.
      * @param screen The screening parameter for the GTOs.
+     * @param nSpinors The number of spinors to consider.
      */
-    void projectMO(OrbitalVector &Phi, const std::string &mo_file, double prec, double screen);
+    void projectMO(OrbitalVector &Phi, const std::string &mo_file, double prec, double screen, size_t nSpinors = 1);
 
 private:
     std::unique_ptr<AOFileReader> reader = nullptr; ///< Pointer to the AOFileReader for reading basis sets
+
+    /**
+     * @brief Project the real part of a molecular orbital onto the GTO basis.
+     * @param out The output function tree for the projected orbital.
+     * @param exp The OrbitalExp object containing the GTO expansion.
+     * @param i The index of the molecular orbital to project.
+     * @param M The coefficient matrix for the molecular orbitals.
+     * @param prec The precision for the projection.
+     * @param screen The screening parameter for the GTOs.
+     * @return True if the projection was successful, false otherwise.
+     */
+    bool projectRealPart(mrcpp::FunctionTree<3, double> &out, const OrbitalExp &exp, int i, const DoubleMatrix &M, double prec, double screen);
 };
 
 } // namespace gto_utils

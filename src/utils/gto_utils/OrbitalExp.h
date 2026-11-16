@@ -44,7 +44,7 @@ struct CartToSphTransformation {
 
 class OrbitalExp final {
 public:
-    OrbitalExp(AOFileReader &reader);
+    OrbitalExp(AOFileReader &reader, bool smallComp = false);
     ~OrbitalExp() = default;
 
     /**
@@ -84,6 +84,7 @@ public:
     
 private:
     bool cartesian;
+    bool smallComp;
     std::vector<mrcpp::GaussExp<3>> orbitals;
     
     std::vector<CartToSphTransformation> sph_transformation_data;

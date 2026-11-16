@@ -45,7 +45,7 @@ double cartesianNormFac(int lx, int ly, int lz);
  */
 class AOContraction final {
 public:
-    AOContraction(int l = 0);
+    AOContraction(int l = 0, bool normalize = true);
 
     void append(double e, double c);
     mrcpp::GaussExp<3> getNormContraction(int m, const mrcpp::Coord<3> &center) const;
@@ -63,6 +63,7 @@ public:
 
 protected:
     int L;
+    bool normalize;
     int nComp;
     std::vector<double> expo;
     std::vector<double> coefs;

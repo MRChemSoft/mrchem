@@ -25,6 +25,9 @@
 
 #include "utils/gto_utils/DaltonAOReader.h"
 
+#include "chemistry/PeriodicTable.h"
+#include "chemistry/Element.h"
+
 #include <MRCPP/Printer>
 
 #include <filesystem>
@@ -114,7 +117,7 @@ void DaltonAOReader::readContractionBlock(std::ifstream &ifs, AOBasis &bas, size
     }
 }
 
-DoubleMatrix DaltonAOReader::getMOCoefficients(const std::string &MOFile) const {
+std::vector<ComplexMatrix> DaltonAOReader::getMOCoefficients(const std::string &MOFile, size_t nMOs, size_t nSpinors) const {
     int nTerms;
     std::ifstream ifs(MOFile.c_str());
     if (not ifs)
@@ -125,12 +128,12 @@ DoubleMatrix DaltonAOReader::getMOCoefficients(const std::string &MOFile) const 
     std::istringstream iss(line);
     iss >> nTerms;
 
-    DoubleMatrix C = DoubleMatrix::Zero(nTerms, nTerms);
-    for (int i = 0; i < nTerms; i++) {
+    std::vector<ComplexMatrix> C(nSpinors, ComplexMatrix::Zero(nTerms, nMOs));
+    for (size_t i = 0; i < nMOs; i++) {
         for (int j = 0; j < nTerms; j++) {
             std::getline(ifs, line);
             std::istringstream iss(line);
-            iss >> C(j, i);
+            iss >> C[0].real()(j, i);
         }
     }
     return C;

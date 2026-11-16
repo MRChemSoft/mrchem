@@ -43,9 +43,11 @@ public:
     /**
      * @brief Get the molecular orbital coefficients from a file.
      * @param MOFile The path to the molecular orbital file.
-     * @return A DoubleMatrix containing the molecular orbital coefficients.
+     * @param nMOs The number of molecular orbitals to read.
+     * @param nSpinors The number of spinors to read.
+     * @return A vector of ComplexMatrix containing the molecular orbital coefficients.
      */
-    DoubleMatrix getMOCoefficients(const std::string &MOFile) const override;
+    std::vector<ComplexMatrix> getMOCoefficients(const std::string &MOFile, size_t nMOs, size_t nSpinors = 1) const override;
 
 private:
     /**

@@ -41,8 +41,8 @@ using mrcpp::Gaussian;
 namespace mrchem {
 namespace gto_utils {
 
-OrbitalExp::OrbitalExp(AOFileReader &reader)
-        : cartesian(true) {
+OrbitalExp::OrbitalExp(AOFileReader &reader, bool smallComp)
+        : cartesian(true), smallComp(smallComp) {
     readAOExpansion(reader);
 }
 
@@ -97,11 +97,14 @@ void OrbitalExp::rotate(const DoubleMatrix &U) {
 void OrbitalExp::readAOExpansion(AOFileReader &reader) {
     for (size_t i = 0; i < reader.getNNuclei(); i++) {
         std::shared_ptr<Nucleus> nuc = reader.getNucleus(i);
-        std::shared_ptr<AOBasis> aoBasis = reader.getAOBasis(i);
+        std::shared_ptr<AOBasis> aoBasis = smallComp ? reader.getSmallAOBasis(i) : reader.getAOBasis(i);
+        if (aoBasis == nullptr)
+            MSG_ABORT("No small-component basis available (requires a 4-component DIRAC file)");
         for (int j = 0; j < aoBasis->getNFunc(); j++)
             this->orbitals.push_back(GaussExp<3>(aoBasis->getAO(j, nuc->getCoord())));
     }
-    transformToSpherical();
+    if (!reader.isCartesian())
+        transformToSpherical();
 }
 
 /**
