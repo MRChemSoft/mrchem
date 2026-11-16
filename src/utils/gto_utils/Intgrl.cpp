@@ -128,22 +128,20 @@ void Intgrl::readContractionBlock(std::ifstream &ifs, AOBasis &bas, int l) {
 GaussExp<3> Intgrl::getAtomBasis(int i, bool norm) const {
     assert(i >= 0 and i < this->nuclei.size());
     const mrcpp::Coord<3> &coord = this->nuclei[i]->getCoord();
-    if (norm) {
+    if (norm)
         return this->basis[i]->getNormBasis(coord);
-    } else {
+    else
         return this->basis[i]->getBasis(coord);
-    }
 }
 
 GaussExp<3> Intgrl::getMolBasis(bool norm) const {
     GaussExp<3> molexp;
     for (unsigned int i = 0; i < this->nuclei.size(); i++) {
         const mrcpp::Coord<3> &coord = this->nuclei[i]->getCoord();
-        if (norm) {
+        if (norm)
             molexp.append(this->basis[i]->getNormBasis(coord));
-        } else {
+        else
             molexp.append(this->basis[i]->getBasis(coord));
-        }
     }
     return molexp;
 }

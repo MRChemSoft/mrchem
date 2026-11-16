@@ -32,6 +32,7 @@ Options:
   --eigen3=<STRING>                      Behaviour for finding/fetching Eigen3 (default, onlylocal, onlyfetch) [default: default].
   --mrcpp=<STRING>                       Behaviour for finding/fetching MRCPP (default, onlylocal, onlyfetch) [default: default].
   --catch2=<STRING>                      Behaviour for finding/fetching Catch2 (default, onlylocal, onlyfetch) [default: default].
+  --hdf5=<STRING>                        Behaviour for finding/fetching HDF5, needed for DIRAC/Serenity/VeloxChem GTO files (none, default, onlylocal, onlyfetch) [default: none].
   --type=<TYPE>                          Set the CMake build type (debug, release, relwithdebinfo, minsizerel) [default: release].
   --generator=<STRING>                   Set the CMake build system generator [default: Unix Makefiles].
   --show                                 Show CMake command and exit.
@@ -63,6 +64,7 @@ def gen_cmake_command(options, arguments):
     command.append('-DEIGEN3_FIND_BEHAVIOUR={0}'.format(arguments['--eigen3']))
     command.append('-DMRCPP_FIND_BEHAVIOUR={0}'.format(arguments['--mrcpp']))
     command.append('-DCATCH2_FIND_BEHAVIOUR={0}'.format(arguments['--catch2']))
+    command.append('-DHDF5_FIND_BEHAVIOUR={0}'.format(arguments['--hdf5']))
     command.append('-G"{0}"'.format(arguments['--generator']))
     if arguments['--cmake-options'] != "''":
         command.append(arguments['--cmake-options'])

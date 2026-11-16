@@ -67,14 +67,16 @@ static std::array<int, 3> index_to_cartesian(int l, int i) {
     return {lx, ly, lz};
 }
 
-AOContraction::AOContraction(int l) {
+AOContraction::AOContraction(int l, bool normalize) {
     this->L = l;
     this->nComp = (this->L + 1) * (this->L + 2) / 2;
+    this->normalize = normalize;
 }
 
 GaussExp<3> AOContraction::getNormContraction(int m, const mrcpp::Coord<3> &center) const {
     GaussExp<3> ctr = getContraction(m, center);
-    ctr.normalize();
+    if(this->normalize)
+        ctr.normalize();
     return ctr;
 }
 
@@ -107,12 +109,17 @@ GaussExp<3> AOContraction::getContraction(int m, const mrcpp::Coord<3> &center) 
     GaussExp<3> ctr;
     std::array<int, 3> pow = index_to_cartesian(this->L, m);
     double normFac = cartesianNormFac(pow[0], pow[1], pow[2]);
-
+    
     for (unsigned int i = 0; i < expo.size(); i++) {
-        GaussFunc<3> gto(this->expo[i], 1.0, center, pow);
-        gto.normalize();
-        gto.setCoef(normFac * gto.getCoef() * this->coefs[i]);
-        ctr.append(gto);
+        if (this->normalize) {
+            GaussFunc<3> gto(this->expo[i], 1.0, center, pow);
+            gto.normalize();
+            gto.setCoef(normFac * gto.getCoef() * this->coefs[i]);
+            ctr.append(gto);
+        } else {
+            GaussFunc<3> gto(this->expo[i], this->coefs[i], center, pow);
+            ctr.append(gto);
+        }
     }
     return ctr;
 }

@@ -183,6 +183,90 @@ def _reaction_operator_handler(user_dict, rsp=False):
     return reo_dict
 
 
+GTO_TYPES = ["dalton", "orca", "dirac", "veloxchem", "serenity"]
+HDF5_SIGNATURE = b"\x89HDF\r\n\x1a\n"
+
+
+def _is_float(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
+def _is_int(s):
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+
+def _looks_like_dalton(path):
+    """Check whether the file follows the MRChem/Dalton GTO basis format:
+
+    line 1: free-text title
+    line 2: number of atom types
+    line 3: charge  n_atoms  n_shells  n_funcs_shell_1 ... n_funcs_shell_n
+    line 4: symbol  x  y  z
+    """
+    try:
+        with path.open() as f:
+            lines = [f.readline().split() for _ in range(4)]
+    except UnicodeDecodeError:
+        return False
+
+    n_types, atom_block, atom_line = lines[1], lines[2], lines[3]
+
+    if len(n_types) != 1 or not _is_int(n_types[0]) or int(n_types[0]) < 1:
+        return False
+
+    if len(atom_block) < 3 or not _is_float(atom_block[0]) or not all(_is_int(x) for x in atom_block[1:]):
+        return False
+    n_shells = int(atom_block[2])
+    if len(atom_block) != 3 + n_shells:
+        return False
+
+    if len(atom_line) != 4 or not atom_line[0].isalpha() or not all(_is_float(x) for x in atom_line[1:]):
+        return False
+
+    return True
+
+
+def detect_gto_type(basis_file):
+    """Return the GTO format of the basis file, or None if it cannot be determined."""
+    path = Path(basis_file)
+    if not path.is_file():
+        raise RuntimeError(f"ABORT: GTO basis file not found: {basis_file}")
+
+    with path.open("rb") as f:
+        if f.read(len(HDF5_SIGNATURE)) == HDF5_SIGNATURE:
+            # HDF5 container (e.g. VeloxChem, Serenity): cannot tell which program wrote it
+            return None
+
+    if _looks_like_dalton(path):
+        return "dalton"
+
+    return None
+
+
+def resolve_gto_type(file_dict):
+    """Return the GTO format to use, detecting it from the basis file if gto_type is 'auto'."""
+    gto_type = file_dict["gto_type"].lower()
+    if gto_type != "auto":
+        return gto_type
+
+    basis_file = file_dict["gto_basis"]
+    detected = detect_gto_type(basis_file)
+    if detected is None:
+        raise RuntimeError(
+            f"ABORT: Could not determine the format of the GTO basis file '{basis_file}'. "
+            f"Please set 'gto_type' in the Files section manually (one of: {', '.join(GTO_TYPES)})."
+        )
+    return detected
+
+
 def write_scf_guess(user_dict, wf_dict):
     guess_str = user_dict["SCF"]["guess_type"].lower()
     guess_type = guess_str.split("_")[0]
@@ -232,6 +316,9 @@ def write_scf_guess(user_dict, wf_dict):
             )
             guess_type = "sad_gto"
 
+    # Only needed (and only checked) when projecting from GTO files
+    gto_type = resolve_gto_type(file_dict) if guess_type == "gto" else "none"
+
     vector_dir = file_dict["cube_vectors"]
     guess_dict = {
         "zeta": zeta,
@@ -246,10 +333,11 @@ def write_scf_guess(user_dict, wf_dict):
         "rotate": scf_dict["guess_rotate"],
         "restricted": user_dict["WaveFunction"]["restricted"],
         "file_chk": f"{scf_dict['path_checkpoint']}/phi_scf",
-        "file_basis": file_dict["guess_basis"],
-        "file_gto_p": file_dict["guess_gto_p"],
-        "file_gto_a": file_dict["guess_gto_a"],
-        "file_gto_b": file_dict["guess_gto_b"],
+        "gto_type": gto_type,
+        "file_basis": file_dict["gto_basis"],
+        "file_gto_p": file_dict["gto_p"],
+        "file_gto_a": file_dict["gto_a"],
+        "file_gto_b": file_dict["gto_b"],
         "file_phi_p": file_dict["guess_phi_p"] + "_scf",
         "file_phi_a": file_dict["guess_phi_a"] + "_scf",
         "file_phi_b": file_dict["guess_phi_b"] + "_scf",

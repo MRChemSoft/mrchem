@@ -592,25 +592,34 @@ User input reference
  :Files: Defines file paths used for program input/output. Note: all paths must be given in quotes if they contain slashes "path/to/file". 
 
   :red:`Keywords`
-   :guess_basis: File name for GTO basis set, used with ``gto`` guess. 
+   :gto_type: Where does the GTO data come from? 
+  
+    **Type** ``str``
+  
+    **Default** ``auto``
+  
+    **Predicates**
+      - ``value.lower() in ['auto', 'dalton', 'orca', 'dirac', 'veloxchem', 'serenity']``
+  
+   :gto_basis: File name for GTO basis set, used with ``gto`` guess. 
   
     **Type** ``str``
   
     **Default** ``initial_guess/mrchem.bas``
   
-   :guess_gto_p: File name for paired orbitals, used with ``gto`` guess. 
+   :gto_p: File name for paired orbitals, used with ``gto`` guess. 
   
     **Type** ``str``
   
     **Default** ``initial_guess/mrchem.mop``
   
-   :guess_gto_a: File name for alpha orbitals, used with ``gto`` guess. 
+   :gto_a: File name for alpha orbitals, used with ``gto`` guess. 
   
     **Type** ``str``
   
     **Default** ``initial_guess/mrchem.moa``
   
-   :guess_gto_b: File name for beta orbitals, used with ``gto`` guess. 
+   :gto_b: File name for beta orbitals, used with ``gto`` guess. 
   
     **Type** ``str``
   
