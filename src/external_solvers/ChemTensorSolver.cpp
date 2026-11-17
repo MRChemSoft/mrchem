@@ -26,14 +26,14 @@
 // This include must come first due to name clashes
 
 extern "C" {
-#include "hamiltonian.h"
-#include "mps.h"
-#include "rng.h"
-#include "dmrg.h"
-#include "qnumber.h"
-#include "gradient.h"
 #include "aligned_memory.h"
+#include "dmrg.h"
+#include "gradient.h"
+#include "hamiltonian.h"
 #include "logging.h"
+#include "mps.h"
+#include "qnumber.h"
+#include "rng.h"
 }
 
 #include <limits>
@@ -43,11 +43,12 @@ extern "C" {
 
 namespace mrchem {
 
-ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, Nuclei &nucs, int Ne, int spin, json dict_chemtensor) : ExternalSolver(F, nucs, dict_chemtensor["prec"]) {
+ChemTensorSolver::ChemTensorSolver(OrbitalVector &Phi, FockBuilder &F, Nuclei &nucs, int Ne, int spin, json dict_chemtensor)
+        : ExternalSolver(F, nucs, dict_chemtensor["prec"]) {
     this->qnum_sector = encode_quantum_number_pair(Ne, spin);
     std::cout << "Initialized ChemTensorSolver with Ne = " << Ne << " and spin = " << spin << std::endl;
 
-    this->max_vdim = dict_chemtensor["max_vdim"]; 
+    this->max_vdim = dict_chemtensor["max_vdim"];
     this->num_sweeps = dict_chemtensor["num_sweeps"];
     this->maxiter_lanczos = dict_chemtensor["maxiter_lanczos"];
     this->tol_split = dict_chemtensor["tol_split"];
@@ -73,17 +74,17 @@ ChemTensorSolver::~ChemTensorSolver() {
         delete[] this->velec_tensor->dim;
         delete this->velec_tensor;
     }
-    if (this->assembly){ 
-        delete_mpo_assembly(this->assembly); 
-        delete this->assembly; 
+    if (this->assembly) {
+        delete_mpo_assembly(this->assembly);
+        delete this->assembly;
     }
-    if (this->psi){ 
+    if (this->psi) {
         delete_mps(this->psi);
         delete this->psi;
     }
 }
 
-void ChemTensorSolver::set_dense_tensors(){
+void ChemTensorSolver::set_dense_tensors() {
     // free the tensors of the previous iteration (the data is owned by the row-major members)
     if (this->tkin_tensor) {
         delete[] this->tkin_tensor->dim;
@@ -101,46 +102,41 @@ void ChemTensorSolver::set_dense_tensors(){
     void *tkin_data, *velec_data;
     if (this->real) {
         this->one_body_integrals_rowmajor_real = std::make_shared<RowMajorMatrixReal>(this->one_body_integrals->real());
-        this->two_body_integrals_rowmajor_real = std::make_shared<RowMajorTensorReal>(
-            this->two_body_integrals->real().shuffle(reverse).swap_layout()
-        );
-        tkin_data = static_cast<void*>(this->one_body_integrals_rowmajor_real->data());
-        velec_data = static_cast<void*>(this->two_body_integrals_rowmajor_real->data());
+        this->two_body_integrals_rowmajor_real = std::make_shared<RowMajorTensorReal>(this->two_body_integrals->real().shuffle(reverse).swap_layout());
+        tkin_data = static_cast<void *>(this->one_body_integrals_rowmajor_real->data());
+        velec_data = static_cast<void *>(this->two_body_integrals_rowmajor_real->data());
     } else {
         this->one_body_integrals_rowmajor = std::make_shared<RowMajorMatrix>(*this->one_body_integrals);
-        this->two_body_integrals_rowmajor = std::make_shared<RowMajorTensor>(
-            this->two_body_integrals->shuffle(reverse).swap_layout()
-        );
-        tkin_data = static_cast<void*>(this->one_body_integrals_rowmajor->data());
-        velec_data = static_cast<void*>(this->two_body_integrals_rowmajor->data());
+        this->two_body_integrals_rowmajor = std::make_shared<RowMajorTensor>(this->two_body_integrals->shuffle(reverse).swap_layout());
+        tkin_data = static_cast<void *>(this->one_body_integrals_rowmajor->data());
+        velec_data = static_cast<void *>(this->two_body_integrals_rowmajor->data());
     }
     const auto dtype = this->real ? CT_DOUBLE_REAL : CT_DOUBLE_COMPLEX;
     const ct_long L = this->one_body_integrals->rows();
 
     this->tkin_tensor = new dense_tensor;
-    this->tkin_tensor->data  = tkin_data;
-    this->tkin_tensor->dim   = new ct_long[2]{L, L};
+    this->tkin_tensor->data = tkin_data;
+    this->tkin_tensor->dim = new ct_long[2]{L, L};
     this->tkin_tensor->dtype = dtype;
-    this->tkin_tensor->ndim  = 2;
+    this->tkin_tensor->ndim = 2;
 
     this->velec_tensor = new dense_tensor;
-    this->velec_tensor->data  = velec_data;
-    this->velec_tensor->dim   = new ct_long[4]{L, L, L, L};
+    this->velec_tensor->data = velec_data;
+    this->velec_tensor->dim = new ct_long[4]{L, L, L, L};
     this->velec_tensor->dtype = dtype;
-    this->velec_tensor->ndim  = 4;
+    this->velec_tensor->ndim = 4;
 }
 
-void ChemTensorSolver::set_integrals(OrbitalVector &Phi){
+void ChemTensorSolver::set_integrals(OrbitalVector &Phi) {
     ExternalSolver::set_integrals(Phi);
     set_dense_tensors();
 }
 
 void ChemTensorSolver::optimize() {
-    if (!this->tkin_tensor || !this->velec_tensor)
-        MSG_ABORT("Integrals not set.");
-    
+    if (!this->tkin_tensor || !this->velec_tensor) MSG_ABORT("Integrals not set.");
+
     // free the assembly of the previous iteration before building a new one
-    if(this->assembly)
+    if (this->assembly)
         delete_mpo_assembly(this->assembly);
     else
         this->assembly = new mpo_assembly{};
@@ -149,12 +145,11 @@ void ChemTensorSolver::optimize() {
     // NOTE: optimized assembly (optimize = true) not implemented in chemtensor, and calculate_rdms
     // relies on the fixed coefficient layout of the non-optimized construction
     construct_spin_molecular_hamiltonian_mpo_assembly(this->tkin_tensor, this->velec_tensor, false, this->assembly);
-    //this->assembly = std::make_shared<mpo_assembly>(assembly);
+    // this->assembly = std::make_shared<mpo_assembly>(assembly);
 
     mpo_from_assembly(this->assembly, &hamiltonian);
-    if (!mpo_is_consistent(&hamiltonian))
-		MSG_ABORT("internal consistency check for Molecular Hamiltonian MPO failed");
-	
+    if (!mpo_is_consistent(&hamiltonian)) MSG_ABORT("internal consistency check for Molecular Hamiltonian MPO failed");
+
     // initial state vector as MPS
     // if requested, start from the MPS of the previous iteration (if any, and of the same data type
     // as the Hamiltonian: not the case after switching from real to complex), otherwise from a random one
@@ -162,25 +157,24 @@ void ChemTensorSolver::optimize() {
         // nothing to do: dmrg_twosite uses this->psi as initial state
     } else {
         // free the MPS of the previous iteration before building a new one
-        if(this->psi) {
+        if (this->psi) {
             delete_mps(this->psi);
         } else {
             this->psi = new mps{};
         }
 
-		rng_state rng;
-		seed_rng_state(this->mps_seed, &rng);
+        rng_state rng;
+        seed_rng_state(this->mps_seed, &rng);
 
-		construct_random_mps(hamiltonian.a[0].dtype, hamiltonian.nsites, hamiltonian.d, hamiltonian.qsite, this->qnum_sector, this->max_vdim, &rng, this->psi);
-		if (!mps_is_consistent(this->psi)) 
-			MSG_ABORT("internal MPS consistency check failed");
-	}
+        construct_random_mps(hamiltonian.a[0].dtype, hamiltonian.nsites, hamiltonian.d, hamiltonian.qsite, this->qnum_sector, this->max_vdim, &rng, this->psi);
+        if (!mps_is_consistent(this->psi)) MSG_ABORT("internal MPS consistency check failed");
+    }
 
-	// #ifdef _OPENMP
-	// printf("maximum number of OpenMP threads: %d\n", omp_get_max_threads());
-	// #else
-	// printf("OpenMP not available\n");
-	// #endif
+    // #ifdef _OPENMP
+    // printf("maximum number of OpenMP threads: %d\n", omp_get_max_threads());
+    // #else
+    // printf("OpenMP not available\n");
+    // #endif
 
     // run two-site DMRG
     // this->en_sweeps.assign(this->num_sweeps, 0.0);
@@ -192,8 +186,7 @@ void ChemTensorSolver::optimize() {
     options.tol_split = this->tol_split;
     options.max_vdim = this->max_vdim;
     dmrg_twosite_info info;
-    if (dmrg_twosite(&hamiltonian, &options, this->psi, &info) < 0)
-        MSG_ERROR("'dmrg_twosite' failed internally");
+    if (dmrg_twosite(&hamiltonian, &options, this->psi, &info) < 0) MSG_ERROR("'dmrg_twosite' failed internally");
 
     if (this->energy_correction) {
         for (auto i = 0; i < info.num_sweeps; i++) info.en_sweeps[i] += this->E_nn;
@@ -201,12 +194,9 @@ void ChemTensorSolver::optimize() {
 
     this->energy = info.en_sweeps[info.num_sweeps - 1];
 
-
-
     // calculate final bond dimensions
     this->bond_dimensions.assign(hamiltonian.nsites + 1, 0);
-	for (int l = 0; l < hamiltonian.nsites + 1; l++)
-		this->bond_dimensions[l] = mps_bond_dim(this->psi, l);
+    for (int l = 0; l < hamiltonian.nsites + 1; l++) this->bond_dimensions[l] = mps_bond_dim(this->psi, l);
 
     // the MPO is rebuilt at every call (RDMs only need assembly and psi)
     delete_mpo(&hamiltonian);
@@ -225,28 +215,25 @@ void ChemTensorSolver::calculate_rdms() {
     if (this->assembly->dtype == CT_DOUBLE_REAL) {
         std::vector<double> dcoeff_real(this->assembly->num_coeffs);
         operator_average_coefficient_gradient(this->assembly, this->psi, this->psi, &avr, dcoeff_real.data());
-        for (size_t i = 0; i < dcoeff_real.size(); i++)
-            dcoeff[i] = dcoeff_real[i];
+        for (size_t i = 0; i < dcoeff_real.size(); i++) dcoeff[i] = dcoeff_real[i];
     } else {
         operator_average_coefficient_gradient(this->assembly, this->psi, this->psi, &avr, dcoeff.data());
     }
 
     // --- one-body RDM ---
     int c = 2;
-    ComplexMatrix rdm1(N,N);
+    ComplexMatrix rdm1(N, N);
     for (int i = 0; i < N; i++)
-        for (int j = 0; j < N; j++)
-            rdm1(i, j) = dcoeff[c++];
+        for (int j = 0; j < N; j++) rdm1(i, j) = dcoeff[c++];
     // symmetrize
     rdm1 = 0.5 * (rdm1 + rdm1.conjugate().transpose());
     this->one_rdm = std::make_shared<ComplexMatrix>(std::move(rdm1));
-
 
     // --- two-body RDM ---
     const int dim_g0 = (this->assembly->num_coeffs - c) / 2;
 
     // intermediate tensors
-    ComplexTensorR4 dg0(N, N, N, N); 
+    ComplexTensorR4 dg0(N, N, N, N);
     ComplexTensorR4 dg1(N, N, N, N);
     dg0.setZero();
     dg1.setZero();
@@ -267,18 +254,14 @@ void ChemTensorSolver::calculate_rdms() {
     for (int i = 0; i < N; i++)
         for (int j = 0; j < N; j++)
             for (int k = 0; k < N; k++)
-                for (int l = 0; l < N; l++)
-                    rdm2(i, j, k, l) = 0.5 * (
-                          dg0(i, j, k, l) + dg0(j, i, l, k)
-                        - dg1(j, i, k, l) - dg1(i, j, l, k));
+                for (int l = 0; l < N; l++) rdm2(i, j, k, l) = 0.5 * (dg0(i, j, k, l) + dg0(j, i, l, k) - dg1(j, i, k, l) - dg1(i, j, l, k));
 
     // enforce hermiticity rdm2(i,j,k,l) = conj(rdm2(k,l,i,j)), with rdm2(i,j,k,l) = 1/2 <a+_i a+_j a_l a_k>
     ComplexTensorR4 rdm2_sym(N, N, N, N);
     Eigen::array<int, 4> perm = {2, 3, 0, 1};
     rdm2_sym = 0.5 * (rdm2 + rdm2.conjugate().shuffle(perm));
-    
+
     // store two body RDM in variable of parent class
     this->two_rdm = std::make_shared<ComplexTensorR4>(std::move(rdm2_sym));
-
 }
 } // namespace mrchem
