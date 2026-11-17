@@ -58,15 +58,8 @@ ExchangePotential::ExchangePotential(PoissonOperator_p P, OrbitalVector_p Phi, d
  */
 void ExchangePotential::rotate(const ComplexMatrix &U) {
     if (this->exchange.size() == 0) return;
-    // //test debug start
-    // MSG_INFO("rotut");
     // for (auto i: this->exchange){
-    //     i.calcSquareNorm();
-    //     MSG_INFO("norm =" << i.getSquareNorm());
-    //     if (i.isreal()) MSG_INFO("real comp 0 exists="<< (i.CompD[0]!=nullptr) << "comp 1 exists="<< (i.CompD[1]!=nullptr));
-    //     if (i.iscomplex()) MSG_INFO("complex comp 0 exists="<< (i.CompC[0]!=nullptr) << "comp 1 exists="<< (i.CompC[1]!=nullptr));
     // }
-    // //test debug end
     mrcpp::rotate(this->exchange, U, this->apply_prec);
 
     // NOTE: The following MPI point is currently NOT implemented!

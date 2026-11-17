@@ -64,6 +64,9 @@ ComplexMatrix calc_overlap_matrix(OrbitalVector &Bra, OrbitalVector &Ket);
 ComplexMatrix localize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 ComplexMatrix diagonalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 ComplexMatrix orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
+bool is_kramers_restricted(const OrbitalVector &Phi);
+OrbitalVector kramers_partners(OrbitalVector &Phi);
+OrbitalVector rotate_with_partners(OrbitalVector &Phi, OrbitalVector &KPhi, const ComplexMatrix &U, double prec);
 ComplexMatrix kramers_orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F);
 
 int size_empty(const OrbitalVector &Phi);

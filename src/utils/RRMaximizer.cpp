@@ -268,7 +268,6 @@ double RRMaximizer::get_hessian(int ij, int kl) {
     int i = ij-(j*(j-1))/2;
 
     if(i>=j or i<0 or j<0)std::cout<<" ij ERROR "<<i<<" "<<j<<" "<<ij<<std::endl;
-    //std::cout<<"i "<<i<<" j"<<j<<" ij"<<ij<<std::endl;
     double lr = 0.5*(std::sqrt(9.0+8.0*kl)+1.0);
     auto l = (int) (lr-1.0E-9);
     int k = kl-(l*(l-1))/2;

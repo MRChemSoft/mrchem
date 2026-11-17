@@ -37,7 +37,7 @@
 #include "qmoperators/two_electron/FockBuilder.h"
 #include "qmoperators/two_electron/ReactionOperator.h"
 
-#include <MRCPP/utils/spinor_utils.h> //debug, remove when done
+#include <MRCPP/utils/spinor_utils.h>
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -301,28 +301,7 @@ json GroundStateSolver::optimize(Molecule &mol, FockBuilder &F) {
         Psi.clear();
         F.clear();
         // Orthonormalize
-        orbital::orthonormalize(orb_prec, Phi_np1, F_mat); //TODO: include Kramers symmetry when restricted and 2c
-
-        // //--Test of Kramers pairing -- debug
-        // MSG_WARN("DEBUG REMOVE WHEN DONE");
-        // int nhalf = std::floor(Phi_np1.size()/2);
-        // for (int orbitale=0; orbitale < nhalf; orbitale++){
-        //     Orbital kramphi;
-        //     mrcpp::deep_copy(kramphi, Phi_np1[orbitale]);
-        //     // Complex conjugate the copy of ket[j]
-        //     kramphi.conj(); //note: only changes a flag that will affect the dot product. Would be problematic if the rest of the time-reversal was imaginary, as it would be conjugated too during the dot. 
-        //     // apply σ_y (2C ONLY) to it
-        //     mrcpp::apply_gamma(kramphi, 2); //σ_y
-        //     //multiply by -i
-        //     ComplexDouble cplx_i = {0.0, 1.0}; 
-        //     kramphi.func_ptr->data.c1[0] *= -cplx_i;
-        //     kramphi.func_ptr->data.c1[1] *= -cplx_i;
-        //     for (int sblam=0; sblam < Phi_np1.size(); sblam++){
-        //         ComplexDouble kramdot = mrcpp::dot(Phi_np1[sblam], kramphi);
-        //         MSG_INFO("Kramers pairing for orbital="<< sblam << ", "<< orbitale << " is ="<< kramdot );
-        //     }
-        // }
-        // //--End test
+        orbital::orthonormalize(orb_prec, Phi_np1, F_mat);
 
         // Compute orbital updates
         OrbitalVector dPhi_n = orbital::add(1.0, Phi_np1, -1.0, Phi_n);
@@ -512,7 +491,6 @@ DoubleVector GroundStateSolver::getNewOccupations(OrbitalVector &Phi_n, OrbitalV
     DoubleMatrix occOverlap = currOcc.asDiagonal() * overlap;
     DoubleVector p = occOverlap.colwise().norm();
 
-    // debug print section
     print_utils::matrix(3, "MOM overlap matrix", overlap, 2);
     print_utils::vector(3, "MOM total overlap", p, 2);
 

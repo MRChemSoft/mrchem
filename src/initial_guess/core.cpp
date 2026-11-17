@@ -229,7 +229,6 @@ void initial_guess::core::project_ao(OrbitalVector &Phi, double prec, const Nucl
                     mrcpp::project(Phi.back(), h_func, prec, 1); 
                     // Phi.back().alloc_comp(n_components, true);
                     if (std::abs(Phi.back().norm() - 1.0) > 0.01) MSG_WARN("AO not normalized!");
-                    MSG_INFO("Norm="<<std::abs(Phi.back().norm()));
                 }
 
                 std::stringstream o_txt;
@@ -250,7 +249,12 @@ void initial_guess::core::rotate_orbitals(OrbitalVector &Psi, double prec, Compl
     if (Psi.size() == 0) return;
 
     Timer t_tot;
-    mrcpp::rotate(Phi, U, Psi, prec);
+    // Rotate on the full union grid of the AOs (prec < 0), then crop. mrcpp::rotate only refines a node
+    // if the parent's rotated wavelet norm exceeds prec*2^(-(n+1)/2); at the coarse root scales of a large
+    // box this threshold is ~8*prec and compact core orbitals (e.g. guess 1s orbitals at low guess prec) are lost.
+    mrcpp::rotate(Phi, U, Psi, -1.0);
+    for (auto &psi : Psi)
+        if (mrcpp::mpi::my_func(psi)) psi.crop(prec);
     mrcpp::print::time(1, "Rotating orbitals", t_tot);
 }
 

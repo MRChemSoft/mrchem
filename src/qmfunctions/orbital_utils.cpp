@@ -607,6 +607,7 @@ ComplexMatrix orbital::diagonalize(double prec, OrbitalVector &Phi, ComplexMatri
  * Orbitals are rotated in place, and the transformation matrix is returned.
  */
 ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
+    if (orbital::is_kramers_restricted(Phi)) return kramers_orthonormalize(prec, Phi, F);
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
     mrcpp::print::header(2, "Lowdin orthonormalization");
@@ -625,47 +626,126 @@ ComplexMatrix orbital::orthonormalize(double prec, OrbitalVector &Phi, ComplexMa
     return U;
 }
 
-/** @brief Perform the Löwdin orthonormalization on a set of orbitals verifying the time-reversal symmetry (Kramers theorem)
+/** @brief Kramers partner K phi = -i sigma_y phi* of a 2-component spinor, as a new function */
+static Orbital kramers_partner(const Orbital &phi) {
+    if (phi.Ncomp() != 2 or phi.conj()) MSG_ABORT("kramers_partner needs 2 components and no soft conjugation");
+    Orbital out;
+    mrcpp::deep_copy(out, phi);
+    mrcpp::apply_gamma(out, 1); // swap the two component trees
+    // K phi = (-conj(c1[1] T1), conj(c1[0] T0)). The prefactors are folded into the trees and c1 is set to 1:
+    // mrcpp::apply with a component-mixing metric (sigma_x, sigma_y in sigma.p) keeps c1 per output component,
+    // so a non-trivial c1 would be attached to the wrong tree (apply.cpp:416).
+    const ComplexDouble f[2] = {-std::conj(phi.func_ptr->data.c1[1]), std::conj(phi.func_ptr->data.c1[0])};
+    for (int q = 0; q < 2; q++) {
+        if (out.CompD[q] != nullptr) { // real tree: conjugation is a no-op
+            if (std::abs(f[q].imag()) > mrcpp::MachineZero) MSG_ABORT("kramers_partner: complex prefactor on a real spinor");
+            out.CompD[q]->rescale(f[q].real());
+        }
+        auto *tree = out.CompC[q];
+        if (tree == nullptr) continue;
+        for (int n = 0; n < tree->getNEndNodes(); n++) { // the MW filters are real: conjugate the end nodes, transform up
+            auto &node = tree->getEndFuncNode(n);
+            ComplexDouble *c = node.getCoefs();
+            for (int k = 0; k < node.getNCoefs(); k++) c[k] = f[q] * std::conj(c[k]);
+            node.calcNorms();
+        }
+        tree->mwTransform(mrcpp::BottomUp);
+        tree->calcSquareNorm();
+    }
+    out.func_ptr->data.c1[0] = out.func_ptr->data.c1[1] = 1.0;
+    return out;
+}
+
+/** @brief True if Phi is a Kramers-restricted set of 2-component spinors (all paired) */
+bool orbital::is_kramers_restricted(const OrbitalVector &Phi) {
+    // Must give the same answer on every rank (it selects collective code paths): foreign spinors carry no components
+    int nComp = 0;
+    for (const auto &phi : Phi)
+        if (mrcpp::mpi::my_func(phi)) nComp = std::max(nComp, phi.Ncomp());
+    nComp = mrcpp::mpi::allreduce_max(nComp, mrcpp::mpi::comm_wrk);
+    return not Phi.empty() and nComp == 2 and orbital::size_paired(Phi) == Phi.size();
+}
+
+/** @brief Kramers partners K phi_i of all (local) spinors in Phi, as new functions */
+OrbitalVector orbital::kramers_partners(OrbitalVector &Phi) {
+    OrbitalVector KPhi = orbital::param_copy(Phi);
+    for (int i = 0; i < Phi.size(); i++)
+        if (mrcpp::mpi::my_func(Phi[i])) KPhi[i] = kramers_partner(Phi[i]);
+    return KPhi;
+}
+
+/** @brief Psi_i = sum_j Phi_j U(j, i) + sum_j KPhi_j U(N + j, i), U is 2N x N, KPhi distributed as Phi
  *
- * @param Phi: orbitals to orthonormalize
+ * mrcpp::rotate assigns input j to rank j % wrk_size. A single rotate over [Phi, KPhi] (shallow copies) is used when
+ * KPhi_j (owned like Phi_j) also sits on the right rank at index N + j, i.e. when N is a multiple of wrk_size
+ * (always true in serial). Otherwise Phi and KPhi are rotated separately and summed.
+ * Note: rotate absorbs the prefactors c1 of its inputs into their (shared) trees, which leaves them unchanged.
+ */
+OrbitalVector orbital::rotate_with_partners(OrbitalVector &Phi, OrbitalVector &KPhi, const ComplexMatrix &U, double prec) {
+    int N = Phi.size();
+    auto new_output = [&Phi]() {
+        OrbitalVector Psi = orbital::param_copy(Phi);
+        for (auto &psi : Psi) std::fill_n(psi.func_ptr->data.c1, 4, ComplexDouble(1.0, 0.0));
+        return Psi;
+    };
+    OrbitalVector Psi = new_output();
+    if (N % mrcpp::mpi::wrk_size == 0) {
+        mrcpp::CompFunctionVector Phi_full(2 * N);
+        for (int i = 0; i < N; i++) {
+            Phi_full[i] = Phi[i];
+            Phi_full[N + i] = KPhi[i];
+        }
+        mrcpp::rotate(Phi_full, U, Psi, prec);
+    } else { // TODO(MPI): this branch is only tested with a small MPI run
+        OrbitalVector Psi_K = new_output();
+        mrcpp::rotate(Phi, U.topRows(N), Psi, prec);
+        mrcpp::rotate(KPhi, U.bottomRows(N), Psi_K, prec);
+        for (int i = 0; i < N; i++) {
+            if (not mrcpp::mpi::my_func(Psi[i])) continue;
+            Psi[i].add(1.0, Psi_K[i]);
+            Psi_K[i].free();
+        }
+    }
+    return Psi;
+}
+
+/** @brief Perform the Löwdin orthonormalization on a Kramers-restricted set of 2-component spinors
+ *
+ * @param Phi: orbitals to orthonormalize (each one implicitly carries its Kramers partner K phi)
  * @param F: Fock matrix in the Phi basis
  *
- * Orthonormalizes the orbitals by multiplication of the Löwdin matrix S^(-1/2).
- * Orbitals are rotated in place, and the transformation matrix is returned.
+ * Orthonormalizes the full set {Phi, K Phi} with S^(-1/2) and keeps the first N columns,
+ * so that both <phi_i|phi_j> = delta_ij and <phi_i|K phi_j> = 0. Orbitals are replaced,
+ * and the N x N block of S^(-1/2) is returned.
  */
 ComplexMatrix orbital::kramers_orthonormalize(double prec, OrbitalVector &Phi, ComplexMatrix &F) {
     Timer t_tot, t_lap;
     auto plevel = Printer::getPrintLevel();
-    mrcpp::print::header(2, "Lowdin orthonormalization");
+    mrcpp::print::header(2, "Kramers Lowdin orthonormalization");
 
-    // number of represented electrons
     int N = Phi.size();
+    OrbitalVector KPhi = orbital::kramers_partners(Phi);
 
-    // Compute complete 2N x 2N overlap matrix 
-    ComplexMatrix S = mrcpp::calc_kramers_overlap_matrix(Phi, Phi); 
-
-    // Compute S^-1/2 
+    // S = [[A, B], [B^H, conj(A)]] with A = <phi|phi>, B = <phi|K phi>
+    ComplexMatrix A = orbital::calc_overlap_matrix(Phi);
+    ComplexMatrix B = orbital::calc_overlap_matrix(Phi, KPhi);
+    ComplexMatrix S(2 * N, 2 * N);
+    S << A, B, B.adjoint(), A.conjugate();
     ComplexMatrix S_m12 = math_utils::hermitian_matrix_pow(S, -1.0 / 2.0);
+    ComplexMatrix U = S_m12.leftCols(N);
 
-    // Isolate the upper left N x X block 
-    ComplexMatrix S_restricted (N,N);
-    for (int i=0; i < N; i++){
-        for (int j=0; j < N; j++){
-            S_restricted(i,j) = S_m12(i,j);
-        }
-    }
-
-    // orthonormalise the orbitals
     t_lap.start();
-    mrcpp::rotate(Phi, S_restricted, prec);
+    Phi = orbital::rotate_with_partners(Phi, KPhi, U, prec);
     mrcpp::print::time(2, "Rotating orbitals", t_lap);
+    KPhi.clear();
 
-    // Transform Fock matrix
-    F = S_restricted.adjoint() * F * S_restricted;
+    // Approximate (Kramers block of F not available); the SCF rebuilds F after the second orthonormalization
+    ComplexMatrix U_N = S_m12.topLeftCorner(N, N);
+    F = U_N.adjoint() * F * U_N;
     mrcpp::print::footer(2, t_tot, 2);
-    if (plevel == 1) mrcpp::print::time(1, "Lowdin orthonormalization", t_tot);
+    if (plevel == 1) mrcpp::print::time(1, "Kramers Lowdin orthonormalization", t_tot);
 
-    return S_restricted;
+    return U_N;
 }
 
 /** @brief Returns the number of occupied orbitals */

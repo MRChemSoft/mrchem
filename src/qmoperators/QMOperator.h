@@ -75,11 +75,8 @@ public:
     double apply_prec{-1.0};
 
     void setApplyPrec(double prec) {
-        // std::cout << "QMOperator::setApplyPrec -- Setting apply precision to " << prec << std::endl;
         if (this->apply_prec < 0.0) {
-            // std::cout << "QMOperator::setApplyPrec -- tut" << std::endl;
             this->apply_prec = prec;
-            // std::cout << "QMOperator::setApplyPrec -- pouet" << std::endl;
         } else if (not isSetup(prec)) {
             MSG_ERROR("Clear operator before setup with different prec!");
         }
@@ -87,11 +84,8 @@ public:
     void clearApplyPrec() { this->apply_prec = -1.0; }
 
     bool isSetup(double prec) const {
-        // MSG_INFO("QMOperator::setApplyPrec -- start ");
         double dPrec = std::abs(this->apply_prec - prec);
         double thrs = mrcpp::MachineZero;
-        // MSG_INFO("QMOperator::setApplyPrec -- end ", " apply_prec=", this->apply_prec, " prec=", prec, " dPrec=", dPrec, " thrs=", thrs);
-        // std::cout << "QMOperator::setApplyPrec -- end " << " apply_prec=" << this->apply_prec << " prec=" << prec << " dPrec=" << dPrec << " thrs=" << thrs << std::endl;
         return (dPrec < thrs) ? true : false;
     }
 

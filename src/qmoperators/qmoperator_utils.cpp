@@ -49,6 +49,17 @@ ComplexMatrix calc_kinetic_matrix_component(MomentumOperator &p, RankZeroOperato
 ComplexMatrix calc_kinetic_matrix_component_symmetrized(int d, MomentumOperator &p, RankZeroOperator &V, OrbitalVector &bra, OrbitalVector &ket, bool spinorial = false);
 } // namespace qmoperator
 
+/** @brief (σ·p)|Phi>, summing the three σ_d p_d terms one orbital at a time,
+ *  so that only the components of a single orbital are stored at once */
+static OrbitalVector apply_sigma_p(MomentumOperator &p, OrbitalVector &Phi) {
+    OrbitalVector out = orbital::param_copy(Phi);
+    for (int i = 0; i < Phi.size(); i++) {
+        if (not mrcpp::mpi::my_func(Phi[i])) continue;
+        for (auto &sigma_p_phi : p(Phi[i], true)) out[i].add({1.0, 0.0}, sigma_p_phi); // σ_d p_d |phi_i>, d = x,y,z
+    }
+    return out;
+}
+
 double qmoperator::calc_kinetic_trace(MomentumOperator &p, OrbitalVector &Phi) {
     DoubleVector eta = orbital::get_occupations(Phi).cast<double>();
     DoubleVector norms = DoubleVector::Zero(Phi.size());
@@ -91,12 +102,7 @@ ComplexDouble qmoperator::calc_kinetic_trace(MomentumOperator &p, RankZeroOperat
         //in this case, the operator cannot be separated into its 3 directional components,
         //because (σ·p)χ(σ·p) ≠ (σ_x·p_x)χ(σ_x·p_x) + (σ_y·p_y)χ(σ_y·p_y) + (σ_z·p_z)χ(σ_z·p_z)
         //and so we need to compute the (σ·p) applied on Phi first.
-        OrbitalVector dPhi_x = p[0](Phi, 1); //(σ_x·p_x)|Phi>
-        OrbitalVector dPhi_y = p[1](Phi, 2); //(σ_y·p_y)|Phi>
-        OrbitalVector dPhi_z = p[2](Phi, 3); //(σ_z·p_z)|Phi>
-        //summing it all together
-        OrbitalVector dPhi_tmp = orbital::add({1.0,0.0}, dPhi_x, {1.0,0.0}, dPhi_y);//intermediate sum
-        OrbitalVector dPhi = orbital::add({1.0,0.0}, dPhi_tmp, {1.0,0.0}, dPhi_z);
+        OrbitalVector dPhi = apply_sigma_p(p, Phi);
         //Computing the trace over the Hilbert space
         out += V.trace(dPhi);
     }
@@ -154,16 +160,12 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component(int d, MomentumOperator 
     int Ni = bra.size();
     int Nj = ket.size();
     ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
-    // MSG_INFO("calc kin mat comp start braket true=" << (&bra == &ket));
 
     int nNodes = 0, sNodes = 0;
     if (&bra == &ket) {
         OrbitalVector dKet = p[d](ket);
-        // MSG_INFO("1");
         nNodes += orbital::get_n_nodes(dKet);
-        // MSG_INFO("2");
         sNodes += orbital::get_size_nodes(dKet);
-        // MSG_INFO("3");
         T = mrcpp::calc_overlap_matrix(dKet);
     } else {
         OrbitalVector dBra = p[d](bra);
@@ -252,43 +254,18 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component( MomentumOperator &p, Ra
     int Ni = bra.size();
     int Nj = ket.size();
     ComplexMatrix T = ComplexMatrix::Zero(Ni, Nj);
-    // MSG_INFO("calc kin mat comp start d=" << d << " Ni=" << Ni << " Nj=" << Nj);
 
-    // MSG_INFO("spinorial done");
     int nNodes = 0, sNodes = 0;
     if (&bra == &ket) {
-        // MSG_INFO("bra ket same");
-        OrbitalVector dKet_x = p[0](ket, 1); //(σ_x·p_x)|ket>
-        OrbitalVector dKet_y = p[1](ket, 2); //(σ_y·p_y)|ket>
-        OrbitalVector dKet_z = p[2](ket, 3); //(σ_z·p_z)|ket>
-        //summing it all together
-        OrbitalVector dKet_tmp = orbital::add({1.0,0.0}, dKet_x, {1.0,0.0}, dKet_y);//intermediate sum
-        OrbitalVector dKet = orbital::add({1.0,0.0}, dKet_tmp, {1.0,0.0}, dKet_z);
+        OrbitalVector dKet = apply_sigma_p(p, ket);
 
-        // MSG_INFO("bk same dket done ");
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dKet);
-        // MSG_INFO("bk same gotten stuff ");
         T = V(dKet, dKet); //includes conjugation?
-        // MSG_INFO("test")
-        // MSG_INFO("bk same V applied tut "  << T(0,0) << " "<< T(0,1) << " " << d);
-        // MSG_INFO("bk same V applied tut "  << T(1,0) << " "<< T(1,1));
         
     } else {
-        // MSG_INFO("bra no ket");
-        OrbitalVector dBra_x = p[0](bra, 1); //(σ_x·p_x)|ket>
-        OrbitalVector dBra_y = p[1](bra, 2); //(σ_y·p_y)|ket>
-        OrbitalVector dBra_z = p[2](bra, 3); //(σ_z·p_z)|ket>
-        //summing it all together
-        OrbitalVector dBra_tmp = orbital::add({1.0,0.0}, dBra_x, {1.0,0.0}, dBra_y);//intermediate sum
-        OrbitalVector dBra = orbital::add({1.0,0.0}, dBra_tmp, {1.0,0.0}, dBra_z);
-
-        OrbitalVector dKet_x = p[0](ket, 1); //<bra|(σ_x·p_x)
-        OrbitalVector dKet_y = p[1](ket, 2); //<bra|(σ_y·p_y)
-        OrbitalVector dKet_z = p[2](ket, 3); //<bra|(σ_z·p_z)
-        //summing it all together
-        OrbitalVector dKet_tmp = orbital::add({1.0,0.0}, dKet_x, {1.0,0.0}, dKet_y);//intermediate sum
-        OrbitalVector dKet = orbital::add({1.0,0.0}, dKet_tmp, {1.0,0.0}, dKet_z);
+        OrbitalVector dBra = apply_sigma_p(p, bra);
+        OrbitalVector dKet = apply_sigma_p(p, ket);
         // ComplexVector ones = ComplexVector::Ones(Ni, 1);
         // OrbitalVector dBra = p[1](bra, 1); //(σ_x·p_x)|ket>, also holding the sum of all three directions
         // // mrcpp::add(dBra, ones, p[2](bra, 2)); //(σ_y·p_y)|ket>
@@ -306,18 +283,13 @@ ComplexMatrix qmoperator::calc_kinetic_matrix_component( MomentumOperator &p, Ra
         // mrcpp::add(dKet, ones, dKet_y); 
         // OrbitalVector dKet_z = p[3](ket, 3); //(σ_z·p_z)|ket>
         // mrcpp::add(dKet, ones, dKet_z);
-        // MSG_INFO("bk diff ket done");
         nNodes += orbital::get_n_nodes(dBra);
         nNodes += orbital::get_n_nodes(dKet);
         sNodes += orbital::get_size_nodes(dBra);
         sNodes += orbital::get_size_nodes(dKet);
-        // MSG_INFO("bk diff gotten stuff");
         T = V(dBra, dKet);
-        // MSG_INFO("bk diff V applied ");
     }
-    // MSG_INFO("calc kin mat out of if statement");
     mrcpp::print::tree(2, "<i|sigma p kappa sigma p|j>", nNodes, sNodes, timer.elapsed());
-    // MSG_INFO("end ");
     return 0.5 * T;
 }
 

@@ -66,7 +66,6 @@ void CoulombPotentialD2::setupLocalDensity(double prec) {
     if (this->orbitals_x == nullptr) MSG_ERROR("Orbitals not initialized");
     if (this->orbitals_y == nullptr) MSG_ERROR("Orbitals not initialized");
 
-    MSG_INFO("Debug message");
 
     Density &rho = this->density;
     OrbitalVector &Phi = *this->orbitals;

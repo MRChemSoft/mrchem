@@ -26,7 +26,7 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 #include <MRCPP/Timer>
-#include <mrdft/MRDFT.h> // libxc debug
+#include <mrdft/MRDFT.h>
 
 #include "driver.h"
 #include <filesystem>
@@ -271,7 +271,6 @@ void driver::init_properties(const json &json_prop, Molecule &mol) {
  */
 json driver::scf::run(const json &json_scf, Molecule &mol) {
     // print_utils::headline(0, "Computing Ground State Wavefunction");
-    std::cout << "driver::scf::run start"  << json_scf["spinor_components"]<< std::endl;
     json json_out = {{"success", true}};
     if (json_scf.contains("properties")) driver::init_properties(json_scf["properties"], mol);
 
@@ -288,14 +287,12 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ////////////////   WAVEFUNCTION COMPONENTS  ///////////////
     ///////////////////////////////////////////////////////////
     int n_components = json_scf["spinor_components"];
-    std::cout << "driver::scf::run n_components: " << n_components << std::endl;
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
     ///////////////////////////////////////////////////////////
     FockBuilder F;
     const auto &json_fock = json_scf["fock_operator"];
-    std::cout << "driver::scf::run Fock start " << n_components<< std::endl;
     driver::build_fock_operator(json_fock, mol, F, 0, true, n_components); 
 
     // Pre-compute internal exchange contributions
@@ -304,7 +301,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     ///////////////   Setting Up Initial Guess   //////////////
     ///////////////////////////////////////////////////////////
-    std::cout << "driver::scf::run Initial Guess start" << std::endl;
     print_utils::headline(0, "Computing Initial Guess Wavefunction");
     const auto &json_guess = json_scf["initial_guess"];
     const auto &json_occ = json_scf["occupancies"];
@@ -329,7 +325,6 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////   Optimizing Ground State Orbitals  ////////////
     ///////////////////////////////////////////////////////////
-    std::cout << "driver::scf::run Optimisation start" << std::endl;
 
     // Run GroundStateSolver if present in input JSON
     if (json_scf.contains("scf_solver")) {
@@ -380,23 +375,15 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     //////////   Computing Ground State Properties   //////////
     ///////////////////////////////////////////////////////////
        
-    MSG_INFO("optimised");
     // get the orbital positions
     mol.calculateOrbitalPositions();
-    MSG_INFO("calculated positons");
 
     if (json_out["success"]) {
-        MSG_INFO("successed");
         if (json_scf.contains("write_orbitals_txt")) scf::write_orbitals_txt(json_scf["write_orbitals_txt"], mol);
-        if (json_scf.contains("write_orbitals_txt")) MSG_INFO("written orb txt");
         if (json_scf.contains("write_orbitals")) scf::write_orbitals(json_scf["write_orbitals"], mol);
-        if (json_scf.contains("write_orbitals")) MSG_INFO("written orb");
         if (json_scf.contains("write_density")) scf::write_density(json_scf["write_density"], mol);
-        if (json_scf.contains("write_density")) MSG_INFO("written density");
         if (json_scf.contains("properties")) scf::calc_properties(json_scf["properties"], mol, json_fock);
-        if (json_scf.contains("properties")) MSG_INFO("calc'd properties");
         if (json_scf.contains("plots")) scf::plot_quantities(json_scf["plots"], mol);
-        if (json_scf.contains("plots")) MSG_INFO("plotted");
     }
 
     return json_out;
@@ -1386,7 +1373,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         if (order == 0) {
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, shared_memory);
             F.getCoulombOperator() = J_p;
-            MSG_INFO("Coulomb value="<< F.getCoulombOperator()->trace(*Phi_p));
         } else if (order == 1) {
             auto J_p = std::make_shared<CoulombOperator>(P_p, Phi_p, X_p, Y_p, shared_memory);
             F.getCoulombOperator() = J_p;
@@ -1527,7 +1513,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         mrdft::Factory xc_factory(*MRA);
         if (n_components > 1) xc_spin = false; //2+ Components: real-space/spin-space not separable, always use total density
-        MSG_INFO("qqqqqqqqqqqqqq "<< n_components <<" xc_spin="<< xc_spin);
         xc_factory.setSpin(xc_spin);
         xc_factory.setLibxc((xc_lib == "libxc") ? true : false);
         xc_factory.setOrder(xc_order);
@@ -1561,14 +1546,12 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
     /////////////////   Exchange Operator   ///////////////////
     ///////////////////////////////////////////////////////////
     if (json_fock.contains("exchange_operator") and exx > mrcpp::MachineZero) {
-        std::cout << "driver::build_fock_operator: Building exchange operator" << std::endl;
         auto exchange_prec = json_fock["exchange_operator"]["exchange_prec"];
         auto poisson_prec = json_fock["exchange_operator"]["poisson_prec"];
         auto P_p = std::make_shared<PoissonOperator>(*MRA, poisson_prec);
         if (order == 0) {
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, exchange_prec);
             F.getExchangeOperator() = K_p;
-            // MSG_INFO("Exchange size=" << K_p->trace(*Phi_p) << " " << F.getCoulombOperator()->trace(*Phi_p));// << " expct val="<< (*K_p)((*Phi_p)[0], (*Phi_p)[0]));
         } else {
             auto K_p = std::make_shared<ExchangeOperator>(P_p, Phi_p, X_p, Y_p, exchange_prec);
             F.getExchangeOperator() = K_p;
@@ -1584,7 +1567,6 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto V_ext = std::make_shared<ElectricFieldOperator>(field, r_O);
         F.getExtOperator() = V_ext;
     }
-    std::cout << "driver::build_fock_operator: finally building the fock operator" << std::endl;
     F.build(exx);
 }
 

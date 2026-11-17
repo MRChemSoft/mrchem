@@ -113,7 +113,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
         // Compute Coulomb density
         t_lap.start();
         Density &rho_j = J.getDensity();
-        std::cout << "initial_guess::sad::setup -- Projecting Coulomb density start" << std::endl;
         initial_guess::sad::project_atomic_densities(prec, rho_j, nucs, screen);
 
     // Compute XC density
@@ -137,7 +136,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
         mrcpp::print::header(2, "Diagonalizing Fock matrix");
         ComplexMatrix U = initial_guess::core::diagonalize(Psi, p, V);
 
-        // std::cout << "sad::setup Psi norm (2nd argument)=" << Psi[0].norm() << " Phi norm (1st argument)=" << Phi[0].norm() << std::endl;
 
         // Rotate orbitals and fill electrons by Aufbau 
         t_lap.start();

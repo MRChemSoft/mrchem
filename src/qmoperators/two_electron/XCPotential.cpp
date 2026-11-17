@@ -227,7 +227,6 @@ Orbital XCPotential::apply(Orbital phi) {
     QMPotential &V = *this;
     if (V.hasImag()) MSG_ERROR("Imaginary part of XC potential non-zero");
 
-    // MSG_INFO("pouet");
     // FunctionTree<3> &pot = getPotential(phi.spin()); //original
     // V.setReal(&pot); //original
     // Orbital Vphi = QMPotential::apply(phi); //original

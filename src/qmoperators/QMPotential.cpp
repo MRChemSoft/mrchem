@@ -131,7 +131,6 @@ void QMPotential::calc(mrcpp::CompFunction<3> &out, mrcpp::CompFunction<3> &inp,
     double prec = this->apply_prec;
     if (out.Ncomp() > 0) MSG_ABORT("Output not empty");
     if (out.isShared()) MSG_ABORT("Cannot share this function");
-    // if (dagger and inp.iscomplex()) MSG_INFO("DAGGER OPERATOR NEEDS TO BE CHECKED"); //it should be good now
     if (inp.conjugate()) MSG_ERROR("Not implemented");
 
     mrcpp::CompFunction<3> V = this->paramCopy(true); 

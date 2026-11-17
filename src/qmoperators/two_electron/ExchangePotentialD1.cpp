@@ -102,13 +102,11 @@ int ExchangePotentialD1::testInternal(Orbital phi_p) const {
  * particular exchange contribution has been precomputed.
  */
 Orbital ExchangePotentialD1::apply(Orbital phi_p) {
-    // MSG_INFO("bidoum test");
     Orbital out_p = phi_p.paramCopy(true);
     if (this->apply_prec < 0.0) {
         MSG_ERROR("Uninitialized operator");
         return out_p;
     }
-    // MSG_INFO("tutest");
     int i = testInternal(phi_p);
     if (i < 0) {
         if (not mrcpp::mpi::my_func(phi_p)) {
@@ -414,7 +412,6 @@ void ExchangePotentialD1::setupInternal(double prec) {
 Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) { //this needs to be updated to multicomp
     Timer timer;
     OrbitalVector &Phi = *this->orbitals;
-    // MSG_INFO("spouet");
 
     double prec = this->apply_prec;
     // use fixed exchange_prec if set explicitly, otherwise use setup prec
@@ -430,7 +427,6 @@ Orbital ExchangePotentialD1::calcExchange(Orbital phi_p) { //this needs to be up
 
         double spin_fac = phi_i.occ() * getSpinFactor(phi_i, phi_p);
         if (std::abs(spin_fac) >= mrcpp::MachineZero) {
-            // MSG_INFO("Orb nbr="<< i << " spin factor="<<spin_fac);
             Orbital ex_iip = phi_p.paramCopy(true);
             calcExchange_kij(precf, phi_i, phi_i, phi_p, ex_iip);
             coef_vec.push_back(spin_fac / phi_i.getSquareNorm());
