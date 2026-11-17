@@ -32,9 +32,11 @@
 #include "HelmholtzVector.h"
 #include "chemistry/Molecule.h"
 #include "qmfunctions/Orbital.h"
+#include "qmfunctions/density_utils.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
 #include "qmoperators/two_electron/FockBuilder.h"
+#include "qmoperators/two_electron/two_electron_utils.h"
 #include "utils/print_utils.h"
 #include <iostream>
 
@@ -289,8 +291,11 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
     auto &two_rdm = *(S.get_two_rdm());
     auto &lag_coeff = *(S.get_lagrange_multipliers());
     auto &basis_change = *(S.get_basis_change());
-    auto &P = *this->P_p;
     auto &orbitals = *this->orbitals;
+
+    // Computing total density to use for screening potential computations
+    Density rho;
+    density::compute(prec, rho, *this->orbitals, DensityType::Total);
 
     // precompute U_dE2(m,j,k,l) = sum_i U(m,i) * two_rdm(i,j,k,l)
     ComplexTensorR4 U_dE2(L, L, L, L);
@@ -306,15 +311,8 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
         std::cout << "Orbital " << j + 1 << " out of " << L << std::endl;
         for (int l = j; l < L; l++) { // Triangular loop l >= j
             // g_jl = poisson(Phi[j]^* * Phi[l]) (the MRCPP kernel is already 1/|r-r'|, no 4*pi as in python)
-            Orbital phi_jl, g_jl;
-            mrcpp::multiply(phi_jl, orbitals[j], orbitals[l], this->prec, false, false, true);
-
-            if (phi_jl.norm() < this->prec * 1.0e-5) {
-                // std::cout << "Skipping orbital pair: " << j << ", " << l << std::endl;
-                continue;
-            }
-
-            mrcpp::apply(this->prec, g_jl, P, phi_jl);
+            Orbital g_jl = orbitals[j].paramCopy(true);
+            ij_r12(this->prec, rho, orbitals[j], orbitals[l], g_jl);
 
             for (int k = 0; k < L; k++) {
                 // state = g_jl * Phi[k]
