@@ -67,94 +67,41 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
             dens_vec.push_back(std::make_tuple(1.0, &rho.real()));
         }
 
-        if (this->mrdft->functional().isMetaGGA()) { // Unperturbed kinetic energy density tau(r) = 1/2 sum_i |∇phi_i(r)|^2
+        if (this->mrdft->functional().isMetaGGA()) { // Unperturbed kinetic energy density tau(r) = 1/2 sum_i occ_i |∇phi_i(r)|^2
             Timer timer;
-            Density &tau = densities[3]; // tau total
+            // NB: tau is stored in densities[3]; do not use getDensity(Total, 1) here,
+            // that index is reserved for the perturbed density in the response code.
+            Density &tau = densities[3];
             if (tau.Ncomp() == 0) {
-                tau.alloc(1);
-                mrcpp::copy_grid(tau.real(), grid);
+                auto derivOp = this->mrdft->functional().getDerivOp();
+                if (derivOp == nullptr) MSG_ABORT("XCPotentialD1::setupDensities: derivative operator not set, cannot build tau");
+                NablaOperator nabla(derivOp);
+                nabla.setup(prec);
+
+                // Same structure as density::compute(): each MPI rank sums the
+                // contributions of its own orbitals, then the result is reduced.
+                // Contributions are accumulated with the in-place CompFunction::add
+                // (extends to union grid), never with mrcpp::add(out, ..., out, ...).
+                Density tau_loc(false);
+                for (auto &phi_i : *orbitals) {
+                    if (not mrcpp::mpi::my_func(phi_i)) continue;
+                    double occ = static_cast<double>(phi_i.occ()); // total occupation, as for rho
+                    if (std::abs(occ) < mrcpp::MachineZero) continue;
+                    for (int d = 0; d < 3; d++) {
+                        Orbital dphi = nabla[d](phi_i);
+                        Density tau_d(false);
+                        mrcpp::copy_grid(tau_d, dphi);
+                        mrcpp::make_density(tau_d, dphi, prec); // |d/dx_d phi_i|^2 (real, also for complex phi)
+                        tau_d.crop(prec);
+                        tau_loc.add(0.5 * occ, tau_d);
+                    }
+                }
+                nabla.clear();
+                density::allreduce_density(tau, tau_loc);
             }
-            tau.real().clear(); // start from zero
-
-            // Use the derivative operator already stored in the functional
-            auto derivOp = this->mrdft->functional().getDerivOp();
-            if (!derivOp) {
-                MSG_ABORT("XCPotentialD1::setupDensities: derivative operator not set, cannot build tau.\n");
-            }
-
-            // Temporary trees on the XC grid
-            mrcpp::FunctionTree<3> tau_phi(grid.getMRA());
-            mrcpp::copy_grid(tau_phi, grid);
-
-            mrcpp::FunctionTree<3> d2phi_x(grid.getMRA());
-            mrcpp::copy_grid(d2phi_x, grid);
-
-            mrcpp::FunctionTree<3> d2phi_y(grid.getMRA());
-            mrcpp::copy_grid(d2phi_y, grid);
-
-            mrcpp::FunctionTree<3> d2phi_z(grid.getMRA());
-            mrcpp::copy_grid(d2phi_z, grid);
-
-            // Loop over orbitals: tau += 1/2 * tau_phi = 1/2 * |∇phi_i|^2
-            for (int i = 0; i < static_cast<int>(orbitals->size()); ++i) {
-                const mrcpp::CompFunction<3> &phi_i = (*orbitals)[i];
-                mrcpp::FunctionTree<3> &phi_r =
-                    const_cast<mrcpp::FunctionTree<3>&>(phi_i.real());
-
-                tau_phi.clear();
-                d2phi_x.clear();
-                d2phi_y.clear();
-                d2phi_z.clear();
-
-                // Getting the gradient of orbitals
-                mrcpp::FunctionTreeVector<3> grad_vec =
-                    this->mrdft->functional().getLogGradient()
-                        ? mrdft::xc_utils::log_gradient(*derivOp, phi_r)
-                        : mrcpp::gradient(*derivOp, phi_r);
-
-                mrcpp::FunctionTree<3> &dphi_x = mrcpp::get_func(grad_vec, 0);
-                mrcpp::FunctionTree<3> &dphi_y = mrcpp::get_func(grad_vec, 1);
-                mrcpp::FunctionTree<3> &dphi_z = mrcpp::get_func(grad_vec, 2);
-
-                // mrcpp::FunctionTreeVector<3> hess_x_vec =
-                //     this->mrdft->functional().getLogGradient()
-                //         ? mrdft::xc_utils::log_gradient(*derivOp, dphi_x)
-                //         : mrcpp::gradient(*derivOp, dphi_x);
-                // mrcpp::FunctionTreeVector<3> hess_y_vec =
-                //     this->mrdft->functional().getLogGradient()
-                //         ? mrdft::xc_utils::log_gradient(*derivOp, dphi_y)
-                //         : mrcpp::gradient(*derivOp, dphi_y);
-                // mrcpp::FunctionTreeVector<3> hess_z_vec =
-                //     this->mrdft->functional().getLogGradient()
-                //         ? mrdft::xc_utils::log_gradient(*derivOp, dphi_z)
-                //         : mrcpp::gradient(*derivOp, dphi_z);
-
-                // mrcpp::FunctionTree<3> &d2phi_x = mrcpp::get_func(hess_x_vec, 0);
-                // mrcpp::FunctionTree<3> &d2phi_y = mrcpp::get_func(hess_y_vec, 1);
-                // mrcpp::FunctionTree<3> &d2phi_z = mrcpp::get_func(hess_z_vec, 2);
-
-
-                // mrcpp::add(prec, tau_phi, 1.0, tau_phi, 1.0, d2phi_x);  // tau_phi += d2phi_x
-                // mrcpp::add(prec, tau_phi, 1.0, tau_phi, 1.0, d2phi_y);  // tau_phi += d2phi_y
-                // mrcpp::add(prec, tau_phi, 1.0, tau_phi, 1.0, d2phi_z);  // tau_phi += d2phi_z
-
-
-                // Constructing tau_phi as sum_i=xyz dphi_i^2
-                mrcpp::power(prec, d2phi_x, dphi_x, 2.0);              // d2phi_x = (dphi_x)^2
-                mrcpp::power(prec, d2phi_y, dphi_y, 2.0);              // d2phi_y = (dphi_y)^2
-                mrcpp::power(prec, d2phi_z, dphi_z, 2.0);              // d2phi_z = (dphi_z)^2
-
-                mrcpp::add(prec, tau_phi, 1.0, tau_phi, 1.0, d2phi_x);  // d2phi_ += d2phi_x
-                mrcpp::add(prec, tau_phi, 1.0, tau_phi, 1.0, d2phi_y);  // d2phi_ += d2phi_y
-                mrcpp::add(prec, tau_phi, 1.0, tau_phi, 1.0, d2phi_z);  // d2phi_ += d2phi_z
-
-                // tau needs the same orbital occupancy weight as the density.
-                // For paired orbitals this restores the usual factor of 2.
-                double occ = phi_i.occ();
-                mrcpp::add(prec, tau.real(), 1.0, tau.real(), 0.5 * occ, tau_phi);
-            }
-
             print_utils::qmfunction(3, "Compute tau", tau, timer);
+            // Debug check: for real orbitals int tau = sum_i occ_i <phi_i|T|phi_i> = E_kin
+            mrcpp::print::value(1, "Integral of tau (=E_kin)", tau.integrate().real(), "(au)", 10);
             dens_vec.push_back(std::make_tuple(1.0, &tau.real()));
         }
     } else {

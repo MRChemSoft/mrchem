@@ -278,6 +278,9 @@ void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nP
                     sigma = Eigen::MatrixXd::Zero(1, nPts);
                     Eigen::MatrixXd tau  = Eigen::MatrixXd::Zero(1, nPts);
                     Eigen::MatrixXd vtau = Eigen::MatrixXd::Zero(1, nPts);
+                    // Laplacian is not supported: pass zeros
+                    Eigen::MatrixXd lapl  = Eigen::MatrixXd::Zero(1, nPts);
+                    Eigen::MatrixXd vlapl = Eigen::MatrixXd::Zero(1, nPts);
 
                     for (size_t j = 0; j < nPts; j++) {
                         sigma(j) = inp(1, j) * inp(1, j)
@@ -288,12 +291,12 @@ void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nP
 
                     xc_mgga_exc_vxc(libxc_objects[i], nPts,
                                     rho.data(), sigma.data(),
-                                    nullptr,      // TODO: laplacian
+                                    lapl.data(),  // TODO: laplacian (zero)
                                     tau.data(),
                                     exc.data(),
                                     vxc.data(),
                                     sxc.data(),
-                                    nullptr,      // v_laplacian
+                                    vlapl.data(), // v_laplacian (ignored)
                                     vtau.data());
 
                     for (size_t j = 0; j < nPts; ++j) {

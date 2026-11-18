@@ -81,7 +81,9 @@ protected:
     double energy;                                          ///< XC energy
     std::vector<Density> densities;                         ///< XC densities (total or alpha/beta)
     mrcpp::FunctionTreeVector<3> potentials;                ///< XC Potential functions collected in a vector
-    RankZeroOperator tauPotential;                          ///< XC tau potential used by meta-GGA kinetic corrections
+    RankZeroOperator tauPotential;                          ///< XC tau potential v_tau = dF/dtau (meta-GGA only)
+    RankZeroOperator tauOperator;                           ///< Meta-GGA operator -1/2 div(v_tau grad), added in apply()/dagger()
+    double debug_vtau_tau{0.0};                             ///< Debug: int v_tau * tau (checks tauOperator)
     std::shared_ptr<mrcpp::FunctionTree<3>> v_tot{nullptr}; ///< Total XC potential
     std::shared_ptr<OrbitalVector> orbitals;                ///< External set of orbitals used to build the density
     std::unique_ptr<mrdft::MRDFT> mrdft;                    ///< External XC functional to be used

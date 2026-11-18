@@ -27,6 +27,8 @@
 
 #include <MRCPP/Printer>
 #include <stdlib.h>
+#include <algorithm>
+#include <cmath>
 
 #include "Factory.h"
 #include "utils/print_utils.h"
@@ -178,7 +180,40 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         }
     }
 
+    // Meta-GGA (unpolarized) input columns: 0 rho, 1-3 grad rho, 4 tau; one row per point.
+    // tau >= tau_W = |grad rho|^2 / (8 rho) holds exactly, but numerical noise in the density
+    // tail violates it (tau can even be negative there), which makes v_tau blow up.
+    // The clamp target is tau_W * (1 + 1e-10), NOT tau_W itself: Libxc defines TPSS-type
+    // functionals with min(tau_W/tau, 1) and at exactly tau = tau_W it returns the derivative of
+    // the constant branch. Clamping onto that point made the Libxc potential jump between two
+    // derivative branches (one-orbital regions, e.g. He, have tau ~ tau_W everywhere), so the SCF
+    // stalled with noisy orbitals while XCFun (no min) converged smoothly.
+    if (isMetaGGA() && !isSpin()) {
+        for (int j = 0; j < ncoefs; j++) {
+            double rho = xclib_inp(j, 0);
+            if (rho <= 0.0) continue;
+            double g2 = xclib_inp(j, 1) * xclib_inp(j, 1) + xclib_inp(j, 2) * xclib_inp(j, 2) + xclib_inp(j, 3) * xclib_inp(j, 3);
+            double tau_min = g2 / (8.0 * rho) * (1.0 + 1.0e-10);
+            // Optional floor relative to the uniform-gas value tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3)
+            // (lower_tau_cutoff = eps). Where an orbital gradient vanishes at high density (H2 bond
+            // midpoint: rho ~ 0.27, tau -> 0) v_tau ~ tau_W/tau^2 and dF/d(grad rho) ~ grad rho/tau diverge;
+            // the floor keeps both bounded. tau_unif decays faster than tau in the tail and tau/tau_unif >~ 0.2
+            // near nuclei, so for small eps it only acts at such points.
+            if (lower_tau_cutoff > 0.0) tau_min = std::max(tau_min, lower_tau_cutoff * 2.871234000188191 * std::pow(rho, 5.0 / 3.0));
+            if (xclib_inp(j, 4) < tau_min) xclib_inp(j, 4) = tau_min;
+        }
+    }
+
     Eigen::MatrixXd xc_out = Functional::evaluate(xclib_inp);
+
+    // Meta-GGA: screen the low-density tail, where the functional is evaluated on numerical
+    // noise (rho < 1e-15 gave v_tau ~ 1e10-1e24 and SCF divergence). Rows are grid points.
+    if (isMetaGGA() && !isSpin()) {
+        const double rho_min = std::max(this->cutoff, 1.0e-10);
+        for (int j = 0; j < ncoefs; j++) {
+            if (xclib_inp(j, 0) < rho_min) xc_out.row(j).setZero();
+        }
+    }
 
     int ctrsize = inp.size() - spinsize;
     int d_datasize = ctrsize;
@@ -239,6 +274,18 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         node.mwTransform(mrcpp::Compression);
         for (int j = 0; j < ncoefs; j++) xcNodes[1]->getCoefs()[j] = Ctrout(j, 1);
         xcNodes[1]->setHasCoefs();
+        // Gradient part of the potential, as in the GGA branch below:
+        // v_xc = dF/drho - div( dF/d(grad rho) ), with dF/d(d_d rho) in columns 2, 3, 4.
+        for (int d = 0; d < 3; d++) {
+            node.attachCoefs(Ctrout.col(2 + d).data());
+            node.cvTransform(mrcpp::Backward);
+            node.mwTransform(mrcpp::Compression);
+            node.calcNorms();
+            mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho0);
+            mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx), true, false);
+            derivcalc.calcNode(node, noded);
+            for (int j = 0; j < ncoefs; j++) xcNodes[1]->getCoefs()[j] -= noded.getCoefs()[j];
+        }
 
         node.attachCoefs(Ctrout.col(5).data());
         node.cvTransform(mrcpp::Backward);

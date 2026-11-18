@@ -28,7 +28,9 @@
 
 #include "XCPotential.h"
 #include "qmfunctions/density_utils.h"
+#include "qmoperators/one_electron/NablaOperator.h"
 #include "qmfunctions/orbital_utils.h"
+#include <cstdlib>
 #include <vector>
 
 using mrcpp::FunctionTree;
@@ -139,11 +141,73 @@ void XCPotential::setup(double prec) {
 
     if (this->mrdft->functional().isMetaGGA() && !this->mrdft->functional().isSpin()) {
         auto &v_tau = mrcpp::get_func(xc_out, 2);
-        auto tau_op = std::make_shared<QMPotential>(0, false);
+        auto tau_op = std::make_shared<QMPotential>(1, false); // same adaptivity as the XC potential
+        tau_op->alloc(1);                                      // real() is only valid after alloc
         mrcpp::copy_grid(tau_op->real(), v_tau);
         mrcpp::copy_func(tau_op->real(), v_tau);
         this->tauPotential = tau_op;
-        this->tauPotential.setup(prec);
+
+        { // Debug: range of v_tau on the grid, and rho/tau at the extreme points.
+            // xc_inp = {rho, tau} and xc_out share the unified grid, so node n / point j match.
+            auto &rho_t = mrcpp::get_func(xc_inp, 0);
+            auto &tau_t = mrcpp::get_func(xc_inp, 1);
+            double vmin = 0.0, vmax = 0.0, rho_at_min = 0.0, tau_at_min = 0.0, rho_at_max = 0.0, tau_at_max = 0.0;
+            int n_at_max = 0;
+            for (int n = 0; n < v_tau.getNEndNodes(); n++) {
+                Eigen::VectorXd v, r, t;
+                v_tau.getEndFuncNode(n).getValues(v);
+                rho_t.getEndFuncNode(n).getValues(r);
+                tau_t.getEndFuncNode(n).getValues(t);
+                for (int j = 0; j < v.size(); j++) {
+                    if (v[j] < vmin) { vmin = v[j]; rho_at_min = r[j]; tau_at_min = t[j]; }
+                    if (v[j] > vmax) { vmax = v[j]; rho_at_max = r[j]; tau_at_max = t[j]; n_at_max = n; }
+                }
+            }
+            mrcpp::print::value(1, "v_tau min", vmin, "(au)", 6);
+            mrcpp::print::value(1, "  rho at v_tau min", rho_at_min, "(au)", 6);
+            mrcpp::print::value(1, "  tau at v_tau min", tau_at_min, "(au)", 6);
+            mrcpp::print::value(1, "v_tau max", vmax, "(au)", 6);
+            mrcpp::print::value(1, "  rho at v_tau max", rho_at_max, "(au)", 6);
+            mrcpp::print::value(1, "  tau at v_tau max", tau_at_max, "(au)", 6);
+            { // Debug: where the maximum is (center of its grid node) and how fine/large the v_tau grid is
+                auto &node = v_tau.getEndFuncNode(n_at_max);
+                auto c = node.getCenter();
+                mrcpp::print::value(1, "  x at v_tau max", c[0], "(au)", 4);
+                mrcpp::print::value(1, "  y at v_tau max", c[1], "(au)", 4);
+                mrcpp::print::value(1, "  z at v_tau max", c[2], "(au)", 4);
+                mrcpp::print::value(1, "  scale at v_tau max", static_cast<double>(node.getScale()), "", 0);
+                mrcpp::print::value(1, "v_tau grid nodes", static_cast<double>(v_tau.getNNodes()), "", 0);
+                mrcpp::print::value(1, "rho grid nodes", static_cast<double>(rho_t.getNNodes()), "", 0);
+            }
+            // Reference value for the operator check further down: int v_tau * tau
+            this->debug_vtau_tau = mrcpp::dot(v_tau, tau_t);
+        }
+
+        // Generalized Kohn-Sham operator for the tau dependence:
+        //   dE_xc/dphi_i^* = -1/2 div( v_tau grad phi_i )
+        // NB: A * B applies B first, so the product reads d_d(v_tau (d_d phi)).
+        NablaOperator nabla(this->mrdft->functional().getDerivOp());
+        RankZeroOperator &V_tau = this->tauPotential;
+        this->tauOperator = -0.5 * (nabla[0] * V_tau * nabla[0] + nabla[1] * V_tau * nabla[1] + nabla[2] * V_tau * nabla[2]);
+        this->tauOperator.name() = "V_xc_tau";
+        this->tauOperator.setup(prec);
+
+        if (this->orbitals != nullptr) { // Debug: sum_i occ_i <phi_i|T_tau|phi_i> must equal int v_tau * tau
+            double expval = 0.0;
+            for (auto &phi_i : *this->orbitals) {
+                if (not mrcpp::mpi::my_func(phi_i)) continue;
+                Orbital Tphi = this->tauOperator(phi_i);
+                expval += static_cast<double>(phi_i.occ()) * mrcpp::dot(phi_i, Tphi).real();
+            }
+            mrcpp::print::value(1, "sum occ <phi|T_tau|phi>", expval, "(au)", 10);
+            mrcpp::print::value(1, "int v_tau * tau", this->debug_vtau_tau, "(au)", 10);
+        }
+        // Debug switch: MRCHEM_DEBUG_NO_TAUOP=1 leaves the tau operator out of the Fock operator
+        if (std::getenv("MRCHEM_DEBUG_NO_TAUOP") != nullptr) {
+            MSG_WARN("MRCHEM_DEBUG_NO_TAUOP set: tau operator NOT applied");
+            this->tauOperator.clear();
+            this->tauOperator = RankZeroOperator();
+        }
     }
 
     // Fetch potential
@@ -175,7 +239,13 @@ void XCPotential::clear() {
     this->energy = 0.0;
     for (auto &rho : this->densities) rho.free();
     mrcpp::clear(this->potentials, true);
+    this->tauOperator.clear();              // clear the derivative operators (avoids ~QMOperator error)
+    this->tauOperator = RankZeroOperator(); // drops refs; v_tau itself is cleared below
     this->tauPotential.clear();
+    // RankZeroOperator::clear() only resets the precision, and operator=(QMOperator_p)
+    // APPENDS to the expansion. Without this reset every setup() added another v_tau
+    // term, so after n SCF iterations the applied potential was v_tau^(1)+...+v_tau^(n).
+    this->tauPotential = RankZeroOperator();
     clearApplyPrec();
 }
 
@@ -240,6 +310,10 @@ Orbital XCPotential::apply(Orbital phi) {
     V.setReal(&pot);
     Orbital Vphi = QMPotential::apply(phi);
     V.setReal(nullptr);
+    if (this->tauOperator.size() > 0) { // meta-GGA: add -1/2 div(v_tau grad phi)
+        Orbital Tphi = this->tauOperator(phi);
+        Vphi.add(1.0, Tphi);
+    }
     return Vphi;
 }
 
@@ -251,6 +325,10 @@ Orbital XCPotential::dagger(Orbital phi) {
     V.setReal(&pot);
     Orbital Vphi = QMPotential::dagger(phi);
     V.setReal(nullptr);
+    if (this->tauOperator.size() > 0) { // Hermitian (real v_tau); QMDerivative::dagger is not implemented
+        Orbital Tphi = this->tauOperator(phi);
+        Vphi.add(1.0, Tphi);
+    }
     return Vphi;
 }
 

@@ -27,6 +27,7 @@
 
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
+#include <cstdlib>
 #include <memory>
 #include "qmoperators/one_electron/KineticOperator.h"
 #include "xc_libraries/XCLib.h"
@@ -159,6 +160,27 @@ public:
 protected:
     const int order;                                                ///< @brief Order of functional derivatives. Eg. 0 (energy), 1 (potential), 2 (pot. gradient), etc.
     bool log_grad{false};                                           ///< @brief Toggle for logarithmic gradient
+    /** @brief Relative lower cutoff for the kinetic energy density tau (meta-GGA only; 0 = off)
+     *
+     * If > 0, makepot() evaluates the functional with
+     *   tau >= lower_tau_cutoff * tau_unif(rho),   tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3)
+     * (on top of the always-active clamp tau >= tau_W = |grad rho|^2 / (8 rho)).
+     *
+     * meta-GGAs that depend on tau through the ratio tau_W / tau
+     * (TPSS family via z = tau_W/tau; M05/M06, B95 and VSXC correlation via D = 1 - tau_W/tau)
+     * have potentials that diverge where tau -> 0 while rho stays finite:
+     *   v_tau = dF/dtau ~ tau_W / tau^2 ~ 1/tau,   W = dF/d(grad rho) ~ grad rho / tau.
+     * This happens at points where all occupied orbitals have zero gradient at once, e.g. the
+     * bond midpoint of H2 (one doubly occupied orbital: rho ~ 0.27 but tau -> 0 like r^2).
+     * The energy integrand stays finite, but v_tau must be represented on the multiwavelet grid
+     * and applied as -1/2 div(v_tau grad phi), which an unbounded v_tau prevents (the SCF diverges).
+     * Bounding tau from below keeps v_tau and W finite.
+     *
+     * Scaling with tau_unif (not a fixed value) confines the cutoff to such points: in the density
+     * tail tau_unif ~ rho^(5/3) decays faster than tau, and near nuclei tau / tau_unif >~ 0.2, so a
+     * small value (1e-2 is used for H2) leaves other systems unchanged (He, H2O: identical energies).
+     */
+    double lower_tau_cutoff{std::getenv("lower_tau_cutoff") ? std::atof(std::getenv("lower_tau_cutoff")) : 0.0};
     double cutoff{-1.0};                                            ///< @brief Density threshold
     Eigen::VectorXi d_mask;                                         ///< @brief density and derivative(s) mask vector for response calculations
     Eigen::MatrixXi xc_mask;                                        ///< @brief functional and derivative(s) mask vector for response calculations
