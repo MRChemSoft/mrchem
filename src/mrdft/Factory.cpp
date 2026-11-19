@@ -35,22 +35,51 @@
 #include "mGGA.h"
 #include "SpinGGA.h"
 #include "SpinLDA.h"
+
+#ifndef DISABLE_LIBXC
 #include "xc_libraries/Libxc.h"
+#endif
+
+#ifndef DISABLE_XCFUN
 #include "xc_libraries/XCFun.h"
+#endif
 
 namespace mrdft {
 
 Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin_enabled, const std::string &xclibname)
     : spin_enabled(spin_enabled), xclibname(xclibname), mra(MRA) {
     if (xclibname == "xcfun") {
-        xclib = std::make_unique<XCFun>(spin_enabled);
+#ifdef DISABLE_XCFUN
+        MSG_ABORT("XCFun support disabled during compilation!");
+#else
+        xclib = std::make_unique<XCFun>(spin);
+#endif
     } else if (xclibname == "libxc") {
-        xclib = std::make_unique<Libxc>(spin_enabled);
+#ifdef DISABLE_LIBXC
+        MSG_ABORT("LibXC support disabled during compilation!");
+#else
+        xclib = std::make_unique<Libxc>(spin);
+#endif
+    } else if (xclibname == "auto") {
+#ifndef DISABLE_XCFUN
+        xclib = std::make_unique<XCFun>(spin);
+#else
+#ifndef DISABLE_LIBXC
+        xclib = std::make_unique<Libxc>(spin);
+#else
+        MSG_ABORT("No XC library available!");
+#endif
+#endif
     }
 }
 
 void Factory::setFunctional(const std::string &name, double c) {
-    xclib->setFunctional(name, c, cutoff);
+    xclib->setFunctional(name, c);
+}
+
+void Factory::setDensityCutoff(double c) {
+    cutoff = c;
+    xclib->setCutoff(c);
 }
 
 std::unique_ptr<MRDFT> Factory::build() {

@@ -42,13 +42,16 @@ The MRChem program depends on the following C++ libraries:
 - Input handling: `nlohmann/json-3.12  <https://github.com/nlohmann/json>`_
 - Multiwavelets: `MRCPP-1.4  <https://github.com/MRChemSoft/mrcpp>`_
 - Linear algebra: `Eigen-3.4  <https://gitlab.com/libeigen/eigen>`_
-- DFT functionals: `XCFun-2.1  <https://github.com/dftlibs/xcfun>`_
+- DFT functionals (optional):
+    - `XCFun-2.1  <https://github.com/dftlibs/xcfun>`_
+    - `LibXC-7.0  <https://gitlab.com/libxc/libxc>`_
 
 All these dependencies will be downloaded automatically at configure time by
 CMake, but can also be linked manually by setting the variables::
 
     MRCPP_DIR=<path_to_mrcpp>/share/cmake/MRCPP
     XCFun_DIR=<path_to_xcfun>/share/cmake/XCFun
+    Libxc_DIR=<path_to_libxc>/lib/cmake/
     Eigen3_DIR=<path_to_eigen3>/share/eigen3/cmake
     nlohmann_json_DIR=<path_to_nlohmann_json>
 

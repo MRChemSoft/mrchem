@@ -53,7 +53,7 @@ TEST_CASE("[XCOperatorLDA]", "[xc_operator_lda]") {
 
     auto Phi_p = std::make_shared<OrbitalVector>();
 
-    mrdft::Factory xc_factory(*MRA, false, "xcfun");
+    mrdft::Factory xc_factory(*MRA, false, "auto");
     xc_factory.setOrder(MRDFT::Gradient);
     xc_factory.setFunctional("LDA", 1.0);
     xc_factory.setDensityCutoff(1.0e-10);

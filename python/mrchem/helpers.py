@@ -123,8 +123,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
         }
 
     # Exchange-Correlation library
-    if wf_dict["method_type"] in ["dft"] and "xc_library" not in fock_dict:
-        fock_dict["xc_library"] = user_dict["DFT"]["xc_library"]
+    fock_dict["xc_library"] = user_dict["DFT"]["xc_library"]
 
     # External electric field
     if len(user_dict["ExternalFields"]["electric_field"]) > 0:
@@ -489,8 +488,7 @@ def write_rsp_fock(user_dict, wf_dict):
         }
 
     # Exchange-Correlation library
-    if wf_dict["method_type"] in ["dft"] and "xc_library" not in fock_dict:
-        fock_dict["xc_library"] = user_dict["DFT"]["xc_library"]
+    fock_dict["xc_library"] = user_dict["DFT"]["xc_library"]
 
     # Reaction
     if user_dict["WaveFunction"]["environment"].lower() != "none":

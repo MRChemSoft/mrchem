@@ -39,7 +39,7 @@ XCFun::~XCFun() {
     }
 }
 
-void XCFun::setFunctional(const std::string &name, double c, double cutoff) {
+void XCFun::setFunctional(const std::string &name, double c) {
     addFunctionalSpec(name, c);
     xcfun_set(xcfun, name.c_str(), c);
 }
@@ -86,8 +86,8 @@ void XCFun::printFunctionalReference(int out_txt_width) const {
     return;
 }
 
-void XCFun::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts, int nInp, int nOut, double cutoff) const {
-    if (nInp != xcfun_input_length(xcfun) or nOut != xcfun_output_length(xcfun)) { throw std::logic_error("Dimension mismatch!\n"); }
+void XCFun::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts) const {
+    if (inp.rows() != xcfun_input_length(xcfun) or out.rows() != xcfun_output_length(xcfun)) { throw std::logic_error("Dimension mismatch!\n"); }
 
     for (int i = 0; i < nPts; i++) {
         if (spin) {

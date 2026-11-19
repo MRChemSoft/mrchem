@@ -50,14 +50,16 @@ public:
     double getAmountExx() const override;
     int getnOut() override { return xcfun_output_length(xcfun); }
 
-    void setFunctional(const std::string &name, double c, double cutoff) override;
+    void setFunctional(const std::string &name, double c) override;
     void initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) override;
     void printFunctionalReference(int out_txt_width) const override;
-    void callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts, int nInp, int nOut, double cutoff) const override;
+    void callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts) const override;
 
     std::vector<std::string> xcfun_func_names;                                                   ///< @brief Names of XCFun functionals registered via setFunctional()
     const std::vector<std::string> &getXCFunFunctionalNames() const { return xcfun_func_names; } ///< @brief Get the list of XCFun functional names
     void addXCFunFunctionalName(const std::string &name) { xcfun_func_names.push_back(name); }   ///< @brief Add an XCFun functional name to the xcfun_func_names list
+
+    void setCutoff(double cutoff) override { this->cutoff = cutoff; }
 };
 
 } // namespace mrdft

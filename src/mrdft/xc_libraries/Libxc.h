@@ -51,10 +51,12 @@ public:
     double getCustomExx() const { return customExx; }
     int getnOut() override;
 
-    void setFunctional(const std::string &name, double c, double cutoff) override;
+    void setFunctional(const std::string &name, double c) override;
     void initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) override;
-    void callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts, int nInp, int nOut, double cutoff) const override;
+    void callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts) const override;
     void printFunctionalReference(int out_txt_width) const override;
+
+    void setCutoff(double cutoff) override;
 
     double customExx{0.0};                             ///< @brief Additional exact exchange provided by mapFunctionalName for custom functionals
     void setCustomExx(double exx) { customExx = exx; } ///< @brief Used in mapFunctionalName() to set a custom fraction of exact exchange

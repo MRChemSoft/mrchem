@@ -277,13 +277,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////////////   Setting XC Library  //////////////////
     ///////////////////////////////////////////////////////////
-    std::string xc_lib;
-
-    if (json_scf["fock_operator"].contains("xc_library")) {
-        xc_lib = json_scf["fock_operator"]["xc_library"].get<std::string>();
-    } else {
-        xc_lib = "xcfun";
-    }
+    auto xc_lib = json_scf["fock_operator"]["xc_library"];
 
     ///////////////////////////////////////////////////////////
     ////////////////   Building Fock Operator   ///////////////
@@ -411,6 +405,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     auto cube_a = json_guess["file_CUBE_a"];
     auto cube_b = json_guess["file_CUBE_b"];
     auto xclib = json_guess["xc_library"];
+    auto cutoff = json_guess["cutoff"];
 
     int mult = mol.getMultiplicity();
     if (restricted && mult != 1) {
@@ -524,9 +519,9 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
     } else if (type == "core") {
         success = initial_guess::core::setup(Phi, prec, nucs, zeta);
     } else if (type == "sad") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs, xclib, zeta);
+        success = initial_guess::sad::setup(Phi, prec, screen, nucs, xclib, cutoff, zeta);
     } else if (type == "sad_gto") {
-        success = initial_guess::sad::setup(Phi, prec, screen, nucs, xclib);
+        success = initial_guess::sad::setup(Phi, prec, screen, nucs, xclib, cutoff);
     } else if (type == "gto") {
         success = initial_guess::gto::setup(Phi, prec, screen, gto_bas, gto_p, gto_a, gto_b);
     } else if (type == "cube") {
@@ -542,7 +537,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
         std::string nao_directory = "";
         if (json_guess.contains(key)) nao_directory = json_guess[key];
 
-        success = initial_guess::nao::setup(Phi, prec, nucs, nmix, alpha_mix, xclib, nao_directory);
+        success = initial_guess::nao::setup(Phi, prec, nucs, nmix, alpha_mix, xclib, cutoff, nao_directory);
     } else {
         MSG_ERROR("Invalid initial guess");
         success = false;
@@ -1480,13 +1475,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         auto xc_cutoff = json_xcfunc["cutoff"];
         auto xc_funcs = json_xcfunc["functionals"];
         auto xc_order = order + 1;
-        // TODO: Look over and input parser so this is not necessary
-        std::string xc_lib;
-        if (json_fock.contains("xc_library")) {
-            xc_lib = json_fock["xc_library"].get<std::string>();
-        } else {
-            xc_lib = "xcfun";
-        }
+        auto xc_lib = json_fock["xc_library"];
 
         mrdft::Factory xc_factory(*MRA, xc_spin, xc_lib);
         xc_factory.setOrder(xc_order);

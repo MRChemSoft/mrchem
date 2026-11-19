@@ -61,7 +61,7 @@ void project_atomic_densities(double prec, Density &rho_tot, const Nuclei &nucs,
 } // namespace sad
 } // namespace initial_guess
 
-bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib, int zeta) {
+bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib, double cutoff, int zeta) {
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_doubly(Phi)) ? true : false;
@@ -83,6 +83,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
     mrdft::Factory xc_factory(*MRA, false, xclib);
+    xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();
@@ -140,7 +141,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     return true;
 }
 
-bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib) {
+bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, const Nuclei &nucs, const std::string &xclib, double cutoff) {
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_doubly(Phi)) ? true : false;
@@ -161,6 +162,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
     mrdft::Factory xc_factory(*MRA, false, xclib);
+    xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
     auto mrdft_p = xc_factory.build();

@@ -53,8 +53,9 @@ public:
     void setOrder(int k) { order = k; }                      ///< Set the polynomial order for the MRA basis
     void setUseGamma(bool g) { gamma = g; }                  ///< Toggle between gamma-type and explicit derivatives
     void setLogGradient(bool lg) { log_grad = lg; }          ///< Toggle the use of logarithmic gradients
-    void setDensityCutoff(double c) { cutoff = c; }          ///< Set the threshold for neglecting low-density regions
     void setDerivative(const std::string &n) { diff_s = n; } ///< Set derivative operator type (e.g., "bspline", "abgv_00")
+
+    void setDensityCutoff(double c);                         ///< Set the threshold for neglecting low-density regions
 
     /**
      * @brief Configures the xc functional

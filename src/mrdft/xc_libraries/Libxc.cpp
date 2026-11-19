@@ -39,7 +39,7 @@ Libxc::~Libxc() {
     }
 }
 
-void Libxc::setFunctional(const std::string &name, double c, double cutoff) {
+void Libxc::setFunctional(const std::string &name, double c) {
     std::vector<int> ids;
     std::vector<double> coefs;
     double scaled_custom_exx = 0.0;
@@ -62,6 +62,14 @@ void Libxc::setFunctional(const std::string &name, double c, double cutoff) {
         }
         this->libxc_objects.push_back(libxc_obj);
         this->libxc_coefs.push_back(c * coefs[i]);
+    }
+}
+
+void Libxc::setCutoff(double cutoff) {
+    this->cutoff = cutoff;
+
+    for (auto *f : libxc_objects) {
+        xc_func_set_dens_threshold(f, cutoff);
     }
 }
 
@@ -88,13 +96,15 @@ void getFamilyType(int family_type, bool &lda, bool &gga, bool &mgga) {
                     mgga = true;
                     break;
 
-                default:
-                    MSG_ABORT("Libxc functional family not handled in MRChem!\n");
-            }
+        default:
+            MSG_ABORT("Libxc functional family not handled in MRChem!\n");
+    }
 }
 
 void Libxc::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) {
-    (void)order;
+    gga = false;
+    mgga = false;
+    (void)order; // TODO: use order to choose which libxc functions to call to obtain higher derivatives (vxc, fxc, kxc, ...)
     (void)gamma;
     for (const auto *f : libxc_objects) {
         getFamilyType(f->info->family, lda, gga, mgga);
@@ -150,7 +160,7 @@ void Libxc::printFunctionalReference(int out_txt_width) const {
     }
 }
 
-void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts, int nInp, int nOut, double cutoff) const {
+void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts) const {
     Eigen::MatrixXd exc, vxc, sxc, sigma;
     for (size_t i = 0; i < libxc_objects.size(); i++) {
         switch (libxc_objects[i]->info->family) {
