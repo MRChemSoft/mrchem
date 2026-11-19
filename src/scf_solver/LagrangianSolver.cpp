@@ -39,6 +39,7 @@
 #include "qmoperators/two_electron/two_electron_utils.h"
 #include "utils/print_utils.h"
 #include <iostream>
+#include <utils/Printer.h>
 
 using mrcpp::Printer;
 using mrcpp::Timer;
@@ -306,14 +307,27 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
                 for (int k = 0; k < L; k++)
                     for (int l = 0; l < L; l++) U_dE2(m, j, k, l) += basis_change(m, i) * two_rdm(i, j, k, l);
 
+    int num_skipped = 0;
+
     // two-body term: m on the new basis (through U_dE2), j, k, l on the old basis (like two_rdm)
     for (int j = 0; j < L; j++) {
         std::cout << "Orbital " << j + 1 << " out of " << L << std::endl;
         for (int l = j; l < L; l++) { // Triangular loop l >= j
             // g_jl = poisson(Phi[j]^* * Phi[l]) (the MRCPP kernel is already 1/|r-r'|, no 4*pi as in python)
             Orbital g_jl = orbitals[j].paramCopy(true);
-            if (ij_r12(this->prec, rho, orbitals[j], orbitals[l], g_jl)) {
-                MSG_INFO("Skipped orbital pair (" << j << ", " << l << ")");
+
+            double max_coef = 0.0;
+
+            for (int k = 0; k < L; k++) {
+                for (int m = 0; m < L; m++) {
+                    max_coef = std::max(max_coef, std::abs(U_dE2(m, j, k, l)));
+                    max_coef = std::max(max_coef, std::abs(U_dE2(m, l, k, j)));
+                }
+            }
+
+            if (max_coef < 1.0e-16 or ij_r12(this->prec / max_coef, rho, orbitals[j], orbitals[l], g_jl)) {
+                // MSG_INFO("Skipped orbital pair (" << j << ", " << l << ")");
+                num_skipped++;
                 continue;
             }
 
@@ -339,6 +353,8 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
             }
         }
     }
+
+    MSG_INFO("Skipped " << num_skipped << " orbital pairs");
 }
 
 /** @brief Pretty printing of orbitals with energies and occupancies
