@@ -362,7 +362,7 @@ json driver::scf::run(const json &json_scf, Molecule &mol) {
     ///////////////////////////////////////////////////////////
     //////////   Computing Ground State Properties   //////////
     ///////////////////////////////////////////////////////////
-       
+
     // get the orbital positions
     mol.calculateOrbitalPositions();
 
@@ -463,7 +463,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
                 core_occupancies(i) += beta_occ;
             }
         }
-      
+
         // In the unrestricted case, we need to map the alpha and beta occupancies to the correct orbital number
         else {
             // the input number of orbitals

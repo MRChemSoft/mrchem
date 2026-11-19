@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <cmath>
+#include <vector>
 
 #include "Factory.h"
 #include "utils/print_utils.h"
@@ -138,6 +139,10 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
     // if(isMetaGGA()) xcfun_inpsize += spinsize;      // add tau (1 for each spin)
 
     Eigen::MatrixXd xclib_inp(ncoefs, xclib_inpsize); // input for xcfun
+    // Meta-GGA (unpolarized): if XCPotentialD1 supplied grad rho built from the orbital gradients
+    // (inputs 2, 3, 4 after rho and tau), use it instead of differentiating rho, so that it is
+    // consistent with tau (built from the same orbital gradients).
+    const bool orbital_grad_rho = isMetaGGA() && !isSpin() && static_cast<int>(inp.size()) >= spinsize + 4;
     double *coef = node.getCoefs();
 
     for (int i = 0; i < spinsize; i++) {
@@ -152,8 +157,13 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         if (usesGradients()) {
             for (int d = 0; d < 3; d++) {
                 node.attachCoefs(xclib_inp.col(spinsize + 3 * i + d).data());
-                mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
-                derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                if (orbital_grad_rho) {
+                    mrcpp::FunctionTree<3> *grad_d = std::get<1>(inp[spinsize + 1 + d]);
+                    for (int j = 0; j < ncoefs; j++) xclib_inp(j, spinsize + 3 * i + d) = grad_d->getNode(nodeIdx).getCoefs()[j];
+                } else {
+                    mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
+                    derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                }
                 node.mwTransform(mrcpp::Reconstruction);
                 node.cvTransform(mrcpp::Forward);
             }
@@ -188,23 +198,56 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
     // the constant branch. Clamping onto that point made the Libxc potential jump between two
     // derivative branches (one-orbital regions, e.g. He, have tau ~ tau_W everywhere), so the SCF
     // stalled with noisy orbitals while XCFun (no min) converged smoothly.
+    // Smooth lower cutoff (lower_tau_cutoff = c > 0), relative to tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3):
+    // with tau_c = c tau_unif and x = tau / tau_c, the functional is evaluated at
+    //   tau_eff = tau                         for x >= 2 (unchanged),
+    //   tau_eff = tau_c + tau^2 / (4 tau_c)   for x <  2,
+    // which is C1 at x = 2, monotonic, >= max(tau, tau_c), and has d tau_eff / d tau = x/2 -> 0 for tau -> 0.
+    // Where an orbital gradient vanishes at high density (H2 bond midpoint: rho ~ 0.27, tau -> 0)
+    // v_tau ~ tau_W/tau^2 and dF/d(grad rho) ~ grad rho/tau would diverge; tau_eff keeps both bounded.
+    // The potentials are corrected with the chain rule after evaluate() (smooth_x / smooth_tc below),
+    // so they are the exact derivatives of the evaluated energy. tau_unif decays faster than tau in the
+    // tail and tau/tau_unif >~ 0.2 near nuclei, so for small c only such points are affected.
+    std::vector<double> smooth_x;  // x = tau/tau_c at points with x < 2, else -1 (not smoothed)
+    std::vector<double> smooth_tc; // tau_c at those points
     if (isMetaGGA() && !isSpin()) {
+        if (lower_tau_cutoff > 0.0) {
+            smooth_x.assign(ncoefs, -1.0);
+            smooth_tc.assign(ncoefs, 0.0);
+        }
         for (int j = 0; j < ncoefs; j++) {
             double rho = xclib_inp(j, 0);
             if (rho <= 0.0) continue;
             double g2 = xclib_inp(j, 1) * xclib_inp(j, 1) + xclib_inp(j, 2) * xclib_inp(j, 2) + xclib_inp(j, 3) * xclib_inp(j, 3);
             double tau_min = g2 / (8.0 * rho) * (1.0 + 1.0e-10);
-            // Optional floor relative to the uniform-gas value tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3)
-            // (lower_tau_cutoff = eps). Where an orbital gradient vanishes at high density (H2 bond
-            // midpoint: rho ~ 0.27, tau -> 0) v_tau ~ tau_W/tau^2 and dF/d(grad rho) ~ grad rho/tau diverge;
-            // the floor keeps both bounded. tau_unif decays faster than tau in the tail and tau/tau_unif >~ 0.2
-            // near nuclei, so for small eps it only acts at such points.
-            if (lower_tau_cutoff > 0.0) tau_min = std::max(tau_min, lower_tau_cutoff * 2.871234000188191 * std::pow(rho, 5.0 / 3.0));
             if (xclib_inp(j, 4) < tau_min) xclib_inp(j, 4) = tau_min;
+            if (lower_tau_cutoff > 0.0) {
+                double tau_c = lower_tau_cutoff * 2.871234000188191 * std::pow(rho, 5.0 / 3.0);
+                double tau = xclib_inp(j, 4);
+                if (tau < 2.0 * tau_c) {
+                    smooth_x[j] = tau / tau_c;
+                    smooth_tc[j] = tau_c;
+                    xclib_inp(j, 4) = tau_c + tau * tau / (4.0 * tau_c);
+                }
+            }
         }
     }
 
     Eigen::MatrixXd xc_out = Functional::evaluate(xclib_inp);
+
+    // Chain rule for the smooth cutoff (unpolarized meta-GGA output columns: 0 f, 1 dF/drho,
+    // 2-4 dF/d(grad rho), 5 dF/dtau): with tau_eff(rho, tau),
+    //   v_tau = dF/dtau_eff * x/2,   v_rho += dF/dtau_eff * (1 - x^2/4) * (5/3) tau_c / rho.
+    if (!smooth_x.empty()) {
+        for (int j = 0; j < ncoefs; j++) {
+            double x = smooth_x[j];
+            if (x < 0.0) continue;
+            double rho = xclib_inp(j, 0);
+            double f_tau = xc_out(j, 5);
+            xc_out(j, 1) += f_tau * (1.0 - 0.25 * x * x) * (5.0 / 3.0) * smooth_tc[j] / rho;
+            xc_out(j, 5) = f_tau * 0.5 * x;
+        }
+    }
 
     // Meta-GGA: screen the low-density tail, where the functional is evaluated on numerical
     // noise (rho < 1e-15 gave v_tau ~ 1e10-1e24 and SCF divergence). Rows are grid points.

@@ -162,9 +162,12 @@ protected:
     bool log_grad{false};                                           ///< @brief Toggle for logarithmic gradient
     /** @brief Relative lower cutoff for the kinetic energy density tau (meta-GGA only; 0 = off)
      *
-     * If > 0, makepot() evaluates the functional with
-     *   tau >= lower_tau_cutoff * tau_unif(rho),   tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3)
-     * (on top of the always-active clamp tau >= tau_W = |grad rho|^2 / (8 rho)).
+     * If c = lower_tau_cutoff > 0, makepot() evaluates the functional at a smoothly bounded tau:
+     *   tau_c = c * tau_unif(rho),   tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3),   x = tau / tau_c
+     *   tau_eff = tau (x >= 2),   tau_eff = tau_c + tau^2 / (4 tau_c) (x < 2)
+     * (C1, monotonic, tau_eff >= tau_c), with the chain rule applied to v_tau and v_rho so that the
+     * potential is the exact derivative of the evaluated energy. This is on top of the always-active
+     * clamp tau >= tau_W = |grad rho|^2 / (8 rho).
      *
      * meta-GGAs that depend on tau through the ratio tau_W / tau
      * (TPSS family via z = tau_W/tau; M05/M06, B95 and VSXC correlation via D = 1 - tau_W/tau)
@@ -179,8 +182,10 @@ protected:
      * Scaling with tau_unif (not a fixed value) confines the cutoff to such points: in the density
      * tail tau_unif ~ rho^(5/3) decays faster than tau, and near nuclei tau / tau_unif >~ 0.2, so a
      * small value (1e-2 is used for H2) leaves other systems unchanged (He, H2O: identical energies).
+     *
+     * Set through the environment variable LOWER_TAU_CUTOFF (unset = 0 = off).
      */
-    double lower_tau_cutoff{std::getenv("lower_tau_cutoff") ? std::atof(std::getenv("lower_tau_cutoff")) : 0.0};
+    double lower_tau_cutoff{std::getenv("LOWER_TAU_CUTOFF") ? std::atof(std::getenv("LOWER_TAU_CUTOFF")) : 0.0};
     double cutoff{-1.0};                                            ///< @brief Density threshold
     Eigen::VectorXi d_mask;                                         ///< @brief density and derivative(s) mask vector for response calculations
     Eigen::MatrixXi xc_mask;                                        ///< @brief functional and derivative(s) mask vector for response calculations
