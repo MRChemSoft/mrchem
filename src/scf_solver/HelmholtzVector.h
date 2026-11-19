@@ -51,6 +51,7 @@ public:
 private:
     double prec;         ///< Precision for construction and application of Helmholtz operators
     DoubleVector lambda; ///< Helmholtz parameter, mu_i = sqrt(-2.0*lambda_i)
+    double poisson_threshold{1.0e-10}; ///< Below this |lambda_i| the Poisson kernel (mu = 0) is used
 
     Orbital apply(int i, const Orbital &phi) const;
 };

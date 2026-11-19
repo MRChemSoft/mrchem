@@ -248,18 +248,24 @@ def scale(array, factors):
     return [x * y for x, y in zip(array, factors)]
 
 
-def read_occ_mo(mol, mo_perm, mo_sign):
-    restricted = mol["HFTyp"] == "RHF"
+def read_occ_mo(mol, mo_perm, mo_sign, all):
+    restricted = mol["HFTyp"] in ("RHF", "CASSCF")
 
-    mo_buf = [0.0 for _ in mo_perm]
+    orbitals = mol["MolecularOrbitals"]["MOs"]
+
+    nmo = len(orbitals)
+    if restricted:
+        na = nmo
+        nb = 0
+    else:
+        na = nmo // 2
+        nb = na
 
     moa = []
 
     i = 0
 
-    orbitals = mol["MolecularOrbitals"]["MOs"]
-
-    while orbitals[i]["Occupancy"] > 0:
+    while i < na and (all or orbitals[i]["Occupancy"] > 0):
         moa.extend(
             scale(permute(orbitals[i]["MOCoefficients"], mo_perm), mo_sign))
         i += 1
@@ -267,12 +273,11 @@ def read_occ_mo(mol, mo_perm, mo_sign):
     if restricted:
         return (moa, None)
 
-    while orbitals[i]["Occupancy"] == 0:
-        i += 1
+    i = na
 
     mob = []
 
-    while orbitals[i]["Occupancy"] > 0:
+    while i < len(orbitals) and (all or orbitals[i]["Occupancy"] > 0):
         mob.extend(
             scale(permute(orbitals[i]["MOCoefficients"], mo_perm), mo_sign))
         i += 1
@@ -301,6 +306,11 @@ if __name__ == "__main__":
     with open(sys.argv[1]) as orca_file:
         orca_json = json.load(orca_file)
 
+    all = False
+
+    if len(sys.argv) >= 3:
+        all = sys.argv[2] == "all"
+
     mol = orca_json["Molecule"]
 
     atoms = mol["Atoms"]
@@ -316,6 +326,6 @@ if __name__ == "__main__":
 
     mo_perm, mo_sign = make_mo_permutation(atoms, basis_sets)
 
-    mo = read_occ_mo(mol, mo_perm, mo_sign)
+    mo = read_occ_mo(mol, mo_perm, mo_sign, all)
 
     print_mrchem_mo_files(mo, len(mo_perm))
