@@ -52,20 +52,20 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin_enabled
 #ifdef DISABLE_XCFUN
         MSG_ABORT("XCFun support disabled during compilation!");
 #else
-        xclib = std::make_unique<XCFun>(spin);
+        xclib = std::make_unique<XCFun>(spin_enabled);
 #endif
     } else if (xclibname == "libxc") {
 #ifdef DISABLE_LIBXC
         MSG_ABORT("LibXC support disabled during compilation!");
 #else
-        xclib = std::make_unique<Libxc>(spin);
+        xclib = std::make_unique<Libxc>(spin_enabled);
 #endif
     } else if (xclibname == "auto") {
 #ifndef DISABLE_XCFUN
-        xclib = std::make_unique<XCFun>(spin);
+        xclib = std::make_unique<XCFun>(spin_enabled);
 #else
 #ifndef DISABLE_LIBXC
-        xclib = std::make_unique<Libxc>(spin);
+        xclib = std::make_unique<Libxc>(spin_enabled);
 #else
         MSG_ABORT("No XC library available!");
 #endif
@@ -101,6 +101,8 @@ std::unique_ptr<MRDFT> Factory::build() {
                 diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
             } else if (diff_s == "abgv_55") {
                 diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.5, 0.5);
+            } else if (diff_s == "ph") {
+                diff_p = std::make_shared<mrcpp::PHOperator<3>>(mra, 1);
             } else {
                 MSG_ABORT("Factory::build: unknown derivative operator '" + diff_s + "'");
             }
@@ -113,12 +115,15 @@ std::unique_ptr<MRDFT> Factory::build() {
         kin_p = std::make_unique<mrchem::KineticOperator>(diff_p);
     }
 
+    // The GGA/mGGA constructors std::move from their (reference) argument, so they get a copy:
+    // diff_p itself must stay valid for setDerivOp() below.
+    auto diff_func = diff_p;
     std::unique_ptr<Functional> func_p{nullptr};
     if (spin_enabled) {
         if (mgga) {
             MSG_ABORT("Factory::build: spin-polarized meta-GGA is not supported yet");
         } else if (gga) {
-            func_p = std::make_unique<SpinGGA>(order, xclib, diff_p);
+            func_p = std::make_unique<SpinGGA>(order, xclib, diff_func);
         } else if (lda) {
             func_p = std::make_unique<SpinLDA>(order, xclib);
         } else {
@@ -126,9 +131,9 @@ std::unique_ptr<MRDFT> Factory::build() {
         }
     } else {
         if (mgga) {
-            func_p = std::make_unique<mGGA>(order, xclib, diff_p);
+            func_p = std::make_unique<mGGA>(order, xclib, diff_func);
         } else if (gga) {
-            func_p = std::make_unique<GGA>(order, xclib, diff_p);
+            func_p = std::make_unique<GGA>(order, xclib, diff_func);
         } else if (lda) {
             func_p = std::make_unique<LDA>(order, xclib);
         } else {
@@ -137,7 +142,7 @@ std::unique_ptr<MRDFT> Factory::build() {
     }
 
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-    diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
+    if (!diff_p) diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0); // LDA: no derivative was built
     func_p->setDerivOp(diff_p);
     func_p->setKinOp(kin_p);
     func_p->setLogGradient(log_grad);
