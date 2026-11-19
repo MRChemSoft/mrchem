@@ -1,17 +1,17 @@
-find_package( Catch2 3.8.0 CONFIG)
-if( NOT Catch2_FOUND )
-  message( STATUS "Could NOT Find Catch2 (Building v3.8.0 Locally)" )
-  include( FetchContent )
-  FetchContent_Declare(
-    catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v3.8.0
+option(ENABLE_TESTS "Enable test suite" ON)
+
+if(ENABLE_TESTS)
+option(CATCH2_FIND_BEHAVIOUR "Find Catch2 behavior" "default")
+cpm_set_find_behaviour(${CATCH2_FIND_BEHAVIOUR})
+CPMAddPackage(
+  NAME Catch2
+  VERSION 3
+  GIT_TAG v3.16.0
+  GITHUB_REPOSITORY catchorg/Catch2
+  FIND_PACKAGE_ARGUMENTS "CONFIG"
+  OPTIONS
+  "BUILD_TESTING OFF"
   )
-  set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-  FetchContent_MakeAvailable(catch2)
-else()
-  message( STATUS "Found Catch2 VERSION ${Catch2_VERSION} DIR ${Catch2_DIR}" )
-endif()
 
 add_executable(mrchem-tests unit_tests.cpp)
 
@@ -67,3 +67,5 @@ add_subdirectory(lih_core_hole)
 add_subdirectory(na_pp_scf_hf)
 add_subdirectory(ne_zora_scf_pbe)
 add_subdirectory(o2_gto_qzvp_libxc_pbe)
+
+endif()

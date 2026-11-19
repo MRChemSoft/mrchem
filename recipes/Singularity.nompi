@@ -1,7 +1,7 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: ubuntu:20.04
+From: ubuntu:24.04
 Stage: build
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -23,7 +23,7 @@ Stage: build
         git
     rm -rf /var/lib/apt/lists/*
 
-# CMake version 3.20.6
+# CMake version 3.31.12
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -32,10 +32,10 @@ Stage: build
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Kitware/CMake/releases/download/v3.20.6/cmake-3.20.6-linux-x86_64.sh
+    mkdir -p /var/tmp && wget -q -nc -P /var/tmp https://github.com/Kitware/CMake/releases/download/v3.31.12/cmake-3.31.12-linux-x86_64.sh
     mkdir -p /usr/local
-    /bin/sh /var/tmp/cmake-3.20.6-linux-x86_64.sh --prefix=/usr/local --skip-license
-    rm -rf /var/tmp/cmake-3.20.6-linux-x86_64.sh
+    /bin/sh /var/tmp/cmake-3.31.12-linux-x86_64.sh --prefix=/usr/local --skip-license
+    rm -rf /var/tmp/cmake-3.31.12-linux-x86_64.sh
 %environment
     export PATH=/usr/local/bin:$PATH
 %post
@@ -45,7 +45,7 @@ Stage: build
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        python3.9
+        python3
     rm -rf /var/lib/apt/lists/*
 
 
@@ -62,7 +62,7 @@ Stage: build
 
 
 BootStrap: docker
-From: ubuntu:20.04
+From: ubuntu:24.04
 %post
     . /.singularity.d/env/10-docker*.sh
 
@@ -70,7 +70,7 @@ From: ubuntu:20.04
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        libgfortran4 \
+        libgfortran5 \
         libgomp1
     rm -rf /var/lib/apt/lists/*
 
@@ -78,7 +78,7 @@ From: ubuntu:20.04
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        python3.9
+        python3
     rm -rf /var/lib/apt/lists/*
 
 

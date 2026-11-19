@@ -1,20 +1,25 @@
-if(MRCPP_FIND_BEHAVIOUR STREQUAL "default" OR MRCPP_FIND_BEHAVIOUR STREQUAL "onlylocal")
-  find_package(MRCPP CONFIG QUIET
-    NO_CMAKE_PATH
-    NO_CMAKE_PACKAGE_REGISTRY
-    NO_CMAKE_SYSTEM_PACKAGE_REGISTRY
-    )
-endif()
-if(TARGET MRCPP::mrcpp)
-  get_property(_loc TARGET MRCPP::mrcpp PROPERTY LOCATION)
-  message(STATUS "Found MRCPP: ${_loc} (found version ${MRCPP_VERSION})")
+option(MRCPP_FIND_BEHAVIOUR "Find MRCPP behavior" "default")
+cpm_set_find_behaviour(${MRCPP_FIND_BEHAVIOUR})
+set(CMAKE_BUILD_TYPE Release)
+set(Eigen3_DIR ${eigen3_BINARY_DIR})
+CPMAddPackage(
+  NAME MRCPP
+  VERSION 1
+  GITHUB_REPOSITORY MRChemSoft/mrcpp
+  GIT_TAG f73b863d3af98b9bae45d62378a7618285b1dfb1
 
-  # check that the parallel configurations of MRChem and MRCPP are compatible
-  # these checks are only needed when picking up an installed library:
-  # if we build it ourselves, then the parallel configuration for MRCPP will follow that of MRChem
-  #
-  # 1. OMP MRChem + non-OMP MRCPP is not a great idea, but it's not problematic.
-  #    We just emit a warning.
+  FIND_PACKAGE_ARGUMENTS "CONFIG NO_CMAKE_PATH NO_CMAKE_PACKAGE_REGISTRY NO_CMAKE_SYSTEM_PACKAGE_REGISTRY"
+  OPTIONS
+  "ENABLE_OPENMP ${ENABLE_OPENMP}"
+  "ENABLE_MPI ${ENABLE_MPI}"
+  "PYTHON_INTERPRETER ${Python_EXECUTABLE}"
+  "ENABLE_TESTS OFF"
+  "ENABLE_EXAMPLES OFF"
+  )
+
+if(NOT mrcpp_ADDED)
+  # found locally — MRCPP was pre-built independently of MRChem's own
+  # ENABLE_OPENMP/ENABLE_MPI, so check the parallel configs actually match
   get_target_property(MRCPP_HAS_OMP MRCPP::mrcpp MRCPP_HAS_OMP)
   if(ENABLE_OPENMP AND NOT MRCPP_HAS_OMP)
     message(WARNING
@@ -23,8 +28,6 @@ if(TARGET MRCPP::mrcpp)
       )
   endif()
 
-  # 2. MPI MRChem + non-MPI MRCPP will lead to runtime failures.
-  #    Fail configuration with a fatal error.
   get_target_property(MRCPP_HAS_MPI MRCPP::mrcpp MRCPP_HAS_MPI)
   if(ENABLE_MPI AND NOT MRCPP_HAS_MPI)
     message(FATAL_ERROR
@@ -32,27 +35,4 @@ if(TARGET MRCPP::mrcpp)
          Rebuild MRCPP with MPI support or disable it for MRChem."
       )
   endif()
-elseif(MRCPP_FIND_BEHAVIOUR STREQUAL "default" OR MRCPP_FIND_BEHAVIOUR STREQUAL "onlyfetch")
-  message(STATUS "Suitable MRCPP could not be located. Fetching and building!")
-  include(FetchContent)
-
-  FetchContent_Declare(mrcpp_sources
-    QUIET
-    GIT_REPOSITORY
-      https://github.com/msnik1999/mrcpp.git
-    GIT_TAG
-      a2eebd9eb402e2e34f861939026d287c328e3db9
-    )
-
-  set(CMAKE_BUILD_TYPE Release)
-  set(ENABLE_OPENMP ${ENABLE_OPENMP})
-  set(ENABLE_MPI ${ENABLE_MPI})
-  set(Eigen3_DIR ${eigen3_sources_BINARY_DIR})
-  set(PYTHON_INTERPRETER ${Python_EXECUTABLE})
-  set(ENABLE_TESTS OFF CACHE BOOL "" FORCE)
-  set(ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
-
-  FetchContent_MakeAvailable(mrcpp_sources)
-else()
-  message(FATAL_ERROR "No suitable MRCPP found or fetched. Aborting setup!")
 endif()

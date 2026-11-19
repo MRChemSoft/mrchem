@@ -35,6 +35,18 @@ add_custom_command(
     ${CMAKE_CURRENT_LIST_DIR}
   )
 
+include(cmake/CPM.cmake)
+# We need to set the find behaviour for CPM, as it does not have a default behaviour like FetchContent does. This is done by setting the following variables:
+macro(cpm_set_find_behaviour BEHAVIOUR)
+  set(CPM_USE_LOCAL_PACKAGES OFF)
+  set(CPM_LOCAL_PACKAGES_ONLY OFF)
+  if("${BEHAVIOUR}" STREQUAL "onlylocal")
+    set(CPM_LOCAL_PACKAGES_ONLY ON)
+  elseif("${BEHAVIOUR}" STREQUAL "default")
+    set(CPM_USE_LOCAL_PACKAGES ON)
+  endif()
+endmacro()
+
 # rebuild version_info.h every time
 add_custom_target(
   mrchem-info

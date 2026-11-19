@@ -41,9 +41,13 @@ H       1.4375  0.0000   1.0250
 def consolidate_basis(basis):
     new_basis = {}
 
-    for shell in basis:
+    angmom_order = []
+
+    for i, shell in enumerate(basis):
         angmom = shell["Shell"]
         exp_hash = str(shell["Exponents"])
+
+        angmom_order.append((angmom_to_l[angmom], i))
 
         if angmom not in new_basis:
             new_basis[angmom] = {}
@@ -54,8 +58,11 @@ def consolidate_basis(basis):
         else:
             new_basis[angmom][exp_hash][1].append(shell["Coefficients"])
 
+    angmom_order.sort()
+    angmom_order = [i for _, i in angmom_order]
+
     return {angmom: list(shell_basis.values())
-            for angmom, shell_basis in new_basis.items()}
+            for angmom, shell_basis in new_basis.items()}, angmom_order
 
 
 def print_mrchem_bas_file(atoms, basis_sets, coord_scale):
@@ -63,7 +70,7 @@ def print_mrchem_bas_file(atoms, basis_sets, coord_scale):
         f.write("Gaussian basis from ORCA gbw json file\n")
         f.write(f"{len(basis_sets):9}\n")
 
-        for symbol, q, basis, atom_idxs in basis_sets:
+        for symbol, q, (basis, _), atom_idxs in basis_sets:
             f.write(f"{q:9} {len(atom_idxs):4}")
             f.write(f" {len(basis):4}")
             for shells in basis.values():
@@ -162,20 +169,38 @@ def atom_basis_permutation(atom_basis):
     perm = []
     sign = []
 
+    atom_basis, shell_order = atom_basis
+
+    angmom_in_order = []
+
     for angmom in atom_basis:
+        for _, coeffs in atom_basis[angmom]:
+            for _ in coeffs:
+                angmom_in_order.append(angmom)
+
+    angmom_in_order = permute(angmom_in_order, invert_perm(shell_order))
+
+    offset = 0
+
+    for angmom in angmom_in_order:
         shell_perm = shell_permutation(angmom)
         shell_sign = shell_signs(angmom)
 
-        num_funcs = 0
-        for _, coeffs in atom_basis[angmom]:
-            num_funcs += len(coeffs)
+        sub_perm = []
+        for i in shell_perm:
+            sub_perm.append(i + offset)
+        perm.append(sub_perm)
+        sub_sign = []
+        for i in shell_sign:
+            sub_sign.append(i)
+        sign.append(sub_sign)
+        offset += len(shell_perm)
 
-        for _ in range(num_funcs):
-            offset = len(perm)
-            for i in shell_perm:
-                perm.append(i + offset)
-            for i in shell_sign:
-                sign.append(i)
+    perm = permute(perm, shell_order)
+    sign = permute(sign, shell_order)
+
+    perm = [x for shell in perm for x in shell]
+    sign = [x for shell in sign for x in shell]
 
     return perm, sign
 

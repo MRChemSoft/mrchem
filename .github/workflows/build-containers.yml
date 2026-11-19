@@ -10,28 +10,25 @@ on:
 jobs:
   build-test-containers:
     runs-on: ubuntu-latest
-    env:
-      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     strategy:
       # Keep going on other deployments if anything bloops
       fail-fast: false
       matrix:
-        singularity_version:
-          - '3.9.2'
         program:
           - 'mrchem'
         variant:
           - 'nompi'
           - 'openmpi4.0'
 
-    container:
-      image: quay.io/singularity/singularity:v${{ matrix.singularity_version }}
-      options: --privileged
-
     name: Build ${{ matrix.program }}-${{ matrix.variant }}
     steps:
       - name: Check out code for the container builds
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Set up Apptainer
+        uses: eWaterCycle/setup-apptainer@v2
+        with:
+          apptainer-version: 1.3.6
 
       - name: Build container
         env:
@@ -45,7 +42,9 @@ jobs:
           echo "IMAGE_NAME=$image_name" >> $GITHUB_ENV
 
           # build container
-          sudo -E singularity build container.sif recipes/"$recipe_name"
+          sudo -E apptainer build container.sif recipes/"$recipe_name"
+          # the root build leaves root-owned files in ~/.apptainer, which breaks the unprivileged login/push
+          sudo chown -R "$(id -u):$(id -g)" "$HOME/.apptainer"
 
           # determine release tag
           if [[ ${GITHUB_EVENT_NAME} == "release" ]]; then
@@ -61,6 +60,6 @@ jobs:
 
       - name: Login and deploy container
         run: |
-          echo ${{ secrets.GITHUB_TOKEN }} | singularity remote login -u ${{ secrets.GHCR_USERNAME }} --password-stdin oras://ghcr.io
+          echo ${{ secrets.GITHUB_TOKEN }} | apptainer registry login -u ${{ secrets.GHCR_USERNAME }} --password-stdin oras://ghcr.io
           echo "Pushing $IMAGE_NAME with tag $TAG"
-          singularity push container.sif oras://ghcr.io/${GITHUB_REPOSITORY}/${IMAGE_NAME}:${TAG}
+          apptainer push container.sif oras://ghcr.io/${GITHUB_REPOSITORY,,}/${IMAGE_NAME}:${TAG}
