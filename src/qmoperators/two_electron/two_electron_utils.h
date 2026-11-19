@@ -49,5 +49,5 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
  * Computes the product of complex conjugate of phi_i and phi_j,
  * then applies the Poisson operator. The result is given in V_ij.
  */
-void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_ij);
+bool ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_ij);
 }

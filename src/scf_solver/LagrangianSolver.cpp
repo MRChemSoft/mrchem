@@ -312,7 +312,10 @@ void LagrangianSolver::orbital_update_two_body(FockBuilder &F, ChemTensorSolver 
         for (int l = j; l < L; l++) { // Triangular loop l >= j
             // g_jl = poisson(Phi[j]^* * Phi[l]) (the MRCPP kernel is already 1/|r-r'|, no 4*pi as in python)
             Orbital g_jl = orbitals[j].paramCopy(true);
-            ij_r12(this->prec, rho, orbitals[j], orbitals[l], g_jl);
+            if (ij_r12(this->prec, rho, orbitals[j], orbitals[l], g_jl)) {
+                MSG_INFO("Skipped orbital pair (" << j << ", " << l << ")");
+                continue;
+            }
 
             for (int k = 0; k < L; k++) {
                 // state = g_jl * Phi[k]

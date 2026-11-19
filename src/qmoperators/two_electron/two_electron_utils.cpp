@@ -267,7 +267,7 @@ Eigen::Tensor<std::complex<double>, 4> calc_2elintegrals(double prec, OrbitalVec
     return ikVjl;
 }
 
-void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_ij) {
+bool ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_ij) {
     Timer timer_tot;
     mrcpp::PoissonOperator P(*MRA, prec);
 
@@ -282,7 +282,7 @@ void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_i
     Orbital rho_ij = phi_i.paramCopy(true);
     mrcpp::multiply(rho_ij, phi_i, phi_j, prec_m1, true, true, true);
     timer_ij.stop();
-    if (rho_ij.norm() < prec) return;
+    if (rho_ij.norm() < prec) return true;
 
     // For now we assume all phi are complex or all are real.
     bool RealOrbitals = phi_i.isreal();
@@ -309,5 +309,6 @@ void ij_r12(double prec, Orbital rho, Orbital phi_i, Orbital phi_j, Orbital &V_i
     rho_ij.free();
     timer_p.stop();
 
+    return false;
 }
 }
