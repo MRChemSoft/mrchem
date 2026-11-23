@@ -41,7 +41,9 @@ XCFun::~XCFun() {
 
 void XCFun::setFunctional(const std::string &name, double c) {
     addFunctionalSpec(name, c);
-    xcfun_set(xcfun, name.c_str(), c);
+    if (xcfun_set(xcfun, name.c_str(), c) != 0) MSG_ABORT(name + " is not a known functional, alias or parameter in XCFun.\n");
+    // For printFunctionalReference(): only names accepted by xcfun_set, so xcfun_describe_long() is never null
+    if (std::find(xcfun_func_names.begin(), xcfun_func_names.end(), name) == xcfun_func_names.end()) addXCFunFunctionalName(name);
 }
 
 void XCFun::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) {
@@ -64,7 +66,8 @@ void XCFun::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, b
         } else {
             func_type = 0;
         }
-    xcfun_user_eval_setup(xcfun_p, order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+    int ierr = xcfun_user_eval_setup(xcfun_p, order, func_type, dens_type, mode, laplacian, kinetic, current, exp_derivative);
+    if (ierr != 0) MSG_ABORT("XCFun: eval setup failed (code " + std::to_string(ierr) + "): the functional needs an input MRChem does not provide (e.g. the Laplacian) or the derivative order is invalid\n");
 }
 
 double XCFun::getAmountExx() const {
@@ -79,8 +82,8 @@ void XCFun::printFunctionalReference(int out_txt_width) const {
     printout(0, xcfun_splash());
     std::cout << "\nXCFun functionals used in this calculation:\n";
     for (const auto &func_name : xcfun_func_names) {
-        std::string xcfun_ref = xcfun_describe_long(func_name.c_str());
-        std::string xcfun_ref_str = "  - " + xcfun_ref;
+        std::string xcfun_ref_str = "  - " + func_name + ": " + std::string(xcfun_describe_long(func_name.c_str()));
+        if (xcfun_ref_str.back() != '\n') xcfun_ref_str += '\n'; // alias/parameter descriptions have no trailing newline
         XCLib::printWrap(xcfun_ref_str, out_txt_width, 4);
     }
     return;

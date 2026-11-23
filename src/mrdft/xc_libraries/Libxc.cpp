@@ -111,8 +111,9 @@ void Libxc::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, b
         // Check if functional is range separated
         if ((f->info->flags & XC_FLAGS_HYB_CAM)  || (f->info->flags & XC_FLAGS_HYB_LC)) MSG_ABORT("Coulomb attenuated functionals not supported in MRChem!\n");
         if ((f->info->flags & XC_FLAGS_HYB_CAMY) || (f->info->flags & XC_FLAGS_HYB_LCY)) MSG_ABORT("Yukawa attenuated functionals not supported in MRChem!\n");
+        // The Laplacian of the density is not computed (callLibEval passes lapl = 0)
+        if (f->info->flags & XC_FLAGS_NEEDS_LAPLACIAN) MSG_ABORT("Laplacian-dependent functional " + std::string(f->info->name) + " not supported in MRChem!\n");
     }
-
 }
 
 double Libxc::getAmountExx() const {
@@ -186,9 +187,10 @@ void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nP
                         out(2, j) += vxc(1, j) * libxc_coefs[i];
                     }
                 } else {
+                    Eigen::MatrixXd rho = inp.row(0).transpose();
                     exc = Eigen::MatrixXd::Zero(1, nPts);
                     vxc = Eigen::MatrixXd::Zero(1, nPts);
-                    xc_lda_exc_vxc(libxc_objects[i], nPts, inp.data(), exc.data(), vxc.data());
+                    xc_lda_exc_vxc(libxc_objects[i], nPts, rho.data(), exc.data(), vxc.data());
                     for (int j = 0; j < nPts; ++j) {
                         //    xcfun calculates actual energy density while libxc calculates
                         //    energy density per electron density
