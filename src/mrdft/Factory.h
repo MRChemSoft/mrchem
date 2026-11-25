@@ -39,23 +39,28 @@ namespace mrdft {
 class Factory final {
 public:
     /**
-     * @brief Construct a new Factory object. Initializes the MRA reference and creates the XCFun handle
+     * @brief Construct a new Factory object. Stores a copy of the MRA and creates the XC library backend
      * @param[in] MRA The Multi-Resolution Analysis object providing the grid
      * and basis functions for the calculation
+     * @param[in] spin If true, use spin separated densities
+     * @param[in] xclibname Name of the XC library: "xcfun", "libxc" or "auto" (XCFun if available, else Libxc)
+     * @throws MSG_ABORT If the library name is unknown or the library was not compiled in
      */
-    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const std::string &libname);
+    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const std::string &xclibname);
 
     ~Factory() = default; ///< @brief Default destructor
 
     /*
      * Setters
      */
-    void setOrder(int k) { order = k; }                      ///< Set the polynomial order for the MRA basis
+    void setOrder(int k) { order = k; }                      ///< Set the order of the functional derivatives (1: potential, 2: response, ...)
     void setUseGamma(bool g) { gamma = g; }                  ///< Toggle between gamma-type and explicit derivatives
-    void setLogGradient(bool lg) { log_grad = lg; }          ///< Toggle the use of logarithmic gradients
-    void setDerivative(const std::string &n) { diff_s = n; } ///< Set derivative operator type (e.g., "bspline", "abgv_00")
+    void setLogGradient(bool lg) { log_grad = lg; }          ///< Toggle the use of logarithmic gradients (currently unused, see Functional::log_grad)
+    void setDerivative(const std::string &n) { diff_s = n; } ///< Set derivative operator type (only "abgv_00" is supported, see Functional::makepot)
 
     void setDensityCutoff(double c);                         ///< Set the threshold for neglecting low-density regions
+
+    std::string getXCLibName() const; ///< Get the name of the XC library in use (resolves "auto")
 
     /**
      * @brief Configures the xc functional
@@ -76,12 +81,13 @@ public:
      * 2.  **Library dependent initiation**: If using Libxc, iterates through functional objects
      * to ensure they belong to supported families (LDA/GGA, not meta-GGA or range separated).
      * If using XCFun, sets evaluation parameters, mode and order
-     * 3.  **Operator Selection**: Assigns numerical derivative operators (BSpline or ABGV)
-     * required for GGAs
+     * 3.  **Operator Selection**: Builds the ABGV(0,0) derivative operator (the only
+     * one supported, see Functional::makepot). Aborts if setDerivative() was given anything else
      * 4.  **Functional Instantiation**: Selects the appropriate concrete implementation
-     * (SpinLDA, SpinGGA, LDA, or GGA) based on spin and gradient requirements.
+     * (LDA or GGA, both with a spin flag) based on the functional family; spin is passed to the constructor.
      * 5.  **State Sync**: Passes functional objects, density cutoffs, and derivative
      * schemes to the functional
+     * @note Can be called only once, because the XC library backend is moved into the functional
      * @return std::unique_ptr<MRDFT> A pointer to the assembled Multi-Resolution DFT object.
      * @throws MSG_ABORT If unsupported functional families are detected in the Libxc case
      * (eg. meta-GGAs and range separated functionals)
@@ -89,16 +95,15 @@ public:
     std::unique_ptr<MRDFT> build();
 
 private:
-    int order{1};                  ///< Polynomial order of the Multi-Resolution Analysis (MRA) basis
+    int order{1};                  ///< Order of the functional derivatives (1: potential, 2: response, ...)
     bool spin{false};              ///< If true, perform unrestricted calculations
     bool gamma{false};             ///< If true, use gamma-type derivatives (gradient squared) instead of explicit components
-    bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations
-    double cutoff{-1.0};           ///< Density threshold; values below this are sat to 0
-    std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (e.g., "bspline", "abgv_55")
-    std::string xclibname;
+    bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations (currently unused, see Functional::log_grad)
+    double cutoff{-1.0};           ///< Density threshold; values below this are set to 0
+    std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (only "abgv_00" is supported)
 
-    const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Reference to the 3D Multi-Resolution Analysis grid structure
-    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
+    const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Copy of the 3D Multi-Resolution Analysis grid structure
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
     std::unique_ptr<XCLib> xclib;                         ///< @brief Handle for exchange–correlation library interface
 };
 

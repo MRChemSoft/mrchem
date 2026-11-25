@@ -26,7 +26,6 @@
 #pragma once
 
 #include "Functional.h"
-#include "MRCPP/Printer"
 #include "xc_utils.h"
 
 namespace mrdft {
@@ -34,7 +33,7 @@ namespace mrdft {
 /**
  * @class LDA
  * @brief Local Density Approximation xc functional
- * @details Implements a non‑spin‑polarized LDA functional on the MRA grid
+ * @details Implements the spin-restricted and the spin-polarized LDA functional on the MRA grid
  */
 class LDA final : public Functional {
 public:
@@ -42,34 +41,21 @@ public:
      * @brief Construct a LDA functional
      * @param[in] k Polynomial order of the functional derivatives (0: energy,
      *             1: potential, etc.)
+     * @param[in] s True for the spin-polarized case, false for spin-restricted
      * @param[in] f XC library handle (Libxc/XCFun); ownership is transferred
      */
-    LDA(int k, XCLib_p &f)
-            : Functional(k, f) {
-        xc_mask = xc_utils::build_output_mask(true, false, this->order);
-        d_mask = xc_utils::build_density_mask(true, false, this->order);
+    LDA(int k, bool s, XCLib_p &f)
+            : Functional(k, s, f) {
+        xc_mask = xc_utils::build_output_mask(true, spin, this->order);
+        d_mask = xc_utils::build_density_mask(true, spin, this->order);
     }
     ~LDA() override = default;
 
-    bool isSpin() const override { return false; }
     bool isGGA() const override { return false; }
     bool isMetaGGA() const override { return false; }
 
-    int numIn() const override { return 1; }                 ///< @brief Number of input components: 1 density
     int numOut() const override { return xclib->getnOut(); } ///< @brief Number of raw outputs provided by the xc backend
-    int densityChannels() const override { return 1; }       ///< @brief Signle density channel, rho
     bool usesGradients() const override { return false; }    ///< @brief LDA does not require density gradients
-
-private:
-    mrcpp::FunctionTreeVector<3> rho;
-
-    int getCtrOutputLength() const override { return 2; } ///< @brief Number of contracted outputs (energy + 1 potential component for LDA)
-
-    /** @brief Clear internal functions
-     *
-     * Ownership of densities is outside MRDFT -> clear
-     */
-    void clear() override { mrcpp::clear(this->rho, false); }
 };
 
 } // namespace mrdft

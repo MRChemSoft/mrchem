@@ -32,8 +32,6 @@
 #include "Grid.h"
 #include "LDA.h"
 #include "MRDFT.h"
-#include "SpinGGA.h"
-#include "SpinLDA.h"
 
 #ifndef DISABLE_LIBXC
 #include "xc_libraries/Libxc.h"
@@ -46,7 +44,7 @@
 namespace mrdft {
 
 Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const std::string &xclibname)
-        : spin(spin), xclibname(xclibname), mra(MRA) {
+        : spin(spin), mra(MRA) {
     if (xclibname == "xcfun") {
 #ifdef DISABLE_XCFUN
         MSG_ABORT("XCFun support disabled during compilation!");
@@ -66,10 +64,16 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const 
 #ifndef DISABLE_LIBXC
         xclib = std::make_unique<Libxc>(spin);
 #else
-        MSG_ABORT("No XC library available!");
+        MSG_ABORT("No XC library compiled in. DFT, and the sad/nao initial guesses (also for Hartree-Fock), need XCFun or Libxc; use guess_type gto or core (not possible with pseudopotentials, which always use the nao guess).");
 #endif
 #endif
+    } else {
+        MSG_ABORT("Unknown xc_library '" << xclibname << "' (use auto, xcfun or libxc)");
     }
+}
+
+std::string Factory::getXCLibName() const {
+    return xclib->name();
 }
 
 void Factory::setFunctional(const std::string &name, double c) {
@@ -92,31 +96,20 @@ std::unique_ptr<MRDFT> Factory::build() {
     xclib->initFunctionalLibrary(lda, gga, mgga, order, gamma);
 
     // Init MW derivative
-    if (gga) {
-        if (diff_s == "bspline") diff_p = std::make_unique<mrcpp::BSOperator<3>>(mra, 1);
-        if (diff_s == "abgv_00") diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
-        if (diff_s == "abgv_55") diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.5, 0.5);
-    }
+    // makepot() differentiates node by node (DerivativeCalculator::calcNode), which is only valid for a
+    // bandwidth-0 operator. ABGV(0,0) is the only one.
+    if (diff_s != "abgv_00") MSG_ABORT("Factory::build: the XC derivative must be abgv_00, got '" << diff_s << "'");
+    diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
 
     // Init XC functional
     std::unique_ptr<Functional> func_p{nullptr};
-    if (spin) {
-        if (gga)
-            func_p = std::make_unique<SpinGGA>(order, xclib, diff_p);
-        else if (lda)
-            func_p = std::make_unique<SpinLDA>(order, xclib);
-        else
-            MSG_ABORT("Case not handled");
-    } else {
-        if (gga)
-            func_p = std::make_unique<GGA>(order, xclib, diff_p);
-        else if (lda)
-            func_p = std::make_unique<LDA>(order, xclib);
-        else
-            MSG_ABORT("Case not handled");
-    }
+    if (gga)
+        func_p = std::make_unique<GGA>(order, spin, xclib);
+    else if (lda)
+        func_p = std::make_unique<LDA>(order, spin, xclib);
+    else
+        MSG_ABORT("Case not handled");
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-    diff_p = std::make_unique<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
     func_p->setDerivOp(diff_p);
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);

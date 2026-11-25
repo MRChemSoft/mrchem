@@ -23,10 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <memory>
-#include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/Printer>
-#include <XCFun/xcfun.h>
 
 #include "XCFun.h"
 
@@ -41,7 +38,7 @@ XCFun::~XCFun() {
 
 void XCFun::setFunctional(const std::string &name, double c) {
     addFunctionalSpec(name, c);
-    xcfun_set(xcfun, name.c_str(), c);
+    if (xcfun_set(xcfun, name.c_str(), c) != 0) MSG_ABORT("XCFun: could not set functional '" << name << "'");
 }
 
 void XCFun::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) {
@@ -70,7 +67,10 @@ void XCFun::printFunctionalReference(int out_txt_width) const {
     XCLib::printReferenceHeader();
     printout(0, xcfun_splash());
     std::cout << "\nXCFun functionals used in this calculation:\n";
-    for (const auto &func_name : xcfun_func_names) {
+    std::set<std::string> printed_names;
+    for (const auto &spec : functional_specs) {
+        const std::string &func_name = spec.first;
+        if (!printed_names.insert(func_name).second) continue;
         std::string xcfun_ref = xcfun_describe_long(func_name.c_str());
         std::string xcfun_ref_str = "  - " + xcfun_ref;
         XCLib::printWrap(xcfun_ref_str, out_txt_width, 4);

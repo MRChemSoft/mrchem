@@ -47,9 +47,10 @@ public:
 
     std::vector<xc_func_type *> libxc_objects; ///< @brief Vector of initialized Libxc functionals
     std::vector<double> libxc_coefs;           ///< @brief Vector scaling coefficients for each functional in libxc_objects
+    std::string name() const override { return "Libxc"; }
     double getAmountExx() const override;
     double getCustomExx() const { return customExx; }
-    int getnOut() override;
+    int getnOut() const override;
 
     void setFunctional(const std::string &name, double c) override;
     void initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) override;
@@ -63,9 +64,9 @@ public:
     /**
      * @brief Maps a functional name string (eg., "PBE0", "LDA" or "XC_LDA_X", XC_GGA_X_B88) to its corresponding Libxc IDs and scaling coefficients
      * @param[in] name        Name of the functional
-     * @param[in] ids         Vector to be populated with the IDs used by Libxc
-     * @param[in] coefs       Vector to be populated with the corresponding scaling coefficients
-     * @param[in] customExx   Variable for a customized exact exchange sat by a pre-defined functional
+     * @param[out] ids        Vector to be populated with the IDs used by Libxc
+     * @param[out] coefs      Vector to be populated with the corresponding scaling coefficients
+     * @param[out] customExx  Variable for a customized exact exchange set by a pre-defined functional
      */
     void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs, double &customExx);
 };
