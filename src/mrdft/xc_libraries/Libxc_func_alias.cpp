@@ -33,7 +33,7 @@ void Libxc::mapFunctionalName(std::string name, std::vector<int> &ids, std::vect
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });
 
     // LDA
-    if (name == "SLATERX") {
+    if (name == "SLATERX" || name == "SLATER" || name == "LDAX") {
         ids = {XC_LDA_X};
         coefs = {1.0};
         return;
@@ -41,7 +41,7 @@ void Libxc::mapFunctionalName(std::string name, std::vector<int> &ids, std::vect
         ids = {XC_LDA_C_VWN_RPA};
         coefs = {1.0};
         return;
-    } else if (name == "VWN5C" || name == "VWN5") {
+    } else if (name == "VWN5C" || name == "VWN5" || name == "VWN") {
         ids = {XC_LDA_C_VWN};
         coefs = {1.0};
         return;
@@ -49,14 +49,26 @@ void Libxc::mapFunctionalName(std::string name, std::vector<int> &ids, std::vect
         ids = {XC_LDA_C_VWN_RPA, XC_LDA_X};
         coefs = {1.0, 1.0};
         return;
-    } else if (name == "SVWN5" || name == "LDA") {
+    } else if (name == "SVWN5" || name == "SVWN" || name == "LDA") {
         ids = {XC_LDA_C_VWN, XC_LDA_X};
         coefs = {1.0, 1.0};
         return;
 
         // GGA
-    } else if (name == "BECKEX") {
+    } else if (name == "BECKEX" || name == "B88X") {
         ids = {XC_GGA_X_B88};
+        coefs = {1.0};
+        return;
+    } else if (name == "PBEX") {
+        ids = {XC_GGA_X_PBE};
+        coefs = {1.0};
+        return;
+    } else if (name == "OPTX") {
+        ids = {XC_GGA_X_OPTX};
+        coefs = {1.0};
+        return;
+    } else if (name == "LYP") {
+        ids = {XC_GGA_C_LYP};
         coefs = {1.0};
         return;
     } else if (name == "BLYP") {
@@ -113,9 +125,87 @@ void Libxc::mapFunctionalName(std::string name, std::vector<int> &ids, std::vect
         ids = {XC_HYB_GGA_XC_B3P86};
         coefs = {1.0};
         return;
-    } else if (name == "PBE0") {
+    } else if (name == "B3P86-XCFUN") {
+        // Same as XCFun: 0.08 Slater + 0.72 B88 + 1.0 VWN5 + 0.81 (P86 - PZ81) + 0.20 exx
+        // (XC_HYB_GGA_XC_B3P86 has 0.19*VWN_RPA + 0.81*P86, i.e. PZ81 local correlation;
+        //  P86_FT is used, as in BP86, since it matches XCFun p86c)
+        ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN, XC_GGA_C_P86_FT, XC_LDA_C_PZ};
+        coefs = {0.08, 0.72, 1.0, 0.81, -0.81};
+        customExx = 0.20;
+        return;
+    } else if (name == "B3P86-G-XCFUN") {
+        // Same as XCFun: B3P86-XCFUN but with VWN3 (VWN_RPA) local correlation
+        ids = {XC_LDA_X, XC_GGA_X_B88, XC_LDA_C_VWN_RPA, XC_GGA_C_P86_FT, XC_LDA_C_PZ};
+        coefs = {0.08, 0.72, 1.0, 0.81, -0.81};
+        customExx = 0.20;
+        return;
+    } else if (name == "PBE0" || name == "PBEH") {
         ids = {XC_HYB_GGA_XC_PBEH};
         coefs = {1.0};
+        return;
+    } else if (name == "B97") {
+        ids = {XC_HYB_GGA_XC_B97};
+        coefs = {1.0};
+        return;
+    } else if (name == "B97-1" || name == "B97_1") {
+        ids = {XC_HYB_GGA_XC_B97_1};
+        coefs = {1.0};
+        return;
+    } else if (name == "B97-2" || name == "B97_2") {
+        ids = {XC_HYB_GGA_XC_B97_2};
+        coefs = {1.0};
+        return;
+
+        // META-GGA
+    } else if (name == "TPSS") {
+        ids = {XC_MGGA_X_TPSS, XC_MGGA_C_TPSS};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "REVTPSS") {
+        ids = {XC_MGGA_X_REVTPSS, XC_MGGA_C_REVTPSS};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "M06-L" || name == "M06L") {
+        ids = {XC_MGGA_X_M06_L, XC_MGGA_C_M06_L};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "SCAN") {
+        ids = {XC_MGGA_X_SCAN, XC_MGGA_C_SCAN};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "RSCAN") {
+        ids = {XC_MGGA_X_RSCAN, XC_MGGA_C_RSCAN};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "RPPSCAN" || name == "R++SCAN") {
+        ids = {XC_MGGA_X_RPPSCAN, XC_MGGA_C_RPPSCAN};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "R2SCAN") {
+        ids = {XC_MGGA_X_R2SCAN, XC_MGGA_C_R2SCAN};
+        coefs = {1.0, 1.0};
+        return;
+
+        // HYB META-GGA
+    } else if (name == "TPSSH") {
+        ids = {XC_HYB_MGGA_XC_TPSSH};
+        coefs = {1.0};
+        return;
+    } else if (name == "REVTPSSH") {
+        ids = {XC_HYB_MGGA_XC_REVTPSSH};
+        coefs = {1.0};
+        return;
+    } else if (name == "TPSS0") {
+        ids = {XC_HYB_MGGA_XC_TPSS0};
+        coefs = {1.0};
+        return;
+    } else if (name == "M06") {
+        ids = {XC_HYB_MGGA_X_M06, XC_MGGA_C_M06};
+        coefs = {1.0, 1.0};
+        return;
+    } else if (name == "M06-2X" || name == "M062X") {
+        ids = {XC_HYB_MGGA_X_M06_2X, XC_MGGA_C_M06_2X};
+        coefs = {1.0, 1.0};
         return;
 
     // Other: Check if Libxc has this functional
