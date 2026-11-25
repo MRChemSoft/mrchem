@@ -75,9 +75,9 @@ void KAIN::setupLinearSystem() {
 
                     // Ref. Harrisons KAIN paper the following has the wrong sign,
                     // but we define the updates (lowercase f) with opposite sign.
-                    orbA(i, j) -= mrcpp::dot(dPhi_im, dfPhi_jm);
+                    orbA(i, j) -= ComplexDouble( std::real(mrcpp::dot(dPhi_im, dfPhi_jm)), 0.0 );
                 }
-                orbB(i) += mrcpp::dot(dPhi_im, fPhi_m);
+                orbB(i) += ComplexDouble( std::real(mrcpp::dot(dPhi_im, fPhi_m)), 0.0 );
             }
         }
         double alpha = (this->scaling.size() == nOrbitals) ? scaling[n] : 1.0;
