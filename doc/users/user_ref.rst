@@ -294,6 +294,15 @@ User input reference
   
     **Default** ``abgv_00``
   
+   :dft: Derivative used in the XC potential (density gradients in GGA functionals). Only abgv_00 is supported, because the XC potential is built node by node. 
+  
+    **Type** ``str``
+  
+    **Default** ``abgv_00``
+  
+    **Predicates**
+      - ``value.lower() in ['abgv_00']``
+  
  :Molecule: Define molecule. 
 
   :red:`Keywords`
@@ -418,17 +427,20 @@ User input reference
  :DFT: Define the exchange-correlation functional in case of DFT. 
 
   :red:`Keywords`
-   :density_cutoff: Hard cutoff for passing density values to XCFun. 
+   :density_cutoff: Hard cutoff for passing density values to the XC library. XCFun skips grid points with density below the cutoff. Libxc uses it as its density threshold; values <= 0 mean Libxc's built-in default. 
   
     **Type** ``float``
   
-    **Default** ``0.0``
+    **Default** ``1e-11``
   
-   :xc_library: Runs Libxc or XCFun 
+   :xc_library: Which library evaluates the XC functional. Allowed values are ``auto``, ``xcfun`` and ``libxc``. ``auto`` picks XCFun if it was compiled in, otherwise Libxc. 
   
     **Type** ``str``
   
-    **Default** ``xcfun``
+    **Default** ``auto``
+  
+    **Predicates**
+      - ``value.lower() in ["auto", "xcfun", "libxc"]``
   
    :functionals: List of density functionals with numerical coefficient. E.g. for PBE0 ``EXX 0.25``, ``PBEX 0.75``, ``PBEC 1.0``, see XCFun documentation <https://xcfun.readthedocs.io/>_. 
   

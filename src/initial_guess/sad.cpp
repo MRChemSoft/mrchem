@@ -65,6 +65,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_doubly(Phi)) ? true : false;
+    mrdft::Factory xc_factory(*MRA, false, xclib);
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize SAD Hamiltonian");
@@ -72,7 +73,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "XC Library  ", xclib);
+    print_utils::text(0, "XC Library  ", xc_factory.getXCLibName());
     print_utils::text(0, "AO basis    ", "Hydrogenic orbitals");
     print_utils::text(0, "Zeta quality", std::to_string(zeta));
     mrcpp::print::separator(0, '~', 2);
@@ -82,7 +83,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA, false, xclib);
     xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);
@@ -145,6 +145,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_doubly(Phi)) ? true : false;
+    mrdft::Factory xc_factory(*MRA, false, xclib);
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize SAD Hamiltonian");
@@ -152,7 +153,7 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     print_utils::text(0, "Screening   ", print_utils::dbl_to_str(screen, 5, true) + " StdDev");
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
-    print_utils::text(0, "XC Library  ", xclib);
+    print_utils::text(0, "XC Library  ", xc_factory.getXCLibName());
     print_utils::text(0, "AO basis    ", "3-21G");
     mrcpp::print::separator(0, '~', 2);
 
@@ -161,7 +162,6 @@ bool initial_guess::sad::setup(OrbitalVector &Phi, double prec, double screen, c
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA, false, xclib);
     xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);

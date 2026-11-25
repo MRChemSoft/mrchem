@@ -70,6 +70,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     if (Phi.size() == 0) return false;
 
     auto restricted = (orbital::size_singly(Phi)) ? false : true;
+    mrdft::Factory xc_factory(*MRA, false, xclib);
     mrcpp::print::separator(0, '~');
     print_utils::text(0, "Calculation ", "Compute initial orbitals");
     print_utils::text(0, "Method      ", "Diagonalize NAO Hamiltonian with optional mixing");
@@ -78,6 +79,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     print_utils::text(0, "Precision   ", print_utils::dbl_to_str(prec, 5, true));
     print_utils::text(0, "Restricted  ", (restricted) ? "True" : "False");
     print_utils::text(0, "Functional  ", "LDA (SVWN5)");
+    print_utils::text(0, "XC Library  ", xc_factory.getXCLibName());
     mrcpp::print::separator(0, '~', 2);
 
     bool use_pp = false;
@@ -93,7 +95,6 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
     auto P_p = std::make_shared<mrcpp::PoissonOperator>(*MRA, prec);
     auto D_p = std::make_shared<mrcpp::ABGVOperator<3>>(*MRA, 0.0, 0.0);
 
-    mrdft::Factory xc_factory(*MRA, false, xclib);
     xc_factory.setDensityCutoff(cutoff);
     xc_factory.setFunctional("SLATERX", 1.0);
     xc_factory.setFunctional("VWN5C", 1.0);

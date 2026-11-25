@@ -23,10 +23,7 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <memory>
-#include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/Printer>
-#include <XCFun/xcfun.h>
 
 #include "XCFun.h"
 
@@ -41,9 +38,7 @@ XCFun::~XCFun() {
 
 void XCFun::setFunctional(const std::string &name, double c) {
     addFunctionalSpec(name, c);
-    if (xcfun_set(xcfun, name.c_str(), c) != 0) MSG_ABORT(name + " is not a known functional, alias or parameter in XCFun.\n");
-    // For printFunctionalReference(): only names accepted by xcfun_set, so xcfun_describe_long() is never null
-    if (std::find(xcfun_func_names.begin(), xcfun_func_names.end(), name) == xcfun_func_names.end()) addXCFunFunctionalName(name);
+    if (xcfun_set(xcfun, name.c_str(), c) != 0) MSG_ABORT("XCFun: could not set functional '" << name << "'");
 }
 
 void XCFun::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) {
@@ -81,9 +76,12 @@ void XCFun::printFunctionalReference(int out_txt_width) const {
     XCLib::printReferenceHeader();
     printout(0, xcfun_splash());
     std::cout << "\nXCFun functionals used in this calculation:\n";
-    for (const auto &func_name : xcfun_func_names) {
-        std::string xcfun_ref_str = "  - " + func_name + ": " + std::string(xcfun_describe_long(func_name.c_str()));
-        if (xcfun_ref_str.back() != '\n') xcfun_ref_str += '\n'; // alias/parameter descriptions have no trailing newline
+    std::set<std::string> printed_names;
+    for (const auto &spec : functional_specs) {
+        const std::string &func_name = spec.first;
+        if (!printed_names.insert(func_name).second) continue;
+        std::string xcfun_ref = xcfun_describe_long(func_name.c_str());
+        std::string xcfun_ref_str = "  - " + xcfun_ref;
         XCLib::printWrap(xcfun_ref_str, out_txt_width, 4);
     }
     return;

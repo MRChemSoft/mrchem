@@ -44,7 +44,7 @@ The MRChem program depends on the following C++ libraries:
 - Linear algebra: `Eigen-3.4  <https://gitlab.com/libeigen/eigen>`_
 - DFT functionals (optional):
     - `XCFun-2.1  <https://github.com/dftlibs/xcfun>`_
-    - `LibXC-7.0  <https://gitlab.com/libxc/libxc>`_
+    - `LibXC-7  <https://gitlab.com/libxc/libxc>`_
 
 All these dependencies will be downloaded automatically at configure time by
 CMake, but can also be linked manually by setting the variables::
@@ -142,6 +142,20 @@ To build the code with distributed memory (MPI) parallelization, add the
 for GNU)::
 
     $ ./setup --prefix=<install-dir> --omp --mpi --cxx=mpicxx <build-dir>
+
+The XC libraries are optional. The options ``--xcfun=<STRING>`` and
+``--libxc=<STRING>`` control how XCFun and LibXC are found or fetched
+(``default``, ``onlylocal``, ``onlyfetch`` or ``none``). With ``none`` the
+library is not used at all: it is neither searched for nor downloaded, and
+MRChem is compiled without it. For example, ``--xcfun=none`` gives a
+LibXC-only build. At least one of the two libraries is needed for DFT, and
+also for the ``sad`` and ``nao`` initial guesses (also in Hartree-Fock
+calculations; use ``guess_type = gto`` or ``core`` otherwise, except with
+pseudopotentials, which always use the ``nao`` guess). Without any
+library, MRChem aborts with an error message when such a calculation is
+requested, and the tests that need a library are not built. Note that LibXC
+only provides energies and potentials, so response (property) calculations
+with DFT require XCFun.
 
 When dependencies are fetched at configuration time, they will be downloaded
 into ``<build-dir>/_deps``. For the example of MRCPP, sources are saved into

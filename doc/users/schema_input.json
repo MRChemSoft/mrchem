@@ -77,6 +77,7 @@
         "xc_functional": {                   # XC functional specification
           "spin": bool,                      # Use spin separated functional
           "cutoff": float,                   # Cutoff value for small densities
+          "derivative": string,              # Derivative operator for GGA potentials (only "abgv_00")
           "functionals": array[              # Array of density functionals
             {
               "coef": float,                 # Numerical coefficient
@@ -208,7 +209,7 @@
       ],
       "properties": {                        # Collection of properties to compute
         "polarizability": {                  # Collection of polarizabilities
-           id (string): {                    # Unique id: 'pol-${frequency}'
+          id (string): {                     # Unique id: 'pol-${frequency}'
             "precision": float,              # Operator precision
             "operator": string,              # Operator used for property
             "r_O": array[float]              # Operator gauge origin
@@ -250,6 +251,7 @@
           "xc_functional": {                 # XC functional specification
             "spin": bool,                    # Use spin separated functional
             "cutoff": float,                 # Cutoff value for small densities
+            "derivative": string,            # Derivative operator for GGA potentials (only "abgv_00")
             "functionals": array[            # Array of density functionals
               {
                 "coef": float,               # Numerical coefficient
@@ -284,6 +286,7 @@
             "xc_functional": {               # XC functional specification
               "spin": bool,                  # Use spin separated functional
               "cutoff": float,               # Cutoff value for small densities
+              "derivative": string,          # Derivative operator for GGA potentials (only "abgv_00")
               "functionals": array[          # Array of density functionals
                 {
                   "coef": float,             # Numerical coefficient

@@ -44,22 +44,24 @@ class Functional {
 public:
     /**
      * @brief Constructor for the Functional base class
-     * @param[in] k The polynomial order for the MRA basis
-     * @param[in] f The XCFun handle (ownership is transferred)
+     * @param[in] k Order of the functional derivatives (0: energy, 1: potential, etc.)
+     * @param[in] s True for a spin-polarized functional (alpha and beta densities), false for spin-restricted
+     * @param[in] f The XC library backend (ownership is transferred)
      */
-    Functional(int k, XCLib_p &f)
+    Functional(int k, bool s, XCLib_p &f)
             : order(k)
+            , spin{s} // braces: Orbital.h defines a function-like macro spin()
             , xclib(std::move(f)) {}
     virtual ~Functional() = default;
 
     /** @brief  Evaluates XC functional and derivatives for a given NodeIndex
      *
      * The electronic densities (total/alpha/beta) are given as input.
-     * The values of the zero order densities and their gradient are sent to xcfun.
-     * The output of xcfun must then be combined ("contract") with the gradients
+     * The values of the zero order densities and their gradient are sent to the XC library.
+     * The output of the XC library must then be combined ("contract") with the gradients
      * of the higher order densities.
      *
-     * XCFunctional output (with k=1 and explicit derivatives):
+     * XC library output (with k=1 and explicit derivatives):
      *
      * LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho}\right) \f$
      *
@@ -69,10 +71,10 @@ public:
      *  \frac{\partial F_{xc}}{\partial \rho_y},
      *  \frac{\partial F_{xc}}{\partial \rho_z}\right) \f$
      *
-     * Spin LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho^\alpha},
+     * LDA, spin-polarized: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho^\alpha},
      *  \frac{\partial F_{xc}}{\partial \rho^\beta}\right) \f$
      *
-     * Spin GGA: \f$ \left(F_{xc},
+     * GGA, spin-polarized: \f$ \left(F_{xc},
      *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
      *  \frac{\partial F_{xc}}{\partial \rho^\beta},
      *  \frac{\partial F_{xc}}{\partial \rho_x^\alpha},
@@ -83,13 +85,13 @@ public:
      *  \frac{\partial F_{xc}}{\partial \rho_z^\beta}
      *  \right) \f$
      *
-     * XCFunctional output (with k=1 and gamma-type derivatives):
+     * XC library output (with k=1 and gamma-type derivatives):
      *
      * GGA: \f$ \left(F_{xc},
      *  \frac{\partial F_{xc}}{\partial \rho},
      *  \frac{\partial F_{xc}}{\partial \gamma} \f$
      *
-     * Spin GGA: \f$ \left(F_{xc},
+     * GGA, spin-polarized: \f$ \left(F_{xc},
      *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
      *  \frac{\partial F_{xc}}{\partial \rho^\beta },
      *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \alpha}},
@@ -126,11 +128,11 @@ public:
      */
     bool isLDA() const { return not(isGGA() or isMetaGGA()); }          ///< @return True if functional is LDA type (not a GGA or meta-GGA)
     bool isHybrid() const { return (std::abs(amountEXX()) > 1.0e-10); } ///< @return True if functional is a hybrid (includes exact exchange)
-    virtual bool isSpin() const = 0;                                    ///< @brief Returns True if the functional object is spin-polarized
+    bool isSpin() const { return spin; }                                ///< @brief Returns True if the functional object is spin-polarized
     virtual bool isGGA() const = 0;                                     ///< @brief Returns True if the functional is a GGA
     virtual bool isMetaGGA() const = 0;                                 ///< @brief Returns True if the functional is a Meta-GGA
 
-    virtual int numIn() const = 0;  ///< Fetches number of variables in the input matrix
+    int numIn() const { return densityChannels() * (usesGradients() ? 4 : 1); } ///< Fetches number of variables in the input matrix (per density channel: 1 density, +3 gradient components if usesGradients())
     virtual int numOut() const = 0; ///< Fetches number of variables in the output matrix
 
     /**
@@ -143,8 +145,8 @@ public:
     /**
      * @brief Evaluates the functional on a set of grid points
      * @param[in] inp Matrix of input values (density, gradient,...)
-     * @param[out] out_trans Matrix of output values (energy, potential, ...)
-     * @details Each row corresponds to one grid point. Previously called evaluate_transposed()
+     * @return Matrix of output values (energy, potential, ...)
+     * @details Each row corresponds to one grid point Previously called evaluate_transposed()
      */
     Eigen::MatrixXd evaluate(Eigen::MatrixXd &inp) const;
 
@@ -160,15 +162,8 @@ public:
 
 protected:
     const int order;                                                ///< @brief Order of functional derivatives. Eg. 0 (energy), 1 (potential), 2 (pot. gradient), etc.
+    const bool spin;                                                ///< @brief True if the functional is spin-polarized (alpha and beta densities)
     bool log_grad{false};                                           ///< @brief Toggle for logarithmic gradient
-    /** @brief Relative lower cutoff c for tau (meta-GGA only; 0 = off)
-     *
-     * Why: meta-GGAs using tau_W/tau (TPSS, M06, ...) have a v_tau ~ 1/tau that diverges where tau -> 0
-     * at finite rho (e.g. the H2 bond midpoint), which makes the SCF diverge.
-     * What: makepot() evaluates the functional at a smoothly bounded tau_eff >= c * tau_unif(rho)
-     * (see makepot), which keeps v_tau finite. TODO: make it an input keyword.
-     */
-    double lower_tau_cutoff{1.0e-3};
     double cutoff{-1.0};                                            ///< @brief Density threshold
     Eigen::VectorXi d_mask;                                         ///< @brief density and derivative(s) mask vector for response calculations
     Eigen::MatrixXi xc_mask;                                        ///< @brief functional and derivative(s) mask vector for response calculations
@@ -176,9 +171,8 @@ protected:
     std::shared_ptr<mrcpp::DerivativeOperator<3>> tauDerivOp{nullptr}; ///< @brief Derivative for tau / tau operator (nullptr = derivOp)
     std::unique_ptr<XCLib> xclib;                                   ///< @brief Handle for exchange–correlation library interface
 
-    virtual int densityChannels() const = 0; ///< @brief Returns number of densities/derivatives (eg. LDA/GGA -> 1, spinLDA/spinGGA -> 2)
-    virtual bool usesGradients() const = 0;  ///< @brief Returns true if functional type uses gradients (eg. true for GGAs og metaGGAs)
-    virtual int getCtrInputLength() const { return (order > 1 ? order - 1 : 0) * densityChannels(); } ///< @brief Expected number of contracted input density trees beyond the ground-state density
+    int densityChannels() const { return spin ? 2 : 1; } ///< @brief Returns number of density channels (spin-restricted -> 1, spin-polarized -> 2)
+    virtual bool usesGradients() const = 0;  ///< @brief Returns true if functional type uses gradients (eg. true for GGAs or metaGGAs)
 
     /**
      * @brief Run a collection of grid points through Libxc or XCFun
@@ -193,23 +187,11 @@ protected:
      * gradients or when calculating higher-order properties
      * @param[in] xc_data xc_data Matrix of functional partial derivative values
      * @param[in] d_data  d_data Matrix of density input values
-     * @param[out] out_data Matrix of contracted output values
-     * @details Each row corresponds to one grid point
+     * @return Matrix of contracted output values. Each row corresponds to one grid point
      */
     Eigen::MatrixXd contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
-    /**
-     * @brief Contracts a collection of grid points. Transposed version of Functional::contract
-     * @details This is used to implement the chain rule for functionals involving
-     * gradients or when calculating higher-order properties
-     * @param[in] xc_data xc_data Matrix of functional partial derivative values
-     * @param[in] d_data  d_data Matrix of density input values
-     * @param[out] out_data Matrix of contracted output values
-     * @details Each column corresponds to one grid point
-     */
-    Eigen::MatrixXd contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const;
 
-    virtual int getCtrOutputLength() const = 0; ///< @brief Expected number of output components for the contraction step
-    virtual void clear() = 0;                   ///< @brief Clears internal functions
+    int getCtrOutputLength() const { return numIn() + 1; } ///< @brief Expected number of output components for the contraction step (energy + one per input component)
 };
 
 } // namespace mrdft

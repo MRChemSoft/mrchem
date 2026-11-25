@@ -47,24 +47,22 @@ public:
 
     virtual ~XCLib() = default;
 
+    XCLib(const XCLib &) = delete;
+    XCLib &operator=(const XCLib &) = delete;
+
     bool spin;                                                    ///< @brief True if density is spin-polarized
     std::vector<std::pair<std::string, double>> functional_specs; ///< @brief Configured functionals and scaling coefficients
+    virtual std::string name() const = 0;                         ///< @brief Name of the library (e.g. "XCFun", "Libxc")
     virtual double getAmountExx() const = 0;                      ///< @brief Get total fraction of exact exchange
-    virtual int getnOut() = 0;                                    ///< @brief Determine the number of output channels (eg. LDA: 2, spinLDA: 3, GGA: 5, ...)
+    virtual int getnOut() const = 0;                              ///< @brief Determine the number of output channels (eg. LDA: 2, spin-polarized LDA: 3, GGA: 5, ...)
 
     /**
      * @brief Configure a functional object in the backend
      * @param[in] name   XC functional name (e.g. "PBE", "B3LYP",
      *                   Libxc shorthand, or XCFun name)
      * @param[in] c      Scaling coefficient associated with @p name
-     * @param[in] cutoff Density threshold; passed to ::xc_func_set_dens_threshold in Libxc, unused by XCFun
      */
     virtual void setFunctional(const std::string &name, double c) = 0;
-
-    /**
-     * @brief Get list of configured functional names and scaling coefficients
-     */
-    const std::vector<std::pair<std::string, double>> &getFunctionalSpecs() const { return functional_specs; }
 
     /**
      * @brief Add a functional specification to #functional_specs
@@ -78,11 +76,11 @@ public:
     void addFunctionalSpec(const std::string &name, double c) { functional_specs.emplace_back(name, c); }
 
     /**
-     * @brief Inspect functional families and sets evaluation varables for XCFun
+     * @brief Inspect functional families and sets evaluation variables for the library
      * @param[out] lda  True if any functional is LDA
      * @param[out] gga  True if any functional is GGA
      * @param[out] mgga True if any functional is metaGGA
-     * @param[in]  order Order of functional derivatives requested (unused for Libxc)
+     * @param[in]  order Order of functional derivatives requested (Libxc supports only order <= 1)
      * @param[in]  gamma If true, gamma‑type derivatives are requested (unused for Libxc)
      */
     virtual void initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) = 0;
@@ -91,11 +89,8 @@ public:
      * @brief Evaluate configured functionals on a batch of grid points
      * @param[in]  inp    Input matrix with one column per grid point and
      *                    one row per input component
-     * @param[out] out    Output matrix to with energy densitiesand potentials
+     * @param[out] out    Output matrix with energy densities and potentials
      * @param[in]  nPts   Number of grid points (cols in @p inp/@p out)
-     * @param[in]  nInp   Number of input components (rows in @p inp)
-     * @param[in]  nOut   Number of output components (rows in @p out)
-     * @param[in]  cutoff Density threshold (not used by Libxc)
      */
     virtual void callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts) const = 0;
 
@@ -105,11 +100,16 @@ public:
      */
     virtual void printFunctionalReference(int out_txt_width) const = 0;
 
+    /**
+     * @brief Set the density cutoff
+     * @param[in] cutoff Density threshold. XCFun skips grid points with density below the cutoff.
+     *                   Libxc uses it as its density threshold (::xc_func_set_dens_threshold);
+     *                   values <= 0 mean Libxc's built-in default
+     */
     virtual void setCutoff(double cutoff) = 0;
 
     /**
      * @brief Print a common xc functional reference header
-     * @param[in] out_txt_width h Maximum line width used when wrapping text
      */
     static void printReferenceHeader();
 

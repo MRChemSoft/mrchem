@@ -62,7 +62,6 @@ namespace mrdft {
  * out_vec[2] = v_xc_b (XC beta potential)
  */
 mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) {
-    mrcpp::Timer t_tot, t_pre;
     grid().unify(inp);
     int nCoefs = mrcpp::get_func(inp, 0).getEndFuncNode(0).getNCoefs();
 
@@ -118,7 +117,6 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
         }
     }
     this->functional().XCenergy = XCenergy[0];
-    functional().clear();
     int outNodes = 0;
     int outSize = 0;
     for (size_t i = 1; i < PotVec.size(); i++) {

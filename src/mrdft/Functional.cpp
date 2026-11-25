@@ -26,17 +26,11 @@
 #include "Functional.h"
 
 #include <MRCPP/Printer>
-#include <stdlib.h>
-#include <algorithm>
-#include <cmath>
-#include <vector>
-
-#include "Factory.h"
-#include "utils/print_utils.h"
 
 namespace mrdft {
 
 void Functional::print_functional_references() const {
+    if (mrcpp::mpi::world_rank != 0) return;
     int outfile_txt_width = 75;
     xclib->printFunctionalReference(outfile_txt_width);
     if (isMetaGGA()) println(0, " Meta-GGA lower tau cutoff (relative to tau_unif): " << lower_tau_cutoff);
@@ -80,28 +74,6 @@ Eigen::MatrixXd Functional::evaluate(Eigen::MatrixXd &inp) const {
 }
 
 Eigen::MatrixXd Functional::contract(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
-    auto nPts = xc_data.cols();
-    auto nFcs = getCtrOutputLength();
-    Eigen::MatrixXd out_data = Eigen::MatrixXd::Zero(nFcs, nPts);
-    out_data.row(0) = xc_data.row(0); // we always keep the energy functional
-
-    for (int i = 0; i < this->xc_mask.rows(); i++) {
-        // Eigen::VectorXd cont_i = Eigen::VectorXd::Zero(nPts);
-        for (int j = 0; j < this->xc_mask.cols(); j++) {
-            int xc_idx = this->xc_mask(i, j);
-            int d_idx = this->d_mask(j);
-            if (d_idx >= 0) {
-                out_data.row(i + 1).array() += xc_data.row(xc_idx).array() * d_data.row(d_idx).array();
-            } else {
-                out_data.row(i + 1).array() += xc_data.row(xc_idx).array();
-            }
-        }
-        // out_data.row(i + 1) = cont_i; // The first column contains the energy functional
-    }
-    return out_data;
-}
-
-Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen::MatrixXd &d_data) const {
     auto nPts = xc_data.rows();
     auto nFcs = getCtrOutputLength();
     Eigen::MatrixXd out_data = Eigen::MatrixXd::Zero(nPts, nFcs);
@@ -123,27 +95,16 @@ Eigen::MatrixXd Functional::contract_transposed(Eigen::MatrixXd &xc_data, Eigen:
 }
 
 void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes) const {
-    if (this->log_grad) { MSG_ERROR("log_grad not implemented"); }
+    if (this->log_grad) { MSG_ERROR("log_grad not implemented"); } // see Functional::log_grad
 
     mrcpp::NodeIndex<3> nodeIdx = xcNodes[0]->getNodeIndex();
     mrcpp::FunctionTree<3> *rho0 = std::get<1>(inp[0]);
     mrcpp::MWNode<3> node(rho0->getNode(nodeIdx), true, false); // copy node from rho, but do not copy coef
     int ncoefs = rho0->getTDim() * rho0->getKp1_d();
     int spinsize = densityChannels();
-    int xclib_inpsize = spinsize * (usesGradients() ? 4 : 1);
+    int xclib_inpsize = numIn();
     if (isMetaGGA()) xclib_inpsize += spinsize;
-
-    // int xcfun_inpsize = 1; // rho
-    // int spinsize = isSpin() ? 2 : 1; // 1 for unpolarized, 2 for polarized
-    // xcfun_inpsize *= spinsize; // alpha and beta
-    // if (isGGA() || isMetaGGA()) xcfun_inpsize *= 4; // add gradient (3 components for each spin)
-    // if(isMetaGGA()) xcfun_inpsize += spinsize;      // add tau (1 for each spin)
-
-    Eigen::MatrixXd xclib_inp(ncoefs, xclib_inpsize); // input for xcfun
-    // Meta-GGA (unpolarized): if XCPotentialD1 supplied grad rho built from the orbital gradients
-    // (inputs 2, 3, 4 after rho and tau), use it instead of differentiating rho, so that it is
-    // consistent with tau (built from the same orbital gradients).
-    const bool orbital_grad_rho = isMetaGGA() && !isSpin() && static_cast<int>(inp.size()) >= spinsize + 4;
+    Eigen::MatrixXd xclib_inp(ncoefs, xclib_inpsize); // input for the XC library
     double *coef = node.getCoefs();
 
     for (int i = 0; i < spinsize; i++) {

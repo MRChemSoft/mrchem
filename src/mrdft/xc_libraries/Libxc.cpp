@@ -23,8 +23,6 @@
  * <https://mrchem.readthedocs.io/>
  */
 
-#include <memory>
-#include <MRCPP/trees/FunctionNode.h>
 #include <MRCPP/Printer>
 
 #include "Libxc.h"
@@ -104,7 +102,7 @@ void getFamilyType(int family_type, bool &lda, bool &gga, bool &mgga) {
 void Libxc::initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) {
     gga = false;
     mgga = false;
-    (void)order; // TODO: use order to choose which libxc functions to call to obtain higher derivatives (vxc, fxc, kxc, ...)
+    if (order > 1) MSG_ABORT("Libxc backend supports only energies and potentials (order <= 1); DFT response calculations require XCFun (xc_library = xcfun)");
     (void)gamma;
     for (const auto *f : libxc_objects) {
         getFamilyType(f->info->family, lda, gga, mgga);
@@ -222,7 +220,6 @@ void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nP
                     xc_gga_exc_vxc(libxc_objects[i], nPts, rho.data(), sigma.data(), exc.data(), vxc.data(), sxc.data());
 
                     for (int j = 0; j < nPts; ++j) {
-                        // clang-format off
                         //    xcfun calculates energy density per volume while libxc calculates
                         //    energy density per electron, so we multiply by the density here
                         out(0, j) += exc(0, j) * libxc_coefs[i] * (inp(0, j) + inp(1, j));
@@ -328,7 +325,7 @@ void Libxc::callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nP
     }
 }
 
-int Libxc::getnOut() {
+int Libxc::getnOut() const {
     bool lda = false;
     bool gga = false;
     bool mgga = false;

@@ -32,7 +32,7 @@
  * @brief Exchange-Correlation potential defined by a particular (spin) density
  *
  * The XC potential is computed by mapping of the density through a XC functional,
- * provided by the XCFun library. There are two ways of defining the density:
+ * provided by the XC library. There are two ways of defining the density:
  *
  *  1) Use getDensity() prior to setup() and build the density as you like.
  *  2) Provide a default set of orbitals in the constructor that is used to

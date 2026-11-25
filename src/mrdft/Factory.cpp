@@ -30,11 +30,7 @@
 
 #include "MRDFT.h"
 #include "Grid.h"
-#include "LDA.h"
-#include "GGA.h"
-#include "mGGA.h"
-#include "SpinGGA.h"
-#include "SpinLDA.h"
+#include "MRDFT.h"
 
 #ifndef DISABLE_LIBXC
 #include "xc_libraries/Libxc.h"
@@ -46,8 +42,8 @@
 
 namespace mrdft {
 
-Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin_enabled, const std::string &xclibname)
-    : spin_enabled(spin_enabled), xclibname(xclibname), mra(MRA) {
+Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const std::string &xclibname)
+        : spin(spin), mra(MRA) {
     if (xclibname == "xcfun") {
 #ifdef DISABLE_XCFUN
         MSG_ABORT("XCFun support disabled during compilation!");
@@ -67,10 +63,16 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin_enabled
 #ifndef DISABLE_LIBXC
         xclib = std::make_unique<Libxc>(spin_enabled);
 #else
-        MSG_ABORT("No XC library available!");
+        MSG_ABORT("No XC library compiled in. DFT, and the sad/nao initial guesses (also for Hartree-Fock), need XCFun or Libxc; use guess_type gto or core (not possible with pseudopotentials, which always use the nao guess).");
 #endif
 #endif
+    } else {
+        MSG_ABORT("Unknown xc_library '" << xclibname << "' (use auto, xcfun or libxc)");
     }
+}
+
+std::string Factory::getXCLibName() const {
+    return xclib->name();
 }
 
 void Factory::setFunctional(const std::string &name, double c) {
@@ -93,54 +95,23 @@ std::unique_ptr<MRDFT> Factory::build() {
     xclib->initFunctionalLibrary(lda, gga, mgga, order, gamma);
 
     // Init MW derivative
-    if (gga || mgga) {
-        if (!diff_p) {
-            // makepot() differentiates node by node (DerivativeCalculator::calcNode), which is only valid for a
-            // bandwidth-0 operator (abgv_00). The other branches date from when the derivative was applied to whole trees.
-            if (diff_s != "abgv_00") MSG_ABORT("Factory::build: the XC potential derivative must be abgv_00 (bandwidth 0), got '" + diff_s + "'");
-            if (diff_s == "bspline") {
-                diff_p = std::make_shared<mrcpp::BSOperator<3>>(mra, 1);
-            } else if (diff_s == "abgv_00") {
-                diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
-            } else if (diff_s == "abgv_55") {
-                diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.5, 0.5);
-            } else if (diff_s == "ph") {
-                diff_p = std::make_shared<mrcpp::PHOperator<3>>(mra, 1);
-            } else {
-                MSG_ABORT("Factory::build: unknown derivative operator '" + diff_s + "'");
-            }
-        }
-    }
+    // makepot() differentiates node by node (DerivativeCalculator::calcNode), which is only valid for a
+    // bandwidth-0 operator. ABGV(0,0) is the only one.
+    if (diff_s != "abgv_00") MSG_ABORT("Factory::build: the XC derivative must be abgv_00, got '" << diff_s << "'");
+    diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
 
 
     // The GGA/mGGA constructors std::move from their (reference) argument, so they get a copy:
     // diff_p itself must stay valid for setDerivOp() below.
     auto diff_func = diff_p;
     std::unique_ptr<Functional> func_p{nullptr};
-    if (spin_enabled) {
-        if (mgga) {
-            MSG_ABORT("Factory::build: spin-polarized meta-GGA is not supported yet"); // TODO: implement spin
-        } else if (gga) {
-            func_p = std::make_unique<SpinGGA>(order, xclib, diff_func);
-        } else if (lda) {
-            func_p = std::make_unique<SpinLDA>(order, xclib);
-        } else {
-            MSG_ABORT("Case not handled");
-        }
-    } else {
-        if (mgga) {
-            func_p = std::make_unique<mGGA>(order, xclib);
-        } else if (gga) {
-            func_p = std::make_unique<GGA>(order, xclib, diff_func);
-        } else if (lda) {
-            func_p = std::make_unique<LDA>(order, xclib);
-        } else {
-            MSG_ABORT("Case not handled");
-        }
-    }
-
+    if (gga)
+        func_p = std::make_unique<GGA>(order, spin, xclib);
+    else if (lda)
+        func_p = std::make_unique<LDA>(order, spin, xclib);
+    else
+        MSG_ABORT("Case not handled");
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
-    if (!diff_p) diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0); // LDA: no derivative was built
     func_p->setDerivOp(diff_p);
     if (mgga) {
         // TODO: make optional derivative operator from input preference (eg xc_derivOp/tau/...)

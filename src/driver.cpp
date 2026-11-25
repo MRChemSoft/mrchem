@@ -1480,6 +1480,7 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         mrdft::Factory xc_factory(*MRA, xc_spin, xc_lib);
         xc_factory.setOrder(xc_order);
         xc_factory.setDensityCutoff(xc_cutoff);
+        xc_factory.setDerivative(json_xcfunc.value("derivative", std::string("abgv_00")));
         for (const auto &f : xc_funcs) {
             auto name = f["name"];
             auto coef = f["coef"];
@@ -1487,7 +1488,11 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
         }
         auto mrdft_p = xc_factory.build();
 
-        mrdft_p->functional().print_functional_references();
+        static bool xc_refs_printed = false; // print the references once per run (SCF and response both build XC)
+        if (!xc_refs_printed) {
+            mrdft_p->functional().print_functional_references();
+            xc_refs_printed = true;
+        }
 
         exx = mrdft_p->functional().amountEXX();
 
