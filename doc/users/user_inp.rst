@@ -250,8 +250,8 @@ Here we specify the exchange-correlation functional used in DFT
 
     DFT {
       spin = false                          # Use spin-polarized functionals
-      density_cutoff = 1e-11                # Cutoff to set XC potential to zero
-      xc_library = xcfun                    # Specify XC functional library
+      density_cutoff = 1e-11                # Density cutoff passed to the XC library
+      xc_library = auto                     # Specify XC functional library (auto, xcfun or libxc)
       functionals = <func>                  # Functional name, see table below for examples
     $functionals
     <func1>     1.0                         # Functional name and coefficient
@@ -267,8 +267,30 @@ of exact Hartree-Fock exchange as a separate functional
 ``EXX`` (``EXX 0.2`` for B3LYP and ``EXX 0.25`` for PBE0 etc.). Option to use
 spin-polarized functionals or not. Unrestricted calculations will use
 spin-polarized functionals by default. The XC functionals are provided by the
-`XCFun <https://github.com/dftlibs/xcfun>`_ library by default, but can be 
-changed with the keyword ``xc_library`` to use either XCFun or `LibXC <https://libxc.gitlab.io/>`_ .
+`XCFun <https://github.com/dftlibs/xcfun>`_ or `LibXC <https://libxc.gitlab.io/>`_
+libraries, chosen with the keyword ``xc_library``:
+
+ * ``auto`` (default): use XCFun if it was compiled in, otherwise LibXC.
+ * ``xcfun``: use XCFun.
+ * ``libxc``: use LibXC. Only energies and potentials are available, so
+   response (property) calculations require XCFun.
+
+The library actually used is printed in the SAD and NAO initial guess sections
+of the output; other sections print the input value. If the chosen library was
+not compiled in, the program aborts. The keyword ``density_cutoff`` is passed
+to the XC library: XCFun skips grid points where the density is below the
+cutoff, while LibXC uses it as its density threshold (values :math:`\leq 0`
+mean LibXC's built-in default). The default is ``1e-11``.
+
+The derivative used to compute the density gradients in GGA functionals can be
+set in the ``Derivatives`` section, but only ``abgv_00`` is supported (and is
+the default), because the XC potential is built node by node:
+
+.. code-block:: bash
+
+    Derivatives {
+      dft = abgv_00
+    }
 
 Exchange-correlation Functionals
 ++++++++++++++++++++++++++++++++

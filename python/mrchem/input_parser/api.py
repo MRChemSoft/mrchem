@@ -260,6 +260,11 @@ def stencil() -> JSONDict:
                                             'type': 'str'},
                                         {   'default': 'abgv_00',
                                             'name': 'zora',
+                                            'type': 'str'},
+                                        {   'default': 'abgv_00',
+                                            'name': 'dft',
+                                            'predicates': [   'value.lower() in '
+                                                              "['abgv_00']"],
                                             'type': 'str'}],
                         'name': 'Derivatives'},
                     {   'keywords': [   {   'default': 0,
@@ -355,6 +360,9 @@ def stencil() -> JSONDict:
                                             'type': 'float'},
                                         {   'default': 'auto',
                                             'name': 'xc_library',
+                                            'predicates': [   'value.lower() in '
+                                                              '["auto", "xcfun", '
+                                                              '"libxc"]'],
                                             'type': 'str'},
                                         {   'default': ' ',
                                             'name': 'functionals',
