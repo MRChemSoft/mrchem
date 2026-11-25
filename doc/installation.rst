@@ -44,7 +44,7 @@ The MRChem program depends on the following C++ libraries:
 - Linear algebra: `Eigen-3.4  <https://gitlab.com/libeigen/eigen>`_
 - DFT functionals (optional):
     - `XCFun-2.1  <https://github.com/dftlibs/xcfun>`_
-    - `LibXC-7.0  <https://gitlab.com/libxc/libxc>`_
+    - `LibXC-7  <https://gitlab.com/libxc/libxc>`_
 
 All these dependencies will be downloaded automatically at configure time by
 CMake, but can also be linked manually by setting the variables::

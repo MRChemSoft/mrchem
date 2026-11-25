@@ -2,18 +2,18 @@
 HPCCM recipe for MRChem Singularity image (OpenMP)
 
 Contents:
-  Ubuntu 20.04
+  Ubuntu 24.04
   GNU compilers (upstream)
-  CMake 3.20.6
-  Python3.9
+  CMake 3.31.12
+  Python3.12
   MRChem (current source version)
 
 Generating recipe (stdout):
   $ hpccm --recipe recipe_nompi.py --format singularity --singularity-version=3.2
 """
 
-os_version="20.04"
-cmake_version="3.20.6"
+os_version="24.04"
+cmake_version="3.31.12"
 
 # Ubuntu base image
 Stage0 += baseimage(image=f"ubuntu:{os_version}", _as="build")

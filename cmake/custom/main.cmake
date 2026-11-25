@@ -35,6 +35,18 @@ add_custom_command(
     ${CMAKE_CURRENT_LIST_DIR}
   )
 
+include(cmake/CPM.cmake)
+# We need to set the find behaviour for CPM, as it does not have a default behaviour like FetchContent does. This is done by setting the following variables:
+macro(cpm_set_find_behaviour BEHAVIOUR)
+  set(CPM_USE_LOCAL_PACKAGES OFF)
+  set(CPM_LOCAL_PACKAGES_ONLY OFF)
+  if("${BEHAVIOUR}" STREQUAL "onlylocal")
+    set(CPM_LOCAL_PACKAGES_ONLY ON)
+  elseif("${BEHAVIOUR}" STREQUAL "default")
+    set(CPM_USE_LOCAL_PACKAGES ON)
+  endif()
+endmacro()
+
 # rebuild version_info.h every time
 add_custom_target(
   mrchem-info
@@ -55,12 +67,41 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
 set(_build_type ${CMAKE_BUILD_TYPE})
 # Order IS important here!
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
-include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
-include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
+if(NOT XCFUN_FIND_BEHAVIOUR STREQUAL "none")
+  include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
+endif()
+if(NOT LIBXC_FIND_BEHAVIOUR STREQUAL "none")
+  include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
+endif()
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
 # reset CMAKE_BUILD_TYPE to whatever it was for MRChem
 set(CMAKE_BUILD_TYPE ${_build_type})
+
+# XCFun and LibXC are optional. src/CMakeLists.txt links ${XCFUN_LIBRARY} and ${LIBXC_LIBRARY},
+# src/mrdft/xc_libraries and tests/ check ENABLE_XCFUN / ENABLE_LIBXC, and the code checks
+# DISABLE_XCFUN / DISABLE_LIBXC.
+if(TARGET xcfun AND NOT TARGET XCFun::xcfun)
+  add_library(XCFun::xcfun ALIAS xcfun)
+endif()
+if(TARGET XCFun::xcfun)
+  set(XCFUN_LIBRARY XCFun::xcfun)
+  set(ENABLE_XCFUN ON)
+else()
+  message(STATUS "Disabling XCFun support!")
+  add_compile_definitions(DISABLE_XCFUN)
+  set(XCFUN_LIBRARY "")
+  set(ENABLE_XCFUN OFF)
+endif()
+if(TARGET Libxc::xc)
+  set(LIBXC_LIBRARY Libxc::xc)
+  set(ENABLE_LIBXC ON)
+else()
+  message(STATUS "Disabling LibXC support!")
+  add_compile_definitions(DISABLE_LIBXC)
+  set(LIBXC_LIBRARY "")
+  set(ENABLE_LIBXC OFF)
+endif()
 
 add_subdirectory(src)
 add_subdirectory(python)

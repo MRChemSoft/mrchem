@@ -1,7 +1,7 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: ubuntu:20.04
+From: ubuntu:24.04
 Stage: build
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -23,7 +23,7 @@ Stage: build
         git
     rm -rf /var/lib/apt/lists/*
 
-# Mellanox OFED version 5.2-2.2.0.0
+# Mellanox OFED version 5.6-2.0.9.0
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -33,7 +33,7 @@ Stage: build
     rm -rf /var/lib/apt/lists/*
 %post
     wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | apt-key add -
-    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/5.2-2.2.0.0/ubuntu20.04/mellanox_mlnx_ofed.list
+    mkdir -p /etc/apt/sources.list.d && wget -q -nc -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/5.6-2.0.9.0/ubuntu22.04/mellanox_mlnx_ofed.list
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ibverbs-providers \
@@ -48,7 +48,7 @@ Stage: build
         librdmacm1
     rm -rf /var/lib/apt/lists/*
 
-# UCX version 1.9.0
+# UCX version 1.17.0
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -60,12 +60,12 @@ Stage: build
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/openucx/ucx/releases/download/v1.9.0/ucx-1.9.0.tar.gz
-    mkdir -p /var/tmp && tar -x -f /var/tmp/ucx-1.9.0.tar.gz -C /var/tmp -z
-    cd /var/tmp/ucx-1.9.0 &&   ./configure --prefix=/usr/local/ucx --disable-assertions --disable-debug --disable-doxygen-doc --disable-logging --disable-params-check --enable-optimizations --with-rdmacm --with-verbs --without-cuda
+    mkdir -p /var/tmp && wget -q -nc -P /var/tmp https://github.com/openucx/ucx/releases/download/v1.17.0/ucx-1.17.0.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/ucx-1.17.0.tar.gz -C /var/tmp -z
+    cd /var/tmp/ucx-1.17.0 &&   ./configure --prefix=/usr/local/ucx --disable-assertions --disable-debug --disable-doxygen-doc --disable-logging --disable-params-check --enable-optimizations --with-rdmacm --with-verbs --without-cuda
     make -j$(nproc)
     make -j$(nproc) install
-    rm -rf /var/tmp/ucx-1.9.0 /var/tmp/ucx-1.9.0.tar.gz
+    rm -rf /var/tmp/ucx-1.17.0 /var/tmp/ucx-1.17.0.tar.gz
 %environment
     export CPATH=/usr/local/ucx/include:$CPATH
     export LD_LIBRARY_PATH=/usr/local/ucx/lib:$LD_LIBRARY_PATH
@@ -90,7 +90,7 @@ Stage: build
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://download.schedmd.com/slurm/slurm-21.08.8.tar.bz2
+    mkdir -p /var/tmp && wget -q -nc -P /var/tmp https://download.schedmd.com/slurm/slurm-21.08.8.tar.bz2
     mkdir -p /var/tmp && tar -x -f /var/tmp/slurm-21.08.8.tar.bz2 -C /var/tmp -j
     cd /var/tmp/slurm-21.08.8 &&   ./configure --prefix=/usr/local/slurm-pmi2
     cd /var/tmp/slurm-21.08.8
@@ -113,7 +113,7 @@ Stage: build
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.5.tar.bz2
+    mkdir -p /var/tmp && wget -q -nc -P /var/tmp https://www.open-mpi.org/software/ompi/v4.0/downloads/openmpi-4.0.5.tar.bz2
     mkdir -p /var/tmp && tar -x -f /var/tmp/openmpi-4.0.5.tar.bz2 -C /var/tmp -j
     cd /var/tmp/openmpi-4.0.5 &&  CC=gcc CXX=g++ F77=gfortran F90=gfortran FC=gfortran ./configure --prefix=/usr/local/openmpi --disable-getpwuid --enable-orterun-prefix-by-default --with-pmi=/usr/local/slurm-pmi2 --with-ucx=/usr/local/ucx --without-cuda --without-verbs
     make -j$(nproc)
@@ -126,7 +126,7 @@ Stage: build
     export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
     export PATH=/usr/local/openmpi/bin:$PATH
 
-# CMake version 3.20.6
+# CMake version 3.31.12
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -135,10 +135,10 @@ Stage: build
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Kitware/CMake/releases/download/v3.20.6/cmake-3.20.6-linux-x86_64.sh
+    mkdir -p /var/tmp && wget -q -nc -P /var/tmp https://github.com/Kitware/CMake/releases/download/v3.31.12/cmake-3.31.12-linux-x86_64.sh
     mkdir -p /usr/local
-    /bin/sh /var/tmp/cmake-3.20.6-linux-x86_64.sh --prefix=/usr/local --skip-license
-    rm -rf /var/tmp/cmake-3.20.6-linux-x86_64.sh
+    /bin/sh /var/tmp/cmake-3.31.12-linux-x86_64.sh --prefix=/usr/local --skip-license
+    rm -rf /var/tmp/cmake-3.31.12-linux-x86_64.sh
 %environment
     export PATH=/usr/local/bin:$PATH
 %post
@@ -165,7 +165,7 @@ Stage: build
 
 
 BootStrap: docker
-From: ubuntu:20.04
+From: ubuntu:24.04
 %post
     . /.singularity.d/env/10-docker*.sh
 
@@ -173,11 +173,11 @@ From: ubuntu:20.04
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        libgfortran4 \
+        libgfortran5 \
         libgomp1
     rm -rf /var/lib/apt/lists/*
 
-# Mellanox OFED version 5.2-2.2.0.0
+# Mellanox OFED version 5.6-2.0.9.0
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -187,7 +187,7 @@ From: ubuntu:20.04
     rm -rf /var/lib/apt/lists/*
 %post
     wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | apt-key add -
-    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/5.2-2.2.0.0/ubuntu20.04/mellanox_mlnx_ofed.list
+    mkdir -p /etc/apt/sources.list.d && wget -q -nc -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/5.6-2.0.9.0/ubuntu22.04/mellanox_mlnx_ofed.list
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ibverbs-providers \
@@ -284,7 +284,7 @@ From: ubuntu:20.04
     (--dryrun) the container on the main input file, here called molecule.inp:
 
         $ ./<image-name>.sif --dryrun molecule
-    
+
     This will produce a new file molecule.json in the current directory which can
     be passed to the mrchem.x program inside the container using the singularity
     exec command:

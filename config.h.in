@@ -32,4 +32,11 @@ inline constexpr auto sad_basis_source_dir() noexcept {
 inline constexpr auto sad_basis_install_dir() noexcept {
     return "@SAD_BASIS_INSTALL_DIR@";
 }
+
+inline constexpr auto azora_potentials_source_dir() noexcept {
+    return "@AZORA_POTENTIALS_SOURCE_DIR@";
+}
+inline constexpr auto azora_potentials_install_dir() noexcept {
+    return "@AZORA_POTENTIALS_INSTALL_DIR@";
+}
 } // namespace mrchem
