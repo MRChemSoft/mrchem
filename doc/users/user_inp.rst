@@ -282,16 +282,6 @@ to the XC library: XCFun skips grid points where the density is below the
 cutoff, while LibXC uses it as its density threshold (values :math:`\leq 0`
 mean LibXC's built-in default). The default is ``1e-11``.
 
-The derivative used to compute the density gradients in GGA functionals can be
-set in the ``Derivatives`` section, but only ``abgv_00`` is supported (and is
-the default), because the XC potential is built node by node:
-
-.. code-block:: bash
-
-    Derivatives {
-      dft = abgv_00
-    }
-
 Exchange-correlation Functionals
 ++++++++++++++++++++++++++++++++
 

@@ -312,7 +312,6 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     mrdft::Factory xc_factory(*MRA, xc_spin, xc_lib);
     xc_factory.setOrder(xc_order);
     xc_factory.setDensityCutoff(xc_cutoff);
-    xc_factory.setDerivative(json_xcfunc.value("derivative", std::string("abgv_00")));
     for (const auto &f : xc_funcs) {
         auto name = f["name"];
         auto coef = f["coef"];
@@ -323,7 +322,6 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     mrdft::Factory xc_factory2(*MRA, xc_spin, xc_lib);
     xc_factory2.setOrder(xc_order);
     xc_factory2.setDensityCutoff(xc_cutoff);
-    xc_factory2.setDerivative(json_xcfunc.value("derivative", std::string("abgv_00")));
     for (const auto &f : xc_funcs) {
         auto name = f["name"];
         auto coef = f["coef"];

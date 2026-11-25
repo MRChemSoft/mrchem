@@ -249,14 +249,6 @@ sections:
         default: abgv_00
         docstring: |
           Derivative used ZORA potential.
-      - name: dft
-        type: str
-        default: abgv_00
-        predicates:
-          - value.lower() in ['abgv_00']
-        docstring: |
-          Derivative used in the XC potential (density gradients in GGA functionals).
-          Only abgv_00 is supported, because the XC potential is built node by node.
   - name: Molecule
     docstring: |
       Define molecule.

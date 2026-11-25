@@ -33,8 +33,8 @@ Derivative operator
 bandwidth-0 part of the derivative operator. ``ABGVOperator`` has bandwidth 0
 only for a = b = 0, so ``abgv_00`` is the only valid choice. Other operators
 (``bspline``, ``abgv_55``) would silently drop the terms from neighbouring
-nodes. ``Factory::build()`` therefore aborts for anything but ``abgv_00``, and
-the input keyword ``Derivatives.dft`` accepts only ``abgv_00``.
+nodes. ``abgv_00`` is therefore the ``Factory`` default and is not a user input;
+``Factory::build()`` aborts if ``setDerivative()`` is given anything else.
 
 Adding a new XC library
 -----------------------

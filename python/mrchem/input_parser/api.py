@@ -260,11 +260,6 @@ def stencil() -> JSONDict:
                                             'type': 'str'},
                                         {   'default': 'abgv_00',
                                             'name': 'zora',
-                                            'type': 'str'},
-                                        {   'default': 'abgv_00',
-                                            'name': 'dft',
-                                            'predicates': [   'value.lower() in '
-                                                              "['abgv_00']"],
                                             'type': 'str'}],
                         'name': 'Derivatives'},
                     {   'keywords': [   {   'default': 0,

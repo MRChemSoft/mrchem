@@ -118,7 +118,6 @@ def write_scf_fock(user_dict, wf_dict, origin):
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                "derivative": user_dict["Derivatives"]["dft"].lower(),
                 "functionals": func_dict,
             },
         }
@@ -484,7 +483,6 @@ def write_rsp_fock(user_dict, wf_dict):
             "xc_functional": {
                 "spin": user_dict["DFT"]["spin"],
                 "cutoff": user_dict["DFT"]["density_cutoff"],
-                "derivative": user_dict["Derivatives"]["dft"].lower(),
                 "functionals": func_dict,
             },
         }

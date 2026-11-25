@@ -294,15 +294,6 @@ User input reference
   
     **Default** ``abgv_00``
   
-   :dft: Derivative used in the XC potential (density gradients in GGA functionals). Only abgv_00 is supported, because the XC potential is built node by node. 
-  
-    **Type** ``str``
-  
-    **Default** ``abgv_00``
-  
-    **Predicates**
-      - ``value.lower() in ['abgv_00']``
-  
  :Molecule: Define molecule. 
 
   :red:`Keywords`
