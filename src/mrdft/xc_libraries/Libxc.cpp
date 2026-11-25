@@ -73,26 +73,24 @@ void Libxc::setCutoff(double cutoff) {
 
 void getFamilyType(int family_type, bool &lda, bool &gga, bool &mgga) {
     switch (family_type) {
-                case XC_FAMILY_LDA:
+        case XC_FAMILY_LDA:
 #ifdef XC_FAMILY_HYB_GGA
-                case XC_FAMILY_HYB_LDA:
+        case XC_FAMILY_HYB_LDA:
 #endif
-                    lda = true;
-                    break;
+            lda = true;
+            break;
 
-                case XC_FAMILY_GGA:
+        case XC_FAMILY_GGA:
 #ifdef XC_FAMILY_HYB_GGA
-                case XC_FAMILY_HYB_GGA:
+        case XC_FAMILY_HYB_GGA:
 #endif
-                    gga = true;
-                    break;
+            gga = true;
+            break;
 
-                case XC_FAMILY_MGGA:
-#ifdef XC_FAMILY_HYB_GGA
-                case XC_FAMILY_HYB_MGGA:
-#endif
-                    mgga = true;
-                    break;
+        case XC_FAMILY_MGGA:
+        case XC_FAMILY_HYB_MGGA:
+            mgga = true;
+            break;
 
         default:
             MSG_ABORT("Libxc functional family not handled in MRChem!\n");

@@ -14,13 +14,13 @@ The XC potential is built in a few steps:
    derivative order and the density cutoff.
 2. ``Factory::build()`` asks the backend which functional families are used
    and creates the matching ``Functional`` (``LDA`` or ``GGA``, each
-   spin-restricted or spin-polarized). The backend is moved into the functional, so ``build()`` can
+   spin-restricted or spin-polarized, or ``mGGA`` for meta-GGAs, spin-restricted only). The backend is moved into the functional, so ``build()`` can
    be called only once per ``Factory``. The functional is wrapped in an
    ``MRDFT`` object together with the ``Grid``.
 3. ``MRDFT::evaluate()`` unifies the grids of the input densities and loops
    over the nodes of the grid (in parallel with OpenMP and MPI).
 4. For each node ``Functional::makepot()`` transforms the density (and its
-   gradient, for GGAs) to grid-point values, evaluates the XC library through
+   gradient, for GGAs; and the kinetic energy density tau, for meta-GGAs) to grid-point values, evaluates the XC library through
    ``XCLib::callLibEval()``, contracts the result with the higher order
    densities (``Functional::contract()``) and transforms back to the
    multiwavelet representation.
@@ -35,6 +35,12 @@ only for a = b = 0, so ``abgv_00`` is the only valid choice. Other operators
 (``bspline``, ``abgv_55``) would silently drop the terms from neighbouring
 nodes. ``Factory::build()`` therefore aborts for anything but ``abgv_00``, and
 the input keyword ``Derivatives.dft`` accepts only ``abgv_00``.
+
+Meta-GGAs use a second operator, the tau derivative (``Functional::getTauDerivOp()``,
+currently fixed to ``bspline`` in ``Factory::build()``). It is applied to whole
+orbitals, not node by node: ``XCPotentialD1`` uses it to build tau and the
+gradient of the density from the orbital gradients, and ``XCPotential`` uses it
+for the operator -1/2 div(v_tau grad). These need an antisymmetric derivative.
 
 Adding a new XC library
 -----------------------

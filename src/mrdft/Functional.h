@@ -103,8 +103,8 @@ public:
      *  - xcNodes[0]: energy density (not distributed; the energy is summed directly in MRDFT)
      *  - xcNodes[1]: \f$ v_{xc} = \partial F/\partial\rho - \nabla\cdot(\partial F/\partial\nabla\rho) \f$
      *  - xcNodes[2]: \f$ v_\tau = \partial F/\partial\tau \f$
-     * The input is (rho, grad rho (3 trees), tau); the divergence uses the node-local derivOp
-     * (bandwidth 0 required).
+     * The input is (rho, tau) or (rho, tau, grad rho (3 trees built from the orbital gradients));
+     * the divergence uses the node-local derivOp (bandwidth 0 required).
      *
      * @param[in] inp Input values
      * @param[out] xcNodes Output values
@@ -115,12 +115,10 @@ public:
     /**
      * Setters and getters
      */
-    void setLogGradient(bool log) { log_grad = log; }                      ///< @brief Set whether to use logarithmic gradient transformations
-    bool getLogGradient() const { return log_grad; }                      ///< @brief Query whether logarithmic gradient is enabled
-    void setDensityCutoff(double cut) { cutoff = cut; }                    ///< @brief Set the density threshold below which density is set to 0
-    void setDerivOp(std::shared_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = d; } ///< @brief Set the numerical derivative operator for gradient-based functionals
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> getDerivOp() const { return derivOp; } ///< @brief Access the derivative operator (read-only)
-    void setTauDerivOp(std::shared_ptr<mrcpp::DerivativeOperator<3>> &d) { tauDerivOp = d; } ///< @brief Sets the Derivative for tau, the orbital-gradient grad rho and the tau operator (meta-GGA)
+    void setLogGradient(bool log) { log_grad = log; }                                               ///< @brief Set whether to use logarithmic gradient transformations (currently unused, see log_grad)
+    void setDensityCutoff(double cut) { cutoff = cut; }                                             ///< @brief Set the density threshold below which density is set to 0
+    void setDerivOp(const std::shared_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = d; }        ///< @brief Set the numerical derivative operator for gradient-based functionals
+    void setTauDerivOp(const std::shared_ptr<mrcpp::DerivativeOperator<3>> &d) { tauDerivOp = d; }  ///< @brief Set the derivative for tau, the orbital-gradient grad rho and the tau operator (meta-GGA)
     std::shared_ptr<mrcpp::DerivativeOperator<3>> getTauDerivOp() const { return tauDerivOp ? tauDerivOp : derivOp; } ///< @brief If no tauDerivOp is sat, falls back to derivOp
 
     /**
@@ -132,7 +130,7 @@ public:
     virtual bool isGGA() const = 0;                                     ///< @brief Returns True if the functional is a GGA
     virtual bool isMetaGGA() const = 0;                                 ///< @brief Returns True if the functional is a Meta-GGA
 
-    int numIn() const { return densityChannels() * (usesGradients() ? 4 : 1); } ///< Fetches number of variables in the input matrix (per density channel: 1 density, +3 gradient components if usesGradients())
+    int numIn() const { return densityChannels() * ((usesGradients() ? 4 : 1) + (isMetaGGA() ? 1 : 0)); } ///< Fetches number of variables in the input matrix (per density channel: 1 density, +3 gradient components if usesGradients(), +1 tau if isMetaGGA())
     virtual int numOut() const = 0; ///< Fetches number of variables in the output matrix
 
     /**
@@ -163,8 +161,23 @@ public:
 protected:
     const int order;                                                ///< @brief Order of functional derivatives. Eg. 0 (energy), 1 (potential), 2 (pot. gradient), etc.
     const bool spin;                                                ///< @brief True if the functional is spin-polarized (alpha and beta densities)
-    bool log_grad{false};                                           ///< @brief Toggle for logarithmic gradient
-    double cutoff{-1.0};                                            ///< @brief Density threshold
+    /** @brief Toggle for logarithmic gradients (xc_utils::log_gradient)
+     *
+     * Currently unused: no input keyword sets it, so it is always false. makepot() computes the density
+     * gradients node by node, while xc_utils::log_gradient works on whole FunctionTrees (log of the full
+     * density, then a tree-wide gradient), so it cannot be called from makepot(). If set, makepot() reports
+     * an error. Kept so a tree-level gradient path can use it later.
+     */
+    bool log_grad{false};
+    /** @brief Relative lower cutoff c for tau (meta-GGA only; 0 = off)
+     *
+     * Why: meta-GGAs using tau_W/tau (TPSS, M06, ...) have a v_tau ~ 1/tau that diverges where tau -> 0
+     * at finite rho (e.g. the H2 bond midpoint), which makes the SCF diverge.
+     * What: makepot() evaluates the functional at a smoothly bounded tau_eff >= c * tau_unif(rho)
+     * (see makepot), which keeps v_tau finite. TODO: make it an input keyword.
+     */
+    double lower_tau_cutoff{1.0e-3};
+    double cutoff{-1.0};                                            ///< @brief Density threshold. Applied in XCLib; makepot() also uses it to screen the low-density tail for meta-GGAs
     Eigen::VectorXi d_mask;                                         ///< @brief density and derivative(s) mask vector for response calculations
     Eigen::MatrixXi xc_mask;                                        ///< @brief functional and derivative(s) mask vector for response calculations
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr}; ///< @brief Operator used to compute gradients

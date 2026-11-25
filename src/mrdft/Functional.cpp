@@ -103,29 +103,37 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
     int ncoefs = rho0->getTDim() * rho0->getKp1_d();
     int spinsize = densityChannels();
     int xclib_inpsize = numIn();
-    if (isMetaGGA()) xclib_inpsize += spinsize;
+
     Eigen::MatrixXd xclib_inp(ncoefs, xclib_inpsize); // input for the XC library
+    // Meta-GGA (unpolarized): inp is (rho, tau) or, if XCPotentialD1 supplied grad rho built from the orbital
+    // gradients, (rho, tau, d/dx rho, d/dy rho, d/dz rho). Then that grad rho is used instead of differentiating
+    // rho, so that it is consistent with tau (built from the same orbital gradients).
+    const bool orbital_grad_rho = isMetaGGA() && !isSpin() && static_cast<int>(inp.size()) >= spinsize + 4;
     double *coef = node.getCoefs();
 
     for (int i = 0; i < spinsize; i++) {
         // make cv representation of density
         mrcpp::FunctionTree<3> *rho = std::get<1>(inp[i]);
         auto &rhoNode = rho->getNode(nodeIdx);
+        // we link into the node, in order to be able to do a mwtransform without copying the data back and forth
         node.attachCoefs(xclib_inp.col(i).data());
         for (int j = 0; j < ncoefs; j++) xclib_inp(j, i) = rhoNode.getCoefs()[j];
         node.mwTransform(mrcpp::Reconstruction);
         node.cvTransform(mrcpp::Forward);
 
         if (usesGradients()) {
+            // make gradient of input
             for (int d = 0; d < 3; d++) {
                 node.attachCoefs(xclib_inp.col(spinsize + 3 * i + d).data());
                 if (orbital_grad_rho) {
                     mrcpp::FunctionTree<3> *grad_d = std::get<1>(inp[spinsize + 1 + d]);
                     for (int j = 0; j < ncoefs; j++) xclib_inp(j, spinsize + 3 * i + d) = grad_d->getNode(nodeIdx).getCoefs()[j];
                 } else {
+                    // derive rho and put result into xclib_inp aka node
                     mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
                     derivcalc.calcNode(rho->getNode(nodeIdx), node);
                 }
+                // make cv representation of gradient of density
                 node.mwTransform(mrcpp::Reconstruction);
                 node.cvTransform(mrcpp::Forward);
             }
@@ -183,6 +191,7 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         }
     }
 
+    // send rho, grad rho (and tau) to the XC library
     Eigen::MatrixXd xc_out = Functional::evaluate(xclib_inp);
 
     // Chain rule for the smooth cutoff (unpolarized meta-GGA output columns: 0 f, 1 dF/drho,
@@ -208,35 +217,40 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         }
     }
 
-    int ctrsize = inp.size() - spinsize;
+    // make gradient of the higher order densities
+    // layout per higher-order rho when gradients are used:
+    //   1 density value + 3 spatial gradient components (x, y, z)
+    // order in inp / d_data:
+    //   rho_a_1
+    //   rho_b_1
+    //   drho_a_1/dx
+    //   drho_a_1/dy
+    //   drho_a_1/dz
+    //   drho_b_1/dx
+    //   drho_b_1/dy
+    //   drho_b_1/dz
+    // Meta-GGA: the inputs after rho are tau and grad rho, not higher-order densities
+    // (meta-GGA response is not implemented, XCPotentialD2 aborts).
+    int ctrsize = isMetaGGA() ? 0 : inp.size() - spinsize; // number of higher-order inputs (each: density + 3 gradient components if usesGradients())
     int d_datasize = ctrsize;
-    if (usesGradients()) d_datasize *= 4;
-    if (isMetaGGA() && !isSpin()) {
-        ctrsize = 0;
-        d_datasize = 0;
-    } else if (isMetaGGA() && isSpin()) {
-        MSG_ABORT("Functional::makepot: spin-polarized meta-GGA not supported.");
-    }
-    if (ctrsize != getCtrInputLength()) {
-        std::ostringstream oss;
-        oss << "Functional::makepot: mismatch between ctr inputs ("
-            << ctrsize << ") and expected (" << getCtrInputLength() << ").\n" << " spinsize: " << spinsize << " inp.size(): " << inp.size();
-        MSG_ABORT(oss.str());
-    }
-
+    if (usesGradients()) d_datasize *= 4; // 1 density + 3 gradient components for each higher-order rho
     Eigen::MatrixXd d_data = Eigen::MatrixXd::Zero(ncoefs, d_datasize);
     if (d_datasize > 0) {
         for (int i = 0; i < ctrsize; i++) {
+            // make cv representation of density
             mrcpp::FunctionTree<3> *rho = std::get<1>(inp[i + spinsize]);
+            // we link into the node, in order to be able to do a mwtransform without copying the data back and forth
             node.attachCoefs(d_data.col(i).data());
             for (int j = 0; j < ncoefs; j++) d_data(j, i) = rho->getNode(nodeIdx).getCoefs()[j];
             node.mwTransform(mrcpp::Reconstruction);
             node.cvTransform(mrcpp::Forward);
             if (usesGradients()) {
+                // make gradient of input
                 for (int d = 0; d < 3; d++) {
                     node.attachCoefs(d_data.col(ctrsize + 3 * i + d).data());
                     mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
                     derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                    // make cv representation of gradient of density
                     node.mwTransform(mrcpp::Reconstruction);
                     node.cvTransform(mrcpp::Forward);
                 }
@@ -244,69 +258,46 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         }
     }
 
-    Eigen::MatrixXd Ctrout;
-    if (isMetaGGA() && !isSpin() && getCtrInputLength() == 0) {
-        Ctrout = xc_out;
-    } else {
-        Ctrout = contract_transposed(xc_out, d_data);
+    // Meta-GGA (order 1 only): the library output is already (f, dF/drho, dF/d(grad rho) (3), dF/dtau);
+    // there is nothing to contract
+    Eigen::MatrixXd Ctrout = isMetaGGA() ? xc_out : contract(xc_out, d_data); // size output: LDA=1, GGA=4, spin *2
+
+    // postprocess
+    // For spin-polarized GGA:
+    // f_xc         : out[0] = inp[0]
+    // df_xc/drho_a : out[1] = inp[1] - div(inp[3,4,5])
+    // df_xc/drho_b : out[2] = inp[2] - div(inp[6,7,8])
+    // Meta-GGA (unpolarized) has the GGA layout in columns 0-4, plus v_tau = dF/dtau in column 5 (-> xcNodes[2])
+    int xc_outsize = densityChannels() + 1;
+    for (int i = 0; i < xc_outsize; i++) {
+        // from cv to node values
+        node.attachCoefs(Ctrout.col(i).data());
+        node.cvTransform(mrcpp::Backward);
+        node.mwTransform(mrcpp::Compression);
+        for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] = Ctrout(j, i);
+        xcNodes[i]->setHasCoefs();
+        if (usesGradients() and i > 0) {
+            for (int d = 0; d < 3; d++) {
+                node.attachCoefs(Ctrout.col(xc_outsize + 3 * (i - 1) + d).data());
+                node.cvTransform(mrcpp::Backward);
+                node.mwTransform(mrcpp::Compression);
+                node.calcNorms();
+                mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho0); // TODO: define outside loops
+                mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx), true, false);
+                derivcalc.calcNode(node, noded);
+                // xcNodes[i] = Ctrout[i] - div(Ctrout[d_i])
+                for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] -= noded.getCoefs()[j];
+            }
+        }
     }
-
-    if (isMetaGGA() && !isSpin() && getCtrInputLength() == 0) {
-        if (xcNodes.size() < 3) {
-            MSG_ABORT("Functional::makepot: meta-GGA output vector too small for tau potential.\n");
-        }
-
-        node.attachCoefs(Ctrout.col(0).data());
-        node.cvTransform(mrcpp::Backward);
-        node.mwTransform(mrcpp::Compression);
-        for (int j = 0; j < ncoefs; j++) xcNodes[0]->getCoefs()[j] = Ctrout(j, 0);
-        xcNodes[0]->setHasCoefs();
-
-        node.attachCoefs(Ctrout.col(1).data());
-        node.cvTransform(mrcpp::Backward);
-        node.mwTransform(mrcpp::Compression);
-        for (int j = 0; j < ncoefs; j++) xcNodes[1]->getCoefs()[j] = Ctrout(j, 1);
-        xcNodes[1]->setHasCoefs();
-        // Gradient part of the potential, as in the GGA branch below:
-        // v_xc = dF/drho - div( dF/d(grad rho) ), with dF/d(d_d rho) in columns 2, 3, 4.
-        for (int d = 0; d < 3; d++) {
-            node.attachCoefs(Ctrout.col(2 + d).data());
-            node.cvTransform(mrcpp::Backward);
-            node.mwTransform(mrcpp::Compression);
-            node.calcNorms();
-            mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho0);
-            mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx), true, false);
-            derivcalc.calcNode(node, noded);
-            for (int j = 0; j < ncoefs; j++) xcNodes[1]->getCoefs()[j] -= noded.getCoefs()[j];
-        }
-
+    if (isMetaGGA()) {
+        if (xcNodes.size() < 3) MSG_ABORT("Functional::makepot: meta-GGA output vector too small for tau potential.");
         node.attachCoefs(Ctrout.col(5).data());
         node.cvTransform(mrcpp::Backward);
         node.mwTransform(mrcpp::Compression);
         for (int j = 0; j < ncoefs; j++) xcNodes[2]->getCoefs()[j] = Ctrout(j, 5);
         xcNodes[2]->setHasCoefs();
-    } else {
-        int xc_outsize = densityChannels() + 1;
-        for (int i = 0; i < xc_outsize; i++) {
-            node.attachCoefs(Ctrout.col(i).data());
-            node.cvTransform(mrcpp::Backward);
-            node.mwTransform(mrcpp::Compression);
-            for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] = Ctrout(j, i);
-            xcNodes[i]->setHasCoefs();
-            if (usesGradients() and i > 0) {
-                for (int d = 0; d < 3; d++) {
-                    node.attachCoefs(Ctrout.col(xc_outsize + 3 * (i - 1) + d).data());
-                    node.cvTransform(mrcpp::Backward);
-                    node.mwTransform(mrcpp::Compression);
-                    node.calcNorms();
-                    mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho0);
-                    mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx), true, false);
-                    derivcalc.calcNode(node, noded);
-                    for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] -= noded.getCoefs()[j];
-                }
-            }
-        }
     }
-    node.attachCoefs(coef);
+    node.attachCoefs(coef); // reestablish the original link (for proper destructor behaviour)
 }
 } // namespace mrdft

@@ -30,26 +30,35 @@
 
 namespace mrdft {
 
+/**
+ * @class mGGA
+ * @brief Meta-GGA xc functional (depends on the density, its gradient and the kinetic energy density tau)
+ * @details Only the spin-restricted case is implemented: Factory::build aborts for spin-polarized meta-GGAs,
+ * and makepot() handles only the spin-restricted layout. Response (order > 1) is not implemented
+ * (XCPotentialD2 aborts).
+ */
 class mGGA final : public Functional {
 public:
-    mGGA(int k, XCLib_p &f)
-            : Functional(k, f) {
-        xc_mask = xc_utils::build_output_mask(false, false, this->order);
-        d_mask = xc_utils::build_density_mask(false, false, this->order);
+    /**
+     * @brief Construct a meta-GGA functional
+     * @param[in] k Polynomial order of the functional derivatives (0: energy,
+     *             1: potential, etc.)
+     * @param[in] s True for the spin-polarized case, false for spin-restricted (only false is supported)
+     * @param[in] f XC library handle (Libxc/XCFun); ownership is transferred
+     */
+    mGGA(int k, bool s, XCLib_p &f)
+            : Functional(k, s, f) {
+        // The masks are only used by contract() (response), which meta-GGAs do not support yet
+        xc_mask = xc_utils::build_output_mask(false, spin, this->order);
+        d_mask = xc_utils::build_density_mask(false, spin, this->order);
     }
     ~mGGA() override = default;
 
-    bool isSpin() const override { return false; }
     bool isGGA() const override { return false; }
     bool isMetaGGA() const override { return true; }
-    int numIn() const override { return 5; }
-    int numOut() const override { return xclib->getnOut(); }
-    int densityChannels() const override { return 1; }
-    bool usesGradients() const override { return true; }
-private:
-    int getCtrOutputLength() const override { return 6; }
 
-    void clear() override {}
+    int numOut() const override { return xclib->getnOut(); } ///< @brief Number of raw outputs provided by the xc backend
+    bool usesGradients() const override { return true; }     ///< @brief Meta-GGA requires density gradients
 };
 
 } // namespace mrdft

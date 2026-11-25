@@ -28,9 +28,11 @@
 #include <MRCPP/MWOperators>
 #include <MRCPP/Printer>
 
-#include "MRDFT.h"
+#include "GGA.h"
 #include "Grid.h"
+#include "LDA.h"
 #include "MRDFT.h"
+#include "mGGA.h"
 
 #ifndef DISABLE_LIBXC
 #include "xc_libraries/Libxc.h"
@@ -48,20 +50,20 @@ Factory::Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const 
 #ifdef DISABLE_XCFUN
         MSG_ABORT("XCFun support disabled during compilation!");
 #else
-        xclib = std::make_unique<XCFun>(spin_enabled);
+        xclib = std::make_unique<XCFun>(spin);
 #endif
     } else if (xclibname == "libxc") {
 #ifdef DISABLE_LIBXC
         MSG_ABORT("LibXC support disabled during compilation!");
 #else
-        xclib = std::make_unique<Libxc>(spin_enabled);
+        xclib = std::make_unique<Libxc>(spin);
 #endif
     } else if (xclibname == "auto") {
 #ifndef DISABLE_XCFUN
-        xclib = std::make_unique<XCFun>(spin_enabled);
+        xclib = std::make_unique<XCFun>(spin);
 #else
 #ifndef DISABLE_LIBXC
-        xclib = std::make_unique<Libxc>(spin_enabled);
+        xclib = std::make_unique<Libxc>(spin);
 #else
         MSG_ABORT("No XC library compiled in. DFT, and the sad/nao initial guesses (also for Hartree-Fock), need XCFun or Libxc; use guess_type gto or core (not possible with pseudopotentials, which always use the nao guess).");
 #endif
@@ -100,24 +102,24 @@ std::unique_ptr<MRDFT> Factory::build() {
     if (diff_s != "abgv_00") MSG_ABORT("Factory::build: the XC derivative must be abgv_00, got '" << diff_s << "'");
     diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0);
 
-
-    // The GGA/mGGA constructors std::move from their (reference) argument, so they get a copy:
-    // diff_p itself must stay valid for setDerivOp() below.
-    auto diff_func = diff_p;
+    // Init XC functional (meta-GGA first: a meta-GGA functional may also report gga)
     std::unique_ptr<Functional> func_p{nullptr};
-    if (gga)
+    if (mgga) {
+        if (spin) MSG_ABORT("Factory::build: spin-polarized meta-GGA is not supported yet"); // TODO: implement spin
+        func_p = std::make_unique<mGGA>(order, spin, xclib);
+    } else if (gga) {
         func_p = std::make_unique<GGA>(order, spin, xclib);
-    else if (lda)
+    } else if (lda) {
         func_p = std::make_unique<LDA>(order, spin, xclib);
-    else
+    } else {
         MSG_ABORT("Case not handled");
+    }
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
     func_p->setDerivOp(diff_p);
     if (mgga) {
         // TODO: make optional derivative operator from input preference (eg xc_derivOp/tau/...)
         // tau, the orbital grad rho and the tau operator need an antisymmetric derivative (bspline, abgv_55, ph(?))
-        std::shared_ptr<mrcpp::DerivativeOperator<3>> tau_diff_p = std::make_shared<mrcpp::BSOperator<3>>(mra, 1);
-        func_p->setTauDerivOp(tau_diff_p);
+        func_p->setTauDerivOp(std::make_shared<mrcpp::BSOperator<3>>(mra, 1));
     }
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);

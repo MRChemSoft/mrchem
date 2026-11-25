@@ -60,6 +60,11 @@ namespace mrdft {
  * out_vec[0] = f_xc (XC energy density)
  * out_vec[1] = v_xc_a (XC alpha potential)
  * out_vec[2] = v_xc_b (XC beta potential)
+ *
+ * Meta-GGA (spin-restricted only):
+ * out_vec[0] = f_xc (XC energy density)
+ * out_vec[1] = v_xc (XC potential, including -div(dF/d(grad rho)))
+ * out_vec[2] = v_tau = dF/dtau
  */
 mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) {
     grid().unify(inp);
@@ -69,32 +74,25 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     //       instead we compute the energy directly.
     mrcpp::Timer t_post;
     int potvecSize = 2; // this size includes PotVec[0], which is not used
-    if (functional().isMetaGGA() && !functional().isSpin()) {
-        potvecSize = 3; // energy, v_xc and v_tau
-    } else if (functional().isSpin()) {
-        potvecSize = 3;
-    }
+    if (functional().isSpin() or functional().isMetaGGA()) potvecSize = 3; // spin: v_xc_a, v_xc_b; meta-GGA: v_xc, v_tau
     mrcpp::FunctionTreeVector<3> PotVec = grid().generate(potvecSize);
     int nNodes = grid().size();
     // parallelization of loop both with omp (pragma omp for) and
     // mpi (each mpi has a portion of the loop, defined by n_start and n_end)
     int n_start = (mrcpp::mpi::wrk_rank * nNodes) / mrcpp::mpi::wrk_size;
     int n_end = ((mrcpp::mpi::wrk_rank + 1) * nNodes) / mrcpp::mpi::wrk_size;
-    DoubleVector XCenergy = DoubleVector::Zero(1);  // [0] XC energy
-    double sum_fxc = 0.0;
-    double sum_vtau = 0.0;
-    #pragma omp parallel
+    DoubleVector XCenergy = DoubleVector::Zero(1);
+    double sum = 0.0;
+#pragma omp parallel
     {
-    #pragma omp for schedule(guided) reduction (+: sum_fxc, sum_vtau)
+#pragma omp for schedule(guided) reduction (+: sum)
         for (int n = n_start; n < n_end; n++) {
             vector<mrcpp::FunctionNode<3> *> xcNodes = xc_utils::fetch_nodes(n, PotVec);
             functional().makepot(inp, xcNodes);
-            sum_fxc  += xcNodes[0]->integrate();
+            sum += xcNodes[0]->integrate();
         }
     }
-
-    // sum_fxc: local XC energy from f_xc * rho
-    XCenergy[0] = sum_fxc;
+    XCenergy[0] = sum;
 
     // each mpi only has part of the results. All send their results to bank and then fetch
     if(mrcpp::mpi::wrk_size > 1) {
