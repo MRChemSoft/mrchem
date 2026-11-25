@@ -149,7 +149,7 @@ void XCPotential::setup(double prec) {
         // Generalized Kohn-Sham operator for the tau dependence:
         //   dE_xc/dphi_i^* = -1/2 div( v_tau grad phi_i )
         // NB: A * B applies B first, so the product reads d_d(v_tau (d_d phi)).
-        NablaOperator nabla(this->mrdft->functional().getDerivOp());
+        NablaOperator nabla(this->mrdft->functional().getTauDerivOp());
         RankZeroOperator &V_tau = this->tauPotential;
         this->tauOperator = -0.5 * (nabla[0] * V_tau * nabla[0] + nabla[1] * V_tau * nabla[1] + nabla[2] * V_tau * nabla[2]);
         this->tauOperator.name() = "V_xc_tau";
@@ -271,7 +271,9 @@ Orbital XCPotential::dagger(Orbital phi) {
     V.setReal(&pot);
     Orbital Vphi = QMPotential::dagger(phi);
     V.setReal(nullptr);
-    if (this->tauOperator.size() > 0) { // Hermitian (real v_tau); QMDerivative::dagger is not implemented
+    // dagger() applies the same operator as apply(): this equals the adjoint only for an antisymmetric tau
+    // derivative (bspline), for which -1/2 div(v_tau grad) is Hermitian (QMDerivative::dagger is not implemented).
+    if (this->tauOperator.size() > 0) {
         Orbital Tphi = this->tauOperator(phi);
         Vphi.add(1.0, Tphi);
     }

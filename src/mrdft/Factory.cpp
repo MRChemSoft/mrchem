@@ -95,6 +95,9 @@ std::unique_ptr<MRDFT> Factory::build() {
     // Init MW derivative
     if (gga || mgga) {
         if (!diff_p) {
+            // makepot() differentiates node by node (DerivativeCalculator::calcNode), which is only valid for a
+            // bandwidth-0 operator (abgv_00). The other branches date from when the derivative was applied to whole trees.
+            if (diff_s != "abgv_00") MSG_ABORT("Factory::build: the XC potential derivative must be abgv_00 (bandwidth 0), got '" + diff_s + "'");
             if (diff_s == "bspline") {
                 diff_p = std::make_shared<mrcpp::BSOperator<3>>(mra, 1);
             } else if (diff_s == "abgv_00") {
@@ -109,11 +112,6 @@ std::unique_ptr<MRDFT> Factory::build() {
         }
     }
 
-    std::unique_ptr<mrchem::KineticOperator> kin_p{nullptr};
-    if (mgga) {
-        if (spin_enabled) MSG_ABORT("Factory::build: spin-polarized meta-GGA is not supported yet");
-        kin_p = std::make_unique<mrchem::KineticOperator>(diff_p);
-    }
 
     // The GGA/mGGA constructors std::move from their (reference) argument, so they get a copy:
     // diff_p itself must stay valid for setDerivOp() below.
@@ -121,7 +119,7 @@ std::unique_ptr<MRDFT> Factory::build() {
     std::unique_ptr<Functional> func_p{nullptr};
     if (spin_enabled) {
         if (mgga) {
-            MSG_ABORT("Factory::build: spin-polarized meta-GGA is not supported yet");
+            MSG_ABORT("Factory::build: spin-polarized meta-GGA is not supported yet"); // TODO: implement spin
         } else if (gga) {
             func_p = std::make_unique<SpinGGA>(order, xclib, diff_func);
         } else if (lda) {
@@ -131,7 +129,7 @@ std::unique_ptr<MRDFT> Factory::build() {
         }
     } else {
         if (mgga) {
-            func_p = std::make_unique<mGGA>(order, xclib, diff_func);
+            func_p = std::make_unique<mGGA>(order, xclib);
         } else if (gga) {
             func_p = std::make_unique<GGA>(order, xclib, diff_func);
         } else if (lda) {
@@ -144,7 +142,12 @@ std::unique_ptr<MRDFT> Factory::build() {
     if (func_p == nullptr) MSG_ABORT("Invalid functional type");
     if (!diff_p) diff_p = std::make_shared<mrcpp::ABGVOperator<3>>(mra, 0.0, 0.0); // LDA: no derivative was built
     func_p->setDerivOp(diff_p);
-    func_p->setKinOp(kin_p);
+    if (mgga) {
+        // TODO: make optional derivative operator from input preference (eg xc_derivOp/tau/...)
+        // tau, the orbital grad rho and the tau operator need an antisymmetric derivative (bspline, abgv_55, ph(?))
+        std::shared_ptr<mrcpp::DerivativeOperator<3>> tau_diff_p = std::make_shared<mrcpp::BSOperator<3>>(mra, 1);
+        func_p->setTauDerivOp(tau_diff_p);
+    }
     func_p->setLogGradient(log_grad);
     func_p->setDensityCutoff(cutoff);
 

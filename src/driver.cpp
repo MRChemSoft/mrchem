@@ -1491,6 +1491,12 @@ void driver::build_fock_operator(const json &json_fock, Molecule &mol, FockBuild
 
         exx = mrdft_p->functional().amountEXX();
 
+        // TODO: implement meta-GGAs for PSPs and ZORA
+        // The NLCC core density is added to rho only; the meta-GGA grad rho tau have no core part
+        if (mrdft_p->functional().isMetaGGA() and mol.hasNLCCPseudopotential()) MSG_ABORT("Meta-GGA functionals with NLCC pseudopotentials are not supported");
+        // ZORA only receives the multiplicative v_xc; the tau term of a meta-GGA would be missing
+        if (mrdft_p->functional().isMetaGGA() and json_fock.contains("zora_operator") and json_fock["zora_operator"]["include_xc"]) MSG_ABORT("Meta-GGA functionals in the ZORA potential (include_xc) are not supported");
+
         if (order == 0) {
             auto XC_p = std::make_shared<XCOperator>(mrdft_p, Phi_p, shared_memory);
             if (mol.hasNLCCPseudopotential()) {

@@ -39,6 +39,7 @@ namespace mrdft {
 void Functional::print_functional_references() const {
     int outfile_txt_width = 75;
     xclib->printFunctionalReference(outfile_txt_width);
+    if (isMetaGGA()) println(0, " Meta-GGA lower tau cutoff (relative to tau_unif): " << lower_tau_cutoff);
 }
 
 double Functional::amountEXX() const {
@@ -190,24 +191,12 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
         }
     }
 
-    // Meta-GGA (unpolarized) input columns: 0 rho, 1-3 grad rho, 4 tau; one row per point.
-    // tau >= tau_W = |grad rho|^2 / (8 rho) holds exactly, but numerical noise in the density
-    // tail violates it (tau can even be negative there), which makes v_tau blow up.
-    // The clamp target is tau_W * (1 + 1e-10), NOT tau_W itself: Libxc defines TPSS-type
-    // functionals with min(tau_W/tau, 1) and at exactly tau = tau_W it returns the derivative of
-    // the constant branch. Clamping onto that point made the Libxc potential jump between two
-    // derivative branches (one-orbital regions, e.g. He, have tau ~ tau_W everywhere), so the SCF
-    // stalled with noisy orbitals while XCFun (no min) converged smoothly.
-    // Smooth lower cutoff (lower_tau_cutoff = c > 0), relative to tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3):
-    // with tau_c = c tau_unif and x = tau / tau_c, the functional is evaluated at
-    //   tau_eff = tau                         for x >= 2 (unchanged),
-    //   tau_eff = tau_c + tau^2 / (4 tau_c)   for x <  2,
-    // which is C1 at x = 2, monotonic, >= max(tau, tau_c), and has d tau_eff / d tau = x/2 -> 0 for tau -> 0.
-    // Where an orbital gradient vanishes at high density (H2 bond midpoint: rho ~ 0.27, tau -> 0)
-    // v_tau ~ tau_W/tau^2 and dF/d(grad rho) ~ grad rho/tau would diverge; tau_eff keeps both bounded.
-    // The potentials are corrected with the chain rule after evaluate() (smooth_x / smooth_tc below),
-    // so they are the exact derivatives of the evaluated energy. tau_unif decays faster than tau in the
-    // tail and tau/tau_unif >~ 0.2 near nuclei, so for small c only such points are affected.
+    // Meta-GGA input columns: 0 rho, 1-3 grad rho, 4 tau.
+    // 1) Clamp tau >= tau_W (1 + 1e-10), tau_W = |grad rho|^2 / (8 rho): numerical noise can violate tau >= tau_W.
+    //    The 1e-10 margin keeps Libxc's min(tau_W/tau, 1) on one derivative branch.
+    // 2) Smooth lower cutoff (c = lower_tau_cutoff), tau_c = c tau_unif, tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3):
+    //    tau_eff = tau_c + tau^2 / (4 tau_c) where tau < 2 tau_c, otherwise tau. Keeps v_tau bounded where tau -> 0
+    //    at finite rho (e.g. the H2 bond midpoint). The chain rule is applied to the potentials after evaluate().
     std::vector<double> smooth_x;  // x = tau/tau_c at points with x < 2, else -1 (not smoothed)
     std::vector<double> smooth_tc; // tau_c at those points
     if (isMetaGGA() && !isSpin()) {

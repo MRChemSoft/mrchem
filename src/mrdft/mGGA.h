@@ -32,9 +32,8 @@ namespace mrdft {
 
 class mGGA final : public Functional {
 public:
-    mGGA(int k, XCLib_p &f, std::shared_ptr<mrcpp::DerivativeOperator<3>> &d)
-            : Functional(k, f)
-            , derivative(std::move(d)) {
+    mGGA(int k, XCLib_p &f)
+            : Functional(k, f) {
         xc_mask = xc_utils::build_output_mask(false, false, this->order);
         d_mask = xc_utils::build_density_mask(false, false, this->order);
     }
@@ -48,18 +47,9 @@ public:
     int densityChannels() const override { return 1; }
     bool usesGradients() const override { return true; }
 private:
-    std::shared_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
-    mrcpp::FunctionTreeVector<3> rho;
-    mrcpp::FunctionTreeVector<3> grad;
-    mrcpp::FunctionTreeVector<3> tau;
-
     int getCtrOutputLength() const override { return 6; }
 
-    void clear() override {
-        mrcpp::clear(this->rho, false);
-        mrcpp::clear(this->grad, true);
-        mrcpp::clear(this->tau, false);
-    }
+    void clear() override {}
 };
 
 } // namespace mrdft

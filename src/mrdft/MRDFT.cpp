@@ -71,7 +71,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     mrcpp::Timer t_post;
     int potvecSize = 2; // this size includes PotVec[0], which is not used
     if (functional().isMetaGGA() && !functional().isSpin()) {
-        potvecSize = 3;
+        potvecSize = 3; // energy, v_xc and v_tau
     } else if (functional().isSpin()) {
         potvecSize = 3;
     }
@@ -81,7 +81,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
     // mpi (each mpi has a portion of the loop, defined by n_start and n_end)
     int n_start = (mrcpp::mpi::wrk_rank * nNodes) / mrcpp::mpi::wrk_size;
     int n_end = ((mrcpp::mpi::wrk_rank + 1) * nNodes) / mrcpp::mpi::wrk_size;
-    DoubleVector XCenergy = DoubleVector::Zero(2);  // [0] standard XC, [1] vtau-contribution
+    DoubleVector XCenergy = DoubleVector::Zero(1);  // [0] XC energy
     double sum_fxc = 0.0;
     double sum_vtau = 0.0;
     #pragma omp parallel
@@ -96,9 +96,6 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
 
     // sum_fxc: local XC energy from f_xc * rho
     XCenergy[0] = sum_fxc;
-
-    // XCenergy_vtau: accumulated vtau contribution over all nodes on this rank
-    XCenergy[1] = this->functional().XCenergy_vtau;
 
     // each mpi only has part of the results. All send their results to bank and then fetch
     if(mrcpp::mpi::wrk_size > 1) {
@@ -120,10 +117,7 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
                 PotVecBank.get_data(potvecSize*n+i, nCoefs, xcNodes[i]->getCoefs());
         }
     }
-    // XCenergy[0] : standard f_xc * rho contribution
-    // XCenergy[1] : vtau-related contribution (currently zero, no explicit vtau energy)
-    this->functional().XCenergy      = XCenergy[0];
-    this->functional().XCenergy_vtau = XCenergy[1];
+    this->functional().XCenergy = XCenergy[0];
     functional().clear();
     int outNodes = 0;
     int outSize = 0;

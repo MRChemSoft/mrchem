@@ -27,9 +27,7 @@
 
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
-#include <cstdlib>
 #include <memory>
-#include "qmoperators/one_electron/KineticOperator.h"
 #include "xc_libraries/XCLib.h"
 
 namespace mrdft {
@@ -99,6 +97,13 @@ public:
      *  \frac{\partial F_{xc}}{\partial \gamma^{\beta  \beta }}
      *  \right) \f$
      *
+     * Meta-GGA (unpolarized) output, one tree per entry of xcNodes:
+     *  - xcNodes[0]: energy density (not distributed; the energy is summed directly in MRDFT)
+     *  - xcNodes[1]: \f$ v_{xc} = \partial F/\partial\rho - \nabla\cdot(\partial F/\partial\nabla\rho) \f$
+     *  - xcNodes[2]: \f$ v_\tau = \partial F/\partial\tau \f$
+     * The input is (rho, grad rho (3 trees), tau); the divergence uses the node-local derivOp
+     * (bandwidth 0 required).
+     *
      * @param[in] inp Input values
      * @param[out] xcNodes Output values
      *
@@ -106,15 +111,15 @@ public:
     void makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::FunctionNode<3> *> xcNodes) const;
 
     /**
-     * Setters
+     * Setters and getters
      */
     void setLogGradient(bool log) { log_grad = log; }                      ///< @brief Set whether to use logarithmic gradient transformations
     bool getLogGradient() const { return log_grad; }                      ///< @brief Query whether logarithmic gradient is enabled
     void setDensityCutoff(double cut) { cutoff = cut; }                    ///< @brief Set the density threshold below which density is set to 0
     void setDerivOp(std::shared_ptr<mrcpp::DerivativeOperator<3>> &d) { derivOp = d; } ///< @brief Set the numerical derivative operator for gradient-based functionals
     std::shared_ptr<mrcpp::DerivativeOperator<3>> getDerivOp() const { return derivOp; } ///< @brief Access the derivative operator (read-only)
-    void setKinOp(std::unique_ptr<mrchem::KineticOperator> &d) { kinOp = std::move(d); } ///< @brief Set the numerical kinetic energy operator for mGGAs
-    const mrchem::KineticOperator *getKinOp() const { return kinOp.get(); }               ///< @brief Access the kinetic operator (read-only)
+    void setTauDerivOp(std::shared_ptr<mrcpp::DerivativeOperator<3>> &d) { tauDerivOp = d; } ///< @brief Sets the Derivative for tau, the orbital-gradient grad rho and the tau operator (meta-GGA)
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> getTauDerivOp() const { return tauDerivOp ? tauDerivOp : derivOp; } ///< @brief If no tauDerivOp is sat, falls back to derivOp
 
     /**
      * Functional type querying
@@ -134,10 +139,6 @@ public:
      */
     double amountEXX() const;
     double XCenergy = 0.0;     ///< @brief Stores calculated xc energy for the current state
-    double XCenergy_vtau = 0.0; ///< @brief Optional vtau-related energy contribution
-
-    void reset_vtau_energy() { XCenergy_vtau = 0.0; }
-    void add_vtau_energy(double e) { XCenergy_vtau += e; }
 
     /**
      * @brief Evaluates the functional on a set of grid points
@@ -160,38 +161,20 @@ public:
 protected:
     const int order;                                                ///< @brief Order of functional derivatives. Eg. 0 (energy), 1 (potential), 2 (pot. gradient), etc.
     bool log_grad{false};                                           ///< @brief Toggle for logarithmic gradient
-    /** @brief Relative lower cutoff for the kinetic energy density tau (meta-GGA only; 0 = off)
+    /** @brief Relative lower cutoff c for tau (meta-GGA only; 0 = off)
      *
-     * If c = lower_tau_cutoff > 0, makepot() evaluates the functional at a smoothly bounded tau:
-     *   tau_c = c * tau_unif(rho),   tau_unif = 3/10 (3 pi^2)^(2/3) rho^(5/3),   x = tau / tau_c
-     *   tau_eff = tau (x >= 2),   tau_eff = tau_c + tau^2 / (4 tau_c) (x < 2)
-     * (C1, monotonic, tau_eff >= tau_c), with the chain rule applied to v_tau and v_rho so that the
-     * potential is the exact derivative of the evaluated energy. This is on top of the always-active
-     * clamp tau >= tau_W = |grad rho|^2 / (8 rho).
-     *
-     * meta-GGAs that depend on tau through the ratio tau_W / tau
-     * (TPSS family via z = tau_W/tau; M05/M06, B95 and VSXC correlation via D = 1 - tau_W/tau)
-     * have potentials that diverge where tau -> 0 while rho stays finite:
-     *   v_tau = dF/dtau ~ tau_W / tau^2 ~ 1/tau,   W = dF/d(grad rho) ~ grad rho / tau.
-     * This happens at points where all occupied orbitals have zero gradient at once, e.g. the
-     * bond midpoint of H2 (one doubly occupied orbital: rho ~ 0.27 but tau -> 0 like r^2).
-     * The energy integrand stays finite, but v_tau must be represented on the multiwavelet grid
-     * and applied as -1/2 div(v_tau grad phi), which an unbounded v_tau prevents (the SCF diverges).
-     * Bounding tau from below keeps v_tau and W finite.
-     *
-     * Scaling with tau_unif (not a fixed value) confines the cutoff to such points: in the density
-     * tail tau_unif ~ rho^(5/3) decays faster than tau, and near nuclei tau / tau_unif >~ 0.2, so a
-     * small value (1e-2 is used for H2) leaves other systems unchanged (He, H2O: identical energies).
-     *
-     * Set through the environment variable LOWER_TAU_CUTOFF (unset = 0 = off).
+     * Why: meta-GGAs using tau_W/tau (TPSS, M06, ...) have a v_tau ~ 1/tau that diverges where tau -> 0
+     * at finite rho (e.g. the H2 bond midpoint), which makes the SCF diverge.
+     * What: makepot() evaluates the functional at a smoothly bounded tau_eff >= c * tau_unif(rho)
+     * (see makepot), which keeps v_tau finite. TODO: make it an input keyword.
      */
-    double lower_tau_cutoff{std::getenv("LOWER_TAU_CUTOFF") ? std::atof(std::getenv("LOWER_TAU_CUTOFF")) : 0.0};
+    double lower_tau_cutoff{1.0e-3};
     double cutoff{-1.0};                                            ///< @brief Density threshold
     Eigen::VectorXi d_mask;                                         ///< @brief density and derivative(s) mask vector for response calculations
     Eigen::MatrixXi xc_mask;                                        ///< @brief functional and derivative(s) mask vector for response calculations
     std::shared_ptr<mrcpp::DerivativeOperator<3>> derivOp{nullptr}; ///< @brief Operator used to compute gradients
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> tauDerivOp{nullptr}; ///< @brief Derivative for tau / tau operator (nullptr = derivOp)
     std::unique_ptr<XCLib> xclib;                                   ///< @brief Handle for exchange–correlation library interface
-    std::unique_ptr<mrchem::KineticOperator> kinOp{nullptr};        ///< @brief Operator used to compute kinetic-energy-density terms
 
     virtual int densityChannels() const = 0; ///< @brief Returns number of densities/derivatives (eg. LDA/GGA -> 1, spinLDA/spinGGA -> 2)
     virtual bool usesGradients() const = 0;  ///< @brief Returns true if functional type uses gradients (eg. true for GGAs og metaGGAs)

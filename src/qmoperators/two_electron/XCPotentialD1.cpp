@@ -85,7 +85,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
             for (auto &phi_i : *orbitals) real_orbs = real_orbs and (phi_i.iscomplex() == 0);
             Density *grad_rho[3] = {&densities[4], &densities[5], &densities[6]};
             if (tau.Ncomp() == 0) {
-                auto derivOp = this->mrdft->functional().getDerivOp();
+                auto derivOp = this->mrdft->functional().getTauDerivOp();
                 if (derivOp == nullptr) MSG_ABORT("XCPotentialD1::setupDensities: derivative operator not set, cannot build tau");
                 NablaOperator nabla(derivOp);
                 nabla.setup(prec);
@@ -112,7 +112,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
                         Density tau_d(false);
                         mrcpp::copy_grid(tau_d, dphi);
                         if (real_orbs) {
-                            mrcpp::multiply(prec, tau_d, 1.0, dphi, dphi, tau_maxiter); // |d/dx_d phi_i|^2 on the grid of dphi
+                            mrcpp::multiply(prec, tau_d, 1.0, dphi, dphi, tau_maxiter); // |d/dx_d phi_i|^2, no refinement
                         } else {
                             mrcpp::make_density(tau_d, dphi, prec); // |d/dx_d phi_i|^2 (real, also for complex phi)
                         }
@@ -120,7 +120,7 @@ mrcpp::FunctionTreeVector<3> XCPotentialD1::setupDensities(double prec, mrcpp::F
                         tau_loc.add(0.5 * occ, tau_d);
                         if (real_orbs) { // d_d rho += 2 occ phi_i d_d phi_i
                             Density g_d(false);
-                            mrcpp::copy_grid(g_d, phi_i);
+                            mrcpp::copy_grid(g_d, dphi); // grid of the factors: phi's grid, widened by one node for a bandwidth-1 derivative
                             mrcpp::multiply(prec, g_d, 1.0, phi_i, dphi, tau_maxiter);
                             g_d.crop(prec);
                             grad_loc[d].add(2.0 * occ, g_d);
