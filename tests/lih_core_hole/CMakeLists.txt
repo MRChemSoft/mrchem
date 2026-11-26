@@ -2,6 +2,7 @@ if(ENABLE_MPI)
     set(_lih_core_hole_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
+if(ENABLE_XCFUN)
 add_integration_test(
   NAME "LiH_core_hole"
   LABELS "mrchem;LiH;scf;dft;gga;pbe;core;energy;xcfun;medium"
@@ -9,3 +10,4 @@ add_integration_test(
   LAUNCH_AGENT ${_lih_core_hole_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess
   )
+endif()

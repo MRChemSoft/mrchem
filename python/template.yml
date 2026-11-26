@@ -249,6 +249,14 @@ sections:
         default: abgv_00
         docstring: |
           Derivative used ZORA potential.
+      - name: dft
+        type: str
+        default: abgv_00
+        predicates:
+          - value.lower() in ['abgv_00']
+        docstring: |
+          Derivative used in the XC potential (density gradients in GGA functionals).
+          Only abgv_00 is supported, because the XC potential is built node by node.
   - name: Molecule
     docstring: |
       Define molecule.
@@ -393,14 +401,20 @@ sections:
           Use spin separated density functionals.
       - name: density_cutoff
         type: float
-        default: 0.0
+        default: 1.0e-11
         docstring: |
-          Hard cutoff for passing density values to XCFun.
+          Hard cutoff for passing density values to the XC library. XCFun skips
+          grid points with density below the cutoff. Libxc uses it as its density
+          threshold; values <= 0 mean Libxc's built-in default.
       - name: xc_library
         type: str
-        default: xcfun
+        default: auto
+        predicates:
+          - value.lower() in ["auto", "xcfun", "libxc"]
         docstring: |
-          Runs Libxc or XCFun
+          Which library evaluates the XC functional. Allowed values are ``auto``,
+          ``xcfun`` and ``libxc``. ``auto`` picks XCFun if it was compiled in,
+          otherwise Libxc.
       - name: functionals
         type: str
         default: ' '

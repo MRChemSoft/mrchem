@@ -69,6 +69,7 @@ XCPotentialD2::XCPotentialD2(std::unique_ptr<mrdft::MRDFT> &F, std::shared_ptr<O
  *
  */
 mrcpp::FunctionTreeVector<3> XCPotentialD2::setupDensities(double prec, mrcpp::FunctionTree<3> &grid) {
+    if (this->mrdft->functional().isMetaGGA()) MSG_ABORT("Meta-GGA response (XCPotentialD2) is not implemented");
     mrcpp::FunctionTreeVector<3> dens_vec;
     if (not this->mrdft->functional().isSpin()) {
         { // Unperturbed total density

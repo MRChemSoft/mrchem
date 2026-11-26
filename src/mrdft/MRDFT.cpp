@@ -60,17 +60,21 @@ namespace mrdft {
  * out_vec[0] = f_xc (XC energy density)
  * out_vec[1] = v_xc_a (XC alpha potential)
  * out_vec[2] = v_xc_b (XC beta potential)
+ *
+ * Meta-GGA (spin-restricted only):
+ * out_vec[0] = f_xc (XC energy density)
+ * out_vec[1] = v_xc (XC potential, including -div(dF/d(grad rho)))
+ * out_vec[2] = v_tau = dF/dtau
  */
 mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) {
-    mrcpp::Timer t_tot, t_pre;
     grid().unify(inp);
     int nCoefs = mrcpp::get_func(inp, 0).getEndFuncNode(0).getNCoefs();
 
     // Note: we do not need to make the complete energy density (PotVec[0]) for each mpi,
     //       instead we compute the energy directly.
     mrcpp::Timer t_post;
-    int potvecSize = 2; // this size include PotVec[0], which is not used
-    if (functional().isSpin()) potvecSize = 3;
+    int potvecSize = 2; // this size includes PotVec[0], which is not used
+    if (functional().isSpin() or functional().isMetaGGA()) potvecSize = 3; // spin: v_xc_a, v_xc_b; meta-GGA: v_xc, v_tau
     mrcpp::FunctionTreeVector<3> PotVec = grid().generate(potvecSize);
     int nNodes = grid().size();
     // parallelization of loop both with omp (pragma omp for) and
@@ -111,7 +115,6 @@ mrcpp::FunctionTreeVector<3> MRDFT::evaluate(mrcpp::FunctionTreeVector<3> &inp) 
         }
     }
     this->functional().XCenergy = XCenergy[0];
-    functional().clear();
     int outNodes = 0;
     int outSize = 0;
     for (size_t i = 1; i < PotVec.size(); i++) {

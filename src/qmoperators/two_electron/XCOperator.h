@@ -64,6 +64,7 @@ public:
 
     auto getEnergy() { return potential->getEnergy(); }
     auto &getDensity(DensityType spin, int pert_idx = 0) { return potential->getDensity(spin, pert_idx); }
+    RankZeroOperator &getTauPotential() { return potential->getTauPotential(); }
 
     void setNuclei(std::shared_ptr<Nuclei> nucs) {
         this->potential->setNuclei(nucs);

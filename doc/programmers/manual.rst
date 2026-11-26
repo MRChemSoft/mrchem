@@ -23,6 +23,7 @@ Classes and functions reference
    code_reference/chemistry
    code_reference/environment
    code_reference/initial_guess
+   code_reference/mrdft
    code_reference/properties
    code_reference/qmfunctions
    code_reference/qmoperators

@@ -34,4 +34,5 @@ SCF {
 
 DFT {
   xc_library = xcfun
+  density_cutoff = 0.0
 }

@@ -2,6 +2,7 @@ if(ENABLE_MPI)
     set(_h2_pol_cube_launcher "${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 1")
 endif()
 
+if(ENABLE_XCFUN)
 add_integration_test(
   NAME "H2_polarizability_CUBE"
   LABELS "mrchem;H2;lda;polarizability;cube;xcfun;medium"
@@ -9,3 +10,4 @@ add_integration_test(
   LAUNCH_AGENT ${_h2_pol_cube_launcher}
   INITIAL_GUESS ${CMAKE_CURRENT_LIST_DIR}/initial_guess
   )
+endif()

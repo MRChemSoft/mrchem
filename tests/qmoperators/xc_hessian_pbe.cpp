@@ -53,7 +53,7 @@ TEST_CASE("XCHessianPBE", "[xc_hessian_pbe]") {
     auto Phi_p = std::make_shared<OrbitalVector>();
     auto X_p = std::make_shared<OrbitalVector>();
 
-    mrdft::Factory xc_factory(*MRA);
+    mrdft::Factory xc_factory(*MRA, false, "xcfun");
     xc_factory.setOrder(MRDFT::Hessian);
     xc_factory.setFunctional("PBE", 1.0);
     xc_factory.setDensityCutoff(1.0e-10);

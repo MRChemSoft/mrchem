@@ -27,6 +27,7 @@
 
 #include "qmfunctions/Density.h"
 #include "qmoperators/QMPotential.h"
+#include "tensor/RankZeroOperator.h"
 #include "chemistry/Nucleus.h"
 
 #include "mrdft/MRDFT.h"
@@ -36,7 +37,7 @@
  * @brief Exchange-Correlation potential defined by a particular (spin) density
  *
  * The XC potential is computed by mapping of the density through a XC functional,
- * provided by the XCFun library. There are two ways of defining the density:
+ * provided by the XC library. There are two ways of defining the density:
  *
  *  1) Use getDensity() prior to setup() and build the density as you like.
  *  2) Provide a default set of orbitals in the constructor that is used to
@@ -68,6 +69,7 @@ public:
      * @brief Get the XC potential. For unrestricted calculations, the potential is a vector of two functions.
      */
     std::shared_ptr<mrcpp::FunctionTreeVector<3>> getPotentialVector() { return std::make_shared<mrcpp::FunctionTreeVector<3>>(potentials); }
+    RankZeroOperator &getTauPotential() { return tauPotential; }
 
     friend class XCOperator;
 
@@ -79,6 +81,8 @@ protected:
     double energy;                                          ///< XC energy
     std::vector<Density> densities;                         ///< XC densities (total or alpha/beta)
     mrcpp::FunctionTreeVector<3> potentials;                ///< XC Potential functions collected in a vector
+    RankZeroOperator tauPotential;                          ///< XC tau potential v_tau = dF/dtau (meta-GGA only)
+    RankZeroOperator tauOperator;                           ///< Meta-GGA operator -1/2 div(v_tau grad), added in apply()/dagger()
     std::shared_ptr<mrcpp::FunctionTree<3>> v_tot{nullptr}; ///< Total XC potential
     std::shared_ptr<OrbitalVector> orbitals;                ///< External set of orbitals used to build the density
     std::unique_ptr<mrdft::MRDFT> mrdft;                    ///< External XC functional to be used

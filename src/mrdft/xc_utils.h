@@ -25,7 +25,6 @@
 
 #include <Eigen/Core>
 #include <MRCPP/MWFunctions>
-#include <XCFun/xcfun.h>
 
 namespace mrdft {
 namespace xc_utils {
@@ -37,7 +36,7 @@ std::vector<mrcpp::FunctionNode<3> *> fetch_nodes(int n, mrcpp::FunctionTreeVect
 Eigen::MatrixXd compress_nodes(std::vector<mrcpp::FunctionNode<3> *> &inp_nodes);
 void expand_nodes(std::vector<mrcpp::FunctionNode<3> *> &out_nodes, Eigen::MatrixXd &out_data);
 
-mrcpp::FunctionTreeVector<3> log_gradient(mrcpp::DerivativeOperator<3> &diff_oper, mrcpp::FunctionTree<3> &rho);
+mrcpp::FunctionTreeVector<3> log_gradient(mrcpp::DerivativeOperator<3> &diff_oper, mrcpp::FunctionTree<3> &rho); ///< Currently unused, see xc_utils.cpp
 
 } // namespace xc_utils
 } // namespace mrdft

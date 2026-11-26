@@ -250,8 +250,8 @@ Here we specify the exchange-correlation functional used in DFT
 
     DFT {
       spin = false                          # Use spin-polarized functionals
-      density_cutoff = 1e-11                # Cutoff to set XC potential to zero
-      xc_library = xcfun                    # Specify XC functional library
+      density_cutoff = 1e-11                # Density cutoff passed to the XC library
+      xc_library = auto                     # Specify XC functional library (auto, xcfun or libxc)
       functionals = <func>                  # Functional name, see table below for examples
     $functionals
     <func1>     1.0                         # Functional name and coefficient
@@ -267,13 +267,51 @@ of exact Hartree-Fock exchange as a separate functional
 ``EXX`` (``EXX 0.2`` for B3LYP and ``EXX 0.25`` for PBE0 etc.). Option to use
 spin-polarized functionals or not. Unrestricted calculations will use
 spin-polarized functionals by default. The XC functionals are provided by the
-`XCFun <https://github.com/dftlibs/xcfun>`_ library by default, but can be 
-changed with the keyword ``xc_library`` to use either XCFun or `LibXC <https://libxc.gitlab.io/>`_ .
+`XCFun <https://github.com/dftlibs/xcfun>`_ or `LibXC <https://libxc.gitlab.io/>`_
+libraries, chosen with the keyword ``xc_library``:
+
+ * ``auto`` (default): use XCFun if it was compiled in, otherwise LibXC.
+ * ``xcfun``: use XCFun.
+ * ``libxc``: use LibXC. Only energies and potentials are available, so
+   response (property) calculations require XCFun.
+
+The library actually used is printed in the SAD and NAO initial guess sections
+of the output; other sections print the input value. If the chosen library was
+not compiled in, the program aborts. The keyword ``density_cutoff`` is passed
+to the XC library: XCFun skips grid points where the density is below the
+cutoff, while LibXC uses it as its density threshold (values :math:`\leq 0`
+mean LibXC's built-in default). The default is ``1e-11``.
+
+The derivative used to compute the density gradients in GGA functionals can be
+set in the ``Derivatives`` section, but only ``abgv_00`` is supported (and is
+the default), because the XC potential is built node by node:
+
+.. code-block:: bash
+
+    Derivatives {
+      dft = abgv_00
+    }
 
 Exchange-correlation Functionals
 ++++++++++++++++++++++++++++++++
 
-A list of available xc functional shorthands in MRChem and their mapping to respective libraries. Note that only LDAs, GGAs and their hybrids are currently supported by MRChem.
+A functional is given as a shorthand in the ``$functionals`` block (or through ``WaveFunction.method``
+for the shorthands listed there). LDAs, GGAs, meta-GGAs and their hybrids are supported. Meta-GGAs are
+only available for closed-shell (``spin = false``) ground-state calculations; response properties with
+meta-GGAs are not implemented.
+
+The two libraries handle shorthands differently:
+
+ * **XCFun**: the name is passed directly to XCFun (case-insensitive), so only XCFun's own aliases and
+   functional names are recognized. They are defined in XCFun's
+   `aliases.cpp <https://github.com/dftlibs/xcfun/blob/master/src/functionals/aliases.cpp>`__ file and
+   `functionals <https://github.com/dftlibs/xcfun/tree/master/src/functionals>`__ directory.
+ * **LibXC**: the name is first matched against the MRChem shorthands below (case-insensitive). If it is
+   not one of them, it is looked up as a LibXC functional name (e.g. ``gga_x_pbe`` or ``XC_GGA_X_PBE``).
+
+The shorthands are therefore split into four groups: shorthands that give the same functional in both
+libraries, shorthands that exist in both but give different functionals, shorthands that only exist in
+LibXC, and XCFun aliases that have no LibXC shorthand.
 
 .. |c_on| raw:: html
 
@@ -283,26 +321,38 @@ A list of available xc functional shorthands in MRChem and their mapping to resp
 
    </strong></div>
 
+Shorthands available in both libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These shorthands give the same functional in XCFun and LibXC.
+
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 | MRChem Shorthand  | XCFun Functionals | LibXC Functionals              | Difference between libraries [*]_ |
 +===================+===================+================================+===================================+
-|                             |c_on| LDAs |c_off|                                                            |
+|                                            |c_on| LDAs |c_off|                                             |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| slaterx           | | slaterx         | | LDA_X                        |                                   |
+| slaterx, slater,  | | slaterx         | | LDA_X                        |                                   |
+| ldax              | |                 | |                              |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 | vwn3, vwn3c       | | vwn3c           | | LDA_C_VWN_RPA                |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| vwn5, vwn5c       | | vwn5c           | | LDA_C_VWN                    |                                   |
+| vwn5, vwn5c, vwn  | | vwn5c           | | LDA_C_VWN                    |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| svwn3             | | svwn3c          | | LDA_X                        |                                   |
+| svwn3             | | svwn3           | | LDA_X                        |                                   |
 |                   | |                 | | + LDA_C_VWN_RPA              |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| svwn5, svwn, lda  | | svwn3c          | | LDA_X                        |                                   |
+| svwn5, svwn, lda  | | svwn5           | | LDA_X                        |                                   |
 |                   | |                 | | + LDA_C_VWN                  |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-|                             |c_on| GGAs |c_off|                                                            |
+|                                            |c_on| GGAs |c_off|                                             |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| beckex            | | beckex          | | GGA_X_B88                    | 1e-10                             |
+| beckex, b88x      | | beckex          | | GGA_X_B88                    | 1e-10                             |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| pbex              | | pbex            | | GGA_X_PBE                    |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| optx              | | optx            | | GGA_X_OPTX                   |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| lyp               | | lyp             | | GGA_C_LYP                    |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 | blyp              | | blyp            | | GGA_X_B88                    | 1e-11                             |
 |                   | |                 | | + GGA_C_LYP                  |                                   |
@@ -321,26 +371,158 @@ A list of available xc functional shorthands in MRChem and their mapping to resp
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 | kt1               | | kt1             | | GGA_XC_KT1                   |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| kt3               | | kt2             | | GGA_XC_KT2                   |                                   |
+| kt2               | | kt2             | | GGA_XC_KT2                   |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 | kt3               | | kt3             | | GGA_XC_KT3                   |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-|                           |c_on| Hyb-GGAs |c_off|                                                          |
+|                                          |c_on| Hyb-GGAs |c_off|                                           |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| b3lyp, b3lyp5     | | b3lyp           | | HYB_GGA_XC_B3LYP5            | 1e-10                             |
+| b3lyp             | | b3lyp           | | HYB_GGA_XC_B3LYP5            | 1e-10                             |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 | b3lyp-g           | | b3lyp-g         | | HYB_GGA_XC_B3LYP             |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
-| b3p86             | | b3p86           | | HYB_GGA_XC_B3P86 + LDA_C_VWN | 1e-2                              |
-|                   | |                 | | - LDA_C_VWN_RPA              |                                   |
-+-------------------+-------------------+--------------------------------+-----------------------------------+
-| b3p86-g           | | b3p86-g         | | HYB_GGA_XC_B3P86             |                                   |
-+-------------------+-------------------+--------------------------------+-----------------------------------+
 | pbe0              | | pbe0            | | HYB_GGA_XC_PBEH              |                                   |
-|                   | |                 | |                              |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| b97               | | b97             | | HYB_GGA_XC_B97               |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| b97-1             | | b97-1           | | HYB_GGA_XC_B97_1             |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| b97_2             | | b97_2           | | HYB_GGA_XC_B97_2             |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+|                                          |c_on| meta-GGAs |c_off|                                          |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| m06l              | | m06L            | | MGGA_X_M06_L                 |                                   |
+|                   | |                 | | + MGGA_C_M06_L               |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| scan              | | scan            | | MGGA_X_SCAN                  |                                   |
+|                   | |                 | | + MGGA_C_SCAN                |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| rscan             | | rscan           | | MGGA_X_RSCAN                 |                                   |
+|                   | |                 | | + MGGA_C_RSCAN               |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| rppscan           | | rppscan         | | MGGA_X_RPPSCAN               |                                   |
+|                   | |                 | | + MGGA_C_RPPSCAN             |                                   |
++-------------------+-------------------+--------------------------------+-----------------------------------+
+| r2scan            | | r2scan          | | MGGA_X_R2SCAN                |                                   |
+|                   | |                 | | + MGGA_C_R2SCAN              |                                   |
 +-------------------+-------------------+--------------------------------+-----------------------------------+
 
 .. [*] The difference between functionals with the same alias are based on total energies [hartree] of the H\ :math:`_2` dimer and is not dependent on world precision.
+
+Shorthands that differ between the libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These shorthands exist in both libraries, but the libraries define them differently. The last column
+gives the input that reproduces the functional of the *other* library, e.g. ``b3p86-xcfun`` with
+``xc_library = libxc`` gives the same functional as ``b3p86`` with ``xc_library = xcfun``. Note that the
+XCFun ``m06`` and ``m06-2x`` aliases do not contain the exact exchange of the published functionals.
+
++-----------+---------------------------------+---------------------------------+---------------------------------------+
+| Shorthand | XCFun                           | LibXC                           | Same functional in the other library  |
++===========+=================================+=================================+=======================================+
+| b3p86     | 0.08 slaterx + 0.72 beckecorrx  | HYB_GGA_XC_B3P86 + LDA_C_VWN    | LibXC: ``b3p86-xcfun``                |
+|           | + vwn5c + 0.81 p86corrc         | - LDA_C_VWN_RPA                 |                                       |
+|           | + 0.20 exx                      | (its 0.81 P86 includes PZ81     |                                       |
+|           |                                 | local correlation)              |                                       |
++-----------+---------------------------------+---------------------------------+---------------------------------------+
+| b3p86-g   | 0.08 slaterx + 0.72 beckecorrx  | HYB_GGA_XC_B3P86                | LibXC: ``b3p86-g-xcfun``              |
+|           | + vwn3c + 0.81 p86corrc         | (0.19 LDA_C_VWN_RPA + 0.81 P86; |                                       |
+|           | + 0.20 exx                      | P86 includes PZ81 local         |                                       |
+|           |                                 | correlation)                    |                                       |
++-----------+---------------------------------+---------------------------------+---------------------------------------+
+| m06       | m06x + m06c                     | HYB_MGGA_X_M06 + MGGA_C_M06     | XCFun: ``m06x 1.0``, ``m06c 1.0``,    |
+|           | (no exact exchange)             | (27 % exact exchange)           | ``exx 0.27``                          |
++-----------+---------------------------------+---------------------------------+---------------------------------------+
+| m06-2x    | m06x2x + m06x2c                 | HYB_MGGA_X_M06_2X               | XCFun: ``m06x2x 1.0``,                |
+|           | (no exact exchange)             | + MGGA_C_M06_2X                 | ``m06x2c 1.0``, ``exx 0.54``          |
+|           |                                 | (54 % exact exchange)           |                                       |
++-----------+---------------------------------+---------------------------------+---------------------------------------+
+
+LibXC-only shorthands
+^^^^^^^^^^^^^^^^^^^^^
+
+These shorthands are only defined in MRChem's LibXC interface and abort with ``xc_library = xcfun``.
+The last column gives the XCFun input (in the ``$functionals`` block) for the same functional.
+
++---------------+--------------------------------+--------------------------------------+
+| Shorthand     | LibXC Functionals              | XCFun equivalent                     |
++===============+================================+======================================+
+|                         |c_on| Alternative spellings |c_off|                          |
++---------------+--------------------------------+--------------------------------------+
+| b3lyp5        | HYB_GGA_XC_B3LYP5              | ``b3lyp``                            |
++---------------+--------------------------------+--------------------------------------+
+| pbeh          | HYB_GGA_XC_PBEH                | ``pbe0``                             |
++---------------+--------------------------------+--------------------------------------+
+| b97_1         | HYB_GGA_XC_B97_1               | ``b97-1``                            |
++---------------+--------------------------------+--------------------------------------+
+| b97-2         | HYB_GGA_XC_B97_2               | ``b97_2``                            |
++---------------+--------------------------------+--------------------------------------+
+| m06-l         | MGGA_X_M06_L                   | ``m06l``                             |
+|               | + MGGA_C_M06_L                 |                                      |
++---------------+--------------------------------+--------------------------------------+
+| m062x         | HYB_MGGA_X_M06_2X              | see ``m06-2x`` above                 |
+|               | + MGGA_C_M06_2X                |                                      |
++---------------+--------------------------------+--------------------------------------+
+| r++scan       | MGGA_X_RPPSCAN                 | ``rppscan``                          |
+|               | + MGGA_C_RPPSCAN               |                                      |
++---------------+--------------------------------+--------------------------------------+
+|                               |c_on| Hyb-GGAs |c_off|                                 |
++---------------+--------------------------------+--------------------------------------+
+| b3p86-xcfun   | 0.08 LDA_X + 0.72 GGA_X_B88    | ``b3p86``                            |
+|               | + LDA_C_VWN                    |                                      |
+|               | + 0.81 GGA_C_P86_FT            |                                      |
+|               | - 0.81 LDA_C_PZ                |                                      |
+|               | + 0.20 exact exchange          |                                      |
++---------------+--------------------------------+--------------------------------------+
+| b3p86-g-xcfun | 0.08 LDA_X + 0.72 GGA_X_B88    | ``b3p86-g``                          |
+|               | + LDA_C_VWN_RPA                |                                      |
+|               | + 0.81 GGA_C_P86_FT            |                                      |
+|               | - 0.81 LDA_C_PZ                |                                      |
+|               | + 0.20 exact exchange          |                                      |
++---------------+--------------------------------+--------------------------------------+
+|                               |c_on| meta-GGAs |c_off|                                |
++---------------+--------------------------------+--------------------------------------+
+| tpss          | MGGA_X_TPSS                    | ``tpssx 1.0``, ``tpssc 1.0``         |
+|               | + MGGA_C_TPSS                  |                                      |
++---------------+--------------------------------+--------------------------------------+
+| revtpss       | MGGA_X_REVTPSS                 | ``revtpssx 1.0``, ``revtpssc 1.0``   |
+|               | + MGGA_C_REVTPSS               |                                      |
++---------------+--------------------------------+--------------------------------------+
+|                             |c_on| Hyb-meta-GGAs |c_off|                              |
++---------------+--------------------------------+--------------------------------------+
+| tpssh         | HYB_MGGA_XC_TPSSH              | ``tpssx 0.9``, ``tpssc 1.0``,        |
+|               |                                | ``exx 0.1``                          |
++---------------+--------------------------------+--------------------------------------+
+| revtpssh      | HYB_MGGA_XC_REVTPSSH           | ``revtpssx 0.9``, ``revtpssc 1.0``,  |
+|               |                                | ``exx 0.1``                          |
++----------- ---+--------------------------------+--------------------------------------+
+| tpss0         | HYB_MGGA_XC_TPSS0              | ``tpssx 0.75``, ``tpssc 1.0``,       |
+|               |                                | ``exx 0.25``                         |
++---------------+--------------------------------+--------------------------------------+
+
+XCFun-only aliases
+^^^^^^^^^^^^^^^^^^
+
+Some XCFun aliases have no LibXC shorthand in MRChem. A selection is given below; the complete list is in
+XCFun's `aliases.cpp <https://github.com/dftlibs/xcfun/blob/master/src/functionals/aliases.cpp>`__. The
+individual XCFun functionals (e.g. ``tpssx``, ``m06x``, ``scanx``) can also be used directly.
+
++-----------+--------------------------------------+------------------------------------+
+| Shorthand | XCFun Functionals                    | LibXC equivalent                   |
++===========+======================================+====================================+
+| becke     | beckecorrx (Becke 88 gradient        | ``gga_x_b88 1.0``, ``lda_x -1.0``  |
+|           | correction only, no Slater exchange) |                                    |
++-----------+--------------------------------------+------------------------------------+
+| kt3x      | 1.092 slaterx - 0.004 ktx            | none                               |
+|           | - 0.925452 optxcorr                  |                                    |
++-----------+--------------------------------------+------------------------------------+
+| r4scan    | r4scanx + r4scanc                    | ``mgga_x_r4scan 1.0``,             |
+|           | (r4scanc is r2SCAN correlation)      | ``mgga_c_r2scan 1.0``              |
++-----------+--------------------------------------+------------------------------------+
+
+The XCFun aliases ``camb3lyp``, ``ldaerf`` and ``camcompx`` are range-separated, which MRChem does not
+support, and ``tfk`` and ``tw`` are kinetic-energy functionals for orbital-free DFT; these should not be
+used in MRChem.
 
 XCFun and LibXC functionals can also be specified in the `functionals` input keyword as their raw internal aliases:
 
@@ -357,7 +539,6 @@ XCFun and LibXC functionals can also be specified in the `functionals` input key
 
 Some general notes:
 
- * Functional aliases are based on the XCFun definitions.
  * LibXC and XCFun have implementation differences, which in some cases result in numerical variations.
  * Some functional parameters are intrinsically different in the two libraries, internally changing these in MRChem to match would remove the purpose of using libraries; thus some differences are to be expected.
  * A complete list of XCFun shorthands and definitions can be found in the `aliases.cpp <https://github.com/dftlibs/xcfun/blob/master/src/functionals/aliases.cpp>`_ file.

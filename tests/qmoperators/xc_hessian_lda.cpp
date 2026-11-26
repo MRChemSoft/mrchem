@@ -53,7 +53,7 @@ TEST_CASE("XCHessianLDA", "[xc_hessian_lda]") {
     auto Phi_p = std::make_shared<OrbitalVector>();
     auto X_p = std::make_shared<OrbitalVector>();
 
-    mrdft::Factory xc_factory(*MRA);
+    mrdft::Factory xc_factory(*MRA, false, "xcfun");
     xc_factory.setOrder(MRDFT::Hessian);
     xc_factory.setUseGamma(true);
     xc_factory.setFunctional("LDA", 1.0);

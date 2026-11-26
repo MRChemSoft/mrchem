@@ -27,8 +27,8 @@ Options:
   --enable-tests=<TESTS>                 Enable tests [default: True].
   --xcfun-old-pbe                        Compile xcfun with old definition of pbe parameters [default: False].
   --nlohmann_json=<STRING>               Behaviour for finding/fetching nlohmann_json (default, onlylocal, onlyfetch) [default: default].
-  --xcfun=<STRING>                       Behaviour for finding/fetching XCFun (default, onlylocal, onlyfetch) [default: default].
-  --libxc=<STRING>                       Behaviour for finding/fetching LibXC (default, onlylocal, onlyfetch) [default: default].
+  --xcfun=<STRING>                       Behaviour for finding/fetching XCFun (default, onlylocal, onlyfetch, none) [default: default].
+  --libxc=<STRING>                       Behaviour for finding/fetching LibXC (default, onlylocal, onlyfetch, none) [default: default].
   --eigen3=<STRING>                      Behaviour for finding/fetching Eigen3 (default, onlylocal, onlyfetch) [default: default].
   --mrcpp=<STRING>                       Behaviour for finding/fetching MRCPP (default, onlylocal, onlyfetch) [default: default].
   --catch2=<STRING>                      Behaviour for finding/fetching Catch2 (default, onlylocal, onlyfetch) [default: default].

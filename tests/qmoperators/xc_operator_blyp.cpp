@@ -54,7 +54,7 @@ TEST_CASE("XCOperatorBLYP", "[xc_operator_blyp]") {
 
     auto Phi_p = std::make_shared<OrbitalVector>();
 
-    mrdft::Factory xc_factory(*MRA);
+    mrdft::Factory xc_factory(*MRA, false, "xcfun");
     xc_factory.setOrder(MRDFT::Gradient);
     xc_factory.setFunctional("BLYP", 1.0);
     xc_factory.setDensityCutoff(1.0e-10);

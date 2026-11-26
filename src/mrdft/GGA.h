@@ -25,38 +25,37 @@
 
 #pragma once
 
-#include <XCFun/xcfun.h>
-
 #include "Functional.h"
-#include "Factory.h" // only to call Factory::libxc
+#include "xc_utils.h"
 
 namespace mrdft {
 
+/**
+ * @class GGA
+ * @brief Generalized Gradient Approximation xc functional
+ * @details Implements the spin-restricted and the spin-polarized GGA functional on the MRA grid
+ */
 class GGA final : public Functional {
 public:
-    GGA(int k, XC_p &f, std::unique_ptr<mrcpp::DerivativeOperator<3>> &d);
+    /**
+     * @brief Construct a GGA functional
+     * @param[in] k Polynomial order of the functional derivatives (0: energy,
+     *             1: potential, etc.)
+     * @param[in] s True for the spin-polarized case, false for spin-restricted
+     * @param[in] f XC library handle (Libxc/XCFun); ownership is transferred
+     */
+    GGA(int k, bool s, XCLib_p &f)
+            : Functional(k, s, f) {
+        xc_mask = xc_utils::build_output_mask(false, spin, this->order);
+        d_mask = xc_utils::build_density_mask(false, spin, this->order);
+    }
     ~GGA() override = default;
 
-    bool isSpin() const override { return false; }
     bool isGGA() const override { return true; }
     bool isMetaGGA() const override { return false; }
-    int numIn() const override { return 4; }
-    int numOut() const override { if (Factory::libxc) {return 5;} else {return xcfun_output_length(xcfun.get());} }
 
-private:
-    std::unique_ptr<mrcpp::DerivativeOperator<3>> derivative{nullptr};
-    mrcpp::FunctionTreeVector<3> rho;
-    mrcpp::FunctionTreeVector<3> grad;
-
-    int getCtrInputLength() const override;
-    int getCtrOutputLength() const override { return 5; }
-
-    void clear() override;
-    virtual mrcpp::FunctionTreeVector<3> setupXCInput() override;
-    virtual mrcpp::FunctionTreeVector<3> setupCtrInput() override;
-
-    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
-    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    int numOut() const override { return xclib->getnOut(); } ///< @brief Number of raw outputs provided by the xc backend
+    bool usesGradients() const override { return true; }     ///< @brief GGA requires density gradients
 };
 
 } // namespace mrdft

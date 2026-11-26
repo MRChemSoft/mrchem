@@ -28,6 +28,7 @@
 
 #include "XCPotential.h"
 #include "qmfunctions/density_utils.h"
+#include "qmoperators/one_electron/NablaOperator.h"
 #include "qmfunctions/orbital_utils.h"
 #include <vector>
 
@@ -125,7 +126,6 @@ void XCPotential::setup(double prec) {
         }
     }
 
-
     mrcpp::FunctionTreeVector<3> xc_out = this->mrdft->evaluate(xc_inp);
 
     // Fetch energy
@@ -137,6 +137,24 @@ void XCPotential::setup(double prec) {
     mrcpp::copy_grid(*v_global, v_local);
     mrcpp::copy_func(*v_global, v_local);
     this->potentials.push_back(std::make_tuple(1.0, v_global));
+
+    if (this->mrdft->functional().isMetaGGA() && !this->mrdft->functional().isSpin()) {
+        auto &v_tau = mrcpp::get_func(xc_out, 2);
+        auto tau_op = std::make_shared<QMPotential>(1, false); // same adaptivity as the XC potential
+        tau_op->alloc(1);                                      // real() is only valid after alloc
+        mrcpp::copy_grid(tau_op->real(), v_tau);
+        mrcpp::copy_func(tau_op->real(), v_tau);
+        this->tauPotential = tau_op;
+
+        // Generalized Kohn-Sham operator for the tau dependence:
+        //   dE_xc/dphi_i^* = -1/2 div( v_tau grad phi_i )
+        // NB: A * B applies B first, so the product reads d_d(v_tau (d_d phi)).
+        NablaOperator nabla(this->mrdft->functional().getTauDerivOp());
+        RankZeroOperator &V_tau = this->tauPotential;
+        this->tauOperator = -0.5 * (nabla[0] * V_tau * nabla[0] + nabla[1] * V_tau * nabla[1] + nabla[2] * V_tau * nabla[2]);
+        this->tauOperator.name() = "V_xc_tau";
+        this->tauOperator.setup(prec);
+    }
 
     // Fetch potential
     if (this->mrdft->functional().isSpin()) {
@@ -167,6 +185,13 @@ void XCPotential::clear() {
     this->energy = 0.0;
     for (auto &rho : this->densities) rho.free();
     mrcpp::clear(this->potentials, true);
+    this->tauOperator.clear();              // clear the derivative operators (avoids ~QMOperator error)
+    this->tauOperator = RankZeroOperator(); // drops refs; v_tau itself is cleared below
+    this->tauPotential.clear();
+    // RankZeroOperator::clear() only resets the precision, and operator=(QMOperator_p)
+    // APPENDS to the expansion. Without this reset every setup() added another v_tau
+    // term, so after n SCF iterations the applied potential was v_tau^(1)+...+v_tau^(n).
+    this->tauPotential = RankZeroOperator();
     clearApplyPrec();
 }
 
@@ -231,6 +256,10 @@ Orbital XCPotential::apply(Orbital phi) {
     V.setReal(&pot);
     Orbital Vphi = QMPotential::apply(phi);
     V.setReal(nullptr);
+    if (this->tauOperator.size() > 0) { // meta-GGA: add -1/2 div(v_tau grad phi)
+        Orbital Tphi = this->tauOperator(phi);
+        Vphi.add(1.0, Tphi);
+    }
     return Vphi;
 }
 
@@ -242,6 +271,12 @@ Orbital XCPotential::dagger(Orbital phi) {
     V.setReal(&pot);
     Orbital Vphi = QMPotential::dagger(phi);
     V.setReal(nullptr);
+    // dagger() applies the same operator as apply(): this equals the adjoint only for an antisymmetric tau
+    // derivative (bspline), for which -1/2 div(v_tau grad) is Hermitian (QMDerivative::dagger is not implemented).
+    if (this->tauOperator.size() > 0) {
+        Orbital Tphi = this->tauOperator(phi);
+        Vphi.add(1.0, Tphi);
+    }
     return Vphi;
 }
 

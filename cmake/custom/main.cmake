@@ -67,12 +67,41 @@ set_source_files_properties(${PROJECT_BINARY_DIR}/version.h
 set(_build_type ${CMAKE_BUILD_TYPE})
 # Order IS important here!
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_nlohmann_json.cmake)
-include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
-include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
+if(NOT XCFUN_FIND_BEHAVIOUR STREQUAL "none")
+  include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_xcfun.cmake)
+endif()
+if(NOT LIBXC_FIND_BEHAVIOUR STREQUAL "none")
+  include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_libxc.cmake)
+endif()
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_eigen3.cmake)
 include(${PROJECT_SOURCE_DIR}/external/upstream/fetch_mrcpp.cmake)
 # reset CMAKE_BUILD_TYPE to whatever it was for MRChem
 set(CMAKE_BUILD_TYPE ${_build_type})
+
+# XCFun and LibXC are optional. src/CMakeLists.txt links ${XCFUN_LIBRARY} and ${LIBXC_LIBRARY},
+# src/mrdft/xc_libraries and tests/ check ENABLE_XCFUN / ENABLE_LIBXC, and the code checks
+# DISABLE_XCFUN / DISABLE_LIBXC.
+if(TARGET xcfun AND NOT TARGET XCFun::xcfun)
+  add_library(XCFun::xcfun ALIAS xcfun)
+endif()
+if(TARGET XCFun::xcfun)
+  set(XCFUN_LIBRARY XCFun::xcfun)
+  set(ENABLE_XCFUN ON)
+else()
+  message(STATUS "Disabling XCFun support!")
+  add_compile_definitions(DISABLE_XCFUN)
+  set(XCFUN_LIBRARY "")
+  set(ENABLE_XCFUN OFF)
+endif()
+if(TARGET Libxc::xc)
+  set(LIBXC_LIBRARY Libxc::xc)
+  set(ENABLE_LIBXC ON)
+else()
+  message(STATUS "Disabling LibXC support!")
+  add_compile_definitions(DISABLE_LIBXC)
+  set(LIBXC_LIBRARY "")
+  set(ENABLE_LIBXC OFF)
+endif()
 
 add_subdirectory(src)
 add_subdirectory(python)
