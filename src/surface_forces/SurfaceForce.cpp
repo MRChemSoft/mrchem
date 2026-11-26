@@ -305,11 +305,11 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     bool xc_spin = json_xcfunc["spin"];
     auto xc_cutoff = json_xcfunc["cutoff"];
     auto xc_funcs = json_xcfunc["functionals"];
+    auto xc_lib = json_fock["xc_library"];
     auto xc_order = order + 1;
     auto funcVectorShared = std::make_shared<OrbitalVector>(Phi);
 
-    mrdft::Factory xc_factory(*MRA);
-    xc_factory.setSpin(xc_spin);
+    mrdft::Factory xc_factory(*MRA, xc_spin, xc_lib);
     xc_factory.setOrder(xc_order);
     xc_factory.setDensityCutoff(xc_cutoff);
     for (const auto &f : xc_funcs) {
@@ -319,8 +319,7 @@ Eigen::MatrixXd surface_forces(mrchem::Molecule &mol, mrchem::OrbitalVector &Phi
     }
     std::unique_ptr<mrdft::MRDFT> mrdft_p = xc_factory.build();
 
-    mrdft::Factory xc_factory2(*MRA);
-    xc_factory2.setSpin(xc_spin);
+    mrdft::Factory xc_factory2(*MRA, xc_spin, xc_lib);
     xc_factory2.setOrder(xc_order);
     xc_factory2.setDensityCutoff(xc_cutoff);
     for (const auto &f : xc_funcs) {

@@ -23,15 +23,11 @@
  * <https://mrchem.readthedocs.io/>
  */
 
+#include "Libxc.h"
 #include <MRCPP/Printer>
-#include <xc_funcs.h>
-#include <xc.h>
-
-#include "xc_func_alias.h"
-
 namespace mrdft {
-    
-void mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs, double &customExx) {
+
+void Libxc::mapFunctionalName(std::string name, std::vector<int> &ids, std::vector<double> &coefs, double &customExx) {
     customExx = 0.0; // Allows for hard coded exact exchange
     // ensure name is upper case
     std::transform(name.begin(), name.end(), name.begin(), [](unsigned char c) { return std::toupper(c); });

@@ -208,7 +208,7 @@
       ],
       "properties": {                        # Collection of properties to compute
         "polarizability": {                  # Collection of polarizabilities
-           id (string): {                    # Unique id: 'pol-${frequency}'
+          id (string): {                     # Unique id: 'pol-${frequency}'
             "precision": float,              # Operator precision
             "operator": string,              # Operator used for property
             "r_O": array[float]              # Operator gauge origin

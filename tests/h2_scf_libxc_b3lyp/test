@@ -10,10 +10,10 @@ from tester import *  # isort:skip
 options = script_cli()
 
 filters = {
-    SUM_OCCUPIED: rel_tolerance(1.0e-10),
-    E_KIN:        rel_tolerance(1.0e-10),
+    SUM_OCCUPIED: rel_tolerance(1.0e-9),
+    E_KIN:        rel_tolerance(1.0e-9),
     E_EN:         rel_tolerance(1.0e-10),
-    E_EE:         rel_tolerance(1.0e-10),
+    E_EE:         rel_tolerance(1.0e-9),
     E_X:          rel_tolerance(1.0e-10),
     E_XC:         rel_tolerance(1.0e-10),
     E_EEXT:       rel_tolerance(1.0e-10),

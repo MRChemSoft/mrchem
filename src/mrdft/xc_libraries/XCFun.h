@@ -25,37 +25,38 @@
 
 #pragma once
 
+#include "XCLib.h"
 #include <XCFun/xcfun.h>
-
-#include "Functional.h"
-#include "Factory.h" // only to call Factory::libxc
 
 namespace mrdft {
 
-class SpinLDA final : public Functional {
+/**
+ * @class XCFun
+ * @brief Class for Exchange-Correlation functionals using XCFun
+ * @details Provides the interface for evaluating XC potentials
+ * on the Multi-Resolution Analysis (MRA) grid using XCFun
+ */
+class XCFun final : public XCLib {
+
 public:
-    SpinLDA(int k, XC_p &f);
-    ~SpinLDA() override = default;
+    explicit XCFun(bool spin_enabled)
+            : XCLib(spin_enabled) {
+        xcfun = xcfun_new();
+    }
 
-    bool isSpin() const override { return true; }
-    bool isGGA() const override { return false; }
-    bool isMetaGGA() const override { return false; }
-    int numIn() const override { return 2; }
-    int numOut() const override { if (Factory::libxc) {return 3;} else {return xcfun_output_length(xcfun.get());} }
+    ~XCFun() override;
 
-private:
-    mrcpp::FunctionTreeVector<3> rho_a;
-    mrcpp::FunctionTreeVector<3> rho_b;
+    xcfun_t *xcfun; ///< @brief XCFun library handle
+    std::string name() const override { return "XCFun"; }
+    double getAmountExx() const override;
+    int getnOut() const override { return xcfun_output_length(xcfun); }
 
-    int getCtrInputLength() const override;
-    int getCtrOutputLength() const override { return 3; }
+    void setFunctional(const std::string &name, double c) override;
+    void initFunctionalLibrary(bool &lda, bool &gga, bool &mgga, int order, bool gamma) override;
+    void printFunctionalReference(int out_txt_width) const override;
+    void callLibEval(const Eigen::MatrixXd &inp, Eigen::MatrixXd &out, int nPts) const override;
 
-    void clear() override;
-    virtual mrcpp::FunctionTreeVector<3> setupXCInput() override;
-    virtual mrcpp::FunctionTreeVector<3> setupCtrInput() override;
-
-    void preprocess(mrcpp::FunctionTreeVector<3> &inp) override;
-    mrcpp::FunctionTreeVector<3> postprocess(mrcpp::FunctionTreeVector<3> &inp) override;
+    void setCutoff(double cutoff) override { this->cutoff = cutoff; }
 };
 
 } // namespace mrdft

@@ -25,47 +25,46 @@
 
 #pragma once
 
-#include <MRCPP/MWOperators>
-#include <XCFun/xcfun.h>
-#include <xc_funcs.h>
-#include <xc.h>
-
-#include "xc_func_alias.h"
 #include "MRDFT.h"
+#include "xc_libraries/XCLib.h"
 
 namespace mrdft {
 
 /**
  * @class Factory
  * @brief Building class for MRDFT objects
- * @details Manages the different xc libraries, mapping of functional names and builds the functional objects 
+ * @details Manages the different xc libraries, mapping of functional names and builds the functional objects
  * with the required parameters to initialize a DFT calculation
  */
 class Factory final {
 public:
     /**
-     * @brief Construct a new Factory object. Initializes the MRA reference and creates the XCFun handle
-     * @param[in] MRA The Multi-Resolution Analysis object providing the grid 
+     * @brief Construct a new Factory object. Initializes the MRA reference  and creates the XC library backend
+     * @param[in] MRA The Multi-Resolution Analysis object providing the grid
      * and basis functions for the calculation
+     * @param[in] spin If true, use spin separated densities
+     * @param[in] xclibname Name of the XC library: "xcfun", "libxc" or "auto" (XCFun if available, else Libxc)
+     * @throws MSG_ABORT If the library name is unknown or the library was not compiled in
      */
-    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA);
+    Factory(const mrcpp::MultiResolutionAnalysis<3> &MRA, bool spin, const std::string &xclibname);
 
-    ~Factory() = default;   ///< @brief Default destructor
+    ~Factory() = default; ///< @brief Default destructor
 
     /*
      * Setters
      */
-    void setSpin(bool s) { spin = s; }                        ///< Set spin polarization (true for unrestricted/spin-polarized) */
-    void setOrder(int k) { order = k; }                       ///< Set the polynomial order for the MRA basis
-    void setUseGamma(bool g) { gamma = g; }                   ///< Toggle between gamma-type and explicit derivatives
-    void setLogGradient(bool lg) { log_grad = lg; }           ///< Toggle the use of logarithmic gradients
-    void setDensityCutoff(double c) { cutoff = c; }           ///< Set the threshold for neglecting low-density regions
-    void setLibxc(bool libxc_) {libxc = libxc_; }             ///< Toggle between Libxc (true) and XCFun (false) backends
-    void setDerivative(const std::string &n) { diff_s = n; }  ///< Set derivative operator type (e.g., "bspline", "abgv_00")
+    void setOrder(int k) { order = k; }                      ///< Set the order of the functional derivatives (1: potential, 2: response, ...)
+    void setUseGamma(bool g) { gamma = g; }                  ///< Toggle between gamma-type and explicit derivatives
+    void setLogGradient(bool lg) { log_grad = lg; }          ///< Toggle the use of logarithmic gradients (currently unused, see Functional::log_grad)
+    void setDerivative(const std::string &n) { diff_s = n; } ///< Set derivative operator type (only "abgv_00" is supported, see Functional::makepot)
+
+    void setDensityCutoff(double c);                         ///< Set the threshold for neglecting low-density regions
+
+    std::string getXCLibName() const; ///< Get the name of the XC library in use (resolves "auto")
 
     /**
      * @brief Configures the xc functional
-     * 
+     *
      * @param[in] name The name of the xc functional (e.g., "PBE", "B3LYP")
      * @param[in] c    A global scaling coefficient applied to the functional.
      * @throws MSG_ABORT If a mapped Libxc ID is incompatible with the linked Libxc version
@@ -80,38 +79,32 @@ public:
      * @details Performs the following steps:
      * 1.  **Grid Initialization**: Creates a multi-resolution grid based on the MRA
      * 2.  **Library dependent initiation**: If using Libxc, iterates through functional objects
-     * to ensure they belong to supported families (LDA/GGA, not meta-GGA or range separated). 
+     * to ensure they belong to supported families (LDA/GGA, not meta-GGA or range separated).
      * If using XCFun, sets evaluation parameters, mode and order
-     * 3.  **Operator Selection**: Assigns numerical derivative operators (BSpline or ABGV)
-     * required for GGAs
+     * 3.  **Operator Selection**: Builds the ABGV(0,0) derivative operator (the only
+     * one supported, see Functional::makepot). Aborts if setDerivative() was given anything else
      * 4.  **Functional Instantiation**: Selects the appropriate concrete implementation
-     * (SpinLDA, SpinGGA, LDA, or GGA) based on spin and gradient requirements.
-     * 5.  **State Sync**: Passes functional objects, density cutoffs, and derivative 
+     * (LDA or GGA, both with a spin flag) based on the functional family; spin is passed to the constructor.
+     * 5.  **State Sync**: Passes functional objects, density cutoffs, and derivative
      * schemes to the functional
+     * @note Can be called only once, because the XC library backend is moved into the functional
      * @return std::unique_ptr<MRDFT> A pointer to the assembled Multi-Resolution DFT object.
      * @throws MSG_ABORT If unsupported functional families are detected in the Libxc case
      * (eg. meta-GGAs and range separated functionals)
      */
     std::unique_ptr<MRDFT> build();
 
-    static bool libxc;     ///< @brief Flag indicating if Libxc is active (True if "DFT {xc_library = libxc}" in input file). False by default
-
 private:
-    int order{1};                  ///< Polynomial order of the Multi-Resolution Analysis (MRA) basis
+    int order{1};                  ///< Order of the functional derivatives (1: potential, 2: response, ...)
     bool spin{false};              ///< If true, perform unrestricted calculations
     bool gamma{false};             ///< If true, use gamma-type derivatives (gradient squared) instead of explicit components
-    bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations
-    double cutoff{-1.0};           ///< Density threshold; values below this are sat to 0
-    double customExx{0.0};         ///< @brief Used in mapfunctionalName to set exx for custom functionals
-    std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (e.g., "bspline", "abgv_55")
+    bool log_grad{false};          ///< Toggle for using logarithmic gradient transformations (currently unused, see Functional::log_grad)
+    double cutoff{-1.0};           ///< Density threshold; values below this are set to 0
+    std::string diff_s{"abgv_00"}; ///< String identifier for the derivative operator type (only "abgv_00" is supported)
 
-    const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Reference to the 3D Multi-Resolution Analysis grid structure
-    std::unique_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
-    XC_p xcfun_p;                                         ///< @brief Pointer to the XCFun library handle
-
-    std::vector<std::string> xcfun_func_names;      ///< @brief Vector for storing used XCFun functional names
-    std::vector<xc_func_type*> libxc_objects;       ///< @brief Vector of initialized Libxc functionals
-    std::vector<double> libxc_coefs;                ///< @brief Vector scaling coefficients for each functional in libxc_objects
+    const mrcpp::MultiResolutionAnalysis<3> mra;          ///< @brief Copy of the 3D Multi-Resolution Analysis grid structure
+    std::shared_ptr<mrcpp::DerivativeOperator<3>> diff_p; ///< @brief Pointer to the numerical derivative operator used for GGA gradients
+    std::unique_ptr<XCLib> xclib;                         ///< @brief Handle for exchange–correlation library interface
 };
 
 } // namespace mrdft

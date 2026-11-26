@@ -35,6 +35,10 @@ from .validators import MoleculeValidator
 
 def translate_input(user_dict):
 
+    # string keywords are validated case-insensitively; normalize to lower case
+    user_dict["world_unit"] = user_dict["world_unit"].lower()
+    user_dict["DFT"]["xc_library"] = user_dict["DFT"]["xc_library"].lower()
+
     # get the origin in the desired units of measure
     origin = user_dict["world_origin"]
     pc = user_dict["Constants"]

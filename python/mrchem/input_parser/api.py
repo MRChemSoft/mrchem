@@ -350,11 +350,14 @@ def stencil() -> JSONDict:
                                             'name': 'azora_potential_path',
                                             'type': 'str'}],
                         'name': 'ZORA'},
-                    {   'keywords': [   {   'default': 0.0,
+                    {   'keywords': [   {   'default': 1.0e-11,
                                             'name': 'density_cutoff',
                                             'type': 'float'},
-                                        {   'default': 'xcfun',
+                                        {   'default': 'auto',
                                             'name': 'xc_library',
+                                            'predicates': [   'value.lower() in '
+                                                              '["auto", "xcfun", '
+                                                              '"libxc"]'],
                                             'type': 'str'},
                                         {   'default': ' ',
                                             'name': 'functionals',

@@ -186,6 +186,10 @@ void xc_utils::expand_nodes(std::vector<mrcpp::FunctionNode<3> *> &out_nodes, Ei
  * param[in] diff_oper Derivative operator
  * param[in] inp_func Function to differentiate
  * param[out] out_grad Gradient of input function
+ *
+ * Currently unused: Functional::makepot computes gradients node by node, but this function works on whole
+ * FunctionTrees (log of the full density, then a tree-wide gradient), so it cannot be called from there.
+ * Kept for a future tree-level gradient path; enabling Functional::setLogGradient makes makepot report an error.
  */
 mrcpp::FunctionTreeVector<3> xc_utils::log_gradient(mrcpp::DerivativeOperator<3> &diff_oper, mrcpp::FunctionTree<3> &inp_func) {
     mrcpp::FunctionTree<3> zeta(inp_func.getMRA());
