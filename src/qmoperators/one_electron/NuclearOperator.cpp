@@ -56,12 +56,42 @@ namespace mrchem {
  *  @param proj_prec: Precision for projection of analytic function
  *  @param smooth_prec: Precision for smoothing of analytic function
  *  @param mpi_share: Should MPI ranks on the same machine share this function?
+ *  @param model: Nuclear model for the nuclei in nucs
+ *  @param pp_nucs: Nuclei with pseudopotential, added to the potential before it is shared
  */
-NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, const std::string &model) {
+NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, const std::string &model)
+        : NuclearOperator(nucs, proj_prec, smooth_prec, mpi_share, model, Nuclei()) {}
+
+NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, const std::string &model, const Nuclei &pp_nucs) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
     Timer t_tot;
 
+    // Project on private trees, the shared potential must be written only once
+    mrcpp::CompFunction<3> V_loc = projectLocal(nucs, proj_prec, smooth_prec, model);
+    if (!pp_nucs.empty()) V_loc.add(1.0, projectLocal(pp_nucs, proj_prec, smooth_prec, "pp"));
+
+    // Scale precision by charge, since norm of potential is ~ to charge
+    double Z_tot = 1.0 * (chemistry::get_total_charge(nucs) + chemistry::get_total_charge(pp_nucs));
+    double tot_prec = proj_prec / std::min(1.0 * Z_tot, std::sqrt(2.0 * Z_tot));
+
+    // Collect local potentials
+    Timer t_com;
+    auto V_tot = std::make_shared<QMPotential>(1, mpi_share);
+    allreducePotential(tot_prec, *V_tot, V_loc);
+    t_com.stop();
+
+    t_tot.stop();
+    print_utils::qmfunction(1, "Allreduce potential", *V_tot, t_com);
+    mrcpp::print::footer(1, t_tot, 2);
+
+    // Invoke operator= to assign *this operator
+    RankZeroOperator &O = (*this);
+    O = V_tot;
+    O.name() = "V_nuc";
+}
+
+mrcpp::CompFunction<3> NuclearOperator::projectLocal(const Nuclei &nucs, double proj_prec, double smooth_prec, const std::string &model) const {
     // Setup local analytic function
     Timer t_loc;
     NuclearFunction *f_loc = nullptr;
@@ -90,9 +120,7 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     setupLocalPotential(*f_loc, nucs, smooth_prec);
 
     // Scale precision by charge, since norm of potential is ~ to charge
-    double Z_tot = 1.0 * chemistry::get_total_charge(nucs);
     double Z_loc = 1.0 * chemistry::get_total_charge(f_loc->getNuclei());
-    double tot_prec = proj_prec / std::min(1.0 * Z_tot, std::sqrt(2.0 * Z_tot));
     double loc_prec = proj_prec / std::max(1.0, Z_loc); // relative prec
 
     // Scale precision by box size, so that accuracy is independent of box size
@@ -108,23 +136,8 @@ NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double sm
     t_loc.stop();
     mrcpp::print::separator(1, '-');
     print_utils::qmfunction(1, "Local potential", V_loc, t_loc);
-
-    // Collect local potentials
-    Timer t_com;
-    auto V_tot = std::make_shared<QMPotential>(1, mpi_share);
-    allreducePotential(tot_prec, *V_tot, V_loc);
-    V_func = *V_tot;
-    t_com.stop();
-
-    t_tot.stop();
-    print_utils::qmfunction(1, "Allreduce potential", *V_tot, t_com);
-    mrcpp::print::footer(1, t_tot, 2);
-
-    // Invoke operator= to assign *this operator
-    RankZeroOperator &O = (*this);
-    O = V_tot;
-    O.name() = "V_nuc";
     delete f_loc;
+    return V_loc;
 }
 
 void NuclearOperator::setupLocalPotential(NuclearFunction &f_loc, const Nuclei &nucs, double smooth_prec) const {

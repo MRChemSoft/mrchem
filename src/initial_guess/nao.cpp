@@ -143,11 +143,7 @@ bool initial_guess::nao::setup(OrbitalVector &Phi, double prec, const Nuclei &nu
             }
         }
         P = std::make_shared<ProjectorOperator>(nucs_pp, prec);
-        std::string model_pp = "point_like";
-        V_nuc = std::make_shared<NuclearOperator>(nucs_all_el, prec, prec, false, model_pp);
-        model_pp = "pp";
-        NuclearOperator pp_nuc(nucs_pp, prec, prec, false,  model_pp);
-        V_nuc->add(pp_nuc);
+        V_nuc = std::make_shared<NuclearOperator>(nucs_all_el, prec, prec, false, "point_like", nucs_pp);
         V = V + (*P);
     } else{
         V_nuc = std::make_shared<NuclearOperator>(nucs, prec);
