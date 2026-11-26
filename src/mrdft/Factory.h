@@ -39,7 +39,7 @@ namespace mrdft {
 class Factory final {
 public:
     /**
-     * @brief Construct a new Factory object. Stores a copy of the MRA and creates the XC library backend
+     * @brief Construct a new Factory object. Initializes the MRA reference  and creates the XC library backend
      * @param[in] MRA The Multi-Resolution Analysis object providing the grid
      * and basis functions for the calculation
      * @param[in] spin If true, use spin separated densities

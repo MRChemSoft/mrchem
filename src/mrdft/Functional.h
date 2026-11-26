@@ -25,9 +25,9 @@
 
 #pragma once
 
+#include <memory>
 #include <MRCPP/MWOperators>
 #include <MRCPP/trees/FunctionNode.h>
-#include <memory>
 #include "xc_libraries/XCLib.h"
 
 namespace mrdft {
@@ -71,10 +71,10 @@ public:
      *  \frac{\partial F_{xc}}{\partial \rho_y},
      *  \frac{\partial F_{xc}}{\partial \rho_z}\right) \f$
      *
-     * LDA, spin-polarized: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho^\alpha},
+     * Spin LDA: \f$ \left(F_{xc}, \frac{\partial F_{xc}}{\partial \rho^\alpha},
      *  \frac{\partial F_{xc}}{\partial \rho^\beta}\right) \f$
      *
-     * GGA, spin-polarized: \f$ \left(F_{xc},
+     * Spin GGA: \f$ \left(F_{xc},
      *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
      *  \frac{\partial F_{xc}}{\partial \rho^\beta},
      *  \frac{\partial F_{xc}}{\partial \rho_x^\alpha},
@@ -91,7 +91,7 @@ public:
      *  \frac{\partial F_{xc}}{\partial \rho},
      *  \frac{\partial F_{xc}}{\partial \gamma} \f$
      *
-     * GGA, spin-polarized: \f$ \left(F_{xc},
+     * Spin GGA: \f$ \left(F_{xc},
      *  \frac{\partial F_{xc}}{\partial \rho^\alpha},
      *  \frac{\partial F_{xc}}{\partial \rho^\beta },
      *  \frac{\partial F_{xc}}{\partial \gamma^{\alpha \alpha}},

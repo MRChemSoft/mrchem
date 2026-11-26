@@ -424,7 +424,7 @@ User input reference
   
     **Default** ``1e-11``
   
-   :xc_library: Which library evaluates the XC functional. Allowed values are ``auto``, ``xcfun`` and ``libxc``. ``auto`` picks XCFun if it was compiled in, otherwise Libxc. 
+   :xc_library: Which library evaluates the XC functional. ``XCFun``, ``LibXC`` or ``auto``.
   
     **Type** ``str``
   
