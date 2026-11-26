@@ -111,6 +111,14 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
     const bool orbital_grad_rho = isMetaGGA() && !isSpin() && static_cast<int>(inp.size()) >= spinsize + 4;
     double *coef = node.getCoefs();
 
+    // Derivative calculators, built once per call
+    std::unique_ptr<mrcpp::DerivativeCalculator<3>> derivcalcs[3];
+    std::unique_ptr<mrcpp::MWNode<3>> noded;
+    if (usesGradients()) {
+        for (int d = 0; d < 3; d++) derivcalcs[d] = std::make_unique<mrcpp::DerivativeCalculator<3>>(d, *this->derivOp, *rho0);
+        noded = std::make_unique<mrcpp::MWNode<3>>(rho0->getNode(nodeIdx), true, false);
+    }
+
     for (int i = 0; i < spinsize; i++) {
         // make cv representation of density
         mrcpp::FunctionTree<3> *rho = std::get<1>(inp[i]);
@@ -127,11 +135,11 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
                 node.attachCoefs(xclib_inp.col(spinsize + 3 * i + d).data());
                 if (orbital_grad_rho) {
                     mrcpp::FunctionTree<3> *grad_d = std::get<1>(inp[spinsize + 1 + d]);
-                    for (int j = 0; j < ncoefs; j++) xclib_inp(j, spinsize + 3 * i + d) = grad_d->getNode(nodeIdx).getCoefs()[j];
+                    const double *grad_coefs = grad_d->getNode(nodeIdx).getCoefs(); // getNode() locks: call it once, not per coefficient
+                    for (int j = 0; j < ncoefs; j++) xclib_inp(j, spinsize + 3 * i + d) = grad_coefs[j];
                 } else {
                     // derive rho and put result into xclib_inp aka node
-                    mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
-                    derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                    derivcalcs[d]->calcNode(rho->getNode(nodeIdx), node);
                 }
                 // make cv representation of gradient of density
                 node.mwTransform(mrcpp::Reconstruction);
@@ -152,8 +160,9 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
             }
 
             node.attachCoefs(xclib_inp.col(tau_col).data());
+            const double *tau_coefs = tau->getNode(nodeIdx).getCoefs(); // getNode() locks: call it once, not per coefficient
             for (int j = 0; j < ncoefs; j++) {
-                xclib_inp(j, tau_col) = tau->getNode(nodeIdx).getCoefs()[j];
+                xclib_inp(j, tau_col) = tau_coefs[j];
             }
             node.mwTransform(mrcpp::Reconstruction);
             node.cvTransform(mrcpp::Forward);
@@ -241,15 +250,15 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
             mrcpp::FunctionTree<3> *rho = std::get<1>(inp[i + spinsize]);
             // we link into the node, in order to be able to do a mwtransform without copying the data back and forth
             node.attachCoefs(d_data.col(i).data());
-            for (int j = 0; j < ncoefs; j++) d_data(j, i) = rho->getNode(nodeIdx).getCoefs()[j];
+            const double *rho_coefs = rho->getNode(nodeIdx).getCoefs(); // getNode() locks: call it once, not per coefficient
+            for (int j = 0; j < ncoefs; j++) d_data(j, i) = rho_coefs[j];
             node.mwTransform(mrcpp::Reconstruction);
             node.cvTransform(mrcpp::Forward);
             if (usesGradients()) {
                 // make gradient of input
                 for (int d = 0; d < 3; d++) {
                     node.attachCoefs(d_data.col(ctrsize + 3 * i + d).data());
-                    mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho);
-                    derivcalc.calcNode(rho->getNode(nodeIdx), node);
+                    derivcalcs[d]->calcNode(rho->getNode(nodeIdx), node);
                     // make cv representation of gradient of density
                     node.mwTransform(mrcpp::Reconstruction);
                     node.cvTransform(mrcpp::Forward);
@@ -282,11 +291,9 @@ void Functional::makepot(mrcpp::FunctionTreeVector<3> &inp, std::vector<mrcpp::F
                 node.cvTransform(mrcpp::Backward);
                 node.mwTransform(mrcpp::Compression);
                 node.calcNorms();
-                mrcpp::DerivativeCalculator<3> derivcalc(d, *this->derivOp, *rho0); // TODO: define outside loops
-                mrcpp::MWNode<3> noded(rho0->getNode(nodeIdx), true, false);
-                derivcalc.calcNode(node, noded);
+                derivcalcs[d]->calcNode(node, *noded);
                 // xcNodes[i] = Ctrout[i] - div(Ctrout[d_i])
-                for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] -= noded.getCoefs()[j];
+                for (int j = 0; j < ncoefs; j++) xcNodes[i]->getCoefs()[j] -= noded->getCoefs()[j];
             }
         }
     }
