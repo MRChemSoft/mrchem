@@ -348,7 +348,7 @@ sections:
         docstring: |
           Json string of pseudopotential files. The key can be the element symbol or a number.
           When the key is an element symbol, all atoms of that element will use the given pseudopotential.
-          When the key is a number (index is 1 based), the corresponding atom will use the given pseudopotential.
+          When the key is a number (index is 0 based), the corresponding atom will use the given pseudopotential.
           When the value is an empty string, an all electron calculation will 
           be performed for the corresponding atom or element.
         default: '{}'
