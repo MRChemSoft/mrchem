@@ -50,6 +50,10 @@ def translate_input(user_dict):
     pseudo_potential_dict = write_pseudo_potential(user_dict, mol_dict)
     mol_dict["pseudopotentials"] = pseudo_potential_dict
 
+    guess_dict = scf_dict["initial_guess"]
+    if guess_dict["type"] == "auto":
+        guess_dict["type"] = "nao" if pseudo_potential_dict["use_pp"] else "sad_gto"
+
     if mol_dict["pseudopotentials"]["use_pp"]:
         scf_dict["fock_operator"]["pseudopotential"] = {
             "pp_prec": mol_dict["pseudopotentials"]["pp_prec"]

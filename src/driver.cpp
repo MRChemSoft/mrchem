@@ -510,10 +510,6 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
 
     auto success = true;
 
-    if (mol.hasPseudopotential()) {
-        type = "nao";
-    }
-
     if (type == "chk") {
         success = initial_guess::chk::setup(Phi, file_chk);
     } else if (type == "mw") {
