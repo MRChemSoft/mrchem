@@ -123,7 +123,7 @@ def write_scf_fock(user_dict, wf_dict, origin):
         }
 
     # Exchange-Correlation library
-    fock_dict["xc_library"] = user_dict["DFT"]["xc_library"].lower()
+    fock_dict["xc_library"] = user_dict["DFT"]["xc_library"]
 
     # External electric field
     if len(user_dict["ExternalFields"]["electric_field"]) > 0:
@@ -255,7 +255,7 @@ def write_scf_guess(user_dict, wf_dict):
         "file_CUBE_p": f"{vector_dir}CUBE_p_vector.json",
         "file_CUBE_a": f"{vector_dir}CUBE_a_vector.json",
         "file_CUBE_b": f"{vector_dir}CUBE_b_vector.json",
-        "xc_library": user_dict["DFT"]["xc_library"].lower(),
+        "xc_library": user_dict["DFT"]["xc_library"],
         "cutoff": user_dict["DFT"]["density_cutoff"],
         "initial_mixing_steps": nmix,
         "initial_mixing_step_size": alpha_mix,
@@ -291,7 +291,7 @@ def write_scf_solver(user_dict, wf_dict):
         "energy_thrs": scf_dict["energy_thrs"],
         "orbital_thrs": scf_dict["orbital_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
-        "xc_library": user_dict["DFT"]["xc_library"].lower(),
+        "xc_library": user_dict["DFT"]["xc_library"],
         "deltascf_method": scf_dict["deltascf_method"],
     }
 
@@ -488,7 +488,7 @@ def write_rsp_fock(user_dict, wf_dict):
         }
 
     # Exchange-Correlation library
-    fock_dict["xc_library"] = user_dict["DFT"]["xc_library"].lower()
+    fock_dict["xc_library"] = user_dict["DFT"]["xc_library"]
 
     # Reaction
     if user_dict["WaveFunction"]["environment"].lower() != "none":
@@ -520,7 +520,7 @@ def write_rsp_solver(user_dict, wf_dict, d):
         "property_thrs": user_dict["Response"]["property_thrs"],
         "helmholtz_prec": user_dict["Precisions"]["helmholtz_prec"],
         "orth_prec": 1.0e-14,
-        "xc_library": user_dict["DFT"]["xc_library"].lower(),
+        "xc_library": user_dict["DFT"]["xc_library"],
         "cutoff": user_dict["DFT"]["density_cutoff"],
     }
     return solver_dict
