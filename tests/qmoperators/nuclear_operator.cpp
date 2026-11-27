@@ -318,18 +318,16 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
 }
 
 TEST_CASE("PPNucleus", "[nuclear_operator]") {
-    auto make_pp = [](double zeff, double alpha, std::vector<double> c) {
+    auto make_pp = [](double zeff, double alpha) {
         nlohmann::json pp = {{"zeff", zeff},
                              {"zion", 11.0},
-                             {"local", {{"rloc", 1.0}, {"nloc", c.size()}, {"alpha_pp", alpha}, {"c", c}}},
+                             {"local", {{"rloc", 1.0}, {"nloc", 1}, {"alpha_pp", alpha}, {"c", {-0.5}}}},
                              {"nonlocal", {{"nsep", 0}, {"rl", nlohmann::json::array()}, {"dim_h", nlohmann::json::array()}, {"h", nlohmann::json::array()}}}};
         return std::make_shared<PseudopotentialData>(nlohmann::json{{"pseuodopotential", pp}});
     };
-    mrcpp::Coord<3> r0{0.0, 0.0, 0.0};
-    mrcpp::Coord<3> r1{1.0, 0.0, 0.0};
     Nuclei nucs;
-    nucs.push_back("Na", r0, make_pp(1.0, 0.7, {-0.7, -0.02}));
-    nucs.push_back("Na", r1, make_pp(2.0, 0.9, {-0.5, -0.1}));
+    nucs.push_back("Na", {0.0, 0.0, 0.0}, make_pp(1.0, 0.7));
+    nucs.push_back("Na", {1.0, 0.0, 0.0}, make_pp(2.0, 0.9));
 
     // A rank that only projects the second nucleus must use the pseudopotential of that nucleus
     PPNucleus f(nucs);

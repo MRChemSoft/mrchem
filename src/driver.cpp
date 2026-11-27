@@ -510,7 +510,7 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
 
     auto success = true;
 
-    if (mol.hasPseudopotential() && type == "sad_gto") {
+    if (mol.hasPseudopotential() && (type == "sad_gto" || type == "sad" || type == "core")) {
         type = "nao";
     }
 

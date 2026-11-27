@@ -773,7 +773,6 @@ sections:
             'sad_gto', 'cube', 'nao']
         docstring: |
           Type of initial guess for ground state orbitals.
-          With pseudopotentials, ``sad_gto`` is replaced by ``nao``.
           ``chk`` restarts a previous calculation which was dumped using the
           ``write_checkpoint`` keyword. This will load MRA and electron spin
           configuration directly from the checkpoint files, which are thus
@@ -791,6 +790,8 @@ sections:
           ``nao`` will start from orbitals saved in NAO format from external calculations. 
           It also allows for some mixing iterations to converge the initial guess within the
           nao basis.
+          With pseudopotentials, the all-electron guesses ``sad_*`` and ``core_*`` are
+          replaced by ``nao``.
       - name: nao_directory
         type: str
         default: none
