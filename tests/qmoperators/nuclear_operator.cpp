@@ -336,7 +336,7 @@ TEST_CASE("PPNucleus", "[nuclear_operator]") {
     f.push_back(nucs[1], 0.0, 0.0);
 
     Nuclei second;
-    second.push_back("Na", r1, make_pp(2.0, 0.9, {-0.5, -0.1}));
+    second.push_back(nucs[1]);
     PPNucleus f_ref(second);
     f_ref.push_back(second[0], 0.0, 0.0);
 

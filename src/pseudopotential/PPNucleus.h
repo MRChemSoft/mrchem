@@ -44,6 +44,7 @@ namespace mrchem {
  */
 class PPNucleus : public NuclearFunction {
 public:
+
     /**
      * @brief Constructs a PPNucleus object with the given pseudopotential data.
      * @param nucs The nuclei, all of which must carry pseudopotential data.
@@ -75,7 +76,7 @@ public:
 
             double temp = 1.0;
             double temp_square = 2.0 * R1 * R1 * pp.alpha_pp * pp.alpha_pp;
-
+            
             for (int iloc = 0; iloc < pp.nloc; iloc++) {
                 result += pp.c[iloc] * temp_exp * temp;
                 temp *= temp_square;

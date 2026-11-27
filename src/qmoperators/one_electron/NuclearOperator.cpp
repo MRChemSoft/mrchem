@@ -59,9 +59,6 @@ namespace mrchem {
  *  @param model: Nuclear model for the nuclei in nucs
  *  @param pp_nucs: Nuclei with pseudopotential, added to the potential before it is shared
  */
-NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, const std::string &model)
-        : NuclearOperator(nucs, proj_prec, smooth_prec, mpi_share, model, Nuclei()) {}
-
 NuclearOperator::NuclearOperator(const Nuclei &nucs, double proj_prec, double smooth_prec, bool mpi_share, const std::string &model, const Nuclei &pp_nucs) {
     if (proj_prec < 0.0) MSG_ABORT("Negative projection precision");
     if (smooth_prec < 0.0) smooth_prec = proj_prec;
