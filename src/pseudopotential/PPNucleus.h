@@ -67,7 +67,7 @@ public:
         double temp_exp;
         for (size_t i = 0; i < this->nuclei.size(); i++) {
             const auto &R = this->nuclei[i].getCoord();
-            const auto &pp = this->nuclei[i].getPseudopotentialData();
+            const auto &pp = *this->nuclei[i].getPseudopotentialData();
             auto R1 = math_utils::calc_distance(R, r);
 
             temp_exp = std::exp(-pp.alpha_pp * pp.alpha_pp * R1 * R1);

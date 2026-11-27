@@ -115,7 +115,7 @@ bool Molecule::hasNLCCPseudopotential() const {
     for (auto i = 0; i < getNNuclei(); i++) {
         const auto &nuc = getNuclei()[i];
         if (nuc.hasPseudopotential()) {
-            if (nuc.getPseudopotentialData().getHasNlcc()) return true;
+            if (nuc.getPseudopotentialData()->getHasNlcc()) return true;
         }
     }
     return false;
@@ -126,7 +126,7 @@ bool Molecule::hasProjectorPseudopotential() const {
     for (auto i = 0; i < getNNuclei(); i++) {
         const auto &nuc = getNuclei()[i];
         if (nuc.hasPseudopotential()) {
-            if (nuc.getPseudopotentialData().getNsep() > 0) return true;
+            if (nuc.getPseudopotentialData()->getNsep() > 0) return true;
         }
     }
     return false;
