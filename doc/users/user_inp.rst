@@ -554,8 +554,7 @@ for large systems. It is, however, not recommended to reduce the value much belo
 10 StdDevs, as this will have the *opposite* effect on efficiency due to introduction
 of discontinuities at the cutoff point, which leads to higher grid refinement.
 ``sad_gto`` is usually the preferred guess both for accuracy and efficiency, and
-is thus the default choice, except when pseudopotentials are used, where the
-default is ``nao``. The default ``auto`` selects between the two.
+is thus the default choice.
 
 The ``core`` and ``sad`` guesses are fully specified with the following keywords
 (defaults shown):
@@ -564,7 +563,7 @@ The ``core`` and ``sad`` guesses are fully specified with the following keywords
 
     SCF {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = sad_gto                  # Type of inital guess (auto, chk, mw, cube, core_XX, sad_XX)
+      guess_type = sad_gto                  # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
       guess_screen = 12.0                   # Number of StdDev before a GTO is set to zero (sad_gto)
       guess_rotate = true                   # Localize/Diagonalize guess orbitals before calculating the initial guess energy
     }
@@ -597,7 +596,7 @@ chk`` in the subsequent calculation:
 .. code-block:: bash
 
     SCF {
-      guess_type = chk                      # Type of inital guess (auto, chk, mw, cube, core_XX, sad_XX)
+      guess_type = chk                      # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 In this case the ``path_checkpoint`` must be the same as the previous
@@ -626,7 +625,7 @@ calculations using the ``guess_type = mw`` initial guess:
 
     SCF {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = mw                       # Type of inital guess (auto, chk, mw, cube, core_XX, sad_XX)
+      guess_type = mw                       # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 Here the orbitals will be re-projected onto the current MW basis with precision
@@ -789,7 +788,7 @@ calculations using the ``guess_type = mw`` initial guess:
 
     Response {
       guess_prec = 1.0e-3                   # Numerical precision used in guess
-      guess_type = mw                       # Type of inital guess (auto, chk, mw, cube, core_XX, sad_XX)
+      guess_type = mw                       # Type of inital guess (chk, mw, cube, core_XX, sad_XX)
     }
 
 Here the orbitals will be re-projected onto the current MW basis with precision

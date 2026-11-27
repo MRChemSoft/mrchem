@@ -200,9 +200,9 @@ def write_scf_guess(user_dict, wf_dict):
         chk_Phi = Path(f"{scf_dict['path_checkpoint']}/phi_scf_idx_0.meta")
         if not chk_Phi.is_file():
             print(
-                f"No checkpoint guess found in {scf_dict['path_checkpoint']}, falling back to the default ('auto') initial guess"
+                f"No checkpoint guess found in {scf_dict['path_checkpoint']}, falling back to 'sad_gto' initial guess"
             )
-            guess_type = "auto"
+            guess_type = "sad_gto"
         else:
             # adjust guess precision if checkpoint files are present
             guess_prec = user_dict["world_prec"]
@@ -228,9 +228,9 @@ def write_scf_guess(user_dict, wf_dict):
         found = parse_files(user_dict)
         if not found:
             print(
-                f"No CUBE guess found in any of the 'initial_guess' sub-folders, falling back to the default ('auto') initial guess"
+                f"No CUBE guess found in any of the 'initial_guess' sub-folders, falling back to 'sad_gto' initial guess"
             )
-            guess_type = "auto"
+            guess_type = "sad_gto"
 
     vector_dir = file_dict["cube_vectors"]
     guess_dict = {

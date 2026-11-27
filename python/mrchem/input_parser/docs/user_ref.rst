@@ -796,14 +796,14 @@ User input reference
   
     **Default** ``-1.0``
   
-   :guess_type: Type of initial guess for ground state orbitals. ``auto`` selects ``nao`` if any pseudopotential is used and ``sad_gto`` otherwise. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. ``nao`` will start from orbitals saved in NAO format from external calculations.  It also allows for some mixing iterations to converge the initial guess within the nao basis. 
+   :guess_type: Type of initial guess for ground state orbitals. With pseudopotentials, ``sad_gto`` is replaced by ``nao``. ``chk`` restarts a previous calculation which was dumped using the ``write_checkpoint`` keyword. This will load MRA and electron spin configuration directly from the checkpoint files, which are thus required to be identical in the two calculations. ``mw`` will start from final orbitals in a previous calculation written using the ``write_orbitals`` keyword. The orbitals will be re-projected into the new computational setup, which means that the electron spin configuration and MRA can be different in the two calculations. ``gto`` reads precomputed GTO orbitals (requires extra non-standard input files for basis set and MO coefficients). ``core`` and ``sad`` will diagonalize the Fock matrix in the given AO basis (SZ, DZ, TZ or QZ) using a Core or Superposition of Atomic Densities Hamiltonian, respectively. ``cube`` will start from orbitals saved in cubefiles from external calculations. ``nao`` will start from orbitals saved in NAO format from external calculations.  It also allows for some mixing iterations to converge the initial guess within the nao basis. 
   
     **Type** ``str``
   
-    **Default** ``auto``
+    **Default** ``sad_gto``
   
     **Predicates**
-      - ``value.lower() in ['auto', 'mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube', 'nao']``
+      - ``value.lower() in ['mw', 'chk', 'gto', 'core_sz', 'core_dz', 'core_tz', 'core_qz', 'sad_sz', 'sad_dz', 'sad_tz', 'sad_qz', 'sad_gto', 'cube', 'nao']``
   
    :nao_directory: Directory where NAO orbitals are stored for MRChem calculation. 
   

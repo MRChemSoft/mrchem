@@ -510,8 +510,8 @@ bool driver::scf::guess_orbitals(const json &json_guess, const json &json_occ, M
 
     auto success = true;
 
-    if (mol.hasPseudopotential() && (type == "core" || type == "sad" || type == "sad_gto")) {
-        MSG_WARN("The " << type << " initial guess is all-electron and ignores the pseudopotentials");
+    if (mol.hasPseudopotential() && type == "sad_gto") {
+        type = "nao";
     }
 
     if (type == "chk") {
