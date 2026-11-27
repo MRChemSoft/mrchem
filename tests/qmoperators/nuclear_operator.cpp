@@ -31,6 +31,7 @@
 
 #include "analyticfunctions/HydrogenFunction.h"
 #include "chemistry/Nucleus.h"
+#include "pseudopotential/PPNucleus.h"
 #include "qmfunctions/Orbital.h"
 #include "qmfunctions/orbital_utils.h"
 #include "qmoperators/one_electron/NuclearOperator.h"
@@ -314,6 +315,31 @@ TEST_CASE("PointNucleusMinimum", "[nuclear_operator]") {
         }
     }
     V.clear();
+}
+
+TEST_CASE("PPNucleus", "[nuclear_operator]") {
+    auto make_pp = [](double zeff, double alpha) {
+        nlohmann::json pp = {{"zeff", zeff},
+                             {"zion", 11.0},
+                             {"local", {{"rloc", 1.0}, {"nloc", 1}, {"alpha_pp", alpha}, {"c", {-0.5}}}},
+                             {"nonlocal", {{"nsep", 0}, {"rl", nlohmann::json::array()}, {"dim_h", nlohmann::json::array()}, {"h", nlohmann::json::array()}}}};
+        return std::make_shared<PseudopotentialData>(nlohmann::json{{"pseuodopotential", pp}});
+    };
+    Nuclei nucs;
+    nucs.push_back("Na", {0.0, 0.0, 0.0}, make_pp(1.0, 0.7));
+    nucs.push_back("Na", {1.0, 0.0, 0.0}, make_pp(2.0, 0.9));
+
+    // A rank that only projects the second nucleus must use the pseudopotential of that nucleus
+    PPNucleus f(nucs);
+    f.push_back(nucs[1], 0.0, 0.0);
+
+    Nuclei second;
+    second.push_back(nucs[1]);
+    PPNucleus f_ref(second);
+    f_ref.push_back(second[0], 0.0, 0.0);
+
+    mrcpp::Coord<3> r{0.3, 0.2, 0.1};
+    REQUIRE(f.evalf(r) == Catch::Approx(f_ref.evalf(r)));
 }
 
 } // namespace nuclear_potential

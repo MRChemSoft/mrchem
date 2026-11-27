@@ -47,14 +47,13 @@ public:
 
     /**
      * @brief Constructs a PPNucleus object with the given pseudopotential data.
-     * @param pps The pseudopotential data. (One for each nucleus)
+     * @param nucs The nuclei, all of which must carry pseudopotential data.
      */
     PPNucleus(const Nuclei &nucs) : NuclearFunction(){
         for(size_t i = 0; i < nucs.size(); i++) {
             if (! nucs[i].hasPseudopotential()) {
                 MSG_ABORT("Nucleus has no pseudopotential data in constructor of PPNucleus");
             }
-            this->pps.push_back(*nucs[i].getPseudopotentialData());
         }
     }
 
@@ -68,17 +67,18 @@ public:
         double temp_exp;
         for (size_t i = 0; i < this->nuclei.size(); i++) {
             const auto &R = this->nuclei[i].getCoord();
+            const auto &pp = *this->nuclei[i].getPseudopotentialData();
             auto R1 = math_utils::calc_distance(R, r);
 
-            temp_exp = std::exp(-this->pps[i].alpha_pp * this->pps[i].alpha_pp * R1 * R1);
+            temp_exp = std::exp(-pp.alpha_pp * pp.alpha_pp * R1 * R1);
 
-            result -= this->pps[i].getZeff() / R1 * std::erf(this->pps[i].alpha_pp * R1);
+            result -= pp.getZeff() / R1 * std::erf(pp.alpha_pp * R1);
 
             double temp = 1.0;
-            double temp_square = 2.0 * R1 * R1 * this->pps[i].alpha_pp * this->pps[i].alpha_pp;
+            double temp_square = 2.0 * R1 * R1 * pp.alpha_pp * pp.alpha_pp;
             
-            for (int iloc = 0; iloc < pps[i].nloc; iloc++){
-                result += this->pps[i].c[iloc] * temp_exp * temp;
+            for (int iloc = 0; iloc < pp.nloc; iloc++) {
+                result += pp.c[iloc] * temp_exp * temp;
                 temp *= temp_square;
             }
         }
@@ -116,9 +116,6 @@ public:
      * @note This method is required by the NuclearFunction interface but is not used for pseudopotentials.
      */
     double calcParam2(double prec, const Nucleus &nuc) const override { (void)nuc; return prec; }
-
-protected:
-    std::vector<PseudopotentialData> pps;
 
 };
 
