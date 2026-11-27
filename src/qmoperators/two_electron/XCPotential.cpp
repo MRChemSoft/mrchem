@@ -75,13 +75,13 @@ void XCPotential::setup(double prec) {
         for (size_t i = 0; i < this->nucs->size(); i++) {
             Nucleus nuc = (*nucs)[i];
             if ( nuc.hasPseudopotential()) {
-                if (nuc.getPseudopotentialData()->getHasNlcc()) {
+                if (nuc.getPseudopotentialData().getHasNlcc()) {
                     nlccCoords.push_back(nuc.getCoord());
-                    double prefact = - nuc.getPseudopotentialData()->getQnlcc()
-                        * (nuc.getPseudopotentialData()->getZeff() - nuc.getPseudopotentialData()->getZion())
-                        / std::pow((std::sqrt(2 * M_PI) * nuc.getPseudopotentialData()->getRnlcc()), 3.0);
+                    double prefact = - nuc.getPseudopotentialData().getQnlcc()
+                        * (nuc.getPseudopotentialData().getZeff() - nuc.getPseudopotentialData().getZion())
+                        / std::pow((std::sqrt(2 * M_PI) * nuc.getPseudopotentialData().getRnlcc()), 3.0);
                     prefacts.push_back(prefact); // minus because rho is electron density not charge density
-                    nlccrs.push_back(nuc.getPseudopotentialData()->getRnlcc());
+                    nlccrs.push_back(nuc.getPseudopotentialData().getRnlcc());
                 }
             }
         }

@@ -112,11 +112,11 @@ public:
     /**
      * Get the pseudopotential data of the nucleus.
      */
-    const std::shared_ptr<PseudopotentialData> &getPseudopotentialData() const {
+    const PseudopotentialData &getPseudopotentialData() const {
         if (!has_pp_data) {
             MSG_ABORT("Nucleus has no pseudopotential data");
         }
-        return this->pp_data_ptr;
+        return *this->pp_data_ptr;
     }
 
     /**

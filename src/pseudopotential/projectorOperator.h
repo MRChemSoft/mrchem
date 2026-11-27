@@ -108,7 +108,7 @@ public:
             if (!nucs[i].hasPseudopotential()){
                 MSG_ABORT("No pseudopotential for atom " + std::to_string(i));
             }
-            this->pp.push_back(*nucs[i].getPseudopotentialData());
+            this->pp.push_back(nucs[i].getPseudopotentialData());
         }
 
         this->prec = prec;
