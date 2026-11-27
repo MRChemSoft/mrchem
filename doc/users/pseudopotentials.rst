@@ -28,7 +28,7 @@ Assigning pseudopotentials
 --------------------------
 
 The ``pp_files`` keyword accepts a JSON dictionary. Keys can be either element
-symbols or atom indices (1-based). This allows flexible assignment:
+symbols or atom indices (0-based). This allows flexible assignment:
 
 **By element** -- all atoms of that element use the same pseudopotential::
 
@@ -43,8 +43,8 @@ symbols or atom indices (1-based). This allows flexible assignment:
 
     $pp_files
     {
-    "1": "psppar.Na",
-    "2": "psppar.Cl"
+    "0": "psppar.Na",
+    "1": "psppar.Cl"
     }
     $end
 
